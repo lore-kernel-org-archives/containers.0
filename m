@@ -1,15 +1,16 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 05/11] fs: Allow superblock owner to access do_remount_sb()
-Date: Fri, 22 Dec 2017 21:30:44 -0600
-Message-ID: <20171223033044.GE6837__27674.9107208618$1513999741$gmane$org@mail.hallyn.com>
+Subject: Re: [PATCH 06/11] capabilities: Allow privileged user in s_user_ns
+	to set security.* xattrs
+Date: Fri, 22 Dec 2017 21:33:36 -0600
+Message-ID: <20171223033336.GF6837__8571.93150227449$1513999930$gmane$org@mail.hallyn.com>
 References: <cover.1512741134.git.dongsu@kinvolk.io>
-	<8dd484dceb9e96e5b67f21b8a0cf333753985e89.1512041070.git.dongsu@kinvolk.io>
+	<5adc5e31c25beb987798ecc219df79671547a9ac.1512041070.git.dongsu@kinvolk.io>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <8dd484dceb9e96e5b67f21b8a0cf333753985e89.1512041070.git.dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
+In-Reply-To: <5adc5e31c25beb987798ecc219df79671547a9ac.1512041070.git.dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,55 +21,83 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
-Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, James Morris <james.l.morris-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Dec 22, 2017 at 03:32:29PM +0100, Dongsu Park wrote:
+On Fri, Dec 22, 2017 at 03:32:30PM +0100, Dongsu Park wrote:
 > From: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 > 
-> Superblock level remounts are currently restricted to global
-> CAP_SYS_ADMIN, as is the path for changing the root mount to
-> read only on umount. Loosen both of these permission checks to
-> also allow CAP_SYS_ADMIN in any namespace which is privileged
-> towards the userns which originally mounted the filesystem.
+> A privileged user in s_user_ns will generally have the ability to
+> manipulate the backing store and insert security.* xattrs into
+> the filesystem directly. Therefore the kernel must be prepared to
+> handle these xattrs from unprivileged mounts, and it makes little
+> sense for commoncap to prevent writing these xattrs to the
+> filesystem. The capability and LSM code have already been updated
+> to appropriately handle xattrs from unprivileged mounts, so it
+> is safe to loosen this restriction on setting xattrs.
 > 
-> Patch v4 is available: https://patchwork.kernel.org/patch/8944631/
+> The exception to this logic is that writing xattrs to a mounted
+> filesystem may also cause the LSM inode_post_setxattr or
+> inode_setsecurity callbacks to be invoked. SELinux will deny the
+> xattr update by virtue of applying mountpoint labeling to
+> unprivileged userns mounts, and Smack will deny the writes for
+> any user without global CAP_MAC_ADMIN, so loosening the
+> capability check in commoncap is safe in this respect as well.
 > 
-> Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> Patch v4 is available: https://patchwork.kernel.org/patch/8944641/
+> 
+> Cc: linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 > Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> Cc: Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-> Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> Cc: James Morris <james.l.morris-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
 > Cc: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 
-Acked-by: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Reviewed-by: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 
 > Signed-off-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 > Signed-off-by: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
 > ---
->  fs/namespace.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
+>  security/commoncap.c | 8 ++++++--
+>  1 file changed, 6 insertions(+), 2 deletions(-)
 > 
-> diff --git a/fs/namespace.c b/fs/namespace.c
-> index e158ec6b..830040d7 100644
-> --- a/fs/namespace.c
-> +++ b/fs/namespace.c
-> @@ -1589,7 +1589,7 @@ static int do_umount(struct mount *mnt, int flags)
->  		 * Special case for "unmounting" root ...
->  		 * we just try to remount it readonly.
->  		 */
-> -		if (!capable(CAP_SYS_ADMIN))
-> +		if (!ns_capable(sb->s_user_ns, CAP_SYS_ADMIN))
->  			return -EPERM;
->  		down_write(&sb->s_umount);
->  		if (!sb_rdonly(sb))
-> @@ -2327,7 +2327,7 @@ static int do_remount(struct path *path, int ms_flags, int sb_flags,
->  	down_write(&sb->s_umount);
->  	if (ms_flags & MS_BIND)
->  		err = change_mount_flags(path->mnt, ms_flags);
-> -	else if (!capable(CAP_SYS_ADMIN))
-> +	else if (!ns_capable(sb->s_user_ns, CAP_SYS_ADMIN))
->  		err = -EPERM;
->  	else
->  		err = do_remount_sb(sb, sb_flags, data, 0);
+> diff --git a/security/commoncap.c b/security/commoncap.c
+> index 4f8e0934..dd0afef9 100644
+> --- a/security/commoncap.c
+> +++ b/security/commoncap.c
+> @@ -920,6 +920,8 @@ int cap_bprm_set_creds(struct linux_binprm *bprm)
+>  int cap_inode_setxattr(struct dentry *dentry, const char *name,
+>  		       const void *value, size_t size, int flags)
+>  {
+> +	struct user_namespace *user_ns = dentry->d_sb->s_user_ns;
+> +
+>  	/* Ignore non-security xattrs */
+>  	if (strncmp(name, XATTR_SECURITY_PREFIX,
+>  			sizeof(XATTR_SECURITY_PREFIX) - 1) != 0)
+> @@ -932,7 +934,7 @@ int cap_inode_setxattr(struct dentry *dentry, const char *name,
+>  	if (strcmp(name, XATTR_NAME_CAPS) == 0)
+>  		return 0;
+>  
+> -	if (!capable(CAP_SYS_ADMIN))
+> +	if (!ns_capable(user_ns, CAP_SYS_ADMIN))
+>  		return -EPERM;
+>  	return 0;
+>  }
+> @@ -950,6 +952,8 @@ int cap_inode_setxattr(struct dentry *dentry, const char *name,
+>   */
+>  int cap_inode_removexattr(struct dentry *dentry, const char *name)
+>  {
+> +	struct user_namespace *user_ns = dentry->d_sb->s_user_ns;
+> +
+>  	/* Ignore non-security xattrs */
+>  	if (strncmp(name, XATTR_SECURITY_PREFIX,
+>  			sizeof(XATTR_SECURITY_PREFIX) - 1) != 0)
+> @@ -965,7 +969,7 @@ int cap_inode_removexattr(struct dentry *dentry, const char *name)
+>  		return 0;
+>  	}
+>  
+> -	if (!capable(CAP_SYS_ADMIN))
+> +	if (!ns_capable(user_ns, CAP_SYS_ADMIN))
+>  		return -EPERM;
+>  	return 0;
+>  }
 > -- 
 > 2.13.6
