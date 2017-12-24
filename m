@@ -1,16 +1,15 @@
-From: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
-Subject: Re: [PATCH 02/11] mtd: Check permissions towards mtd block device
-	inode when mounting
-Date: Sat, 23 Dec 2017 13:56:51 +0100
-Message-ID: <65834980.AClogkzgvk__49763.2456747398$1514034115$gmane$org@blindfold>
+From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 11/11] evm: Don't update hmacs in user ns mounts
+Date: Sun, 24 Dec 2017 00:12:08 -0500
+Message-ID: <1514092328.5221.116.camel__3362.85413145578$1514092247$gmane$org@linux.vnet.ibm.com>
 References: <cover.1512741134.git.dongsu@kinvolk.io>
-	<CAFLxGvwzRBGJf0-jCAwGts1HwV_nT072+yhHLP079sxQezoTFQ@mail.gmail.com>
-	<CANxcAMtVqgLmQaTtfJocGGgsn5dSX2CDwzh6bwv6OnjUUwsTrg@mail.gmail.com>
+	<1f2233a1a028f1eb1e9bea7d06efa6d34e69e752.1512041070.git.dongsu@kinvolk.io>
+	<20171223040348.GK6837@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CANxcAMtVqgLmQaTtfJocGGgsn5dSX2CDwzh6bwv6OnjUUwsTrg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20171223040348.GK6837-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,42 +19,42 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
-Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, "linux-mtd-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org" <linux-mtd-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
+Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, James Morris <james.l.morris-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Dongsu,
-
-Am Samstag, 23. Dezember 2017, 13:18:30 CET schrieb Dongsu Park:
-> Hi,
-> 
-> On Fri, Dec 22, 2017 at 10:06 PM, Richard Weinberger
-> 
-> <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
-> > Dongsu,
-> > 
-> > On Fri, Dec 22, 2017 at 3:32 PM, Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org> wrote:
-> >> From: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-> >> 
-> >> Unprivileged users should not be able to mount mtd block devices
-> >> when they lack sufficient privileges towards the block device
-> >> inode.  Update mount_mtd() to validate that the user has the
-> >> required access to the inode at the specified path. The check
-> >> will be skipped for CAP_SYS_ADMIN, so privileged mounts will
-> >> continue working as before.
-> > 
-> > What is the big picture of this?
-> > Can in future an unprivileged user just mount UBIFS?
-> 
-> I'm not sure I'm aware of all use cases w.r.t mtd & ubifs.
-> To my understanding, in these days many container runtimes allow
-> unprivileged users to run containers. (docker, lxc, runc, bubblewrap, etc)
-> That's why the kernel should deal with additional permission checks
-> that might have not been necessary in the past.
-> This MTD patch is one of those special cases.
-
-My fear is that a corner case is forgotten and all of a sudden someone can do 
-funky things with MTD in a container...
-
-Thanks,
-//richard
+SGkgU2VyZ2UsCgpPbiBGcmksIDIwMTctMTItMjIgYXQgMjI6MDMgLTA2MDAsIFNlcmdlIEUuIEhh
+bGx5biB3cm90ZToKPiBPbiBGcmksIERlYyAyMiwgMjAxNyBhdCAwMzozMjozNVBNICswMTAwLCBE
+b25nc3UgUGFyayB3cm90ZToKPiA+IEZyb206IFNldGggRm9yc2hlZSA8c2V0aC5mb3JzaGVlQGNh
+bm9uaWNhbC5jb20+Cj4gPiAKPiA+IFRoZSBrZXJuZWwgc2hvdWxkIG5vdCBjYWxjdWxhdGUgbmV3
+IGhtYWNzIGZvciBtb3VudHMgZG9uZSBieQo+ID4gbm9uLXJvb3QgdXNlcnMuIFVwZGF0ZSBldm1f
+Y2FsY19obWFjX29yX2hhc2goKSB0byByZWZ1c2UgdG8KPiA+IGNhbGN1bGF0ZSBuZXcgaG1hY3Mg
+Zm9yIG1vdW50cyBmb3Igbm9uLWluaXQgdXNlciBuYW1lc3BhY2VzLgo+ID4gCj4gPiBDYzogbGlu
+dXgtaW50ZWdyaXR5QHZnZXIua2VybmVsLm9yZwo+ID4gQ2M6IGxpbnV4LXNlY3VyaXR5LW1vZHVs
+ZUB2Z2VyLmtlcm5lbC5vcmcKPiA+IENjOiBsaW51eC1rZXJuZWxAdmdlci5rZXJuZWwub3JnCj4g
+PiBDYzogSmFtZXMgTW9ycmlzIDxqYW1lcy5sLm1vcnJpc0BvcmFjbGUuY29tPgo+ID4gQ2M6IE1p
+bWkgWm9oYXIgPHpvaGFyQGxpbnV4LnZuZXQuaWJtLmNvbT4KPiAKPiBIaSBNaW1pLAo+IAo+IGRv
+ZXMgdGhpcyBjaGFuZ2Ugc2VlbSBzdWZmaWNpZW50IHRvIHlvdT8KCkkgdGhpbmsgdGhpcyBpcyB0
+aGUgY29ycmVjdCBiZWhhdmlvciBpbiB0aGUgY29udGV4dCBvZiBmdXNlIGZpbGUKc3lzdGVtcy4g
+wqBUaGlzIHBhdGNoLCB0aGUgImltYTogZGVmaW5lIGEgbmV3IHBvbGljeSBvcHRpb24gbmFtZWQK
+Zm9yY2UiIHBhdGNoLCBhbmQgYW4gdXBkYXRlZCBJTUEgcG9saWN5IHNob3VsZCBiZSB1cHN0cmVh
+bWVkIHRvZ2V0aGVyLgrCoFRoZSBjb3ZlciBsZXR0ZXIgc2hvdWxkIHByb3ZpZGUgdGhlIG1vdGl2
+YXRpb24gZm9yIHRoZXNlIHBhdGNoZXMuCgpNaW1pCgo+IAo+ID4gQ2M6ICJTZXJnZSBFLiBIYWxs
+eW4iIDxzZXJnZUBoYWxseW4uY29tPgo+ID4gU2lnbmVkLW9mZi1ieTogU2V0aCBGb3JzaGVlIDxz
+ZXRoLmZvcnNoZWVAY2Fub25pY2FsLmNvbT4KPiA+IFNpZ25lZC1vZmYtYnk6IERvbmdzdSBQYXJr
+IDxkb25nc3VAa2ludm9say5pbz4KPiA+IC0tLQo+ID4gIHNlY3VyaXR5L2ludGVncml0eS9ldm0v
+ZXZtX2NyeXB0by5jIHwgMyArKy0KPiA+ICAxIGZpbGUgY2hhbmdlZCwgMiBpbnNlcnRpb25zKCsp
+LCAxIGRlbGV0aW9uKC0pCj4gPiAKPiA+IGRpZmYgLS1naXQgYS9zZWN1cml0eS9pbnRlZ3JpdHkv
+ZXZtL2V2bV9jcnlwdG8uYyBiL3NlY3VyaXR5L2ludGVncml0eS9ldm0vZXZtX2NyeXB0by5jCj4g
+PiBpbmRleCBiY2Q2NGJhZi4uNzI5ZjQ1NDUgMTAwNjQ0Cj4gPiAtLS0gYS9zZWN1cml0eS9pbnRl
+Z3JpdHkvZXZtL2V2bV9jcnlwdG8uYwo+ID4gKysrIGIvc2VjdXJpdHkvaW50ZWdyaXR5L2V2bS9l
+dm1fY3J5cHRvLmMKPiA+IEBAIC0xOTAsNyArMTkwLDggQEAgc3RhdGljIGludCBldm1fY2FsY19o
+bWFjX29yX2hhc2goc3RydWN0IGRlbnRyeSAqZGVudHJ5LAo+ID4gIAlpbnQgZXJyb3I7Cj4gPiAg
+CWludCBzaXplOwo+ID4gIAo+ID4gLQlpZiAoIShpbm9kZS0+aV9vcGZsYWdzICYgSU9QX1hBVFRS
+KSkKPiA+ICsJaWYgKCEoaW5vZGUtPmlfb3BmbGFncyAmIElPUF9YQVRUUikgfHwKPiA+ICsJICAg
+IGlub2RlLT5pX3NiLT5zX3VzZXJfbnMgIT0gJmluaXRfdXNlcl9ucykKPiA+ICAJCXJldHVybiAt
+RU9QTk9UU1VQUDsKPiA+ICAKPiA+ICAJZGVzYyA9IGluaXRfZGVzYyh0eXBlKTsKPiA+IC0tIAo+
+ID4gMi4xMy42Cj4gCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5k
+YXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3Rp
+bmZvL2NvbnRhaW5lcnM=
