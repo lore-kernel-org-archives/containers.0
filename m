@@ -1,12 +1,11 @@
-From: Adam Richter <lgmp-keaFvQtjc6i7NGdpmJTKYQ@public.gmane.org>
-Subject: (unknown)
-Date: Fri, 29 Dec 2017 19:37:47 -0900
-Message-ID: <20171230044438.1F7B1491@mail.linuxfoundation.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: [GIT PULL] pid bug fix for v4.15-rc7
+Date: Tue, 02 Jan 2018 19:38:05 -0600
+Message-ID: <87k1wz203m.fsf__45089.6633709364$1514943436$gmane$org@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: 
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,8 +15,125 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: adam richter2004 <adam_richter2004-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>, barrykendall <barrykendall-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, ann zhang888 <ann.zhang888-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, sca38018 <sca38018-JTKT+MZqROFWk0Htik3J/w@public.gmane.org>
+To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Dave Jones <davej-rdkfGonbjUTCLXcRTR1eJlpr/1R2p/CL@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Gargi Sharma <gs051095-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-http://durable.daphnevy.com
-Adam Richter
+
+
+Linus,
+
+Please pull the for-linus branch from the git tree:
+
+   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
+
+   HEAD: c0ee554906c3d6554fbddf95ae664cd9f817082b pid: Handle failure to allocate the first pid in a pid namespace
+
+The replacement of the pid hash table and the pid bitmap with an idr
+resulted in an implementation that now fails more often in low memory
+situations.  Allowing fuzzers to observe bad behavior from a memory
+allocation failure during pid allocation.
+
+This is a small change to fix this by making the kernel more robust
+in the case of error.  The non-error paths are left alone so the only
+danger is to the already broken error path.  I have manually injected
+errors and verified that this new error handling works.
+
+From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Date: Fri, 22 Dec 2017 12:37:43 -0600
+Subject: [PATCH] pid: Handle failure to allocate the first pid in a pid namespace
+
+With the replacement of the pid bitmap and hashtable with an idr in
+alloc_pid started occassionally failing when allocating the first pid
+in a pid namespace.  Things were not completely reset resulting in
+the first allocated pid getting the number 2 (not 1).  Which
+further resulted in ns->proc_mnt not getting set and eventually
+causing an oops in proc_flush_task.
+
+Oops: 0000 [#1] SMP
+CPU: 2 PID: 6743 Comm: trinity-c117 Not tainted 4.15.0-rc4-think+ #2
+RIP: 0010:proc_flush_task+0x8e/0x1b0
+RSP: 0018:ffffc9000bbffc40 EFLAGS: 00010286
+RAX: 0000000000000001 RBX: 0000000000000001 RCX: 00000000fffffffb
+RDX: 0000000000000000 RSI: ffffc9000bbffc50 RDI: 0000000000000000
+RBP: ffffc9000bbffc63 R08: 0000000000000000 R09: 0000000000000002
+R10: ffffc9000bbffb70 R11: ffffc9000bbffc64 R12: 0000000000000003
+R13: 0000000000000000 R14: 0000000000000003 R15: ffff8804c10d7840
+FS:  00007f7cb8965700(0000) GS:ffff88050a200000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000000000000 CR3: 00000003e21ae003 CR4: 00000000001606e0
+DR0: 00007fb1d6c22000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000600
+Call Trace:
+ ? release_task+0xaf/0x680
+ release_task+0xd2/0x680
+ ? wait_consider_task+0xb82/0xce0
+ wait_consider_task+0xbe9/0xce0
+ ? do_wait+0xe1/0x330
+ do_wait+0x151/0x330
+ kernel_wait4+0x8d/0x150
+ ? task_stopped_code+0x50/0x50
+ SYSC_wait4+0x95/0xa0
+ ? rcu_read_lock_sched_held+0x6c/0x80
+ ? syscall_trace_enter+0x2d7/0x340
+ ? do_syscall_64+0x60/0x210
+ do_syscall_64+0x60/0x210
+ entry_SYSCALL64_slow_path+0x25/0x25
+RIP: 0033:0x7f7cb82603aa
+RSP: 002b:00007ffd60770bc8 EFLAGS: 00000246
+ ORIG_RAX: 000000000000003d
+RAX: ffffffffffffffda RBX: 00007f7cb6cd4000 RCX: 00007f7cb82603aa
+RDX: 000000000000000b RSI: 00007ffd60770bd0 RDI: 0000000000007cca
+RBP: 0000000000007cca R08: 00007f7cb8965700 R09: 00007ffd607c7080
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 00007ffd60770bd0 R14: 00007f7cb6cd4058 R15: 00000000cccccccd
+Code: c1 e2 04 44 8b 60 30 48 8b 40 38 44 8b 34 11 48 c7 c2 60 3a f5 81 44 89 e1 4c 8b 68 58 e8 4b b4 77 00 89 44 24 14 48 8d 74 24 10 <49> 8b 7d 00 e8 b9 6a f9 ff 48 85 c0 74 1a 48 89 c7 48 89 44 24
+RIP: proc_flush_task+0x8e/0x1b0 RSP: ffffc9000bbffc40
+CR2: 0000000000000000
+---[ end trace 53d67a6481059862 ]---
+
+Improve the quality of the implementation by resetting the place to
+start allocating pids on failure to allocate the first pid.
+
+As improving the quality of the implementation is the goal remove the now
+unnecesarry disable_pid_allocations call when we fail to mount proc.
+
+Fixes: 95846ecf9dac ("pid: replace pid bitmap implementation with IDR API")
+Fixes: 8ef047aaaeb8 ("pid namespaces: make alloc_pid(), free_pid() and put_pid() work with struct upid")
+Reported-by: Dave Jones <davej-rdkfGonbjUTCLXcRTR1eJlpr/1R2p/CL@public.gmane.org>
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ kernel/pid.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/kernel/pid.c b/kernel/pid.c
+index b13b624e2c49..1e8bb6550ec4 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -193,10 +193,8 @@ struct pid *alloc_pid(struct pid_namespace *ns)
+ 	}
+ 
+ 	if (unlikely(is_child_reaper(pid))) {
+-		if (pid_ns_prepare_proc(ns)) {
+-			disable_pid_allocation(ns);
++		if (pid_ns_prepare_proc(ns))
+ 			goto out_free;
+-		}
+ 	}
+ 
+ 	get_pid_ns(ns);
+@@ -226,6 +224,10 @@ struct pid *alloc_pid(struct pid_namespace *ns)
+ 	while (++i <= ns->level)
+ 		idr_remove(&ns->idr, (pid->numbers + i)->nr);
+ 
++	/* On failure to allocate the first pid, reset the state */
++	if (ns->pid_allocated == PIDNS_ADDING)
++		idr_set_cursor(&ns->idr, 0);
++
+ 	spin_unlock_irq(&pidmap_lock);
+ 
+ 	kmem_cache_free(ns->pid_cachep, pid);
+-- 
+2.14.1
+
+Eric
