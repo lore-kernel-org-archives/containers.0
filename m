@@ -1,11 +1,20 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [GIT PULL] pid bug fix for v4.15-rc7
-Date: Tue, 02 Jan 2018 19:38:05 -0600
-Message-ID: <87k1wz203m.fsf__45089.6633709364$1514943436$gmane$org@xmission.com>
+From: Christian Brauner <christian.brauner-cl+VPiYnx/1AfugRpC6u6w@public.gmane.org>
+Subject: Re: [PATCH] userns: honour no_new_privs for cap_bset during user ns
+	creation/switch
+Date: Wed, 3 Jan 2018 12:23:17 +0100
+Message-ID: <20180103112317.gmpn5iatakrs7xqi__39363.5534252555$1514978499$gmane$org@mailbox.org>
+References: <20171221210605.181720-1-zenczykowski@gmail.com>
+	<87wp1foiwa.fsf@xmission.com>
+	<CAHo-OoyrOr5jXwU-j4Z4qYdWo40+qAdAk0r+OpfMUZ6LgbS-RA@mail.gmail.com>
+	<87fu83lfw5.fsf@xmission.com>
+	<CAHo-OoxoTEZuQ0ZXa9a2BnjAv83y0UWC0eqn-ok9hS31LkiiSA@mail.gmail.com>
+	<87o9mqhn3v.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <87o9mqhn3v.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,125 +24,112 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Dave Jones <davej-rdkfGonbjUTCLXcRTR1eJlpr/1R2p/CL@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Gargi Sharma <gs051095-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Willem de Bruijn <willemb-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Maciej =?utf-8?Q?=C5=BBenczykowski?= <zenczykowski-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mahesh Bandewar <maheshb-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-
-Linus,
-
-Please pull the for-linus branch from the git tree:
-
-   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
-
-   HEAD: c0ee554906c3d6554fbddf95ae664cd9f817082b pid: Handle failure to allocate the first pid in a pid namespace
-
-The replacement of the pid hash table and the pid bitmap with an idr
-resulted in an implementation that now fails more often in low memory
-situations.  Allowing fuzzers to observe bad behavior from a memory
-allocation failure during pid allocation.
-
-This is a small change to fix this by making the kernel more robust
-in the case of error.  The non-error paths are left alone so the only
-danger is to the already broken error path.  I have manually injected
-errors and verified that this new error handling works.
-
-From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Date: Fri, 22 Dec 2017 12:37:43 -0600
-Subject: [PATCH] pid: Handle failure to allocate the first pid in a pid namespace
-
-With the replacement of the pid bitmap and hashtable with an idr in
-alloc_pid started occassionally failing when allocating the first pid
-in a pid namespace.  Things were not completely reset resulting in
-the first allocated pid getting the number 2 (not 1).  Which
-further resulted in ns->proc_mnt not getting set and eventually
-causing an oops in proc_flush_task.
-
-Oops: 0000 [#1] SMP
-CPU: 2 PID: 6743 Comm: trinity-c117 Not tainted 4.15.0-rc4-think+ #2
-RIP: 0010:proc_flush_task+0x8e/0x1b0
-RSP: 0018:ffffc9000bbffc40 EFLAGS: 00010286
-RAX: 0000000000000001 RBX: 0000000000000001 RCX: 00000000fffffffb
-RDX: 0000000000000000 RSI: ffffc9000bbffc50 RDI: 0000000000000000
-RBP: ffffc9000bbffc63 R08: 0000000000000000 R09: 0000000000000002
-R10: ffffc9000bbffb70 R11: ffffc9000bbffc64 R12: 0000000000000003
-R13: 0000000000000000 R14: 0000000000000003 R15: ffff8804c10d7840
-FS:  00007f7cb8965700(0000) GS:ffff88050a200000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 0000000000000000 CR3: 00000003e21ae003 CR4: 00000000001606e0
-DR0: 00007fb1d6c22000 DR1: 0000000000000000 DR2: 0000000000000000
-DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000600
-Call Trace:
- ? release_task+0xaf/0x680
- release_task+0xd2/0x680
- ? wait_consider_task+0xb82/0xce0
- wait_consider_task+0xbe9/0xce0
- ? do_wait+0xe1/0x330
- do_wait+0x151/0x330
- kernel_wait4+0x8d/0x150
- ? task_stopped_code+0x50/0x50
- SYSC_wait4+0x95/0xa0
- ? rcu_read_lock_sched_held+0x6c/0x80
- ? syscall_trace_enter+0x2d7/0x340
- ? do_syscall_64+0x60/0x210
- do_syscall_64+0x60/0x210
- entry_SYSCALL64_slow_path+0x25/0x25
-RIP: 0033:0x7f7cb82603aa
-RSP: 002b:00007ffd60770bc8 EFLAGS: 00000246
- ORIG_RAX: 000000000000003d
-RAX: ffffffffffffffda RBX: 00007f7cb6cd4000 RCX: 00007f7cb82603aa
-RDX: 000000000000000b RSI: 00007ffd60770bd0 RDI: 0000000000007cca
-RBP: 0000000000007cca R08: 00007f7cb8965700 R09: 00007ffd607c7080
-R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
-R13: 00007ffd60770bd0 R14: 00007f7cb6cd4058 R15: 00000000cccccccd
-Code: c1 e2 04 44 8b 60 30 48 8b 40 38 44 8b 34 11 48 c7 c2 60 3a f5 81 44 89 e1 4c 8b 68 58 e8 4b b4 77 00 89 44 24 14 48 8d 74 24 10 <49> 8b 7d 00 e8 b9 6a f9 ff 48 85 c0 74 1a 48 89 c7 48 89 44 24
-RIP: proc_flush_task+0x8e/0x1b0 RSP: ffffc9000bbffc40
-CR2: 0000000000000000
----[ end trace 53d67a6481059862 ]---
-
-Improve the quality of the implementation by resetting the place to
-start allocating pids on failure to allocate the first pid.
-
-As improving the quality of the implementation is the goal remove the now
-unnecesarry disable_pid_allocations call when we fail to mount proc.
-
-Fixes: 95846ecf9dac ("pid: replace pid bitmap implementation with IDR API")
-Fixes: 8ef047aaaeb8 ("pid namespaces: make alloc_pid(), free_pid() and put_pid() work with struct upid")
-Reported-by: Dave Jones <davej-rdkfGonbjUTCLXcRTR1eJlpr/1R2p/CL@public.gmane.org>
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- kernel/pid.c | 8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
-
-diff --git a/kernel/pid.c b/kernel/pid.c
-index b13b624e2c49..1e8bb6550ec4 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -193,10 +193,8 @@ struct pid *alloc_pid(struct pid_namespace *ns)
- 	}
- 
- 	if (unlikely(is_child_reaper(pid))) {
--		if (pid_ns_prepare_proc(ns)) {
--			disable_pid_allocation(ns);
-+		if (pid_ns_prepare_proc(ns))
- 			goto out_free;
--		}
- 	}
- 
- 	get_pid_ns(ns);
-@@ -226,6 +224,10 @@ struct pid *alloc_pid(struct pid_namespace *ns)
- 	while (++i <= ns->level)
- 		idr_remove(&ns->idr, (pid->numbers + i)->nr);
- 
-+	/* On failure to allocate the first pid, reset the state */
-+	if (ns->pid_allocated == PIDNS_ADDING)
-+		idr_set_cursor(&ns->idr, 0);
-+
- 	spin_unlock_irq(&pidmap_lock);
- 
- 	kmem_cache_free(ns->pid_cachep, pid);
--- 
-2.14.1
-
-Eric
+T24gRnJpLCBEZWMgMjIsIDIwMTcgYXQgMDg6MDg6MDRBTSAtMDYwMCwgRXJpYyBXLiBCaWVkZXJt
+YW4gd3JvdGU6Cj4gTWFjaWVqIMW7ZW5jenlrb3dza2kgPHplbmN6eWtvd3NraUBnbWFpbC5jb20+
+IHdyaXRlczoKPiAKPiA+PiBHb29kIHBvaW50IGFib3V0IENBUF9EQUNfT1ZFUlJJREUgb24gZmls
+ZXMgeW91IG93bi4KPiA+Pgo+ID4+IEkgdGhpbmsgdGhlcmUgaXMgYW4gYXJndW1lbnQgdGhhdCB5
+b3UgYXJlIHBsYXlpbmcgZGFuZ2Vyb3VzIGdhbWVzIHdpdGgKPiA+PiB0aGUgcGVybWlzc2lvbiBz
+eXN0ZW0gdGhlcmUsIGFzIGl0IGlzbid0IGVmZmVjdGl2ZWx5IGEgZmlsZSB5b3Ugb3duIGlmCj4g
+Pj4geW91IGNhbid0IHJlYWQgaXQsIGFuZCB5b3UgY2FuJ3QgY2hhbmdlIGl0J3MgcGVybWlzc2lv
+bnMuCj4gPgo+ID4gQXBwZW5kLW9ubHkgZmlsZXMgYXJlIHVzZWZ1bCAtIHBhcnRpY3VsYXJseSBm
+b3IgbG9nZ2luZy4KPiA+IEl0IGNvdWxkIGFsc28gc2ltcGx5IGJlIGEgbm9uLXJlYWRhYmxlIGZp
+bGUgb24gYSBSL08gZmlsZXN5c3RlbS4KPiA+Cj4gPj4gR2l2ZW4gbGl0dGxlIHRoaW5ncyBsaWtl
+IHRoYXQgSSBjYW4gY29tcGxldGVseSBzZWUgbm9fbmV3X3ByaXZzIG1lYW5pbmcKPiA+PiB5b3Ug
+Y2FuJ3QgY3JlYXRlIGEgdXNlciBuYW1lc3BhY2UuICBUaGF0IHNlZW1zIGNvbnNpc3RlbnQgd2l0
+aCB0aGUKPiA+PiBtZWFuaW5nIGFuZCBwaGlsb3NvcGh5IG9mIG5vX25ld19wcml2cy4gIFNvIHNp
+bXBsZSBpdCBpcyBoYXJkIHRvIGdldAo+ID4+IHdyb25nLgo+ID4KPiA+IFllcywgSSBjb3VsZCB0
+b3RhbGx5IGJ1eSB0aGUgYXJndW1lbnQgdGhhdCBub19uZXdfcHJpdnMgc2hvdWxkIHByZXZlbnQK
+PiA+IGNyZWF0aW5nIGEgdXNlciBucy4KPiA+Cj4gPiBIb3dldmVyLCB0aGVyZSdzIGFsc28gc2V0
+bnMoKSBhbmQgdGhhdCdzIGEgZmFpciBiaXQgaGFyZGVyIHRvIHJlYXNvbiBhYm91dC4KPiA+IEVu
+dGlyZWx5IGRlbnkgaXQ/ICBCdXQgdGhhdCBhY3R1YWxseSBzZWVtcyBwb3RlbnRpYWxseSB1c2Vm
+dWwuLi4KPiA+IEFsbG93IGl0IGJ1dCBjYXAgaXQ/ICBUaGF0J3Mgd2hhdCB0aGlzIGRvZXMuLi4K
+PiA+Cj4gPj4gV2UgY291bGQgZG8gbW9yZSBjbGV2ZXIgdGhpbmdzIGxpa2UgcGx1ZyB0aGlzIHdo
+b2xlIGluIHVzZXIgbmFtZXNwYWNlcywKPiA+PiBhbmQgdGhhdCB3b3VsZCBub3QgaHVydCBteSBm
+ZWVsaW5ncy4KPiA+Cj4gPiBTdXJlLCB0aGlzIHBhcnRpY3VsYXIgb25lIHdvdWxkbid0IGJlIGFs
+bCB0aGF0IGVhc3kgSSB0aGluay4uLiBhbmQgaG93Cj4gPiBtYW55IHN1Y2ggaG9sZXMgYXJlIHRo
+ZXJlPwo+ID4gSSBmb3VuZCB0aGlzIHBhcnRpY3VsYXIgb25lICphZnRlciogeW91ciBmaXJzdCBy
+ZXBseSBpbiB0aGlzIHRocmVhZC4KPiA+Cj4gPj4gSG93ZXZlciB1bmxlc3MgdGhhdCBpcyBvdXIg
+b25seQo+ID4+IGNob2ljZSB0byBhdm9pZCBiYWRseSBicmVha2luZyB1c2Vyc3BhY2UgSSB3b3Vs
+ZCBoYXZlIHRvIGhhdmUgdG8gZGVwZW5kCj4gPj4gb24gdXNlciBuYW1lc3BhY2VzIGJlaW5nIHBl
+cmZlY3QgZm9yIG5vX25ld19wcml2cyB0byBiZSBhIHByb3BlciBqYWlsLgo+ID4KPiA+IFRoaXMg
+c3R1ZmYgaXMgcmlkaWN1bG91c2x5IGNvbXBsZXggdG8gZ2V0IHJpZ2h0IGZyb20gdXNlcnNwYWNl
+LiA6LSgKPiAKPiA+PiBBcyBhIGdlbmVyYWwgcnVsZSB1c2VyIG5hbWVzcGFjZXMgYXJlIHdoZXJl
+IHdlIHRhY2tsZSB0aGUgc3VidGxlIHNjYXJ5Cj4gPj4gdGhpbmdzIHRoYXQgc2hvdWxkIHdvcmss
+IGFuZCBub19uZXdfcHJpdnMgaXMgd2hlcmUgd2UgaW1wbGVtZW50IGEgc2ltcGxlCj4gPj4gaGFy
+ZCB0byBnZXQgd3JvbmcgamFpbC4gIE1vc3Qgb2YgdGhlIHRpbWUgdGhlIGVmZmVjdCBpcyB0aGUg
+c2FtZSB0byBhbgo+ID4+IG91dHNpZGUgb2JzZXJ2ZXIgKGJvdW5kZWQgcGVybWlzc2lvbnMpLCBi
+dXQgdGhlcmUgaXMgYSByZWFsIGRpZmZlcmVuY2UKPiA+PiBpbiBkaWZmaWN1bHR5IG9mIGltcGxl
+bWVudGF0aW9uLgo+ID4KPiA+IFNvLCB3aGVyZSB0byBub3cuLi4KPiA+Cj4gPiBXb3VsZCB5b3Ug
+YWNjZXB0IHBhdGNoZXMgdGhhdDoKPiA+Cj4gPiAtIG1ha2Ugbm9fbmV3X3ByaXYgYmxvY2sgdXNl
+ciBucyBjcmVhdGlvbj8KPiA+Cj4gPiAtIG1ha2Ugbm9fbmV3X3ByaXYgYmxvY2sgdXNlciBucyB0
+cmFuc2l0aW9uPwo+IAo+IFllcy4KPiAKPiBUaGUgYXBwcm9hY2ggd2lsbCBuZWVkIHRvIGJlIHJl
+dGhvdWdodCBpZiB0aGVyZSBpcyBhbnl0aGluZyBkZWxpYmVyYXRlbHkKPiBjb21iaW5pbmcgdXNl
+ciBuYW1lc3BhY2VzIGFuZCBub19uZXdfcHJpdnMuICBBcyByZWdyZXNzaW9ucyBhcmUgYSBuby1u
+by4KPiBTbyB3ZSBuZWVkIHdpZGUgc3ByZWFkIHRlc3RpbmcsIHRvIGF2b2lkIHRoYXQuCgpKdXN0
+IHRvIGJlIGNsZWFyOiAgYXMgc29vbiBhcyB5b3Ugc2V0IG5vX25ld19wcml2cyB5b3Ugc2hvdWxk
+IG5vdCBiZQphYmxlIHRvIGNyZWF0ZSBuZXcgdXNlciBuYW1lc3BhY2UgYW55bW9yZSBhbmQgeW91
+IHNob3VsZG4ndCBiZSBhYmxlIHRvCmF0dGFjaCB0byB1c2VyIG5hbWVzcGFjZXMgYW55bW9yZS4K
+VGhpcyBzaG91bGQgd29yayBhbmQgbm90IGNhdXNlIHJlZ3Jlc3Npb25zIGZvciBlLmcuIGxpYmx4
+YyB3ZXJlIHdlCmFsd2F5cyBzZXQgbm9fbmV3X3ByaXZzIGFzIG9uZSBvZiB0aGUgbGFzdCBzdGVw
+cyBhbmQgZXNwZWNpYWxseSBhZnRlciB3ZQpoYXZlIGNsb25lKENMT05FX05FV1VTRVIpIHRoZSBj
+b250YWluZXIgYW5kIC0gZm9yIHRoZSBhdHRhY2ggY2FzZSAtCmFmdGVyIHdlIGhhdmUgYWxyZWFk
+eSBkb25lIHRoZSBzZXRucyhmZCwgQ0xPTkVfTkVXVVNFUikuIFRoZXNlIHVzZS1jYXNlcwpzaG91
+bGQgYmUgcHJlc2VydmVkLiBCdXQgaXQgc2VlbXMgdG8gbWUgdGhhdCB0aGV5IHdpbGwgYmUuIEJ1
+dCBJJ2QgbGlrZQp0byB0ZXN0IHRoaXMgb25jZSBwYXRjaGVzIGFyZSBmbG9hdGluZyBhcm91bmQu
+Cgo+IAo+IEJ1dCBhcyBtdWNoIGFzIHBvc3NpYmxlIEkgd2FudCBub19uZXdfcHJpdnMgdG8gYmUg
+c2ltcGxlIGFuZCBkb2luZyBpdCdzCj4gam9iLgo+IAo+IEkgd2lsbCBhbHNvIHRha2UgYW5kIGVu
+Y291cmFnZSBwYXRjaGVzIHRoYXQgY2xvc2UgdGhpcyBtaW5vciBwcml2aWxlZ2UKPiBlc2NhbGF0
+aW9uIGZyb20gdGhlIHVzZXIgbmFtZXNwYWNlIHNpZGUuICBBcyBpZGVhbGx5IGNyZWF0aW5nIGEg
+dXNlcgo+IG5hbWVzcGFjZSBzaG91bGQgYmUgYXMgc2FmZSBhcyBub19uZXdfcHJpdnMuCj4gCj4g
+Cj4gPiBPciBwZXJoYXBzIHdlIGNhbiBhc3N1bWUgdGhhdCBsYWNrIG9mIGNyZWF0ZSBwcml2cyBp
+cyBzdWZmaWNpZW50LCBhbmQKPiA+IGlmIHRoZXJlJ3MgYSBwcmUtZXhpc3RpbmcgdXNlciBucyBm
+b3IgeW91IHRvIGVudGVyLCB0aGVuIHRoYXQncwo+ID4gYWNjZXB0YWJsZS4uLgo+ID4gQWx0aG91
+Z2ggdGhpcyBpbXBsaWVzIHlvdSBwcm9iYWJseSBhbHdheXMgd2FudCB0byBjb21iaW5lIG5vX25l
+d19wcml2cwo+ID4gd2l0aCBhIGxlYWYgdXNlciBucywgb3Igbm9fbmV3X3ByaXZzIGlzbid0IGFs
+bCB0aGF0IHVzZWZ1bCBmb3Igcm9vdCBpbgo+ID4gcm9vdCBucy4uLgo+ID4gVGhpcyBhZGRlZCBj
+b21wbGV4aXR5LCBwcm9iYWJseSBtZWFucyBpdCBzaG91bGQgYmUgYmxvY2tlZC4uLgo+IAo+IFll
+cy4KPiAKPiA+IC0gaW5oZXJpdHMgYnNldCBhY3Jvc3MgdXNlciBucyBjcmVhdGlvbi90cmFuc2l0
+aW9uIGJhc2VkIG9uIFg/Cj4gPiBbdGhpcyBpcyB0aGUgb25lIHdlIGNhcmUgYWJvdXQsIGJlY2F1
+c2UgdGhlcmUgYXJlIHNpbXBseSB0b28gbWFueSBidWdzCj4gPiBpbiB0aGUga2VybmVsIHdydC4g
+Y2VydGFpbiBjYXBzXQo+IAo+IFRoYXQgd2FzIG15IHN1c3BpY2lvbiwgYW5kIGF0dGFjayBzdXJm
+YWNlIHJlZHVjdGlvbiBpcyBhIGRpZmZlcmVudAo+IGRpc2N1c3Npb24uICBXb3VsZCBub19uZXdf
+cHJpdnMgcHJldmVudGluZyBhIHVzZXJucyB0cmFuc2l0aW9uIGJlIGVub3VnaAo+IGZvciB0aGUg
+Y2FzZXMgeW91IGNhcmUgYWJvdXQ/Cj4gCj4gT3RoZXJ3aXNlIHRoaXMgaXMgYSBkaWZmZXJlbnQg
+Y29udmVyc2F0aW9uIGJlY2F1c2UgaXQgaXMgbm90IGFib3V0Cj4gc2VtYW50aWNzIGJ1dCBhYm91
+dCBtYWtpbmcgdGhlIGNvZGUgc2FmZXIgdG8gdXNlLiAgSW4gZ2VuZXJhbCBpZiBjb2RlIGlzCj4g
+c2ltcGx5IG5vdCBzYWZlIHRvIHVzZXIgaW4gYSB1c2VyIG5hbWVzcGFjZSBJIHdvdWxkIHByZWZl
+ciB0byB0aWdodGVuCj4gdGhlIHBlcm1pc3Npb24gY2hlY2tzLCBhbmQganVzdCBub3QgYWxsb3cg
+dGhhdCBjb2RlLgo+IAo+IE1vc3RseSB3aGF0IEkgaGF2ZSBzZWVuIGluIHByZXZpb3VzIGNvbnZl
+cnNhdGlvbnMgaXMgc2ltcGx5IGNvbmNlcm5zCj4gYWJvdXQgY29kZSB0aGF0IGlzIG5vdCB1c2Vk
+IG9yIG5lZWRlZCwgYmVpbmcgYSBwcm9ibGVtLgo+IAo+ID4gWCBjb3VsZCBiZToKPiA+IC0gYSBu
+ZXcgZmxhZyBzaW1pbGFyIHRvIG5vX25ld19wcml2Cj4gPiAtIGEgbmV3IHNlY3VyZWJpdCBmbGFn
+ICh3L2xvY2tiaXQpICBbcHJvdmlkZWQgc2VjdXJlYml0cyBzdXJ2aXZlIGEKPiA+IHVzZXJucyB0
+cmFuc2l0aW9uLCBoYXZlbid0IGNoZWNrZWRdCj4gPiAtIG9yIHBlcmhhcHMgYSBuZXcgY2FwYWJp
+bGl0eQo+ID4gLSBzb21ldGhpbmcgZWxzZT8KPiA+Cj4gPiBIb3cgZG8gd2UgbWFrZSBmb3J3YXJk
+IHByb2dyZXNzPwo+IAo+IFdlIHN0YXJ0IGJ5IGNhdXNpbmcgbm9fbmV3X3ByaXZzIHRvIGJsb2Nr
+IHVzZXJucyBjcmVhdGlvbiBhbmQgZW50ZXJpbmcuCgpUaGF0IHNvdW5kcyByZWFzb25hYmxlLiBP
+bmUgdGhpbmcgSSB0aG91Z2h0IGFib3V0IGlzIHdoYXQgdGhlCmludGVyYWN0aW9uIGJldHdlZW4g
+bm9fbmV3X3ByaXZzIGFuZCAvcHJvYy9zeXMvdXNlci9tYXhfdXNlcl9uYW1lc3BhY2VzCnNob3Vs
+ZCBsb29rIGxpa2UgYWZ0ZXIgdGhpcyBjaGFuZ2UuIEJvdGggd2lsbCBiYXNpY2FsbHkgaGF2ZSB0
+aGUgc2FtZQplZmZlY3QsIHJpZ2h0PyBTbyB3b3VsZG4ndCBpdCBtYWtlIHNlbnNlIHRvIGhhdmUg
+bm9fbmV3X3ByaXZzIGltcGx5IHRoYXQKL3Byb2Mvc3lzL3VzZXIvbWF4X3VzZXJfbmFtZXNwYWNl
+cyBpcyAwIGFuZCBiZWNvbWVzIHJlYWQtb25seSBpbiB0aGUKaW4gdGhlIGNhbGxpbmcgcHJvY2Vz
+cycgdXNlciBuYW1lc3BhY2UgKGUuZy4gcmV0dXJuaW5nIEVJTlZBTCB3b3VsZCBtYWtlCnNlbnNl
+KT8gSSB3b3JyeSB0aGF0IG90aGVyd2lzZSB3ZSBtaWdodCBjb25mdXNlIHVzZXJzIHdoZW4gdGhl
+eSBzZWUgdGhhdAovcHJvYy9zeXMvdXNlci9tYXhfdXNlcl9uYW1lc3BhY2VzIGlzIG5vdCAwIGJ1
+dCB0aGV5IHN0aWxsIGFyZW4ndCBhYmxlCnRvIGNyZWF0ZSB1c2VyIG5hbWVzcGFjZXMuIEkga25v
+dyB0aGF0IGhhdmluZyBtdWx0aXBsZSBzZWN1cml0eSBvcHRpb25zCmJsb2NrIHRoZSBzYW1lIHRo
+aW5nIGluZGVwZW5kZW50IG9mIGVhY2ggb3RoZXIgaXMgbm90IHVucHJlY2VkZW50ZWQKKGUuZy4g
+aW4gYWRkaXRpb24gdG8gL3Byb2Mvc3lzL3VzZXIvbWF4X3VzZXJfbmFtZXNwYWNlcyBDZW50T1Mg
+YW5kIFJIRUwKaGF2ZSBhbiBhZGRpdGlvbmFsIGJvb3QgcGFyYW1ldGVyIHRvIHtkaXMsZW59YWJs
+ZSB1c2VyIG5hbWVzcGFjZQpjcmVhdGlvbiB3aGljaCBvZnRlbiBjb25mdXNlcyB0aGUgaGVjayBv
+dXQgb2YgdXNlcnMpIGJ1dCBJJ2QgcmF0aGVyIG5vdAptYWtlIHRoaXMgYSBjb21tb24gc2NlbmFy
+aW8gd2hlbiB3ZSBjYW4gZXN0YWJsaXNoIGEgc2Vuc2libGUgaW50ZXJhY3Rpb24KYmV0d2VlbiB0
+d28gc2VjdXJpdHkgc2V0dGluZ3MuCgpDaHJpc3RpYW4KX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVy
+c0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlv
+bi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
