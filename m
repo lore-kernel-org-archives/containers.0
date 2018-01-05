@@ -1,20 +1,16 @@
-From: Christian Brauner <christian.brauner-cl+VPiYnx/1AfugRpC6u6w@public.gmane.org>
-Subject: Re: [PATCH] userns: honour no_new_privs for cap_bset during user ns
-	creation/switch
-Date: Wed, 3 Jan 2018 12:23:17 +0100
-Message-ID: <20180103112317.gmpn5iatakrs7xqi__39363.5534252555$1514978499$gmane$org@mailbox.org>
-References: <20171221210605.181720-1-zenczykowski@gmail.com>
-	<87wp1foiwa.fsf@xmission.com>
-	<CAHo-OoyrOr5jXwU-j4Z4qYdWo40+qAdAk0r+OpfMUZ6LgbS-RA@mail.gmail.com>
-	<87fu83lfw5.fsf@xmission.com>
-	<CAHo-OoxoTEZuQ0ZXa9a2BnjAv83y0UWC0eqn-ok9hS31LkiiSA@mail.gmail.com>
-	<87o9mqhn3v.fsf@xmission.com>
+From: "Luis R. Rodriguez" <mcgrof-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 03/11] fs: Allow superblock owner to change ownership of
+	inodes
+Date: Fri, 5 Jan 2018 20:24:07 +0100
+Message-ID: <20180105192407.GF22430__24146.6470215984$1515180179$gmane$org@wotan.suse.de>
+References: <cover.1512741134.git.dongsu@kinvolk.io>
+	<ac3d34002d7690f6ca5928b57b7fc4d707104b04.1512041070.git.dongsu@kinvolk.io>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <87o9mqhn3v.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <ac3d34002d7690f6ca5928b57b7fc4d707104b04.1512041070.git.dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,112 +20,95 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Willem de Bruijn <willemb-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Maciej =?utf-8?Q?=C5=BBenczykowski?= <zenczykowski-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mahesh Bandewar <maheshb-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
+Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, "Luis R. Rodriguez" <mcgrof-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gRnJpLCBEZWMgMjIsIDIwMTcgYXQgMDg6MDg6MDRBTSAtMDYwMCwgRXJpYyBXLiBCaWVkZXJt
-YW4gd3JvdGU6Cj4gTWFjaWVqIMW7ZW5jenlrb3dza2kgPHplbmN6eWtvd3NraUBnbWFpbC5jb20+
-IHdyaXRlczoKPiAKPiA+PiBHb29kIHBvaW50IGFib3V0IENBUF9EQUNfT1ZFUlJJREUgb24gZmls
-ZXMgeW91IG93bi4KPiA+Pgo+ID4+IEkgdGhpbmsgdGhlcmUgaXMgYW4gYXJndW1lbnQgdGhhdCB5
-b3UgYXJlIHBsYXlpbmcgZGFuZ2Vyb3VzIGdhbWVzIHdpdGgKPiA+PiB0aGUgcGVybWlzc2lvbiBz
-eXN0ZW0gdGhlcmUsIGFzIGl0IGlzbid0IGVmZmVjdGl2ZWx5IGEgZmlsZSB5b3Ugb3duIGlmCj4g
-Pj4geW91IGNhbid0IHJlYWQgaXQsIGFuZCB5b3UgY2FuJ3QgY2hhbmdlIGl0J3MgcGVybWlzc2lv
-bnMuCj4gPgo+ID4gQXBwZW5kLW9ubHkgZmlsZXMgYXJlIHVzZWZ1bCAtIHBhcnRpY3VsYXJseSBm
-b3IgbG9nZ2luZy4KPiA+IEl0IGNvdWxkIGFsc28gc2ltcGx5IGJlIGEgbm9uLXJlYWRhYmxlIGZp
-bGUgb24gYSBSL08gZmlsZXN5c3RlbS4KPiA+Cj4gPj4gR2l2ZW4gbGl0dGxlIHRoaW5ncyBsaWtl
-IHRoYXQgSSBjYW4gY29tcGxldGVseSBzZWUgbm9fbmV3X3ByaXZzIG1lYW5pbmcKPiA+PiB5b3Ug
-Y2FuJ3QgY3JlYXRlIGEgdXNlciBuYW1lc3BhY2UuICBUaGF0IHNlZW1zIGNvbnNpc3RlbnQgd2l0
-aCB0aGUKPiA+PiBtZWFuaW5nIGFuZCBwaGlsb3NvcGh5IG9mIG5vX25ld19wcml2cy4gIFNvIHNp
-bXBsZSBpdCBpcyBoYXJkIHRvIGdldAo+ID4+IHdyb25nLgo+ID4KPiA+IFllcywgSSBjb3VsZCB0
-b3RhbGx5IGJ1eSB0aGUgYXJndW1lbnQgdGhhdCBub19uZXdfcHJpdnMgc2hvdWxkIHByZXZlbnQK
-PiA+IGNyZWF0aW5nIGEgdXNlciBucy4KPiA+Cj4gPiBIb3dldmVyLCB0aGVyZSdzIGFsc28gc2V0
-bnMoKSBhbmQgdGhhdCdzIGEgZmFpciBiaXQgaGFyZGVyIHRvIHJlYXNvbiBhYm91dC4KPiA+IEVu
-dGlyZWx5IGRlbnkgaXQ/ICBCdXQgdGhhdCBhY3R1YWxseSBzZWVtcyBwb3RlbnRpYWxseSB1c2Vm
-dWwuLi4KPiA+IEFsbG93IGl0IGJ1dCBjYXAgaXQ/ICBUaGF0J3Mgd2hhdCB0aGlzIGRvZXMuLi4K
-PiA+Cj4gPj4gV2UgY291bGQgZG8gbW9yZSBjbGV2ZXIgdGhpbmdzIGxpa2UgcGx1ZyB0aGlzIHdo
-b2xlIGluIHVzZXIgbmFtZXNwYWNlcywKPiA+PiBhbmQgdGhhdCB3b3VsZCBub3QgaHVydCBteSBm
-ZWVsaW5ncy4KPiA+Cj4gPiBTdXJlLCB0aGlzIHBhcnRpY3VsYXIgb25lIHdvdWxkbid0IGJlIGFs
-bCB0aGF0IGVhc3kgSSB0aGluay4uLiBhbmQgaG93Cj4gPiBtYW55IHN1Y2ggaG9sZXMgYXJlIHRo
-ZXJlPwo+ID4gSSBmb3VuZCB0aGlzIHBhcnRpY3VsYXIgb25lICphZnRlciogeW91ciBmaXJzdCBy
-ZXBseSBpbiB0aGlzIHRocmVhZC4KPiA+Cj4gPj4gSG93ZXZlciB1bmxlc3MgdGhhdCBpcyBvdXIg
-b25seQo+ID4+IGNob2ljZSB0byBhdm9pZCBiYWRseSBicmVha2luZyB1c2Vyc3BhY2UgSSB3b3Vs
-ZCBoYXZlIHRvIGhhdmUgdG8gZGVwZW5kCj4gPj4gb24gdXNlciBuYW1lc3BhY2VzIGJlaW5nIHBl
-cmZlY3QgZm9yIG5vX25ld19wcml2cyB0byBiZSBhIHByb3BlciBqYWlsLgo+ID4KPiA+IFRoaXMg
-c3R1ZmYgaXMgcmlkaWN1bG91c2x5IGNvbXBsZXggdG8gZ2V0IHJpZ2h0IGZyb20gdXNlcnNwYWNl
-LiA6LSgKPiAKPiA+PiBBcyBhIGdlbmVyYWwgcnVsZSB1c2VyIG5hbWVzcGFjZXMgYXJlIHdoZXJl
-IHdlIHRhY2tsZSB0aGUgc3VidGxlIHNjYXJ5Cj4gPj4gdGhpbmdzIHRoYXQgc2hvdWxkIHdvcmss
-IGFuZCBub19uZXdfcHJpdnMgaXMgd2hlcmUgd2UgaW1wbGVtZW50IGEgc2ltcGxlCj4gPj4gaGFy
-ZCB0byBnZXQgd3JvbmcgamFpbC4gIE1vc3Qgb2YgdGhlIHRpbWUgdGhlIGVmZmVjdCBpcyB0aGUg
-c2FtZSB0byBhbgo+ID4+IG91dHNpZGUgb2JzZXJ2ZXIgKGJvdW5kZWQgcGVybWlzc2lvbnMpLCBi
-dXQgdGhlcmUgaXMgYSByZWFsIGRpZmZlcmVuY2UKPiA+PiBpbiBkaWZmaWN1bHR5IG9mIGltcGxl
-bWVudGF0aW9uLgo+ID4KPiA+IFNvLCB3aGVyZSB0byBub3cuLi4KPiA+Cj4gPiBXb3VsZCB5b3Ug
-YWNjZXB0IHBhdGNoZXMgdGhhdDoKPiA+Cj4gPiAtIG1ha2Ugbm9fbmV3X3ByaXYgYmxvY2sgdXNl
-ciBucyBjcmVhdGlvbj8KPiA+Cj4gPiAtIG1ha2Ugbm9fbmV3X3ByaXYgYmxvY2sgdXNlciBucyB0
-cmFuc2l0aW9uPwo+IAo+IFllcy4KPiAKPiBUaGUgYXBwcm9hY2ggd2lsbCBuZWVkIHRvIGJlIHJl
-dGhvdWdodCBpZiB0aGVyZSBpcyBhbnl0aGluZyBkZWxpYmVyYXRlbHkKPiBjb21iaW5pbmcgdXNl
-ciBuYW1lc3BhY2VzIGFuZCBub19uZXdfcHJpdnMuICBBcyByZWdyZXNzaW9ucyBhcmUgYSBuby1u
-by4KPiBTbyB3ZSBuZWVkIHdpZGUgc3ByZWFkIHRlc3RpbmcsIHRvIGF2b2lkIHRoYXQuCgpKdXN0
-IHRvIGJlIGNsZWFyOiAgYXMgc29vbiBhcyB5b3Ugc2V0IG5vX25ld19wcml2cyB5b3Ugc2hvdWxk
-IG5vdCBiZQphYmxlIHRvIGNyZWF0ZSBuZXcgdXNlciBuYW1lc3BhY2UgYW55bW9yZSBhbmQgeW91
-IHNob3VsZG4ndCBiZSBhYmxlIHRvCmF0dGFjaCB0byB1c2VyIG5hbWVzcGFjZXMgYW55bW9yZS4K
-VGhpcyBzaG91bGQgd29yayBhbmQgbm90IGNhdXNlIHJlZ3Jlc3Npb25zIGZvciBlLmcuIGxpYmx4
-YyB3ZXJlIHdlCmFsd2F5cyBzZXQgbm9fbmV3X3ByaXZzIGFzIG9uZSBvZiB0aGUgbGFzdCBzdGVw
-cyBhbmQgZXNwZWNpYWxseSBhZnRlciB3ZQpoYXZlIGNsb25lKENMT05FX05FV1VTRVIpIHRoZSBj
-b250YWluZXIgYW5kIC0gZm9yIHRoZSBhdHRhY2ggY2FzZSAtCmFmdGVyIHdlIGhhdmUgYWxyZWFk
-eSBkb25lIHRoZSBzZXRucyhmZCwgQ0xPTkVfTkVXVVNFUikuIFRoZXNlIHVzZS1jYXNlcwpzaG91
-bGQgYmUgcHJlc2VydmVkLiBCdXQgaXQgc2VlbXMgdG8gbWUgdGhhdCB0aGV5IHdpbGwgYmUuIEJ1
-dCBJJ2QgbGlrZQp0byB0ZXN0IHRoaXMgb25jZSBwYXRjaGVzIGFyZSBmbG9hdGluZyBhcm91bmQu
-Cgo+IAo+IEJ1dCBhcyBtdWNoIGFzIHBvc3NpYmxlIEkgd2FudCBub19uZXdfcHJpdnMgdG8gYmUg
-c2ltcGxlIGFuZCBkb2luZyBpdCdzCj4gam9iLgo+IAo+IEkgd2lsbCBhbHNvIHRha2UgYW5kIGVu
-Y291cmFnZSBwYXRjaGVzIHRoYXQgY2xvc2UgdGhpcyBtaW5vciBwcml2aWxlZ2UKPiBlc2NhbGF0
-aW9uIGZyb20gdGhlIHVzZXIgbmFtZXNwYWNlIHNpZGUuICBBcyBpZGVhbGx5IGNyZWF0aW5nIGEg
-dXNlcgo+IG5hbWVzcGFjZSBzaG91bGQgYmUgYXMgc2FmZSBhcyBub19uZXdfcHJpdnMuCj4gCj4g
-Cj4gPiBPciBwZXJoYXBzIHdlIGNhbiBhc3N1bWUgdGhhdCBsYWNrIG9mIGNyZWF0ZSBwcml2cyBp
-cyBzdWZmaWNpZW50LCBhbmQKPiA+IGlmIHRoZXJlJ3MgYSBwcmUtZXhpc3RpbmcgdXNlciBucyBm
-b3IgeW91IHRvIGVudGVyLCB0aGVuIHRoYXQncwo+ID4gYWNjZXB0YWJsZS4uLgo+ID4gQWx0aG91
-Z2ggdGhpcyBpbXBsaWVzIHlvdSBwcm9iYWJseSBhbHdheXMgd2FudCB0byBjb21iaW5lIG5vX25l
-d19wcml2cwo+ID4gd2l0aCBhIGxlYWYgdXNlciBucywgb3Igbm9fbmV3X3ByaXZzIGlzbid0IGFs
-bCB0aGF0IHVzZWZ1bCBmb3Igcm9vdCBpbgo+ID4gcm9vdCBucy4uLgo+ID4gVGhpcyBhZGRlZCBj
-b21wbGV4aXR5LCBwcm9iYWJseSBtZWFucyBpdCBzaG91bGQgYmUgYmxvY2tlZC4uLgo+IAo+IFll
-cy4KPiAKPiA+IC0gaW5oZXJpdHMgYnNldCBhY3Jvc3MgdXNlciBucyBjcmVhdGlvbi90cmFuc2l0
-aW9uIGJhc2VkIG9uIFg/Cj4gPiBbdGhpcyBpcyB0aGUgb25lIHdlIGNhcmUgYWJvdXQsIGJlY2F1
-c2UgdGhlcmUgYXJlIHNpbXBseSB0b28gbWFueSBidWdzCj4gPiBpbiB0aGUga2VybmVsIHdydC4g
-Y2VydGFpbiBjYXBzXQo+IAo+IFRoYXQgd2FzIG15IHN1c3BpY2lvbiwgYW5kIGF0dGFjayBzdXJm
-YWNlIHJlZHVjdGlvbiBpcyBhIGRpZmZlcmVudAo+IGRpc2N1c3Npb24uICBXb3VsZCBub19uZXdf
-cHJpdnMgcHJldmVudGluZyBhIHVzZXJucyB0cmFuc2l0aW9uIGJlIGVub3VnaAo+IGZvciB0aGUg
-Y2FzZXMgeW91IGNhcmUgYWJvdXQ/Cj4gCj4gT3RoZXJ3aXNlIHRoaXMgaXMgYSBkaWZmZXJlbnQg
-Y29udmVyc2F0aW9uIGJlY2F1c2UgaXQgaXMgbm90IGFib3V0Cj4gc2VtYW50aWNzIGJ1dCBhYm91
-dCBtYWtpbmcgdGhlIGNvZGUgc2FmZXIgdG8gdXNlLiAgSW4gZ2VuZXJhbCBpZiBjb2RlIGlzCj4g
-c2ltcGx5IG5vdCBzYWZlIHRvIHVzZXIgaW4gYSB1c2VyIG5hbWVzcGFjZSBJIHdvdWxkIHByZWZl
-ciB0byB0aWdodGVuCj4gdGhlIHBlcm1pc3Npb24gY2hlY2tzLCBhbmQganVzdCBub3QgYWxsb3cg
-dGhhdCBjb2RlLgo+IAo+IE1vc3RseSB3aGF0IEkgaGF2ZSBzZWVuIGluIHByZXZpb3VzIGNvbnZl
-cnNhdGlvbnMgaXMgc2ltcGx5IGNvbmNlcm5zCj4gYWJvdXQgY29kZSB0aGF0IGlzIG5vdCB1c2Vk
-IG9yIG5lZWRlZCwgYmVpbmcgYSBwcm9ibGVtLgo+IAo+ID4gWCBjb3VsZCBiZToKPiA+IC0gYSBu
-ZXcgZmxhZyBzaW1pbGFyIHRvIG5vX25ld19wcml2Cj4gPiAtIGEgbmV3IHNlY3VyZWJpdCBmbGFn
-ICh3L2xvY2tiaXQpICBbcHJvdmlkZWQgc2VjdXJlYml0cyBzdXJ2aXZlIGEKPiA+IHVzZXJucyB0
-cmFuc2l0aW9uLCBoYXZlbid0IGNoZWNrZWRdCj4gPiAtIG9yIHBlcmhhcHMgYSBuZXcgY2FwYWJp
-bGl0eQo+ID4gLSBzb21ldGhpbmcgZWxzZT8KPiA+Cj4gPiBIb3cgZG8gd2UgbWFrZSBmb3J3YXJk
-IHByb2dyZXNzPwo+IAo+IFdlIHN0YXJ0IGJ5IGNhdXNpbmcgbm9fbmV3X3ByaXZzIHRvIGJsb2Nr
-IHVzZXJucyBjcmVhdGlvbiBhbmQgZW50ZXJpbmcuCgpUaGF0IHNvdW5kcyByZWFzb25hYmxlLiBP
-bmUgdGhpbmcgSSB0aG91Z2h0IGFib3V0IGlzIHdoYXQgdGhlCmludGVyYWN0aW9uIGJldHdlZW4g
-bm9fbmV3X3ByaXZzIGFuZCAvcHJvYy9zeXMvdXNlci9tYXhfdXNlcl9uYW1lc3BhY2VzCnNob3Vs
-ZCBsb29rIGxpa2UgYWZ0ZXIgdGhpcyBjaGFuZ2UuIEJvdGggd2lsbCBiYXNpY2FsbHkgaGF2ZSB0
-aGUgc2FtZQplZmZlY3QsIHJpZ2h0PyBTbyB3b3VsZG4ndCBpdCBtYWtlIHNlbnNlIHRvIGhhdmUg
-bm9fbmV3X3ByaXZzIGltcGx5IHRoYXQKL3Byb2Mvc3lzL3VzZXIvbWF4X3VzZXJfbmFtZXNwYWNl
-cyBpcyAwIGFuZCBiZWNvbWVzIHJlYWQtb25seSBpbiB0aGUKaW4gdGhlIGNhbGxpbmcgcHJvY2Vz
-cycgdXNlciBuYW1lc3BhY2UgKGUuZy4gcmV0dXJuaW5nIEVJTlZBTCB3b3VsZCBtYWtlCnNlbnNl
-KT8gSSB3b3JyeSB0aGF0IG90aGVyd2lzZSB3ZSBtaWdodCBjb25mdXNlIHVzZXJzIHdoZW4gdGhl
-eSBzZWUgdGhhdAovcHJvYy9zeXMvdXNlci9tYXhfdXNlcl9uYW1lc3BhY2VzIGlzIG5vdCAwIGJ1
-dCB0aGV5IHN0aWxsIGFyZW4ndCBhYmxlCnRvIGNyZWF0ZSB1c2VyIG5hbWVzcGFjZXMuIEkga25v
-dyB0aGF0IGhhdmluZyBtdWx0aXBsZSBzZWN1cml0eSBvcHRpb25zCmJsb2NrIHRoZSBzYW1lIHRo
-aW5nIGluZGVwZW5kZW50IG9mIGVhY2ggb3RoZXIgaXMgbm90IHVucHJlY2VkZW50ZWQKKGUuZy4g
-aW4gYWRkaXRpb24gdG8gL3Byb2Mvc3lzL3VzZXIvbWF4X3VzZXJfbmFtZXNwYWNlcyBDZW50T1Mg
-YW5kIFJIRUwKaGF2ZSBhbiBhZGRpdGlvbmFsIGJvb3QgcGFyYW1ldGVyIHRvIHtkaXMsZW59YWJs
-ZSB1c2VyIG5hbWVzcGFjZQpjcmVhdGlvbiB3aGljaCBvZnRlbiBjb25mdXNlcyB0aGUgaGVjayBv
-dXQgb2YgdXNlcnMpIGJ1dCBJJ2QgcmF0aGVyIG5vdAptYWtlIHRoaXMgYSBjb21tb24gc2NlbmFy
-aW8gd2hlbiB3ZSBjYW4gZXN0YWJsaXNoIGEgc2Vuc2libGUgaW50ZXJhY3Rpb24KYmV0d2VlbiB0
-d28gc2VjdXJpdHkgc2V0dGluZ3MuCgpDaHJpc3RpYW4KX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVy
-c0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlv
-bi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On Fri, Dec 22, 2017 at 03:32:27PM +0100, Dongsu Park wrote:
+> diff --git a/fs/attr.c b/fs/attr.c
+> index 12ffdb6f..bf8e94f3 100644
+> --- a/fs/attr.c
+> +++ b/fs/attr.c
+> @@ -18,6 +18,30 @@
+>  #include <linux/evm.h>
+>  #include <linux/ima.h>
+>  
+> +static bool chown_ok(const struct inode *inode, kuid_t uid)
+> +{
+> +	if (uid_eq(current_fsuid(), inode->i_uid) &&
+> +	    uid_eq(uid, inode->i_uid))
+> +		return true;
+> +	if (capable_wrt_inode_uidgid(inode, CAP_CHOWN))
+> +		return true;
+> +	if (ns_capable(inode->i_sb->s_user_ns, CAP_CHOWN))
+> +		return true;
+> +	return false;
+> +}
+> +
+> +static bool chgrp_ok(const struct inode *inode, kgid_t gid)
+> +{
+> +	if (uid_eq(current_fsuid(), inode->i_uid) &&
+> +	    (in_group_p(gid) || gid_eq(gid, inode->i_gid)))
+> +		return true;
+> +	if (capable_wrt_inode_uidgid(inode, CAP_CHOWN))
+> +		return true;
+> +	if (ns_capable(inode->i_sb->s_user_ns, CAP_CHOWN))
+> +		return true;
+> +	return false;
+> +}
+> +
+>  /**
+>   * setattr_prepare - check if attribute changes to a dentry are allowed
+>   * @dentry:	dentry to check
+> @@ -52,17 +76,11 @@ int setattr_prepare(struct dentry *dentry, struct iattr *attr)
+>  		goto kill_priv;
+>  
+>  	/* Make sure a caller can chown. */
+> -	if ((ia_valid & ATTR_UID) &&
+> -	    (!uid_eq(current_fsuid(), inode->i_uid) ||
+> -	     !uid_eq(attr->ia_uid, inode->i_uid)) &&
+> -	    !capable_wrt_inode_uidgid(inode, CAP_CHOWN))
+> +	if ((ia_valid & ATTR_UID) && !chown_ok(inode, attr->ia_uid))
+>  		return -EPERM;
+
+I think this patch would read much better and easier to review if it was
+split up by first adding the helpers, and then extending them afterwards.
+
+>  
+>  	/* Make sure caller can chgrp. */
+> -	if ((ia_valid & ATTR_GID) &&
+> -	    (!uid_eq(current_fsuid(), inode->i_uid) ||
+> -	    (!in_group_p(attr->ia_gid) && !gid_eq(attr->ia_gid, inode->i_gid))) &&
+> -	    !capable_wrt_inode_uidgid(inode, CAP_CHOWN))
+> +	if ((ia_valid & ATTR_GID) && !chgrp_ok(inode, attr->ia_gid))
+>  		return -EPERM;
+>  
+>  	/* Make sure a caller can chmod. */
+> diff --git a/fs/proc/base.c b/fs/proc/base.c
+> index 31934cb9..9d50ec92 100644
+> --- a/fs/proc/base.c
+> +++ b/fs/proc/base.c
+> @@ -665,10 +665,17 @@ int proc_setattr(struct dentry *dentry, struct iattr *attr)
+>  {
+>  	int error;
+>  	struct inode *inode = d_inode(dentry);
+> +	struct user_namespace *s_user_ns;
+>  
+>  	if (attr->ia_valid & ATTR_MODE)
+>  		return -EPERM;
+>  
+> +	/* Don't let anyone mess with weird proc files */
+> +	s_user_ns = inode->i_sb->s_user_ns;
+> +	if (!kuid_has_mapping(s_user_ns, inode->i_uid) ||
+> +	    !kgid_has_mapping(s_user_ns, inode->i_gid))
+> +		return -EPERM;
+> +
+>  	error = setattr_prepare(dentry, attr);
+>  	if (error)
+>  		return error;
+
+Are we sure proc is the only special one? How was it observed first that this was
+require for proc? Has anyone tried fuzzing by trying this op with a slew of other
+filesystems on all files?
+
+  Luis
