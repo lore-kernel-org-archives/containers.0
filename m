@@ -1,13 +1,18 @@
-From: Simo Sorce <simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: RFC(V3): Audit Kernel Container IDs
-Date: Tue, 09 Jan 2018 11:18:56 -0500
-Message-ID: <1515514736.3239.10.camel@redhat.com>
-References: <20180109121620.wi7dq2423ugsraqv@madcap2.tricolour.ca>
+From: "Luis R. Rodriguez" <mcgrof-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 03/11] fs: Allow superblock owner to change ownership of
+	inodes
+Date: Tue, 9 Jan 2018 18:23:18 +0100
+Message-ID: <20180109172318.GO22430__19914.6537729122$1515518519$gmane$org@wotan.suse.de>
+References: <cover.1512741134.git.dongsu@kinvolk.io>
+	<ac3d34002d7690f6ca5928b57b7fc4d707104b04.1512041070.git.dongsu@kinvolk.io>
+	<20180105192407.GF22430@wotan.suse.de>
+	<CANxcAMvDQFH0g5PPnVZ3p2Tei04N+8fNf0pk02DrfTkBHjjrPQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20180109121620.wi7dq2423ugsraqv-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <CANxcAMvDQFH0g5PPnVZ3p2Tei04N+8fNf0pk02DrfTkBHjjrPQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,158 +22,29 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Audit <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Carlos O'Donell <carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Daniel Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Paul Moore <pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Madz Car <madzcar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, "Eric W.
-	Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
+Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, "Luis R. Rodriguez" <mcgrof-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 2018-01-09 at 07:16 -0500, Richard Guy Briggs wrote:
-> Containers are a userspace concept.  The kernel knows nothing of them.
+On Tue, Jan 09, 2018 at 04:10:54PM +0100, Dongsu Park wrote:
+> On Fri, Jan 5, 2018 at 8:24 PM, Luis R. Rodriguez <mcgrof-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> wrote:
+> > On Fri, Dec 22, 2017 at 03:32:27PM +0100, Dongsu Park wrote:
+> > I think this patch would read much better and easier to review if it was
+> > split up by first adding the helpers, and then extending them afterwards.
 > 
-> The Linux audit system needs a way to be able to track the container
-> provenance of events and actions.  Audit needs the kernel's help to do
-> this.
-> 
-> Since the concept of a container is entirely a userspace concept, a
-> registration from the userspace container orchestration system initiates
-> this.  This will define a point in time and a set of resources
-> associated with a particular container with an audit container
-> identifier.
-> 
-> The registration is a u64 representing the audit container identifier
-> written to a special file in a pseudo filesystem (proc, since PID tree
-> already exists) representing a process that will become a parent process
-> in that container.  This write might place restrictions on mount
-> namespaces required to define a container, or at least careful checking
-> of namespaces in the kernel to verify permissions of the orchestrator so
-> it can't change its own container ID.  A bind mount of nsfs may be
-> necessary in the container orchestrator's mount namespace.  This write
-> can only happen once per process.
-> 
-> Note: The justification for using a u64 is that it minimizes the
-> information printed in every audit record, reducing bandwidth and limits
-> comparisons to a single u64 which will be faster and less error-prone.
-> 
-> Require CAP_AUDIT_CONTROL to be able to carry out the registration.  At
-> that time, record the target container's user-supplied audit container
-> identifier along with a target container's parent process (which may
-> become the target container's "init" process) process ID (referenced
-> from the initial PID namespace) in a new record AUDIT_CONTAINER with a
-> qualifying op=$action field.
-> 
-> Issue a new auxilliary record AUDIT_CONTAINER_INFO for each valid
-> container ID present on an auditable action or event.
-> 
-> Forked and cloned processes inherit their parent's audit container
-> identifier, referenced in the process' task_struct.  Since the audit
-> container identifier is inherited rather than written, it can still be
-> written once.  This will prevent tampering while allowing nesting.
-> (This can be implemented with an internal settable flag upon
-> registration that does not get copied across a fork/clone.)
-> 
-> Mimic setns(2) and return an error if the process has already initiated
-> threading or forked since this registration should happen before the
-> process execution is started by the orchestrator and hence should not
-> yet have any threads or children.  If this is deemed overly restrictive,
-> switch all of the target's threads and children to the new containerID.
-> 
-> Trust the orchestrator to judiciously use and restrict CAP_AUDIT_CONTROL.
-> 
-> When a container ceases to exist because the last process in that
-> container has exited log the fact to balance the registration action.  
-> (This is likely needed for certification accountability.)
-> 
-> At this point it appears unnecessary to add a container session
-> identifier since this is all tracked from loginuid and sessionid to
-> communicate with the container orchestrator to spawn an additional
-> session into an existing container which would be logged.  It can be
-> added at a later date without breaking API should it be deemed
-> necessary.
-> 
-> The following namespace logging actions are not needed for certification
-> purposes at this point, but are helpful for tracking namespace activity.
-> These are auxilliary records that are associated with namespace
-> manipulation syscalls unshare(2), clone(2) and setns(2), so the records
-> will only show up if explicit syscall rules have been added to document
-> this activity.
-> 
-> Log the creation of every namespace, inheriting/adding its spawning
-> process' audit container identifier(s), if applicable.  Include the
-> spawning and spawned namespace IDs (device and inode number tuples).
-> [AUDIT_NS_CREATE, AUDIT_NS_DESTROY] [clone(2), unshare(2), setns(2)]
-> Note: At this point it appears only network namespaces may need to track
-> container IDs apart from processes since incoming packets may cause an
-> auditable event before being associated with a process.  Since a
-> namespace can be shared by processes in different containers, the
-> namespace will need to track all containers to which it has been
-> assigned.
-> 
-> Upon registration, the target process' namespace IDs (in the form of a
-> nsfs device number and inode number tuple) will be recorded in an
-> AUDIT_NS_INFO auxilliary record.
-> 
-> Log the destruction of every namespace that is no longer used by any
-> process, including the namespace IDs (device and inode number tuples).
-> [AUDIT_NS_DESTROY] [process exit, unshare(2), setns(2)]
-> 
-> Issue a new auxilliary record AUDIT_NS_CHANGE listing (opt: op=$action)
-> the parent and child namespace IDs for any changes to a process'
-> namespaces. [setns(2)]
-> Note: It may be possible to combine AUDIT_NS_* record formats and
-> distinguish them with an op=$action field depending on the fields
-> required for each message type.
-> 
-> The audit container identifier will need to be reaped from all
-> implicated namespaces upon the destruction of a container.
-> 
-> This namespace information adds supporting information for tracking
-> events not attributable to specific processes.
-> 
-> Changelog:
-> 
-> (Upstream V3)
-> - switch back to u64 (from pmoore, can be expanded to u128 in future if
->   need arises without breaking API.  u32 was originally proposed, up to
->   c36 discussed)
-> - write-once, but children inherit audit container identifier and can
->   then still be written once
-> - switch to CAP_AUDIT_CONTROL
-> - group namespace actions together, auxilliary records to namespace
->   operations.
-> 
-> (Upstream V2)
-> - switch from u64 to u128 UUID
-> - switch from "signal" and "trigger" to "register"
-> - restrict registration to single process or force all threads and
->   children into same container
+> I'm fine with splitting it up into multiple patches, if the original author
+> Eric agrees.
 
-I am trying to understand the back and forth on the ID size.
+Great.
 
-From an orchestrator POV anything that requires tracking a node
-specific ID is not ideal.
+> > Are we sure proc is the only special one? How was it observed first that this was
+> > require for proc? Has anyone tried fuzzing by trying this op with a slew of other
+> > filesystems on all files?
+>
+> Please let me know if there are other good ways to figure out potential issues.
 
-Orchestrators tend to span many nodes, and containers tend to have IDs
-that are either UUID or have a Hash (like SHA256) as identifier.
+I think the trick would be to create a test which mimicks the issue and then try to
+mount and run the test against as many filesystems as we support. So would developing
+a test be possible here?
 
-The problem here is two-fold:
-
-a) Your auditing requires some mapping to be useful outside of the
-system.
-If you aggreggate audit logs outside of the system or you want to
-correlate the system audit logs with other components dealing with
-containers, now you need a place where you provide a mapping from your
-audit u64 to the ID a container has in the rest of the system.
-
-b) Now you need a mapping of some sort. The simplest way a container
-orchestrator can go about this is to just use the UUID or Hash
-representing their view of the container, truncate it to a u64 and use
-that for Audit. This means there are some chances there will be a
-collision and a duplicate u64 ID will be used by the orchestrator as
-the container ID. What happen in that case ?
-
-Simo.
-
--- 
-Simo Sorce
-Sr. Principal Software Engineer
-Red Hat, Inc
+  Luis
