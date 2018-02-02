@@ -1,12 +1,14 @@
-From: Christian Brauner <christian.brauner-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: rtnetlink updates in 4.16
-Date: Thu, 1 Feb 2018 09:57:44 +0100
-Message-ID: <20180201085743.eqxbspsy6yg6n6yl@gmail.com>
+From: Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>
+Subject: Re: RFC(V3): Audit Kernel Container IDs
+Date: Fri, 2 Feb 2018 16:18:41 -0500
+Message-ID: <CAHC9VhSMnG9=h8YrrV7uS3mDGpdD5tDUivmbsOiKrmgT-ZpFYA__36026.3374903754$1517606235$gmane$org@mail.gmail.com>
+References: <20180109121620.wi7dq2423ugsraqv@madcap2.tricolour.ca>
+	<1515514736.3239.10.camel@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <1515514736.3239.10.camel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,28 +18,94 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org
+To: Simo Sorce <simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Carlos O'Donell <carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Audit <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Linux Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
+On Tue, Jan 9, 2018 at 11:18 AM, Simo Sorce <simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> On Tue, 2018-01-09 at 07:16 -0500, Richard Guy Briggs wrote:
 
-Pushed some patches that might be interesting to container runtimes. The
-gist is:
+...
 
-rtnetlink: enable IFLA_IF_NETNSID for RTM_{DEL,NEW,SET}LINK
+>> Changelog:
+>>
+>> (Upstream V3)
+>> - switch back to u64 (from pmoore, can be expanded to u128 in future if
+>>   need arises without breaking API.  u32 was originally proposed, up to
+>>   c36 discussed)
+>> - write-once, but children inherit audit container identifier and can
+>>   then still be written once
+>> - switch to CAP_AUDIT_CONTROL
+>> - group namespace actions together, auxilliary records to namespace
+>>   operations.
+>>
+>> (Upstream V2)
+>> - switch from u64 to u128 UUID
+>> - switch from "signal" and "trigger" to "register"
+>> - restrict registration to single process or force all threads and
+>>   children into same container
+>
+> I am trying to understand the back and forth on the ID size.
 
-The series enables passing a IFLA_IF_NETNSID property along with
-RTM_{DEL,NEW,SET}LINK requests to perform operations on network
-namespaces without the need to setns() to the corresponding network
-namespace (and its owning user namespace). For workloads employing user
-namespaces and network namespaces this effectively let's you avoid
-spawning an additional helper processes.
+I'm just now getting a chance to read Richard's latest draft, but I
+wanted to comment on this quickly.
 
-https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=7c4f63ba824302492985553018881455982241d6
-https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=c310bfcb6e1be993629c5747accf8e1c65fbb255
-https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=b61ad68a9fe85d29d5363eb36860164a049723cf
-https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=5bb8ed075428b71492734af66230aa0c07fcc515
+There are two main reasons for keeping this a 32 or 64 bit integer:
 
-Thanks!
-Christian
+1) After the initial "be able to associate audit events with a
+container" stage, we are going to look into supporting multiple audit
+daemons on the system so that you could run an audit daemon inside a
+container and it would collect events generated by the container
+(we're tentatively calling this "phase 2", feel free to insert your
+own "magic happens" joke).  There are a lot things that need to happen
+in phase two, one of these things is the addition of an audit event
+routing mechanism that will send audit records to the right audit
+daemons (the "host" daemon will always see everything), in order to do
+this we will need to be able to quickly compare audit container IDs,
+this means an integer.
+
+2) Whatever we pick for an audit container ID it is going to be wrong
+for at least one container orchestrator.  There is no "one" solution
+here, so we are providing a small and flexible mechanism that higher
+level orchestrators can use to provide a more complete solution.
+
+> >From an orchestrator POV anything that requires tracking a node
+> specific ID is not ideal.
+>
+> Orchestrators tend to span many nodes, and containers tend to have IDs
+> that are either UUID or have a Hash (like SHA256) as identifier.
+
+You're helping me prove my reason #2.
+
+> The problem here is two-fold:
+>
+> a) Your auditing requires some mapping to be useful outside of the
+> system.
+> If you aggreggate audit logs outside of the system or you want to
+> correlate the system audit logs with other components dealing with
+> containers, now you need a place where you provide a mapping from your
+> audit u64 to the ID a container has in the rest of the system.
+
+Yep, see my reason #2.  I want us to have something that "works" for a
+single system as well as something that can be leveraged by higher
+level tools for large networks of machines.
+
+I realize it's easy, and tempting, to expand the scope of this effort;
+but if we are to have any success it is only going to be through some
+discipline.  We need to focus on a small solution which addresses the
+basic needs and hopefully remains flexible enough for any potential
+expansion while staying palatable to the audit folks and the general
+kernel community.
+
+> b) Now you need a mapping of some sort. The simplest way a container
+> orchestrator can go about this is to just use the UUID or Hash
+> representing their view of the container, truncate it to a u64 and use
+> that for Audit. This means there are some chances there will be a
+> collision and a duplicate u64 ID will be used by the orchestrator as
+> the container ID. What happen in that case ?
+
+That is a design decision left to the different container orchestrators.
+
+-- 
+paul moore
+www.paul-moore.com
