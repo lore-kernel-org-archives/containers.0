@@ -1,15 +1,19 @@
-From: Tom Hromatka <tom.hromatka-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+From: Tycho Andersen <tycho-E0fblnxP3wo@public.gmane.org>
 Subject: Re: [PATCH net-next 0/3] eBPF Seccomp filters
-Date: Tue, 13 Feb 2018 13:38:53 -0700
-Message-ID: <b885663b-eaa2-f212-7b9b-2496943a30e1__15338.258809834$1518554274$gmane$org@oracle.com>
-References: <7eb1497e-e5f3-c5ba-e255-7f510795b51d@oracle.com>
-	<CAGXu5jJZgrgLrhkZO33RNdOds8zwnnOZh+rqwguxJM+zm=EJ7g@mail.gmail.com>
+Date: Tue, 13 Feb 2018 13:50:40 -0700
+Message-ID: <20180213205040.h3nsvz5go6lewvuy@smitten>
+References: <20180213154244.GA3292@ircssh-2.c.rugged-nimbus-611.internal>
+	<CAGXu5jLiYh0rSRuJ_-2xLB03Wod5G07njpoESR4SnmsmiUnsEw@mail.gmail.com>
+	<CAMp4zn8VNurTjmrUtHnaK21A4hUQQz5tnarj15vmTU+TjY79XA@mail.gmail.com>
+	<CAEk6tEw3ty0kBH+06TYt4=Ywt-4_cHBa9f8p3ajMghtjRkHmMg@mail.gmail.com>
+	<CAMp4zn-Lw0grNrCyjHJZUje1Aznaj03iAUWZ86ki68MZMN1-zA@mail.gmail.com>
+	<CAGXu5jKv3QFVKLhok1JWiPamE0b4CqLTO-hx8sP0KWED921=6w@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; Format="flowed"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAGXu5jJZgrgLrhkZO33RNdOds8zwnnOZh+rqwguxJM+zm=EJ7g-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-Content-Language: en-US
+Content-Disposition: inline
+In-Reply-To: <CAGXu5jKv3QFVKLhok1JWiPamE0b4CqLTO-hx8sP0KWED921=6w-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,64 +24,53 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>, Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexei Starovoitov <ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
+Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>, Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexei Starovoitov <ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Paul Moore <pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-CgpPbiAwMi8xMy8yMDE4IDAxOjM1IFBNLCBLZWVzIENvb2sgd3JvdGU6Cj4gT24gVHVlLCBGZWIg
-MTMsIDIwMTggYXQgMTI6MzMgUE0sIFRvbSBIcm9tYXRrYSA8dG9tLmhyb21hdGthQG9yYWNsZS5j
-b20+IHdyb3RlOgo+PiBPbiBUdWUsIEZlYiAxMywgMjAxOCBhdCA3OjQyIEFNLCBTYXJndW4gRGhp
-bGxvbiA8c2FyZ3VuQHNhcmd1bi5tZT4gd3JvdGU6Cj4+PiBUaGlzIHBhdGNoc2V0IGVuYWJsZXMg
-c2VjY29tcCBmaWx0ZXJzIHRvIGJlIHdyaXR0ZW4gaW4gZUJQRi4gQWx0aG91Z2gsCj4+PiB0aGlz
-IHBhdGNoc2V0IGRvZXNuJ3QgaW50cm9kdWNlIG11Y2ggb2YgdGhlIGZ1bmN0aW9uYWxpdHkgZW5h
-YmxlZCBieQo+Pj4gZUJQRiwgaXQgbGF5cyB0aGUgZ3JvdW5kIHdvcmsgZm9yIGl0Lgo+Pj4KPj4+
-IEl0IGFsc28gaW50cm9kdWNlcyB0aGUgY2FwYWJpbGl0eSB0byBkdW1wIGVCUEYgZmlsdGVycyB2
-aWEgdGhlIFBUUkFDRQo+Pj4gQVBJIGluIG9yZGVyIHRvIG1ha2UgaXQgc28gdGhhdCBDSEVDS1BP
-SU5UX1JFU1RPUkUgd2lsbCBiZSBzYXRpc2lmZWQuCj4+PiBJbiB0aGUgYXR0YWNoZWQgc2FtcGxl
-cywgdGhlcmUncyBhbiBleGFtcGxlIG9mIHRoaXMuIE9uZSBjYW4gdGhlbiB1c2UKPj4+IEJQRl9P
-QkpfR0VUX0lORk9fQllfRkQgaW4gb3JkZXIgdG8gZ2V0IHRoZSBhY3R1YWwgY29kZSBvZiB0aGUg
-cHJvZ3JhbSwKPj4+IGFuZCB1c2UgdGhhdCBhdCByZWxvYWQgdGltZS4KPj4+Cj4+PiBUaGUgcHJp
-bWFyeSByZWFzb24gZm9yIG5vdCBhZGRpbmcgbWFwcyBzdXBwb3J0IGluIHRoaXMgcGF0Y2hzZXQg
-aXMKPj4+IHRvIGF2b2lkIGludHJvZHVjaW5nIG5ldyBjb21wbGV4aXRpZXMgYXJvdW5kIFBSX1NF
-VF9OT19ORVdfUFJJVlMuCj4+PiBJZiB3ZSBoYXZlIGEgbWFwIHRoYXQgdGhlIEJQRiBwcm9ncmFt
-IGNhbiByZWFkLCBpdCBjYW4gcG90ZW50aWFsbHkKPj4+ICJjaGFuZ2UiIHByaXZpbGVnZXMgYWZ0
-ZXIgcnVubmluZy4gSXQgc2VlbXMgbGlrZSBkb2luZyB3cml0ZXMgb25seQo+Pj4gaXMgc2FmZSwg
-YmVjYXVzZSBpdCBjYW4gYmUgcHVyZSwgYW5kIHNpZGUgZWZmZWN0IGZyZWUsIGFuZCB0aGVyZWZv
-cmUKPj4+IG5vdCBuZWdhdGl2ZWx5IGVmZmVjdCBQUl9TRVRfTk9fTkVXX1BSSVZTLiBOb25ldGhl
-bGVzcywgaWYgd2UgY29tZQo+Pj4gdG8gYW4gYWdyZWVtZW50LCB0aGlzIGNhbiBiZSBpbiBhIGZv
-bGxvdy11cCBwYXRjaHNldC4KPj4KPj4KPj4gQ29pbmNpZGVudGFsbHkgSSBhbHNvIHNlbnQgYW4g
-UkZDIGZvciBhZGRpbmcgZUJQRiBoYXNoIG1hcHMgdG8gdGhlIHNlY2NvbXAKPj4gdXNlcnNwYWNl
-IG1haWxpbmcgbGlzdCBqdXN0IGxhc3Qgd2VlazoKPj4gaHR0cHM6Ly9ncm91cHMuZ29vZ2xlLmNv
-bS9mb3J1bS8jIXRvcGljL2xpYnNlY2NvbXAvcFg2UWtWRjBGNzQKPj4KPj4gVGhlIGtlcm5lbCBj
-aGFuZ2VzIEkgcHJvcG9zZWQgYXJlIGluIHRoaXMgZW1haWw6Cj4+IGh0dHBzOi8vZ3JvdXBzLmdv
-b2dsZS5jb20vZC9tc2cvbGlic2VjY29tcC9wWDZRa1ZGMEY3NC9aVUpsd0k1cUF3QUoKPj4KPj4g
-SW4gdGhhdCBlbWFpbCB0aHJlYWQsIEtlZXMgcmVxdWVzdGVkIHRoYXQgSSB0cnkgb3V0IGEgYmlu
-YXJ5IHRyZWUgaW4gY0JQRgo+PiBhbmQgZXZhbHVhdGUgaXRzIHBlcmZvcm1hbmNlLiAgSSBqdXN0
-IGdvdCBhIHJvdWdoIHByb3RvdHlwZSB3b3JraW5nLCBhbmQKPj4gd2hpbGUgbm90IGFzIGZhc3Qg
-YXMgYW4gZUJQRiBoYXNoIG1hcCwgdGhlIGNCUEYgYmluYXJ5IHRyZWUgd2FzIGEKPj4gc2lnbmlm
-aWNhbnQKPj4gaW1wcm92ZW1lbnQgb3ZlciB0aGUgbGluZWFyIGxpc3Qgb2YgaWZzIHRoYXQgYXJl
-IGN1cnJlbnRseSBnZW5lcmF0ZWQuICBBbHNvLAo+PiBpdCBvbmx5IHJlcXVpcmVkIGNoYW5naW5n
-IGEgc2luZ2xlIGZ1bmN0aW9uIHdpdGhpbiB0aGUgbGlic2VjY29tcCBsaWJhcnkKPj4gaXRzZWxm
-Lgo+Pgo+PiBodHRwczovL2dpdGh1Yi5jb20vZHJha2VuY2xpbWJlci9saWJzZWNjb21wL2NvbW1p
-dC84N2IzNjM2OWYxNzM4NWY1YTdhNGQ5NTEwMTE4NTU3N2ZiZjYyMDNiCj4+Cj4+IEhlcmUgYXJl
-IHRoZSByZXN1bHRzIEkgYW0gY3VycmVudGx5IHNlZWluZyB1c2luZyBhbiBpbi1ob3VzZSBjdXN0
-b21lcidzCj4+IHNlY2NvbXAgZmlsdGVyIGFuZCBhIHNpbXBsaXN0aWMgdGVzdCBwcm9ncmFtIHRo
-YXQgcnVucyBnZXRwcGlkKCkgdGhvdXNhbmRzCj4+IG9mIHRpbWVzLgo+Pgo+PiBUZXN0IENhc2Ug
-ICAgICAgICAgICAgICAgICAgICAgbWluaW11bSBUU0MgdGlja3MgdG8gbWFrZSBzeXNjYWxsCj4+
-IC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0KPj4gc2VjY29tcCBkaXNhYmxlZCAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgIDYyMAo+PiBnZXRwcGlkKCkgYXQgdGhlIGZyb250IG9mIDMwNi1zeXNj
-YWxsIHNlY2NvbXAgZmlsdGVyICAgICAgICAgNzIyCj4+IGdldHBwaWQoKSBpbiBtaWRkbGUgb2Yg
-MzA2LXN5c2NhbGwgc2VjY29tcCBmaWx0ZXIgICAgICAgICAgIDEzOTIKPj4gZ2V0cHBpZCgpIGF0
-IHRoZSBlbmQgb2YgdGhlIDMwNi1zeXNjYWxsIGZpbHRlciAgICAgICAgICAgICAgMjQ1Mgo+PiBz
-ZWNjb21wIHVzaW5nIGEgMzA2LXN5c2NhbGwtc2l6ZWQgRUJQRiBoYXNoIG1hcCAgICAgICAgICAg
-ICAgODAwCj4+IGNCUEYgZmlsdGVyIHVzaW5nIGEgYmluYXJ5IHRyZWUgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICA5MjIKPiBJIHN0aWxsIHRoaW5rIHRoYXQncyBhIGNyYXp5IGZpbHRlci4g
-OikgSXQgc2hvdWxkIGJlIGludmVydGVkIHRvIGp1c3QKPiBjaGVjayB0aGUgMjYgc3lzY2FsbHMg
-YW5kIGEgZmluYWwgImdyZWF0ZXIgdGhhbiIgdGVzdC4gSSB3b3VsZCBleHBlY3QKPiBpdCB0byBi
-ZSBmYXN0ZXIgc3RpbGwuIDopCj4KPiAtS2VlcwoKSSBjb21wbGV0ZWx5IGFncmVlIGl0J3MgYSBj
-cmF6eSBmaWx0ZXIsIGJ1dCBpdCBzZWVtcyB0byBiZSBhCmNvbW1vbiAibWlzdGFrZSIgb3VyIHVz
-ZXJzIGFyZSBtYWtpbmcuwqAgSXQgd291bGQgYmUgbmljZSB0bwpoZWxwIHRoZW0gb3V0IGlmIHdl
-IGNhbi4KClRvbQoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0
-aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5m
-by9jb250YWluZXJz
+On Tue, Feb 13, 2018 at 12:16:42PM -0800, Kees Cook wrote:
+> If the needs Tycho outlined[1] could be addressed fully with eBPF, and
+> we can very narrowly scope the use of the "extra" eBPF features, I
+> might be more inclined to merge something like this, but I want to
+> take it very carefully. Besides creating a dependency on the bpf()
+> syscall, this would create side channels (via maps) that make me very
+> uncomfortable when dealing with process isolation. (Though, in theory,
+> this is already correctly constrained by no-new-privs...)
+> 
+> Tycho, could you get what you needed from eBPF?
+
+We could get almost all the way there, I think. We could pass the
+event via a bpf map, and then have a userspace daemon do:
+
+    while (1) {
+        bpf(BPF_MAP_LOOKUP_ELEM, &attr, sizeof(attr));
+        if (!syscall_queued(&attr))
+            continue;
+
+        do_stuff(&attr);
+        set_done(&attr);
+        bpf(BPF_MAP_UPDATE_ELEM, &attr, sizeof(attr));
+    }
+
+but as you say,
+
+> My impression would be that you'd still need a user notification
+> mechanism to stop the process, as the decisions about how to rewrite
+> arguments likely cannot be fully characterized by the internal eBPF
+> filter.
+
+...there's no way to stop the seccomp'd task until userspace is
+finished with whatever thing it needs to do on behalf of the seccomp'd
+task (at least, IIUC).
+
+That's of course ignoring the ergonomics from userspace: bpf_map_fops
+doesn't implement poll() or anything, so we really do have to use a
+while(1), if we want to allow more than one syscall queuing at a time,
+we need to poll multiple map elements.
+
+One of the extensions I had been considering floating for v2 of my set
+was allowing users to pass fds back across (again, to make userspace
+ergonomics a little better), which would be impossible via ebpf.
+
+Cheers,
+
+Tycho
