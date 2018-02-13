@@ -1,13 +1,13 @@
-From: Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
-Subject: [PATCH net-next 2/3] seccomp, ptrace: Add a mechanism to retrieve
-	attached eBPF seccomp filters
-Date: Tue, 13 Feb 2018 15:43:10 +0000
-Message-ID: <20180213154308.GA3310__6065.00874641842$1518536529$gmane$org@ircssh-2.c.rugged-nimbus-611.internal>
+From: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Subject: Re: [PATCH net-next 0/3] eBPF Seccomp filters
+Date: Tue, 13 Feb 2018 07:47:33 -0800
+Message-ID: <CAGXu5jLiYh0rSRuJ_-2xLB03Wod5G07njpoESR4SnmsmiUnsEw__32633.4561490969$1518536904$gmane$org@mail.gmail.com>
+References: <20180213154244.GA3292@ircssh-2.c.rugged-nimbus-611.internal>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20180213154244.GA3292-du9IEJ8oIxHXYT48pCVpJ3c7ZZ+wIVaZYkHkVr5ML8kVGlcevz2xqA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,124 +17,71 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org, keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org, daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org
+To: Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
+Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>, Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexei Starovoitov <ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Sargun Dhillon <sargun-5cpTQ645gshBDgjK7y7TUQ@public.gmane.org>
+On Tue, Feb 13, 2018 at 7:42 AM, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org> wrote:
+> This patchset enables seccomp filters to be written in eBPF. Although,
+> this patchset doesn't introduce much of the functionality enabled by
+> eBPF, it lays the ground work for it.
+>
+> It also introduces the capability to dump eBPF filters via the PTRACE
+> API in order to make it so that CHECKPOINT_RESTORE will be satisifed.
+> In the attached samples, there's an example of this. One can then use
+> BPF_OBJ_GET_INFO_BY_FD in order to get the actual code of the program,
+> and use that at reload time.
+>
+> The primary reason for not adding maps support in this patchset is
+> to avoid introducing new complexities around PR_SET_NO_NEW_PRIVS.
+> If we have a map that the BPF program can read, it can potentially
+> "change" privileges after running. It seems like doing writes only
+> is safe, because it can be pure, and side effect free, and therefore
+> not negatively effect PR_SET_NO_NEW_PRIVS. Nonetheless, if we come
+> to an agreement, this can be in a follow-up patchset.
 
-This extends the the ptrace API to allow fetching eBPF seccomp filters
-attached to programs. This is to enable checkpoint / restore cases.
-The user will have to use the traditional PTRACE_SECCOMP_GET_FILTER
-API call, and if they get an invalid medium type error they can switch
-over to the eBPF variant of the API -- PTRACE_SECCOMP_GET_FILTER_EXTENDED.
+What's the reason for adding eBPF support? seccomp shouldn't need it,
+and it only makes the code more complex. I'd rather stick with cBPF
+until we have an overwhelmingly good reason to use eBPF as a "native"
+seccomp filter language.
 
-Signed-off-by: Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
----
- include/linux/seccomp.h     | 12 ++++++++++++
- include/uapi/linux/ptrace.h |  5 +++--
- kernel/ptrace.c             |  3 +++
- kernel/seccomp.c            | 37 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 55 insertions(+), 2 deletions(-)
+-Kees
 
-diff --git a/include/linux/seccomp.h b/include/linux/seccomp.h
-index c723a5c4e3ff..97fdbcffacc2 100644
---- a/include/linux/seccomp.h
-+++ b/include/linux/seccomp.h
-@@ -110,4 +110,16 @@ static inline long seccomp_get_metadata(struct task_struct *task,
- 	return -EINVAL;
- }
- #endif /* CONFIG_SECCOMP_FILTER && CONFIG_CHECKPOINT_RESTORE */
-+#if defined(CONFIG_SECCOMP_FILTER_EXTENDED) && defined(CONFIG_CHECKPOINT_RESTORE)
-+extern long seccomp_get_filter_extended(struct task_struct *task,
-+					unsigned long n,
-+					void __user *data);
-+#else
-+static inline long seccomp_get_filter_extended(struct task_struct *task,
-+					       unsigned long n,
-+					       void __user *data)
-+{
-+	return -EINVAL;
-+}
-+#endif /* CONFIG_SECCOMP_FILTER_EXTENDED && CONFIG_CHECKPOINT_RESTORE */
- #endif /* _LINUX_SECCOMP_H */
-diff --git a/include/uapi/linux/ptrace.h b/include/uapi/linux/ptrace.h
-index e46d82b91166..c619eb46b9d9 100644
---- a/include/uapi/linux/ptrace.h
-+++ b/include/uapi/linux/ptrace.h
-@@ -65,8 +65,9 @@ struct ptrace_peeksiginfo_args {
- #define PTRACE_GETSIGMASK	0x420a
- #define PTRACE_SETSIGMASK	0x420b
- 
--#define PTRACE_SECCOMP_GET_FILTER	0x420c
--#define PTRACE_SECCOMP_GET_METADATA	0x420d
-+#define PTRACE_SECCOMP_GET_FILTER		0x420c
-+#define PTRACE_SECCOMP_GET_METADATA		0x420d
-+#define PTRACE_SECCOMP_GET_FILTER_EXTENDED	0x420e
- 
- struct seccomp_metadata {
- 	unsigned long filter_off;	/* Input: which filter */
-diff --git a/kernel/ptrace.c b/kernel/ptrace.c
-index 21fec73d45d4..90c62f9e1a55 100644
---- a/kernel/ptrace.c
-+++ b/kernel/ptrace.c
-@@ -1096,6 +1096,9 @@ int ptrace_request(struct task_struct *child, long request,
- 		ret = seccomp_get_metadata(child, addr, datavp);
- 		break;
- 
-+	case PTRACE_SECCOMP_GET_FILTER_EXTENDED:
-+		ret = seccomp_get_filter_extended(child, addr, datavp);
-+
- 	default:
- 		break;
- 	}
-diff --git a/kernel/seccomp.c b/kernel/seccomp.c
-index b30dd25c1cb8..931a13a8cd63 100644
---- a/kernel/seccomp.c
-+++ b/kernel/seccomp.c
-@@ -1155,6 +1155,43 @@ long seccomp_get_metadata(struct task_struct *task,
- }
- #endif
- 
-+#if defined(CONFIG_SECCOMP_FILTER_EXTENDED) && defined(CONFIG_CHECKPOINT_RESTORE)
-+long seccomp_get_filter_extended(struct task_struct *task,
-+				 unsigned long filter_off,
-+				 void __user *data)
-+{
-+	struct seccomp_filter *filter;
-+	struct bpf_prog *prog;
-+	long ret;
-+
-+	if (!capable(CAP_SYS_ADMIN) ||
-+	    current->seccomp.mode != SECCOMP_MODE_DISABLED) {
-+		return -EACCES;
-+	}
-+
-+	filter = get_nth_filter(task, filter_off);
-+	if (IS_ERR(filter))
-+		return PTR_ERR(filter);
-+
-+	if (bpf_prog_was_classic(filter->prog)) {
-+		ret = -EMEDIUMTYPE;
-+		goto out;
-+	}
-+	prog = bpf_prog_inc_not_zero(filter->prog);
-+	if (IS_ERR(prog)) {
-+		ret = PTR_ERR(prog);
-+		goto out;
-+	}
-+
-+	ret = bpf_prog_new_fd(filter->prog);
-+	if (ret < 0)
-+		bpf_prog_put(prog);
-+out:
-+	__put_seccomp_filter(filter);
-+	return ret;
-+}
-+#endif
-+
- #ifdef CONFIG_SYSCTL
- 
- /* Human readable action names for friendly sysctl interaction */
+>
+>
+> Sargun Dhillon (3):
+>   bpf, seccomp: Add eBPF filter capabilities
+>   seccomp, ptrace: Add a mechanism to retrieve attached eBPF seccomp
+>     filters
+>   bpf: Add eBPF seccomp sample programs
+>
+>  arch/Kconfig                 |   7 ++
+>  include/linux/bpf_types.h    |   3 +
+>  include/linux/seccomp.h      |  12 +++
+>  include/uapi/linux/bpf.h     |   2 +
+>  include/uapi/linux/ptrace.h  |   5 +-
+>  include/uapi/linux/seccomp.h |  15 ++--
+>  kernel/bpf/syscall.c         |   1 +
+>  kernel/ptrace.c              |   3 +
+>  kernel/seccomp.c             | 185 ++++++++++++++++++++++++++++++++++++++-----
+>  samples/bpf/Makefile         |   9 +++
+>  samples/bpf/bpf_load.c       |   9 ++-
+>  samples/bpf/seccomp1_kern.c  |  17 ++++
+>  samples/bpf/seccomp1_user.c  |  34 ++++++++
+>  samples/bpf/seccomp2_kern.c  |  24 ++++++
+>  samples/bpf/seccomp2_user.c  |  66 +++++++++++++++
+>  15 files changed, 362 insertions(+), 30 deletions(-)
+>  create mode 100644 samples/bpf/seccomp1_kern.c
+>  create mode 100644 samples/bpf/seccomp1_user.c
+>  create mode 100644 samples/bpf/seccomp2_kern.c
+>  create mode 100644 samples/bpf/seccomp2_user.c
+>
+> --
+> 2.14.1
+>
+
+
+
 -- 
-2.14.1
+Kees Cook
+Pixel Security
