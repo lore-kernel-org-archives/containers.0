@@ -1,7 +1,8 @@
 From: Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
-Subject: [PATCH net-next 3/3] bpf: Add eBPF seccomp sample programs
-Date: Tue, 13 Feb 2018 15:43:22 +0000
-Message-ID: <20180213154320.GA3319__46436.9128145792$1518536525$gmane$org@ircssh-2.c.rugged-nimbus-611.internal>
+Subject: [PATCH net-next 2/3] seccomp, ptrace: Add a mechanism to retrieve
+	attached eBPF seccomp filters
+Date: Tue, 13 Feb 2018 15:43:10 +0000
+Message-ID: <20180213154308.GA3310__6065.00874641842$1518536529$gmane$org@ircssh-2.c.rugged-nimbus-611.internal>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -22,272 +23,118 @@ List-Id: containers.vger.kernel.org
 
 From: Sargun Dhillon <sargun-5cpTQ645gshBDgjK7y7TUQ@public.gmane.org>
 
-This adds two sample programs:
-seccomp1: A simple eBPF seccomp filter
-seccomp2: A program which installs an eBPF filter
-	  and then retrieves it via ptrace to show
-	  checkpoint / restore capability.
+This extends the the ptrace API to allow fetching eBPF seccomp filters
+attached to programs. This is to enable checkpoint / restore cases.
+The user will have to use the traditional PTRACE_SECCOMP_GET_FILTER
+API call, and if they get an invalid medium type error they can switch
+over to the eBPF variant of the API -- PTRACE_SECCOMP_GET_FILTER_EXTENDED.
 
 Signed-off-by: Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
 ---
- samples/bpf/Makefile        |  9 +++++++
- samples/bpf/bpf_load.c      |  9 +++++--
- samples/bpf/seccomp1_kern.c | 17 ++++++++++++
- samples/bpf/seccomp1_user.c | 34 +++++++++++++++++++++++
- samples/bpf/seccomp2_kern.c | 24 +++++++++++++++++
- samples/bpf/seccomp2_user.c | 66 +++++++++++++++++++++++++++++++++++++++++++++
- 6 files changed, 157 insertions(+), 2 deletions(-)
- create mode 100644 samples/bpf/seccomp1_kern.c
- create mode 100644 samples/bpf/seccomp1_user.c
- create mode 100644 samples/bpf/seccomp2_kern.c
- create mode 100644 samples/bpf/seccomp2_user.c
+ include/linux/seccomp.h     | 12 ++++++++++++
+ include/uapi/linux/ptrace.h |  5 +++--
+ kernel/ptrace.c             |  3 +++
+ kernel/seccomp.c            | 37 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 55 insertions(+), 2 deletions(-)
 
-diff --git a/samples/bpf/Makefile b/samples/bpf/Makefile
-index ec3fc8d88e87..f1ba5fa18db7 100644
---- a/samples/bpf/Makefile
-+++ b/samples/bpf/Makefile
-@@ -43,6 +43,8 @@ hostprogs-y += xdp_redirect_cpu
- hostprogs-y += xdp_monitor
- hostprogs-y += xdp_rxq_info
- hostprogs-y += syscall_tp
-+hostprogs-y += seccomp1
-+hostprogs-y += seccomp2
- 
- # Libbpf dependencies
- LIBBPF := ../../tools/lib/bpf/bpf.o ../../tools/lib/bpf/nlattr.o
-@@ -93,6 +95,9 @@ xdp_redirect_cpu-objs := bpf_load.o $(LIBBPF) xdp_redirect_cpu_user.o
- xdp_monitor-objs := bpf_load.o $(LIBBPF) xdp_monitor_user.o
- xdp_rxq_info-objs := bpf_load.o $(LIBBPF) xdp_rxq_info_user.o
- syscall_tp-objs := bpf_load.o $(LIBBPF) syscall_tp_user.o
-+seccomp1-objs := bpf_load.o $(LIBBPF) seccomp1_user.o
-+seccomp2-objs := bpf_load.o $(LIBBPF) seccomp2_user.o
-+
- 
- # Tell kbuild to always build the programs
- always := $(hostprogs-y)
-@@ -144,6 +149,8 @@ always += xdp_monitor_kern.o
- always += xdp_rxq_info_kern.o
- always += xdp2skb_meta_kern.o
- always += syscall_tp_kern.o
-+always += seccomp1_kern.o
-+always += seccomp2_kern.o
- 
- HOSTCFLAGS += -I$(objtree)/usr/include
- HOSTCFLAGS += -I$(srctree)/tools/lib/
-@@ -188,6 +195,8 @@ HOSTLOADLIBES_xdp_redirect_cpu += -lelf
- HOSTLOADLIBES_xdp_monitor += -lelf
- HOSTLOADLIBES_xdp_rxq_info += -lelf
- HOSTLOADLIBES_syscall_tp += -lelf
-+HOSTLOADLIBES_seccomp1 += -lelf
-+HOSTLOADLIBES_seccomp2 += -lelf
- 
- # Allows pointing LLC/CLANG to a LLVM backend with bpf support, redefine on cmdline:
- #  make samples/bpf/ LLC=~/git/llvm/build/bin/llc CLANG=~/git/llvm/build/bin/clang
-diff --git a/samples/bpf/bpf_load.c b/samples/bpf/bpf_load.c
-index 69806d74fa53..856bc8b93916 100644
---- a/samples/bpf/bpf_load.c
-+++ b/samples/bpf/bpf_load.c
-@@ -67,6 +67,7 @@ static int load_and_attach(const char *event, struct bpf_insn *prog, int size)
- 	bool is_cgroup_sk = strncmp(event, "cgroup/sock", 11) == 0;
- 	bool is_sockops = strncmp(event, "sockops", 7) == 0;
- 	bool is_sk_skb = strncmp(event, "sk_skb", 6) == 0;
-+	bool is_seccomp = strncmp(event, "seccomp", 7) == 0;
- 	size_t insns_cnt = size / sizeof(struct bpf_insn);
- 	enum bpf_prog_type prog_type;
- 	char buf[256];
-@@ -96,6 +97,8 @@ static int load_and_attach(const char *event, struct bpf_insn *prog, int size)
- 		prog_type = BPF_PROG_TYPE_SOCK_OPS;
- 	} else if (is_sk_skb) {
- 		prog_type = BPF_PROG_TYPE_SK_SKB;
-+	} else if (is_seccomp) {
-+		prog_type = BPF_PROG_TYPE_SECCOMP;
- 	} else {
- 		printf("Unknown event '%s'\n", event);
- 		return -1;
-@@ -110,7 +113,8 @@ static int load_and_attach(const char *event, struct bpf_insn *prog, int size)
- 
- 	prog_fd[prog_cnt++] = fd;
- 
--	if (is_xdp || is_perf_event || is_cgroup_skb || is_cgroup_sk)
-+	if (is_xdp || is_perf_event || is_cgroup_skb || is_cgroup_sk ||
-+	    is_seccomp)
- 		return 0;
- 
- 	if (is_socket || is_sockops || is_sk_skb) {
-@@ -589,7 +593,8 @@ static int do_load_bpf_file(const char *path, fixup_map_cb fixup_map)
- 		    memcmp(shname, "socket", 6) == 0 ||
- 		    memcmp(shname, "cgroup/", 7) == 0 ||
- 		    memcmp(shname, "sockops", 7) == 0 ||
--		    memcmp(shname, "sk_skb", 6) == 0) {
-+		    memcmp(shname, "sk_skb", 6) == 0 ||
-+		    memcmp(shname, "seccomp", 7) == 0) {
- 			ret = load_and_attach(shname, data->d_buf,
- 					      data->d_size);
- 			if (ret != 0)
-diff --git a/samples/bpf/seccomp1_kern.c b/samples/bpf/seccomp1_kern.c
-new file mode 100644
-index 000000000000..7fcbd48fa69a
---- /dev/null
-+++ b/samples/bpf/seccomp1_kern.c
-@@ -0,0 +1,17 @@
-+#include <uapi/linux/seccomp.h>
-+#include <uapi/linux/bpf.h>
-+#include <uapi/linux/unistd.h>
-+#include "bpf_helpers.h"
-+#include <uapi/linux/errno.h>
-+
-+/* Returns EPERM when trying to close fd 999 */
-+SEC("seccomp")
-+int bpf_prog1(struct seccomp_data *ctx)
+diff --git a/include/linux/seccomp.h b/include/linux/seccomp.h
+index c723a5c4e3ff..97fdbcffacc2 100644
+--- a/include/linux/seccomp.h
++++ b/include/linux/seccomp.h
+@@ -110,4 +110,16 @@ static inline long seccomp_get_metadata(struct task_struct *task,
+ 	return -EINVAL;
+ }
+ #endif /* CONFIG_SECCOMP_FILTER && CONFIG_CHECKPOINT_RESTORE */
++#if defined(CONFIG_SECCOMP_FILTER_EXTENDED) && defined(CONFIG_CHECKPOINT_RESTORE)
++extern long seccomp_get_filter_extended(struct task_struct *task,
++					unsigned long n,
++					void __user *data);
++#else
++static inline long seccomp_get_filter_extended(struct task_struct *task,
++					       unsigned long n,
++					       void __user *data)
 +{
-+	if (ctx->nr == __NR_close && ctx->args[0] == 999)
-+		return SECCOMP_RET_ERRNO | EPERM;
-+
-+	return SECCOMP_RET_ALLOW;
++	return -EINVAL;
 +}
-+
-+char _license[] SEC("license") = "GPL";
-diff --git a/samples/bpf/seccomp1_user.c b/samples/bpf/seccomp1_user.c
-new file mode 100644
-index 000000000000..35b3533de711
---- /dev/null
-+++ b/samples/bpf/seccomp1_user.c
-@@ -0,0 +1,34 @@
-+// SPDX-License-Identifier: GPL-2.0
-+#include <assert.h>
-+#include <stdio.h>
-+#include <linux/bpf.h>
-+#include <unistd.h>
-+#include "libbpf.h"
-+#include "bpf_load.h"
-+#include <linux/bpf.h>
-+#include <sys/prctl.h>
-+#include <strings.h>
-+#include <errno.h>
-+#include <sys/ptrace.h>
-+#include <linux/seccomp.h>
-+
-+int main(int argc, char **argv)
-+{
-+	char filename[256];
-+
-+
-+	snprintf(filename, sizeof(filename), "%s_kern.o", argv[0]);
-+
-+	if (load_bpf_file(filename)) {
-+		printf("%s", bpf_log_buf);
-+		return 1;
-+	}
-+
-+	assert(!prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER_EXTENDED, &prog_fd));
-+	close(111);
-+	assert(errno == EBADF);
-+	close(999);
-+	assert(errno = EPERM);
-+
-+	return 0;
-+}
-diff --git a/samples/bpf/seccomp2_kern.c b/samples/bpf/seccomp2_kern.c
-new file mode 100644
-index 000000000000..38014ed41b9b
---- /dev/null
-+++ b/samples/bpf/seccomp2_kern.c
-@@ -0,0 +1,24 @@
-+#include <uapi/linux/seccomp.h>
-+#include <uapi/linux/bpf.h>
-+#include <uapi/linux/unistd.h>
-+#include "bpf_helpers.h"
-+#include <uapi/linux/errno.h>
-+
-+static inline int unknown(struct seccomp_data *ctx)
-+{
-+	if (ctx->args[0] % 2 == 0)
-+		return SECCOMP_RET_KILL;
-+	return SECCOMP_RET_LOG;
-+}
-+
-+/* Returns errno on sched_yield syscall */
-+SEC("seccomp")
-+int bpf_prog1(struct seccomp_data *ctx)
-+{
-+	if (ctx->nr == __NR_sched_yield)
-+		return SECCOMP_RET_ERRNO | EPERM;
-+
-+	return SECCOMP_RET_ALLOW;
-+}
-+
-+char _license[] SEC("license") = "aGPL";
-diff --git a/samples/bpf/seccomp2_user.c b/samples/bpf/seccomp2_user.c
-new file mode 100644
-index 000000000000..986f70473fca
---- /dev/null
-+++ b/samples/bpf/seccomp2_user.c
-@@ -0,0 +1,66 @@
-+// SPDX-License-Identifier: GPL-2.0
-+#include <assert.h>
-+#include <stdio.h>
-+#include <linux/bpf.h>
-+#include <unistd.h>
-+#include "libbpf.h"
-+#include "bpf_load.h"
-+#include <linux/bpf.h>
-+#include <sys/prctl.h>
-+#include <strings.h>
-+#include <errno.h>
-+#include <linux/seccomp.h>
-+#include <sys/ptrace.h>
-+#include <sys/types.h>
-+#include <signal.h>
-+#include <stdlib.h>
-+#include <sys/wait.h>
-+#include <sched.h>
-+
++#endif /* CONFIG_SECCOMP_FILTER_EXTENDED && CONFIG_CHECKPOINT_RESTORE */
+ #endif /* _LINUX_SECCOMP_H */
+diff --git a/include/uapi/linux/ptrace.h b/include/uapi/linux/ptrace.h
+index e46d82b91166..c619eb46b9d9 100644
+--- a/include/uapi/linux/ptrace.h
++++ b/include/uapi/linux/ptrace.h
+@@ -65,8 +65,9 @@ struct ptrace_peeksiginfo_args {
+ #define PTRACE_GETSIGMASK	0x420a
+ #define PTRACE_SETSIGMASK	0x420b
+ 
+-#define PTRACE_SECCOMP_GET_FILTER	0x420c
+-#define PTRACE_SECCOMP_GET_METADATA	0x420d
++#define PTRACE_SECCOMP_GET_FILTER		0x420c
++#define PTRACE_SECCOMP_GET_METADATA		0x420d
 +#define PTRACE_SECCOMP_GET_FILTER_EXTENDED	0x420e
-+static void tracee(void)
+ 
+ struct seccomp_metadata {
+ 	unsigned long filter_off;	/* Input: which filter */
+diff --git a/kernel/ptrace.c b/kernel/ptrace.c
+index 21fec73d45d4..90c62f9e1a55 100644
+--- a/kernel/ptrace.c
++++ b/kernel/ptrace.c
+@@ -1096,6 +1096,9 @@ int ptrace_request(struct task_struct *child, long request,
+ 		ret = seccomp_get_metadata(child, addr, datavp);
+ 		break;
+ 
++	case PTRACE_SECCOMP_GET_FILTER_EXTENDED:
++		ret = seccomp_get_filter_extended(child, addr, datavp);
++
+ 	default:
+ 		break;
+ 	}
+diff --git a/kernel/seccomp.c b/kernel/seccomp.c
+index b30dd25c1cb8..931a13a8cd63 100644
+--- a/kernel/seccomp.c
++++ b/kernel/seccomp.c
+@@ -1155,6 +1155,43 @@ long seccomp_get_metadata(struct task_struct *task,
+ }
+ #endif
+ 
++#if defined(CONFIG_SECCOMP_FILTER_EXTENDED) && defined(CONFIG_CHECKPOINT_RESTORE)
++long seccomp_get_filter_extended(struct task_struct *task,
++				 unsigned long filter_off,
++				 void __user *data)
 +{
-+	assert(!prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0));
++	struct seccomp_filter *filter;
++	struct bpf_prog *prog;
++	long ret;
 +
-+	assert(!prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER_EXTENDED, &prog_fd));
-+	sched_yield();
-+	assert(errno == EPERM);
-+	ptrace(PTRACE_TRACEME, 0, NULL, NULL);
-+	kill(getpid(), SIGSTOP);
-+}
-+
-+int main(int argc, char **argv)
-+{
-+	struct bpf_prog_info loaded_prog_info = {}, retrieved_prog_info = {};
-+	char filename[256];
-+	__u32 info_len;
-+	pid_t child;
-+	int fd;
-+
-+	snprintf(filename, sizeof(filename), "%s_kern.o", argv[0]);
-+
-+	if (load_bpf_file(filename)) {
-+		printf("%s", bpf_log_buf);
-+		return 1;
-+	}
-+	info_len = sizeof(loaded_prog_info);
-+	assert(!bpf_obj_get_info_by_fd(prog_fd[0], &loaded_prog_info,
-+				       &info_len));
-+
-+	child = fork();
-+	if (child == 0) {
-+		tracee();
-+		return 0;
++	if (!capable(CAP_SYS_ADMIN) ||
++	    current->seccomp.mode != SECCOMP_MODE_DISABLED) {
++		return -EACCES;
 +	}
 +
-+	wait(NULL);
-+	/* Fetches eBPF filter from traced child */
-+	fd = ptrace(PTRACE_SECCOMP_GET_FILTER_EXTENDED, child, 0, NULL);
-+	kill(child, SIGKILL);
-+	assert(fd >= 0);
-+	info_len = sizeof(retrieved_prog_info);
-+	assert(!bpf_obj_get_info_by_fd(fd, &retrieved_prog_info, &info_len));
-+	assert(retrieved_prog_info.id == loaded_prog_info.id);
++	filter = get_nth_filter(task, filter_off);
++	if (IS_ERR(filter))
++		return PTR_ERR(filter);
 +
-+	return 0;
++	if (bpf_prog_was_classic(filter->prog)) {
++		ret = -EMEDIUMTYPE;
++		goto out;
++	}
++	prog = bpf_prog_inc_not_zero(filter->prog);
++	if (IS_ERR(prog)) {
++		ret = PTR_ERR(prog);
++		goto out;
++	}
++
++	ret = bpf_prog_new_fd(filter->prog);
++	if (ret < 0)
++		bpf_prog_put(prog);
++out:
++	__put_seccomp_filter(filter);
++	return ret;
 +}
++#endif
++
+ #ifdef CONFIG_SYSCTL
+ 
+ /* Human readable action names for friendly sysctl interaction */
 -- 
 2.14.1
