@@ -1,14 +1,14 @@
-From: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Subject: Re: [RFC 3/3] seccomp: add a way to get a listener fd from ptrace
-Date: Tue, 13 Feb 2018 13:32:26 -0800
-Message-ID: <CAGXu5jLS2dzCjZOKa-W4kUdOPoJkRAq5Rsw1t5jX99v34yaoQw@mail.gmail.com>
-References: <20180204104946.25559-1-tycho@tycho.ws>
-	<20180204104946.25559-4-tycho@tycho.ws>
+From: Enrico Weigelt <lkml-EcKl7qYKIbxeoWH0uzbU5w@public.gmane.org>
+Subject: Re: plan9 semantics on Linux - mount namespaces
+Date: Tue, 13 Feb 2018 22:19:48 +0000
+Message-ID: <5633d335-3926-d98f-d6d7-948b1e2a0b2c__23029.3178152808$1518560610$gmane$org@metux.net>
+References: <0f058286-a432-379b-f559-f2fe713807ab@metux.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20180204104946.25559-4-tycho-E0fblnxP3wo@public.gmane.org>
+In-Reply-To: <0f058286-a432-379b-f559-f2fe713807ab-EcKl7qYKIbxeoWH0uzbU5w@public.gmane.org>
+Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,26 +18,28 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tycho Andersen <tycho-E0fblnxP3wo@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Akihiro Suda <suda.akihiro-Zyj7fXuS5i5L9jVzuh4AOg@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Tyler Hicks <tyhicks-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+To: "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sun, Feb 4, 2018 at 2:49 AM, Tycho Andersen <tycho-E0fblnxP3wo@public.gmane.org> wrote:
-> As an alternative to SECCOMP_FILTER_FLAG_GET_LISTENER, perhaps a ptrace()
-> version which can acquire filters is useful. There are at least two reasons
-> this is preferable, even though it uses ptrace:
->
-> 1. You can control tasks that aren't cooperating with you
-> 2. You can control tasks whose filters block sendmsg() and socket(); if the
->    task installs a filter which blocks these calls, there's no way with
->    SECCOMP_FILTER_FLAG_GET_LISTENER to get the fd out to the privileged task.
-
-I got worried for a second that this would get us into a many-to-many
-state, but I see init_listener enforces a single listener per filter.
-Whew. Seems legit. :)
-
--Kees
-
--- 
-Kees Cook
-Pixel Security
+T24gMTMuMDIuMjAxOCAyMjoxMiwgRW5yaWNvIFdlaWdlbHQgd3JvdGU6CgpDQyBAY29udGFpbmVy
+c0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwoKPiBIaSBmb2xrcywKPiAKPiAKPiBJJ20gY3Vy
+cmVudGx5IHRyeWluZyB0byBpbXBsZW1lbnQgcGxhbjkgc2VtYW50aWNzIG9uIExpbnV4IGFuZAo+
+IHlldCBzb3J0aW5nIG91dCBob3cgdG8gZG8gdGhlIG1vdW50IG5hbWVzcGFjZSBoYW5kbGluZy4K
+PiAKPiBPbiBwbGFuOSwgYW55IHVucHJpdmlsZWdlZCBwcm9jZXNzIGNhbiBjcmVhdGUgaXRzIG93
+biBuYW1lc3BhY2UKPiBhbmQgbW91bnQvYmluZCBhdCB3aWxsLCB3aGlsZSBvbiBMaW51eCB0aGlz
+IHJlcXVpcmVzIENBUF9TWVNfQURNSU4uCj4gCj4gV2hhdCBpcyB0aGUgcmVhc29uIGZvciBub3Qg
+YWxsb3dpbmcgYXJiaXRyYXJ5IHVzZXJzIHRvIGNyZWF0ZSB0aGVpcgo+IG93biBwcml2YXRlIG1v
+dW50IG5hbWVzcGFjZSA/IFdoYXQgY291bGQgZ28gd3JvbmcgaGVyZSA/Cj4gCj4gSU1ITywgd2Ug
+Y291bGQgYWxsb3cgbW91bnQvYmluZCB1bmRlciB0aGUgZm9sbG93aW5nIGNvbmRpdGlvbnM6Cj4g
+Cj4gKiB0aGUgcHJvY2VzcyBpcyBpbiBhIHByaXZhdGUgbW91bnQgbmFtZXNwYWNlCj4gKiBubyBz
+dWlkLWZsYWcgaXMgaG9ub3JlZCAoZWl0aGVyIGZvcmNlIGFsbCBtb3VudHMgdG8gbm9zdWlkIG9y
+Cj4gIMKgIGNvbXBsZXRlbHkgbWFzayBpdCBvdXQpCj4gKiBvbmx5IGNlcnRhaW4gd2hpdGVsaXN0
+ZWQgZmlsZXN5c3RlbXMgYWxsb3dlZCAoZWcuIDlQIGFuZCBGVVNFKQo+IAo+IE1heWJlIHRoYXQg
+YWxsIGNvdWxkIGJlIGVuYWJsZWQgYnkgYSBuZXcgY2FwYWJpbGl0eS4KPiAKPiAKPiBhbnkgc3Vn
+Z2VzdGlvbnMgPwo+IAo+IAo+IC0tbXR4Cj4gCgoKLS0gCkVucmljbyBXZWlnZWx0LCBtZXR1eCBJ
+VCBjb25zdWx0CkZyZWUgc29mdHdhcmUgYW5kIExpbnV4IGVtYmVkZGVkIGVuZ2luZWVyaW5nCmlu
+Zm9AbWV0dXgubmV0IC0tICs0OS0xNTEtMjc1NjUyODcKX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVy
+c0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlv
+bi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
