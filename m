@@ -1,13 +1,15 @@
 From: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v5 00/11] FUSE mounts from non-init user namespaces
-Date: Tue, 13 Feb 2018 12:32:09 +0100
-Message-ID: <CAOssrKey+oxahrXHO5d6Lu1ZD=r1t-b0i4iZM_Ke9ToqTckjkQ@mail.gmail.com>
+Subject: Re: [PATCH 03/11] fs: Allow superblock owner to change ownership of
+	inodes
+Date: Tue, 13 Feb 2018 14:18:21 +0100
+Message-ID: <CAOssrKcZeAHsRz7P_dxh==QAKnp7HeSTh4vWY2tgbWa1ZD918g__41193.6576165774$1518527821$gmane$org@mail.gmail.com>
 References: <cover.1512741134.git.dongsu@kinvolk.io>
+	<ac3d34002d7690f6ca5928b57b7fc4d707104b04.1512041070.git.dongsu@kinvolk.io>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <cover.1512741134.git.dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
+In-Reply-To: <ac3d34002d7690f6ca5928b57b7fc4d707104b04.1512041070.git.dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,25 +20,28 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
+Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, "Luis R. Rodriguez" <mcgrof-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 On Fri, Dec 22, 2017 at 3:32 PM, Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org> wrote:
+> From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>
+> Allow users with CAP_SYS_CHOWN over the superblock of a filesystem to
+> chown files.  Ordinarily the capable_wrt_inode_uidgid check is
+> sufficient to allow access to files but when the underlying filesystem
+> has uids or gids that don't map to the current user namespace it is
+> not enough, so the chown permission checks need to be extended to
+> allow this case.
+>
+> Calling chown on filesystem nodes whose uid or gid don't map is
+> necessary if those nodes are going to be modified as writing back
+> inodes which contain uids or gids that don't map is likely to cause
+> filesystem corruption of the uid or gid fields.
 
-> Patches 1-2 deal with an additional flag of lookup_bdev() to check for
-> additional inode permission.
+How can the filesystem be corrupted if chown is denied?
 
-fuse_blk is less suitable for unprivileged mounting than plain fuse.
-fusermount doesn't allow mounting fuse_blk unprivileged, so there's
-little data about that usecase (IIRC ntfs3g guys did that, or at least
-tried to do it, but I don't remember the details).
-
-As such, I think we should leave it out of the initial version.  Which
-means you can drop patches 1-2 from this series.  Unless there's a
-strong use case for this.  In which case we should look hard at the
-differences between fuse_blk and fuse and how that affects
-unprivileged operation.   There are a few assumptions about fuse_blk
-filesystem being more "well behaved", I think.
+It is not clear to me what the purpose of this patch is or what the
+exact usecase this is fixing.
 
 Thanks,
 Miklos
