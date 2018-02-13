@@ -1,16 +1,12 @@
-From: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 04/11] fs: Don't remove suid for CAP_FSETID for userns root
-Date: Tue, 13 Feb 2018 14:37:12 +0100
-Message-ID: <CAOssrKdse2_HKO0xweLD7uaBajZQArJ_URcLi9un6aLohqWxLg@mail.gmail.com>
-References: <cover.1512741134.git.dongsu@kinvolk.io>
-	<ddf1fb9b5001e633e0022dee7fecb0ef431e851f.1512041070.git.dongsu@kinvolk.io>
-	<20171223032606.GD6837@mail.hallyn.com>
-	<CANxcAMtpE05xpOPt3Ua+4DkiTzkW5hOo4BBpiNZh_5+RTCfThA@mail.gmail.com>
+From: Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
+Subject: [PATCH net-next 0/3] eBPF Seccomp filters
+Date: Tue, 13 Feb 2018 15:42:46 +0000
+Message-ID: <20180213154244.GA3292__7873.55454308472$1518536473$gmane$org@ircssh-2.c.rugged-nimbus-611.internal>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CANxcAMtpE05xpOPt3Ua+4DkiTzkW5hOo4BBpiNZh_5+RTCfThA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,39 +16,55 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org, keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org, daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sat, Dec 23, 2017 at 1:38 PM, Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org> wrote:
-> Hi,
->
-> On Sat, Dec 23, 2017 at 4:26 AM, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
->> On Fri, Dec 22, 2017 at 03:32:28PM +0100, Dongsu Park wrote:
->>> From: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
->>>
->>> Expand the check in should_remove_suid() to keep privileges for
->>
->> I realize this description came from Seth, but reading it now,
->> 'Expand' seems wrong.  Expanding a check brings to my mind making
->> it stricter, not looser.  How about 'Relax the check' ?
->
-> Makes sense. Will do.
->
->>> CAP_FSETID in s_user_ns rather than init_user_ns.
->>>
->>> Patch v4 is available: https://patchwork.kernel.org/patch/8944621/
->>>
->>> --EWB Changed from ns_capable(sb->s_user_ns, ) to capable_wrt_inode_uidgid
->>
->> Why exactly?
->>
->> This is wrong, because capable_wrt_inode_uidgid() does a check
->> against current_user_ns, not the  inode->i_sb->s_user_ns
+This patchset enables seccomp filters to be written in eBPF. Although,
+this patchset doesn't introduce much of the functionality enabled by
+eBPF, it lays the ground work for it.
 
-I'm thoroughly confused.   s_user_ns is supposed to be about the
-usernamespace the filesystem perceives to be in, right?  How does that
-come into play when checking permissions to do something?
+It also introduces the capability to dump eBPF filters via the PTRACE
+API in order to make it so that CHECKPOINT_RESTORE will be satisifed.
+In the attached samples, there's an example of this. One can then use
+BPF_OBJ_GET_INFO_BY_FD in order to get the actual code of the program,
+and use that at reload time.
 
-Thanks,
-Miklos
+The primary reason for not adding maps support in this patchset is
+to avoid introducing new complexities around PR_SET_NO_NEW_PRIVS.
+If we have a map that the BPF program can read, it can potentially
+"change" privileges after running. It seems like doing writes only
+is safe, because it can be pure, and side effect free, and therefore
+not negatively effect PR_SET_NO_NEW_PRIVS. Nonetheless, if we come
+to an agreement, this can be in a follow-up patchset.
+
+
+Sargun Dhillon (3):
+  bpf, seccomp: Add eBPF filter capabilities
+  seccomp, ptrace: Add a mechanism to retrieve attached eBPF seccomp
+    filters
+  bpf: Add eBPF seccomp sample programs
+
+ arch/Kconfig                 |   7 ++
+ include/linux/bpf_types.h    |   3 +
+ include/linux/seccomp.h      |  12 +++
+ include/uapi/linux/bpf.h     |   2 +
+ include/uapi/linux/ptrace.h  |   5 +-
+ include/uapi/linux/seccomp.h |  15 ++--
+ kernel/bpf/syscall.c         |   1 +
+ kernel/ptrace.c              |   3 +
+ kernel/seccomp.c             | 185 ++++++++++++++++++++++++++++++++++++++-----
+ samples/bpf/Makefile         |   9 +++
+ samples/bpf/bpf_load.c       |   9 ++-
+ samples/bpf/seccomp1_kern.c  |  17 ++++
+ samples/bpf/seccomp1_user.c  |  34 ++++++++
+ samples/bpf/seccomp2_kern.c  |  24 ++++++
+ samples/bpf/seccomp2_user.c  |  66 +++++++++++++++
+ 15 files changed, 362 insertions(+), 30 deletions(-)
+ create mode 100644 samples/bpf/seccomp1_kern.c
+ create mode 100644 samples/bpf/seccomp1_user.c
+ create mode 100644 samples/bpf/seccomp2_kern.c
+ create mode 100644 samples/bpf/seccomp2_user.c
+
+-- 
+2.14.1
