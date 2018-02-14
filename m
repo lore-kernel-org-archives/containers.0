@@ -1,16 +1,16 @@
 From: Tycho Andersen <tycho-E0fblnxP3wo@public.gmane.org>
-Subject: Re: [RFC 2/3] seccomp: hoist out filter resolving logic
-Date: Wed, 14 Feb 2018 08:33:06 -0700
-Message-ID: <20180214153306.m3wlmz6zwjqsav36__49404.4392522939$1518622317$gmane$org@smitten>
+Subject: Re: [RFC 3/3] seccomp: add a way to get a listener fd from ptrace
+Date: Wed, 14 Feb 2018 08:33:59 -0700
+Message-ID: <20180214153359.6wj6wclsqvgj4jlt__43392.8373422988$1518622361$gmane$org@smitten>
 References: <20180204104946.25559-1-tycho@tycho.ws>
-	<20180204104946.25559-3-tycho@tycho.ws>
-	<CAGXu5jJLCcmB6MCeOgMntUgrnPycbmM8MBt_CVGXtsrQ+mtf=Q@mail.gmail.com>
+	<20180204104946.25559-4-tycho@tycho.ws>
+	<CAGXu5jLS2dzCjZOKa-W4kUdOPoJkRAq5Rsw1t5jX99v34yaoQw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <CAGXu5jJLCcmB6MCeOgMntUgrnPycbmM8MBt_CVGXtsrQ+mtf=Q@mail.gmail.com>
+In-Reply-To: <CAGXu5jLS2dzCjZOKa-W4kUdOPoJkRAq5Rsw1t5jX99v34yaoQw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,21 +24,22 @@ To: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
 Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Akihiro Suda <suda.akihiro-Zyj7fXuS5i5L9jVzuh4AOg@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Tyler Hicks <tyhicks-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Feb 13, 2018 at 01:29:23PM -0800, Kees Cook wrote:
+On Tue, Feb 13, 2018 at 01:32:26PM -0800, Kees Cook wrote:
 > On Sun, Feb 4, 2018 at 2:49 AM, Tycho Andersen <tycho-E0fblnxP3wo@public.gmane.org> wrote:
-> > Hoist out the nth filter resolving logic that ptrace uses into a new
-> > function. We'll use this in the next patch to implement the new
-> > PTRACE_SECCOMP_GET_FILTER_FLAGS command. This is based on an older patch
-> > that I had sent a while ago; it significantly revamps the get_nth_filter
-> > logic based on previous suggestions from Oleg.
+> > As an alternative to SECCOMP_FILTER_FLAG_GET_LISTENER, perhaps a ptrace()
+> > version which can acquire filters is useful. There are at least two reasons
+> > this is preferable, even though it uses ptrace:
+> >
+> > 1. You can control tasks that aren't cooperating with you
+> > 2. You can control tasks whose filters block sendmsg() and socket(); if the
+> >    task installs a filter which blocks these calls, there's no way with
+> >    SECCOMP_FILTER_FLAG_GET_LISTENER to get the fd out to the privileged task.
 > 
-> Is this the same as f06eae831f0c1fc5b982ea200daf552810e1dd55 ? Quick
-> compare says yes? Either way, please rebase to v4.16-rc1 (or -rc2 in
-> the future). :)
+> I got worried for a second that this would get us into a many-to-many
+> state, but I see init_listener enforces a single listener per filter.
+> Whew. Seems legit. :)
 
-Yep, there was no tagged tree with that when I did these; I'll do that
-for the next version.
-
-Cheers,
+Yes, although if you sendmsg() the listener fd, you could still get
+into that state, so it's still maybe a concern?
 
 Tycho
