@@ -1,15 +1,22 @@
-From: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 07/11] fs: Allow CAP_SYS_ADMIN in s_user_ns to freeze and
-	thaw filesystems
-Date: Wed, 14 Feb 2018 13:28:12 +0100
-Message-ID: <CAOssrKeSTY1pAhpmegFWdGh7irNbT4veG5JaYFj8Q1JjMynadw__45254.1388491683$1518611199$gmane$org@mail.gmail.com>
-References: <cover.1512741134.git.dongsu@kinvolk.io>
-	<61a37f0b159dd56825696d8d3beb8eaffdf1f72f.1512041070.git.dongsu@kinvolk.io>
+From: Enrico Weigelt <lkml-EcKl7qYKIbxeoWH0uzbU5w@public.gmane.org>
+Subject: Re: plan9 semantics on Linux - mount namespaces
+Date: Wed, 14 Feb 2018 13:38:48 +0100
+Message-ID: <4864d279-9a3f-eaf4-c297-ea34be604e41@metux.net>
+References: <0f058286-a432-379b-f559-f2fe713807ab@metux.net>
+	<5633d335-3926-d98f-d6d7-948b1e2a0b2c@metux.net>
+	<20180213222751.p3fyg7whg6jqlzz5@gordon>
+	<39b08c53-3449-3164-c1b1-44ac587dd4ea@metux.net>
+	<20180214045442.jyv6zpbwz5glzi4z@gordon>
+	<9c097fd9-3035-d5be-a829-fc18e7734f18@metux.net>
+	<20180214102410.dxgbayb4i76h5exo@gordon>
+	<24ddea73-5c84-e098-caae-8a4c14834cbd@metux.net>
+	<CAFLxGvzxLP_UTQbwEY99bQfyftWzZHwaOP+WrzJ8099EKtbVLg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <61a37f0b159dd56825696d8d3beb8eaffdf1f72f.1512041070.git.dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
+In-Reply-To: <CAFLxGvzxLP_UTQbwEY99bQfyftWzZHwaOP+WrzJ8099EKtbVLg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,21 +26,46 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Dec 22, 2017 at 3:32 PM, Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org> wrote:
-> From: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
->
-> The user in control of a super block should be allowed to freeze
-> and thaw it. Relax the restrictions on the FIFREEZE and FITHAW
-> ioctls to require CAP_SYS_ADMIN in s_user_ns.
+On 14.02.2018 12:30, Richard Weinberger wrote:
+> On Wed, Feb 14, 2018 at 12:27 PM, Enrico Weigelt <lkml-EcKl7qYKIbxeoWH0uzbU5w@public.gmane.org> wrote:
+>> On 14.02.2018 11:24, Aleksa Sarai wrote:
+>>
+>>> What distribution are you using and which release?
+>>
+>>
+>> On a self-compiled system.
+>>
+>> Forgot to enable namespaces in the kernel. Now it seems to work
+>> as root, but not as an unprivileged user:
+>>
+>>
+>> daemon@alphabox:~ unshare -r -U
+>> unshare: can't open '/proc/self/setgroups': Permission denied
+>> daemon@alphabox:~ unshare -f -r -U
+>> unshare: can't open '/proc/self/setgroups': Permission denied
+>>
+> 
+> Please read http://man7.org/linux/man-pages/man7/user_namespaces.7.html
+> setgroups is a corner case and needs special care.
 
-Why is this required for unprivileged fuse?
+I'm still confused. Does the unshare program do something wrong here ?
 
-Fuse doesn't support freeze, so this seems to make no sense in the
-context of this patchset.
+Anyways, I doubt that user namespaces help solving my problem.
 
-Thanks,
-Miklos
+What I'd like to achieve is that processes can manipulate their private 
+namespace at will and mount other filesystems (primarily 9p and fuse).
+
+For that, I need to get rid of setuid (and per-file caps) for these
+private namespaces.
+
+
+--mtx
+
+-- 
+Enrico Weigelt, metux IT consult
+Free software and Linux embedded engineering
+info-EcKl7qYKIbxeoWH0uzbU5w@public.gmane.org -- +49-151-27565287
