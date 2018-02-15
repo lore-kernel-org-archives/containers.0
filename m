@@ -1,18 +1,15 @@
-From: Lorenzo Colitti via Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: Re: [PATCH net-next 0/3] eBPF Seccomp filters
-Date: Thu, 15 Feb 2018 17:35:07 +0900
-Message-ID: <CAKD1Yr15WP+_fQPc98FOOLFf=AhyAZon08p+=WaY4wJjA9oOJw@mail.gmail.com>
-References: <20180213154244.GA3292@ircssh-2.c.rugged-nimbus-611.internal>
-	<CAGXu5jLiYh0rSRuJ_-2xLB03Wod5G07njpoESR4SnmsmiUnsEw@mail.gmail.com>
-	<CALCETrV9xUd3XRgobTDgVNRFY_+o=pEDkfjvuxQ7w_UyH324zA@mail.gmail.com>
-	<20180214173222.kvos6izqcywkuyi5@cisco>
-	<20180215043027.zssmhvfdn7iz3rlz@ast-mbp.dhcp.thefacebook.com>
-Reply-To: Lorenzo Colitti <lorenzo-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+From: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 10/11] fuse: Allow user namespace mounts
+Date: Thu, 15 Feb 2018 09:46:51 +0100
+Message-ID: <CAOssrKf+d3PcHxT-GTfpESONywk9kFanmnzrX4EN=1XUpizFsg__33505.0469883301$1518684324$gmane$org@mail.gmail.com>
+References: <cover.1512741134.git.dongsu@kinvolk.io>
+	<a26103156b3f6ba73b1e46c6f577f1bee74872d9.1512041070.git.dongsu@kinvolk.io>
+	<CAOssrKcHOp9OaCWRALsxe5MTk+tv7Gi5rPsHz2VLguzK-P+LMw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20180215043027.zssmhvfdn7iz3rlz-+o4/htvd0TCa6kscz5V53/3mLCh9rsb+VpNB7YpNyf8@public.gmane.org>
+In-Reply-To: <CAOssrKcHOp9OaCWRALsxe5MTk+tv7Gi5rPsHz2VLguzK-P+LMw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,27 +19,55 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+To: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Feb 15, 2018 at 1:30 PM, Alexei Starovoitov
-<alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
-> Specifically for android we added bpf_lsm hooks, cookie/uid helpers,
-> and read-only maps.
-> Lorenzo,
-> there was a claim in this thread that bpf is disabled on android.
-> Can you please clarify ?
+On Wed, Feb 14, 2018 at 2:44 PM, Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> On Fri, Dec 22, 2017 at 3:32 PM, Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org> wrote:
+>> From: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+>>
+>> To be able to mount fuse from non-init user namespaces, it's necessary
+>> to set FS_USERNS_MOUNT flag to fs_flags.
+>>
+>> Patch v4 is available: https://patchwork.kernel.org/patch/8944681/
+>>
+>> Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+>> Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+>> Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+>> Signed-off-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+>> [dongsu: add a simple commit messasge]
+>> Signed-off-by: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
+>> ---
+>>  fs/fuse/inode.c | 4 ++--
+>>  1 file changed, 2 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/fs/fuse/inode.c b/fs/fuse/inode.c
+>> index 7f6b2e55..8c98edee 100644
+>> --- a/fs/fuse/inode.c
+>> +++ b/fs/fuse/inode.c
+>> @@ -1212,7 +1212,7 @@ static void fuse_kill_sb_anon(struct super_block *sb)
+>>  static struct file_system_type fuse_fs_type = {
+>>         .owner          = THIS_MODULE,
+>>         .name           = "fuse",
+>> -       .fs_flags       = FS_HAS_SUBTYPE,
+>> +       .fs_flags       = FS_HAS_SUBTYPE | FS_USERNS_MOUNT,
+>>         .mount          = fuse_mount,
+>>         .kill_sb        = fuse_kill_sb_anon,
+>>  };
+>
+> I think enabling FS_USERNS_MOUNT should be pretty safe.
+>
+> I was thinking opting out should be as simple as "chmod o-rw
+> /dev/fuse".  But that breaks libfuse, even though fusermount opens
+> /dev/fuse in privileged mode, so it shouldn't.
 
-It's not compiled out, at least at the moment.
-https://android.googlesource.com/kernel/configs/+/master/android-4.9/android-base.cfg
-has CONFIG_BPF_SYSCALL=y. As with many things on Android, use of EBPF
-is (heavily) restricted via selinux, and I'm not aware of any plans to
-allow unprivileged applications to use EBPF, or even or any usecases
-other than network accounting. Even for this use case, we're looking
-at having the program being completely read-only and baked into the
-system image.
+I'm talking rubbish, /dev/fuse is opened without privs in fusermount as well.
 
-I definitely don't have a complete view of things though. Also, bear
-in mind that none of this code has been released yet, so things could
-change.
+So there's not way to differentiate user_ns unpriv mounts from suid
+fusermount unpriv mounts.
+
+Maybe that's just as well...
+
+Thanks,
+Miklos
