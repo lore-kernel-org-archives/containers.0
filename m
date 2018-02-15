@@ -1,18 +1,17 @@
-From: Christian Brauner <christian.brauner-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: [RFC 1/3] seccomp: add a return code to trap to userspace
-Date: Thu, 15 Feb 2018 15:48:56 +0100
-Message-ID: <20180215144855.GA16088__32651.6845882454$1518706046$gmane$org@gmail.com>
-References: <20180204104946.25559-1-tycho@tycho.ws>
-	<20180204104946.25559-2-tycho@tycho.ws>
-	<CAGXu5jLAAKY19a9iC1PmXRyuwdn1Zxr2Cb318zdzkqgYt8vtdg@mail.gmail.com>
-	<20180214152958.cjgwh2k52zji2jxk@cisco>
-	<CALCETrXeZZfVzXh7SwKhyB=+ySDk5fhrrdrXrcABsQ=JpQT7Tg@mail.gmail.com>
-Mime-Version: 1.0
+From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Subject: Re: [PATCH net-next 0/3] eBPF Seccomp filters
+Date: Thu, 15 Feb 2018 08:05:18 -0800
+Message-ID: <17F5A58C-AEE3-4E99-A0F9-313533109FD5__23275.84884265$1518710645$gmane$org@amacapital.net>
+References: <20180213154244.GA3292@ircssh-2.c.rugged-nimbus-611.internal>
+	<CAGXu5jLiYh0rSRuJ_-2xLB03Wod5G07njpoESR4SnmsmiUnsEw@mail.gmail.com>
+	<CALCETrV9xUd3XRgobTDgVNRFY_+o=pEDkfjvuxQ7w_UyH324zA@mail.gmail.com>
+	<20180214173222.kvos6izqcywkuyi5@cisco>
+	<20180215043027.zssmhvfdn7iz3rlz@ast-mbp.dhcp.thefacebook.com>
+Mime-Version: 1.0 (1.0)
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CALCETrXeZZfVzXh7SwKhyB=+ySDk5fhrrdrXrcABsQ=JpQT7Tg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20180215043027.zssmhvfdn7iz3rlz-+o4/htvd0TCa6kscz5V53/3mLCh9rsb+VpNB7YpNyf8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,79 +21,44 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Akihiro Suda <suda.akihiro-Zyj7fXuS5i5L9jVzuh4AOg@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Paul Moore <pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Tyler Hicks <tyhicks-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+To: Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Lorenzo Colitti <lorenzo-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Feb 14, 2018 at 05:19:52PM +0000, Andy Lutomirski wrote:
-> On Wed, Feb 14, 2018 at 3:29 PM, Tycho Andersen <tycho-E0fblnxP3wo@public.gmane.org> wrote:
-> > Hey Kees,
-> >
-> > Thanks for taking a look!
-> >
-> > On Tue, Feb 13, 2018 at 01:09:20PM -0800, Kees Cook wrote:
-> >> On Sun, Feb 4, 2018 at 2:49 AM, Tycho Andersen <tycho-E0fblnxP3wo@public.gmane.org> wrote:
-> >> > This patch introduces a means for syscalls matched in seccomp to notify
-> >> > some other task that a particular filter has been triggered.
-> >> >
-> >> > The motivation for this is primarily for use with containers. For example,
-> >> > if a container does an init_module(), we obviously don't want to load this
-> >> > untrusted code, which may be compiled for the wrong version of the kernel
-> >> > anyway. Instead, we could parse the module image, figure out which module
-> >> > the container is trying to load and load it on the host.
-> >> >
-> >> > As another example, containers cannot mknod(), since this checks
-> >> > capable(CAP_SYS_ADMIN). However, harmless devices like /dev/null or
-> >> > /dev/zero should be ok for containers to mknod, but we'd like to avoid hard
-> >> > coding some whitelist in the kernel. Another example is mount(), which has
-> >> > many security restrictions for good reason, but configuration or runtime
-> >> > knowledge could potentially be used to relax these restrictions.
-> >>
-> >> Related to the eBPF seccomp thread, can the logic for these things be
-> >> handled entirely by eBPF? My assumption is that you still need to stop
-> >> the process to do something (i.e. do a mknod, or a mount) before
-> >> letting it continue. Is there some "wait for notification" system in
-> >> eBPF?
-> >
-> > I replied in the other thread
-> > (https://patchwork.ozlabs.org/cover/872938/#1856642 for those
-> > following along at home), but no, at least not that I know of.
-> 
-> eBPF can call functions.  One of those functions could put the caller
-> to sleep.  In fact, I think I once proposed doing this for the seccomp
-> logging action as well.
-> 
-> >> I wonder if this communication should be netlink, which gives a more
-> >> well-structured way to describe what's on the wire? The reason I ask
-> >> is because if we ever change the seccomp_data structure, we'll now
-> >> have two places where we need to deal with it (the first being within
-> >> the BPF itself). My initial idea was to prefix the communication with
-> >> a size field, then send the structure, and then I had nightmares, and
-> >> realized this was basically netlink reinvented.
-> >
-> > I suggested netlink in LA, and everyone (especially Andy) groaned very
-> > loudly :). I'm happy to switch it to netlink if you like, although i
-> > think memcpy() of structs should be safe here, since the return value
-> > from read or write can indicate the size of things.
-> 
-> I could easily get on board with "netlink" (i.e. NLA) messages sent
-> over an fd.  I will object strongly to the use of netlink *sockets*.
 
-I think sending netlink messages makes perfect sense here although we
-burden userspace with all those nice macros to parse these messages.
-Are there already other cases where userspace gets netlink messages on
-fds without having opened a netlink socket.
+> On Feb 14, 2018, at 8:30 PM, Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+> 
+> On Wed, Feb 14, 2018 at 10:32:22AM -0700, Tycho Andersen wrote:
+>>>> 
+>>>> What's the reason for adding eBPF support? seccomp shouldn't need it,
+>>>> and it only makes the code more complex. I'd rather stick with cBPF
+>>>> until we have an overwhelmingly good reason to use eBPF as a "native"
+>>>> seccomp filter language.
+>>>> 
+>>> 
+>>> I can think of two fairly strong use cases for eBPF's ability to call
+>>> functions: logging and Tycho's user notifier thing.
+>> 
+>> Worth noting that there is one additional thing that I didn't
+>> implement, but which would be nice and is probably not possible with
+>> eBPF (at least, not without a bunch of additional infrastructure):
+>> passing fds back to the tracee from the manager if you intercept
+>> socket(), or accept() or something.
+>> 
+>> This could again be accomplished via other means, though it would be a
+>> lot nicer to have a primitive for it.
+> 
+> there is bpf_perf_event_output() interface that allows to stream
+> arbitrary data from kernel into user space via perf ring buffer.
+> User space can epoll on it. We use this in both tracing and networking
+> for notifications and streaming data transfers.
+> I suspect this can be used for 'logging' too, since it's cheap and fast.
+
+I think this is the right idea but we'd want to tweak it.  We don't want the log messages to go to some systemwide buffer (seccomp can already so this and its annoying) -- we want them to go to the filter's creator.  In fact, the seccomp listener fd concept could easily be extended to do exactly this.
 
 > 
-> >
-> >> An ERRNO filter would block a USER_NOTIF because it's unconditional.
-> >> TRACE could be either, USER_NOTIF could be either.
-> >>
-> >> This means TRACE rules would be bumped by a USER_NOTIF... hmm.
-> >
-> > Yes, I didn't exactly know what to do here. ERRNO, TRAP, and KILL all
-> > seemed more important than USER_NOTIF, but TRACE didn't. I don't have
-> > a strong opinion about what to do here, because users can adjust their
-> > filters accordingly. Let me know what you prefer.
-> 
-> If we switched to eBPF functions, this whole issue goes away.
+> Also I think the argument that seccomp+eBPF will be faster than
+> seccomp+cBPF is a weak one. I bet kpti on/off makes no difference
+> under seccomp, since _all_ syscalls are already slow for sandboxed app.
+
+It's been a while since I benchmarked it, but I suspect that a simple seccomp filter is quite a bit faster than a PTI transition.
