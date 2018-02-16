@@ -1,17 +1,15 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [PATCH net-next 0/3] eBPF Seccomp filters
-Date: Thu, 15 Feb 2018 08:05:18 -0800
-Message-ID: <17F5A58C-AEE3-4E99-A0F9-313533109FD5__23275.84884265$1518710645$gmane$org@amacapital.net>
-References: <20180213154244.GA3292@ircssh-2.c.rugged-nimbus-611.internal>
-	<CAGXu5jLiYh0rSRuJ_-2xLB03Wod5G07njpoESR4SnmsmiUnsEw@mail.gmail.com>
-	<CALCETrV9xUd3XRgobTDgVNRFY_+o=pEDkfjvuxQ7w_UyH324zA@mail.gmail.com>
-	<20180214173222.kvos6izqcywkuyi5@cisco>
-	<20180215043027.zssmhvfdn7iz3rlz@ast-mbp.dhcp.thefacebook.com>
-Mime-Version: 1.0 (1.0)
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: plan9 semantics on Linux - mount namespaces
+Date: Fri, 16 Feb 2018 12:26:59 -0600
+Message-ID: <87po54x024.fsf@xmission.com>
+References: <0f058286-a432-379b-f559-f2fe713807ab@metux.net>
+	<5633d335-3926-d98f-d6d7-948b1e2a0b2c@metux.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20180215043027.zssmhvfdn7iz3rlz-+o4/htvd0TCa6kscz5V53/3mLCh9rsb+VpNB7YpNyf8@public.gmane.org>
+In-Reply-To: <5633d335-3926-d98f-d6d7-948b1e2a0b2c-EcKl7qYKIbxeoWH0uzbU5w@public.gmane.org> (Enrico
+	Weigelt's message of "Tue, 13 Feb 2018 22:19:48 +0000")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,44 +19,37 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Lorenzo Colitti <lorenzo-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Enrico Weigelt <lkml-EcKl7qYKIbxeoWH0uzbU5w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-> On Feb 14, 2018, at 8:30 PM, Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
-> 
-> On Wed, Feb 14, 2018 at 10:32:22AM -0700, Tycho Andersen wrote:
->>>> 
->>>> What's the reason for adding eBPF support? seccomp shouldn't need it,
->>>> and it only makes the code more complex. I'd rather stick with cBPF
->>>> until we have an overwhelmingly good reason to use eBPF as a "native"
->>>> seccomp filter language.
->>>> 
->>> 
->>> I can think of two fairly strong use cases for eBPF's ability to call
->>> functions: logging and Tycho's user notifier thing.
->> 
->> Worth noting that there is one additional thing that I didn't
->> implement, but which would be nice and is probably not possible with
->> eBPF (at least, not without a bunch of additional infrastructure):
->> passing fds back to the tracee from the manager if you intercept
->> socket(), or accept() or something.
->> 
->> This could again be accomplished via other means, though it would be a
->> lot nicer to have a primitive for it.
-> 
-> there is bpf_perf_event_output() interface that allows to stream
-> arbitrary data from kernel into user space via perf ring buffer.
-> User space can epoll on it. We use this in both tracing and networking
-> for notifications and streaming data transfers.
-> I suspect this can be used for 'logging' too, since it's cheap and fast.
-
-I think this is the right idea but we'd want to tweak it.  We don't want the log messages to go to some systemwide buffer (seccomp can already so this and its annoying) -- we want them to go to the filter's creator.  In fact, the seccomp listener fd concept could easily be extended to do exactly this.
-
-> 
-> Also I think the argument that seccomp+eBPF will be faster than
-> seccomp+cBPF is a weak one. I bet kpti on/off makes no difference
-> under seccomp, since _all_ syscalls are already slow for sandboxed app.
-
-It's been a while since I benchmarked it, but I suspect that a simple seccomp filter is quite a bit faster than a PTI transition.
+RW5yaWNvIFdlaWdlbHQgPGxrbWxAbWV0dXgubmV0PiB3cml0ZXM6Cgo+IE9uIDEzLjAyLjIwMTgg
+MjI6MTIsIEVucmljbyBXZWlnZWx0IHdyb3RlOgo+Cj4gQ0MgQGNvbnRhaW5lcnNAbGlzdHMubGlu
+dXgtZm91bmRhdGlvbi5vcmcKPgo+PiBIaSBmb2xrcywKPj4KPj4KPj4gSSdtIGN1cnJlbnRseSB0
+cnlpbmcgdG8gaW1wbGVtZW50IHBsYW45IHNlbWFudGljcyBvbiBMaW51eCBhbmQKPj4geWV0IHNv
+cnRpbmcgb3V0IGhvdyB0byBkbyB0aGUgbW91bnQgbmFtZXNwYWNlIGhhbmRsaW5nLgo+Pgo+PiBP
+biBwbGFuOSwgYW55IHVucHJpdmlsZWdlZCBwcm9jZXNzIGNhbiBjcmVhdGUgaXRzIG93biBuYW1l
+c3BhY2UKPj4gYW5kIG1vdW50L2JpbmQgYXQgd2lsbCwgd2hpbGUgb24gTGludXggdGhpcyByZXF1
+aXJlcyBDQVBfU1lTX0FETUlOLgo+Pgo+PiBXaGF0IGlzIHRoZSByZWFzb24gZm9yIG5vdCBhbGxv
+d2luZyBhcmJpdHJhcnkgdXNlcnMgdG8gY3JlYXRlIHRoZWlyCj4+IG93biBwcml2YXRlIG1vdW50
+IG5hbWVzcGFjZSA/IFdoYXQgY291bGQgZ28gd3JvbmcgaGVyZSA/CgpzdWlkIHJvb3QgZXhlY3V0
+YWJsZXMgY291bGQgYmUgZm9vbGVkLiAgQW4gZWFzeSBjYXNlIGlzIGZvb2xpbmcKL2Jpbi9zdSBp
+bnRvIHJlYWRpbmcgYSBkaWZmZXJlbnQgY29weSBvZiAvZXRjL3NoYWRvdywgYW5kIGFsbG93aW5n
+CmFyYml0cmFyeSBjaGFuZ2VzIGJldHdlZW4gdXNlcnMuCgo+PiBJTUhPLCB3ZSBjb3VsZCBhbGxv
+dyBtb3VudC9iaW5kIHVuZGVyIHRoZSBmb2xsb3dpbmcgY29uZGl0aW9uczoKPj4KPj4gKiB0aGUg
+cHJvY2VzcyBpcyBpbiBhIHByaXZhdGUgbW91bnQgbmFtZXNwYWNlCj4+ICogbm8gc3VpZC1mbGFn
+IGlzIGhvbm9yZWQgKGVpdGhlciBmb3JjZSBhbGwgbW91bnRzIHRvIG5vc3VpZCBvcgo+PiAgwqAg
+Y29tcGxldGVseSBtYXNrIGl0IG91dCkKPj4gKiBvbmx5IGNlcnRhaW4gd2hpdGVsaXN0ZWQgZmls
+ZXN5c3RlbXMgYWxsb3dlZCAoZWcuIDlQIGFuZCBGVVNFKQo+Pgo+PiBNYXliZSB0aGF0IGFsbCBj
+b3VsZCBiZSBlbmFibGVkIGJ5IGEgbmV3IGNhcGFiaWxpdHkuCj4+Cj4+Cj4+IGFueSBzdWdnZXN0
+aW9ucyA/CgpVc2VyIG5hbWVzcGFjZXMgbGltaXQgdGhlIGNvbnRhaW5lZCBwcm9jZXNzZXMgdG8g
+bm90IGhhdmluZyBhbnkKcGVybWlzc2lvbnMgb3V0c2lkZSBvZiB0aGUgdXNlciBuYW1lc3BhY2Uu
+ICBXaGlsZSBzdGlsbCBhbGxvd2luZyB0aGUKZnVsbHkgdW5peCBwZXJtaXNzaW9uIG1vZGVsIGlu
+c2lkZSB1c2VyIG5hbWVzcGFjZXMuCgpJIGFtIGluIHRoZSBmaW5hbCBzdGFnZXMgb2YgZ2V0dGlu
+ZyB0aGUgY2hhbmdlcyBpbiB0aGUgdmZzIGFuZCBpbiBmdXNlCnRvIGFsbG93IHVucHJpdmlsZWdl
+ZCB1c2VycyB0byBtb3VudCB0aGF0IGZpbGVzeXN0ZW0uICBwbGFuOWZzIHdvdWxkCmFsc28gYmUg
+YSBjYW5kaWRhdGUgZm9yIHRoYXQga2luZCBvZiB0cmVhdG1lbnQgaWYgaXQgaGFkIGEgbWFpbnRh
+aW5lci4KCkVyaWMKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0
+aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5m
+by9jb250YWluZXJz
