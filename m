@@ -1,17 +1,19 @@
-From: Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
-Subject: Re: [PATCH net-next 0/3] eBPF Seccomp filters
-Date: Fri, 16 Feb 2018 10:39:24 -0800
-Message-ID: <CAMp4zn-6bKkc539fihgVBbdYW9_ps4ARG_hKwWvcVG0x-hR=7Q__48696.2332194254$1518806317$gmane$org@mail.gmail.com>
-References: <20180213154244.GA3292@ircssh-2.c.rugged-nimbus-611.internal>
-	<CAGXu5jLiYh0rSRuJ_-2xLB03Wod5G07njpoESR4SnmsmiUnsEw@mail.gmail.com>
-	<CALCETrV9xUd3XRgobTDgVNRFY_+o=pEDkfjvuxQ7w_UyH324zA@mail.gmail.com>
-	<20180214173222.kvos6izqcywkuyi5@cisco>
-	<20180215043027.zssmhvfdn7iz3rlz@ast-mbp.dhcp.thefacebook.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 08/11] fuse: Support fuse filesystems outside of
+	init_user_ns
+Date: Fri, 16 Feb 2018 15:52:32 -0600
+Message-ID: <87606wtxen.fsf__18924.1754859269$1518817902$gmane$org@xmission.com>
+References: <cover.1512741134.git.dongsu@kinvolk.io>
+	<c85c293e19a478353aba8e6e3ee39e5914f798d5.1512041070.git.dongsu@kinvolk.io>
+	<CAOssrKd6vkMDwRT=QQofKCufzQczzQ7dXoVbVfVax-0HqD986w@mail.gmail.com>
+	<87lgfy5fpd.fsf@xmission.com>
+	<CAOssrKcKz8p9YQJLf2W_NCBo+12auxir5jFwXGbANdWdgavpsw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20180215043027.zssmhvfdn7iz3rlz-+o4/htvd0TCa6kscz5V53/3mLCh9rsb+VpNB7YpNyf8@public.gmane.org>
+In-Reply-To: <CAOssrKcKz8p9YQJLf2W_NCBo+12auxir5jFwXGbANdWdgavpsw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Miklos Szeredi's message of "Tue, 13 Feb 2018 11:20:07 +0100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,93 +23,130 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>, netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Lorenzo Colitti <lorenzo-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Feb 14, 2018 at 8:30 PM, Alexei Starovoitov
-<alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
-> On Wed, Feb 14, 2018 at 10:32:22AM -0700, Tycho Andersen wrote:
->> > >
->> > > What's the reason for adding eBPF support? seccomp shouldn't need it,
->> > > and it only makes the code more complex. I'd rather stick with cBPF
->> > > until we have an overwhelmingly good reason to use eBPF as a "native"
->> > > seccomp filter language.
->> > >
->> >
->> > I can think of two fairly strong use cases for eBPF's ability to call
->> > functions: logging and Tycho's user notifier thing.
+Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+
+> On Mon, Feb 12, 2018 at 5:35 PM, Eric W. Biederman
+> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+>> Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
 >>
->> Worth noting that there is one additional thing that I didn't
->> implement, but which would be nice and is probably not possible with
->> eBPF (at least, not without a bunch of additional infrastructure):
->> passing fds back to the tracee from the manager if you intercept
->> socket(), or accept() or something.
+>>> On Fri, Dec 22, 2017 at 3:32 PM, Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org> wrote:
+>>>> From: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+>>>>
+>>>> In order to support mounts from namespaces other than
+>>>> init_user_ns, fuse must translate uids and gids to/from the
+>>>> userns of the process servicing requests on /dev/fuse. This
+>>>> patch does that, with a couple of restrictions on the namespace:
+>>>>
+>>>>  - The userns for the fuse connection is fixed to the namespace
+>>>>    from which /dev/fuse is opened.
+>>>>
+>>>>  - The namespace must be the same as s_user_ns.
+>>>>
+>>>> These restrictions simplify the implementation by avoiding the
+>>>> need to pass around userns references and by allowing fuse to
+>>>> rely on the checks in inode_change_ok for ownership changes.
+>>>> Either restriction could be relaxed in the future if needed.
+>>>
+>>> Can we not introduce potential userspace interface regressions?
+>>>
+>>> The issue with pid namespaces fixed in commit 5d6d3a301c4e ("fuse:
+>>> allow server to run in different pid_ns") will probably bite us here
+>>> as well.
 >>
->> This could again be accomplished via other means, though it would be a
->> lot nicer to have a primitive for it.
+>> Maybe, but unlike the pid namespace no one has been able to mount
+>> fuse outside of init_user_ns so we are much less exposed.  I agree we
+>> should be careful.
 >
-> there is bpf_perf_event_output() interface that allows to stream
-> arbitrary data from kernel into user space via perf ring buffer.
-> User space can epoll on it. We use this in both tracing and networking
-> for notifications and streaming data transfers.
-> I suspect this can be used for 'logging' too, since it's cheap and fast.
+> Have to wrap my head around all the rules here.
 >
-> Specifically for android we added bpf_lsm hooks, cookie/uid helpers,
-> and read-only maps.
-> Lorenzo,
-> there was a claim in this thread that bpf is disabled on android.
-> Can you please clarify ?
-> If it's actually disabled and there is no intent to enable it,
-> I'd rather not add any more android specific features to bpf.
+> There's the may_mount() one:
 >
-> What I think is important to understand is that BPF goes through
-> very active development. The verifier is constantly getting smarter.
-> There is work to add bounded loops, lock/unlock, get/put tracking,
-> global/percpu variables, dynamic linking and so on.
-> Most of the features are available to root only and unpriv
-> has very limited set. Like getting bpf_perf_event_output() to work
-> for unpriv will likely require additional verifier work.
+>     ns_capable(current->nsproxy->mnt_ns->user_ns, CAP_SYS_ADMIN)
 >
-> So all cool bits will not be usable by seccomp+eBPF and unpriv
-> on day one. It's not a lot of work either, but once it's done
-> I'd hate to see arguments against adding more verifier features
-> just because eBPF is used by seccomp/landlock/other_security_thing.
+> Um, first of all, why isn't it checking current->cred->user_ns?
 >
-> Also I think the argument that seccomp+eBPF will be faster than
-> seccomp+cBPF is a weak one. I bet kpti on/off makes no difference
-> under seccomp, since _all_ syscalls are already slow for sandboxed app.
-> Instead of making seccomp 5% faster with eBPF, I think it's
-> worth looking into extending LSM hooks to cover all syscalls and
-> have programmable (bpf or whatever) filtering applied per syscall.
-> Like we can have a white list syscall table covered by lsm hooks
-> and any other syscall will get into old seccomp-style
-> filtering category automatically.
-> lsm+bpf would need to follow process hierarchy. It shouldn't be
-> a runtime check at syscall entry either, but compile time
-> extra branch in SYSCALL_DEFINE for non-whitelisted syscalls.
-> There are bunch of other things to figure out, but I think
-> the perf win will be bigger than replacing cBPF with eBPF in
-> existing seccomp.
+> Ah, there it is in sget():
 >
-Given this test program:
-for (i = 10; i < 99999999; i++) syscall(__NR_getpid);
+>     ns_capable(user_ns, CAP_SYS_ADMIN)
+>
+> I get the plain capable(CAP_SYS_ADMIN) check in sget_userns() if fs
+> doesn't have FS_USERNS_MOUNT.  This is the one that prevents fuse
+> mounts from being created when (current->cred->user_ns !=
+> &init_user_ns).
+>
+> Maybe there's a logic to this web of namespaces, but I don't yet see
+> it.  Is it documented somewhere?
 
-If I implement an eBPF filter with PROG_ARRAYs, and tail call, the
-numbers are such:
-ebpf JIT 12.3% slower than native
-ebpf no JIT 13.6% slower than native
-seccomp JIT 17.6% slower than native
-seccomp no JIT 37% slower than native
+I think this is a bit simpler than the fiddly details in the
+implementation might make it look.
 
-This is using libseccomp for the standard seccomp BPF program. There's
-no reasonable way for our workload to know which syscalls come
-"earlier", so we can't take that optimization. Potentially, libseccomp
-can be smarter about ordering cases (using ranges), and use an
-O(log(n)) search algorithm, but both of these are microptimizations
-that scale with the number of syscalls and per-syscall rules. The
-nicety of using a PROG_ARRAY means that adding additional filters
-(syscalls) comes at no cost, whereas there's a tradeoff any time you
-add another rule in traditional seccomp filters.
+The fundamental idea is that permission to have full control over
+a mount namespace, is different than permission to have full control
+over an instance of a filesystem.
 
-This was tested on an Amazon M4.16XL running with pcid, and KPTI.
+Implementing that separation of permission checks gets a little bit
+fiddly.  The first challenge is that there are several filesystems like
+sysfs and proc whose internal mount is created outside of a process.
+Then there are the file systems like nfs and afs that have ``referral
+points'' that transition you to other instances of those filesystems
+when you transition over them.  That is the reason why there are
+exceptions for SB_KERNMOUNT and SB_SUBMOUNT.
+
+may_mount is just the permission check for the mount namespace.  It
+checks that the current process has CAP_SYS_ADMIN in the user namespace
+that owns the current mount namespace.  AKA is the process allowed to
+change the mount namespace.
+
+sget is just the permission check for mounting a filesystem.  It checks
+that the mounter has CAP_SYS_ADMIN over the user namespace that will own
+the newly mounted filesystem.
+
+By the time execition gets to to sget_userns in general all of the
+permission checks have all been made.  But if the filesystem is not one
+that supports mounting within a user namespace the code checks
+capable(CAP_SYS_ADMIN).
+
+That is more convoluted than I would like but the checks derive from the
+definition of what we are doing.
+
+>
+>>> We basically need two modes of operation:
+>>>
+>>> a) old, backward compatible (not introducing any new failure mores),
+>>> created with privileged mount
+>>> b) new, non-backward compatible, created with unprivileged mount
+>>>
+>>> Technically there would still be a risk from breaking userspace, since
+>>> we are using the same entry point for both, but let's hope that no
+>>> practical problems come from that.
+>>
+>> Answering from a 10,000 foot perspective:
+>>
+>> There are two cases.  Requests to read/write the filesystem from outside
+>> of s_user_ns.  These run no risk of breaking userspace as this mode has
+>> not been implemented before.
+>
+> This comes from the fact that (s_user_ns == &init_user_ns) and all
+> user namespaces are "inside" init_user_ns, right?
+
+Yes.
+
+> One question: why does current code use the from_[ug]id_munged()
+> variant, when the conversion can never fail.  Or can it?
+
+There is always at least (uid_t)-1 that can fail if it shows up on a
+filesystem.  As far as I can tell no one was using it for a uid, there
+were already uses of (uid_t)-1 as a special case, and I just grabbed it
+to become INVALID_UID.
+
+In practice the mapping can't fail unless someone malicious starts using
+that id.
+
+I believe I picked the _munged variant so in case that version hits
+we are guaranteed to return the 16bit nobody user.
+
+Eric
