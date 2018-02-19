@@ -1,16 +1,17 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 09/11] fuse: Restrict allow_other to the superblock's
-	namespace or a descendant
-Date: Mon, 19 Feb 2018 17:16:59 -0600
-Message-ID: <87d110lgd0.fsf@xmission.com>
+Subject: Re: [PATCH v5 00/11] FUSE mounts from non-init user namespaces
+Date: Mon, 19 Feb 2018 17:09:51 -0600
+Message-ID: <87inaslgow.fsf@xmission.com>
 References: <cover.1512741134.git.dongsu@kinvolk.io>
-	<d055925e5d5c0099e9e9c871004fb45fab67e4bc.1512041070.git.dongsu@kinvolk.io>
+	<877etbcmnd.fsf@xmission.com>
+	<CANxcAMvwwiPXBTKmTM9sEo8Y1T--V7fNaFqzHfyEvwvaYQV60A@mail.gmail.com>
+	<CADZs7q438szfwd-kaaRDnpDFrmno3zy7Zq+6EsnotW8bS0vrTA@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <d055925e5d5c0099e9e9c871004fb45fab67e4bc.1512041070.git.dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
-	(Dongsu Park's message of "Fri, 22 Dec 2017 15:32:33 +0100")
+In-Reply-To: <CADZs7q438szfwd-kaaRDnpDFrmno3zy7Zq+6EsnotW8bS0vrTA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Alban Crequy's message of "Thu, 18 Jan 2018 15:58:41 +0100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,64 +21,57 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
-Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
+Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org> writes:
+Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org> writes:
 
-> From: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> Hi Eric,
 >
-> Unprivileged users are normally restricted from mounting with the
-> allow_other option by system policy, but this could be bypassed
-> for a mount done with user namespace root permissions. In such
-> cases allow_other should not allow users outside the userns
-> to access the mount as doing so would give the unprivileged user
-> the ability to manipulate processes it would otherwise be unable
-> to manipulate. Restrict allow_other to apply to users in the same
-> userns used at mount or a descendant of that namespace. Also
-> export current_in_userns() for use by fuse when built as a
-> module.
+> Do you have some cycles for this now that it is the new year?
 >
-> Patch v4 is available: https://patchwork.kernel.org/patch/8944671/
->
-> Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> Cc: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-> Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Signed-off-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-> Signed-off-by: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
+> A review on the associated ima issue would also be appreciated:
+> https://www.mail-archive.com/linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org/msg1587678.html
 
-Reviewed-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+It has taken me longer than I expected but I do have time now.  I am
+moving through these patches and issues a little slowly I do intend to
+get us through the fuse issues this development cycle if at all
+possible.
 
-> ---
->  fs/fuse/dir.c           | 2 +-
->  kernel/user_namespace.c | 1 +
->  2 files changed, 2 insertions(+), 1 deletion(-)
->
-> diff --git a/fs/fuse/dir.c b/fs/fuse/dir.c
-> index ad1cfac1..d41559a0 100644
-> --- a/fs/fuse/dir.c
-> +++ b/fs/fuse/dir.c
-> @@ -1030,7 +1030,7 @@ int fuse_allow_current_process(struct fuse_conn *fc)
->  	const struct cred *cred;
->  
->  	if (fc->allow_other)
-> -		return 1;
-> +		return current_in_userns(fc->user_ns);
->  
->  	cred = current_cred();
->  	if (uid_eq(cred->euid, fc->user_id) &&
-> diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-> index 246d4d4c..492c255e 100644
-> --- a/kernel/user_namespace.c
-> +++ b/kernel/user_namespace.c
-> @@ -1235,6 +1235,7 @@ bool current_in_userns(const struct user_namespace *target_ns)
->  {
->  	return in_userns(target_ns, current_user_ns());
->  }
-> +EXPORT_SYMBOL(current_in_userns);
->  
->  static inline struct user_namespace *to_user_ns(struct ns_common *ns)
->  {
+I think for starters we should restrict ourselves to the last 4 patches
+aka (8, 9, 10, 11).
+
+In particular we should concentrate on
+[8/11] fuse: Support fuse filesystems outside of init_user_ns
+[9/11] fuse: Restrict allow_other to the superblock's namespace or a descendant
+
+The tricky issues are handled in the vfs, and I think the remaining
+tricky issues are evm and ima.  Which are close enough to be resolved
+that we can count them as resolved.
+
+Once we have 8 & 9 reviewed and merged we can double check there isn't
+some silly reason not to set FS_USERNS_MOUNT on fuse and then enable it.
+
+I would like to double check and ensure there are not silly issues with
+posix acls or anything else in the vfs.  But I think except for a silly
+oversight we are good.
+
+I should probably also add a patch that adds to
+Documentation/filesystems that explains what the vfs does for
+unprivileged mounts.  So that I can point people working on filesystems
+and are thinking about enabling user namespace mounts at the
+documentation for what the vfs does.  That would also provide a good
+checklist to ensure the way the vfs handles things is sufficient for
+fuse.
+
+As for the earlier patches that enable things.  Overall they are
+good.  They are slightly dangerous as they enable more code paths
+to unprivileged users.  But mostly I think they are not immediately
+necessary and as such a distraction to getting this code in.
+
+That said once we get the fuse bits reviewed merged I will be more than
+happy to merge the relaxation of permission checks that we can perform
+now that s_user_ns exists.
+
+Eric
