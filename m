@@ -1,14 +1,14 @@
-From: Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
-Subject: Re: [net-next v2 2/2] bpf: Add eBPF seccomp sample programs
-Date: Sun, 18 Feb 2018 20:05:35 -0800
-Message-ID: <CAMp4zn_4nOEWOx2jCx7gNCVRzyFmZ8xZ-skZKFYgGnyFx_OoHQ@mail.gmail.com>
-References: <20180217073617.GA8226@ircssh-2.c.rugged-nimbus-611.internal>
-	<d6d9e7ae-4bc8-9372-11c8-2a925c66c402@infradead.org>
+From: "Lisa Smith" <lisa.smith-0T2qRkA73kFVgNE/oTeCPxGZ6WaZejjh@public.gmane.org>
+Subject: SCALE - Attendee List
+Date: Mon, 19 Feb 2018 21:36:55 +0530
+Message-ID: <!&!AAAAAAAAAAAYAAAAAAAAAHJUkSW14BRLhWe49BStejjCgAAAEAAAAD1NKY/Q4N1Nrca5BFQSt/0BAAAAAA==@tradeshowprospects.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <d6d9e7ae-4bc8-9372-11c8-2a925c66c402-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+References: 
+In-Reply-To: 
+Content-Language: en-in
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,24 +18,39 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Randy Dunlap <rdunlap-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>, netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexei Starovoitov <ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sat, Feb 17, 2018 at 9:58 AM, Randy Dunlap <rdunlap-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org> wrote:
-> On 02/16/2018 11:36 PM, Sargun Dhillon wrote:
->> +     close(111);
->> +     assert(errno == EBADF);
->> +     close(999);
->> +     assert(errno = EPERM);
->
-> should that be       == ?
->
-Woops. Embarassing. Will fix that in the next re-spin.
->> +
->> +     return 0;
->> +}
->
->
-> --
-> ~Randy
+Hi,
+
+ 
+
+Would you be interested in  Southern California Linux Expo - SCALE     2018
+Attendee list?
+
+ 
+
+We can provide you with 3,600 attendee contacts. Each contact comes with
+First Name, Middle Name, Last Name, Phone, Fax, Email Address, 
+
+Business Name, Job Title, Web Address/URL, Country and Zip Code.
+
+ 
+
+Please let me know if you are interested and I shall get back to you with
+the Pricing.
+
+ 
+
+Best Regards,
+
+Lisa Smith | Demand Generation| B2bprolist
+
+ 
+
+                                                 
+
+ 
+
+                                        If you don't wish to receive our
+newsletters, reply back with " UN-SUBSCRIBE " in subject line.
