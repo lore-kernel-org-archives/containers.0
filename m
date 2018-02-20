@@ -1,14 +1,16 @@
-From: Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>
-Subject: Re: [net-next v2 1/2] bpf, seccomp: Add eBPF filter capabilities
-Date: Tue, 20 Feb 2018 01:00:42 +0100
-Message-ID: <37135c70-bb09-c4ac-e81d-dc161724292b@iogearbox.net>
-References: <20180219162159.GA11474@ircssh-2.c.rugged-nimbus-611.internal>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 08/11] fuse: Support fuse filesystems outside of
+	init_user_ns
+Date: Mon, 19 Feb 2018 20:12:42 -0600
+Message-ID: <877er8if39.fsf@xmission.com>
+References: <cover.1512741134.git.dongsu@kinvolk.io>
+	<c85c293e19a478353aba8e6e3ee39e5914f798d5.1512041070.git.dongsu@kinvolk.io>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20180219162159.GA11474-du9IEJ8oIxHXYT48pCVpJ3c7ZZ+wIVaZYkHkVr5ML8kVGlcevz2xqA@public.gmane.org>
-Content-Language: en-US
+In-Reply-To: <c85c293e19a478353aba8e6e3ee39e5914f798d5.1512041070.git.dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
+	(Dongsu Park's message of "Fri, 22 Dec 2017 15:32:32 +0100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,145 +20,126 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org, keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org, ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org
+To: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
+Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 02/19/2018 05:22 PM, Sargun Dhillon wrote:
-> This introduces the BPF_PROG_TYPE_SECCOMP bpf program type. It is meant
-> to be used for seccomp filters as an alternative to cBPF filters. The
-> program type has relatively limited capabilities in terms of helpers,
-> but that can be extended later on.
-> 
-> The eBPF code loading is separated from attachment of the filter, so
-> a privileged user can load the filter, and pass it back to an
-> unprivileged user who can attach it and use it at a later time.
-> 
-> In order to attach the filter itself, you need to supply a flag to the
-> seccomp syscall indicating that a eBPF filter is being attached, as
-> opposed to a cBPF one. Verification occurs at program load time,
-> so the user should only receive errors related to attachment.
-> 
-> Signed-off-by: Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
-[...]
-> @@ -867,7 +924,7 @@ static long seccomp_set_mode_filter(unsigned int flags,
->  
->  	spin_lock_irq(&current->sighand->siglock);
->  
-> -	if (!seccomp_may_assign_mode(seccomp_mode))
-> +	if (!seccomp_may_assign_mode(filter_mode))
->  		goto out;
->  
->  	ret = seccomp_attach_filter(flags, prepared);
-> @@ -876,7 +933,7 @@ static long seccomp_set_mode_filter(unsigned int flags,
->  	/* Do not free the successfully attached filter. */
->  	prepared = NULL;
->  
-> -	seccomp_assign_mode(current, seccomp_mode);
-> +	seccomp_assign_mode(current, filter_mode);
->  out:
->  	spin_unlock_irq(&current->sighand->siglock);
->  	if (flags & SECCOMP_FILTER_FLAG_TSYNC)
-> @@ -1040,8 +1097,7 @@ long seccomp_get_filter(struct task_struct *task, unsigned long filter_off,
->  	if (IS_ERR(filter))
->  		return PTR_ERR(filter);
->  
-> -	fprog = filter->prog->orig_prog;
-> -	if (!fprog) {
-> +	if (!bpf_prog_was_classic(filter->prog)) {
+Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org> writes:
 
-This is actually a bug, see f8e529ed941b ("seccomp, ptrace: add support for
-dumping seccomp filters") and would cause a NULL ptr deref in case the filter
-was created with bpf_prog_create_from_user() with save_orig as false, so the
-if (!fprog) test for cBPF cannot be removed from here.
-
->  		/* This must be a new non-cBPF filter, since we save
->  		 * every cBPF filter's orig_prog above when
->  		 * CONFIG_CHECKPOINT_RESTORE is enabled.
-> @@ -1050,6 +1106,7 @@ long seccomp_get_filter(struct task_struct *task, unsigned long filter_off,
->  		goto out;
->  	}
+> From: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+>
+> In order to support mounts from namespaces other than
+> init_user_ns, fuse must translate uids and gids to/from the
+> userns of the process servicing requests on /dev/fuse. This
+> patch does that, with a couple of restrictions on the namespace:
+>
+>  - The userns for the fuse connection is fixed to the namespace
+>    from which /dev/fuse is opened.
+>
+>  - The namespace must be the same as s_user_ns.
+>
+> These restrictions simplify the implementation by avoiding the
+> need to pass around userns references and by allowing fuse to
+> rely on the checks in inode_change_ok for ownership changes.
+> Either restriction could be relaxed in the future if needed.
+>
+> For cuse the namespace used for the connection is also simply
+> current_user_ns() at the time /dev/cuse is opened.
+>
+> Patch v4 is available: https://patchwork.kernel.org/patch/8944661/
+>
+> Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> Signed-off-by: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
+> ---
+>  fs/fuse/cuse.c   |  3 ++-
+>  fs/fuse/dev.c    | 11 ++++++++---
+>  fs/fuse/dir.c    | 14 +++++++-------
+>  fs/fuse/fuse_i.h |  6 +++++-
+>  fs/fuse/inode.c  | 31 +++++++++++++++++++------------
+>  5 files changed, 41 insertions(+), 24 deletions(-)
+>
+> diff --git a/fs/fuse/cuse.c b/fs/fuse/cuse.c
+> index e9e97803..b1b83259 100644
+> --- a/fs/fuse/cuse.c
+> +++ b/fs/fuse/cuse.c
+> @@ -48,6 +48,7 @@
+>  #include <linux/stat.h>
+>  #include <linux/module.h>
+>  #include <linux/uio.h>
+> +#include <linux/user_namespace.h>
 >  
-> +	fprog = filter->prog->orig_prog;
->  	ret = fprog->len;
+>  #include "fuse_i.h"
+>  
+> @@ -498,7 +499,7 @@ static int cuse_channel_open(struct inode *inode, struct file *file)
+>  	if (!cc)
+>  		return -ENOMEM;
+>  
+As noticed in the review this should probably say:
+	if (current_user_ns() != &init_user_ns)
+		return -EINVAL;
 
-(See above.)
+Just so we don't need to think about cuse being opened in a user
+namespace at this point.  It is probably harmless.  But it isn't
+what we are focusing on.
 
->  	if (!data)
->  		goto out;
-> @@ -1239,6 +1296,58 @@ static int seccomp_actions_logged_handler(struct ctl_table *ro_table, int write,
->  	return 0;
+> -	fuse_conn_init(&cc->fc);
+> +	fuse_conn_init(&cc->fc, current_user_ns());
+>  
+>  	fud = fuse_dev_alloc(&cc->fc);
+>  	if (!fud) {
+
+
+> diff --git a/fs/fuse/dev.c b/fs/fuse/dev.c
+> index 17f0d05b..0f780e16 100644
+> --- a/fs/fuse/dev.c
+> +++ b/fs/fuse/dev.c
+> @@ -114,8 +114,8 @@ static void __fuse_put_request(struct fuse_req *req)
+>  
+>  static void fuse_req_init_context(struct fuse_conn *fc, struct fuse_req *req)
+>  {
+> -	req->in.h.uid = from_kuid_munged(&init_user_ns, current_fsuid());
+> -	req->in.h.gid = from_kgid_munged(&init_user_ns, current_fsgid());
+> +	req->in.h.uid = from_kuid(fc->user_ns, current_fsuid());
+> +	req->in.h.gid = from_kgid(fc->user_ns, current_fsgid());
+>  	req->in.h.pid = pid_nr_ns(task_pid(current), fc->pid_ns);
 >  }
 >  
-> +#ifdef CONFIG_SECCOMP_FILTER_EXTENDED
-> +static bool seccomp_is_valid_access(int off, int size,
-> +				    enum bpf_access_type type,
-> +				    struct bpf_insn_access_aux *info)
-> +{
-> +	if (type != BPF_READ)
-> +		return false;
-> +
-> +	if (off < 0 || off + size > sizeof(struct seccomp_data))
-> +		return false;
-
-        if (off % size != 0)
-                return false;
-
-> +	switch (off) {
-> +	case bpf_ctx_range_till(struct seccomp_data, args[0], args[5]):
-> +		return (size == sizeof(__u64));
-> +	case bpf_ctx_range(struct seccomp_data, nr):
-> +		return (size == FIELD_SIZEOF(struct seccomp_data, nr));
-> +	case bpf_ctx_range(struct seccomp_data, arch):
-> +		return (size == FIELD_SIZEOF(struct seccomp_data, arch));
-> +	case bpf_ctx_range(struct seccomp_data, instruction_pointer):
-> +		return (size == FIELD_SIZEOF(struct seccomp_data,
-> +					     instruction_pointer));
-
-        default:
-                return false;
-
-[...]
-> +static const struct bpf_func_proto *
-> +seccomp_func_proto(enum bpf_func_id func_id)
-> +{
-> +	switch (func_id) {
-> +	case BPF_FUNC_get_current_uid_gid:
-> +		return &bpf_get_current_uid_gid_proto;
-> +	case BPF_FUNC_ktime_get_ns:
-> +		return &bpf_ktime_get_ns_proto;
-> +	case BPF_FUNC_get_prandom_u32:
-> +		return &bpf_get_prandom_u32_proto;
-> +	case BPF_FUNC_get_current_pid_tgid:
-> +		return &bpf_get_current_pid_tgid_proto;
-
-Do you have a use-case description for the above helpers? Is the prandom/ktime
-one for simulating errors coming from the syscall? And the other two for
-orchestration purposes?
-
-One use case this work could enable would be to implement state machines in BPF
-for BPF-seccomp and enabling a more fine-grained / tiny subset of syscalls based
-on the state the prog is in while the rest is all blocked out - as opposed to a
-global white/black-list of syscalls the app can do in general. Getting to such
-an app model would probably be rather challenging at least for complex apps. We'd
-need some sort of scratch buffer for keeping the state for this though, e.g. either
-map with single slot or per thread scratch space. Anyway, just a thought.
-
-> +	default:
-> +		return NULL;
+> @@ -167,6 +167,10 @@ static struct fuse_req *__fuse_get_req(struct fuse_conn *fc, unsigned npages,
+>  	__set_bit(FR_WAITING, &req->flags);
+>  	if (for_background)
+>  		__set_bit(FR_BACKGROUND, &req->flags);
+> +	if (req->in.h.uid == (uid_t)-1 || req->in.h.gid == (gid_t)-1) {
+> +		fuse_put_request(fc, req);
+> +		return ERR_PTR(-EOVERFLOW);
 > +	}
-> +}
-> +
-> +const struct bpf_prog_ops seccomp_prog_ops = {
-> +};
-> +
-> +const struct bpf_verifier_ops seccomp_verifier_ops = {
-> +	.get_func_proto		= seccomp_func_proto,
-> +	.is_valid_access	= seccomp_is_valid_access,
-> +};
-> +#endif /* CONFIG_SECCOMP_FILTER_EXTENDED */
-> +
->  static struct ctl_path seccomp_sysctl_path[] = {
->  	{ .procname = "kernel", },
->  	{ .procname = "seccomp", },
-> 
+>  
+>  	return req;
+>  
+> @@ -1260,7 +1264,8 @@ static ssize_t fuse_dev_do_read(struct fuse_dev *fud, struct file *file,
+>  	in = &req->in;
+>  	reqsize = in->h.len;
+>  
+> -	if (task_active_pid_ns(current) != fc->pid_ns) {
+> +	if (task_active_pid_ns(current) != fc->pid_ns ||
+> +	    current_user_ns() != fc->user_ns) {
+>  		rcu_read_lock();
+>  		in->h.pid = pid_vnr(find_pid_ns(in->h.pid, fc->pid_ns));
+>  		rcu_read_unlock();
+
+The hunk above is a rebase error.  I believe it started out by erroring
+out in the same case the pid namespace case errored out.  Miklos has a
+good point that we need to handle the case where we have servers running
+in jails of one sort or another because at least sandstorm runs
+applications in that fashion, and we have previously had error reports
+about that configuration breaking.
+
+I think we can easily fix that.  Either by adding extra translation as
+we did for the pid namespace or changing the user namespace used on the
+connection.  I believe extra translation like we did with the pid
+namespace will be more consistent.  And again it won't be a special
+case except possibly during mount.  Of course there is weirdness there.
+
+Eric
