@@ -1,23 +1,13 @@
 From: Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>
-Subject: Re: [net-next v3 0/2] eBPF seccomp filters
-Date: Wed, 28 Feb 2018 20:56:45 +0100
-Message-ID: <19cd2e07-5702-1713-6903-e5667250b09d@iogearbox.net>
-References: <20180226072651.GA27045@ircssh-2.c.rugged-nimbus-611.internal>
-	<20180226230418.46nczgkh5csakyu7@ast-mbp>
-	<CAGXu5jLdOcrn16q9pQ7JwTf88AVsL0o5LMJ=4P6vRN36u-_k_g@mail.gmail.com>
-	<CALCETrXNODxWkcwF-LbXBn+Ju7QJEyi3JR+spsRX4ecg8d1iMQ@mail.gmail.com>
-	<CAGXu5j+64WzxjBnpQxYCU50ak+VqVw1y0W+MWygFodxsDqEZRw@mail.gmail.com>
-	<db759dd2-31dc-d094-251d-d4c1e8af8704@oracle.com>
-	<CAGXu5j+idW9AjZHVdeedqLOFXriObUJLvcw8-9k5WxyQF8EWrg@mail.gmail.com>
-	<ddbefdda-f3b8-3956-fa0f-dcba8cf8e7d9@oracle.com>
-	<f712a383-8e84-da64-a454-51fdebf28741@iogearbox.net>
-	<7fc0fab8-c1bc-bc76-a892-b3faab7d16ad@oracle.com>
-	<4fbef77e-92ad-b896-a259-492412ad4c55@oracle.com>
+Subject: Re: [net-next v2 1/2] bpf, seccomp: Add eBPF filter capabilities
+Date: Tue, 20 Feb 2018 01:00:42 +0100
+Message-ID: <37135c70-bb09-c4ac-e81d-dc161724292b@iogearbox.net>
+References: <20180219162159.GA11474@ircssh-2.c.rugged-nimbus-611.internal>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4fbef77e-92ad-b896-a259-492412ad4c55-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20180219162159.GA11474-du9IEJ8oIxHXYT48pCVpJ3c7ZZ+wIVaZYkHkVr5ML8kVGlcevz2xqA@public.gmane.org>
 Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -28,100 +18,145 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: chris hyser <chris.hyser-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexei Starovoitov <ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org, keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org, ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gMDIvMjgvMjAxOCAxMjo1NSBBTSwgY2hyaXMgaHlzZXIgd3JvdGU6Cj4+IE9uIDAyLzI3LzIw
-MTggMDQ6NTggUE0sIERhbmllbCBCb3JrbWFubiB3cm90ZTogPj4gT24gMDIvMjcvMjAxOCAwNTo1
-OSBQTSwgY2hyaXMgaHlzZXIgd3JvdGU6Cj4+Pj4gT24gMDIvMjcvMjAxOCAxMTowMCBBTSwgS2Vl
-cyBDb29rIHdyb3RlOgo+Pj4+PiBPbiBUdWUsIEZlYiAyNywgMjAxOCBhdCA2OjUzIEFNLCBjaHJp
-cyBoeXNlciA8Y2hyaXMuaHlzZXJAb3JhY2xlLmNvbT4gd3JvdGU6Cj4+Pj4+PiBPbiAwMi8yNi8y
-MDE4IDExOjM4IFBNLCBLZWVzIENvb2sgd3JvdGU6Cj4+Pj4+Pj4gT24gTW9uLCBGZWIgMjYsIDIw
-MTggYXQgODoxOSBQTSwgQW5keSBMdXRvbWlyc2tpIDxsdXRvQGFtYWNhcGl0YWwubmV0Pgo+Pj4+
-Pj4+IHdyb3RlOgo+Pj4+Pj4+Pgo+Pj4+Pj4+PiAzLiBTdHJhaWdodC11cCBidWdzLsKgIFRob3Nl
-IGFyZSBleGFjdGx5IGFzIHByb2JsZW1hdGljIGFzIHZlcmlmaWVyCj4+Pj4+Pj4+IGJ1Z3MgaW4g
-YW55IG90aGVyIHVucHJpdmlsZWdlZCBlQlBGIHByb2dyYW0gdHlwZSwgcmlnaHQ/wqAgSSBkb24n
-dCBzZWUKPj4+Pj4+Pj4gd2h5IHNlY2NvbXAgaXMgc3BlY2lhbCBoZXJlLgo+Pj4+Pj4+Cj4+Pj4+
-Pj4gTXkgY29uY2VybiBpcyBtb3JlIGFib3V0IHVuaW50ZW5kZWQgZGVzaWduIG1pc3Rha2VzIG9y
-IG90aGVyIGZlYXR1cmUKPj4+Pj4+PiBjcmVlcCB3aXRoIHNpZGUtZWZmZWN0cywgZXNwZWNpYWxs
-eSB3aGVuIGl0IGNvbWVzIHRvIHByaXZpbGVnZXMgYW5kCj4+Pj4+Pj4gc3luY2hyb25pemF0aW9u
-LiBHZXR0aW5nIG5vLW5ldy1wcml2cyBkb25lIGNvcnJlY3RseSwgZm9yIGV4YW1wbGUsCj4+Pj4+
-Pj4gdG9vayBzb21lIGNhcmVmdWwgdGhvdWdodCBhbmQgZGlzY3Vzc2lvbiwgYW5kIEknbSBzaHkg
-ZnJvbSBob3cgcGFpbmZ1bAo+Pj4+Pj4+IFRTWU5DIHdhcyBvbiB0aGUgcHJvY2VzcyBsb2NraW5n
-IHNpZGUsIGFuZCBlQlBGIGhhcyBoYWQgc29tZSByYXRoZXIKPj4+Pj4+PiB1Z2x5IGZsYXdzIGlu
-IHRoZSBwYXN0IChhbmQgcmVjZW50bHk6IGl0IHdhcyBuaWNlIHRvIGJlIGFibGUgdG8gc2F5Cj4+
-Pj4+Pj4gZm9yIFNwZWN0cmUgdGhhdCBzZWNjb21wIGZpbHRlcnMgY291bGRuJ3QgYmUgY29uc3Ry
-dWN0ZWQgdG8gbWFrZQo+Pj4+Pj4+IGF0dGFja3MgYnV0IGVCUEYgY291bGQpLiBBZGRpbmcgdGhl
-IGNvbXBsZXhpdHkgbmVlZHMgdG8gYmUgd29ydGggdGhlCj4+Pgo+Pj4gV2VsbCwgbm90IHJlYWxs
-eS4gT25lIHBhcnQgb2YgYWxsIHRoZSBTcGVjdHJlIG1pdGlnYXRpb25zIHRoYXQgd2VudCB1cHN0
-cmVhbQo+Pj4gZnJvbSBCUEYgc2lkZSB3YXMgdG8gaGF2ZSBhbiBvcHRpb24gdG8gcmVtb3ZlIGlu
-dGVycHJldGVyIGVudGlyZWx5IGFuZCB0aGF0Cj4+PiBhbHNvIHJlbGF0ZXMgdG8gc2VjY29tcCBl
-dmVudHVhbGx5LiBCdXQgb3RoZXIgdGhhbiB0aGF0IGFuIGF0dGFja2VyIG1pZ2h0Cj4+PiBwb3Rl
-bnRpYWxseSBmaW5kIGFzIHdlbGwgdXNlZnVsIGdhZGdldHMgaW5zaWRlIHNlY2NvbXAgb3IgYW55
-IG90aGVyIGNvZGUKPj4+IHRoYXQgaXMgaW5zaWRlIHRoZSBrZXJuZWwsIHNvIGl0J3Mgbm90IGEg
-c3RyaWN0IG5lY2Vzc2l0eSBlaXRoZXIuCj4+Pgo+Pj4+Pj4+IGdhaW4uIEknbSBvbiBib2FyZCBm
-b3IgZG9pbmcgaXQsIEkganVzdCB3YW50IHRvIGJlIGNhcmVmdWwuIDopCj4+Pj4+Pgo+Pj4+Pj4g
-QW5vdGhlciBvcHRpb24gbWlnaHQgYmUgdG8gcmVtb3ZlIGMvZUJQRiBmcm9tIHRoZSBlcXVhdGlv
-biBhbGwgdG9nZXRoZXIuCj4+Pj4+PiBjL2VCUEYgYWxsb3dzIGZsZXhpYmlsaXR5IGFuZCB0aGF0
-IGFsbW9zdCBhbHdheXMgY29tZXMgYXQgdGhlIGNvc3Qgb2YKPj4+Pj4+IGFkZGl0aW9uYWwgc2Vj
-dXJpdHkgcmlzay4gU2VjY29tcCBpcyBmb3IgZW5oYW5jZWQgc2VjdXJpdHkgeWVzPyBIb3cgYWJv
-dXQgYQo+Pj4+Pj4gbmV3IHNlY2NvbXAgbW9kZSB0aGF0IHBhc3NlcyBpbiBzb21ldGhpbmcgbGlr
-ZSBhIGJpdCB2ZWN0b3Igb3IgaGFzaG1hcCBmb3IKPj4+Pj4+ICJzaW1wbGUiIHdoaXRlL2JsYWNr
-IGxpc3QgY2hlY2tzIHZhbGlkYXRlZCBieSBrZXJuZWwgY29kZSwgdmVyc3VzIHVzZXIKPj4+Pj4+
-IHByb3ZpZGVkIGludGVycHJldGVkIGNvZGU/IE9mIGNvdXJzZSB0aGlzIHJlbW92ZXMgYSBmYWly
-IG51bWJlciBvZiB0aGluZ3MKPj4+Pj4+IHlvdSBjYW4gY3VycmVudGx5IGRvIG9yIHdvdWxkIGJl
-IGFibGUgdG8gZG8gd2l0aCBlQlBGLiBPZiBjb3Vyc2UsIHJlc3RhdGVkCj4+Pj4+PiBmcm9tIGEg
-c2VjdXJpdHkgcG9pbnQgb2YgdmlldywgdGhpcyByZW1vdmVzIGEgZmFpciBudW1iZXIgb2YgdGhp
-bmdzIGFuCj4+Pj4+PiBfYXR0YWNrZXJfIGNhbiBkby4gUHJlc3VtYWJseSB0aGUgcGVyZm9ybWFu
-Y2UgaW1wcm92ZW1lbnQgd291bGQgYWxzbyBiZQo+Pj4+Pj4gc2lnbmlmaWNhbnQuCj4+Pgo+Pj4g
-R29vZCBsdWNrIHdpdGggbm90IGJyZWFraW5nIGV4aXN0aW5nIGFwcGxpY2F0aW9ucyByZWx5aW5n
-IG9uIHNlY2NvbXAgb3V0Cj4+PiB0aGVyZS4KPj4KPj4gVGhpcyB3YXNuJ3QgaW4gdGhlIGNvbnRl
-eHQgb2YgYW4gaW1wbGVtZW50YXRpb24gcHJvcG9zYWwsIGJ1dCB0aGUgYXNzdW1wdGlvbiB3b3Vs
-ZCBiZSB0byBhZGQgdGhpcyBpbiBhZGRpdGlvbiB0byB0aGUgb2xkIHdheS4gTm93LCBkb2VzIHRo
-YXQgbWFrZSBzZW5zZSB0byBkbz8gVGhhdCBpcyB0aGUgZGlzY3Vzc2lvbi4KCkkgc2VlOyBkaWRu
-J3QgcmVhZCB0aGF0IG91dCBmcm9tIHRoZSBhYm92ZSB3aGVuIHlvdSBhbHNvIG1lbnRpb25lZCBy
-ZW1vdmluZwpjQlBGLCBidXQgZmFpciBlbm91Z2guCgo+Pj4+Pj4gSXMgdGhpcyBhbiBpZGVhIHdv
-cnRoIHByb3RvdHlwaW5nPwo+Pj4+Pgo+Pj4+PiBUaGF0IHdhcyB0aGUgb3JpZ2luYWwgcHJvdG90
-eXBlIGZvciBzZWNjb21wLWZpbHRlci4gOikgVGhlIGRpc2N1c3Npb24KPj4+Pj4gYXJvdW5kIHRo
-YXQgZnJvbSB5ZWFycyBhZ28gYmFzaWNhbGx5IGJvaWxlZCBkb3duIHRvIGl0IGJlaW5nCj4+Pj4+
-IGluZmxleGlibGUuIEdpdmVuIGFsbCB0aGUgdGhpbmdzIHBlb3BsZSB3YW50IHRvIGRvIGF0IHN5
-c2NhbGwgdGltZSwKPj4+Pj4gdGhhdCBjb250aW51ZXMgdG8gYmUgdHJ1ZS4gU28gdHJ1ZSwgaW4g
-ZmFjdCwgdGhhdCBoZXJlIHdlIGFyZSBub3csCj4+Pj4+IHRyeWluZyB0byBtb3ZlIHRvIGVCUEYg
-ZnJvbSBjQlBGLiA7KQo+Pj4KPj4+IFJpZ2h0LCBhZ3JlZS4gY0JQRiBpcyBhbHNvIHByZXR0eSBt
-dWNoIGZyb3plbiB0aGVzZSBkYXlzIGFuZCBhc2lkZSBmcm9tCj4+PiB0aGF0LCBzZWNjb21wL0JQ
-RiBhbHNvIGp1c3QgdXNlcyBhIHByb3BlciBzdWJzZXQgb2YgaXQuIEkgd291bGRuJ3QgbWluZAo+
-Pj4gZG9pbmcgc29tZXRoaW5nIHNpbWlsYXIgZm9yIGVCUEYgc2lkZSBhcyBsb25nIGFzIHRoaXMg
-aXMgcmVhc29uYWJseQo+Pj4gbWFpbnRhaW5hYmxlIGFuZCBub3QgbWFraW5nIEJQRiBjb3JlIG1v
-cmUgY29tcGxleCwgYnV0IG1vc3Qgb2YgaXQgY2FuCj4+PiBhbHJlYWR5IGJlIHNldCBpbiB0aGUg
-dmVyaWZpZXIgYW55d2F5IGJhc2VkIG9uIHByb2cgdHlwZS4gTm90ZSwgdGhhdAo+Pj4gcGVyZm9y
-bWFuY2Ugb2Ygc2VjY29tcC9CUEYgaXMgZGVmaW5pdGVseSBhIGRlbWFuZCBhcyB3ZWxsIHdoaWNo
-IGlzIHdoeQo+Pj4gcGVvcGxlIHN0aWxsIGV4dGVuZCB0aGUgb2xkIHJlbWFpbmluZyBjQlBGIEpJ
-VHMgdG9kYXkgc3VjaCB0aGF0IGl0IGNhbgo+Pj4gYmUgSklUZWQgYWxzbyBmcm9tIHRoZXJlLgo+
-Pj4KPj4+PiBJIHdpbGwgdHJ5IHRvIGZpbmQgdGhhdCBkaXNjdXNzaW9uLiBBcyBzb21lb25lIHBv
-aW50ZWQgb3V0IGhlcmUgdGhvdWdoLCBlQlBGIGlzIGJlaW5nIHVzZWQgYnkgbW9yZSBhbmQgbW9y
-ZSBwZW9wbGUgaW4gYXJlYXMgd2hlcmUgc2VjdXJpdHkgaXMgbm90IHRoZSBwcmltYXJ5IGNvbmNl
-cm4uIERpZmZlcmluZyBvYmplY3RpdmVzIHdpbGwgbWFrZSB0aGlzIGEgbG9uZyB0ZXJtIGNvbnRp
-bnVpbmcgaXNzdWUuIFdlIG91cnNlbHZlcyB3ZXJlIGxvb2tpbmcgYXQgZUJQRiBzaW1wbHkgYXMg
-YSBtZWFucyB0byB1c2UgYSBoYXNobWFwIGZvciBhIHdoaXRlL2JsYWNrbGlzdCwgaS5lLiBwZXJm
-b3JtYW5jZSBub3QgZmxleGliaWxpdHkuCj4+Pgo+Pj4gTm90IHJlYWxseSwgc2VjdXJpdHkgb2Yg
-dmVyaWZpZXIgYW5kIEJQRiBpbmZyYSBpbiBnZW5lcmFsIGlzIG9uIHRoZSB0b3AKPj4+IG9mIHRo
-ZSBsaXN0LCBpdCdzIGZ1bmRhbWVudGFsIHRvIHRoZSB1bmRlcmx5aW5nIGNvbmNlcHQgYW5kIGp1
-c3QgYmVjYXVzZQo+Pj4gaXQgaXMgaGVhdmlseSB1c2VkIGFsc28gaW4gdHJhY2luZyBhbmQgbmV0
-d29ya2luZywgaXQgb25seSBzaG93cyB0aGF0IHRoZQo+Pj4gY29uY2VwdCBpcyBoaWdobHkgZmxl
-eGlibGUgdGhhdCBpdCBjYW4gYmUgYXBwbGllZCBpbiBtdWx0aXBsZSBhcmVhcy4KPiAKPiBJZiB5
-b3UncmUgaW1wbHlpbmcgdGhhdCBiZWNhdXNlIHNlY2NvbXAgd291bGQgaGF2ZSBpdCdzIG93biB2
-ZXJpZmllciBhbmQgY291bGQgdGhlcmVmb3JlIHJlc3RyaWN0IGl0c2VsZiB0byBhIHN1YnNldCBv
-ZiBlQlBGLCB0aGVyZWZvcmUgYW55IGZ1dHVyZSBhZGRpdGlvbnMvZmVhdHVyZXMgdG8gZUJQRiB3
-b3VsZCBub3QgbmVjZXNzYXJpbHkgbWFrZSBzZWNjb21wIGxlc3Mgc2VjdXJlLCBJIG1haW5seSBh
-Z3JlZS4gSXMgdGhhdCB0aGUgYXJndW1lbnQ/CgpPaywgaW4gYWRkaXRpb24gdG8gdGhlIGN1cnJl
-bnQgdW5wcml2IHJlc3RyaWN0aW9ucyBpbXBvc2VkIGJ5IHRoZSB2ZXJpZmllciwKd2hhdCBhZGRp
-dGlvbmFsIHJlcXVpcmVtZW50cyB3b3VsZCB5b3UgaGF2ZSBmcm9tIHlvdXIgc2lkZSBpbiBvcmRl
-ciB0byBnZXQKdG8gc2VtYW50aWNzIHRoYXQgbWFrZSBzZW5zZSBmb3IgeW91IHdydCBzZWNjb21w
-L2VCUEY/IEp1c3QgdHJ5aW5nIHRvCnVuZGVyc3RhbmQgaG93IGZhciB3ZSBhcmUgYXdheSBmcm9t
-IHRoYXQuIE5vdGUgdGhhdCBub3QgZXZlcnkgbmV3IGZlYXR1cmUsCm1hcCBvciBoZWxwZXIgaXMg
-ZW5hYmxlZCBmb3IgZXZlcnkgcHJvZ3JhbSB0eXBlIG9mIGNvdXJzZS4KClRoYW5rcywKRGFuaWVs
-CgoKPiAtY2hyaXNoCj4gCj4gCj4gCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxp
-bnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWls
-bWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On 02/19/2018 05:22 PM, Sargun Dhillon wrote:
+> This introduces the BPF_PROG_TYPE_SECCOMP bpf program type. It is meant
+> to be used for seccomp filters as an alternative to cBPF filters. The
+> program type has relatively limited capabilities in terms of helpers,
+> but that can be extended later on.
+> 
+> The eBPF code loading is separated from attachment of the filter, so
+> a privileged user can load the filter, and pass it back to an
+> unprivileged user who can attach it and use it at a later time.
+> 
+> In order to attach the filter itself, you need to supply a flag to the
+> seccomp syscall indicating that a eBPF filter is being attached, as
+> opposed to a cBPF one. Verification occurs at program load time,
+> so the user should only receive errors related to attachment.
+> 
+> Signed-off-by: Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
+[...]
+> @@ -867,7 +924,7 @@ static long seccomp_set_mode_filter(unsigned int flags,
+>  
+>  	spin_lock_irq(&current->sighand->siglock);
+>  
+> -	if (!seccomp_may_assign_mode(seccomp_mode))
+> +	if (!seccomp_may_assign_mode(filter_mode))
+>  		goto out;
+>  
+>  	ret = seccomp_attach_filter(flags, prepared);
+> @@ -876,7 +933,7 @@ static long seccomp_set_mode_filter(unsigned int flags,
+>  	/* Do not free the successfully attached filter. */
+>  	prepared = NULL;
+>  
+> -	seccomp_assign_mode(current, seccomp_mode);
+> +	seccomp_assign_mode(current, filter_mode);
+>  out:
+>  	spin_unlock_irq(&current->sighand->siglock);
+>  	if (flags & SECCOMP_FILTER_FLAG_TSYNC)
+> @@ -1040,8 +1097,7 @@ long seccomp_get_filter(struct task_struct *task, unsigned long filter_off,
+>  	if (IS_ERR(filter))
+>  		return PTR_ERR(filter);
+>  
+> -	fprog = filter->prog->orig_prog;
+> -	if (!fprog) {
+> +	if (!bpf_prog_was_classic(filter->prog)) {
+
+This is actually a bug, see f8e529ed941b ("seccomp, ptrace: add support for
+dumping seccomp filters") and would cause a NULL ptr deref in case the filter
+was created with bpf_prog_create_from_user() with save_orig as false, so the
+if (!fprog) test for cBPF cannot be removed from here.
+
+>  		/* This must be a new non-cBPF filter, since we save
+>  		 * every cBPF filter's orig_prog above when
+>  		 * CONFIG_CHECKPOINT_RESTORE is enabled.
+> @@ -1050,6 +1106,7 @@ long seccomp_get_filter(struct task_struct *task, unsigned long filter_off,
+>  		goto out;
+>  	}
+>  
+> +	fprog = filter->prog->orig_prog;
+>  	ret = fprog->len;
+
+(See above.)
+
+>  	if (!data)
+>  		goto out;
+> @@ -1239,6 +1296,58 @@ static int seccomp_actions_logged_handler(struct ctl_table *ro_table, int write,
+>  	return 0;
+>  }
+>  
+> +#ifdef CONFIG_SECCOMP_FILTER_EXTENDED
+> +static bool seccomp_is_valid_access(int off, int size,
+> +				    enum bpf_access_type type,
+> +				    struct bpf_insn_access_aux *info)
+> +{
+> +	if (type != BPF_READ)
+> +		return false;
+> +
+> +	if (off < 0 || off + size > sizeof(struct seccomp_data))
+> +		return false;
+
+        if (off % size != 0)
+                return false;
+
+> +	switch (off) {
+> +	case bpf_ctx_range_till(struct seccomp_data, args[0], args[5]):
+> +		return (size == sizeof(__u64));
+> +	case bpf_ctx_range(struct seccomp_data, nr):
+> +		return (size == FIELD_SIZEOF(struct seccomp_data, nr));
+> +	case bpf_ctx_range(struct seccomp_data, arch):
+> +		return (size == FIELD_SIZEOF(struct seccomp_data, arch));
+> +	case bpf_ctx_range(struct seccomp_data, instruction_pointer):
+> +		return (size == FIELD_SIZEOF(struct seccomp_data,
+> +					     instruction_pointer));
+
+        default:
+                return false;
+
+[...]
+> +static const struct bpf_func_proto *
+> +seccomp_func_proto(enum bpf_func_id func_id)
+> +{
+> +	switch (func_id) {
+> +	case BPF_FUNC_get_current_uid_gid:
+> +		return &bpf_get_current_uid_gid_proto;
+> +	case BPF_FUNC_ktime_get_ns:
+> +		return &bpf_ktime_get_ns_proto;
+> +	case BPF_FUNC_get_prandom_u32:
+> +		return &bpf_get_prandom_u32_proto;
+> +	case BPF_FUNC_get_current_pid_tgid:
+> +		return &bpf_get_current_pid_tgid_proto;
+
+Do you have a use-case description for the above helpers? Is the prandom/ktime
+one for simulating errors coming from the syscall? And the other two for
+orchestration purposes?
+
+One use case this work could enable would be to implement state machines in BPF
+for BPF-seccomp and enabling a more fine-grained / tiny subset of syscalls based
+on the state the prog is in while the rest is all blocked out - as opposed to a
+global white/black-list of syscalls the app can do in general. Getting to such
+an app model would probably be rather challenging at least for complex apps. We'd
+need some sort of scratch buffer for keeping the state for this though, e.g. either
+map with single slot or per thread scratch space. Anyway, just a thought.
+
+> +	default:
+> +		return NULL;
+> +	}
+> +}
+> +
+> +const struct bpf_prog_ops seccomp_prog_ops = {
+> +};
+> +
+> +const struct bpf_verifier_ops seccomp_verifier_ops = {
+> +	.get_func_proto		= seccomp_func_proto,
+> +	.is_valid_access	= seccomp_is_valid_access,
+> +};
+> +#endif /* CONFIG_SECCOMP_FILTER_EXTENDED */
+> +
+>  static struct ctl_path seccomp_sysctl_path[] = {
+>  	{ .procname = "kernel", },
+>  	{ .procname = "seccomp", },
+> 
