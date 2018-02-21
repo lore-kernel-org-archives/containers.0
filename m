@@ -1,7 +1,7 @@
 From: Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
 Subject: Re: [net-next v2 1/2] bpf, seccomp: Add eBPF filter capabilities
-Date: Tue, 20 Feb 2018 23:31:13 -0800
-Message-ID: <CAMp4zn8B5ksZh=_9PpxySnySfcFkw-DTT4U3R+jakCYRztRtzQ@mail.gmail.com>
+Date: Tue, 20 Feb 2018 23:16:20 -0800
+Message-ID: <CAMp4zn-V9fu6WHNkFaHxyOu7Gdez2U3ZaRNTT578txXSwFDHMw@mail.gmail.com>
 References: <20180219162159.GA11474@ircssh-2.c.rugged-nimbus-611.internal>
 	<37135c70-bb09-c4ac-e81d-dc161724292b@iogearbox.net>
 Mime-Version: 1.0
@@ -71,17 +71,6 @@ On Mon, Feb 19, 2018 at 4:00 PM, Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@
 > was created with bpf_prog_create_from_user() with save_orig as false, so the
 > if (!fprog) test for cBPF cannot be removed from here.
 >
-Isn't this function within:
-#if defined(CONFIG_SECCOMP_FILTER) && defined(CONFIG_CHECKPOINT_RESTORE)
-#endif
-
-And, above, where bpf_prog_create_from_user is, save_prog is derived from:
-const bool save_orig = IS_ENABLED(CONFIG_CHECKPOINT_RESTORE);
-
-Are there any other places this can be loaded, or this function can be
-exposes if CONFIG_CHECKPOINT_RESTORE = n?
-
-
 >>               /* This must be a new non-cBPF filter, since we save
 >>                * every cBPF filter's orig_prog above when
 >>                * CONFIG_CHECKPOINT_RESTORE is enabled.
@@ -114,6 +103,9 @@ exposes if CONFIG_CHECKPOINT_RESTORE = n?
 >         if (off % size != 0)
 >                 return false;
 >
+Won't this break access to the instruction pointer, and args if
+sizeof(int) != 4? Don't know any if any architectures fall under that.
+
 >> +     switch (off) {
 >> +     case bpf_ctx_range_till(struct seccomp_data, args[0], args[5]):
 >> +             return (size == sizeof(__u64));
@@ -146,6 +138,23 @@ exposes if CONFIG_CHECKPOINT_RESTORE = n?
 > one for simulating errors coming from the syscall? And the other two for
 > orchestration purposes?
 >
+My specific use case with uid_guid and pid is for containers, I have a
+use case where I can put systemd, or a privileged init system into a
+container, pid 1, running as uid 0 will get access to whetever is
+needed in order to wire up an init system. If the user forks, or
+setuid / setgid to another level, the access is lost, and they become
+unprivileged. Depending on the container, different levels of access
+are needed by the init, so seccomp-ebpf is a bit better here as
+compared to say apparmor.
+
+prandom is for testing.
+ktime is for testing and to limit access after some time period
+occurs. Example: In the first 30 seconds of the container's life time,
+it has privileges to wire up a file system, but this is then shut
+down. It's good for 3rd party software, until we have a map mechanism
+where you can hook a probe in to see once the program has initialized,
+and then you can revoke access to these things.
+
 > One use case this work could enable would be to implement state machines in BPF
 > for BPF-seccomp and enabling a more fine-grained / tiny subset of syscalls based
 > on the state the prog is in while the rest is all blocked out - as opposed to a
@@ -154,6 +163,10 @@ exposes if CONFIG_CHECKPOINT_RESTORE = n?
 > need some sort of scratch buffer for keeping the state for this though, e.g. either
 > map with single slot or per thread scratch space. Anyway, just a thought.
 >
+Yeah, are you thinking a per task space? I'm simply thinking "after
+you notice init is completed for PID x, go ahead and revoke access" --
+and either stash this in an LRU map, or something more clever.
+
 >> +     default:
 >> +             return NULL;
 >> +     }
