@@ -1,16 +1,17 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH v6 2/5] fuse: Fail all requests with invalid uids or gids
-Date: Thu, 22 Feb 2018 12:15:00 -0600
-Message-ID: <87eflc99i3.fsf@xmission.com>
+Subject: Re: [PATCH v6 1/5] fuse: Remove the buggy retranslation of pids in
+	fuse_dev_do_read
+Date: Thu, 22 Feb 2018 13:04:32 -0600
+Message-ID: <87fu5s7sn3.fsf@xmission.com>
 References: <878tbmf5vl.fsf@xmission.com>
-	<20180221202908.17258-2-ebiederm@xmission.com>
-	<CAOssrKeYuVj6ZWUrXp7R_d+wdoArnJ=mhRp22qE9JBW3x-7tfw@mail.gmail.com>
+	<20180221202908.17258-1-ebiederm@xmission.com>
+	<CAOssrKch20vj8phkjfjMe=07-8uQiuXfOuCTDjrMzPbkg6DoxA@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAOssrKeYuVj6ZWUrXp7R_d+wdoArnJ=mhRp22qE9JBW3x-7tfw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Miklos Szeredi's message of "Thu, 22 Feb 2018 11:26:22 +0100")
+In-Reply-To: <CAOssrKch20vj8phkjfjMe=07-8uQiuXfOuCTDjrMzPbkg6DoxA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Miklos Szeredi's message of "Thu, 22 Feb 2018 11:13:36 +0100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -28,99 +29,43 @@ Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
 
 > On Wed, Feb 21, 2018 at 9:29 PM, Eric W. Biederman
 > <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->> Upon a cursory examinination the uid and gid of a fuse request are
->> necessary for correct operation.  Failing a fuse request where those
->> values are not reliable seems a straight forward and reliable means of
->> ensuring that fuse requests with bad data are not sent or processed.
+>> At the point of fuse_dev_do_read the user space process that initiated the
+>> action on the fuse filesystem may no longer exist.  The process have been
+>> killed or may have fired an asynchronous request and exited.
 >>
->> In most cases the vfs will avoid actions it suspects will cause
->> an inode write back of an inode with an invalid uid or gid.  But that does
->> not map precisely to what fuse is doing, so test for this and solve
->> this at the fuse level as well.
+>> If the initial process has exited the code "pid_vnr(find_pid_ns(in->h.pid,
+>> fc->pid_ns)" will either return a pid of 0, or in the unlikely event that
+>> the pid has been reallocated it can return practically any pid.  Any pid is
+>> possible as the pid allocator allocates pid numbers in different pid
+>> namespaces independently.
 >>
->> Performing this work in fuse_req_init_context is cheap as the code is
->> already performing the translation here and only needs to check the
->> result of the translation to see if things are not representable in
->> a form the fuse server can handle.
+>> The only way to make translation in fuse_dev_do_read reliable is to call
+>> get_pid in fuse_req_init_context, and pid_vnr followed by put_pid in
+>> fuse_dev_do_read.  That reference counting in other contexts has been shown
+>> to bounce cache lines between processors and in general be slow.  So that is
+>> not desirable.
 >>
->> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
->> ---
->>  fs/fuse/dev.c | 20 +++++++++++++-------
->>  1 file changed, 13 insertions(+), 7 deletions(-)
->>
->> diff --git a/fs/fuse/dev.c b/fs/fuse/dev.c
->> index 0fb58f364fa6..216db3f51a31 100644
->> --- a/fs/fuse/dev.c
->> +++ b/fs/fuse/dev.c
->> @@ -112,11 +112,13 @@ static void __fuse_put_request(struct fuse_req *req)
->>         refcount_dec(&req->count);
->>  }
->>
->> -static void fuse_req_init_context(struct fuse_conn *fc, struct fuse_req *req)
->> +static bool fuse_req_init_context(struct fuse_conn *fc, struct fuse_req *req)
->>  {
->> -       req->in.h.uid = from_kuid_munged(&init_user_ns, current_fsuid());
->> -       req->in.h.gid = from_kgid_munged(&init_user_ns, current_fsgid());
->> +       req->in.h.uid = from_kuid(&init_user_ns, current_fsuid());
->> +       req->in.h.gid = from_kgid(&init_user_ns, current_fsgid());
->>         req->in.h.pid = pid_nr_ns(task_pid(current), fc->pid_ns);
->> +
->> +       return (req->in.h.uid != ((uid_t)-1)) && (req->in.h.gid != ((gid_t)-1));
->>  }
->>
->>  void fuse_set_initialized(struct fuse_conn *fc)
->> @@ -162,12 +164,13 @@ static struct fuse_req *__fuse_get_req(struct fuse_conn *fc, unsigned npages,
->>                         wake_up(&fc->blocked_waitq);
->>                 goto out;
->>         }
->> -
->> -       fuse_req_init_context(fc, req);
->>         __set_bit(FR_WAITING, &req->flags);
->>         if (for_background)
->>                 __set_bit(FR_BACKGROUND, &req->flags);
->> -
->> +       if (unlikely(!fuse_req_init_context(fc, req))) {
->> +               fuse_put_request(fc, req);
->> +               return ERR_PTR(-EOVERFLOW);
->> +       }
->>         return req;
->>
->>   out:
->> @@ -256,9 +259,12 @@ struct fuse_req *fuse_get_req_nofail_nopages(struct fuse_conn *fc,
->>         if (!req)
->>                 req = get_reserved_req(fc, file);
->>
->> -       fuse_req_init_context(fc, req);
->>         __set_bit(FR_WAITING, &req->flags);
->>         __clear_bit(FR_BACKGROUND, &req->flags);
->> +       if (unlikely(!fuse_req_init_context(fc, req))) {
->> +               fuse_put_request(fc, req);
->> +               return ERR_PTR(-EOVERFLOW);
->> +       }
+>> The only known user of running the fuse server in a different pid namespace
+>> from the filesystem does not care what the pids are in the fuse messages
+>> so removing this code should not matter.
 >
-> I think failing the "_nofail" variant is the wrong thing to do.  This
-> is called to allocate a FLUSH request on close() and in readdirplus to
-> allocate a FORGET request.  Failing the latter results in refcount
-> leak in userspace.   Failing the former results in missing unlock on
-> close() of posix locks.
+> Shouldn't we at least zero out the pid in that case?
 
-Doh!  You are quite correct.
+This is an explicit case of passing a file descriptor between pid
+namespaces.  So I think there are plenty of buyer be ware signs out.
+So I don't know if there are any real world advantages of zeroing the
+pid.
 
-Modifying fuse_get_req_nofail_nopages to fail is a bug.
+I can see a case for using the pid namespace of the opener of /dev/fuse
+instead of the pid namespace of the mounter of the fuse filesystem.
+Although in practice I would be surprised if they were different.
 
-I am thinking the proper solution is to write:
+I am very leary about caring during a read operation.  Caring about the
+current processes during read/write tends to break caching, is error prone
+as the need for this patch demonstrates, and is generally likely to be
+slower than not caring.
 
-    static void fuse_req_init_context_nofail(struct fuse_req *req)
-    {
-            req->in.h.uid = 0;
-            req->in.h.gid = 0;
-            req->in.h.pid = 0;
-    }
-
-And use that in the nofail case.  As it appears neither flush nor
-the eviction of inodes is a user space triggered action and as such
-user space identifiers are nonsense in those cases.
-
-I will respin this patch shortly.
+So yes we can zero the pid.   I don't think it is wise to zero the pid
+unless we zero the pid in fuse_req_init_context.
 
 Eric
