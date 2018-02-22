@@ -1,17 +1,17 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH v6 1/5] fuse: Remove the buggy retranslation of pids in
-	fuse_dev_do_read
-Date: Thu, 22 Feb 2018 13:04:32 -0600
-Message-ID: <87fu5s7sn3.fsf@xmission.com>
+Subject: Re: [PATCH v6 4/5] fuse: Ensure posix acls are translated outside of
+	init_user_ns
+Date: Thu, 22 Feb 2018 13:18:33 -0600
+Message-ID: <87inao6dfa.fsf@xmission.com>
 References: <878tbmf5vl.fsf@xmission.com>
-	<20180221202908.17258-1-ebiederm@xmission.com>
-	<CAOssrKch20vj8phkjfjMe=07-8uQiuXfOuCTDjrMzPbkg6DoxA@mail.gmail.com>
+	<20180221202908.17258-4-ebiederm@xmission.com>
+	<CAOssrKeNLBeMkMrrCeRBO9Z80zFxCCEygKL3DErnQ9xBoLkH0g@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAOssrKch20vj8phkjfjMe=07-8uQiuXfOuCTDjrMzPbkg6DoxA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Miklos Szeredi's message of "Thu, 22 Feb 2018 11:13:36 +0100")
+In-Reply-To: <CAOssrKeNLBeMkMrrCeRBO9Z80zFxCCEygKL3DErnQ9xBoLkH0g-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Miklos Szeredi's message of "Thu, 22 Feb 2018 12:40:18 +0100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -29,43 +29,28 @@ Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
 
 > On Wed, Feb 21, 2018 at 9:29 PM, Eric W. Biederman
 > <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->> At the point of fuse_dev_do_read the user space process that initiated the
->> action on the fuse filesystem may no longer exist.  The process have been
->> killed or may have fired an asynchronous request and exited.
->>
->> If the initial process has exited the code "pid_vnr(find_pid_ns(in->h.pid,
->> fc->pid_ns)" will either return a pid of 0, or in the unlikely event that
->> the pid has been reallocated it can return practically any pid.  Any pid is
->> possible as the pid allocator allocates pid numbers in different pid
->> namespaces independently.
->>
->> The only way to make translation in fuse_dev_do_read reliable is to call
->> get_pid in fuse_req_init_context, and pid_vnr followed by put_pid in
->> fuse_dev_do_read.  That reference counting in other contexts has been shown
->> to bounce cache lines between processors and in general be slow.  So that is
->> not desirable.
->>
->> The only known user of running the fuse server in a different pid namespace
->> from the filesystem does not care what the pids are in the fuse messages
->> so removing this code should not matter.
+>> Ensure the translation happens by failing to read or write
+>> posix acls when the filesystem has not indicated it supports
+>> posix acls.
 >
-> Shouldn't we at least zero out the pid in that case?
+> For the first iteration this is fine, but  we could convert the raw
+> xattrs as well, if we later want to, right?
 
-This is an explicit case of passing a file descriptor between pid
-namespaces.  So I think there are plenty of buyer be ware signs out.
-So I don't know if there are any real world advantages of zeroing the
-pid.
+I will say maybe.  This is tricky.   The code would not be too hard,
+and the function to do the work posix_acl_fix_xattr_userns already
+exists in fs/posix_acl.c
 
-I can see a case for using the pid namespace of the opener of /dev/fuse
-instead of the pid namespace of the mounter of the fuse filesystem.
-Although in practice I would be surprised if they were different.
+I don't actually expect that to work longterm.  I expect the direction
+the kernel internals are moving is that all filesystems that implement
+posix acls will be expected to implement .get_acl and .set_acl.
 
-I am very leary about caring during a read operation.  Caring about the
-current processes during read/write tends to break caching, is error prone
-as the need for this patch demonstrates, and is generally likely to be
-slower than not caring.
+I would have to reread the old thread that got us to this point with
+posix acls before I could really understand the backwards compatible
+fuse use case, and I would have to reread the rest of the acl processing
+in the kernel before I could recall exactly what makes sense.
 
-So yes we can zero the pid.   I don't think it is wise to zero the pid
-unless we zero the pid in fuse_req_init_context.
+If there was an obvious way to whitelist xattrs that fuse can support
+for user namespaces I think I would go for that.  Just to avoid future
+problems with future xattrs.
 
 Eric
