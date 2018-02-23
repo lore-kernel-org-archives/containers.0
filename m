@@ -1,11 +1,12 @@
-From: <trad.interpp-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Pour vos besoins en traductions
-Date: Fri, 23 Feb 2018 15:22:13 +0100
-Message-ID: <3dae82b4e1c284f8b32ad5af09a3d6d3@gmail.com>
+From: Adam Richter <qq7m4mc99-YePDpEwSH3NdvEbG9P4ZtA@public.gmane.org>
+Subject: (unknown)
+Date: Fri, 23 Feb 2018 07:54:53 -0800
+Message-ID: <1519401304.pFgZetoJXyvP3pFgeeHvOV@mf-smf-ucb025c2>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: 
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,30 +16,8 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: zh1001 <zh1001-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>, FRoss Perry <FRoss-Perry-HsDW+lVSy7su+uzj59/SXw@public.gmane.org>, alexander deucher <alexander.deucher-5C7GfCeVMHo@public.gmane.org>, adam richter2004 <adam_richter2004-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>, barrykendall <barrykendall-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, ann zhang888 <ann.zhang888-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, sca38018 <sca38018-JTKT+MZqROFWk0Htik3J/w@public.gmane.org>, westglen <westglen-+nMgl8a9JoZQdUBU4u/fGAC/G2K4zDHf@public.gmane.org>, scott <scott-n2Un8p4Ldar0UPmFDx6yd/RmykmSBopP@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-CiAgICAKICAgIAogICAgCiAgICAgICAgIAogICAgICAgIEJvbmpvdXIsCiAgICAgICAgCiAgICAg
-ICAgSmUKICAgICAgICBtZSBwZXJtZXRzIGRlIHZvdXMgY29udGFjdGVyIGFmaW4gZGUgdm91cyBw
-cm9wb3NlciBub3Mgc2VydmljZXMgZGUgdHJhZHVjdGlvbgogICAgICAgIGV0IGTigJlpbnRlcnBy
-w6l0YXRpb24gbXVsdGlsaW5ndWVzLgogICAgICAgIAogICAgICAgIE5vdXMgc29tbWVzIGVuIG1l
-c3VyZSBkZSB0cmFkdWlyZSB2b3Mgc3VwcG9ydHMgc2NpZW50aWZpcXVlcywKICAgICAgICB0ZWNo
-bmlxdWVzLCB3ZWIsIG1hcmtldGluZywgY29tbWVyY2lhdXggZXQganVyaWRpcXVlcyBlbiB0b3V0
-ZXMgbGFuZ3Vlcy4KICAgICAgICAKICAgICAgICBRdWVscXVlcy11bmVzIGRlIG5vcyByw6lmw6ly
-ZW5jZXMgOiBHcm91cGUgQURGLCBTSUFMLCBEb21haW5lIExlcyBFbWluYWRlcywgV29ybGRTa2ls
-bHMgQmVsZ2l1bSBhc2JsLCBMVSAtIEVGRSBMdXhlbWJvdXJnLCBDTlJTLCBIw7RwaXRhbCBCaWNo
-YXQgLSBDbGF1ZGUtQmVybmFyZCwgVW5pdmVyc2lkYWQgQ2FzdGlsbGEgTGEgTWFuY2hhLCBQYWxh
-aXMgZCdFbWVyYXVkZSwgUmVhbG5ld3RlY2ggUkVOVCAyMDE3LCBDYWJpbmV0IGTigJlhdm9jYXQg
-REFZREUgUExBTlRBUkQgUk9DSEFTICZhbXA7IFZJUlksIEFHTSBBdm9jYXRzIGV0IGJpZW4gZCdh
-dXRyZXMuLi4KICAgICAgICAKICAgICAgICBQYXIgc2ltcGxlCiAgICAgICAgcsOpcG9uc2Ugw6Ag
-Y2UgbWFpbCwgbuKAmWjDqXNpdGV6IHBhcyDDoCByZXZlbmlyIHZlcnMgbW9pIHBvdXIgdG91dGUg
-ZGVtYW5kZQogICAgICAgIGTigJlpbmZvcm1hdGlvbiBvdSBwb3VyIHVuIGRldmlzIGdyYXR1aXQu
-CiAgICAgICAgCiAgICAgICAgQ29yZGlhbGVtZW50LAogICAgICAgIAogICAgICAgIERhdmlkIENB
-TkVUCiAgICAgICAgQ2hlZiBkZSBwcm9qZXQKICAgICAgICAKICAgICAgICAKICAgICAgICAKICAg
-ICAgICAKICAgICAgICBUw6lsLiA6ICszMyAoMCk0IDg0IDQ5IDI0IDc5CiAgICAgICAgCiAgICAg
-ICAgdHJhZC5pbnRlcnBwQGdtYWlsLmNvbQogICAgICAgIHd3dy5pbnRlcnBwcm8ubmV0CiAgICAg
-ICAgCiAgICAgICAgU2kgdm91cyBuZSBkw6lzaXJleiBwbHVzIHJlY2V2b2lyIG5vdHJlIGxldHRy
-ZSBkJ2luZm9ybWF0aW9uLCBjbGlxdWV6IGljaQogICAgICAgIAogICAgCl9fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0
-CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51
-eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+http://add.chattanooga360.com
+Adam Richter
