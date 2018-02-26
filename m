@@ -1,20 +1,14 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH v6 4/5] fuse: Ensure posix acls are translated outside of
-	init_user_ns
-Date: Mon, 26 Feb 2018 15:51:16 -0600
-Message-ID: <87lgff1ktn.fsf@xmission.com>
-References: <878tbmf5vl.fsf@xmission.com>
-	<20180221202908.17258-4-ebiederm@xmission.com>
-	<CAOssrKeNLBeMkMrrCeRBO9Z80zFxCCEygKL3DErnQ9xBoLkH0g@mail.gmail.com>
-	<87inao6dfa.fsf@xmission.com> <87mv004p0t.fsf@xmission.com>
-	<CAOssrKd+c0Mx+=S-+zr1QS8a37Pm=VGki=FVR+LXQZBsk3byqA@mail.gmail.com>
-	<87zi3v1zga.fsf@xmission.com>
+From: Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [net-next v3 0/2] eBPF seccomp filters
+Date: Mon, 26 Feb 2018 15:04:20 -0800
+Message-ID: <20180226230418.46nczgkh5csakyu7@ast-mbp>
+References: <20180226072651.GA27045@ircssh-2.c.rugged-nimbus-611.internal>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87zi3v1zga.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (Eric W. Biederman's message of
-	"Mon, 26 Feb 2018 10:35:17 -0600")
+Content-Disposition: inline
+In-Reply-To: <20180226072651.GA27045-du9IEJ8oIxHXYT48pCVpJ3c7ZZ+wIVaZYkHkVr5ML8kVGlcevz2xqA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,44 +18,53 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
+Cc: wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org, keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org, daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) writes:
+On Mon, Feb 26, 2018 at 07:26:54AM +0000, Sargun Dhillon wrote:
+> This patchset enables seccomp filters to be written in eBPF. Although, this
+> patchset doesn't introduce much of the functionality enabled by eBPF, it lays
+> the ground work for it. Currently, you have to disable CHECKPOINT_RESTORE
+> support in order to utilize eBPF seccomp filters, as eBPF filters cannot be
+> retrieved via the ptrace GET_FILTER API.
 
-> Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
->
->> On Thu, Feb 22, 2018 at 11:50 PM, Eric W. Biederman
->> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->>
->>> So if we could figure out how to use the generic acl support for the old
->>> brand of fuse filesystems that don't set FUSE_POSIX_ACL it would be much
->>> easier to support them long term.
->>
->> Simplest and most robust way seems to be to do everything the same (as
->> with FUSE_POSIX_ACL) but tell the vfs not to cache the acl.
->
-> Good point.  That sounds like for the !fc->posix_acl case we just
-> need a careful use of "forget_all_cached_acls(inode)".
->
-> I will take a quick look at that, and see if that is easy/sufficient to
-> cover the legacy fuse case.  Otherwise I will go with what I already
-> have here.
->
-> That feels like a better path.  And internally I would call what is
-> today fc->posix_acl fc->cached_posix_acl.  To better convey the intent.
-> Fingers crossed.
+this was discussed multiple times in the past.
+In eBPF land it's practically impossible to do checkpoint/restore
+of the whole bpf program/map graph.
 
-It looks like simply setting
-"inode->i_acl = inode->i_default_acl = ACL_DONT_CACHE;" is the secret
-sauce needed to disable caching in the legacy case and make everything
-work.
+> Any user can load a bpf seccomp filter program, and it can be pinned and
+> reused without requiring access to the bpf syscalls. A user only requires
+> the traditional permissions of either being cap_sys_admin, or have
+> no_new_privs set in order to install their rule.
+> 
+> The primary reason for not adding maps support in this patchset is
+> to avoid introducing new complexities around PR_SET_NO_NEW_PRIVS.
+> If we have a map that the BPF program can read, it can potentially
+> "change" privileges after running. It seems like doing writes only
+> is safe, because it can be pure, and side effect free, and therefore
+> not negatively effect PR_SET_NO_NEW_PRIVS. Nonetheless, if we come
+> to an agreement, this can be in a follow-up patchset.
 
-I had to tweak the calls to forget_all_cached_acls so that won't clear
-the ACL_DONT_CACHE status but otherwise that was an absolutely trivial
-change to combine those two code paths.
+readonly maps already exist. See BPF_F_RDONLY.
+Is that not enough?
 
-I will post my updated patches shortly.
+> A benchmark of this patchset is as follows for a very standard eBPF filter:
+> 
+> Given this test program:
+> for (i = 10; i < 99999999; i++) syscall(__NR_getpid);
+> 
+> If I implement an eBPF filter with PROG_ARRAYs with a program per syscall,
+> and tail call, the numbers are such:
+> ebpf JIT 12.3% slower than native
+> ebpf no JIT 13.6% slower than native
+> seccomp JIT 17.6% slower than native
+> seccomp no JIT 37% slower than native
 
-Eric
+the perf gains are misleading, since patches don't enable bpf_tail_call.
+
+The main statement I want to hear from seccomp maintainers before
+proceeding any further on this that enabling eBPF in seccomp won't lead
+to seccomp folks arguing against changes in bpf core (like verifier)
+just because it's used by seccomp.
+It must be spelled out in the commit log with explicit Ack.
