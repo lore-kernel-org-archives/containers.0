@@ -1,14 +1,15 @@
-From: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Subject: Re: [net-next v3 0/2] eBPF seccomp filters
-Date: Mon, 26 Feb 2018 15:20:15 -0800
-Message-ID: <CAGXu5jLdOcrn16q9pQ7JwTf88AVsL0o5LMJ=4P6vRN36u-_k_g@mail.gmail.com>
-References: <20180226072651.GA27045@ircssh-2.c.rugged-nimbus-611.internal>
-	<20180226230418.46nczgkh5csakyu7@ast-mbp>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: [PATCH v7 0/7] fuse: mounts from non-init user namespaces
+Date: Mon, 26 Feb 2018 17:52:21 -0600
+Message-ID: <87po4rz4ui.fsf_-___41302.7339186103$1519689090$gmane$org@xmission.com>
+References: <cover.1512741134.git.dongsu@kinvolk.io>
+	<878tbmf5vl.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20180226230418.46nczgkh5csakyu7@ast-mbp>
+In-Reply-To: <878tbmf5vl.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (Eric W. Biederman's message of
+	"Wed, 21 Feb 2018 14:24:30 -0600")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,33 +19,59 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>, Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexei Starovoitov <ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
+To: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Feb 26, 2018 at 3:04 PM, Alexei Starovoitov
-<alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
-> On Mon, Feb 26, 2018 at 07:26:54AM +0000, Sargun Dhillon wrote:
->> This patchset enables seccomp filters to be written in eBPF. Although, this
->> [...]
-> The main statement I want to hear from seccomp maintainers before
-> proceeding any further on this that enabling eBPF in seccomp won't lead
-> to seccomp folks arguing against changes in bpf core (like verifier)
-> just because it's used by seccomp.
-> It must be spelled out in the commit log with explicit Ack.
 
-The primary thing I'm concerned about with eBPF and seccomp is
-side-effects from eBPF programs running at syscall time. This is an
-extremely sensitive area, and I want to be sure there won't be
-feature-creep here that leads to seccomp getting into a bad state.
+This patchset builds on the work by Donsu Park and Seth Forshee and is
+reduced to the set of patches that just affect fuse.  The non-fuse
+patches are far enough along we can ignore them except possibly for the
+question of when does FS_USERNS_MOUNT get set in fuse_fs_type.
 
-As long as seccomp can continue have its own verifier, I *think* this
-will be fine, though, again I remain concerned about maps, etc. I'm
-still reviewing these patches and how they might provide overlap with
-Tycho's needs too, etc.
+Fuse with a block device has been left as an exercise for a later time.
 
--Kees
+Since v5 I changed the core of this patchset around as the previous
+patches were showing signs of bitrot.  Some important explanations were
+missing, some important functionality was missing, and xattr handling
+was completely absent.
 
--- 
-Kees Cook
-Pixel Security
+Since v6 I have:
+- Removed the failure case from fuse_get_req_nofail_nopages that I
+  added.
+- Updated fuse to always to use posix_acl_access_xattr_handler, and
+  posix_acl_default_xattr_handler, by teaching fuse to set
+  ACL_DONT_CACHE when FUSE_POSIX_ACL is not set.
+
+Miklos can you take a look and see what you think?
+
+I think this much of the fuse changes are ready, and as such I would
+like to get them in this development cycle if possible.
+
+These changes are also available at:
+
+   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git userns-fuse-v7
+
+Eric W. Biederman (6):
+      fuse: Remove the buggy retranslation of pids in fuse_dev_do_read
+      fuse: Fail all requests with invalid uids or gids
+      fs/posix_acl: Document that get_acl respects ACL_DONT_CACHE
+      fuse: Cache a NULL acl when FUSE_GETXATTR returns -ENOSYS
+      fuse: Simplfiy the posix acl handling logic.
+      fuse: Support fuse filesystems outside of init_user_ns
+
+Seth Forshee (1):
+      fuse: Restrict allow_other to the superblock's namespace or a descendant
+
+ fs/fuse/acl.c           | 10 +++++-----
+ fs/fuse/cuse.c          |  7 ++++++-
+ fs/fuse/dev.c           | 30 +++++++++++++++++-------------
+ fs/fuse/dir.c           | 27 +++++++++++++--------------
+ fs/fuse/fuse_i.h        | 11 ++++++++---
+ fs/fuse/inode.c         | 44 +++++++++++++++++++++++++++++---------------
+ fs/fuse/xattr.c         |  6 +-----
+ fs/posix_acl.c          |  7 +++++--
+ kernel/user_namespace.c |  1 +
+ 9 files changed, 85 insertions(+), 58 deletions(-)
+
+Eric
