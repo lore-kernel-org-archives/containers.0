@@ -1,8 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH v7 7/7] fuse: Restrict allow_other to the superblock's
-	namespace or a descendant
-Date: Mon, 26 Feb 2018 17:53:02 -0600
-Message-ID: <20180226235302.12708-7-ebiederm__39498.5604718842$1519689185$gmane$org@xmission.com>
+Subject: [PATCH v7 4/7] fuse: Cache a NULL acl when FUSE_GETXATTR returns
+	-ENOSYS
+Date: Mon, 26 Feb 2018 17:52:59 -0600
+Message-ID: <20180226235302.12708-4-ebiederm__20768.1114472964$1519689189$gmane$org@xmission.com>
 References: <87po4rz4ui.fsf_-_@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,59 +22,33 @@ To: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+When FUSE_GETXATTR will never return anything call cache_no_acl to
+cache that state in the vfs as well in fuse with fc->no_getxattr.
 
-Unprivileged users are normally restricted from mounting with the
-allow_other option by system policy, but this could be bypassed
-for a mount done with user namespace root permissions. In such
-cases allow_other should not allow users outside the userns
-to access the mount as doing so would give the unprivileged user
-the ability to manipulate processes it would otherwise be unable
-to manipulate. Restrict allow_other to apply to users in the same
-userns used at mount or a descendant of that namespace. Also
-export current_in_userns() for use by fuse when built as a
-module.
+The only code path this affects are the code paths that call
+fuse_get_acl and caching a NULL or returning it immediately
+is exactly the same effect so this should not effect anything.
 
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Acked-by: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Reviewed-by: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Reviewed-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Signed-off-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Signed-off-by: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
-Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+This keeps the vfs from waisting it's time calling down into fuse
+when fuse isn't going to do anything, and it makes it clear
+when a NULL should be cached for optimal performance.
+
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/fuse/dir.c           | 2 +-
- kernel/user_namespace.c | 1 +
- 2 files changed, 2 insertions(+), 1 deletion(-)
+ fs/fuse/xattr.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/fs/fuse/dir.c b/fs/fuse/dir.c
-index 79cca1687457..0cbd1ff3dd48 100644
---- a/fs/fuse/dir.c
-+++ b/fs/fuse/dir.c
-@@ -1030,7 +1030,7 @@ int fuse_allow_current_process(struct fuse_conn *fc)
- 	const struct cred *cred;
- 
- 	if (fc->allow_other)
--		return 1;
-+		return current_in_userns(fc->user_ns);
- 
- 	cred = current_cred();
- 	if (uid_eq(cred->euid, fc->user_id) &&
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 246d4d4ce5c7..492c255e6c5a 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -1235,6 +1235,7 @@ bool current_in_userns(const struct user_namespace *target_ns)
- {
- 	return in_userns(target_ns, current_user_ns());
- }
-+EXPORT_SYMBOL(current_in_userns);
- 
- static inline struct user_namespace *to_user_ns(struct ns_common *ns)
- {
+diff --git a/fs/fuse/xattr.c b/fs/fuse/xattr.c
+index 3caac46b08b0..0520a4f47226 100644
+--- a/fs/fuse/xattr.c
++++ b/fs/fuse/xattr.c
+@@ -82,6 +82,7 @@ ssize_t fuse_getxattr(struct inode *inode, const char *name, void *value,
+ 		ret = min_t(ssize_t, outarg.size, XATTR_SIZE_MAX);
+ 	if (ret == -ENOSYS) {
+ 		fc->no_getxattr = 1;
++		cache_no_acl(inode);
+ 		ret = -EOPNOTSUPP;
+ 	}
+ 	return ret;
 -- 
 2.14.1
