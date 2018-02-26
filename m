@@ -1,12 +1,17 @@
-From: Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
-Subject: [net-next v3 2/2] bpf: Add eBPF seccomp sample programs
-Date: Mon, 26 Feb 2018 07:27:19 +0000
-Message-ID: <20180226072716.GA27069@ircssh-2.c.rugged-nimbus-611.internal>
+From: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH v6 4/5] fuse: Ensure posix acls are translated outside of
+	init_user_ns
+Date: Mon, 26 Feb 2018 08:47:21 +0100
+Message-ID: <CAOssrKd+c0Mx+=S-+zr1QS8a37Pm=VGki=FVR+LXQZBsk3byqA__29768.5081874535$1519631728$gmane$org@mail.gmail.com>
+References: <878tbmf5vl.fsf@xmission.com>
+	<20180221202908.17258-4-ebiederm@xmission.com>
+	<CAOssrKeNLBeMkMrrCeRBO9Z80zFxCCEygKL3DErnQ9xBoLkH0g@mail.gmail.com>
+	<87inao6dfa.fsf@xmission.com> <87mv004p0t.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <87mv004p0t.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,200 +21,19 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org, keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org, daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org, ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This adds a sample program that uses seccomp-eBPF, called
-seccomp1. It shows the simple ability to code seccomp filters
-in C.
+On Thu, Feb 22, 2018 at 11:50 PM, Eric W. Biederman
+<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
 
-Signed-off-by: Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
----
- samples/bpf/Makefile            |  5 +++++
- samples/bpf/bpf_load.c          |  9 ++++++--
- samples/bpf/test_seccomp_kern.c | 41 ++++++++++++++++++++++++++++++++++++
- samples/bpf/test_seccomp_user.c | 46 +++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 99 insertions(+), 2 deletions(-)
- create mode 100644 samples/bpf/test_seccomp_kern.c
- create mode 100644 samples/bpf/test_seccomp_user.c
+> So if we could figure out how to use the generic acl support for the old
+> brand of fuse filesystems that don't set FUSE_POSIX_ACL it would be much
+> easier to support them long term.
 
-diff --git a/samples/bpf/Makefile b/samples/bpf/Makefile
-index ec3fc8d88e87..05f21988775f 100644
---- a/samples/bpf/Makefile
-+++ b/samples/bpf/Makefile
-@@ -43,6 +43,7 @@ hostprogs-y += xdp_redirect_cpu
- hostprogs-y += xdp_monitor
- hostprogs-y += xdp_rxq_info
- hostprogs-y += syscall_tp
-+hostprogs-y += test_seccomp
- 
- # Libbpf dependencies
- LIBBPF := ../../tools/lib/bpf/bpf.o ../../tools/lib/bpf/nlattr.o
-@@ -93,6 +94,8 @@ xdp_redirect_cpu-objs := bpf_load.o $(LIBBPF) xdp_redirect_cpu_user.o
- xdp_monitor-objs := bpf_load.o $(LIBBPF) xdp_monitor_user.o
- xdp_rxq_info-objs := bpf_load.o $(LIBBPF) xdp_rxq_info_user.o
- syscall_tp-objs := bpf_load.o $(LIBBPF) syscall_tp_user.o
-+test_seccomp-objs := bpf_load.o $(LIBBPF) test_seccomp_user.o
-+
- 
- # Tell kbuild to always build the programs
- always := $(hostprogs-y)
-@@ -144,6 +147,7 @@ always += xdp_monitor_kern.o
- always += xdp_rxq_info_kern.o
- always += xdp2skb_meta_kern.o
- always += syscall_tp_kern.o
-+always += test_seccomp_kern.o
- 
- HOSTCFLAGS += -I$(objtree)/usr/include
- HOSTCFLAGS += -I$(srctree)/tools/lib/
-@@ -188,6 +192,7 @@ HOSTLOADLIBES_xdp_redirect_cpu += -lelf
- HOSTLOADLIBES_xdp_monitor += -lelf
- HOSTLOADLIBES_xdp_rxq_info += -lelf
- HOSTLOADLIBES_syscall_tp += -lelf
-+HOSTLOADLIBES_test_seccomp += -lelf
- 
- # Allows pointing LLC/CLANG to a LLVM backend with bpf support, redefine on cmdline:
- #  make samples/bpf/ LLC=~/git/llvm/build/bin/llc CLANG=~/git/llvm/build/bin/clang
-diff --git a/samples/bpf/bpf_load.c b/samples/bpf/bpf_load.c
-index 69806d74fa53..856bc8b93916 100644
---- a/samples/bpf/bpf_load.c
-+++ b/samples/bpf/bpf_load.c
-@@ -67,6 +67,7 @@ static int load_and_attach(const char *event, struct bpf_insn *prog, int size)
- 	bool is_cgroup_sk = strncmp(event, "cgroup/sock", 11) == 0;
- 	bool is_sockops = strncmp(event, "sockops", 7) == 0;
- 	bool is_sk_skb = strncmp(event, "sk_skb", 6) == 0;
-+	bool is_seccomp = strncmp(event, "seccomp", 7) == 0;
- 	size_t insns_cnt = size / sizeof(struct bpf_insn);
- 	enum bpf_prog_type prog_type;
- 	char buf[256];
-@@ -96,6 +97,8 @@ static int load_and_attach(const char *event, struct bpf_insn *prog, int size)
- 		prog_type = BPF_PROG_TYPE_SOCK_OPS;
- 	} else if (is_sk_skb) {
- 		prog_type = BPF_PROG_TYPE_SK_SKB;
-+	} else if (is_seccomp) {
-+		prog_type = BPF_PROG_TYPE_SECCOMP;
- 	} else {
- 		printf("Unknown event '%s'\n", event);
- 		return -1;
-@@ -110,7 +113,8 @@ static int load_and_attach(const char *event, struct bpf_insn *prog, int size)
- 
- 	prog_fd[prog_cnt++] = fd;
- 
--	if (is_xdp || is_perf_event || is_cgroup_skb || is_cgroup_sk)
-+	if (is_xdp || is_perf_event || is_cgroup_skb || is_cgroup_sk ||
-+	    is_seccomp)
- 		return 0;
- 
- 	if (is_socket || is_sockops || is_sk_skb) {
-@@ -589,7 +593,8 @@ static int do_load_bpf_file(const char *path, fixup_map_cb fixup_map)
- 		    memcmp(shname, "socket", 6) == 0 ||
- 		    memcmp(shname, "cgroup/", 7) == 0 ||
- 		    memcmp(shname, "sockops", 7) == 0 ||
--		    memcmp(shname, "sk_skb", 6) == 0) {
-+		    memcmp(shname, "sk_skb", 6) == 0 ||
-+		    memcmp(shname, "seccomp", 7) == 0) {
- 			ret = load_and_attach(shname, data->d_buf,
- 					      data->d_size);
- 			if (ret != 0)
-diff --git a/samples/bpf/test_seccomp_kern.c b/samples/bpf/test_seccomp_kern.c
-new file mode 100644
-index 000000000000..a0dd39b4ba16
---- /dev/null
-+++ b/samples/bpf/test_seccomp_kern.c
-@@ -0,0 +1,41 @@
-+// SPDX-License-Identifier: GPL-2.0
-+#include <uapi/linux/seccomp.h>
-+#include <uapi/linux/bpf.h>
-+#include <uapi/linux/unistd.h>
-+#include "bpf_helpers.h"
-+#include <uapi/linux/errno.h>
-+#include <uapi/linux/audit.h>
-+
-+#if defined(__x86_64__)
-+#define ARCH	AUDIT_ARCH_X86_64
-+#elif defined(__i386__)
-+#define ARCH	AUDIT_ARCH_I386
-+#else
-+#endif
-+
-+#ifdef ARCH
-+/* Returns EPERM when trying to close fd 999 */
-+SEC("seccomp")
-+int bpf_prog1(struct seccomp_data *ctx)
-+{
-+	/*
-+	 * Make sure this BPF program is being run on the same architecture it
-+	 * was compiled on.
-+	 */
-+	if (ctx->arch != ARCH)
-+		return SECCOMP_RET_ERRNO | EPERM;
-+	if (ctx->nr == __NR_close && ctx->args[0] == 999)
-+		return SECCOMP_RET_ERRNO | EPERM;
-+
-+	return SECCOMP_RET_ALLOW;
-+}
-+#else
-+#warning Architecture not supported -- Blocking all syscalls
-+SEC("seccomp")
-+int bpf_prog1(struct seccomp_data *ctx)
-+{
-+	return SECCOMP_RET_ERRNO | EPERM;
-+}
-+#endif
-+
-+char _license[] SEC("license") = "GPL";
-diff --git a/samples/bpf/test_seccomp_user.c b/samples/bpf/test_seccomp_user.c
-new file mode 100644
-index 000000000000..225db14217a2
---- /dev/null
-+++ b/samples/bpf/test_seccomp_user.c
-@@ -0,0 +1,46 @@
-+// SPDX-License-Identifier: GPL-2.0
-+#include <assert.h>
-+#include <stdio.h>
-+#include <linux/bpf.h>
-+#include <unistd.h>
-+#include "libbpf.h"
-+#include "bpf_load.h"
-+#include <linux/bpf.h>
-+#include <sys/prctl.h>
-+#include <strings.h>
-+#include <errno.h>
-+#include <linux/unistd.h>
-+#include <linux/seccomp.h>
-+
-+int main(int argc, char **argv)
-+{
-+	char filename[256];
-+
-+
-+	snprintf(filename, sizeof(filename), "%s_kern.o", argv[0]);
-+
-+	if (load_bpf_file(filename)) {
-+		printf("%s", bpf_log_buf);
-+		return 1;
-+	}
-+
-+	/* set new_new_privs so non-privileged users can attach filters */
-+	if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)) {
-+		perror("prctl(NO_NEW_PRIVS)");
-+		return 1;
-+	}
-+
-+	if (syscall(__NR_seccomp, SECCOMP_SET_MODE_FILTER,
-+		    SECCOMP_FILTER_FLAG_EXTENDED, &prog_fd)) {
-+		perror("seccomp");
-+		return 1;
-+	}
-+
-+	close(111);
-+	assert(errno == EBADF);
-+	close(999);
-+	assert(errno == EPERM);
-+
-+	printf("close syscall successfully filtered\n");
-+	return 0;
-+}
--- 
-2.14.1
+Simplest and most robust way seems to be to do everything the same (as
+with FUSE_POSIX_ACL) but tell the vfs not to cache the acl.
+
+Thanks,
+Miklos
