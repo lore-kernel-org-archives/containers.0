@@ -1,8 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH v7 3/7] fs/posix_acl: Document that get_acl respects
-	ACL_DONT_CACHE
-Date: Mon, 26 Feb 2018 17:52:58 -0600
-Message-ID: <20180226235302.12708-3-ebiederm__8164.95896219767$1519689180$gmane$org@xmission.com>
+Subject: [PATCH v7 7/7] fuse: Restrict allow_other to the superblock's
+	namespace or a descendant
+Date: Mon, 26 Feb 2018 17:53:02 -0600
+Message-ID: <20180226235302.12708-7-ebiederm__39498.5604718842$1519689185$gmane$org@xmission.com>
 References: <87po4rz4ui.fsf_-_@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,47 +22,59 @@ To: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Fuse is about to join overlayfs in relying on get_acl respecting
-ACL_DONT_CACHE so update the documentation in get_acl to reflect that
-fact.  The comment and this change description should give people a
-clue that respecting ACL_DONT_CACHE in get_acl is important, and they
-should audit the filesystems before removing that support.
+From: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-Additionaly update the comment above the call to get_acl itself and
-remove the wrong information that an implementation of get_acl can
-prevent caching by calling forget_cached_acl.  Replace that with the
-correct information that to prevent caching all that is necessary is
-to set inode->i_acl = inode->i_default_acl = ACL_DONT_CACHE when the
-inode is initialized.
+Unprivileged users are normally restricted from mounting with the
+allow_other option by system policy, but this could be bypassed
+for a mount done with user namespace root permissions. In such
+cases allow_other should not allow users outside the userns
+to access the mount as doing so would give the unprivileged user
+the ability to manipulate processes it would otherwise be unable
+to manipulate. Restrict allow_other to apply to users in the same
+userns used at mount or a descendant of that namespace. Also
+export current_in_userns() for use by fuse when built as a
+module.
 
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Acked-by: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Reviewed-by: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Reviewed-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Signed-off-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Signed-off-by: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
+Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/posix_acl.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+ fs/fuse/dir.c           | 2 +-
+ kernel/user_namespace.c | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/fs/posix_acl.c b/fs/posix_acl.c
-index 2fd0fde16fe1..3c24fc263401 100644
---- a/fs/posix_acl.c
-+++ b/fs/posix_acl.c
-@@ -121,14 +121,17 @@ struct posix_acl *get_acl(struct inode *inode, int type)
- 	 * could wait for that other task to complete its job, but it's easier
- 	 * to just call ->get_acl to fetch the ACL ourself.  (This is going to
- 	 * be an unlikely race.)
-+	 *
-+	 * ACL_DONT_CACHE is treated as another task updating the acl and
-+	 * remains set.
- 	 */
- 	if (cmpxchg(p, ACL_NOT_CACHED, sentinel) != ACL_NOT_CACHED)
- 		/* fall through */ ;
+diff --git a/fs/fuse/dir.c b/fs/fuse/dir.c
+index 79cca1687457..0cbd1ff3dd48 100644
+--- a/fs/fuse/dir.c
++++ b/fs/fuse/dir.c
+@@ -1030,7 +1030,7 @@ int fuse_allow_current_process(struct fuse_conn *fc)
+ 	const struct cred *cred;
  
- 	/*
- 	 * Normally, the ACL returned by ->get_acl will be cached.
--	 * A filesystem can prevent that by calling
--	 * forget_cached_acl(inode, type) in ->get_acl.
-+	 * A filesystem can prevent that by calling setting
-+	 * inode->i_acl = inode->i_default_acl = ACL_DONT_CACHE.
- 	 *
- 	 * If the filesystem doesn't have a get_acl() function at all, we'll
- 	 * just create the negative cache entry.
+ 	if (fc->allow_other)
+-		return 1;
++		return current_in_userns(fc->user_ns);
+ 
+ 	cred = current_cred();
+ 	if (uid_eq(cred->euid, fc->user_id) &&
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 246d4d4ce5c7..492c255e6c5a 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -1235,6 +1235,7 @@ bool current_in_userns(const struct user_namespace *target_ns)
+ {
+ 	return in_userns(target_ns, current_user_ns());
+ }
++EXPORT_SYMBOL(current_in_userns);
+ 
+ static inline struct user_namespace *to_user_ns(struct ns_common *ns)
+ {
 -- 
 2.14.1
