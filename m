@@ -1,7 +1,7 @@
-From: chris hyser <chris.hyser-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+From: Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>
 Subject: Re: [net-next v3 0/2] eBPF seccomp filters
-Date: Tue, 27 Feb 2018 16:22:45 -0500
-Message-ID: <cda8f13d-79b6-077a-2129-d2d52dc8efd1@oracle.com>
+Date: Tue, 27 Feb 2018 22:58:11 +0100
+Message-ID: <f712a383-8e84-da64-a454-51fdebf28741@iogearbox.net>
 References: <20180226072651.GA27045@ircssh-2.c.rugged-nimbus-611.internal>
 	<20180226230418.46nczgkh5csakyu7@ast-mbp>
 	<CAGXu5jLdOcrn16q9pQ7JwTf88AVsL0o5LMJ=4P6vRN36u-_k_g@mail.gmail.com>
@@ -10,12 +10,11 @@ References: <20180226072651.GA27045@ircssh-2.c.rugged-nimbus-611.internal>
 	<db759dd2-31dc-d094-251d-d4c1e8af8704@oracle.com>
 	<CAGXu5j+idW9AjZHVdeedqLOFXriObUJLvcw8-9k5WxyQF8EWrg@mail.gmail.com>
 	<ddbefdda-f3b8-3956-fa0f-dcba8cf8e7d9@oracle.com>
-	<CAGXu5jKnk90Yruhx_=t8yW2ziLaubqW80pxB95g5W_XnMuT1mA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAGXu5jKnk90Yruhx_=t8yW2ziLaubqW80pxB95g5W_XnMuT1mA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <ddbefdda-f3b8-3956-fa0f-dcba8cf8e7d9-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
 Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -27,26 +26,77 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>, Netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexei Starovoitov <ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexei Starovoitov <ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 02/27/2018 02:19 PM, Kees Cook wrote:
-> On Tue, Feb 27, 2018 at 8:59 AM, chris hyser <chris.hyser-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org> wrote:
->> I will try to find that discussion. As someone pointed out here though, eBPF
-> 
-> A good starting point might be this:
-> https://lwn.net/Articles/441232/
-
-Thanks. A fair amount of reading referenced there :-). In particular I'll be curious to find out what happened to this idea:
-
-"Essentially, that would make for three choices for each system call: enabled, disabled, or filtered."
-
-Something like that might address some of the security concerns in that a simple go/no go on syscall number need not 
-incur the performance hit nor increased attack surface of running c/eBPF code, but it is there for argument checking, 
-etc if you need it. Basically instead of the kernel making the flexibility/performance/security trade-off in advance, 
-you leave it to user code/policy.
-
-Anyway, lest it is not clear :-), I think your instincts on security and eBPF are dead on. At the same time it is 
-powerful and useful. So, how to make it optional?
-
--chrish
+T24gMDIvMjcvMjAxOCAwNTo1OSBQTSwgY2hyaXMgaHlzZXIgd3JvdGU6Cj4gT24gMDIvMjcvMjAx
+OCAxMTowMCBBTSwgS2VlcyBDb29rIHdyb3RlOgo+PiBPbiBUdWUsIEZlYiAyNywgMjAxOCBhdCA2
+OjUzIEFNLCBjaHJpcyBoeXNlciA8Y2hyaXMuaHlzZXJAb3JhY2xlLmNvbT4gd3JvdGU6Cj4+PiBP
+biAwMi8yNi8yMDE4IDExOjM4IFBNLCBLZWVzIENvb2sgd3JvdGU6Cj4+Pj4gT24gTW9uLCBGZWIg
+MjYsIDIwMTggYXQgODoxOSBQTSwgQW5keSBMdXRvbWlyc2tpIDxsdXRvQGFtYWNhcGl0YWwubmV0
+Pgo+Pj4+IHdyb3RlOgo+Pj4+Pgo+Pj4+PiAzLiBTdHJhaWdodC11cCBidWdzLsKgIFRob3NlIGFy
+ZSBleGFjdGx5IGFzIHByb2JsZW1hdGljIGFzIHZlcmlmaWVyCj4+Pj4+IGJ1Z3MgaW4gYW55IG90
+aGVyIHVucHJpdmlsZWdlZCBlQlBGIHByb2dyYW0gdHlwZSwgcmlnaHQ/wqAgSSBkb24ndCBzZWUK
+Pj4+Pj4gd2h5IHNlY2NvbXAgaXMgc3BlY2lhbCBoZXJlLgo+Pj4+Cj4+Pj4gTXkgY29uY2VybiBp
+cyBtb3JlIGFib3V0IHVuaW50ZW5kZWQgZGVzaWduIG1pc3Rha2VzIG9yIG90aGVyIGZlYXR1cmUK
+Pj4+PiBjcmVlcCB3aXRoIHNpZGUtZWZmZWN0cywgZXNwZWNpYWxseSB3aGVuIGl0IGNvbWVzIHRv
+IHByaXZpbGVnZXMgYW5kCj4+Pj4gc3luY2hyb25pemF0aW9uLiBHZXR0aW5nIG5vLW5ldy1wcml2
+cyBkb25lIGNvcnJlY3RseSwgZm9yIGV4YW1wbGUsCj4+Pj4gdG9vayBzb21lIGNhcmVmdWwgdGhv
+dWdodCBhbmQgZGlzY3Vzc2lvbiwgYW5kIEknbSBzaHkgZnJvbSBob3cgcGFpbmZ1bAo+Pj4+IFRT
+WU5DIHdhcyBvbiB0aGUgcHJvY2VzcyBsb2NraW5nIHNpZGUsIGFuZCBlQlBGIGhhcyBoYWQgc29t
+ZSByYXRoZXIKPj4+PiB1Z2x5IGZsYXdzIGluIHRoZSBwYXN0IChhbmQgcmVjZW50bHk6IGl0IHdh
+cyBuaWNlIHRvIGJlIGFibGUgdG8gc2F5Cj4+Pj4gZm9yIFNwZWN0cmUgdGhhdCBzZWNjb21wIGZp
+bHRlcnMgY291bGRuJ3QgYmUgY29uc3RydWN0ZWQgdG8gbWFrZQo+Pj4+IGF0dGFja3MgYnV0IGVC
+UEYgY291bGQpLiBBZGRpbmcgdGhlIGNvbXBsZXhpdHkgbmVlZHMgdG8gYmUgd29ydGggdGhlCgpX
+ZWxsLCBub3QgcmVhbGx5LiBPbmUgcGFydCBvZiBhbGwgdGhlIFNwZWN0cmUgbWl0aWdhdGlvbnMg
+dGhhdCB3ZW50IHVwc3RyZWFtCmZyb20gQlBGIHNpZGUgd2FzIHRvIGhhdmUgYW4gb3B0aW9uIHRv
+IHJlbW92ZSBpbnRlcnByZXRlciBlbnRpcmVseSBhbmQgdGhhdAphbHNvIHJlbGF0ZXMgdG8gc2Vj
+Y29tcCBldmVudHVhbGx5LiBCdXQgb3RoZXIgdGhhbiB0aGF0IGFuIGF0dGFja2VyIG1pZ2h0CnBv
+dGVudGlhbGx5IGZpbmQgYXMgd2VsbCB1c2VmdWwgZ2FkZ2V0cyBpbnNpZGUgc2VjY29tcCBvciBh
+bnkgb3RoZXIgY29kZQp0aGF0IGlzIGluc2lkZSB0aGUga2VybmVsLCBzbyBpdCdzIG5vdCBhIHN0
+cmljdCBuZWNlc3NpdHkgZWl0aGVyLgoKPj4+PiBnYWluLiBJJ20gb24gYm9hcmQgZm9yIGRvaW5n
+IGl0LCBJIGp1c3Qgd2FudCB0byBiZSBjYXJlZnVsLiA6KQo+Pj4KPj4+IEFub3RoZXIgb3B0aW9u
+IG1pZ2h0IGJlIHRvIHJlbW92ZSBjL2VCUEYgZnJvbSB0aGUgZXF1YXRpb24gYWxsIHRvZ2V0aGVy
+Lgo+Pj4gYy9lQlBGIGFsbG93cyBmbGV4aWJpbGl0eSBhbmQgdGhhdCBhbG1vc3QgYWx3YXlzIGNv
+bWVzIGF0IHRoZSBjb3N0IG9mCj4+PiBhZGRpdGlvbmFsIHNlY3VyaXR5IHJpc2suIFNlY2NvbXAg
+aXMgZm9yIGVuaGFuY2VkIHNlY3VyaXR5IHllcz8gSG93IGFib3V0IGEKPj4+IG5ldyBzZWNjb21w
+IG1vZGUgdGhhdCBwYXNzZXMgaW4gc29tZXRoaW5nIGxpa2UgYSBiaXQgdmVjdG9yIG9yIGhhc2ht
+YXAgZm9yCj4+PiAic2ltcGxlIiB3aGl0ZS9ibGFjayBsaXN0IGNoZWNrcyB2YWxpZGF0ZWQgYnkg
+a2VybmVsIGNvZGUsIHZlcnN1cyB1c2VyCj4+PiBwcm92aWRlZCBpbnRlcnByZXRlZCBjb2RlPyBP
+ZiBjb3Vyc2UgdGhpcyByZW1vdmVzIGEgZmFpciBudW1iZXIgb2YgdGhpbmdzCj4+PiB5b3UgY2Fu
+IGN1cnJlbnRseSBkbyBvciB3b3VsZCBiZSBhYmxlIHRvIGRvIHdpdGggZUJQRi4gT2YgY291cnNl
+LCByZXN0YXRlZAo+Pj4gZnJvbSBhIHNlY3VyaXR5IHBvaW50IG9mIHZpZXcsIHRoaXMgcmVtb3Zl
+cyBhIGZhaXIgbnVtYmVyIG9mIHRoaW5ncyBhbgo+Pj4gX2F0dGFja2VyXyBjYW4gZG8uIFByZXN1
+bWFibHkgdGhlIHBlcmZvcm1hbmNlIGltcHJvdmVtZW50IHdvdWxkIGFsc28gYmUKPj4+IHNpZ25p
+ZmljYW50LgoKR29vZCBsdWNrIHdpdGggbm90IGJyZWFraW5nIGV4aXN0aW5nIGFwcGxpY2F0aW9u
+cyByZWx5aW5nIG9uIHNlY2NvbXAgb3V0CnRoZXJlLgoKPj4+IElzIHRoaXMgYW4gaWRlYSB3b3J0
+aCBwcm90b3R5cGluZz8KPj4KPj4gVGhhdCB3YXMgdGhlIG9yaWdpbmFsIHByb3RvdHlwZSBmb3Ig
+c2VjY29tcC1maWx0ZXIuIDopIFRoZSBkaXNjdXNzaW9uCj4+IGFyb3VuZCB0aGF0IGZyb20geWVh
+cnMgYWdvIGJhc2ljYWxseSBib2lsZWQgZG93biB0byBpdCBiZWluZwo+PiBpbmZsZXhpYmxlLiBH
+aXZlbiBhbGwgdGhlIHRoaW5ncyBwZW9wbGUgd2FudCB0byBkbyBhdCBzeXNjYWxsIHRpbWUsCj4+
+IHRoYXQgY29udGludWVzIHRvIGJlIHRydWUuIFNvIHRydWUsIGluIGZhY3QsIHRoYXQgaGVyZSB3
+ZSBhcmUgbm93LAo+PiB0cnlpbmcgdG8gbW92ZSB0byBlQlBGIGZyb20gY0JQRi4gOykKClJpZ2h0
+LCBhZ3JlZS4gY0JQRiBpcyBhbHNvIHByZXR0eSBtdWNoIGZyb3plbiB0aGVzZSBkYXlzIGFuZCBh
+c2lkZSBmcm9tCnRoYXQsIHNlY2NvbXAvQlBGIGFsc28ganVzdCB1c2VzIGEgcHJvcGVyIHN1YnNl
+dCBvZiBpdC4gSSB3b3VsZG4ndCBtaW5kCmRvaW5nIHNvbWV0aGluZyBzaW1pbGFyIGZvciBlQlBG
+IHNpZGUgYXMgbG9uZyBhcyB0aGlzIGlzIHJlYXNvbmFibHkKbWFpbnRhaW5hYmxlIGFuZCBub3Qg
+bWFraW5nIEJQRiBjb3JlIG1vcmUgY29tcGxleCwgYnV0IG1vc3Qgb2YgaXQgY2FuCmFscmVhZHkg
+YmUgc2V0IGluIHRoZSB2ZXJpZmllciBhbnl3YXkgYmFzZWQgb24gcHJvZyB0eXBlLiBOb3RlLCB0
+aGF0CnBlcmZvcm1hbmNlIG9mIHNlY2NvbXAvQlBGIGlzIGRlZmluaXRlbHkgYSBkZW1hbmQgYXMg
+d2VsbCB3aGljaCBpcyB3aHkKcGVvcGxlIHN0aWxsIGV4dGVuZCB0aGUgb2xkIHJlbWFpbmluZyBj
+QlBGIEpJVHMgdG9kYXkgc3VjaCB0aGF0IGl0IGNhbgpiZSBKSVRlZCBhbHNvIGZyb20gdGhlcmUu
+Cgo+IEkgd2lsbCB0cnkgdG8gZmluZCB0aGF0IGRpc2N1c3Npb24uIEFzIHNvbWVvbmUgcG9pbnRl
+ZCBvdXQgaGVyZSB0aG91Z2gsIGVCUEYgaXMgYmVpbmcgdXNlZCBieSBtb3JlIGFuZCBtb3JlIHBl
+b3BsZSBpbiBhcmVhcyB3aGVyZSBzZWN1cml0eSBpcyBub3QgdGhlIHByaW1hcnkgY29uY2Vybi4g
+RGlmZmVyaW5nIG9iamVjdGl2ZXMgd2lsbCBtYWtlIHRoaXMgYSBsb25nIHRlcm0gY29udGludWlu
+ZyBpc3N1ZS4gV2Ugb3Vyc2VsdmVzIHdlcmUgbG9va2luZyBhdCBlQlBGIHNpbXBseSBhcyBhIG1l
+YW5zIHRvIHVzZSBhIGhhc2htYXAgZm9yIGEgd2hpdGUvYmxhY2tsaXN0LCBpLmUuIHBlcmZvcm1h
+bmNlIG5vdCBmbGV4aWJpbGl0eS4KCk5vdCByZWFsbHksIHNlY3VyaXR5IG9mIHZlcmlmaWVyIGFu
+ZCBCUEYgaW5mcmEgaW4gZ2VuZXJhbCBpcyBvbiB0aGUgdG9wCm9mIHRoZSBsaXN0LCBpdCdzIGZ1
+bmRhbWVudGFsIHRvIHRoZSB1bmRlcmx5aW5nIGNvbmNlcHQgYW5kIGp1c3QgYmVjYXVzZQppdCBp
+cyBoZWF2aWx5IHVzZWQgYWxzbyBpbiB0cmFjaW5nIGFuZCBuZXR3b3JraW5nLCBpdCBvbmx5IHNo
+b3dzIHRoYXQgdGhlCmNvbmNlcHQgaXMgaGlnaGx5IGZsZXhpYmxlIHRoYXQgaXQgY2FuIGJlIGFw
+cGxpZWQgaW4gbXVsdGlwbGUgYXJlYXMuCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMu
+bGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21h
+aWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
