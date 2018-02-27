@@ -1,14 +1,17 @@
-From: Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
-Subject: Re: [net-next v3 0/2] eBPF seccomp filters
-Date: Mon, 26 Feb 2018 16:01:13 -0800
-Message-ID: <CAMp4zn_Qe0aXhxNzpETBABAhKWF2WkZXnpzrJczbD=6k42OydA@mail.gmail.com>
-References: <20180226072651.GA27045@ircssh-2.c.rugged-nimbus-611.internal>
-	<20180226230418.46nczgkh5csakyu7@ast-mbp>
+From: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Subject: Re: [RFC 1/3] seccomp: add a return code to trap to userspace
+Date: Mon, 26 Feb 2018 16:49:21 -0800
+Message-ID: <CAGXu5jKBmej+fXhEc+Jy7Guy+vXEZkHnc=4LNm1NNEsc1=DFVA__48301.1151817211$1519692476$gmane$org@mail.gmail.com>
+References: <20180204104946.25559-1-tycho@tycho.ws>
+	<20180204104946.25559-2-tycho@tycho.ws>
+	<CAGXu5jLAAKY19a9iC1PmXRyuwdn1Zxr2Cb318zdzkqgYt8vtdg@mail.gmail.com>
+	<20180214152958.cjgwh2k52zji2jxk@cisco>
+	<CALCETrXeZZfVzXh7SwKhyB=+ySDk5fhrrdrXrcABsQ=JpQT7Tg@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20180226230418.46nczgkh5csakyu7@ast-mbp>
+In-Reply-To: <CALCETrXeZZfVzXh7SwKhyB=+ySDk5fhrrdrXrcABsQ=JpQT7Tg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,59 +21,49 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>, netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexei Starovoitov <ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Akihiro Suda <suda.akihiro-Zyj7fXuS5i5L9jVzuh4AOg@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Paul Moore <pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Tyler Hicks <tyhicks-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Feb 26, 2018 at 3:04 PM, Alexei Starovoitov
-<alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
-> On Mon, Feb 26, 2018 at 07:26:54AM +0000, Sargun Dhillon wrote:
->> This patchset enables seccomp filters to be written in eBPF. Although, this
->> patchset doesn't introduce much of the functionality enabled by eBPF, it lays
->> the ground work for it. Currently, you have to disable CHECKPOINT_RESTORE
->> support in order to utilize eBPF seccomp filters, as eBPF filters cannot be
->> retrieved via the ptrace GET_FILTER API.
->
-> this was discussed multiple times in the past.
-> In eBPF land it's practically impossible to do checkpoint/restore
-> of the whole bpf program/map graph.
->
->> Any user can load a bpf seccomp filter program, and it can be pinned and
->> reused without requiring access to the bpf syscalls. A user only requires
->> the traditional permissions of either being cap_sys_admin, or have
->> no_new_privs set in order to install their rule.
+On Wed, Feb 14, 2018 at 9:19 AM, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> wrote:
+> On Wed, Feb 14, 2018 at 3:29 PM, Tycho Andersen <tycho-E0fblnxP3wo@public.gmane.org> wrote:
+>> On Tue, Feb 13, 2018 at 01:09:20PM -0800, Kees Cook wrote:
+>>> On Sun, Feb 4, 2018 at 2:49 AM, Tycho Andersen <tycho-E0fblnxP3wo@public.gmane.org> wrote:
+>>> I wonder if this communication should be netlink, which gives a more
+>>> well-structured way to describe what's on the wire? The reason I ask
+>>> is because if we ever change the seccomp_data structure, we'll now
+>>> have two places where we need to deal with it (the first being within
+>>> the BPF itself). My initial idea was to prefix the communication with
+>>> a size field, then send the structure, and then I had nightmares, and
+>>> realized this was basically netlink reinvented.
 >>
->> The primary reason for not adding maps support in this patchset is
->> to avoid introducing new complexities around PR_SET_NO_NEW_PRIVS.
->> If we have a map that the BPF program can read, it can potentially
->> "change" privileges after running. It seems like doing writes only
->> is safe, because it can be pure, and side effect free, and therefore
->> not negatively effect PR_SET_NO_NEW_PRIVS. Nonetheless, if we come
->> to an agreement, this can be in a follow-up patchset.
+>> I suggested netlink in LA, and everyone (especially Andy) groaned very
+>> loudly :). I'm happy to switch it to netlink if you like, although i
+>> think memcpy() of structs should be safe here, since the return value
+>> from read or write can indicate the size of things.
 >
-> readonly maps already exist. See BPF_F_RDONLY.
-> Is that not enough?
->
-With BPF_F_RDONLY, is there a mechanism to populate a prog_array, and
-then mark it rd_only?
+> I could easily get on board with "netlink" (i.e. NLA) messages sent
+> over an fd.  I will object strongly to the use of netlink *sockets*.
 
->> A benchmark of this patchset is as follows for a very standard eBPF filter:
+Yeah, I was thinking NLA over the fd; not a netlink socket.
+
+>>> An ERRNO filter would block a USER_NOTIF because it's unconditional.
+>>> TRACE could be either, USER_NOTIF could be either.
+>>>
+>>> This means TRACE rules would be bumped by a USER_NOTIF... hmm.
 >>
->> Given this test program:
->> for (i = 10; i < 99999999; i++) syscall(__NR_getpid);
->>
->> If I implement an eBPF filter with PROG_ARRAYs with a program per syscall,
->> and tail call, the numbers are such:
->> ebpf JIT 12.3% slower than native
->> ebpf no JIT 13.6% slower than native
->> seccomp JIT 17.6% slower than native
->> seccomp no JIT 37% slower than native
+>> Yes, I didn't exactly know what to do here. ERRNO, TRAP, and KILL all
+>> seemed more important than USER_NOTIF, but TRACE didn't. I don't have
+>> a strong opinion about what to do here, because users can adjust their
+>> filters accordingly. Let me know what you prefer.
 >
-> the perf gains are misleading, since patches don't enable bpf_tail_call.
->
-> The main statement I want to hear from seccomp maintainers before
-> proceeding any further on this that enabling eBPF in seccomp won't lead
-> to seccomp folks arguing against changes in bpf core (like verifier)
-> just because it's used by seccomp.
-> It must be spelled out in the commit log with explicit Ack.
->
+> If we switched to eBPF functions, this whole issue goes away.
+
+Yeah, though we'd still need some kind of "wait for answer" eBPF
+function. It feels wrong to re-use maps for that...
+
+-Kees
+
+-- 
+Kees Cook
+Pixel Security
