@@ -1,22 +1,17 @@
-From: chris hyser <chris.hyser-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+From: =?UTF-8?Q?Micka=c3=abl_Sala=c3=bcn?= <mic-WFhQfpSGs3bR7s880joybQ@public.gmane.org>
 Subject: Re: [net-next v3 0/2] eBPF seccomp filters
-Date: Tue, 27 Feb 2018 17:20:14 -0500
-Message-ID: <7fc0fab8-c1bc-bc76-a892-b3faab7d16ad@oracle.com>
+Date: Wed, 28 Feb 2018 00:10:12 +0100
+Message-ID: <5323e010-09df-26d9-15f5-c723faa13224@digikod.net>
 References: <20180226072651.GA27045@ircssh-2.c.rugged-nimbus-611.internal>
 	<20180226230418.46nczgkh5csakyu7@ast-mbp>
 	<CAGXu5jLdOcrn16q9pQ7JwTf88AVsL0o5LMJ=4P6vRN36u-_k_g@mail.gmail.com>
 	<CALCETrXNODxWkcwF-LbXBn+Ju7QJEyi3JR+spsRX4ecg8d1iMQ@mail.gmail.com>
 	<CAGXu5j+64WzxjBnpQxYCU50ak+VqVw1y0W+MWygFodxsDqEZRw@mail.gmail.com>
-	<db759dd2-31dc-d094-251d-d4c1e8af8704@oracle.com>
-	<CAGXu5j+idW9AjZHVdeedqLOFXriObUJLvcw8-9k5WxyQF8EWrg@mail.gmail.com>
-	<ddbefdda-f3b8-3956-fa0f-dcba8cf8e7d9@oracle.com>
-	<f712a383-8e84-da64-a454-51fdebf28741@iogearbox.net>
+	<A20EA7DD-94E9-488A-B9FF-D8E2C9F26611@amacapital.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; Format="flowed"
-Content-Transfer-Encoding: base64
+Content-Type: multipart/mixed; boundary="===============6880802283718438483=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <f712a383-8e84-da64-a454-51fdebf28741-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>
-Content-Language: en-US
+In-Reply-To: <A20EA7DD-94E9-488A-B9FF-D8E2C9F26611-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,85 +21,170 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexei Starovoitov <ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>, Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexei Starovoitov <ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gMDIvMjcvMjAxOCAwNDo1OCBQTSwgRGFuaWVsIEJvcmttYW5uIHdyb3RlOgo+IE9uIDAyLzI3
-LzIwMTggMDU6NTkgUE0sIGNocmlzIGh5c2VyIHdyb3RlOgo+PiBPbiAwMi8yNy8yMDE4IDExOjAw
-IEFNLCBLZWVzIENvb2sgd3JvdGU6Cj4+PiBPbiBUdWUsIEZlYiAyNywgMjAxOCBhdCA2OjUzIEFN
-LCBjaHJpcyBoeXNlciA8Y2hyaXMuaHlzZXJAb3JhY2xlLmNvbT4gd3JvdGU6Cj4+Pj4gT24gMDIv
-MjYvMjAxOCAxMTozOCBQTSwgS2VlcyBDb29rIHdyb3RlOgo+Pj4+PiBPbiBNb24sIEZlYiAyNiwg
-MjAxOCBhdCA4OjE5IFBNLCBBbmR5IEx1dG9taXJza2kgPGx1dG9AYW1hY2FwaXRhbC5uZXQ+Cj4+
-Pj4+IHdyb3RlOgo+Pj4+Pj4KPj4+Pj4+IDMuIFN0cmFpZ2h0LXVwIGJ1Z3MuwqAgVGhvc2UgYXJl
-IGV4YWN0bHkgYXMgcHJvYmxlbWF0aWMgYXMgdmVyaWZpZXIKPj4+Pj4+IGJ1Z3MgaW4gYW55IG90
-aGVyIHVucHJpdmlsZWdlZCBlQlBGIHByb2dyYW0gdHlwZSwgcmlnaHQ/wqAgSSBkb24ndCBzZWUK
-Pj4+Pj4+IHdoeSBzZWNjb21wIGlzIHNwZWNpYWwgaGVyZS4KPj4+Pj4KPj4+Pj4gTXkgY29uY2Vy
-biBpcyBtb3JlIGFib3V0IHVuaW50ZW5kZWQgZGVzaWduIG1pc3Rha2VzIG9yIG90aGVyIGZlYXR1
-cmUKPj4+Pj4gY3JlZXAgd2l0aCBzaWRlLWVmZmVjdHMsIGVzcGVjaWFsbHkgd2hlbiBpdCBjb21l
-cyB0byBwcml2aWxlZ2VzIGFuZAo+Pj4+PiBzeW5jaHJvbml6YXRpb24uIEdldHRpbmcgbm8tbmV3
-LXByaXZzIGRvbmUgY29ycmVjdGx5LCBmb3IgZXhhbXBsZSwKPj4+Pj4gdG9vayBzb21lIGNhcmVm
-dWwgdGhvdWdodCBhbmQgZGlzY3Vzc2lvbiwgYW5kIEknbSBzaHkgZnJvbSBob3cgcGFpbmZ1bAo+
-Pj4+PiBUU1lOQyB3YXMgb24gdGhlIHByb2Nlc3MgbG9ja2luZyBzaWRlLCBhbmQgZUJQRiBoYXMg
-aGFkIHNvbWUgcmF0aGVyCj4+Pj4+IHVnbHkgZmxhd3MgaW4gdGhlIHBhc3QgKGFuZCByZWNlbnRs
-eTogaXQgd2FzIG5pY2UgdG8gYmUgYWJsZSB0byBzYXkKPj4+Pj4gZm9yIFNwZWN0cmUgdGhhdCBz
-ZWNjb21wIGZpbHRlcnMgY291bGRuJ3QgYmUgY29uc3RydWN0ZWQgdG8gbWFrZQo+Pj4+PiBhdHRh
-Y2tzIGJ1dCBlQlBGIGNvdWxkKS4gQWRkaW5nIHRoZSBjb21wbGV4aXR5IG5lZWRzIHRvIGJlIHdv
-cnRoIHRoZQo+IAo+IFdlbGwsIG5vdCByZWFsbHkuIE9uZSBwYXJ0IG9mIGFsbCB0aGUgU3BlY3Ry
-ZSBtaXRpZ2F0aW9ucyB0aGF0IHdlbnQgdXBzdHJlYW0KPiBmcm9tIEJQRiBzaWRlIHdhcyB0byBo
-YXZlIGFuIG9wdGlvbiB0byByZW1vdmUgaW50ZXJwcmV0ZXIgZW50aXJlbHkgYW5kIHRoYXQKPiBh
-bHNvIHJlbGF0ZXMgdG8gc2VjY29tcCBldmVudHVhbGx5LiBCdXQgb3RoZXIgdGhhbiB0aGF0IGFu
-IGF0dGFja2VyIG1pZ2h0Cj4gcG90ZW50aWFsbHkgZmluZCBhcyB3ZWxsIHVzZWZ1bCBnYWRnZXRz
-IGluc2lkZSBzZWNjb21wIG9yIGFueSBvdGhlciBjb2RlCj4gdGhhdCBpcyBpbnNpZGUgdGhlIGtl
-cm5lbCwgc28gaXQncyBub3QgYSBzdHJpY3QgbmVjZXNzaXR5IGVpdGhlci4KPiAKPj4+Pj4gZ2Fp
-bi4gSSdtIG9uIGJvYXJkIGZvciBkb2luZyBpdCwgSSBqdXN0IHdhbnQgdG8gYmUgY2FyZWZ1bC4g
-OikKPj4+Pgo+Pj4+IEFub3RoZXIgb3B0aW9uIG1pZ2h0IGJlIHRvIHJlbW92ZSBjL2VCUEYgZnJv
-bSB0aGUgZXF1YXRpb24gYWxsIHRvZ2V0aGVyLgo+Pj4+IGMvZUJQRiBhbGxvd3MgZmxleGliaWxp
-dHkgYW5kIHRoYXQgYWxtb3N0IGFsd2F5cyBjb21lcyBhdCB0aGUgY29zdCBvZgo+Pj4+IGFkZGl0
-aW9uYWwgc2VjdXJpdHkgcmlzay4gU2VjY29tcCBpcyBmb3IgZW5oYW5jZWQgc2VjdXJpdHkgeWVz
-PyBIb3cgYWJvdXQgYQo+Pj4+IG5ldyBzZWNjb21wIG1vZGUgdGhhdCBwYXNzZXMgaW4gc29tZXRo
-aW5nIGxpa2UgYSBiaXQgdmVjdG9yIG9yIGhhc2htYXAgZm9yCj4+Pj4gInNpbXBsZSIgd2hpdGUv
-YmxhY2sgbGlzdCBjaGVja3MgdmFsaWRhdGVkIGJ5IGtlcm5lbCBjb2RlLCB2ZXJzdXMgdXNlcgo+
-Pj4+IHByb3ZpZGVkIGludGVycHJldGVkIGNvZGU/IE9mIGNvdXJzZSB0aGlzIHJlbW92ZXMgYSBm
-YWlyIG51bWJlciBvZiB0aGluZ3MKPj4+PiB5b3UgY2FuIGN1cnJlbnRseSBkbyBvciB3b3VsZCBi
-ZSBhYmxlIHRvIGRvIHdpdGggZUJQRi4gT2YgY291cnNlLCByZXN0YXRlZAo+Pj4+IGZyb20gYSBz
-ZWN1cml0eSBwb2ludCBvZiB2aWV3LCB0aGlzIHJlbW92ZXMgYSBmYWlyIG51bWJlciBvZiB0aGlu
-Z3MgYW4KPj4+PiBfYXR0YWNrZXJfIGNhbiBkby4gUHJlc3VtYWJseSB0aGUgcGVyZm9ybWFuY2Ug
-aW1wcm92ZW1lbnQgd291bGQgYWxzbyBiZQo+Pj4+IHNpZ25pZmljYW50Lgo+IAo+IEdvb2QgbHVj
-ayB3aXRoIG5vdCBicmVha2luZyBleGlzdGluZyBhcHBsaWNhdGlvbnMgcmVseWluZyBvbiBzZWNj
-b21wIG91dAo+IHRoZXJlLgoKVGhpcyB3YXNuJ3QgaW4gdGhlIGNvbnRleHQgb2YgYW4gaW1wbGVt
-ZW50YXRpb24gcHJvcG9zYWwsIGJ1dCB0aGUgYXNzdW1wdGlvbiB3b3VsZCBiZSB0byBhZGQgdGhp
-cyBpbiBhZGRpdGlvbiB0byB0aGUgb2xkIAp3YXkuIE5vdywgZG9lcyB0aGF0IG1ha2Ugc2Vuc2Ug
-dG8gZG8/IFRoYXQgaXMgdGhlIGRpc2N1c3Npb24uCgo+IAo+Pj4+IElzIHRoaXMgYW4gaWRlYSB3
-b3J0aCBwcm90b3R5cGluZz8KPj4+Cj4+PiBUaGF0IHdhcyB0aGUgb3JpZ2luYWwgcHJvdG90eXBl
-IGZvciBzZWNjb21wLWZpbHRlci4gOikgVGhlIGRpc2N1c3Npb24KPj4+IGFyb3VuZCB0aGF0IGZy
-b20geWVhcnMgYWdvIGJhc2ljYWxseSBib2lsZWQgZG93biB0byBpdCBiZWluZwo+Pj4gaW5mbGV4
-aWJsZS4gR2l2ZW4gYWxsIHRoZSB0aGluZ3MgcGVvcGxlIHdhbnQgdG8gZG8gYXQgc3lzY2FsbCB0
-aW1lLAo+Pj4gdGhhdCBjb250aW51ZXMgdG8gYmUgdHJ1ZS4gU28gdHJ1ZSwgaW4gZmFjdCwgdGhh
-dCBoZXJlIHdlIGFyZSBub3csCj4+PiB0cnlpbmcgdG8gbW92ZSB0byBlQlBGIGZyb20gY0JQRi4g
-OykKPiAKPiBSaWdodCwgYWdyZWUuIGNCUEYgaXMgYWxzbyBwcmV0dHkgbXVjaCBmcm96ZW4gdGhl
-c2UgZGF5cyBhbmQgYXNpZGUgZnJvbQo+IHRoYXQsIHNlY2NvbXAvQlBGIGFsc28ganVzdCB1c2Vz
-IGEgcHJvcGVyIHN1YnNldCBvZiBpdC4gSSB3b3VsZG4ndCBtaW5kCj4gZG9pbmcgc29tZXRoaW5n
-IHNpbWlsYXIgZm9yIGVCUEYgc2lkZSBhcyBsb25nIGFzIHRoaXMgaXMgcmVhc29uYWJseQo+IG1h
-aW50YWluYWJsZSBhbmQgbm90IG1ha2luZyBCUEYgY29yZSBtb3JlIGNvbXBsZXgsIGJ1dCBtb3N0
-IG9mIGl0IGNhbgo+IGFscmVhZHkgYmUgc2V0IGluIHRoZSB2ZXJpZmllciBhbnl3YXkgYmFzZWQg
-b24gcHJvZyB0eXBlLiBOb3RlLCB0aGF0Cj4gcGVyZm9ybWFuY2Ugb2Ygc2VjY29tcC9CUEYgaXMg
-ZGVmaW5pdGVseSBhIGRlbWFuZCBhcyB3ZWxsIHdoaWNoIGlzIHdoeQo+IHBlb3BsZSBzdGlsbCBl
-eHRlbmQgdGhlIG9sZCByZW1haW5pbmcgY0JQRiBKSVRzIHRvZGF5IHN1Y2ggdGhhdCBpdCBjYW4K
-PiBiZSBKSVRlZCBhbHNvIGZyb20gdGhlcmUuCj4gCj4+IEkgd2lsbCB0cnkgdG8gZmluZCB0aGF0
-IGRpc2N1c3Npb24uIEFzIHNvbWVvbmUgcG9pbnRlZCBvdXQgaGVyZSB0aG91Z2gsIGVCUEYgaXMg
-YmVpbmcgdXNlZCBieSBtb3JlIGFuZCBtb3JlIHBlb3BsZSBpbiBhcmVhcyB3aGVyZSBzZWN1cml0
-eSBpcyBub3QgdGhlIHByaW1hcnkgY29uY2Vybi4gRGlmZmVyaW5nIG9iamVjdGl2ZXMgd2lsbCBt
-YWtlIHRoaXMgYSBsb25nIHRlcm0gY29udGludWluZyBpc3N1ZS4gV2Ugb3Vyc2VsdmVzIHdlcmUg
-bG9va2luZyBhdCBlQlBGIHNpbXBseSBhcyBhIG1lYW5zIHRvIHVzZSBhIGhhc2htYXAgZm9yIGEg
-d2hpdGUvYmxhY2tsaXN0LCBpLmUuIHBlcmZvcm1hbmNlIG5vdCBmbGV4aWJpbGl0eS4KPiAKPiBO
-b3QgcmVhbGx5LCBzZWN1cml0eSBvZiB2ZXJpZmllciBhbmQgQlBGIGluZnJhIGluIGdlbmVyYWwg
-aXMgb24gdGhlIHRvcAo+IG9mIHRoZSBsaXN0LCBpdCdzIGZ1bmRhbWVudGFsIHRvIHRoZSB1bmRl
-cmx5aW5nIGNvbmNlcHQgYW5kIGp1c3QgYmVjYXVzZQo+IGl0IGlzIGhlYXZpbHkgdXNlZCBhbHNv
-IGluIHRyYWNpbmcgYW5kIG5ldHdvcmtpbmcsIGl0IG9ubHkgc2hvd3MgdGhhdCB0aGUKPiBjb25j
-ZXB0IGlzIGhpZ2hseSBmbGV4aWJsZSB0aGF0IGl0IGNhbiBiZSBhcHBsaWVkIGluIG11bHRpcGxl
-IGFyZWFzLgoKT2suIExldCBtZSBsb29rIGludG8gdGhpcyBhIGJpdCBiZWNhdXNlIHRoaXMgaXMg
-dGhlIGhlYXJ0IG9mIHRoZSBtYXR0ZXIuCgotY2hyaXNoCl9fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5l
-cnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRp
-b24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--===============6880802283718438483==
+Content-Type: multipart/signed; micalg=pgp-sha512;
+ protocol="application/pgp-signature";
+ boundary="PmnjYZyxuO71Rs06l6Hz9CIhRqFt4lj6V"
+
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--PmnjYZyxuO71Rs06l6Hz9CIhRqFt4lj6V
+Content-Type: multipart/mixed; boundary="rkv0HoI3wA8QdBvnAroLWkdV7ayF8bpKW";
+ protected-headers="v1"
+From: =?UTF-8?Q?Micka=c3=abl_Sala=c3=bcn?= <mic-WFhQfpSGs3bR7s880joybQ@public.gmane.org>
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Cc: Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>,
+ Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>,
+ Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>,
+ Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>,
+ Alexei Starovoitov <ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>,
+ Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Jessica Frazelle <me-XvZkT8t+Da5Wk0Htik3J/w@public.gmane.org>,
+ Brian Goff <cpuguy83-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Tom Hromatka <tom.hromatka-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>,
+ James Morris <jmorris-gx6/JNMH7DfYtjvyW6yDsg@public.gmane.org>, Tycho Andersen <tycho-E0fblnxP3wo@public.gmane.org>
+Message-ID: <5323e010-09df-26d9-15f5-c723faa13224-WFhQfpSGs3bR7s880joybQ@public.gmane.org>
+Subject: Re: [net-next v3 0/2] eBPF seccomp filters
+References: <20180226072651.GA27045-du9IEJ8oIxHXYT48pCVpJ3c7ZZ+wIVaZYkHkVr5ML8kVGlcevz2xqA@public.gmane.org>
+ <20180226230418.46nczgkh5csakyu7@ast-mbp>
+ <CAGXu5jLdOcrn16q9pQ7JwTf88AVsL0o5LMJ=4P6vRN36u-_k_g-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+ <CALCETrXNODxWkcwF-LbXBn+Ju7QJEyi3JR+spsRX4ecg8d1iMQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+ <CAGXu5j+64WzxjBnpQxYCU50ak+VqVw1y0W+MWygFodxsDqEZRw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+ <A20EA7DD-94E9-488A-B9FF-D8E2C9F26611-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+In-Reply-To: <A20EA7DD-94E9-488A-B9FF-D8E2C9F26611-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+
+--rkv0HoI3wA8QdBvnAroLWkdV7ayF8bpKW
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+
+On 27/02/2018 05:54, Andy Lutomirski wrote:
+>=20
+>=20
+>> On Feb 26, 2018, at 8:38 PM, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org> wrote:
+>>
+>> On Mon, Feb 26, 2018 at 8:19 PM, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>=
+ wrote:
+>>>> On Feb 26, 2018, at 3:20 PM, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org> wrote=
+:
+>>>>
+>>>> On Mon, Feb 26, 2018 at 3:04 PM, Alexei Starovoitov
+>>>> <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+>>>>>> On Mon, Feb 26, 2018 at 07:26:54AM +0000, Sargun Dhillon wrote:
+>>>>>> This patchset enables seccomp filters to be written in eBPF. Altho=
+ugh, this
+>>>>>> [...]
+>>>>> The main statement I want to hear from seccomp maintainers before
+>>>>> proceeding any further on this that enabling eBPF in seccomp won't =
+lead
+>>>>> to seccomp folks arguing against changes in bpf core (like verifier=
+)
+>>>>> just because it's used by seccomp.
+>>>>> It must be spelled out in the commit log with explicit Ack.
+>>>>
+>>>> The primary thing I'm concerned about with eBPF and seccomp is
+>>>> side-effects from eBPF programs running at syscall time. This is an
+>>>> extremely sensitive area, and I want to be sure there won't be
+>>>> feature-creep here that leads to seccomp getting into a bad state.
+>>>>
+>>>> As long as seccomp can continue have its own verifier, I *think* thi=
+s
+>>>> will be fine, though, again I remain concerned about maps, etc. I'm
+>>>> still reviewing these patches and how they might provide overlap wit=
+h
+>>>> Tycho's needs too, etc.
+>>>
+>>> I'm not sure I see this as a huge problem.  As far as I can see, ther=
+e
+>>> are three ways that a verifier change could be problematic:
+>>>
+>>> 1. Addition of a new type of map.  But seccomp would just not allow
+>>> new map types by default, right?
+>>>
+>>> 2. Addition of a new BPF_CALLable helper.  Seccomp wants a way to
+>>> whitelist BPF_CALL targets.  That should be straightforward.
+>>
+>> Yup, agreed on 1 and 2.
+>>
+>>> 3. Straight-up bugs.  Those are exactly as problematic as verifier
+>>> bugs in any other unprivileged eBPF program type, right?  I don't see=
+
+>>> why seccomp is special here.
+>>
+>> My concern is more about unintended design mistakes or other feature
+>> creep with side-effects, especially when it comes to privileges and
+>> synchronization. Getting no-new-privs done correctly, for example,
+>> took some careful thought and discussion, and I'm shy from how painful=
+
+>> TSYNC was on the process locking side, and eBPF has had some rather
+>> ugly flaws in the past (and recently: it was nice to be able to say
+>> for Spectre that seccomp filters couldn't be constructed to make
+>> attacks but eBPF could). Adding the complexity needs to be worth the
+>> gain. I'm on board for doing it, I just want to be careful. :)
+>>
+>=20
+> I agree.  I think that, if we do this right, we get a clean version of =
+Tycho's notifiers.  We can also very easily build on that to send a non-b=
+locking message to the notifier fd, which gets us a version of seccomp lo=
+gging that works for things like Chromium and even strace.  I think this =
+is worth it.
+>=20
+> I also think this sort of argument is why Micka=C3=ABl's privileged-fir=
+st Landlock is the wrong approach.  By getting the unprivileged parts rig=
+ht from day one, we can carefully extend the mechanism and keep it usable=
+ by unprivileged apps.  But, if we'd started as root-only, fixing up ever=
+ything needed to make it safe for unprivileged users after the fact would=
+ have been quite messy.
+
+We agreed (including Kees and you, at the Santa Fe LPC) to limit the use
+of Landlock to CAP_SYS_ADMIN at first. It is an artificial limitation
+that can be re-enabled by removing three explicit checks/lines. Landlock
+was designed for unprivileged use from day one and it is still the goal.
+
+>=20
+> And the considerations for making eBPF safe for use by unprivileged tas=
+ks to filter their descendents are more or less the same for seccomp and =
+Landlock.  Can we please arrange things so we solve this problem only onc=
+e?
+>=20
+
+Landlock is definitely focused on eBPF. It should not be hard to add a
+new Landlock program type to mimic the seccomp filter checks (to use
+eBPF features like maps), but I'm not sure to get the use case here.
+
+
+--rkv0HoI3wA8QdBvnAroLWkdV7ayF8bpKW--
+
+--PmnjYZyxuO71Rs06l6Hz9CIhRqFt4lj6V
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCgAdFiEEUysCyY8er9Axt7hqIt7+33O9apUFAlqV5VQACgkQIt7+33O9
+apXM5Qf8DxiKDrwBF0Cewz76iQIMBh1BsBjFgINJEdrlAiD8rzAwLksjt+auXl55
+qlw7o6/Fbazejf+2I/w8SMWnm5TBXJ3j6GgK8zM3nQthInQN8cvNy2KFve1UOjkD
+Q8sLEFkkeKr58vXVu+cG6HaBd9JgC8XCNg7PsCq2nUkDMY2OxNDxHBm/S7MrJ0sg
+Ge5M+B2l/wLFAFu93s6UnFnW8ATBxEu+lbu830qFN3qUulT0VQ5AuKgz7z0L3cuY
+A8272eKaxMWjVifcdu5FwDayxrwb0YCbY0KrQmHg5wINNHISEkpf+7SA89/lpUOo
+7Ih1fLGFrnYI5ceogLEbyQONiEjvtQ==
+=b+40
+-----END PGP SIGNATURE-----
+
+--PmnjYZyxuO71Rs06l6Hz9CIhRqFt4lj6V--
+
+--===============6880802283718438483==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============6880802283718438483==--
