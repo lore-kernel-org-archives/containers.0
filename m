@@ -1,17 +1,16 @@
 From: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Subject: Re: [net-next v3 1/2] bpf, seccomp: Add eBPF filter capabilities
-Date: Mon, 26 Feb 2018 20:31:12 -0800
-Message-ID: <CAGXu5jLr0Gavm40qyaL0K0YriLecP33DubURMsW_SUxOsO+r9g@mail.gmail.com>
-References: <20180226072702.GA27057@ircssh-2.c.rugged-nimbus-611.internal>
-	<20180227005446.cmwsmh3fz4vhimmt@smitten>
-	<CAMp4zn9Gk62Wa6WYtmn9qj5zuFFR4MzS4TUGsG5Bx-JYZEc_4A@mail.gmail.com>
-	<20180227035746.vh5mw7ijbyg3mbq3@cisco>
-	<CAMp4zn-NNWT4mpmb_-5MV5urhj3KCzF=ZSoiHX54pLw3847Xrw@mail.gmail.com>
+Subject: Re: [net-next v3 0/2] eBPF seccomp filters
+Date: Mon, 26 Feb 2018 20:38:18 -0800
+Message-ID: <CAGXu5j+64WzxjBnpQxYCU50ak+VqVw1y0W+MWygFodxsDqEZRw@mail.gmail.com>
+References: <20180226072651.GA27045@ircssh-2.c.rugged-nimbus-611.internal>
+	<20180226230418.46nczgkh5csakyu7@ast-mbp>
+	<CAGXu5jLdOcrn16q9pQ7JwTf88AVsL0o5LMJ=4P6vRN36u-_k_g@mail.gmail.com>
+	<CALCETrXNODxWkcwF-LbXBn+Ju7QJEyi3JR+spsRX4ecg8d1iMQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAMp4zn-NNWT4mpmb_-5MV5urhj3KCzF=ZSoiHX54pLw3847Xrw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <CALCETrXNODxWkcwF-LbXBn+Ju7QJEyi3JR+spsRX4ecg8d1iMQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,46 +20,58 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
-Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>, netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexei Starovoitov <ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>, Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexei Starovoitov <ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Feb 26, 2018 at 8:08 PM, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org> wrote:
-> On Mon, Feb 26, 2018 at 7:57 PM, Tycho Andersen <tycho-E0fblnxP3wo@public.gmane.org> wrote:
->> On Mon, Feb 26, 2018 at 07:49:48PM -0800, Sargun Dhillon wrote:
->>> On Mon, Feb 26, 2018 at 4:54 PM, Tycho Andersen <tycho-E0fblnxP3wo@public.gmane.org> wrote:
->>> > On Mon, Feb 26, 2018 at 07:27:05AM +0000, Sargun Dhillon wrote:
->>> >> +config SECCOMP_FILTER_EXTENDED
->>> >> +     bool "Extended BPF seccomp filters"
->>> >> +     depends on SECCOMP_FILTER && BPF_SYSCALL
->>> >> +     depends on !CHECKPOINT_RESTORE
->>> >
->>> > Why not just give -EINVAL or something in case one of these is
->>> > requested, instead of making them incompatible at compile time?
->>> >
->>> > Tycho
->>> There's already code to return -EMEDIUMTYPE if it's a non-classic, or
->>> non-saved filter. Under the normal case, with CHECKPOINT_RESTORE
->>> enabled, you should never be able to get that. I think it makes sense
->>> to preserve this behaviour.
+On Mon, Feb 26, 2018 at 8:19 PM, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> wrote:
+>> On Feb 26, 2018, at 3:20 PM, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org> wrote:
 >>
->> Oh, right. So can't we just drop this, and the existing code will
->> DTRT, i.e. give you -EMEDIUMTYPE because the new filters aren't
->> supported, until they are?
+>> On Mon, Feb 26, 2018 at 3:04 PM, Alexei Starovoitov
+>> <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+>>>> On Mon, Feb 26, 2018 at 07:26:54AM +0000, Sargun Dhillon wrote:
+>>>> This patchset enables seccomp filters to be written in eBPF. Although, this
+>>>> [...]
+>>> The main statement I want to hear from seccomp maintainers before
+>>> proceeding any further on this that enabling eBPF in seccomp won't lead
+>>> to seccomp folks arguing against changes in bpf core (like verifier)
+>>> just because it's used by seccomp.
+>>> It must be spelled out in the commit log with explicit Ack.
 >>
->> Tycho
-> My suggestion is we merge this as is, so we don't break checkpoint /
-> restore, and I will try to get the filter dumping patching in the same
-> development cycle as it comes at minimal risk. Otherwise, we risk
-> introducing a feature which could break checkpoint/restore, even in
-> unprivileged containers since anyone can load a BPF Seccomp filter.
+>> The primary thing I'm concerned about with eBPF and seccomp is
+>> side-effects from eBPF programs running at syscall time. This is an
+>> extremely sensitive area, and I want to be sure there won't be
+>> feature-creep here that leads to seccomp getting into a bad state.
+>>
+>> As long as seccomp can continue have its own verifier, I *think* this
+>> will be fine, though, again I remain concerned about maps, etc. I'm
+>> still reviewing these patches and how they might provide overlap with
+>> Tycho's needs too, etc.
+>
+> I'm not sure I see this as a huge problem.  As far as I can see, there
+> are three ways that a verifier change could be problematic:
+>
+> 1. Addition of a new type of map.  But seccomp would just not allow
+> new map types by default, right?
+>
+> 2. Addition of a new BPF_CALLable helper.  Seccomp wants a way to
+> whitelist BPF_CALL targets.  That should be straightforward.
 
-There is no rush to merge such a drastic expansion of the seccomp
-attack surface. :) For me, the driving feature is if we can get
-Tycho's notifier implemented in eBPF. The speed improvements, as far
-as I'm concerned, aren't sufficient to add eBPF to seccomp. They are
-certainly a nice benefit, but seccomp must be very conservative about
-adding attack surface.
+Yup, agreed on 1 and 2.
+
+> 3. Straight-up bugs.  Those are exactly as problematic as verifier
+> bugs in any other unprivileged eBPF program type, right?  I don't see
+> why seccomp is special here.
+
+My concern is more about unintended design mistakes or other feature
+creep with side-effects, especially when it comes to privileges and
+synchronization. Getting no-new-privs done correctly, for example,
+took some careful thought and discussion, and I'm shy from how painful
+TSYNC was on the process locking side, and eBPF has had some rather
+ugly flaws in the past (and recently: it was nice to be able to say
+for Spectre that seccomp filters couldn't be constructed to make
+attacks but eBPF could). Adding the complexity needs to be worth the
+gain. I'm on board for doing it, I just want to be careful. :)
 
 -Kees
 
