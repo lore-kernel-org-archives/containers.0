@@ -1,17 +1,14 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [net-next v3 0/2] eBPF seccomp filters
-Date: Mon, 26 Feb 2018 20:54:39 -0800
-Message-ID: <A20EA7DD-94E9-488A-B9FF-D8E2C9F26611@amacapital.net>
-References: <20180226072651.GA27045@ircssh-2.c.rugged-nimbus-611.internal>
-	<20180226230418.46nczgkh5csakyu7@ast-mbp>
-	<CAGXu5jLdOcrn16q9pQ7JwTf88AVsL0o5LMJ=4P6vRN36u-_k_g@mail.gmail.com>
-	<CALCETrXNODxWkcwF-LbXBn+Ju7QJEyi3JR+spsRX4ecg8d1iMQ@mail.gmail.com>
-	<CAGXu5j+64WzxjBnpQxYCU50ak+VqVw1y0W+MWygFodxsDqEZRw@mail.gmail.com>
-Mime-Version: 1.0 (1.0)
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+From: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH v7 5/7] fuse: Simplfiy the posix acl handling logic.
+Date: Tue, 27 Feb 2018 10:00:25 +0100
+Message-ID: <CAOssrKeWvYpgj4_cgsRBL_kTOHyRS-9_mfO9JHP-JahgqFnfHQ__13256.5803979107$1519721912$gmane$org@mail.gmail.com>
+References: <87po4rz4ui.fsf_-_@xmission.com>
+	<20180226235302.12708-5-ebiederm@xmission.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAGXu5j+64WzxjBnpQxYCU50ak+VqVw1y0W+MWygFodxsDqEZRw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20180226235302.12708-5-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,72 +18,28 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>, Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexei Starovoitov <ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, mic-WFhQfpSGs3bR7s880joybQ@public.gmane.org, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Cgo+IE9uIEZlYiAyNiwgMjAxOCwgYXQgODozOCBQTSwgS2VlcyBDb29rIDxrZWVzY29va0BjaHJv
-bWl1bS5vcmc+IHdyb3RlOgo+IAo+IE9uIE1vbiwgRmViIDI2LCAyMDE4IGF0IDg6MTkgUE0sIEFu
-ZHkgTHV0b21pcnNraSA8bHV0b0BhbWFjYXBpdGFsLm5ldD4gd3JvdGU6Cj4+PiBPbiBGZWIgMjYs
-IDIwMTgsIGF0IDM6MjAgUE0sIEtlZXMgQ29vayA8a2Vlc2Nvb2tAY2hyb21pdW0ub3JnPiB3cm90
-ZToKPj4+IAo+Pj4gT24gTW9uLCBGZWIgMjYsIDIwMTggYXQgMzowNCBQTSwgQWxleGVpIFN0YXJv
-dm9pdG92Cj4+PiA8YWxleGVpLnN0YXJvdm9pdG92QGdtYWlsLmNvbT4gd3JvdGU6Cj4+Pj4+IE9u
-IE1vbiwgRmViIDI2LCAyMDE4IGF0IDA3OjI2OjU0QU0gKzAwMDAsIFNhcmd1biBEaGlsbG9uIHdy
-b3RlOgo+Pj4+PiBUaGlzIHBhdGNoc2V0IGVuYWJsZXMgc2VjY29tcCBmaWx0ZXJzIHRvIGJlIHdy
-aXR0ZW4gaW4gZUJQRi4gQWx0aG91Z2gsIHRoaXMKPj4+Pj4gWy4uLl0KPj4+PiBUaGUgbWFpbiBz
-dGF0ZW1lbnQgSSB3YW50IHRvIGhlYXIgZnJvbSBzZWNjb21wIG1haW50YWluZXJzIGJlZm9yZQo+
-Pj4+IHByb2NlZWRpbmcgYW55IGZ1cnRoZXIgb24gdGhpcyB0aGF0IGVuYWJsaW5nIGVCUEYgaW4g
-c2VjY29tcCB3b24ndCBsZWFkCj4+Pj4gdG8gc2VjY29tcCBmb2xrcyBhcmd1aW5nIGFnYWluc3Qg
-Y2hhbmdlcyBpbiBicGYgY29yZSAobGlrZSB2ZXJpZmllcikKPj4+PiBqdXN0IGJlY2F1c2UgaXQn
-cyB1c2VkIGJ5IHNlY2NvbXAuCj4+Pj4gSXQgbXVzdCBiZSBzcGVsbGVkIG91dCBpbiB0aGUgY29t
-bWl0IGxvZyB3aXRoIGV4cGxpY2l0IEFjay4KPj4+IAo+Pj4gVGhlIHByaW1hcnkgdGhpbmcgSSdt
-IGNvbmNlcm5lZCBhYm91dCB3aXRoIGVCUEYgYW5kIHNlY2NvbXAgaXMKPj4+IHNpZGUtZWZmZWN0
-cyBmcm9tIGVCUEYgcHJvZ3JhbXMgcnVubmluZyBhdCBzeXNjYWxsIHRpbWUuIFRoaXMgaXMgYW4K
-Pj4+IGV4dHJlbWVseSBzZW5zaXRpdmUgYXJlYSwgYW5kIEkgd2FudCB0byBiZSBzdXJlIHRoZXJl
-IHdvbid0IGJlCj4+PiBmZWF0dXJlLWNyZWVwIGhlcmUgdGhhdCBsZWFkcyB0byBzZWNjb21wIGdl
-dHRpbmcgaW50byBhIGJhZCBzdGF0ZS4KPj4+IAo+Pj4gQXMgbG9uZyBhcyBzZWNjb21wIGNhbiBj
-b250aW51ZSBoYXZlIGl0cyBvd24gdmVyaWZpZXIsIEkgKnRoaW5rKiB0aGlzCj4+PiB3aWxsIGJl
-IGZpbmUsIHRob3VnaCwgYWdhaW4gSSByZW1haW4gY29uY2VybmVkIGFib3V0IG1hcHMsIGV0Yy4g
-SSdtCj4+PiBzdGlsbCByZXZpZXdpbmcgdGhlc2UgcGF0Y2hlcyBhbmQgaG93IHRoZXkgbWlnaHQg
-cHJvdmlkZSBvdmVybGFwIHdpdGgKPj4+IFR5Y2hvJ3MgbmVlZHMgdG9vLCBldGMuCj4+IAo+PiBJ
-J20gbm90IHN1cmUgSSBzZWUgdGhpcyBhcyBhIGh1Z2UgcHJvYmxlbS4gIEFzIGZhciBhcyBJIGNh
-biBzZWUsIHRoZXJlCj4+IGFyZSB0aHJlZSB3YXlzIHRoYXQgYSB2ZXJpZmllciBjaGFuZ2UgY291
-bGQgYmUgcHJvYmxlbWF0aWM6Cj4+IAo+PiAxLiBBZGRpdGlvbiBvZiBhIG5ldyB0eXBlIG9mIG1h
-cC4gIEJ1dCBzZWNjb21wIHdvdWxkIGp1c3Qgbm90IGFsbG93Cj4+IG5ldyBtYXAgdHlwZXMgYnkg
-ZGVmYXVsdCwgcmlnaHQ/Cj4+IAo+PiAyLiBBZGRpdGlvbiBvZiBhIG5ldyBCUEZfQ0FMTGFibGUg
-aGVscGVyLiAgU2VjY29tcCB3YW50cyBhIHdheSB0bwo+PiB3aGl0ZWxpc3QgQlBGX0NBTEwgdGFy
-Z2V0cy4gIFRoYXQgc2hvdWxkIGJlIHN0cmFpZ2h0Zm9yd2FyZC4KPiAKPiBZdXAsIGFncmVlZCBv
-biAxIGFuZCAyLgo+IAo+PiAzLiBTdHJhaWdodC11cCBidWdzLiAgVGhvc2UgYXJlIGV4YWN0bHkg
-YXMgcHJvYmxlbWF0aWMgYXMgdmVyaWZpZXIKPj4gYnVncyBpbiBhbnkgb3RoZXIgdW5wcml2aWxl
-Z2VkIGVCUEYgcHJvZ3JhbSB0eXBlLCByaWdodD8gIEkgZG9uJ3Qgc2VlCj4+IHdoeSBzZWNjb21w
-IGlzIHNwZWNpYWwgaGVyZS4KPiAKPiBNeSBjb25jZXJuIGlzIG1vcmUgYWJvdXQgdW5pbnRlbmRl
-ZCBkZXNpZ24gbWlzdGFrZXMgb3Igb3RoZXIgZmVhdHVyZQo+IGNyZWVwIHdpdGggc2lkZS1lZmZl
-Y3RzLCBlc3BlY2lhbGx5IHdoZW4gaXQgY29tZXMgdG8gcHJpdmlsZWdlcyBhbmQKPiBzeW5jaHJv
-bml6YXRpb24uIEdldHRpbmcgbm8tbmV3LXByaXZzIGRvbmUgY29ycmVjdGx5LCBmb3IgZXhhbXBs
-ZSwKPiB0b29rIHNvbWUgY2FyZWZ1bCB0aG91Z2h0IGFuZCBkaXNjdXNzaW9uLCBhbmQgSSdtIHNo
-eSBmcm9tIGhvdyBwYWluZnVsCj4gVFNZTkMgd2FzIG9uIHRoZSBwcm9jZXNzIGxvY2tpbmcgc2lk
-ZSwgYW5kIGVCUEYgaGFzIGhhZCBzb21lIHJhdGhlcgo+IHVnbHkgZmxhd3MgaW4gdGhlIHBhc3Qg
-KGFuZCByZWNlbnRseTogaXQgd2FzIG5pY2UgdG8gYmUgYWJsZSB0byBzYXkKPiBmb3IgU3BlY3Ry
-ZSB0aGF0IHNlY2NvbXAgZmlsdGVycyBjb3VsZG4ndCBiZSBjb25zdHJ1Y3RlZCB0byBtYWtlCj4g
-YXR0YWNrcyBidXQgZUJQRiBjb3VsZCkuIEFkZGluZyB0aGUgY29tcGxleGl0eSBuZWVkcyB0byBi
-ZSB3b3J0aCB0aGUKPiBnYWluLiBJJ20gb24gYm9hcmQgZm9yIGRvaW5nIGl0LCBJIGp1c3Qgd2Fu
-dCB0byBiZSBjYXJlZnVsLiA6KQo+IAoKSSBhZ3JlZS4gIEkgdGhpbmsgdGhhdCwgaWYgd2UgZG8g
-dGhpcyByaWdodCwgd2UgZ2V0IGEgY2xlYW4gdmVyc2lvbiBvZiBUeWNobydzIG5vdGlmaWVycy4g
-IFdlIGNhbiBhbHNvIHZlcnkgZWFzaWx5IGJ1aWxkIG9uIHRoYXQgdG8gc2VuZCBhIG5vbi1ibG9j
-a2luZyBtZXNzYWdlIHRvIHRoZSBub3RpZmllciBmZCwgd2hpY2ggZ2V0cyB1cyBhIHZlcnNpb24g
-b2Ygc2VjY29tcCBsb2dnaW5nIHRoYXQgd29ya3MgZm9yIHRoaW5ncyBsaWtlIENocm9taXVtIGFu
-ZCBldmVuIHN0cmFjZS4gIEkgdGhpbmsgdGhpcyBpcyB3b3J0aCBpdC4KCkkgYWxzbyB0aGluayB0
-aGlzIHNvcnQgb2YgYXJndW1lbnQgaXMgd2h5IE1pY2thw6tsJ3MgcHJpdmlsZWdlZC1maXJzdCBM
-YW5kbG9jayBpcyB0aGUgd3JvbmcgYXBwcm9hY2guICBCeSBnZXR0aW5nIHRoZSB1bnByaXZpbGVn
-ZWQgcGFydHMgcmlnaHQgZnJvbSBkYXkgb25lLCB3ZSBjYW4gY2FyZWZ1bGx5IGV4dGVuZCB0aGUg
-bWVjaGFuaXNtIGFuZCBrZWVwIGl0IHVzYWJsZSBieSB1bnByaXZpbGVnZWQgYXBwcy4gIEJ1dCwg
-aWYgd2UnZCBzdGFydGVkIGFzIHJvb3Qtb25seSwgZml4aW5nIHVwIGV2ZXJ5dGhpbmcgbmVlZGVk
-IHRvIG1ha2UgaXQgc2FmZSBmb3IgdW5wcml2aWxlZ2VkIHVzZXJzIGFmdGVyIHRoZSBmYWN0IHdv
-dWxkIGhhdmUgYmVlbiBxdWl0ZSBtZXNzeS4KCkFuZCB0aGUgY29uc2lkZXJhdGlvbnMgZm9yIG1h
-a2luZyBlQlBGIHNhZmUgZm9yIHVzZSBieSB1bnByaXZpbGVnZWQgdGFza3MgdG8gZmlsdGVyIHRo
-ZWlyIGRlc2NlbmRlbnRzIGFyZSBtb3JlIG9yIGxlc3MgdGhlIHNhbWUgZm9yIHNlY2NvbXAgYW5k
-IExhbmRsb2NrLiAgQ2FuIHdlIHBsZWFzZSBhcnJhbmdlIHRoaW5ncyBzbyB3ZSBzb2x2ZSB0aGlz
-IHByb2JsZW0gb25seSBvbmNlPwpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4
-LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFu
-L2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On Tue, Feb 27, 2018 at 12:53 AM, Eric W. Biederman
+<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+> Rename the fuse connection flag posix_acl to cached_posix_acl as that
+> is what it actually means.  That fuse will cache and operate on the
+> cached value of the posix acl.
+>
+> When fc->cached_posix_acl is not set, set ACL_DONT_CACHE on the inode
+> so that get_acl and friends won't cache the acl values even if they
+> are called.
+>
+> Replace forget_all_cached_acls with fuse_forget_cached_acls.  This
+> wrapper only takes effect when cached_posix_acl is true to prevent
+> losing the nocache or noxattr status in when posix acls are not
+> cached.
+
+Shouldn't forget_cached_acl() be taught about ACL_DONT_CACHE?  I think
+it makes sense to generally not clear ACL_DONT_CACHE, since it's not
+an actual acl value that needs forgetting.
+
+Thanks,
+Miklos
