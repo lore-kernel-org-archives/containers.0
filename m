@@ -1,8 +1,7 @@
 From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC PATCH V1 06/12] audit: add support for non-syscall auxiliary
-	records
-Date: Thu,  1 Mar 2018 14:41:09 -0500
-Message-ID: <e26d089d495f2ffd1d4e1f3de7730aa209340a59.1519930146.git.rgb__40307.4184585877$1519933521$gmane$org@redhat.com>
+Subject: [RFC PATCH V1 04/12] audit: read container ID of a process
+Date: Thu,  1 Mar 2018 14:41:07 -0500
+Message-ID: <7b1511e27c3239c2d356044fe1acca1375fd9233.1519930146.git.rgb@redhat.com>
 References: <cover.1519930146.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,77 +23,69 @@ To: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFL
 Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, madzcar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Standalone audit records have the timestamp and serial number generated
-on the fly and as such are unique, making them standalone.  This is a
-prototype of a method to generate a local audit context that will be
-used only for a standalone record and its auxiliary record.  The context
-is discarded immediately after the local associated records are
-produced.
+Add support for reading the container ID from the proc filesystem.
+
+This is a read from the proc entry of the form /proc/PID/containerid
+where PID is the process ID of the task whose container ID is sought.
+
+The read expects up to a u64 value (unset: 18446744073709551615).
 
 Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/audit.h |  8 ++++++++
- kernel/auditsc.c      | 20 +++++++++++++++++++-
- 2 files changed, 27 insertions(+), 1 deletion(-)
+ fs/proc/base.c | 20 ++++++++++++++++++--
+ 1 file changed, 18 insertions(+), 2 deletions(-)
 
-diff --git a/include/linux/audit.h b/include/linux/audit.h
-index ed16bb6..c0b83cb 100644
---- a/include/linux/audit.h
-+++ b/include/linux/audit.h
-@@ -227,7 +227,9 @@ static inline int audit_log_container_info(struct audit_context *context,
- /* These are defined in auditsc.c */
- 				/* Public API */
- extern int  audit_alloc(struct task_struct *task);
-+extern struct audit_context *audit_alloc_local(void);
- extern void __audit_free(struct task_struct *task);
-+extern void audit_free_context(struct audit_context *context);
- extern void __audit_syscall_entry(int major, unsigned long a0, unsigned long a1,
- 				  unsigned long a2, unsigned long a3);
- extern void __audit_syscall_exit(int ret_success, long ret_value);
-@@ -472,6 +474,12 @@ static inline int audit_alloc(struct task_struct *task)
- {
- 	return 0;
- }
-+static inline struct audit_context *audit_alloc_local(void)
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index 6ce4fbe..f66d1e2 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -1300,6 +1300,21 @@ static ssize_t proc_sessionid_read(struct file * file, char __user * buf,
+ 	.llseek		= generic_file_llseek,
+ };
+ 
++static ssize_t proc_containerid_read(struct file *file, char __user *buf,
++				  size_t count, loff_t *ppos)
 +{
-+	return NULL;
++	struct inode *inode = file_inode(file);
++	struct task_struct *task = get_proc_task(inode);
++	ssize_t length;
++	char tmpbuf[TMPBUFLEN*2];
++
++	if (!task)
++		return -ESRCH;
++	length = scnprintf(tmpbuf, TMPBUFLEN*2, "%llu", audit_get_containerid(task));
++	put_task_struct(task);
++	return simple_read_from_buffer(buf, count, ppos, tmpbuf, length);
 +}
-+static inline void audit_free_context(struct audit_context *context)
-+{ }
- static inline void audit_free(struct task_struct *task)
- { }
- static inline void audit_syscall_entry(int major, unsigned long a0,
-diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-index 0e41884..0cbd762 100644
---- a/kernel/auditsc.c
-+++ b/kernel/auditsc.c
-@@ -959,8 +959,26 @@ int audit_alloc(struct task_struct *tsk)
- 	return 0;
++
+ static ssize_t proc_containerid_write(struct file *file, const char __user *buf,
+ 				   size_t count, loff_t *ppos)
+ {
+@@ -1330,6 +1345,7 @@ static ssize_t proc_containerid_write(struct file *file, const char __user *buf,
  }
  
--static inline void audit_free_context(struct audit_context *context)
-+struct audit_context *audit_alloc_local(void)
- {
-+	struct audit_context *context;
-+
-+	if (likely(!audit_ever_enabled))
-+		return NULL; /* Return if not auditing. */
-+
-+	context = audit_alloc_context(AUDIT_RECORD_CONTEXT);
-+	if (!context)
-+		return NULL;
-+	context->serial = audit_serial();
-+	context->ctime = current_kernel_time64();
-+	context->in_syscall = 1;
-+	return context;
-+}
-+
-+inline void audit_free_context(struct audit_context *context)
-+{
-+	if (!context)
-+		return;
- 	audit_free_names(context);
- 	unroll_tree_refs(context, NULL, 0);
- 	free_tree_refs(context);
+ static const struct file_operations proc_containerid_operations = {
++	.read		= proc_containerid_read,
+ 	.write		= proc_containerid_write,
+ 	.llseek		= generic_file_llseek,
+ };
+@@ -2996,7 +3012,7 @@ static int proc_pid_patch_state(struct seq_file *m, struct pid_namespace *ns,
+ #ifdef CONFIG_AUDITSYSCALL
+ 	REG("loginuid",   S_IWUSR|S_IRUGO, proc_loginuid_operations),
+ 	REG("sessionid",  S_IRUGO, proc_sessionid_operations),
+-	REG("containerid", S_IWUSR, proc_containerid_operations),
++	REG("containerid", S_IWUSR|S_IRUSR, proc_containerid_operations),
+ #endif
+ #ifdef CONFIG_FAULT_INJECTION
+ 	REG("make-it-fail", S_IRUGO|S_IWUSR, proc_fault_inject_operations),
+@@ -3391,7 +3407,7 @@ static int proc_tid_comm_permission(struct inode *inode, int mask)
+ #ifdef CONFIG_AUDITSYSCALL
+ 	REG("loginuid",  S_IWUSR|S_IRUGO, proc_loginuid_operations),
+ 	REG("sessionid",  S_IRUGO, proc_sessionid_operations),
+-	REG("containerid", S_IWUSR, proc_containerid_operations),
++	REG("containerid", S_IWUSR|S_IRUSR, proc_containerid_operations),
+ #endif
+ #ifdef CONFIG_FAULT_INJECTION
+ 	REG("make-it-fail", S_IRUGO|S_IWUSR, proc_fault_inject_operations),
 -- 
 1.8.3.1
