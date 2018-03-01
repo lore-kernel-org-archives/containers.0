@@ -1,17 +1,25 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 07/11] fs: Allow CAP_SYS_ADMIN in s_user_ns to freeze and
-	thaw filesystems
-Date: Mon, 19 Feb 2018 16:56:56 -0600
-Message-ID: <87mv04mvuv.fsf@xmission.com>
-References: <cover.1512741134.git.dongsu@kinvolk.io>
-	<61a37f0b159dd56825696d8d3beb8eaffdf1f72f.1512041070.git.dongsu@kinvolk.io>
-	<CAOssrKeSTY1pAhpmegFWdGh7irNbT4veG5JaYFj8Q1JjMynadw@mail.gmail.com>
+From: chris hyser <chris.hyser-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [net-next v3 0/2] eBPF seccomp filters
+Date: Thu, 1 Mar 2018 01:46:16 -0500
+Message-ID: <efedc38e-a29b-478a-0b1b-d8292b793d3c@oracle.com>
+References: <20180226072651.GA27045@ircssh-2.c.rugged-nimbus-611.internal>
+	<20180226230418.46nczgkh5csakyu7@ast-mbp>
+	<CAGXu5jLdOcrn16q9pQ7JwTf88AVsL0o5LMJ=4P6vRN36u-_k_g@mail.gmail.com>
+	<CALCETrXNODxWkcwF-LbXBn+Ju7QJEyi3JR+spsRX4ecg8d1iMQ@mail.gmail.com>
+	<CAGXu5j+64WzxjBnpQxYCU50ak+VqVw1y0W+MWygFodxsDqEZRw@mail.gmail.com>
+	<db759dd2-31dc-d094-251d-d4c1e8af8704@oracle.com>
+	<CAGXu5j+idW9AjZHVdeedqLOFXriObUJLvcw8-9k5WxyQF8EWrg@mail.gmail.com>
+	<ddbefdda-f3b8-3956-fa0f-dcba8cf8e7d9@oracle.com>
+	<f712a383-8e84-da64-a454-51fdebf28741@iogearbox.net>
+	<7fc0fab8-c1bc-bc76-a892-b3faab7d16ad@oracle.com>
+	<4fbef77e-92ad-b896-a259-492412ad4c55@oracle.com>
+	<19cd2e07-5702-1713-6903-e5667250b09d@iogearbox.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAOssrKeSTY1pAhpmegFWdGh7irNbT4veG5JaYFj8Q1JjMynadw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Miklos Szeredi's message of "Wed, 14 Feb 2018 13:28:12 +0100")
+In-Reply-To: <19cd2e07-5702-1713-6903-e5667250b09d-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>
+Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,35 +29,42 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexei Starovoitov <ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+On 02/28/2018 02:56 PM, Daniel Borkmann wrote:
+> On 02/28/2018 12:55 AM, chris hyser wrote:
 
-> On Fri, Dec 22, 2017 at 3:32 PM, Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org> wrote:
->> From: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
->>
->> The user in control of a super block should be allowed to freeze
->> and thaw it. Relax the restrictions on the FIFREEZE and FITHAW
->> ioctls to require CAP_SYS_ADMIN in s_user_ns.
->
-> Why is this required for unprivileged fuse?
->
-> Fuse doesn't support freeze, so this seems to make no sense in the
-> context of this patchset.
+>> If you're implying that because seccomp would have it's own verifier and could therefore restrict itself to a subset of eBPF, 
+>> therefore any future additions/features to eBPF would not necessarily make seccomp less secure, I mainly agree. Is that th
+>> argument?
+> 
+> Ok, in addition to the current unpriv restrictions imposed by the verifier,
+> what additional requirements would you have from your side in order to get
+> to semantics that make sense for you wrt seccomp/eBPF? Just trying to
+> understand how far we are away from that. Note that not every new feature,
+> map or helper is enabled for every program type of course.
 
-This isn't required to support fuse.  It is a relaxation in permissions
-so it isn't strictly necessary for anything.
+Let me try to clarify my argument by laying out my thoughts here (I apologize if it seems pedantic):
 
-Until just recently Seth and I work working through the vfs looking at
-what we need in general for unprivileged mounts.  With fuse as our focus
-but we were not limiting ourselves to fuse.
+The intent of seccomp is to reduce the kernel attack surfaces available to a compromised user program; if you can't make 
+a syscall, you can't exploit some lurking security bug.
 
-I have been putting off relaxation of permissions like this because they
-are not necessary for safety.  But in general they do make sense.
+Now, if I order various possible seccomp implementation choices in terms of minimizing that implementation's kernel 
+attack surfaces it might reasonably be:
 
-In practice I think all we need to worry about for fuse is the last 4 patches.
+1) simple bit vector go/no go check (or similar)
+2) cBPF like today
+3) some restricted subset of eBPF
+4) some other or less restricted subset of eBPF
+5) all current eBPF
+6) eBPF plus future features
 
+The trade-off is that more features equals less security (ie more security risk). The question is do we allow user land 
+to decide where they want to be on that scale or do we pick knowing it will be too much for some and too little for 
+others. Answering your question therefore requires knowing either where we choose to be on that scale or what options 
+and at what granularity we allow user land to choose. In terms of user land options, just choosing between 2 and 5 might 
+be enough. I'd favor say 1 and 4 or 1 and 5 as I don't think it unreasonable for the security paranoid to choose 1.
 
-Eric
+-chrish
