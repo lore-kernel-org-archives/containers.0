@@ -1,8 +1,7 @@
 From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC PATCH V1 10/12] audit: add containerid support for seccomp and
-	anom_abend records
-Date: Thu,  1 Mar 2018 14:41:13 -0500
-Message-ID: <a7d7447356a7f6335d6a393ec97d1fbbc341ba33.1519930146.git.rgb__49051.9311083064$1519933593$gmane$org@redhat.com>
+Subject: [RFC PATCH V1 11/12] debug audit: add container id
+Date: Thu,  1 Mar 2018 14:41:14 -0500
+Message-ID: <1a9d4cdacd1dd3c51c4ba2a3f4888d0591c5b6f3.1519930146.git.rgb__13819.7671193213$1519933599$gmane$org@redhat.com>
 References: <cover.1519930146.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,59 +23,25 @@ To: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFL
 Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, madzcar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add container ID information to secure computing and abnormal end
-standalone records.
-
-Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Switch from the 1000 range to the 1300 range for the prototype until it
+can be worked out why the former aren't showing up in the logs.
 ---
- kernel/auditsc.c | 10 ++++++++--
- 1 file changed, 8 insertions(+), 2 deletions(-)
+ include/uapi/linux/audit.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-index 0cbd762..fcee34e 100644
---- a/kernel/auditsc.c
-+++ b/kernel/auditsc.c
-@@ -2569,6 +2569,7 @@ static void audit_log_task(struct audit_buffer *ab)
- void audit_core_dumps(long signr)
- {
- 	struct audit_buffer *ab;
-+	struct audit_context *context = audit_alloc_local();
+diff --git a/include/uapi/linux/audit.h b/include/uapi/linux/audit.h
+index 8443a8f..c392b3b 100644
+--- a/include/uapi/linux/audit.h
++++ b/include/uapi/linux/audit.h
+@@ -71,7 +71,8 @@
+ #define AUDIT_TTY_SET		1017	/* Set TTY auditing status */
+ #define AUDIT_SET_FEATURE	1018	/* Turn an audit feature on or off */
+ #define AUDIT_GET_FEATURE	1019	/* Get which features are enabled */
+-#define AUDIT_CONTAINER		1020	/* Define the container id and information */
++//#define AUDIT_CONTAINER		1020	/* Define the container id and information */
++#define AUDIT_CONTAINER		1333	/* Define the container id and information */
  
- 	if (!audit_enabled)
- 		return;
-@@ -2576,19 +2577,22 @@ void audit_core_dumps(long signr)
- 	if (signr == SIGQUIT)	/* don't care for those */
- 		return;
- 
--	ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_ANOM_ABEND);
-+	ab = audit_log_start(context, GFP_KERNEL, AUDIT_ANOM_ABEND);
- 	if (unlikely(!ab))
- 		return;
- 	audit_log_task(ab);
- 	audit_log_format(ab, " sig=%ld res=1", signr);
- 	audit_log_end(ab);
-+	audit_log_container_info(context, "abend", audit_get_containerid(current));
-+	audit_free_context(context);
- }
- 
- void __audit_seccomp(unsigned long syscall, long signr, int code)
- {
- 	struct audit_buffer *ab;
-+	struct audit_context *context = audit_alloc_local();
- 
--	ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_SECCOMP);
-+	ab = audit_log_start(context, GFP_KERNEL, AUDIT_SECCOMP);
- 	if (unlikely(!ab))
- 		return;
- 	audit_log_task(ab);
-@@ -2596,6 +2600,8 @@ void __audit_seccomp(unsigned long syscall, long signr, int code)
- 			 signr, syscall_get_arch(), syscall,
- 			 in_compat_syscall(), KSTK_EIP(current), code);
- 	audit_log_end(ab);
-+	audit_log_container_info(context, "seccomp", audit_get_containerid(current));
-+	audit_free_context(context);
- }
- 
- struct list_head *audit_killed_trees(void)
+ #define AUDIT_FIRST_USER_MSG	1100	/* Userspace messages mostly uninteresting to kernel */
+ #define AUDIT_USER_AVC		1107	/* We filter this differently */
 -- 
 1.8.3.1
