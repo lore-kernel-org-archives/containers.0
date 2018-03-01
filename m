@@ -1,7 +1,7 @@
-From: Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
+From: Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>
 Subject: Re: [net-next v3 0/2] eBPF seccomp filters
-Date: Thu, 1 Mar 2018 13:51:19 -0800
-Message-ID: <CAMp4zn9g06jTAAycw6hNXF+KsfOM2SXvr1aYywnXyXkEiSO0rA@mail.gmail.com>
+Date: Thu, 1 Mar 2018 22:54:20 +0100
+Message-ID: <f673c77e-0e03-cd82-0fdd-4b7527b56f07@iogearbox.net>
 References: <20180226072651.GA27045@ircssh-2.c.rugged-nimbus-611.internal>
 	<20180226230418.46nczgkh5csakyu7@ast-mbp>
 	<CAGXu5jLdOcrn16q9pQ7JwTf88AVsL0o5LMJ=4P6vRN36u-_k_g@mail.gmail.com>
@@ -20,6 +20,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <CALCETrWugC-M-b2hhKu+Zq6W4w6vDn+bDCURLw48Loa+_SQaqA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -30,10 +31,10 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>, Netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexei Starovoitov <ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexei Starovoitov <ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Mar 1, 2018 at 9:44 AM, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> wrote:
+On 03/01/2018 06:44 PM, Andy Lutomirski wrote:
 > On Wed, Feb 28, 2018 at 7:56 PM, Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org> wrote:
 >> On 02/28/2018 12:55 AM, chris hyser wrote:
 >>>> On 02/27/2018 04:58 PM, Daniel Borkmann wrote: >> On 02/27/2018 05:59 PM, chris hyser wrote:
@@ -114,12 +115,11 @@ On Thu, Mar 1, 2018 at 9:44 AM, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@pub
 >> to semantics that make sense for you wrt seccomp/eBPF? Just trying to
 >> understand how far we are away from that. Note that not every new feature,
 >> map or helper is enabled for every program type of course.
->>
->
+> 
 > I haven't looked at the exact unpriv restrictions lately, but I think
 > I remember them.  Regardless, from my perspective, here's what I would
 > care about as a seccomp reviewer:
->
+> 
 > 1. No extra information should become available to a seccomp filter
 > program without seccomp's explicit opt-in.  In other words, a seccomp
 > filter program should be able to access the fields in struct
@@ -131,35 +131,43 @@ On Thu, Mar 1, 2018 at 9:44 AM, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@pub
 > already the case except insofar as core BPF_CALL helpers may violate
 > this.  (I'm not sure exactly what the policy is on the use of BPF_CALL
 > helpers.)
->
-The only calls that were whitelisted was uid/gid, pid/tid, ktime, and
-prandom. There was no printk, nor perf_events. It didn't give access
-to maps, or anything else. I have to ask though, why isn't it okay for
-eBPF filters to have access to time? My use case is that I launch a
-job, and it has 5 minutes to do some privileged operations, and then I
-want to deny any privileged operations. Maybe when writeable maps are
-a thing, we can do something more advanced, but trying to narrow the
-window of attack has a lot of benefit.
+
+Yes, that is the case already. You also have full control over e.g.
+what helpers may be called when you add a new program type for
+seccomp, you could as well say that no helper would be allowed in
+the extreme case (which brings you more or less back to cBPF) or you
+can add helpers explicitly and only used for the seccomp program type.
+So there's full control over this.
 
 > 2. Filter evaluation should have no side effects except as explicitly
 > authorized by seccomp or by systemwide tracing.  So perf observing
 > that a seccomp filter ran is fine, but seccomp filters should not be
 > able to write to the system log, to perf ring buffers, to maps, etc.
->
-See above.
+
+That's fine as well. The latter would need a trivial adjustment in
+that programs are not allowed to write but only read a map value for
+maps with data. Basically right now we have an option for the opposite
+where user space would have read only access, but not the program
+itself, but adding that is minor.
 
 > 3. Stability.  If a filter passes verification on two different
 > kernels, it should behave the same on both kernels, even if the filter
 > is buggy in some theoretical sense.
-In the sense that BPF is part of the uapi, and uapi is supposed to be
-stable? I think that already makes sense, because for all the places
-where eBPF is used for networking, it has to follow this property.
 
->
+We don't allow for breaking existing BPF programs. The only exception
+is tracing, of course, where kernel internal data structures that might
+get inspected/walked may change, therefore the program needs to be tied
+to a kernel version, but for all the rest of the program types that is
+not the case and ABI is stable in same way as we provide this guarantee
+for syscalls towards user space. This is a hard requirement for networking
+programs and other types just as well.
+
 > And that's it.  Obviously the attack surface provided by the ability
 > to load and run a filter should be minimized, but that's true for eBPF
 > in general and has little to do with seccomp in particular.
->
+
+Agree.
+
 > #1 and #2 are probably fairly straightforward using existing
 > mechanisms, unless the BPF_CALL hooks or map authorization hooks for
 > program types need to be extended a bit to get it right.  #3 is maybe
@@ -168,11 +176,15 @@ where eBPF is used for networking, it has to follow this property.
 > *tracing* doesn't really require #3 to the same extent -- it's really
 > such an awful thing if a buggy or otherwise naughty bpf tracing
 > program behaves differently after a kernel upgrade.
->
+
+(Yeah, see my comment above.)
+
 > I suppose that another way of saying this is that an eBPF seccomp
 > program should behave like a pure function except to the extent that
 > the seccomp core makes an explicit exception.
->
+
+Makes sense.
+
 > I'm not terribly concerned about the additional attack surface exposed
 > by eBPF itself.  Sure, it's more dangerous to allow a sandboxed
 > program to load its own eBPF programs than to allow a sandboxed
@@ -180,5 +192,6 @@ where eBPF is used for networking, it has to follow this property.
 > progress.  If I'm writing a restrictive sandbox a la chromium's, I'm
 > not going to allow it to load eBPF programs, but I can still use eBPF
 > to enforce the sandbox policy.
->
+> 
 > --Andy
+> 
