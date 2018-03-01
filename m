@@ -1,8 +1,7 @@
 From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC PATCH V1 07/12] audit: add container aux record to
-	watch/tree/mark
-Date: Thu,  1 Mar 2018 14:41:10 -0500
-Message-ID: <6c071b3e4fbe848ccd692c7dc27c9f75589852c0.1519930146.git.rgb__28162.6715827317$1519933563$gmane$org@redhat.com>
+Subject: [RFC PATCH V1 12/12] debug! audit: add container id
+Date: Thu,  1 Mar 2018 14:41:15 -0500
+Message-ID: <c6da3e0fe8cdd173cf9d5cd090229d3f215bc590.1519930146.git.rgb__49951.641917187$1519933578$gmane$org@redhat.com>
 References: <cover.1519930146.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,109 +23,102 @@ To: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFL
 Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, madzcar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add container ID information to mark, watch and tree rule standalone
-records.
-
-Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Debugging code for verbose output to aid in development.
 ---
- kernel/audit_fsnotify.c |  5 ++++-
- kernel/audit_tree.c     |  5 ++++-
- kernel/audit_watch.c    | 33 +++++++++++++++++++--------------
- 3 files changed, 27 insertions(+), 16 deletions(-)
+ fs/proc/base.c   | 10 ++++++++++
+ kernel/auditsc.c | 16 ++++++++++++++++
+ 2 files changed, 26 insertions(+)
 
-diff --git a/kernel/audit_fsnotify.c b/kernel/audit_fsnotify.c
-index 52f368b..18c110d 100644
---- a/kernel/audit_fsnotify.c
-+++ b/kernel/audit_fsnotify.c
-@@ -124,10 +124,11 @@ static void audit_mark_log_rule_change(struct audit_fsnotify_mark *audit_mark, c
- {
- 	struct audit_buffer *ab;
- 	struct audit_krule *rule = audit_mark->rule;
-+	struct audit_context *context = audit_alloc_local();
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index f66d1e2..63d1ca4 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -1309,9 +1309,13 @@ static ssize_t proc_containerid_read(struct file *file, char __user *buf,
+ 	char tmpbuf[TMPBUFLEN*2];
  
- 	if (!audit_enabled)
- 		return;
--	ab = audit_log_start(NULL, GFP_NOFS, AUDIT_CONFIG_CHANGE);
-+	ab = audit_log_start(context, GFP_NOFS, AUDIT_CONFIG_CHANGE);
- 	if (unlikely(!ab))
- 		return;
- 	audit_log_format(ab, "auid=%u ses=%u op=%s",
-@@ -138,6 +139,8 @@ static void audit_mark_log_rule_change(struct audit_fsnotify_mark *audit_mark, c
- 	audit_log_key(ab, rule->filterkey);
- 	audit_log_format(ab, " list=%d res=1", rule->listnr);
- 	audit_log_end(ab);
-+	audit_log_container_info(context, "config", audit_get_containerid(current));
-+	audit_free_context(context);
+ 	if (!task)
++	{
++		pr_info("no inode owner");
+ 		return -ESRCH;
++	}
+ 	length = scnprintf(tmpbuf, TMPBUFLEN*2, "%llu", audit_get_containerid(task));
+ 	put_task_struct(task);
++	pr_info("read: pid=%d opid=%d contid=%llu", pid_nr(task_tgid(current)), pid_nr(task_tgid(task)), audit_get_containerid(task));
+ 	return simple_read_from_buffer(buf, count, ppos, tmpbuf, length);
  }
  
- void audit_remove_mark(struct audit_fsnotify_mark *audit_mark)
-diff --git a/kernel/audit_tree.c b/kernel/audit_tree.c
-index fd35312..2ad85d4 100644
---- a/kernel/audit_tree.c
-+++ b/kernel/audit_tree.c
-@@ -496,8 +496,9 @@ static int tag_chunk(struct inode *inode, struct audit_tree *tree)
- static void audit_tree_log_remove_rule(struct audit_krule *rule)
- {
- 	struct audit_buffer *ab;
-+	struct audit_context *context = audit_alloc_local();
+@@ -1324,14 +1328,19 @@ static ssize_t proc_containerid_write(struct file *file, const char __user *buf,
+ 	struct task_struct *task = get_proc_task(inode);
  
--	ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
-+	ab = audit_log_start(context, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
- 	if (unlikely(!ab))
- 		return;
- 	audit_log_format(ab, "op=remove_rule");
-@@ -506,6 +507,8 @@ static void audit_tree_log_remove_rule(struct audit_krule *rule)
- 	audit_log_key(ab, rule->filterkey);
- 	audit_log_format(ab, " list=%d res=1", rule->listnr);
- 	audit_log_end(ab);
-+	audit_log_container_info(context, "config", audit_get_containerid(current));
-+	audit_free_context(context);
+ 	if (!task)
++	{
++		pr_info("no inode owner");
+ 		return -ESRCH;
++	}
+ 	if (*ppos != 0) {
+ 		/* No partial writes. */
+ 		put_task_struct(task);
++		pr_info("no partial writes");
+ 		return -EINVAL;
+ 	}
+ 
+ 	rv = kstrtou64_from_user(buf, count, 10, &containerid);
++	pr_info("write: pid=%d rv=%d count=%ld opid=%d contid=%llu", task_tgid_nr(current), rv, count, task_tgid_nr(task), containerid);
+ 	if (rv < 0) {
+ 		put_task_struct(task);
+ 		return rv;
+@@ -1339,6 +1348,7 @@ static ssize_t proc_containerid_write(struct file *file, const char __user *buf,
+ 
+ 	rv = audit_set_containerid(task, containerid);
+ 	put_task_struct(task);
++	//pr_info("audit_set_containerid: rv=%d", rv);
+ 	if (rv < 0)
+ 		return rv;
+ 	return count;
+diff --git a/kernel/auditsc.c b/kernel/auditsc.c
+index fcee34e..39e7dc10 100644
+--- a/kernel/auditsc.c
++++ b/kernel/auditsc.c
+@@ -2111,16 +2111,28 @@ static int audit_set_containerid_perm(struct task_struct *task, u64 containerid)
+ 
+ 	/* Don't allow to set our own containerid */
+ 	if (current == task)
++	{
++		pr_info("pid=%d can't set own containerid", task_tgid_nr(task));
+ 		return -EPERM;
++	}
+ 	/* Don't allow the containerid to be unset */
+ 	if (!cid_valid(containerid))
++	{
++		pr_info("can't unset containerid");
+ 		return -EINVAL;
++	}
+ 	/* if we don't have caps, reject */
+ 	if (!capable(CAP_AUDIT_CONTROL))
++	{
++		pr_info("don't have CAP_AUDIT_CONTROL");
+ 		return -EPERM;
++	}
+ 	/* if containerid is unset, allow */
+ 	if (!audit_containerid_set(task))
++	{
++		//pr_info("unset, allow");
+ 		return 0;
++	}
+ 	/* it is already set, and not inherited from the parent, reject */
+ 	ccontainerid = audit_get_containerid(task);
+ 	rcu_read_lock();
+@@ -2131,7 +2143,11 @@ static int audit_set_containerid_perm(struct task_struct *task, u64 containerid)
+ 	ppid = task_tgid_nr(parent);
+ 	task_unlock(parent);
+ 	if (ccontainerid != pcontainerid)
++	{
++		pr_info("pid=%d already has contid=%llu set, not inherited from ppid=%d with contid=%llu, can't set containerid %llu",
++			task_tgid_nr(task), ccontainerid, ppid, pcontainerid, containerid);
+ 		return -EPERM;
++	}
+ 	return 0;
  }
  
- static void kill_rules(struct audit_tree *tree)
-diff --git a/kernel/audit_watch.c b/kernel/audit_watch.c
-index 9eb8b35..60d75a2 100644
---- a/kernel/audit_watch.c
-+++ b/kernel/audit_watch.c
-@@ -238,20 +238,25 @@ static struct audit_watch *audit_dupe_watch(struct audit_watch *old)
- 
- static void audit_watch_log_rule_change(struct audit_krule *r, struct audit_watch *w, char *op)
- {
--	if (audit_enabled) {
--		struct audit_buffer *ab;
--		ab = audit_log_start(NULL, GFP_NOFS, AUDIT_CONFIG_CHANGE);
--		if (unlikely(!ab))
--			return;
--		audit_log_format(ab, "auid=%u ses=%u op=%s",
--				 from_kuid(&init_user_ns, audit_get_loginuid(current)),
--				 audit_get_sessionid(current), op);
--		audit_log_format(ab, " path=");
--		audit_log_untrustedstring(ab, w->path);
--		audit_log_key(ab, r->filterkey);
--		audit_log_format(ab, " list=%d res=1", r->listnr);
--		audit_log_end(ab);
--	}
-+	struct audit_buffer *ab;
-+	struct audit_context *context = audit_alloc_local();
-+
-+	if (!audit_enabled)
-+		return;
-+
-+	ab = audit_log_start(context, GFP_NOFS, AUDIT_CONFIG_CHANGE);
-+	if (unlikely(!ab))
-+		return;
-+	audit_log_format(ab, "auid=%u ses=%u op=%s",
-+			 from_kuid(&init_user_ns, audit_get_loginuid(current)),
-+			 audit_get_sessionid(current), op);
-+	audit_log_format(ab, " path=");
-+	audit_log_untrustedstring(ab, w->path);
-+	audit_log_key(ab, r->filterkey);
-+	audit_log_format(ab, " list=%d res=1", r->listnr);
-+	audit_log_end(ab);
-+	audit_log_container_info(context, "config", audit_get_containerid(current));
-+	audit_free_context(context);
- }
- 
- /* Update inode info in audit rules based on filesystem event. */
 -- 
 1.8.3.1
