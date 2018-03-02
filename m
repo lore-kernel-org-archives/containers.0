@@ -1,8 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH v8 1/6] fs/posix_acl: Update the comments and support
-	lightweight cache skipping
-Date: Fri,  2 Mar 2018 15:59:14 -0600
-Message-ID: <20180302215919.27207-1-ebiederm@xmission.com>
+Subject: [PATCH v8 2/6] fuse: Simplfiy the posix acl handling logic.
+Date: Fri,  2 Mar 2018 15:59:15 -0600
+Message-ID: <20180302215919.27207-2-ebiederm@xmission.com>
 References: <87r2p287i8.fsf_-_@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,134 +21,131 @@ To: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The code has been missing a way for a ->get_acl method to not cache
-a return value without risking invalidating a cached value
-that was set while get_acl() was returning.
+Rename the fuse connection flag posix_acl to cached_posix_acl as that
+is what it actually means.  That fuse will cache and operate on the
+cached value of the posix acl.
 
-Add that support by implementing to_uncachable_acl, to_cachable_acl,
-is_uncacheable_acl, and dealing with uncachable acls in get_acl().
+Always use posix_acl_access_xattr_handler so the fuse code benefits
+from the generic posix acl handlers as much as possible.  This will
+become important as the code works on translation of uid and gid in
+the posix acls when fuse is not mounted in the initial user namespace.
 
-Update the comments so that they are a little clearer about
-what is going on in get_acl()
+Update fuse_get_acl so that it does not cache the acl if the code is
+not caching the acl.  This is all that is needed to ensure the
+fuse_getxattr calls down into the fuse server when posix_acl_xattr_get
+is called.  The updated code goes through fuse_getacl, and as such has
+posix acl specific sanity checks and attribute handling but no real
+difference from the previous code that skipped it.
+
+It can safely be assumed that fuse filesystems where acls are not
+cached in the kernel do not set fc->default_permissions as
+default_permissions only checked posix acls if .get_acl was defined
+and before the cached acl flag was introduced fuse did not implement a
+get_acl method.
 
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/posix_acl.c            | 50 ++++++++++++++++++++++++++++++++---------------
- include/linux/posix_acl.h | 17 ++++++++++++++++
- 2 files changed, 51 insertions(+), 16 deletions(-)
+ fs/fuse/acl.c    | 6 ++++--
+ fs/fuse/dir.c    | 2 +-
+ fs/fuse/fuse_i.h | 3 +--
+ fs/fuse/inode.c  | 3 +--
+ fs/fuse/xattr.c  | 5 -----
+ 5 files changed, 7 insertions(+), 12 deletions(-)
 
-diff --git a/fs/posix_acl.c b/fs/posix_acl.c
-index 2fd0fde16fe1..00281bc30854 100644
---- a/fs/posix_acl.c
-+++ b/fs/posix_acl.c
-@@ -96,12 +96,16 @@ struct posix_acl *get_acl(struct inode *inode, int type)
- {
- 	void *sentinel;
- 	struct posix_acl **p;
--	struct posix_acl *acl;
-+	struct posix_acl *acl, *to_cache;
+diff --git a/fs/fuse/acl.c b/fs/fuse/acl.c
+index ec85765502f1..cfa58ee0c10b 100644
+--- a/fs/fuse/acl.c
++++ b/fs/fuse/acl.c
+@@ -19,7 +19,7 @@ struct posix_acl *fuse_get_acl(struct inode *inode, int type)
+ 	void *value = NULL;
+ 	struct posix_acl *acl;
  
- 	/*
- 	 * The sentinel is used to detect when another operation like
- 	 * set_cached_acl() or forget_cached_acl() races with get_acl().
- 	 * It is guaranteed that is_uncached_acl(sentinel) is true.
-+	 *
-+	 * This is sufficient to prevent races between ->set_acl
-+	 * calling set_cached_acl (outside of filesystem specific
-+	 * locking) and get_acl() caching the returned acl.
- 	 */
+-	if (!fc->posix_acl || fc->no_getxattr)
++	if (fc->no_getxattr)
+ 		return NULL;
  
- 	acl = get_cached_acl(inode, type);
-@@ -126,12 +130,18 @@ struct posix_acl *get_acl(struct inode *inode, int type)
- 		/* fall through */ ;
+ 	if (type == ACL_TYPE_ACCESS)
+@@ -44,6 +44,8 @@ struct posix_acl *fuse_get_acl(struct inode *inode, int type)
+ 		acl = ERR_PTR(size);
  
- 	/*
--	 * Normally, the ACL returned by ->get_acl will be cached.
--	 * A filesystem can prevent that by calling
--	 * forget_cached_acl(inode, type) in ->get_acl.
-+	 * Normally, the ACL returned by ->get_acl() will be cached.
-+	 *
-+	 * A filesystem can prevent the acl returned by ->get_acl()
-+	 * from being cached by wrapping it with to_uncachable_acl().
- 	 *
--	 * If the filesystem doesn't have a get_acl() function at all, we'll
--	 * just create the negative cache entry.
-+	 * A filesystem can at anytime effect the cache directly and
-+	 * cause in process calls of get_acl() not to update the cache
-+	 * by calling forget_cache_acl(inode, type) or
-+	 * set_cached_acl(inode, type, acl).
-+	 *
-+	 * If the filesystem doesn't have a ->get_acl() function at
-+	 * all, we'll just create the negative cache entry.
- 	 */
- 	if (!inode->i_op->get_acl) {
- 		set_cached_acl(inode, type, NULL);
-@@ -140,20 +150,28 @@ struct posix_acl *get_acl(struct inode *inode, int type)
- 	acl = inode->i_op->get_acl(inode, type);
- 
- 	if (IS_ERR(acl)) {
--		/*
--		 * Remove our sentinel so that we don't block future attempts
--		 * to cache the ACL.
--		 */
--		cmpxchg(p, sentinel, ACL_NOT_CACHED);
--		return acl;
-+		/* Don't cache an acl just return an error. */
-+		to_cache = ACL_NOT_CACHED;
-+	}
-+	else if (is_uncacheable_acl(acl)) {
-+		/* Don't cache an acl, but return one. */
-+		to_cache = ACL_NOT_CACHED;
-+		acl = to_cacheable_acl(acl);
-+	}
-+	else {
-+		/* Cache and return the acl. */
-+		to_cache = posix_acl_dup(acl);
- 	}
- 
- 	/*
--	 * Cache the result, but only if our sentinel is still in place.
-+	 * Remove the sentinel and replace it with the value to
-+	 * cache, but only if the sentinel is still in place.
- 	 */
--	posix_acl_dup(acl);
--	if (unlikely(cmpxchg(p, sentinel, acl) != sentinel))
--		posix_acl_release(acl);
-+	if (unlikely(cmpxchg(p, sentinel, to_cache) != sentinel)) {
-+		if (!is_uncached_acl(to_cache))
-+			posix_acl_release(to_cache);
-+	}
-+
+ 	kfree(value);
++	if (!IS_ERR(acl) && !fc->cached_posix_acl)
++		acl = to_uncacheable_acl(acl);
  	return acl;
  }
- EXPORT_SYMBOL(get_acl);
-diff --git a/include/linux/posix_acl.h b/include/linux/posix_acl.h
-index 540595a321a7..3be8929b9f48 100644
---- a/include/linux/posix_acl.h
-+++ b/include/linux/posix_acl.h
-@@ -56,6 +56,23 @@ posix_acl_release(struct posix_acl *acl)
- 		kfree_rcu(acl, a_rcu);
- }
  
-+/*
-+ * Allow for acls returned from ->get_acl() to not be cached.
-+ */
-+static inline bool is_uncacheable_acl(struct posix_acl *acl)
-+{
-+	return ((unsigned long)acl) & 1UL;
-+}
-+
-+static inline struct posix_acl *to_uncacheable_acl(struct posix_acl *acl)
-+{
-+	return (struct posix_acl *)(((unsigned long)acl) | 1UL);
-+}
-+
-+static inline struct posix_acl *to_cacheable_acl(struct posix_acl *acl)
-+{
-+	return (struct posix_acl *)(((unsigned long)acl) & ~1UL);
-+}
+@@ -53,7 +55,7 @@ int fuse_set_acl(struct inode *inode, struct posix_acl *acl, int type)
+ 	const char *name;
+ 	int ret;
  
- /* posix_acl.c */
+-	if (!fc->posix_acl || fc->no_setxattr)
++	if (fc->no_setxattr)
+ 		return -EOPNOTSUPP;
  
+ 	if (type == ACL_TYPE_ACCESS)
+diff --git a/fs/fuse/dir.c b/fs/fuse/dir.c
+index 24967382a7b1..43a45e83d313 100644
+--- a/fs/fuse/dir.c
++++ b/fs/fuse/dir.c
+@@ -1764,7 +1764,7 @@ static int fuse_setattr(struct dentry *entry, struct iattr *attr)
+ 		 * If filesystem supports acls it may have updated acl xattrs in
+ 		 * the filesystem, so forget cached acls for the inode.
+ 		 */
+-		if (fc->posix_acl)
++		if (fc->cached_posix_acl)
+ 			forget_all_cached_acls(inode);
+ 
+ 		/* Directory mode changed, may need to revalidate access */
+diff --git a/fs/fuse/fuse_i.h b/fs/fuse/fuse_i.h
+index c4c093bbf456..74ce02fb16d6 100644
+--- a/fs/fuse/fuse_i.h
++++ b/fs/fuse/fuse_i.h
+@@ -619,7 +619,7 @@ struct fuse_conn {
+ 	unsigned no_lseek:1;
+ 
+ 	/** Does the filesystem support posix acls? */
+-	unsigned posix_acl:1;
++	unsigned cached_posix_acl:1;
+ 
+ 	/** Check permissions based on the file mode or not? */
+ 	unsigned default_permissions:1;
+@@ -974,7 +974,6 @@ ssize_t fuse_getxattr(struct inode *inode, const char *name, void *value,
+ ssize_t fuse_listxattr(struct dentry *entry, char *list, size_t size);
+ int fuse_removexattr(struct inode *inode, const char *name);
+ extern const struct xattr_handler *fuse_xattr_handlers[];
+-extern const struct xattr_handler *fuse_acl_xattr_handlers[];
+ 
+ struct posix_acl;
+ struct posix_acl *fuse_get_acl(struct inode *inode, int type);
+diff --git a/fs/fuse/inode.c b/fs/fuse/inode.c
+index 624f18bbfd2b..507f780046c5 100644
+--- a/fs/fuse/inode.c
++++ b/fs/fuse/inode.c
+@@ -915,8 +915,7 @@ static void process_init_reply(struct fuse_conn *fc, struct fuse_req *req)
+ 				fc->sb->s_time_gran = arg->time_gran;
+ 			if ((arg->flags & FUSE_POSIX_ACL)) {
+ 				fc->default_permissions = 1;
+-				fc->posix_acl = 1;
+-				fc->sb->s_xattr = fuse_acl_xattr_handlers;
++				fc->cached_posix_acl = 1;
+ 			}
+ 		} else {
+ 			ra_pages = fc->max_read / PAGE_SIZE;
+diff --git a/fs/fuse/xattr.c b/fs/fuse/xattr.c
+index 3caac46b08b0..ed64c508585a 100644
+--- a/fs/fuse/xattr.c
++++ b/fs/fuse/xattr.c
+@@ -199,11 +199,6 @@ static const struct xattr_handler fuse_xattr_handler = {
+ };
+ 
+ const struct xattr_handler *fuse_xattr_handlers[] = {
+-	&fuse_xattr_handler,
+-	NULL
+-};
+-
+-const struct xattr_handler *fuse_acl_xattr_handlers[] = {
+ 	&posix_acl_access_xattr_handler,
+ 	&posix_acl_default_xattr_handler,
+ 	&fuse_xattr_handler,
 -- 
 2.14.1
