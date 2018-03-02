@@ -1,16 +1,15 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH v7 5/7] fuse: Simplfiy the posix acl handling logic.
-Date: Fri, 02 Mar 2018 15:49:56 -0600
-Message-ID: <87fu5i9mgr.fsf@xmission.com>
-References: <87po4rz4ui.fsf_-_@xmission.com>
-	<20180226235302.12708-5-ebiederm@xmission.com>
-	<CAOssrKeWvYpgj4_cgsRBL_kTOHyRS-9_mfO9JHP-JahgqFnfHQ@mail.gmail.com>
+Subject: [PATCH v8 0/6] fuse: mounts from non-init user namespaces
+Date: Fri, 02 Mar 2018 15:58:23 -0600
+Message-ID: <87r2p287i8.fsf_-___37357.137053232$1520027828$gmane$org@xmission.com>
+References: <cover.1512741134.git.dongsu@kinvolk.io>
+	<878tbmf5vl.fsf@xmission.com> <87po4rz4ui.fsf_-_@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAOssrKeWvYpgj4_cgsRBL_kTOHyRS-9_mfO9JHP-JahgqFnfHQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Miklos Szeredi's message of "Tue, 27 Feb 2018 10:00:25 +0100")
+In-Reply-To: <87po4rz4ui.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (Eric W. Biederman's message of
+	"Mon, 26 Feb 2018 17:52:21 -0600")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,45 +20,65 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
 
-> On Tue, Feb 27, 2018 at 12:53 AM, Eric W. Biederman
-> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->> Rename the fuse connection flag posix_acl to cached_posix_acl as that
->> is what it actually means.  That fuse will cache and operate on the
->> cached value of the posix acl.
->>
->> When fc->cached_posix_acl is not set, set ACL_DONT_CACHE on the inode
->> so that get_acl and friends won't cache the acl values even if they
->> are called.
->>
->> Replace forget_all_cached_acls with fuse_forget_cached_acls.  This
->> wrapper only takes effect when cached_posix_acl is true to prevent
->> losing the nocache or noxattr status in when posix acls are not
->> cached.
->
-> Shouldn't forget_cached_acl() be taught about ACL_DONT_CACHE?  I think
-> it makes sense to generally not clear ACL_DONT_CACHE, since it's not
-> an actual acl value that needs forgetting.
+This patchset builds on the work by Donsu Park and Seth Forshee and is
+reduced to the set of patches that just affect fuse.  The non-fuse
+vfs patches are far enough along we can ignore them except possibly for the
+question of when does FS_USERNS_MOUNT get set in fuse_fs_type.
 
-After stopping to make certain I understand the issues, I don't think
-it makes sense to teach forget_cached_acl about ACL_DONT_CACHE.
+Fuse with a block device has been left as an exercise for a later time.
 
-If you are fogetting a cached attribute ACL_DONT_CACHE simply doesn't
-make sense.
+Since v5 I changed the core of this patchset around as the previous
+patches were showing signs of bitrot.  Some important explanations were
+missing, some important functionality was missing, and xattr handling
+was completely absent.
 
-Further it makes sense to cache a negative result for fuse when
-!fc->no_getxattr.  Even if you would ordinarily not cache posix acls.
+Since v6 I have:
+- Removed the failure case from fuse_get_req_nofail_nopages that I
+  added.
+- Updated fuse to always to use posix_acl_access_xattr_handler, and
+  posix_acl_default_xattr_handler, by teaching fuse to set
+  ACL_DONT_CACHE when FUSE_POSIX_ACL is not set.
 
-So I think the better plan is to teach the posix acl code how to not
-cache results on a case by case basis.  As I did in my rfc patch I
-posted a little earlier today.  That works with forget_cached_acl and it
-supports local reasoning.  Further while the performance might not be as
-good as ACL_DONT_CACHE I don't think that matters as always going to the
-fuse server to get acls is almost certainly going to dominate the acl
-costs.
+Since v7 I have:
+- Rethought and reworked how I am unifying the cached and the non-cached
+  posix acl case so the code is cleaner and simpler.
+  - I have dropped enhancements to caching negative acls when
+    fc->no_getxattr is set.
+  - Removed the need to wrap forget_all_cached_acls in fuse.
+- Reorder the patches so the posix acl work comes first
 
-Eric
+Miklos can you take a look and see what you think?
+
+I think this much of the fuse changes are ready, and as such I would
+like to get them in this development cycle if possible.
+
+These changes are also available at:
+
+   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git userns-fuse-v8
+
+Eric W. Biederman (5):
+      fs/posix_acl: Update the comments and support lightweight cache skipping
+      fuse: Simplfiy the posix acl handling logic.
+      fuse: Remove the buggy retranslation of pids in fuse_dev_do_read
+      fuse: Fail all requests with invalid uids or gids
+      fuse: Support fuse filesystems outside of init_user_ns
+
+Seth Forshee (1):
+      fuse: Restrict allow_other to the superblock's namespace or a descendant
+
+
+ fs/fuse/acl.c             | 10 ++++++----
+ fs/fuse/cuse.c            |  7 ++++++-
+ fs/fuse/dev.c             | 30 ++++++++++++++++------------
+ fs/fuse/dir.c             | 18 ++++++++---------
+ fs/fuse/fuse_i.h          |  9 ++++++---
+ fs/fuse/inode.c           | 34 +++++++++++++++++++-------------
+ fs/fuse/xattr.c           |  5 -----
+ fs/posix_acl.c            | 50 ++++++++++++++++++++++++++++++++---------------
+ include/linux/posix_acl.h | 17 ++++++++++++++++
+ kernel/user_namespace.c   |  1 +
+ 10 files changed, 116 insertions(+), 65 deletions(-)
