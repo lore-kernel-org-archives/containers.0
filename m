@@ -1,14 +1,15 @@
-From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH v8 6/6] fuse: Restrict allow_other to the superblock's
-	namespace or a descendant
-Date: Fri,  2 Mar 2018 15:59:19 -0600
-Message-ID: <20180302215919.27207-6-ebiederm@xmission.com>
-References: <87r2p287i8.fsf_-_@xmission.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC PATCH V1 01/12] audit: add container id
+Date: Sat, 3 Mar 2018 03:19:13 -0600
+Message-ID: <20180303091913.GA13118__33335.1060784937$1520068669$gmane$org@mail.hallyn.com>
+References: <cover.1519930146.git.rgb@redhat.com>
+	<2e5d93ee46feca915a101c2fc3062da674a98223.1519930146.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87r2p287i8.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <2e5d93ee46feca915a101c2fc3062da674a98223.1519930146.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,63 +19,19 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, madzcar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+On Thu, Mar 01, 2018 at 02:41:04PM -0500, Richard Guy Briggs wrote:
+...
+> +static inline bool audit_containerid_set(struct task_struct *tsk)
 
-Unprivileged users are normally restricted from mounting with the
-allow_other option by system policy, but this could be bypassed
-for a mount done with user namespace root permissions. In such
-cases allow_other should not allow users outside the userns
-to access the mount as doing so would give the unprivileged user
-the ability to manipulate processes it would otherwise be unable
-to manipulate. Restrict allow_other to apply to users in the same
-userns used at mount or a descendant of that namespace. Also
-export current_in_userns() for use by fuse when built as a
-module.
+Hi Richard,
 
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Acked-by: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Reviewed-by: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Reviewed-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Signed-off-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Signed-off-by: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
-Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- fs/fuse/dir.c           | 2 +-
- kernel/user_namespace.c | 1 +
- 2 files changed, 2 insertions(+), 1 deletion(-)
+the calls to audit_containerid_set() confused me.  Could you make it
+is_audit_containerid_set() or audit_containerid_isset()?
 
-diff --git a/fs/fuse/dir.c b/fs/fuse/dir.c
-index c749a4bd4ea3..5461b63bb2a4 100644
---- a/fs/fuse/dir.c
-+++ b/fs/fuse/dir.c
-@@ -1030,7 +1030,7 @@ int fuse_allow_current_process(struct fuse_conn *fc)
- 	const struct cred *cred;
- 
- 	if (fc->allow_other)
--		return 1;
-+		return current_in_userns(fc->user_ns);
- 
- 	cred = current_cred();
- 	if (uid_eq(cred->euid, fc->user_id) &&
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 246d4d4ce5c7..492c255e6c5a 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -1235,6 +1235,7 @@ bool current_in_userns(const struct user_namespace *target_ns)
- {
- 	return in_userns(target_ns, current_user_ns());
- }
-+EXPORT_SYMBOL(current_in_userns);
- 
- static inline struct user_namespace *to_user_ns(struct ns_common *ns)
- {
--- 
-2.14.1
+> +{
+> +	return audit_get_containerid(tsk) != INVALID_CID;
+> +}
