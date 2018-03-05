@@ -1,14 +1,15 @@
-From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH] audit: add containerid support for IMA-audit
-Date: Mon, 05 Mar 2018 09:24:14 -0500
-Message-ID: <1520259854.10396.313.camel__44079.3925118216$1520259761$gmane$org@linux.vnet.ibm.com>
-References: <1520257393.10396.291.camel@linux.vnet.ibm.com>
-	<20180305135008.po6lheqnmkqqo6q4@madcap2.tricolour.ca>
+From: Tycho Andersen <tycho-E0fblnxP3wo@public.gmane.org>
+Subject: Re: [net-next v3 1/2] bpf, seccomp: Add eBPF filter capabilities
+Date: Mon, 5 Mar 2018 09:10:06 -0700
+Message-ID: <20180305161006.ovztkslaxcskjelx@cisco>
+References: <20180226072702.GA27057@ircssh-2.c.rugged-nimbus-611.internal>
+	<CALCETrVwwTu0RTepfzq4jAW7d-7qKizKQdmAUhua+Md-Ljv1uQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20180305135008.po6lheqnmkqqo6q4-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <CALCETrVwwTu0RTepfzq4jAW7d-7qKizKQdmAUhua+Md-Ljv1uQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,48 +19,22 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-integrity <linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Daniel Borkmann <daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org>, Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexei Starovoitov <ast-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gTW9uLCAyMDE4LTAzLTA1IGF0IDA4OjUwIC0wNTAwLCBSaWNoYXJkIEd1eSBCcmlnZ3Mgd3Jv
-dGU6Cj4gT24gMjAxOC0wMy0wNSAwODo0MywgTWltaSBab2hhciB3cm90ZToKPiA+IEhpIFJpY2hh
-cmQsCj4gPiAKPiA+IFRoaXMgcGF0Y2ggaGFzIGJlZW4gY29tcGlsZWQsIGJ1dCBub3QgcnVudGlt
-ZSB0ZXN0ZWQuCj4gCj4gT2ssIGdyZWF0LCB0aGFuayB5b3UuICBJIGFzc3VtZSB5b3UgYXJlIG9m
-ZmVyaW5nIHRoaXMgcGF0Y2ggdG8gYmUKPiBpbmNsdWRlZCBpbiB0aGlzIHBhdGNoc2V0PwoKWWVz
-LCB0aGFuayB5b3UuCgo+IEknbGwgaGF2ZSBhIGxvb2sgdG8gc2VlIHdoZXJlIGl0IGZpdHMgaW4g
-dGhlCj4gSU1BIHJlY29yZC4gIEl0IG1pZ2h0IGJlIGJldHRlciBpZiBpdCB3ZXJlIGFuIEFVRElU
-X0NPTlRBSU5FUl9JTkZPCj4gYXV4aWxpYXJ5IHJlY29yZCwgYnV0IEknbGwgaGF2ZSBhIGxvb2sg
-YXQgdGhlIGNpcmN1bXN0YW5jZXMgb2YgdGhlCj4gZXZlbnQuICBDYW4geW91IHN1Z2dlc3QgYSBw
-cm9jZWR1cmUgdG8gdGVzdCBpdD8KCkxpa2UgSU1BLW1lYXN1cmVtZW50IGFuZCBJTUEtYXBwcmFp
-c2FsLCBJTUEtYXVkaXQgaXMgZW5hYmxlZCBiYXNlZCBvbgpwb2xpY3kuIFRoZSBleGFtcGxlIElN
-QSBwb2xpY3ksIGJlbG93LCBpbmNsdWRlcyBJTUEtYXVkaXQgbWVzc2FnZXMgZm9yCmZpbGVzIGV4
-ZWN1dGVkLiAnY2F0JyB0aGUgcG9saWN5IHRvIC9zeXMva2VybmVsL3NlY3VyaXR5L2ltYS9wb2xp
-Y3kuCgovZXRjL2ltYS9pbWEtcG9saWN5OgphdWRpdCBmdW5jPUJQUk1fQ0hFQ0sKClRoZXJlJ3Mg
-YSBGaXJlRXllIGJsb2cgdGl0bGVkICJFeHRlbmRpbmcgTGludXggRXhlY3V0YWJsZSBMb2dnaW5n
-IFdpdGgKVGhlIEludGVncml0eSBNZWFzdXJlbWVudCBBcmNoaXRlY3R1cmUiKiB0aGF0IGV4cGxh
-aW5zIGhvdyB0byBhdWdtZW50CnRoZWlyIGV4aXN0aW5nIHN5c3RlbSBzZWN1cml0eSBhbmFseXRp
-Y3Mgd2l0aCBmaWxlIGhhc2hlcy4KCirCoGh0dHBzOi8vd3d3LmZpcmVleWUuY29tL2Jsb2cvdGhy
-ZWF0LXJlc2VhcmNoLzIwMTYvMTEvZXh0ZW5kaW5nX2xpbnV4Cl9leGVjLmh0bWwKCgpNaW1pCgo+
-IAo+ID4gLS0tCj4gPiAKPiA+IElmIHRoZSBjb250YWluZXJpZCBpcyBkZWZpbmVkLCBpbmNsdWRl
-IGl0IGluIHRoZSBJTUEtYXVkaXQgcmVjb3JkLgo+ID4gCj4gPiBTaWduZWQtb2ZmLWJ5OiBNaW1p
-IFpvaGFyIDx6b2hhckBsaW51eC52bmV0LmlibS5jb20+Cj4gPiAtLS0KPiA+ICBzZWN1cml0eS9p
-bnRlZ3JpdHkvaW1hL2ltYV9hcGkuYyB8IDMgKysrCj4gPiAgMSBmaWxlIGNoYW5nZWQsIDMgaW5z
-ZXJ0aW9ucygrKQo+ID4gCj4gPiBkaWZmIC0tZ2l0IGEvc2VjdXJpdHkvaW50ZWdyaXR5L2ltYS9p
-bWFfYXBpLmMgYi9zZWN1cml0eS9pbnRlZ3JpdHkvaW1hL2ltYV9hcGkuYwo+ID4gaW5kZXggMzNi
-NDQ1OGNkYmVmLi40MWQyOWEwNmYyOGYgMTAwNjQ0Cj4gPiAtLS0gYS9zZWN1cml0eS9pbnRlZ3Jp
-dHkvaW1hL2ltYV9hcGkuYwo+ID4gKysrIGIvc2VjdXJpdHkvaW50ZWdyaXR5L2ltYS9pbWFfYXBp
-LmMKPiA+IEBAIC0zMzUsNiArMzM1LDkgQEAgdm9pZCBpbWFfYXVkaXRfbWVhc3VyZW1lbnQoc3Ry
-dWN0IGludGVncml0eV9paW50X2NhY2hlICppaW50LAo+ID4gIAlhdWRpdF9sb2dfdW50cnVzdGVk
-c3RyaW5nKGFiLCBhbGdvX2hhc2gpOwo+ID4gIAo+ID4gIAlhdWRpdF9sb2dfdGFza19pbmZvKGFi
-LCBjdXJyZW50KTsKPiA+ICsJaWYgKGF1ZGl0X2NvbnRhaW5lcmlkX3NldChjdXJyZW50KSkKPiA+
-ICsJCWF1ZGl0X2xvZ19mb3JtYXQoYWIsICIgY29udGlkPSVsbHUiLAo+ID4gKwkJCQkgYXVkaXRf
-Z2V0X2NvbnRhaW5lcmlkKGN1cnJlbnQpKTsKPiA+ICAJYXVkaXRfbG9nX2VuZChhYik7Cj4gPiAg
-Cj4gPiAgCWlpbnQtPmZsYWdzIHw9IElNQV9BVURJVEVEOwo+ID4gLS0gCj4gPiAyLjcuNQo+ID4g
-Cj4gCj4gLSBSR0IKPiAKPiAtLQo+IFJpY2hhcmQgR3V5IEJyaWdncyA8cmdiQHJlZGhhdC5jb20+
-Cj4gU3IuIFMvVyBFbmdpbmVlciwgS2VybmVsIFNlY3VyaXR5LCBCYXNlIE9wZXJhdGluZyBTeXN0
-ZW1zCj4gUmVtb3RlLCBPdHRhd2EsIFJlZCBIYXQgQ2FuYWRhCj4gSVJDOiByZ2IsIFN1blJheWNl
-cgo+IFZvaWNlOiArMS42NDcuNzc3LjI2MzUsIEludGVybmFsOiAoODEpIDMyNjM1Cj4gCgpfX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1h
-aWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8v
-bGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+Hi Andy,
+
+On Thu, Mar 01, 2018 at 10:05:47PM +0000, Andy Lutomirski wrote:
+> But Tycho: would hooking user notifiers in right here work for you?
+> As I see it, this would be the best justification for seccomp eBPF.
+
+Sorry for the delay; Sargun had declared on irc that he was going to
+implement it, so I didn't look into it. I think the basics will work,
+but I haven't invested the time to look into it given the above.
+
+Sargun, are you still planning to look at this? What's your timeline?
+
+Cheers,
+
+Tycho
