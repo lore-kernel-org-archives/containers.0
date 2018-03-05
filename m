@@ -1,15 +1,15 @@
-From: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v8 1/6] fs/posix_acl: Update the comments and support
-	lightweight cache skipping
-Date: Mon, 5 Mar 2018 10:53:41 +0100
-Message-ID: <CAOssrKf0cuxx1YLiwFJHSnzMOOoejjWWibs98Mb5KSXVSSXfOg__35230.1978542984$1520243541$gmane$org@mail.gmail.com>
-References: <87r2p287i8.fsf_-_@xmission.com>
-	<20180302215919.27207-1-ebiederm@xmission.com>
+From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC PATCH V1 00/12] audit: implement container id
+Date: Mon, 05 Mar 2018 08:27:39 -0500
+Message-ID: <1520256459.10396.283.camel@linux.vnet.ibm.com>
+References: <cover.1519930146.git.rgb@redhat.com>
+	<1520200557.10396.257.camel@linux.vnet.ibm.com>
+	<20180305033128.6sqreoo5olqwq5og@madcap2.tricolour.ca>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20180302215919.27207-1-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <20180305033128.6sqreoo5olqwq5og-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,24 +19,47 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Mar 2, 2018 at 10:59 PM, Eric W. Biederman
-<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-> The code has been missing a way for a ->get_acl method to not cache
-> a return value without risking invalidating a cached value
-> that was set while get_acl() was returning.
->
-> Add that support by implementing to_uncachable_acl, to_cachable_acl,
-> is_uncacheable_acl, and dealing with uncachable acls in get_acl().
-
-I don't like the pointer magic here.  Can't the uncachable bit just be
-added to struct posix_acl?
-
- AFAICS that can be done even without increasing the size of that
-struct (e.g. by unioning it with the rcu_head).
-
-Thanks,
-Miklos
+T24gU3VuLCAyMDE4LTAzLTA0IGF0IDIyOjMxIC0wNTAwLCBSaWNoYXJkIEd1eSBCcmlnZ3Mgd3Jv
+dGU6Cj4gT24gMjAxOC0wMy0wNCAxNjo1NSwgTWltaSBab2hhciB3cm90ZToKPiA+IE9uIFRodSwg
+MjAxOC0wMy0wMSBhdCAxNDo0MSAtMDUwMCwgUmljaGFyZCBHdXkgQnJpZ2dzIHdyb3RlOgo+ID4g
+PiBJbXBsZW1lbnQgYXVkaXQga2VybmVsIGNvbnRhaW5lciBJRC4KPiA+ID4gCj4gPiA+IFRoaXMg
+cGF0Y2hzZXQgaXMgYSBwcmVsaW1pbmFyeSBSRkMgYmFzZWQgb24gdGhlIHByb3Bvc2FsIGRvY3Vt
+ZW50IChWMykKPiA+ID4gcG9zdGVkOgo+ID4gPiAJaHR0cHM6Ly93d3cucmVkaGF0LmNvbS9hcmNo
+aXZlcy9saW51eC1hdWRpdC8yMDE4LUphbnVhcnkvbXNnMDAwMTQuaHRtbAo+ID4gPiAKPiA+ID4g
+VGhlIGZpcnN0IHBhdGNoIGltcGxlbWVudHMgdGhlIHByb2MgZnMgd3JpdGUgdG8gc2V0IHRoZSBh
+dWRpdCBjb250YWluZXIKPiA+ID4gSUQgb2YgYSBwcm9jZXNzLCBlbWl0dGluZyBhbiBBVURJVF9D
+T05UQUlORVIgcmVjb3JkLgo+ID4gPiAKPiA+ID4gVGhlIHNlY29uZCBpbXBsZW1lbnRzIGFuIGF1
+eGlsaWFyeSBzeXNjYWxsIHJlY29yZCBBVURJVF9DT05UQUlORVJfSU5GTwo+ID4gPiBpZiBhIGNv
+bnRhaW5lciBJRCBpcyBwcmVzZW50IG9uIGEgdGFzay4KPiA+ID4gCj4gPiA+IFRoZSB0aGlyZCBh
+ZGRzIGZpbHRlcmluZyB0byB0aGUgZXhpdCwgZXhjbHVkZSBhbmQgdXNlciBsaXN0cy4KPiA+ID4g
+Cj4gPiA+IFRoZSA0dGgsIGltcGxlbWVudHMgcmVhZGluZyB0aGUgY29udGFpbmVyIElEIGZyb20g
+dGhlIHByb2MgZmlsZXN5c3RlbQo+ID4gPiBmb3IgZGVidWdnaW5nLiAgVGhpcyBpc24ndCBwbGFu
+bmVkIGZvciB1cHN0cmVhbSBpbmNsdXNpb24uCj4gPiA+IAo+ID4gPiBUaGUgNXRoIGFkZHMgc2ln
+bmFsIGFuZCBwdHJhY2Ugc3VwcG9ydC4KPiA+ID4gCj4gPiA+IFRoZSA2dGggYXR0ZW1wdHMgdG8g
+Y3JlYXRlIGEgbG9jYWwgYXVkaXQgY29udGV4dCB0byBiZSBhYmxlIHRvIGJpbmQgYQo+ID4gPiBz
+dGFuZGFsb25lIHJlY29yZCB3aXRoIHRoZSBjb250YWluZXIgSUQgcmVjb3JkLgo+ID4gPiAKPiA+
+ID4gVGhlIDd0aCwgOHRoLCA5dGgsIDEwdGggcGF0Y2hlcyBhZGQgY29udGFpbmVyIElEIHJlY29y
+ZHMgdG8gc3RhbmRhbG9uZQo+ID4gPiByZWNvcmRzLiAgU29tZSBvZiB0aGVzZSBtYXkgZW5kIHVw
+IGJlaW5nIHN5c2NhbGwgYXV4aWxpYXJ5IHJlY29yZHMgYW5kCj4gPiA+IHdvbid0IG5lZWQgdGhp
+cyBzcGVjaWZpYyBzdXBwb3J0IHNpbmNlIHRoZXknbGwgYmUgc3VwcG9ydGVkIHZpYQo+ID4gPiBz
+eXNjYWxscy4KPiA+ID4gCj4gPiA+IFRoZSAxMXRoIGlzIGEgdGVtcG9yYXJ5IHdvcmthcm91bmQg
+ZHVlIHRvIHRoZSBBVURJVF9DT05UQUlORVIgcmVjb3Jkcwo+ID4gPiBub3Qgc2hvd2luZyB1cCBh
+cyBkbyBBVURJVF9MT0dJTiByZWNvcmRzLiAgSSBzdXNwZWN0IHRoaXMgaXMgZHVlIHRvIGl0cwo+
+ID4gPiByYW5nZSAoMTAwMCB2cyAxMzAwKSwgYnV0IHRoZSBpbnRlbnQgaXMgdG8gc29sdmUgaXQu
+Cj4gPiA+IAo+ID4gPiBUaGUgMTJ0aCBhZGRzIGRlYnVnIGluZm9ybWF0aW9uIG5vdCBpbnRlbmRl
+ZCBmb3IgdXBzdHJlYW0gZm9yIHRob3NlCj4gPiA+IGJyYXZlIHNvdWxzIHdhbnRpbmcgdG8gdGlu
+a2VyIHdpdGggaXQgaW4gdGhpcyBlYXJseSBzdGF0ZS4KPiA+ID4gCj4gPiA+IEZlZWRiYWNrIHBs
+ZWFzZSEKPiA+IAo+ID4gV2hpY2ggdHJlZSBjYW4gdGhpcyBwYXRjaCBzZXQgYmUgYXBwbGllZCB0
+bz8KPiAKPiBnaXQ6Ly9naXQua2VybmVsLm9yZy9wdWIvc2NtL2xpbnV4L2tlcm5lbC9naXQvcGNt
+b29yZS9hdWRpdC5naXQgbmV4dAoKVGhhbmtzLCB0aGF0IHdvcmtlZC4gwqBJbiBjYXNlIGFueW9u
+ZSBlbHNlIGlzIHRyeWluZyB0byBhcHBseSB0aGVzZQpwYXRjaGVzIHRvIGEgNC4xNi4wLXJjIGJh
+c2VkIGtlcm5lbCwgY29tbWl0wqA0ZTdlM2FkYmJhNTIgKCJFeHBhbmQKdmFyaW91cyBJTklUXyog
+bWFjcm9zIGFuZCByZW1vdmUiKSBtb3ZlZCAuc2Vzc2lvbmlkCnRvwqBpbml0L2luaXRfdGFzay5j
+LgoKTWltaQoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18K
+Q29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9u
+Lm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9j
+b250YWluZXJz
