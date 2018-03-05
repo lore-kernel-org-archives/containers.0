@@ -1,15 +1,11 @@
 From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC PATCH V1 00/12] audit: implement container id
-Date: Mon, 05 Mar 2018 08:27:39 -0500
-Message-ID: <1520256459.10396.283.camel@linux.vnet.ibm.com>
-References: <cover.1519930146.git.rgb@redhat.com>
-	<1520200557.10396.257.camel@linux.vnet.ibm.com>
-	<20180305033128.6sqreoo5olqwq5og@madcap2.tricolour.ca>
+Subject: [PATCH] audit: add containerid support for IMA-audit
+Date: Mon, 05 Mar 2018 08:43:13 -0500
+Message-ID: <1520257393.10396.291.camel__34261.824997566$1520257329$gmane$org@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20180305033128.6sqreoo5olqwq5og-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,46 +16,35 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-integrity <linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gU3VuLCAyMDE4LTAzLTA0IGF0IDIyOjMxIC0wNTAwLCBSaWNoYXJkIEd1eSBCcmlnZ3Mgd3Jv
-dGU6Cj4gT24gMjAxOC0wMy0wNCAxNjo1NSwgTWltaSBab2hhciB3cm90ZToKPiA+IE9uIFRodSwg
-MjAxOC0wMy0wMSBhdCAxNDo0MSAtMDUwMCwgUmljaGFyZCBHdXkgQnJpZ2dzIHdyb3RlOgo+ID4g
-PiBJbXBsZW1lbnQgYXVkaXQga2VybmVsIGNvbnRhaW5lciBJRC4KPiA+ID4gCj4gPiA+IFRoaXMg
-cGF0Y2hzZXQgaXMgYSBwcmVsaW1pbmFyeSBSRkMgYmFzZWQgb24gdGhlIHByb3Bvc2FsIGRvY3Vt
-ZW50IChWMykKPiA+ID4gcG9zdGVkOgo+ID4gPiAJaHR0cHM6Ly93d3cucmVkaGF0LmNvbS9hcmNo
-aXZlcy9saW51eC1hdWRpdC8yMDE4LUphbnVhcnkvbXNnMDAwMTQuaHRtbAo+ID4gPiAKPiA+ID4g
-VGhlIGZpcnN0IHBhdGNoIGltcGxlbWVudHMgdGhlIHByb2MgZnMgd3JpdGUgdG8gc2V0IHRoZSBh
-dWRpdCBjb250YWluZXIKPiA+ID4gSUQgb2YgYSBwcm9jZXNzLCBlbWl0dGluZyBhbiBBVURJVF9D
-T05UQUlORVIgcmVjb3JkLgo+ID4gPiAKPiA+ID4gVGhlIHNlY29uZCBpbXBsZW1lbnRzIGFuIGF1
-eGlsaWFyeSBzeXNjYWxsIHJlY29yZCBBVURJVF9DT05UQUlORVJfSU5GTwo+ID4gPiBpZiBhIGNv
-bnRhaW5lciBJRCBpcyBwcmVzZW50IG9uIGEgdGFzay4KPiA+ID4gCj4gPiA+IFRoZSB0aGlyZCBh
-ZGRzIGZpbHRlcmluZyB0byB0aGUgZXhpdCwgZXhjbHVkZSBhbmQgdXNlciBsaXN0cy4KPiA+ID4g
-Cj4gPiA+IFRoZSA0dGgsIGltcGxlbWVudHMgcmVhZGluZyB0aGUgY29udGFpbmVyIElEIGZyb20g
-dGhlIHByb2MgZmlsZXN5c3RlbQo+ID4gPiBmb3IgZGVidWdnaW5nLiAgVGhpcyBpc24ndCBwbGFu
-bmVkIGZvciB1cHN0cmVhbSBpbmNsdXNpb24uCj4gPiA+IAo+ID4gPiBUaGUgNXRoIGFkZHMgc2ln
-bmFsIGFuZCBwdHJhY2Ugc3VwcG9ydC4KPiA+ID4gCj4gPiA+IFRoZSA2dGggYXR0ZW1wdHMgdG8g
-Y3JlYXRlIGEgbG9jYWwgYXVkaXQgY29udGV4dCB0byBiZSBhYmxlIHRvIGJpbmQgYQo+ID4gPiBz
-dGFuZGFsb25lIHJlY29yZCB3aXRoIHRoZSBjb250YWluZXIgSUQgcmVjb3JkLgo+ID4gPiAKPiA+
-ID4gVGhlIDd0aCwgOHRoLCA5dGgsIDEwdGggcGF0Y2hlcyBhZGQgY29udGFpbmVyIElEIHJlY29y
-ZHMgdG8gc3RhbmRhbG9uZQo+ID4gPiByZWNvcmRzLiAgU29tZSBvZiB0aGVzZSBtYXkgZW5kIHVw
-IGJlaW5nIHN5c2NhbGwgYXV4aWxpYXJ5IHJlY29yZHMgYW5kCj4gPiA+IHdvbid0IG5lZWQgdGhp
-cyBzcGVjaWZpYyBzdXBwb3J0IHNpbmNlIHRoZXknbGwgYmUgc3VwcG9ydGVkIHZpYQo+ID4gPiBz
-eXNjYWxscy4KPiA+ID4gCj4gPiA+IFRoZSAxMXRoIGlzIGEgdGVtcG9yYXJ5IHdvcmthcm91bmQg
-ZHVlIHRvIHRoZSBBVURJVF9DT05UQUlORVIgcmVjb3Jkcwo+ID4gPiBub3Qgc2hvd2luZyB1cCBh
-cyBkbyBBVURJVF9MT0dJTiByZWNvcmRzLiAgSSBzdXNwZWN0IHRoaXMgaXMgZHVlIHRvIGl0cwo+
-ID4gPiByYW5nZSAoMTAwMCB2cyAxMzAwKSwgYnV0IHRoZSBpbnRlbnQgaXMgdG8gc29sdmUgaXQu
-Cj4gPiA+IAo+ID4gPiBUaGUgMTJ0aCBhZGRzIGRlYnVnIGluZm9ybWF0aW9uIG5vdCBpbnRlbmRl
-ZCBmb3IgdXBzdHJlYW0gZm9yIHRob3NlCj4gPiA+IGJyYXZlIHNvdWxzIHdhbnRpbmcgdG8gdGlu
-a2VyIHdpdGggaXQgaW4gdGhpcyBlYXJseSBzdGF0ZS4KPiA+ID4gCj4gPiA+IEZlZWRiYWNrIHBs
-ZWFzZSEKPiA+IAo+ID4gV2hpY2ggdHJlZSBjYW4gdGhpcyBwYXRjaCBzZXQgYmUgYXBwbGllZCB0
-bz8KPiAKPiBnaXQ6Ly9naXQua2VybmVsLm9yZy9wdWIvc2NtL2xpbnV4L2tlcm5lbC9naXQvcGNt
-b29yZS9hdWRpdC5naXQgbmV4dAoKVGhhbmtzLCB0aGF0IHdvcmtlZC4gwqBJbiBjYXNlIGFueW9u
-ZSBlbHNlIGlzIHRyeWluZyB0byBhcHBseSB0aGVzZQpwYXRjaGVzIHRvIGEgNC4xNi4wLXJjIGJh
-c2VkIGtlcm5lbCwgY29tbWl0wqA0ZTdlM2FkYmJhNTIgKCJFeHBhbmQKdmFyaW91cyBJTklUXyog
-bWFjcm9zIGFuZCByZW1vdmUiKSBtb3ZlZCAuc2Vzc2lvbmlkCnRvwqBpbml0L2luaXRfdGFzay5j
-LgoKTWltaQoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18K
-Q29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9u
-Lm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9j
-b250YWluZXJz
+Hi Richard,
+
+This patch has been compiled, but not runtime tested.
+
+---
+
+If the containerid is defined, include it in the IMA-audit record.
+
+Signed-off-by: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+ security/integrity/ima/ima_api.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/security/integrity/ima/ima_api.c b/security/integrity/ima/ima_api.c
+index 33b4458cdbef..41d29a06f28f 100644
+--- a/security/integrity/ima/ima_api.c
++++ b/security/integrity/ima/ima_api.c
+@@ -335,6 +335,9 @@ void ima_audit_measurement(struct integrity_iint_cache *iint,
+ 	audit_log_untrustedstring(ab, algo_hash);
+ 
+ 	audit_log_task_info(ab, current);
++	if (audit_containerid_set(current))
++		audit_log_format(ab, " contid=%llu",
++				 audit_get_containerid(current));
+ 	audit_log_end(ab);
+ 
+ 	iint->flags |= IMA_AUDITED;
+-- 
+2.7.5
