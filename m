@@ -1,16 +1,13 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH v9 0/4] fuse: mounts from non-init user namespaces
-Date: Thu, 08 Mar 2018 15:23:23 -0600
-Message-ID: <87ina6ntx0.fsf_-_@xmission.com>
-References: <cover.1512741134.git.dongsu@kinvolk.io>
-	<878tbmf5vl.fsf@xmission.com> <87po4rz4ui.fsf_-_@xmission.com>
-	<87r2p287i8.fsf_-_@xmission.com>
+From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Subject: [PATCH v9 2/4] fuse: Fail all requests with invalid uids or gids
+Date: Thu,  8 Mar 2018 15:24:28 -0600
+Message-ID: <20180308212430.7053-2-ebiederm@xmission.com>
+References: <87ina6ntx0.fsf_-_@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87r2p287i8.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (Eric W. Biederman's message of
-	"Fri, 02 Mar 2018 15:58:23 -0600")
+In-Reply-To: <87ina6ntx0.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,64 +18,82 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Upon a cursory examinination the uid and gid of a fuse request are
+necessary for correct operation.  Failing a fuse request where those
+values are not reliable seems a straight forward and reliable means of
+ensuring that fuse requests with bad data are not sent or processed.
 
-This patchset builds on the work by Donsu Park and Seth Forshee and is
-reduced to the set of patches that just affect fuse.  The non-fuse
-vfs patches are far enough along we can ignore them except possibly for the
-question of when does FS_USERNS_MOUNT get set in fuse_fs_type.
+In most cases the vfs will avoid actions it suspects will cause
+an inode write back of an inode with an invalid uid or gid.  But that does
+not map precisely to what fuse is doing, so test for this and solve
+this at the fuse level as well.
 
-Fuse with a block device has been left as an exercise for a later time.
+Performing this work in fuse_req_init_context is cheap as the code is
+already performing the translation here and only needs to check the
+result of the translation to see if things are not representable in
+a form the fuse server can handle.
 
-Since v5 I changed the core of this patchset around as the previous
-patches were showing signs of bitrot.  Some important explanations were
-missing, some important functionality was missing, and xattr handling
-was completely absent.
+Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ fs/fuse/dev.c | 24 +++++++++++++++++-------
+ 1 file changed, 17 insertions(+), 7 deletions(-)
 
-Since v6 I have:
-- Removed the failure case from fuse_get_req_nofail_nopages that I
-  added.
-- Updated fuse to always to use posix_acl_access_xattr_handler, and
-  posix_acl_default_xattr_handler, by teaching fuse to set
-  ACL_DONT_CACHE when FUSE_POSIX_ACL is not set.
-
-Since v7 I have:
-- Rethought and reworked how I am unifying the cached and the non-cached
-  posix acl case so the code is cleaner and simpler.
-  - I have dropped enhancements to caching negative acls when
-    fc->no_getxattr is set.
-  - Removed the need to wrap forget_all_cached_acls in fuse.
-- Reorder the patches so the posix acl work comes first
-
-Since v8 I have:
-- Dropped and postponed the unification of the uncached and the cached
-  posix acls case.  The code is not hard but tricky enough it needs
-  to be considered on it's own on it's own merits.
-
-Miklos can you take a look and see what you think?
-
-Miklos if you could pick these up I would appreciate it.  If not I can
-merge these through the userns tree.
-
-These changes are also available at:
-
-   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git userns-fuse-v9
-
-Eric W. Biederman (3):
-      fuse: Remove the buggy retranslation of pids in fuse_dev_do_read
-      fuse: Fail all requests with invalid uids or gids
-      fuse: Support fuse filesystems outside of init_user_ns
-
-Seth Forshee (1):
-      fuse: Restrict allow_other to the superblock's namespace or a descendant
-
- fs/fuse/acl.c           |  4 ++--
- fs/fuse/cuse.c          |  7 ++++++-
- fs/fuse/dev.c           | 30 +++++++++++++++++-------------
- fs/fuse/dir.c           | 16 ++++++++--------
- fs/fuse/fuse_i.h        |  6 +++++-
- fs/fuse/inode.c         | 31 +++++++++++++++++++------------
- kernel/user_namespace.c |  1 +
- 7 files changed, 58 insertions(+), 37 deletions(-)
+diff --git a/fs/fuse/dev.c b/fs/fuse/dev.c
+index 0fb58f364fa6..2886a56d5f61 100644
+--- a/fs/fuse/dev.c
++++ b/fs/fuse/dev.c
+@@ -112,11 +112,20 @@ static void __fuse_put_request(struct fuse_req *req)
+ 	refcount_dec(&req->count);
+ }
+ 
+-static void fuse_req_init_context(struct fuse_conn *fc, struct fuse_req *req)
++static bool fuse_req_init_context(struct fuse_conn *fc, struct fuse_req *req)
+ {
+-	req->in.h.uid = from_kuid_munged(&init_user_ns, current_fsuid());
+-	req->in.h.gid = from_kgid_munged(&init_user_ns, current_fsgid());
++	req->in.h.uid = from_kuid(&init_user_ns, current_fsuid());
++	req->in.h.gid = from_kgid(&init_user_ns, current_fsgid());
+ 	req->in.h.pid = pid_nr_ns(task_pid(current), fc->pid_ns);
++
++	return (req->in.h.uid != ((uid_t)-1)) && (req->in.h.gid != ((gid_t)-1));
++}
++
++static void fuse_req_init_context_nofail(struct fuse_req *req)
++{
++	req->in.h.uid = 0;
++	req->in.h.gid = 0;
++	req->in.h.pid = 0;
+ }
+ 
+ void fuse_set_initialized(struct fuse_conn *fc)
+@@ -162,12 +171,13 @@ static struct fuse_req *__fuse_get_req(struct fuse_conn *fc, unsigned npages,
+ 			wake_up(&fc->blocked_waitq);
+ 		goto out;
+ 	}
+-
+-	fuse_req_init_context(fc, req);
+ 	__set_bit(FR_WAITING, &req->flags);
+ 	if (for_background)
+ 		__set_bit(FR_BACKGROUND, &req->flags);
+-
++	if (unlikely(!fuse_req_init_context(fc, req))) {
++		fuse_put_request(fc, req);
++		return ERR_PTR(-EOVERFLOW);
++	}
+ 	return req;
+ 
+  out:
+@@ -256,7 +266,7 @@ struct fuse_req *fuse_get_req_nofail_nopages(struct fuse_conn *fc,
+ 	if (!req)
+ 		req = get_reserved_req(fc, file);
+ 
+-	fuse_req_init_context(fc, req);
++	fuse_req_init_context_nofail(req);
+ 	__set_bit(FR_WAITING, &req->flags);
+ 	__clear_bit(FR_BACKGROUND, &req->flags);
+ 	return req;
+-- 
+2.14.1
