@@ -1,7 +1,7 @@
 From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC PATCH v2 3/3] ima: mamespace audit status flags
-Date: Fri,  9 Mar 2018 15:14:21 -0500
-Message-ID: <20180309201421.6150-4-stefanb__500.191064975475$1520626409$gmane$org@linux.vnet.ibm.com>
+Subject: [RFC PATCH v2 2/3] ima: Add ns_status for storing namespaced iint data
+Date: Fri,  9 Mar 2018 15:14:20 -0500
+Message-ID: <20180309201421.6150-3-stefanb__44888.9052648612$1520626414$gmane$org@linux.vnet.ibm.com>
 References: <20180309201421.6150-1-stefanb@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,220 +23,228 @@ List-Id: containers.vger.kernel.org
 
 From: Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-The iint cache stores whether the file is measured, appraised, audited
-etc. This patch moves the IMA_AUDITED flag into the per-namespace
-ns_status, enabling IMA audit mechanism to audit the same file each time
-it is accessed in a new namespace.
-
-The ns_status is not looked up if the CONFIG_IMA_NS is disabled or if
-any of the IMA_NS_STATUS_ACTIONS (currently only IMA_AUDIT) is not
-enabled.
-
-Read and write operations on the iint flags is replaced with function
-calls. For reading, iint_flags() returns the bitwise AND of iint->flags
-and ns_status->flags. The ns_status flags are masked with
-IMA_NS_STATUS_FLAGS (currently only IMA_AUDITED). Similarly
-set_iint_flags() only writes the masked portion to the ns_status flags,
-while the iint flags is set as before. The ns_status parameter added to
-ima_audit_measurement() is used with the above functions to query and
-set the ns_status flags.
+This patch adds an rbtree to the IMA namespace structure that stores a
+namespaced version of iint->flags in ns_status struct. Similar to the
+integrity_iint_cache, both the iint ns_struct are looked up using the
+inode pointer value. The lookup, allocate, and insertion code is also
+similar, except ns_struct is not free'd when the inode is free'd.
+Instead, the lookup verifies the i_ino and i_generation fields are also a
+match. This could be replaced by a lazy clean up of the rbtree.
 
 Signed-off-by: Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- init/Kconfig                      |  4 +++-
- security/integrity/ima/ima.h      | 24 +++++++++++++++++++++++-
- security/integrity/ima/ima_api.c  |  8 +++++---
- security/integrity/ima/ima_main.c | 15 ++++++++++++---
- security/integrity/ima/ima_ns.c   | 22 ++++++++++++++++++++++
- 5 files changed, 65 insertions(+), 8 deletions(-)
+ include/linux/ima.h                      |   3 +
+ security/integrity/ima/ima.h             |  19 +++++
+ security/integrity/ima/ima_init_ima_ns.c |   6 ++
+ security/integrity/ima/ima_ns.c          | 117 +++++++++++++++++++++++++++++++
+ 4 files changed, 145 insertions(+)
 
-diff --git a/init/Kconfig b/init/Kconfig
-index a1ad5384e081..f792ae235424 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -938,7 +938,9 @@ config IMA_NS
- 	help
- 	  Allow the creation of IMA namespaces for each mount namespace.
- 	  Namespaced IMA data enables having IMA features work separately
--	  for each mount namespace.
-+	  for each mount namespace. Currently, only the audit status flags
-+	  are stored in the namespace, which allows the same file to be
-+	  audited each time it is accessed in a new namespace.
+diff --git a/include/linux/ima.h b/include/linux/ima.h
+index fd150dfde277..52c9d338819c 100644
+--- a/include/linux/ima.h
++++ b/include/linux/ima.h
+@@ -111,6 +111,9 @@ struct ima_namespace {
+ 	struct kref kref;
+ 	struct user_namespace *user_ns;
+ 	struct ima_namespace *parent;
++	struct rb_root ns_status_tree;
++	rwlock_t ns_status_lock;
++	struct kmem_cache *ns_status_cache;
+ };
  
- endif # NAMESPACES
- 
+ extern struct ima_namespace init_ima_ns;
 diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
-index e51a39ff75ff..86fd3c1c0caf 100644
+index e98c11c7cf75..e51a39ff75ff 100644
 --- a/security/integrity/ima/ima.h
 +++ b/security/integrity/ima/ima.h
-@@ -210,7 +210,8 @@ void ima_store_measurement(struct integrity_iint_cache *iint, struct file *file,
- 			   struct evm_ima_xattr_data *xattr_value,
- 			   int xattr_len, int pcr);
- void ima_audit_measurement(struct integrity_iint_cache *iint,
--			   const unsigned char *filename);
-+			   const unsigned char *filename,
-+			   struct ns_status *status);
- int ima_alloc_init_template(struct ima_event_data *event_data,
- 			    struct ima_template_entry **entry);
- int ima_store_template(struct ima_template_entry *entry, int violation,
-@@ -299,6 +300,9 @@ static inline int ima_read_xattr(struct dentry *dentry,
+@@ -128,6 +128,14 @@ static inline void ima_load_kexec_buffer(void) {}
+  */
+ extern bool ima_canonical_fmt;
  
- #endif /* CONFIG_IMA_APPRAISE */
- 
-+#define IMA_NS_STATUS_ACTIONS   IMA_AUDIT
-+#define IMA_NS_STATUS_FLAGS     IMA_AUDITED
++struct ns_status {
++	struct rb_node rb_node;
++	struct inode *inode;
++	ino_t i_ino;
++	u32 i_generation;
++	unsigned long flags;
++};
 +
- int ima_ns_init(void);
+ /* Internal IMA function definitions */
+ int ima_init(void);
+ int ima_fs_init(void);
+@@ -295,6 +303,17 @@ int ima_ns_init(void);
  struct ima_namespace;
  int ima_init_namespace(struct ima_namespace *ns);
-@@ -306,12 +310,30 @@ int ima_init_namespace(struct ima_namespace *ns);
- #ifdef CONFIG_IMA_NS
- struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
- 				    struct inode *inode);
-+unsigned long iint_flags(struct integrity_iint_cache *iint,
-+			 struct ns_status *status);
-+unsigned long set_iint_flags(struct integrity_iint_cache *iint,
-+			     struct ns_status *status, unsigned long flags);
- #else
- static inline struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
- 						  struct inode *inode)
- {
- 	return NULL;
- }
-+
-+static inline unsigned long iint_flags(struct integrity_iint_cache *iint,
-+				       struct ns_status *status)
-+{
-+	return iint->flags;
-+}
-+
-+static inline unsigned long set_iint_flags(struct integrity_iint_cache *iint,
-+					   struct ns_status *status,
-+					   unsigned long flags)
-+{
-+	iint->flags = flags;
-+	return flags;
-+}
- #endif /* CONFIG_IMA_NS */
  
++#ifdef CONFIG_IMA_NS
++struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
++				    struct inode *inode);
++#else
++static inline struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
++						  struct inode *inode)
++{
++	return NULL;
++}
++#endif /* CONFIG_IMA_NS */
++
  /* LSM based policy rules require audit */
-diff --git a/security/integrity/ima/ima_api.c b/security/integrity/ima/ima_api.c
-index c7e8db0ea4c0..ee55dfd6afdb 100644
---- a/security/integrity/ima/ima_api.c
-+++ b/security/integrity/ima/ima_api.c
-@@ -304,15 +304,17 @@ void ima_store_measurement(struct integrity_iint_cache *iint,
- }
+ #ifdef CONFIG_IMA_LSM_RULES
  
- void ima_audit_measurement(struct integrity_iint_cache *iint,
--			   const unsigned char *filename)
-+			   const unsigned char *filename,
-+			   struct ns_status *status)
- {
- 	struct audit_buffer *ab;
- 	char hash[(iint->ima_hash->length * 2) + 1];
- 	const char *algo_name = hash_algo_name[iint->ima_hash->algo];
- 	char algo_hash[sizeof(hash) + strlen(algo_name) + 2];
- 	int i;
-+	unsigned long flags = iint_flags(iint, status);
- 
--	if (iint->flags & IMA_AUDITED)
-+	if (flags & IMA_AUDITED)
- 		return;
- 
- 	for (i = 0; i < iint->ima_hash->length; i++)
-@@ -333,7 +335,7 @@ void ima_audit_measurement(struct integrity_iint_cache *iint,
- 	audit_log_task_info(ab, current);
- 	audit_log_end(ab);
- 
--	iint->flags |= IMA_AUDITED;
-+	set_iint_flags(iint, status, flags | IMA_AUDITED);
- }
- 
- /*
-diff --git a/security/integrity/ima/ima_main.c b/security/integrity/ima/ima_main.c
-index 770654694efc..9328e57d3f09 100644
---- a/security/integrity/ima/ima_main.c
-+++ b/security/integrity/ima/ima_main.c
-@@ -164,6 +164,7 @@ static int process_measurement(struct file *file, char *buf, loff_t size,
- {
- 	struct inode *inode = file_inode(file);
- 	struct integrity_iint_cache *iint = NULL;
-+	struct ns_status *status = NULL;
- 	struct ima_template_desc *template_desc;
- 	char *pathbuf = NULL;
- 	char filename[NAME_MAX];
-@@ -174,6 +175,7 @@ static int process_measurement(struct file *file, char *buf, loff_t size,
- 	int xattr_len = 0;
- 	bool violation_check;
- 	enum hash_algo hash_algo;
-+	unsigned long flags;
- 
- 	if (!ima_policy_flag || !S_ISREG(inode->i_mode))
- 		return 0;
-@@ -200,6 +202,12 @@ static int process_measurement(struct file *file, char *buf, loff_t size,
- 		iint = integrity_inode_get(inode);
- 		if (!iint)
- 			goto out;
+diff --git a/security/integrity/ima/ima_init_ima_ns.c b/security/integrity/ima/ima_init_ima_ns.c
+index 4b081dbfac07..9e0d5fafdfba 100644
+--- a/security/integrity/ima/ima_init_ima_ns.c
++++ b/security/integrity/ima/ima_init_ima_ns.c
+@@ -10,9 +10,15 @@
+ #include <linux/export.h>
+ #include <linux/user_namespace.h>
+ #include <linux/ima.h>
++#include <linux/slab.h>
 +
-+		if (action & IMA_NS_STATUS_ACTIONS) {
-+			status = ima_get_ns_status(get_current_ns(), inode);
-+			if (IS_ERR(status))
-+				goto out;
-+		}
- 	}
++#include "ima.h"
  
- 	if (violation_check) {
-@@ -215,9 +223,10 @@ static int process_measurement(struct file *file, char *buf, loff_t size,
- 	 * (IMA_MEASURE, IMA_MEASURED, IMA_XXXX_APPRAISE, IMA_XXXX_APPRAISED,
- 	 *  IMA_AUDIT, IMA_AUDITED)
- 	 */
--	iint->flags |= action;
-+	flags = iint_flags(iint, status);
-+	flags = set_iint_flags(iint, status, flags | action);
- 	action &= IMA_DO_MASK;
--	action &= ~((iint->flags & (IMA_DONE_MASK ^ IMA_MEASURED)) >> 1);
-+	action &= ~((flags & (IMA_DONE_MASK ^ IMA_MEASURED)) >> 1);
+ int ima_init_namespace(struct ima_namespace *ns)
+ {
++	ns->ns_status_tree = RB_ROOT;
++	rwlock_init(&ns->ns_status_lock);
++	ns->ns_status_cache = KMEM_CACHE(ns_status, SLAB_PANIC);
+ 	return 0;
+ }
  
- 	/* If target pcr is already measured, unset IMA_MEASURE action */
- 	if ((action & IMA_MEASURE) && (iint->measured_pcrs & (0x1 << pcr)))
-@@ -252,7 +261,7 @@ static int process_measurement(struct file *file, char *buf, loff_t size,
- 		rc = ima_appraise_measurement(func, iint, file, pathname,
- 					      xattr_value, xattr_len, opened);
- 	if (action & IMA_AUDIT)
--		ima_audit_measurement(iint, pathname);
-+		ima_audit_measurement(iint, pathname, status);
- 
- 	if ((file->f_flags & O_DIRECT) && (iint->flags & IMA_PERMIT_DIRECTIO))
- 		rc = 0;
 diff --git a/security/integrity/ima/ima_ns.c b/security/integrity/ima/ima_ns.c
-index 03acf1431868..fc1d88c69b54 100644
+index 7ab4322c88ae..03acf1431868 100644
 --- a/security/integrity/ima/ima_ns.c
 +++ b/security/integrity/ima/ima_ns.c
-@@ -206,3 +206,25 @@ struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
- 
- 	return status;
+@@ -73,10 +73,24 @@ struct ima_namespace *copy_ima(struct user_namespace *user_ns,
+ 	return new_ns;
  }
-+
-+#define IMA_NS_STATUS_ACTIONS	IMA_AUDIT
-+#define IMA_NS_STATUS_FLAGS	IMA_AUDITED
-+
-+unsigned long iint_flags(struct integrity_iint_cache *iint,
-+			 struct ns_status *status)
+ 
++static void free_ns_status_cache(struct ima_namespace *ns)
 +{
-+	if (!status)
-+		return iint->flags;
++	struct ns_status *status, *next;
 +
-+	return (iint->flags & ~IMA_NS_STATUS_FLAGS) | (status->flags & IMA_NS_STATUS_FLAGS);
++	write_lock(&ns->ns_status_lock);
++	rbtree_postorder_for_each_entry_safe(status, next,
++					     &ns->ns_status_tree, rb_node)
++		kmem_cache_free(ns->ns_status_cache, status);
++	ns->ns_status_tree = RB_ROOT;
++	write_unlock(&ns->ns_status_lock);
++	kmem_cache_destroy(ns->ns_status_cache);
 +}
 +
-+unsigned long set_iint_flags(struct integrity_iint_cache *iint,
-+			     struct ns_status *status, unsigned long flags)
-+{
-+	iint->flags = flags;
-+	if (status)
-+		status->flags = flags & IMA_NS_STATUS_FLAGS;
+ static void destroy_ima_ns(struct ima_namespace *ns)
+ {
+ 	put_user_ns(ns->user_ns);
+ 	put_ima_ns(ns->parent);
++	free_ns_status_cache(ns);
+ 	kfree(ns);
+ }
+ 
+@@ -89,3 +103,106 @@ void free_ima_ns(struct kref *kref)
+ 
+ 	destroy_ima_ns(ns);
+ }
 +
-+	return flags;
++/*
++ * __ima_ns_status_find - return the ns_status associated with an inode
++ */
++static struct ns_status *__ima_ns_status_find(struct ima_namespace *ns,
++					      struct inode *inode)
++{
++	struct ns_status *status;
++	struct rb_node *n = ns->ns_status_tree.rb_node;
++
++	while (n) {
++		status = rb_entry(n, struct ns_status, rb_node);
++
++		if (inode < status->inode)
++			n = n->rb_left;
++		else if (inode > status->inode)
++			n = n->rb_right;
++		else
++			break;
++	}
++	if (!n)
++		return NULL;
++
++	return status;
++}
++
++/*
++ * ima_ns_status_find - return the ns_status associated with an inode
++ */
++static struct ns_status *ima_ns_status_find(struct ima_namespace *ns,
++					    struct inode *inode)
++{
++	struct ns_status *status;
++
++	read_lock(&ns->ns_status_lock);
++	status = __ima_ns_status_find(ns, inode);
++	read_unlock(&ns->ns_status_lock);
++
++	return status;
++}
++
++void insert_ns_status(struct ima_namespace *ns, struct inode *inode,
++		      struct ns_status *status)
++{
++	struct rb_node **p;
++	struct rb_node *node, *parent = NULL;
++	struct ns_status *test_status;
++
++	p = &ns->ns_status_tree.rb_node;
++	while (*p) {
++		parent = *p;
++		test_status = rb_entry(parent, struct ns_status, rb_node);
++		if (inode < test_status->inode)
++			p = &(*p)->rb_left;
++		else
++			p = &(*p)->rb_right;
++	}
++	node = &status->rb_node;
++	rb_link_node(node, parent, p);
++	rb_insert_color(node, &ns->ns_status_tree);
++}
++
++struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
++				    struct inode *inode)
++{
++	struct ns_status *status;
++	int skip_insert = 0;
++
++	status = ima_ns_status_find(ns, inode);
++	if (status) {
++		/*
++		 * Unlike integrity_iint_cache we are not free'ing the
++		 * ns_status data when the inode is free'd. So, in addition to
++		 * checking the inode pointer, we need to make sure the
++		 * (i_generation, i_ino) pair matches as well. In the future
++		 * we might want to add support for lazily walking the rbtree
++		 * to clean it up.
++		 */
++		if (inode->i_ino == status->i_ino &&
++		    inode->i_generation == status->i_generation)
++			return status;
++
++		/* Same inode number is reused, overwrite the ns_status */
++		skip_insert = 1;
++	} else {
++		status = kmem_cache_alloc(ns->ns_status_cache, GFP_NOFS);
++		if (!status)
++			return ERR_PTR(-ENOMEM);
++	}
++
++	write_lock(&ns->ns_status_lock);
++
++	if (!skip_insert)
++		insert_ns_status(ns, inode, status);
++
++	status->inode = inode;
++	status->i_ino = inode->i_ino;
++	status->i_generation = inode->i_generation;
++	status->flags = 0UL;
++	write_unlock(&ns->ns_status_lock);
++
++	return status;
 +}
 -- 
 2.13.6
