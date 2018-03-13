@@ -1,11 +1,13 @@
 From: Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 0/4 v5] devpts: handle bind-mounts correctly
-Date: Tue, 13 Mar 2018 13:17:09 +0100
-Message-ID: <20180313121713.32551-1-christian.brauner@ubuntu.com>
+Subject: [PATCH 1/4 v5] devpts: hoist out check for DEVPTS_SUPER_MAGIC
+Date: Tue, 13 Mar 2018 13:17:10 +0100
+Message-ID: <20180313121713.32551-2-christian.brauner@ubuntu.com>
+References: <20180313121713.32551-1-christian.brauner@ubuntu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20180313121713.32551-1-christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,55 +21,93 @@ To: viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, linux-kernel-u79uwXL
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hey everyone,
+Hoist the check whether we have already found a suitable devpts filesystem
+out of devpts_ptmx_path() in preparation for the devpts bind-mount
+resolution patch. This is a non-functional change.
 
-This is the fith iteration of this patch. Per-patch changes are
-summarized in the individual patches:
-
+Signed-off-by: Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+---
 ChangeLog v4->v5:
-* added non-functional patch to document devpts_mntget().
-  Reason for putting this in a separate patch is that it allows you,
-  Linus and Eric, to simply drop it if judged useless.
-* reverse error handling logic to further simplify
-* dput() dentry in the non-function patch. This was not really a problem
-  since the following patch included a fix for it. But better to get it
-  right in all individual patches.
-* I did another rewrite of the problem analysis for
-  posterity in the patch "Subject: [PATCH 2/3 v3] devpts: resolve devpts
-  bind-mounts" and in this cover letter.
-
+* dput() dentry
 ChangeLog v3->v4:
-* small logical simplifications
-* add test that bind-mounts of /dev/pts/ptmx to locations that do not
-  resolve to a valid slave pty path under the originating devpts mount
-  fail
-
+* patch unchanged
 ChangeLog v2->v3:
-* rewritten commit message to thoroughly analyse the problem for
-  posterity in the patch "Subject: [PATCH 2/3 v3] devpts: resolve devpts
-  bind-mounts" and in this cover letter.
-* extended selftests to test for correct handling of /dev/pts/ptmx
-  bind-mounts to /dev/ptmx and non-standard devpts mounts such as
-  mount -t devpts devpts /mnt
-
+* patch unchanged
 ChangeLog v1->v2:
-* see individual patches
+* patch added
 ChangeLog v0->v1:
-* see individual patches
+* patch not present
+---
+ fs/devpts/inode.c | 26 +++++++++++++++-----------
+ 1 file changed, 15 insertions(+), 11 deletions(-)
 
-Christian Brauner (4):
-  devpts: hoist out check for DEVPTS_SUPER_MAGIC
-  devpts: resolve devpts bind-mounts
-  devpts: comment devpts_mntget()
-  selftests: add devpts selftests
-
- fs/devpts/inode.c                                |  66 +++--
- tools/testing/selftests/Makefile                 |   1 +
- tools/testing/selftests/filesystems/.gitignore   |   1 +
- tools/testing/selftests/filesystems/Makefile     |   2 +-
- tools/testing/selftests/filesystems/devpts_pts.c | 313 +++++++++++++++++++++++
- 5 files changed, 363 insertions(+), 20 deletions(-)
- create mode 100644 tools/testing/selftests/filesystems/devpts_pts.c
-
+diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
+index e31d6ed3ec32..71b901936113 100644
+--- a/fs/devpts/inode.c
++++ b/fs/devpts/inode.c
+@@ -138,10 +138,6 @@ static int devpts_ptmx_path(struct path *path)
+ 	struct super_block *sb;
+ 	int err;
+ 
+-	/* Has the devpts filesystem already been found? */
+-	if (path->mnt->mnt_sb->s_magic == DEVPTS_SUPER_MAGIC)
+-		return 0;
+-
+ 	/* Is a devpts filesystem at "pts" in the same directory? */
+ 	err = path_pts(path);
+ 	if (err)
+@@ -159,21 +155,25 @@ static int devpts_ptmx_path(struct path *path)
+ struct vfsmount *devpts_mntget(struct file *filp, struct pts_fs_info *fsi)
+ {
+ 	struct path path;
+-	int err;
++	int err = 0;
+ 
+ 	path = filp->f_path;
+ 	path_get(&path);
+ 
+-	err = devpts_ptmx_path(&path);
++	/* Has the devpts filesystem already been found? */
++	if (path.mnt->mnt_sb->s_magic != DEVPTS_SUPER_MAGIC)
++		err = devpts_ptmx_path(&path);
+ 	dput(path.dentry);
+ 	if (err) {
+ 		mntput(path.mnt);
+ 		return ERR_PTR(err);
+ 	}
++
+ 	if (DEVPTS_SB(path.mnt->mnt_sb) != fsi) {
+ 		mntput(path.mnt);
+ 		return ERR_PTR(-ENODEV);
+ 	}
++
+ 	return path.mnt;
+ }
+ 
+@@ -182,15 +182,19 @@ struct pts_fs_info *devpts_acquire(struct file *filp)
+ 	struct pts_fs_info *result;
+ 	struct path path;
+ 	struct super_block *sb;
+-	int err;
+ 
+ 	path = filp->f_path;
+ 	path_get(&path);
+ 
+-	err = devpts_ptmx_path(&path);
+-	if (err) {
+-		result = ERR_PTR(err);
+-		goto out;
++	/* Has the devpts filesystem already been found? */
++	if (path.mnt->mnt_sb->s_magic != DEVPTS_SUPER_MAGIC) {
++		int err;
++
++		err = devpts_ptmx_path(&path);
++		if (err) {
++			result = ERR_PTR(err);
++			goto out;
++		}
+ 	}
+ 
+ 	/*
 -- 
 2.15.1
