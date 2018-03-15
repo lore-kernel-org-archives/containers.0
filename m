@@ -1,7 +1,7 @@
-From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [RFC PATCH v2 1/3] ima: extend clone() with IMA namespace support
-Date: Thu, 15 Mar 2018 12:01:07 -0700
-Message-ID: <1521140467.5348.94.camel@HansenPartnership.com>
+Date: Thu, 15 Mar 2018 15:15:25 -0400
+Message-ID: <056e5b9e-b4d3-1862-baea-06dda4bd0713@linux.vnet.ibm.com>
 References: <20180309201421.6150-1-stefanb@linux.vnet.ibm.com>
 	<20180309201421.6150-2-stefanb@linux.vnet.ibm.com>
 	<87vadxfwqj.fsf@xmission.com>
@@ -10,11 +10,12 @@ References: <20180309201421.6150-1-stefanb@linux.vnet.ibm.com>
 	<2183a3b4-6270-d2e9-70ad-a7399eb1681c@linux.vnet.ibm.com>
 	<1521139535.5348.89.camel@HansenPartnership.com>
 	<0dc5b856-8dc6-7b5a-eeac-febd19f6498c@linux.vnet.ibm.com>
+	<1521140467.5348.94.camel@HansenPartnership.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <0dc5b856-8dc6-7b5a-eeac-febd19f6498c-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <1521140467.5348.94.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,42 +25,70 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, david.safford-JJi787mZWgc@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gVGh1LCAyMDE4LTAzLTE1IGF0IDE0OjUxIC0wNDAwLCBTdGVmYW4gQmVyZ2VyIHdyb3RlOgo+
-IE9uIDAzLzE1LzIwMTggMDI6NDUgUE0sIEphbWVzIEJvdHRvbWxleSB3cm90ZToKWy4uLl0KPiA+
-ID4gPiBnb2luZyB0byBuZWVkIHNvbWUgdHlwZSBvZiBrZXlyaW5nIG5hbWVzcGFjZSBhbmQgdGhl
-cmUncwo+ID4gPiA+IGFscmVhZHkKPiA+ID4gPiBvbmUgaGFuZ2luZyBvZmYgdGhlIHVzZXJfbnM6
-Cj4gPiA+ID4gCj4gPiA+ID4gY29tbWl0IGYzNmY4Yzc1YWUyZTdkNGRhMzRmNGM5MDhjZWJkYjRh
-YTQyYzk3N2UKPiA+ID4gPiBBdXRob3I6IERhdmlkIEhvd2VsbHMgPGRob3dlbGxzQHJlZGhhdC5j
-b20+Cj4gPiA+ID4gRGF0ZTrCoMKgwqBUdWUgU2VwIDI0IDEwOjM1OjE5IDIwMTMgKzAxMDAKPiA+
-ID4gPiAKPiA+ID4gPiDCoMKgwqDCoMKgwqBLRVlTOiBBZGQgcGVyLXVzZXJfbmFtZXNwYWNlIHJl
-Z2lzdGVycyBmb3IgcGVyc2lzdGVudAo+ID4gPiA+IHBlci1VSUQKPiA+ID4gPiBrZXJiZXJvcyBj
-YWNoZXMKPiA+ID4gVGhlIGJlbmVmaXQgZm9yIElNQSB3b3VsZCBiZSB0aGF0IHRoaXMgd291bGQg
-dGhlbiB0aWUgdGhlIGtleXMKPiA+ID4gbmVlZGVkIGZvciBhcHByYWlzaW5nIHRvIHRoZSBJTUEg
-bmFtZXNwYWNlJ3MgcG9saWN5Lgo+ID4gPiBIb3dldmVyLCBpZiB5b3UgaGF2ZSBhbiBhcHByYWlz
-ZSBwb2xpY3kgaW4geW91ciBJTUEgbmFtZXNwYWNlLAo+ID4gPiB3aGljaCBpcyBub3cgaG9va2Vk
-IHRvIHRoZSB1c2VyIG5hbWVzcGFjZSwgYW5kIHlvdSBqb2luIHRoYXQgdXNlcgo+ID4gPiBuYW1l
-c3BhY2UgYnV0IHlvdXIgZmlsZXMgZG9uJ3QgaGF2ZSBzaWduYXR1cmVzLCBub3RoaW5nIHdpbGwK
-PiA+ID4gZXhlY3V0ZSBhbnltb3JlLiBUaGF0J3Mgbm93IGEgc2lkZSBlZmZlY3Qgb2Ygam9pbmlu
-ZyB0aGlzIHVzZXIKPiA+ID4gbmFtZXNwYWNlIHVubGVzcyB3ZSBoYXZlIGEgbWFnaWPCoMKgZXhj
-ZXB0aW9uLiBNeSBmZWVsaW5nIGlzLAo+ID4gPiBwZW9wbGUgbWF5IG5vdCBsaWtlIHRoYXQuLi4K
-PiA+IEFncmVlLCBidXQgSSB0aGluayB0aGUgbWFnaWMgbWlnaHQgYmUgdG8gcG9wdWxhdGUgdGhl
-IGltYSBrZXlyaW5nCj4gPiB3aXRoIHRoZSBwYXJlbnQgb24gdXNlcl9ucyBjcmVhdGlvbi7CoMKg
-VGhhdCB3YXkgdGhlIHVzZXJfbnMgb3duZXIKPiA+IGNhbiBkZWxldGUgdGhlIHBhcmVudCBrZXlz
-IGlmIHRoZXkgZG9uJ3QgbGlrZSB0aGVtLCBidXQgYnkgZGVmYXVsdAo+ID4gdGhlIHBhcmVudCBh
-cHByYWlzYWwgcG9saWN5IHNob3VsZCBqdXN0IHdvcmsuCj4gCj4gVGhhdCBtYXkgYWRkIGtleXMg
-dG8geW91ciBrZXlyaW5nIGJ1dCBkb2Vzbid0IGdldCB5b3Ugc2lnbmF0dXJlcyBvbgo+IHlvdXIg
-wqBmaWxlcy4KCkJ1dCBpdCBkb2Vzbid0IG5lZWQgdG8uIMKgVGhlIG9ubHkgd2F5IHdlJ2QgZ2V0
-IGEgZmFpbHVyZSBpcyBpZiB0aGUgZmlsZQppcyBhbHJlYWR5IGJlaW5nIGFwcHJhaXNlZCBhbmQg
-d2UgbG9zZSBhY2Nlc3MgdG8gdGhlIGtleS4gwqBJZiB0aGUKcGFyZW50IHBvbGljeSBpc24ndCBh
-cHByYWlzYWwsIGVudGVyaW5nIHRoZSBJTUEgTlMgd29uJ3QgY2F1c2UKYXBwcmFpc2FsIHRvIGJl
-IHR1cm5lZCBvbiB1bmxlc3MgdGhlIG93bmVyIGFza3MgZm9yIGl0LCBpbiB3aGljaCBjYXNlCml0
-J3MgY2F2ZWF0IGVtcHRvcjogQXMgaXQgd29ya3MgdG9kYXksIGlmIGFzIHJvb3QgSSBhZGQgYSBk
-ZWZhdWx0CmFwcHJhaXNhbCBwb2xpY3kgdG8gSU1BIHdpdGhvdXQgZWl0aGVyIGEga2V5IG9yIHhh
-dHRycywgSSBnZXQgYW4KdW51c2FibGUgc3lzdGVtLgoKSmFtZXMKCl9fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNv
-bnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZv
-dW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On 03/15/2018 03:01 PM, James Bottomley wrote:
+> On Thu, 2018-03-15 at 14:51 -0400, Stefan Berger wrote:
+>> On 03/15/2018 02:45 PM, James Bottomley wrote:
+> [...]
+>>>>> going to need some type of keyring namespace and there's
+>>>>> already
+>>>>> one hanging off the user_ns:
+>>>>>
+>>>>> commit f36f8c75ae2e7d4da34f4c908cebdb4aa42c977e
+>>>>> Author: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+>>>>> Date:   Tue Sep 24 10:35:19 2013 +0100
+>>>>>
+>>>>>        KEYS: Add per-user_namespace registers for persistent
+>>>>> per-UID
+>>>>> kerberos caches
+>>>> The benefit for IMA would be that this would then tie the keys
+>>>> needed for appraising to the IMA namespace's policy.
+>>>> However, if you have an appraise policy in your IMA namespace,
+>>>> which is now hooked to the user namespace, and you join that user
+>>>> namespace but your files don't have signatures, nothing will
+>>>> execute anymore. That's now a side effect of joining this user
+>>>> namespace unless we have a magic  exception. My feeling is,
+>>>> people may not like that...
+>>> Agree, but I think the magic might be to populate the ima keyring
+>>> with the parent on user_ns creation.  That way the user_ns owner
+>>> can delete the parent keys if they don't like them, but by default
+>>> the parent appraisal policy should just work.
+>> That may add keys to your keyring but doesn't get you signatures on
+>> your  files.
+> But it doesn't need to.  The only way we'd get a failure is if the file
+> is already being appraised and we lose access to the key.  If the
+
+Well, the configuration I talked about above was assuming that we have 
+an appraisal policy active in the IMA namespace, which is now tied to 
+the user namespace that was just joined.
+
+If we are fine with the side effects of an IMA policy active as part of 
+a user namespace then let's go with it. The side effects in case of an 
+active IMA appraisal may then be that files cannot be read/accessed, or 
+file measurements or IMA auditing may occur.
+
+The alternative is we have an independent IMA namespace. If one joins 
+the USER namespace and there are no IMA-related side effects. If one 
+joins the IMA namespace its IMA policy should start being enforced. If 
+the current active USER namespace has the keys that go with the 
+signatures of the filesystem, then we're fine from the appraisal 
+perspective. If not, then IMA namespace joining may prevent file accesses.
+
+> parent policy isn't appraisal, entering the IMA NS won't cause
+
+Why parent policy? The policy of the namespace that was joined should be 
+the active one, no ?
+
+> appraisal to be turned on unless the owner asks for it, in which case
+> it's caveat emptor: As it works today, if as root I add a default
+> appraisal policy to IMA without either a key or xattrs, I get an
+> unusable system.
+
+    Stefan
+
+>
+> James
+>
