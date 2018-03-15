@@ -1,14 +1,25 @@
-From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC PATCH V1 01/12] audit: add container id
-Date: Thu, 15 Mar 2018 16:27:01 -0400
-Message-ID: <216d1ab1-531b-9185-2e31-34f162f08aad@linux.vnet.ibm.com>
-References: <cover.1519930146.git.rgb@redhat.com>
-	<2e5d93ee46feca915a101c2fc3062da674a98223.1519930146.git.rgb@redhat.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [RFC PATCH v2 1/3] ima: extend clone() with IMA namespace support
+Date: Thu, 15 Mar 2018 15:35:06 -0500
+Message-ID: <87d10513id.fsf__18928.846580866$1521146043$gmane$org@xmission.com>
+References: <20180309201421.6150-1-stefanb@linux.vnet.ibm.com>
+	<20180309201421.6150-2-stefanb@linux.vnet.ibm.com>
+	<87vadxfwqj.fsf@xmission.com>
+	<c18b6e92-57f0-5994-eb60-5fadc6671832@linux.vnet.ibm.com>
+	<1521135192.5348.64.camel@HansenPartnership.com>
+	<2183a3b4-6270-d2e9-70ad-a7399eb1681c@linux.vnet.ibm.com>
+	<1521139535.5348.89.camel@HansenPartnership.com>
+	<0dc5b856-8dc6-7b5a-eeac-febd19f6498c@linux.vnet.ibm.com>
+	<1521140467.5348.94.camel@HansenPartnership.com>
+	<056e5b9e-b4d3-1862-baea-06dda4bd0713@linux.vnet.ibm.com>
+	<87sh915eo0.fsf@xmission.com>
+	<19ecc296-b584-4e1a-5369-30090fbc7880@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <2e5d93ee46feca915a101c2fc3062da674a98223.1519930146.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <19ecc296-b584-4e1a-5369-30090fbc7880-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> (Stefan
+	Berger's message of "Thu, 15 Mar 2018 15:49:02 -0400")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,140 +29,122 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, madzcar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org
+To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, david.safford-JJi787mZWgc@public.gmane.org, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 03/01/2018 02:41 PM, Richard Guy Briggs wrote:
-> Implement the proc fs write to set the audit container ID of a process,
-> emitting an AUDIT_CONTAINER record to document the event.
->
-> This is a write from the container orchestrator task to a proc entry of
-> the form /proc/PID/containerid where PID is the process ID of the newly
-> created task that is to become the first task in a container, or an
-> additional task added to a container.
->
-> The write expects up to a u64 value (unset: 18446744073709551615).
->
-> This will produce a record such as this:
-> type=UNKNOWN[1333] msg=audit(1519903238.968:261): op=set pid=596 uid=0 subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 auid=0 tty=pts0 ses=1 opid=596 old-contid=18446744073709551615 contid=123455 res=0
->
-> The "op" field indicates an initial set.  The "pid" to "ses" fields are
-> the orchestrator while the "opid" field is the object's PID, the process
-> being "contained".  Old and new container ID values are given in the
-> "contid" fields, while res indicates its success.
->
-> It is not permitted to self-set, unset or re-set the container ID.  A
-> child inherits its parent's container ID, but then can be set only once
-> after.
->
-> See: https://github.com/linux-audit/audit-kernel/issues/32
->
->
->   /* audit_rule_data supports filter rules with both integer and string
->    * fields.  It corresponds with AUDIT_ADD_RULE, AUDIT_DEL_RULE and
-> diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-> index 4e0a4ac..0ee1e59 100644
-> --- a/kernel/auditsc.c
-> +++ b/kernel/auditsc.c
-> @@ -2073,6 +2073,92 @@ int audit_set_loginuid(kuid_t loginuid)
->   	return rc;
->   }
->
-> +static int audit_set_containerid_perm(struct task_struct *task, u64 containerid)
-> +{
-> +	struct task_struct *parent;
-> +	u64 pcontainerid, ccontainerid;
-> +	pid_t ppid;
-> +
-> +	/* Don't allow to set our own containerid */
-> +	if (current == task)
-> +		return -EPERM;
-> +	/* Don't allow the containerid to be unset */
-> +	if (!cid_valid(containerid))
-> +		return -EINVAL;
-> +	/* if we don't have caps, reject */
-> +	if (!capable(CAP_AUDIT_CONTROL))
-> +		return -EPERM;
-> +	/* if containerid is unset, allow */
-> +	if (!audit_containerid_set(task))
-> +		return 0;
+Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
 
-I am wondering whether there should be a check for the target process 
-that will receive the containerid to not have CAP_SYS_ADMIN that would 
-otherwise allow it to arbitrarily unshare()/clone() and leave the set of 
-namespaces that may make up the container whose containerid we assign here?
+> On 03/15/2018 03:20 PM, Eric W. Biederman wrote:
+>> Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
+>>
+>>> On 03/15/2018 03:01 PM, James Bottomley wrote:
+>>>> On Thu, 2018-03-15 at 14:51 -0400, Stefan Berger wrote:
+>>>>> On 03/15/2018 02:45 PM, James Bottomley wrote:
+>>>> [...]
+>>>>>>>> going to need some type of keyring namespace and there's
+>>>>>>>> already
+>>>>>>>> one hanging off the user_ns:
+>>>>>>>>
+>>>>>>>> commit f36f8c75ae2e7d4da34f4c908cebdb4aa42c977e
+>>>>>>>> Author: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+>>>>>>>> Date:   Tue Sep 24 10:35:19 2013 +0100
+>>>>>>>>
+>>>>>>>>         KEYS: Add per-user_namespace registers for persistent
+>>>>>>>> per-UID
+>>>>>>>> kerberos caches
+>>>>>>> The benefit for IMA would be that this would then tie the keys
+>>>>>>> needed for appraising to the IMA namespace's policy.
+>>>>>>> However, if you have an appraise policy in your IMA namespace,
+>>>>>>> which is now hooked to the user namespace, and you join that user
+>>>>>>> namespace but your files don't have signatures, nothing will
+>>>>>>> execute anymore. That's now a side effect of joining this user
+>>>>>>> namespace unless we have a magic  exception. My feeling is,
+>>>>>>> people may not like that...
+>>>>>> Agree, but I think the magic might be to populate the ima keyring
+>>>>>> with the parent on user_ns creation.  That way the user_ns owner
+>>>>>> can delete the parent keys if they don't like them, but by default
+>>>>>> the parent appraisal policy should just work.
+>>>>> That may add keys to your keyring but doesn't get you signatures on
+>>>>> your  files.
+>>>> But it doesn't need to.  The only way we'd get a failure is if the file
+>>>> is already being appraised and we lose access to the key.  If the
+>>> Well, the configuration I talked about above was assuming that we have
+>>> an appraisal policy active in the IMA namespace, which is now tied to
+>>> the user namespace that was just joined.
+>>>
+>>> If we are fine with the side effects of an IMA policy active as part
+>>> of a user namespace then let's go with it. The side effects in case of
+>>> an active IMA appraisal may then be that files cannot be
+>>> read/accessed, or file measurements or IMA auditing may occur.
+>>>
+>>> The alternative is we have an independent IMA namespace. If one joins
+>>> the USER namespace and there are no IMA-related side effects. If one
+>>> joins the IMA namespace its IMA policy should start being enforced. If
+>>> the current active USER namespace has the keys that go with the
+>>> signatures of the filesystem, then we're fine from the appraisal
+>>> perspective. If not, then IMA namespace joining may prevent file
+>>> accesses.
+>>>
+>>>> parent policy isn't appraisal, entering the IMA NS won't cause
+>>> Why parent policy? The policy of the namespace that was joined should
+>>> be the active one, no ?
+>> Unless I am completely blind we should never stop enforcing the parent's
+>> polciy.  We should only add policy to enforce for the scope of a
+>> container.
+>
+> What we want is an independent policy for each IMA namespace.
+>
+> What we don't want is that root can abuse his power to spawn new namespaces and
+> circumvent a file appraisal policy on the host (in init_ima_ns). Because of that
+> root's activities are subject to the IMA policy of the currently active IMA
+> namespace and the one of init_ima_ns (and possibly all the ones in between). If
+> root is working in a child IMA namespace and file appraisal fails due to the
+> policy in init_ima_ns and keys found in .ima or _ima keyrings attached to
+> init_user_ns, the file access will be denied.
+>
+> Besides that root's activities will always be measured and audited following the
+> policy in init_ima_ns. This tries to prevent that root spawns an IMA namespace
+> with a NULL policy and does things in the TCB and tries to escape the
+> logging.
 
-> +	/* it is already set, and not inherited from the parent, reject */
-> +	ccontainerid = audit_get_containerid(task);
-> +	rcu_read_lock();
-> +	parent = rcu_dereference(task->real_parent);
-> +	rcu_read_unlock();
-> +	task_lock(parent);
-> +	pcontainerid = audit_get_containerid(parent);
-> +	ppid = task_tgid_nr(parent);
-ppid not needed...
+That sounds exactly like my definition of hierarchical namespace
+enforcement.
 
-> +	task_unlock(parent);
-> +	if (ccontainerid != pcontainerid)
-> +		return -EPERM;
-> +	return 0;
-> +}
-> +
-> +static void audit_log_set_containerid(struct task_struct *task, u64 oldcontainerid,
-> +				      u64 containerid, int rc)
-> +{
-> +	struct audit_buffer *ab;
-> +	uid_t uid;
-> +	struct tty_struct *tty;
-> +
-> +	if (!audit_enabled)
-> +		return;
-> +
-> +	ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_CONTAINER);
-> +	if (!ab)
-> +		return;
-> +
-> +	uid = from_kuid(&init_user_ns, task_uid(current));
-> +	tty = audit_get_tty(current);
-> +
-> +	audit_log_format(ab, "op=set pid=%d uid=%u", task_tgid_nr(current), uid);
-> +	audit_log_task_context(ab);
-> +	audit_log_format(ab, " auid=%u tty=%s ses=%u opid=%d old-contid=%llu contid=%llu res=%d",
-> +			 from_kuid(&init_user_ns, audit_get_loginuid(current)),
-> +			 tty ? tty_name(tty) : "(none)", audit_get_sessionid(current),
-> +			 task_tgid_nr(task), oldcontainerid, containerid, !rc);
-> +
-> +	audit_put_tty(tty);
-> +	audit_log_end(ab);
-> +}
-> +
-> +/**
-> + * audit_set_containerid - set current task's audit_context containerid
-> + * @containerid: containerid value
-> + *
-> + * Returns 0 on success, -EPERM on permission failure.
-> + *
-> + * Called (set) from fs/proc/base.c::proc_containerid_write().
-> + */
-> +int audit_set_containerid(struct task_struct *task, u64 containerid)
-> +{
-> +	u64 oldcontainerid;
-> +	int rc;
-> +
-> +	oldcontainerid = audit_get_containerid(task);
-> +
-> +	rc = audit_set_containerid_perm(task, containerid);
-> +	if (!rc) {
-> +		task_lock(task);
-> +		task->containerid = containerid;
-> +		task_unlock(task);
-> +	}
-> +
-> +	audit_log_set_containerid(task, oldcontainerid, containerid, rc);
-> +	return rc;
-> +}
-> +
->   /**
->    * __audit_mq_open - record audit data for a POSIX MQ open
->    * @oflag: open flag
+And please keep in mind that everyone is allowed to use CLONE_NEWNS now.
+You just have to spawn a new user namespace first so you have the caps.
+
+>> In practice this is just the containers policy as the container is most
+>> likely a do whatever you want to in the parent policy.  But not always
+>> and not explicitly.
+>>
+>> Mount namespaces are not hierarchical, user namespaces are.  Which makes
+>> them much more appropriate for being part of nested policy enforcement.
+>
+> We don't want additive or hierarchical policies - at least I don't. They should
+> be independent. Only exception are activities of root that are always
+> iteratively evaluated against policies of the current IMA NS and the init_ima_ns
+> and possibly all the ones in between.
+
+I believe that is what I meant by a nested/hiearchical policy
+enforcement.
+
+>>  From previous conversations I remember that there is a legitimate
+>> bootstrap problem for IMA.  That needs to be looked at, and I am not
+>> seeing that mentioned.
+>
+> IMA's log should not have a gap. So ideally we shouldn't have to write something
+> into sysfs to spawn a new IMA namespace so that we don't miss whatever setup may
+> have happened to get there, including the writing into procfs. IMA should be
+> there right from the start. So a clone flag would be ideal for that.
+
+Please make that securityfs not sysfs.  Sysfs should be about the
+hardware not these higher level software details.  I really don't want
+to have to namespace sysfs more than I already have.
+
+As for the no gaps requirement.  That is a powerful lever for ruling out
+solutions that don't work as well.
+
+
+
+Eric
