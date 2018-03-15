@@ -1,23 +1,20 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC PATCH v2 1/3] ima: extend clone() with IMA namespace support
-Date: Thu, 15 Mar 2018 14:20:31 -0500
-Message-ID: <87sh915eo0.fsf__14009.4078532004$1521141568$gmane$org@xmission.com>
-References: <20180309201421.6150-1-stefanb@linux.vnet.ibm.com>
-	<20180309201421.6150-2-stefanb@linux.vnet.ibm.com>
-	<87vadxfwqj.fsf@xmission.com>
-	<c18b6e92-57f0-5994-eb60-5fadc6671832@linux.vnet.ibm.com>
-	<1521135192.5348.64.camel@HansenPartnership.com>
-	<2183a3b4-6270-d2e9-70ad-a7399eb1681c@linux.vnet.ibm.com>
-	<1521139535.5348.89.camel@HansenPartnership.com>
-	<0dc5b856-8dc6-7b5a-eeac-febd19f6498c@linux.vnet.ibm.com>
-	<1521140467.5348.94.camel@HansenPartnership.com>
-	<056e5b9e-b4d3-1862-baea-06dda4bd0713@linux.vnet.ibm.com>
+From: Matthew Wilcox <willy-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Subject: Re: [RFC][PATCH] ipc: Remove IPCMNI
+Date: Thu, 15 Mar 2018 12:45:27 -0700
+Message-ID: <20180315194527.GB17574__21846.4286685505$1521143031$gmane$org@bombadil.infradead.org>
+References: <1520885744-1546-1-git-send-email-longman@redhat.com>
+	<1520885744-1546-5-git-send-email-longman@redhat.com>
+	<87woyfyh57.fsf@xmission.com>
+	<5d4a858a-3136-5ef4-76fe-a61e7f2aed56@redhat.com>
+	<87o9jru3bf.fsf@xmission.com>
+	<935a7c50-50cc-2dc0-33bb-92c000d039bc@redhat.com>
+	<87woyego2u.fsf_-_@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <056e5b9e-b4d3-1862-baea-06dda4bd0713-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> (Stefan
-	Berger's message of "Thu, 15 Mar 2018 15:15:25 -0400")
+Content-Disposition: inline
+In-Reply-To: <87woyego2u.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,79 +24,85 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, david.safford-JJi787mZWgc@public.gmane.org, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Luis R. Rodriguez" <mcgrof-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Waiman Long <longman-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
+On Wed, Mar 14, 2018 at 07:49:29PM -0500, Eric W. Biederman wrote:
+> @@ -109,20 +109,13 @@ void free_ipcs(struct ipc_namespace *ns, struct ipc_ids *ids,
+>  {
+>  	struct kern_ipc_perm *perm;
+>  	int next_id;
+> -	int total, in_use;
+>  
+>  	down_write(&ids->rwsem);
+> -
+> -	in_use = ids->in_use;
+> -
+> -	for (total = 0, next_id = 0; total < in_use; next_id++) {
+> -		perm = idr_find(&ids->ipcs_idr, next_id);
+> -		if (perm == NULL)
+> -			continue;
+> +	next_id = 0;
+> +	while ((perm = idr_get_next(&ids->ipcs_idr, &next_id))) {
+>  		rcu_read_lock();
+>  		ipc_lock_object(perm);
+>  		free(ns, perm);
+> -		total++;
+>  	}
+>  	up_write(&ids->rwsem);
+>  }
 
-> On 03/15/2018 03:01 PM, James Bottomley wrote:
->> On Thu, 2018-03-15 at 14:51 -0400, Stefan Berger wrote:
->>> On 03/15/2018 02:45 PM, James Bottomley wrote:
->> [...]
->>>>>> going to need some type of keyring namespace and there's
->>>>>> already
->>>>>> one hanging off the user_ns:
->>>>>>
->>>>>> commit f36f8c75ae2e7d4da34f4c908cebdb4aa42c977e
->>>>>> Author: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
->>>>>> Date:   Tue Sep 24 10:35:19 2013 +0100
->>>>>>
->>>>>>        KEYS: Add per-user_namespace registers for persistent
->>>>>> per-UID
->>>>>> kerberos caches
->>>>> The benefit for IMA would be that this would then tie the keys
->>>>> needed for appraising to the IMA namespace's policy.
->>>>> However, if you have an appraise policy in your IMA namespace,
->>>>> which is now hooked to the user namespace, and you join that user
->>>>> namespace but your files don't have signatures, nothing will
->>>>> execute anymore. That's now a side effect of joining this user
->>>>> namespace unless we have a magic  exception. My feeling is,
->>>>> people may not like that...
->>>> Agree, but I think the magic might be to populate the ima keyring
->>>> with the parent on user_ns creation.  That way the user_ns owner
->>>> can delete the parent keys if they don't like them, but by default
->>>> the parent appraisal policy should just work.
->>> That may add keys to your keyring but doesn't get you signatures on
->>> your  files.
->> But it doesn't need to.  The only way we'd get a failure is if the file
->> is already being appraised and we lose access to the key.  If the
->
-> Well, the configuration I talked about above was assuming that we have
-> an appraisal policy active in the IMA namespace, which is now tied to
-> the user namespace that was just joined.
->
-> If we are fine with the side effects of an IMA policy active as part
-> of a user namespace then let's go with it. The side effects in case of
-> an active IMA appraisal may then be that files cannot be
-> read/accessed, or file measurements or IMA auditing may occur.
->
-> The alternative is we have an independent IMA namespace. If one joins
-> the USER namespace and there are no IMA-related side effects. If one
-> joins the IMA namespace its IMA policy should start being enforced. If
-> the current active USER namespace has the keys that go with the
-> signatures of the filesystem, then we're fine from the appraisal
-> perspective. If not, then IMA namespace joining may prevent file
-> accesses.
->
->> parent policy isn't appraisal, entering the IMA NS won't cause
->
-> Why parent policy? The policy of the namespace that was joined should
-> be the active one, no ?
+We have a helper for this:
 
-Unless I am completely blind we should never stop enforcing the parent's
-polciy.  We should only add policy to enforce for the scope of a
-container.
+	idr_for_each_entry(&ids->ipcs_idr, perm, next_id) {
+		rcu_read_lock();
+		ipc_lock_object(perm);
+		free(ns, perm);
+	}
 
-In practice this is just the containers policy as the container is most
-likely a do whatever you want to in the parent policy.  But not always
-and not explicitly.
+(using idr_get_next() is tricky because you have to remember to increment
+next_id yourself, and you didn't).
 
-Mount namespaces are not hierarchical, user namespaces are.  Which makes
-them much more appropriate for being part of nested policy enforcement.
+> +static int ipc_idr_alloc(struct ipc_ids *ids, struct kern_ipc_perm *new)
+>  {
+> +#ifdef CONFIG_CHECKPOINT_RESTORE
+> +	if (ids->next_id >= 0) {
+> +		idr_set_cursor(&ids->ipcs_idr, ids->next_id);
+>  		ids->next_id = -1;
+>  	}
+> +#endif
+> +	return idr_alloc_cyclic(&ids->ipcs_idr, (new), 0, 0, GFP_NOWAIT);
+>  }
+>  
+> -#endif /* CONFIG_CHECKPOINT_RESTORE */
 
-From previous conversations I remember that there is a legitimate
-bootstrap problem for IMA.  That needs to be looked at, and I am not
-seeing that mentioned.
+That seems a little convoluted; is there a reason to not call idr_set_cursor()
+instead of assigning to ids->next_id?
 
-Eric
+> @@ -757,30 +725,20 @@ static struct kern_ipc_perm *sysvipc_find_ipc(struct ipc_ids *ids, loff_t pos,
+>  					      loff_t *new_pos)
+>  {
+>  	struct kern_ipc_perm *ipc;
+> +	int id;
+>  
+> +	/* Out of range - return NULL to terminate iteration */
+> +	if (pos > INT_MAX)
+>  		return NULL;
+>  
+> +	ipc = idr_get_next(&ids->ipcs_idr, &id);
+> +	if (!ipc)
+> +		return NULL;
+>  
+> +	*new_pos = id + 1;
+> +	rcu_read_lock();
+> +	ipc_lock_object(ipc);
+> +	return ipc;
+>  }
+
+I'm no expert on the IPC locking, but I would have thought you'd want to
+call rcu_read_lock() before calling idr_get_next() to avoid a simultaneous
+delete from freeing 'ipc'.
+
+Oh, I see.  proc_start takes the rwsem for read and proc_stop releases it.
+The locking here seems quite shabby and in need of renovation.
