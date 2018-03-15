@@ -1,16 +1,18 @@
-From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Subject: Re: [RFC PATCH v2 1/3] ima: extend clone() with IMA namespace support
-Date: Thu, 15 Mar 2018 10:33:12 -0700
-Message-ID: <1521135192.5348.64.camel@HansenPartnership.com>
-References: <20180309201421.6150-1-stefanb@linux.vnet.ibm.com>
-	<20180309201421.6150-2-stefanb@linux.vnet.ibm.com>
-	<87vadxfwqj.fsf@xmission.com>
-	<c18b6e92-57f0-5994-eb60-5fadc6671832@linux.vnet.ibm.com>
+From: Tycho Andersen <tycho-E0fblnxP3wo@public.gmane.org>
+Subject: Re: [RFC 0/3] seccomp trap to userspace
+Date: Thu, 15 Mar 2018 11:35:24 -0600
+Message-ID: <20180315173524.k7vwnvnhomg2j5yv__40623.0827131823$1521135211$gmane$org@smitten>
+References: <20180204104946.25559-1-tycho@tycho.ws>
+	<20180315160924.GA12744@gmail.com>
+	<CALCETrVnvbZLx5v=DMu2N1JtR+ys507X5CYBi-qQnus3VMQdwg@mail.gmail.com>
+	<20180315170509.GA32766@mail.hallyn.com>
+	<CALCETrXPcCNbpFJhXktkVS9gOPpmnU_bbY6Z8RrsBarq0dP4Lg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <c18b6e92-57f0-5994-eb60-5fadc6671832-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <CALCETrXPcCNbpFJhXktkVS9gOPpmnU_bbY6Z8RrsBarq0dP4Lg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,65 +22,73 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, david.safford-JJi787mZWgc@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-ima-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Akihiro Suda <suda.akihiro-Zyj7fXuS5i5L9jVzuh4AOg@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Christian Brauner <christian.brauner-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Tyler Hicks <tyhicks-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gVGh1LCAyMDE4LTAzLTE1IGF0IDExOjI2IC0wNDAwLCBTdGVmYW4gQmVyZ2VyIHdyb3RlOgo+
-IE9uIDAzLzE1LzIwMTggMDY6NDAgQU0sIEVyaWMgVy4gQmllZGVybWFuIHdyb3RlOgo+ID4gCj4g
-PiBTdGVmYW4gQmVyZ2VyIDxzdGVmYW5iQGxpbnV4LnZuZXQuaWJtLmNvbT4gd3JpdGVzOgo+ID4g
-Cj4gPiA+IAo+ID4gPiBGcm9tOiBZdXFpb25nIFN1biA8c3VueUB1cy5pYm0uY29tPgo+ID4gPiAK
-PiA+ID4gQWRkIG5ldyBDT05GSUdfSU1BX05TIGNvbmZpZyBvcHRpb24uwqDCoExldCBjbG9uZSgp
-IGNyZWF0ZSBhIG5ldwo+ID4gPiBJTUEgbmFtZXNwYWNlIHVwb24gQ0xPTkVfTkVXTlMgZmxhZy4g
-QWRkIGltYV9ucyBkYXRhIHN0cnVjdHVyZSBpbgo+ID4gPiBuc3Byb3h5LiDCoGltYV9ucyBpcyBh
-bGxvY2F0ZWQgYW5kIGZyZWVkIHVwb24gSU1BIG5hbWVzcGFjZQo+ID4gPiBjcmVhdGlvbiBhbmQg
-ZXhpdC4gwqBDdXJyZW50bHksIHRoZSBpbWFfbnMgY29udGFpbnMgbm8gdXNlZnVsIElNQQo+ID4g
-PiBkYXRhIGJ1dCBvbmx5IGEgZHVtbXkgaW50ZXJmYWNlLiBUaGlzIHBhdGNoIGNyZWF0ZXMgdGhl
-IGZyYW1ld29yawo+ID4gPiBmb3IgbmFtZXNwYWNpbmcgdGhlIGRpZmZlcmVudCBhc3BlY3RzIG9m
-IElNQSAoZWcuIElNQS1hdWRpdCwgSU1BLQo+ID4gPiBtZWFzdXJlbWVudCwgSU1BLWFwcHJhaXNh
-bCkuCj4gPiBJTUEgaXMgbm90IHBhdGggYmFzZWQuwqDCoFRoZSBvbmx5IHRoaW5nIHRoYXQgYmVs
-b25ncyB0byBhIG1vdW50Cj4gPiBuYW1lc3BhY2UgYXJlIHBhdGhzLsKgwqBUaGVyZWZvcmUgSU1B
-IGlzIGNvbXBsZXRlbHkgaW5hcHByb3ByaWF0ZSB0bwo+ID4gYmUgam9pbnQgd2l0aCBhIG1vdW50
-IG5hbWVzcGFjZS4KCkp1c3QgdG8gYmUgY2xlYXI6IFRoZSBtb3VudCBuYW1lc3BhY2UgaXMgbm90
-IG9ubHkgYWJvdXQgcGF0aHMgaXQncyBhbHNvCmFib3V0IHN1YnRyZWUgcHJvcGVydGllcy4gwqBI
-b3dldmVyLCB0aGUgcG9pbnQgc3RpbGwgc3RhbmRzIHRoYXQgSU1BIGhhcwphIGRlcGVuZGVuY3kg
-b24gbmVpdGhlci4KCj4gSU1BIG1lYXN1cmVzIHRoZSBmaWxlcyBkZXNjcmliZWQgYnkgdGhlc2Ug
-cGF0aHMuIFRoZSBmaWxlcyBhbHNvIG1heQo+IGhvbGQgc2lnbmF0dXJlcyAoc2VjdXJpdHkuaW1h
-IHhhdHRyKSBuZWVkZWQgZm9yIElNQSBhcHByYWlzYWwuCgpUaGUgeGF0dHIgaXMgYW4gaW5vZGUg
-cHJvcGVydHksIHdoaWNoIGlzbid0IG5hbWVzcGFjZWQgYnkgdGhlIG1vdW50X25zLgoKV2hlbiB3
-ZSBoYWQgdGhpcyBkaXNjdXNzaW9uIGxhc3QgeWVhciwgd2UgdGFsa2VkIGFib3V0IHBvc3NpYmx5
-IHVzaW5nCnRoZSB1c2VyX25zIGluc3RlYWQuIMKgSXQgbWFrZXMgc2Vuc2UgYmVjYXVzZSBmb3Ig
-SU1BIHNpZ25hdHVyZXMgeW91J3JlCmdvaW5nIHRvIG5lZWQgc29tZSB0eXBlIG9mIGtleXJpbmcg
-bmFtZXNwYWNlIGFuZCB0aGVyZSdzIGFscmVhZHkgb25lCmhhbmdpbmcgb2ZmIHRoZSB1c2VyX25z
-OgoKY29tbWl0IGYzNmY4Yzc1YWUyZTdkNGRhMzRmNGM5MDhjZWJkYjRhYTQyYzk3N2UKQXV0aG9y
-OiBEYXZpZCBIb3dlbGxzIDxkaG93ZWxsc0ByZWRoYXQuY29tPgpEYXRlOsKgwqDCoFR1ZSBTZXAg
-MjQgMTA6MzU6MTkgMjAxMyArMDEwMAoKwqDCoMKgwqBLRVlTOiBBZGQgcGVyLXVzZXJfbmFtZXNw
-YWNlIHJlZ2lzdGVycyBmb3IgcGVyc2lzdGVudCBwZXItVUlECmtlcmJlcm9zIGNhY2hlcwoKPiA+
-IEkgc2F3IHRoYXQgU2VyZ2UgZXZlbiByZWNlbnRseSBtZW50aW9uZWQgdGhhdCB5b3UgbmVlZCB0
-byB0YWtlCj4gPiB0aGlzIGFzcGVjdCBvZiB0aGUgY2hhbmdlcyBiYWNrIHRvIHRoZSBkcmF3aW5n
-IGJvYXJkLsKgwqBXaXRoIG15Cj4gPiBuYW1lc3BhY2UgbWFpbnRhaW5lciBoYXQgb24gSSByZXBl
-YXQgdGhhdC4KPiAKPiBEcmF3aW5nIGJvYXJkIGlzIGhlcmUgbm93ICh0dW5pbmcgb24gdGhlIHRl
-eHQuLi4pOgo+IAo+IGh0dHA6Ly9rZXJuc2VjLm9yZy93aWtpL2luZGV4LnBocC9JTUFfTmFtZXNw
-YWNpbmdfZGVzaWduX2NvbnNpZGVyYXRpbwo+IG5zCgpZb3UgbWVudGlvbiBhbiBhYnVzZSBjYXNl
-IGhlcmUgd2hpY2ggaXMgYmFzaWNhbGx5IGEgd2F5IG9mIHJlbGF4aW5nCnNlY3VyaXR5IHBvbGlj
-eS4gwqBDYW5ub3Qgd2UgZml4IHRoYXQgYnkgbWFraW5nIHBvbGljeSBoaWVyYXJjaGljYWwsIHNv
-CmEgY2hpbGQgbmFtZXNwYWNlIG11c3QgaGF2ZSB0aGUgc2FtZSBvciBhIG1vcmUgc3RyaWN0IHBv
-bGljeSB0aGFuIHRoZQpwYXJlbnQ/Cgo+ID4gwqBGcm9tIGEgMTAsMDAwIGZvb3QgdmlldyBJIGNh
-biBhbHJlYWR5IHRlbGwgdGhhdCB0aGlzIGlzIGhvcGVsZXNzLgo+ID4gU28gZm9yIGJpbmRpbmcg
-SU1BIG5hbXNwYWNlcyBhbmQgQ0xPTkVfTkVXTlM6Cj4gPiAKPiA+IE5hY2tlZC1ieTogIkVyaWMg
-Vy4gQmllZGVybWFuIiA8ZWJpZWRlcm1AeG1pc3Npb24uY29tPgo+ID4gCj4gPiBJIGFtIG5vdCBu
-YWNraW5nIElNQSBuYW1lc3BhY2luZyBqdXN0IGluYXBwcm9wcmlhdGVseSB0eWluZyBpbWEKPiA+
-IG5hbWVzcGFjZXMgdG8gbW91bnQgbmFtZXNwYWNlcy7CoMKgVGhlc2Ugc2hvdWxkIGJlIGNvbXBs
-ZXRlbHkKPiA+IHNlcGFyYXRlIGVudGl0aWVzLgo+IAo+IExldCdzIHNheSB3ZSBnbyBkb3duIHRo
-ZSByb2FkIG9mIHNwYXduaW5nIGl0IGluZGVwZW5kZW50bHkuIENhbiB3ZQo+IHVzZSB0aGUgdW51
-c2VkIGNsb25lIGZsYWcgMHgxMDAwPyBPciBzaG91bGQgd2UgY29tZSB1cCB3aXRoIG5ld8KgCj4g
-dW5zaGFyZTIoKS9jbG9uZTIoKSBzeXNjYWxscyB0byBleHRlbmQgdGhlIGNsb25lIGJpdHMgdG8g
-NjQgYml0PyBPcgo+IHVzZSBhIHN5c2ZzL3NlY3VyaXR5ZnMgZmlsZSB0byBzcGF3biBhIG5ldyBJ
-TUEgbmFtZXNwYWNlPyBNYWtlIHRoaXMgYQo+IGdlbmVyaWMgZmlsZSBub3QgYW4gSU1BIHNwZWNp
-ZmljIG9uZT8KCklmLCBhcyBhIHJlc3VsdCBvZiBkaXNjdXNzaW9ucywgaXQgdHVybnMgb3V0IHRo
-YXQgYSBzZXBhcmF0ZSBuYW1lc3BhY2UKaXMgdGhlIGNvcnJlY3Qgd2F5IHRvIHByb2NlZWQsIEkn
-bSBzdXJlIHdlIGNhbiBzb3J0IG91dCB0aGUgZGV0YWlscyBvZgpob3cgd2UgY29wZSB3aXRoIHRo
-ZSBmbGFnIHBhdWNpdHkgcHJvYmxlbS4KCkphbWVzCgoKX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVy
-c0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlv
-bi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Hi Andy,
+
+On Thu, Mar 15, 2018 at 05:11:32PM +0000, Andy Lutomirski wrote:
+> On Thu, Mar 15, 2018 at 5:05 PM, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
+> > Hm, synchronously - that brings to mind a thought...  I should re-look at
+> > Tycho's patches first, but, if I'm in a container, start some syscall that
+> > gets trapped to userspace, then I hit ctrl-c.  I'd like to be able to have
+> > the handler be interrupted and have it return -EINTR.  Is that going to
+> > be possible with the synchronous approach?
+> 
+> I think so, but it should be possible with the classic async approach
+> too.  The main issue is the difference between a classic filter like
+> this (pseudocode):
+> 
+> if (nr == SYS_mount) return TRAP_TO_USERSPACE;
+> 
+> and the eBPF variant:
+> 
+> if (nr == SYS_mount) trap_to_userspace();
+
+Sargun started a private design discussion thread that I don't think
+you were on, but Alexei said something to the effect of "eBPF programs
+will never wait on userspace", so I'm not sure we can do something
+like this in an eBPF program. I'm cc-ing him here again to confirm,
+but I doubt things have changed.
+
+> I admit that it's still not 100% clear to me that the latter is
+> genuinely more useful than the former.
+> 
+> The case where I think the synchronous function call is a huge win is this one:
+> 
+> if (nr  == SYS_mount) {
+>   log("Someone called mount with args %lx\n", ...);
+>   return RET_KILL;
+> }
+> 
+> The idea being that the log message wouldn't show up in the kernel log
+> -- it would get sent to the listener socket belonging to whoever
+> created the filter, and that process could then go and log it
+> properly.  This would work perfectly in containers and in totally
+> unprivileged applications like Chromium.
+
+The current implementation can't do exactly this, but you could do:
+
+if (nr == SYS_mount) {
+    log(...);
+    kill(pid, SIGKILL);
+}
+
+from the handler instead.
+
+I guess Serge is asking a slightly different question: what if the
+task gets e.g. SIGINT from the user doing a ^C or SIGALARM or
+something, we should probably send the handler some sort of message or
+interrupt to let it know that the syscall was cancelled. Right now the
+current set doesn't behave that way, and the handler will just
+continue on its merry way and get an EINVAL when it tries to respond
+with the cancelled cookie.
+
+Anyway, I think these last two points can be addressed with the
+approach from this series. The notification to the handler about a
+cancelled syscall might be slightly awkward, but I'll take a look.
+
+Cheers,
+
+Tycho
