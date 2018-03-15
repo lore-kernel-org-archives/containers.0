@@ -1,19 +1,15 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [RFC][PATCH] ipc: Remove IPCMNI
-Date: Wed, 14 Mar 2018 19:49:29 -0500
-Message-ID: <87woyego2u.fsf_-_@xmission.com>
-References: <1520885744-1546-1-git-send-email-longman@redhat.com>
-	<1520885744-1546-5-git-send-email-longman@redhat.com>
-	<87woyfyh57.fsf@xmission.com>
-	<5d4a858a-3136-5ef4-76fe-a61e7f2aed56@redhat.com>
-	<87o9jru3bf.fsf@xmission.com>
-	<935a7c50-50cc-2dc0-33bb-92c000d039bc@redhat.com>
+Subject: Re: [RFC PATCH v2 1/3] ima: extend clone() with IMA namespace support
+Date: Thu, 15 Mar 2018 05:40:04 -0500
+Message-ID: <87vadxfwqj.fsf@xmission.com>
+References: <20180309201421.6150-1-stefanb@linux.vnet.ibm.com>
+	<20180309201421.6150-2-stefanb@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <935a7c50-50cc-2dc0-33bb-92c000d039bc-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> (Waiman Long's
-	message of "Tue, 13 Mar 2018 17:06:14 -0400")
+In-Reply-To: <20180309201421.6150-2-stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> (Stefan
+	Berger's message of "Fri, 9 Mar 2018 15:14:19 -0500")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,320 +19,521 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Waiman Long <longman-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Matthew Wilcox <willy-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, "Luis R. Rodriguez" <mcgrof-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, david.safford-JJi787mZWgc@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-ima-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
 
-The define IPCMNI was originally the size of a statically sized array in
-the kernel and that has long since been removed.  Therefore there is no
-fundamental reason for IPCMNI.
+> From: Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+>
+> Add new CONFIG_IMA_NS config option.  Let clone() create a new IMA
+> namespace upon CLONE_NEWNS flag. Add ima_ns data structure in nsproxy.
+> ima_ns is allocated and freed upon IMA namespace creation and exit.
+> Currently, the ima_ns contains no useful IMA data but only a dummy
+> interface. This patch creates the framework for namespacing the different
+> aspects of IMA (eg. IMA-audit, IMA-measurement, IMA-appraisal).
 
-The only remaining use IPCMNI serves is as a convoluted way to format
-the ipc id to userspace.  It does not appear that anything except for
-the CHECKPOINT_RESTORE code even cares about this variety of assignment
-and the CHECKPOINT_RESTORE code only cares about this weirdness because
-it has to restore these peculiar ids.
+IMA is not path based.  The only thing that belongs to a mount
+namespace are paths.  Therefore IMA is completely inappropriate to
+be joint with a mount namespace.
 
-Therefore make the assignment of ipc ids match the description in
-Advanced Programming in the Unix Environment and assign the next id
-until INT_MAX is hit then loop around to the lower ids.
+I saw that Serge even recently mentioned that you need to take
+this aspect of the changes back to the drawing board.  With my
+namespace maintainer hat on I repeat that.
 
-This can be implemented trivially with the current code using idr_alloc_cyclic.
+From a 10,000 foot view I can already tell that this is hopeless.
+So for binding IMA namspaces and CLONE_NEWNS:
 
-To make it possible to keep checkpoint/restore working I have renamed
-the sysctls from xxx_next_id to xxx_nextid.  That is enough change that
-a smart CRIU implementation can see that what is exported has changed,
-and act accordingly.  New kernels will be able to restore the old id's.
+Nacked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-This code still needs some real world testing to verify my assumptions.
-And some work with the CRIU implementations to actually add the code
-that deals with the new for of id assignment.
+I am not nacking IMA namespacing just inappropriately tying ima
+namespaces to mount namespaces.  These should be completely separate
+entities.
 
-Updates: 03f595668017 ("ipc: add sysctl to specify desired next object id")
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
+Eric
 
-Waiman please take a look at this and run it through some tests etc,
-I am pretty certain something like this patch is all you need to do
-to sort out ipc assignment.  Not messing with sysctls needed.
 
- include/linux/ipc.h           |  2 --
- include/linux/ipc_namespace.h |  1 -
- ipc/ipc_sysctl.c              |  6 ++--
- ipc/namespace.c               | 11 ++----
- ipc/util.c                    | 80 ++++++++++---------------------------------
- ipc/util.h                    | 11 +-----
- 6 files changed, 25 insertions(+), 86 deletions(-)
-
-diff --git a/include/linux/ipc.h b/include/linux/ipc.h
-index 821b2f260992..6cc2df7f7ac9 100644
---- a/include/linux/ipc.h
-+++ b/include/linux/ipc.h
-@@ -8,8 +8,6 @@
- #include <uapi/linux/ipc.h>
- #include <linux/refcount.h>
- 
--#define IPCMNI 32768  /* <= MAX_INT limit for ipc arrays (including sysctl changes) */
--
- /* used by in-kernel data structures */
- struct kern_ipc_perm {
- 	spinlock_t	lock;
-diff --git a/include/linux/ipc_namespace.h b/include/linux/ipc_namespace.h
-index b5630c8eb2f3..cab33b6a8236 100644
---- a/include/linux/ipc_namespace.h
-+++ b/include/linux/ipc_namespace.h
-@@ -15,7 +15,6 @@ struct user_namespace;
- 
- struct ipc_ids {
- 	int in_use;
--	unsigned short seq;
- 	bool tables_initialized;
- 	struct rw_semaphore rwsem;
- 	struct idr ipcs_idr;
-diff --git a/ipc/ipc_sysctl.c b/ipc/ipc_sysctl.c
-index 8ad93c29f511..a599963d58bf 100644
---- a/ipc/ipc_sysctl.c
-+++ b/ipc/ipc_sysctl.c
-@@ -176,7 +176,7 @@ static struct ctl_table ipc_kern_table[] = {
- 	},
- #ifdef CONFIG_CHECKPOINT_RESTORE
- 	{
--		.procname	= "sem_next_id",
-+		.procname	= "sem_nextid",
- 		.data		= &init_ipc_ns.ids[IPC_SEM_IDS].next_id,
- 		.maxlen		= sizeof(init_ipc_ns.ids[IPC_SEM_IDS].next_id),
- 		.mode		= 0644,
-@@ -185,7 +185,7 @@ static struct ctl_table ipc_kern_table[] = {
- 		.extra2		= &int_max,
- 	},
- 	{
--		.procname	= "msg_next_id",
-+		.procname	= "msg_nextid",
- 		.data		= &init_ipc_ns.ids[IPC_MSG_IDS].next_id,
- 		.maxlen		= sizeof(init_ipc_ns.ids[IPC_MSG_IDS].next_id),
- 		.mode		= 0644,
-@@ -194,7 +194,7 @@ static struct ctl_table ipc_kern_table[] = {
- 		.extra2		= &int_max,
- 	},
- 	{
--		.procname	= "shm_next_id",
-+		.procname	= "shm_nextid",
- 		.data		= &init_ipc_ns.ids[IPC_SHM_IDS].next_id,
- 		.maxlen		= sizeof(init_ipc_ns.ids[IPC_SHM_IDS].next_id),
- 		.mode		= 0644,
-diff --git a/ipc/namespace.c b/ipc/namespace.c
-index f59a89966f92..84eaeba9e96c 100644
---- a/ipc/namespace.c
-+++ b/ipc/namespace.c
-@@ -109,20 +109,13 @@ void free_ipcs(struct ipc_namespace *ns, struct ipc_ids *ids,
- {
- 	struct kern_ipc_perm *perm;
- 	int next_id;
--	int total, in_use;
- 
- 	down_write(&ids->rwsem);
--
--	in_use = ids->in_use;
--
--	for (total = 0, next_id = 0; total < in_use; next_id++) {
--		perm = idr_find(&ids->ipcs_idr, next_id);
--		if (perm == NULL)
--			continue;
-+	next_id = 0;
-+	while ((perm = idr_get_next(&ids->ipcs_idr, &next_id))) {
- 		rcu_read_lock();
- 		ipc_lock_object(perm);
- 		free(ns, perm);
--		total++;
- 	}
- 	up_write(&ids->rwsem);
- }
-diff --git a/ipc/util.c b/ipc/util.c
-index 4ed5a17dd06f..ce6bf18e54df 100644
---- a/ipc/util.c
-+++ b/ipc/util.c
-@@ -118,7 +118,6 @@ int ipc_init_ids(struct ipc_ids *ids)
- {
- 	int err;
- 	ids->in_use = 0;
--	ids->seq = 0;
- 	init_rwsem(&ids->rwsem);
- 	err = rhashtable_init(&ids->key_ht, &ipc_kht_params);
- 	if (err)
-@@ -192,46 +191,18 @@ static struct kern_ipc_perm *ipc_findkey(struct ipc_ids *ids, key_t key)
- 	return NULL;
- }
- 
--#ifdef CONFIG_CHECKPOINT_RESTORE
--/*
-- * Specify desired id for next allocated IPC object.
-- */
--#define ipc_idr_alloc(ids, new)						\
--	idr_alloc(&(ids)->ipcs_idr, (new),				\
--		  (ids)->next_id < 0 ? 0 : ipcid_to_idx((ids)->next_id),\
--		  0, GFP_NOWAIT)
- 
--static inline int ipc_buildid(int id, struct ipc_ids *ids,
--			      struct kern_ipc_perm *new)
-+static int ipc_idr_alloc(struct ipc_ids *ids, struct kern_ipc_perm *new)
- {
--	if (ids->next_id < 0) { /* default, behave as !CHECKPOINT_RESTORE */
--		new->seq = ids->seq++;
--		if (ids->seq > IPCID_SEQ_MAX)
--			ids->seq = 0;
--	} else {
--		new->seq = ipcid_to_seqx(ids->next_id);
-+#ifdef CONFIG_CHECKPOINT_RESTORE
-+	if (ids->next_id >= 0) {
-+		idr_set_cursor(&ids->ipcs_idr, ids->next_id);
- 		ids->next_id = -1;
- 	}
--
--	return SEQ_MULTIPLIER * new->seq + id;
--}
--
--#else
--#define ipc_idr_alloc(ids, new)					\
--	idr_alloc(&(ids)->ipcs_idr, (new), 0, 0, GFP_NOWAIT)
--
--static inline int ipc_buildid(int id, struct ipc_ids *ids,
--			      struct kern_ipc_perm *new)
--{
--	new->seq = ids->seq++;
--	if (ids->seq > IPCID_SEQ_MAX)
--		ids->seq = 0;
--
--	return SEQ_MULTIPLIER * new->seq + id;
-+#endif
-+	return idr_alloc_cyclic(&ids->ipcs_idr, (new), 0, 0, GFP_NOWAIT);
- }
- 
--#endif /* CONFIG_CHECKPOINT_RESTORE */
--
- /**
-  * ipc_addid - add an ipc identifier
-  * @ids: ipc identifier set
-@@ -251,9 +222,6 @@ int ipc_addid(struct ipc_ids *ids, struct kern_ipc_perm *new, int limit)
- 	kgid_t egid;
- 	int id, err;
- 
--	if (limit > IPCMNI)
--		limit = IPCMNI;
--
- 	if (!ids->tables_initialized || ids->in_use >= limit)
- 		return -ENOSPC;
- 
-@@ -290,7 +258,7 @@ int ipc_addid(struct ipc_ids *ids, struct kern_ipc_perm *new, int limit)
- 	if (id > ids->max_id)
- 		ids->max_id = id;
- 
--	new->id = ipc_buildid(id, ids, new);
-+	new->id = id;
- 
- 	return id;
- }
-@@ -430,7 +398,7 @@ static void ipc_kht_remove(struct ipc_ids *ids, struct kern_ipc_perm *ipcp)
-  */
- void ipc_rmid(struct ipc_ids *ids, struct kern_ipc_perm *ipcp)
- {
--	int lid = ipcid_to_idx(ipcp->id);
-+	int lid = ipcp->id;
- 
- 	idr_remove(&ids->ipcs_idr, lid);
- 	ipc_kht_remove(ids, ipcp);
-@@ -563,7 +531,7 @@ void ipc64_perm_to_ipc_perm(struct ipc64_perm *in, struct ipc_perm *out)
- struct kern_ipc_perm *ipc_obtain_object_idr(struct ipc_ids *ids, int id)
- {
- 	struct kern_ipc_perm *out;
--	int lid = ipcid_to_idx(id);
-+	int lid = id;
- 
- 	if (unlikely(!ids->tables_initialized))
- 		return ERR_PTR(-EINVAL);
-@@ -757,30 +725,20 @@ static struct kern_ipc_perm *sysvipc_find_ipc(struct ipc_ids *ids, loff_t pos,
- 					      loff_t *new_pos)
- {
- 	struct kern_ipc_perm *ipc;
--	int total, id;
--
--	total = 0;
--	for (id = 0; id < pos && total < ids->in_use; id++) {
--		ipc = idr_find(&ids->ipcs_idr, id);
--		if (ipc != NULL)
--			total++;
--	}
-+	int id;
- 
--	if (total >= ids->in_use)
-+	/* Out of range - return NULL to terminate iteration */
-+	if (pos > INT_MAX)
- 		return NULL;
- 
--	for (; pos < IPCMNI; pos++) {
--		ipc = idr_find(&ids->ipcs_idr, pos);
--		if (ipc != NULL) {
--			*new_pos = pos + 1;
--			rcu_read_lock();
--			ipc_lock_object(ipc);
--			return ipc;
--		}
--	}
-+	ipc = idr_get_next(&ids->ipcs_idr, &id);
-+	if (!ipc)
-+		return NULL;
- 
--	/* Out of range - return NULL to terminate iteration */
--	return NULL;
-+	*new_pos = id + 1;
-+	rcu_read_lock();
-+	ipc_lock_object(ipc);
-+	return ipc;
- }
- 
- static void *sysvipc_proc_next(struct seq_file *s, void *it, loff_t *pos)
-diff --git a/ipc/util.h b/ipc/util.h
-index 89b8ec176fc4..de8e27367f0c 100644
---- a/ipc/util.h
-+++ b/ipc/util.h
-@@ -15,8 +15,6 @@
- #include <linux/err.h>
- #include <linux/ipc_namespace.h>
- 
--#define SEQ_MULTIPLIER	(IPCMNI)
--
- int sem_init(void);
- int msg_init(void);
- void shm_init(void);
-@@ -93,10 +91,6 @@ void __init ipc_init_proc_interface(const char *path, const char *header,
- #define IPC_MSG_IDS	1
- #define IPC_SHM_IDS	2
- 
--#define ipcid_to_idx(id) ((id) % SEQ_MULTIPLIER)
--#define ipcid_to_seqx(id) ((id) / SEQ_MULTIPLIER)
--#define IPCID_SEQ_MAX min_t(int, INT_MAX/SEQ_MULTIPLIER, USHRT_MAX)
--
- /* must be called with ids->rwsem acquired for writing */
- int ipc_addid(struct ipc_ids *, struct kern_ipc_perm *, int);
- 
-@@ -120,9 +114,6 @@ static inline int ipc_get_maxid(struct ipc_ids *ids)
- 	if (ids->in_use == 0)
- 		return -1;
- 
--	if (ids->in_use == IPCMNI)
--		return IPCMNI - 1;
--
- 	return ids->max_id;
- }
- 
-@@ -163,7 +154,7 @@ extern int store_msg(void __user *dest, struct msg_msg *msg, size_t len);
- 
- static inline int ipc_checkid(struct kern_ipc_perm *ipcp, int uid)
- {
--	return uid / SEQ_MULTIPLIER != ipcp->seq;
-+	return uid != ipcp->seq;
- }
- 
- static inline void ipc_lock_object(struct kern_ipc_perm *perm)
--- 
-2.14.1
+> Changelog:
+> * Use CLONE_NEWNS instead of a new CLONE_NEWIMA flag
+> * Use existing ima.h headers
+> * Move the ima_namespace.c to security/integrity/ima/ima_ns.c
+> * Fix typo INFO->INO
+> * Each namespace free's itself, removed recursively free'ing
+>   until init_ima_ns from free_ima_ns()
+> * Moved ima_init_ns and related functions into own file that is
+>   always compiled
+> * Fixed putting of imans->parent
+> * Move IMA namespace creation from nsproxy into mount namespace
+>   code
+>
+> Signed-off-by: Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Signed-off-by: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> ---
+>  fs/mount.h                               | 14 -----
+>  fs/namespace.c                           | 29 ++++++++--
+>  include/linux/ima.h                      | 67 +++++++++++++++++++++++
+>  include/linux/mount.h                    | 20 ++++++-
+>  init/Kconfig                             |  8 +++
+>  kernel/nsproxy.c                         |  1 +
+>  security/integrity/ima/Makefile          |  3 +-
+>  security/integrity/ima/ima.h             |  4 ++
+>  security/integrity/ima/ima_init.c        |  4 ++
+>  security/integrity/ima/ima_init_ima_ns.c | 38 +++++++++++++
+>  security/integrity/ima/ima_ns.c          | 91 ++++++++++++++++++++++++++++++++
+>  11 files changed, 260 insertions(+), 19 deletions(-)
+>  create mode 100644 security/integrity/ima/ima_init_ima_ns.c
+>  create mode 100644 security/integrity/ima/ima_ns.c
+>
+> diff --git a/fs/mount.h b/fs/mount.h
+> index f39bc9da4d73..e19ebde97756 100644
+> --- a/fs/mount.h
+> +++ b/fs/mount.h
+> @@ -5,20 +5,6 @@
+>  #include <linux/ns_common.h>
+>  #include <linux/fs_pin.h>
+>  
+> -struct mnt_namespace {
+> -	atomic_t		count;
+> -	struct ns_common	ns;
+> -	struct mount *	root;
+> -	struct list_head	list;
+> -	struct user_namespace	*user_ns;
+> -	struct ucounts		*ucounts;
+> -	u64			seq;	/* Sequence number to prevent loops */
+> -	wait_queue_head_t poll;
+> -	u64 event;
+> -	unsigned int		mounts; /* # of mounts in the namespace */
+> -	unsigned int		pending_mounts;
+> -} __randomize_layout;
+> -
+>  struct mnt_pcp {
+>  	int mnt_count;
+>  	int mnt_writers;
+> diff --git a/fs/namespace.c b/fs/namespace.c
+> index 9d1374ab6e06..7f886c02278b 100644
+> --- a/fs/namespace.c
+> +++ b/fs/namespace.c
+> @@ -26,6 +26,7 @@
+>  #include <linux/bootmem.h>
+>  #include <linux/task_work.h>
+>  #include <linux/sched/task.h>
+> +#include <linux/ima.h>
+>  
+>  #include "pnode.h"
+>  #include "internal.h"
+> @@ -2858,6 +2859,7 @@ static void dec_mnt_namespaces(struct ucounts *ucounts)
+>  
+>  static void free_mnt_ns(struct mnt_namespace *ns)
+>  {
+> +	put_ima_ns(ns->ima_ns);
+>  	ns_free_inum(&ns->ns);
+>  	dec_mnt_namespaces(ns->ucounts);
+>  	put_user_ns(ns->user_ns);
+> @@ -2873,11 +2875,13 @@ static void free_mnt_ns(struct mnt_namespace *ns)
+>   */
+>  static atomic64_t mnt_ns_seq = ATOMIC64_INIT(1);
+>  
+> -static struct mnt_namespace *alloc_mnt_ns(struct user_namespace *user_ns)
+> +static struct mnt_namespace *alloc_mnt_ns(struct user_namespace *user_ns,
+> +					  struct ima_namespace *ima_ns)
+>  {
+>  	struct mnt_namespace *new_ns;
+>  	struct ucounts *ucounts;
+>  	int ret;
+> +	int err;
+>  
+>  	ucounts = inc_mnt_namespaces(user_ns);
+>  	if (!ucounts)
+> @@ -2894,6 +2898,20 @@ static struct mnt_namespace *alloc_mnt_ns(struct user_namespace *user_ns)
+>  		dec_mnt_namespaces(ucounts);
+>  		return ERR_PTR(ret);
+>  	}
+> +
+> +	if (ima_ns == NULL) {
+> +		new_ns->ima_ns = get_ima_ns(&init_ima_ns);
+> +	} else {
+> +		new_ns->ima_ns = copy_ima(user_ns, ima_ns);
+> +		if (IS_ERR(new_ns->ima_ns)) {
+> +			err = PTR_ERR(new_ns->ima_ns);
+> +			ns_free_inum(&new_ns->ns);
+> +			kfree(new_ns);
+> +			dec_mnt_namespaces(ucounts);
+> +			return ERR_PTR(err);
+> +		}
+> +	}
+> +
+>  	new_ns->ns.ops = &mntns_operations;
+>  	new_ns->seq = atomic64_add_return(1, &mnt_ns_seq);
+>  	atomic_set(&new_ns->count, 1);
+> @@ -2920,6 +2938,7 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
+>  	int copy_flags;
+>  
+>  	BUG_ON(!ns);
+> +	BUG_ON(!ns->ima_ns);
+>  
+>  	if (likely(!(flags & CLONE_NEWNS))) {
+>  		get_mnt_ns(ns);
+> @@ -2928,7 +2947,7 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
+>  
+>  	old = ns->root;
+>  
+> -	new_ns = alloc_mnt_ns(user_ns);
+> +	new_ns = alloc_mnt_ns(user_ns, ns->ima_ns);
+>  	if (IS_ERR(new_ns))
+>  		return new_ns;
+>  
+> @@ -2989,7 +3008,8 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
+>   */
+>  static struct mnt_namespace *create_mnt_ns(struct vfsmount *m)
+>  {
+> -	struct mnt_namespace *new_ns = alloc_mnt_ns(&init_user_ns);
+> +	struct mnt_namespace *new_ns = alloc_mnt_ns(&init_user_ns,
+> +						    NULL);
+>  	if (!IS_ERR(new_ns)) {
+>  		struct mount *mnt = real_mount(m);
+>  		mnt->mnt_ns = new_ns;
+> @@ -3497,6 +3517,9 @@ static int mntns_install(struct nsproxy *nsproxy, struct ns_common *ns)
+>  	set_fs_root(fs, &root);
+>  
+>  	path_put(&root);
+> +
+> +	imans_install(nsproxy, ns);
+> +
+>  	return 0;
+>  }
+>  
+> diff --git a/include/linux/ima.h b/include/linux/ima.h
+> index 0e4647e0eb60..fd150dfde277 100644
+> --- a/include/linux/ima.h
+> +++ b/include/linux/ima.h
+> @@ -12,6 +12,7 @@
+>  
+>  #include <linux/fs.h>
+>  #include <linux/kexec.h>
+> +#include <linux/mount.h>
+>  struct linux_binprm;
+>  
+>  #ifdef CONFIG_IMA
+> @@ -105,4 +106,70 @@ static inline int ima_inode_removexattr(struct dentry *dentry,
+>  	return 0;
+>  }
+>  #endif /* CONFIG_IMA_APPRAISE */
+> +
+> +struct ima_namespace {
+> +	struct kref kref;
+> +	struct user_namespace *user_ns;
+> +	struct ima_namespace *parent;
+> +};
+> +
+> +extern struct ima_namespace init_ima_ns;
+> +
+> +void imans_install(struct nsproxy *nsproxy, struct ns_common *new);
+> +
+> +static inline struct ima_namespace *to_ima_ns(struct ns_common *ns)
+> +{
+> +	return container_of(ns, struct mnt_namespace, ns)->ima_ns;
+> +}
+> +
+> +#ifdef CONFIG_IMA_NS
+> +
+> +void free_ima_ns(struct kref *kref);
+> +
+> +static inline struct ima_namespace *get_ima_ns(struct ima_namespace *ns)
+> +{
+> +	BUG_ON(!ns);
+> +	if (ns)
+> +		kref_get(&ns->kref);
+> +	return ns;
+> +}
+> +
+> +static inline void put_ima_ns(struct ima_namespace *ns)
+> +{
+> +	BUG_ON(!ns);
+> +	if (ns)
+> +		kref_put(&ns->kref, free_ima_ns);
+> +}
+> +
+> +struct ima_namespace *copy_ima(struct user_namespace *user_ns,
+> +			       struct ima_namespace *old_ns);
+> +
+> +static inline struct ima_namespace *get_current_ns(void)
+> +{
+> +	return current->nsproxy->mnt_ns->ima_ns;
+> +}
+> +
+> +#else
+> +
+> +static inline struct ima_namespace *get_ima_ns(struct ima_namespace *ns)
+> +{
+> +	return ns;
+> +}
+> +
+> +static inline void put_ima_ns(struct ima_namespace *ns)
+> +{
+> +	return;
+> +}
+> +
+> +static inline struct ima_namespace *copy_ima(struct user_namespace *user_ns,
+> +					     struct ima_namespace *old_ns)
+> +{
+> +	return old_ns;
+> +}
+> +
+> +static inline struct ima_namespace *get_current_ns(void)
+> +{
+> +	return NULL;
+> +}
+> +#endif /* CONFIG_IMA_NS */
+>  #endif /* _LINUX_IMA_H */
+> diff --git a/include/linux/mount.h b/include/linux/mount.h
+> index 45b1f56c6c2f..361c962ebd3d 100644
+> --- a/include/linux/mount.h
+> +++ b/include/linux/mount.h
+> @@ -16,11 +16,29 @@
+>  #include <linux/spinlock.h>
+>  #include <linux/seqlock.h>
+>  #include <linux/atomic.h>
+> +#include <linux/ns_common.h>
+> +#include <linux/wait.h>
+>  
+>  struct super_block;
+>  struct vfsmount;
+>  struct dentry;
+> -struct mnt_namespace;
+> +struct ima_namespace;
+> +
+> +struct mnt_namespace {
+> +	atomic_t		count;
+> +	struct ns_common	ns;
+> +	struct mount *	root;
+> +	struct list_head	list;
+> +	struct user_namespace	*user_ns;
+> +	struct ucounts		*ucounts;
+> +	u64			seq;	/* Sequence number to prevent loops */
+> +	wait_queue_head_t poll;
+> +	u64 event;
+> +	unsigned int		mounts; /* # of mounts in the namespace */
+> +	unsigned int		pending_mounts;
+> +	struct ima_namespace    *ima_ns;
+> +} __randomize_layout;
+> +
+>  
+>  #define MNT_NOSUID	0x01
+>  #define MNT_NODEV	0x02
+> diff --git a/init/Kconfig b/init/Kconfig
+> index a9a2e2c86671..a1ad5384e081 100644
+> --- a/init/Kconfig
+> +++ b/init/Kconfig
+> @@ -931,6 +931,14 @@ config NET_NS
+>  	help
+>  	  Allow user space to create what appear to be multiple instances
+>  	  of the network stack.
+> +config IMA_NS
+> +	bool "IMA namespace"
+> +	depends on IMA
+> +	default y
+> +	help
+> +	  Allow the creation of IMA namespaces for each mount namespace.
+> +	  Namespaced IMA data enables having IMA features work separately
+> +	  for each mount namespace.
+>  
+>  endif # NAMESPACES
+>  
+> diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+> index f6c5d330059a..7d1a35362186 100644
+> --- a/kernel/nsproxy.c
+> +++ b/kernel/nsproxy.c
+> @@ -27,6 +27,7 @@
+>  #include <linux/syscalls.h>
+>  #include <linux/cgroup.h>
+>  #include <linux/perf_event.h>
+> +#include <linux/ima.h>
+>  
+>  static struct kmem_cache *nsproxy_cachep;
+>  
+> diff --git a/security/integrity/ima/Makefile b/security/integrity/ima/Makefile
+> index d921dc4f9eb0..cc60f726e651 100644
+> --- a/security/integrity/ima/Makefile
+> +++ b/security/integrity/ima/Makefile
+> @@ -7,7 +7,8 @@
+>  obj-$(CONFIG_IMA) += ima.o
+>  
+>  ima-y := ima_fs.o ima_queue.o ima_init.o ima_main.o ima_crypto.o ima_api.o \
+> -	 ima_policy.o ima_template.o ima_template_lib.o
+> +	 ima_policy.o ima_template.o ima_template_lib.o ima_init_ima_ns.o
+>  ima-$(CONFIG_IMA_APPRAISE) += ima_appraise.o
+> +ima-$(CONFIG_IMA_NS) += ima_ns.o
+>  ima-$(CONFIG_HAVE_IMA_KEXEC) += ima_kexec.o
+>  obj-$(CONFIG_IMA_BLACKLIST_KEYRING) += ima_mok.o
+> diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+> index d52b487ad259..e98c11c7cf75 100644
+> --- a/security/integrity/ima/ima.h
+> +++ b/security/integrity/ima/ima.h
+> @@ -291,6 +291,10 @@ static inline int ima_read_xattr(struct dentry *dentry,
+>  
+>  #endif /* CONFIG_IMA_APPRAISE */
+>  
+> +int ima_ns_init(void);
+> +struct ima_namespace;
+> +int ima_init_namespace(struct ima_namespace *ns);
+> +
+>  /* LSM based policy rules require audit */
+>  #ifdef CONFIG_IMA_LSM_RULES
+>  
+> diff --git a/security/integrity/ima/ima_init.c b/security/integrity/ima/ima_init.c
+> index 2967d497a665..7f884a71fa1c 100644
+> --- a/security/integrity/ima/ima_init.c
+> +++ b/security/integrity/ima/ima_init.c
+> @@ -137,5 +137,9 @@ int __init ima_init(void)
+>  
+>  	ima_init_policy();
+>  
+> +	rc = ima_ns_init();
+> +	if (rc != 0)
+> +		return rc;
+> +
+>  	return ima_fs_init();
+>  }
+> diff --git a/security/integrity/ima/ima_init_ima_ns.c b/security/integrity/ima/ima_init_ima_ns.c
+> new file mode 100644
+> index 000000000000..4b081dbfac07
+> --- /dev/null
+> +++ b/security/integrity/ima/ima_init_ima_ns.c
+> @@ -0,0 +1,38 @@
+> +/*
+> + * Copyright (C) 2016-2018 IBM Corporation
+> + * Author: Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> + *
+> + * This program is free software; you can redistribute it and/or modify
+> + * it under the terms of the GNU General Public License as published by
+> + * the Free Software Foundation, version 2 of the License.
+> + */
+> +
+> +#include <linux/export.h>
+> +#include <linux/user_namespace.h>
+> +#include <linux/ima.h>
+> +
+> +int ima_init_namespace(struct ima_namespace *ns)
+> +{
+> +	return 0;
+> +}
+> +
+> +int __init ima_ns_init(void)
+> +{
+> +	return ima_init_namespace(&init_ima_ns);
+> +}
+> +
+> +struct ima_namespace init_ima_ns = {
+> +	.kref = KREF_INIT(2),
+> +	.user_ns = &init_user_ns,
+> +	.parent = NULL,
+> +};
+> +EXPORT_SYMBOL(init_ima_ns);
+> +
+> +void imans_install(struct nsproxy *nsproxy, struct ns_common *new)
+> +{
+> +	struct ima_namespace *ns = to_ima_ns(new);
+> +
+> +	get_ima_ns(ns);
+> +	put_ima_ns(nsproxy->mnt_ns->ima_ns);
+> +	nsproxy->mnt_ns->ima_ns = ns;
+> +}
+> diff --git a/security/integrity/ima/ima_ns.c b/security/integrity/ima/ima_ns.c
+> new file mode 100644
+> index 000000000000..7ab4322c88ae
+> --- /dev/null
+> +++ b/security/integrity/ima/ima_ns.c
+> @@ -0,0 +1,91 @@
+> +/*
+> + * Copyright (C) 2016-2018 IBM Corporation
+> + * Author: Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> + *
+> + * This program is free software; you can redistribute it and/or modify
+> + * it under the terms of the GNU General Public License as published by
+> + * the Free Software Foundation, version 2 of the License.
+> + */
+> +
+> +#include <linux/user_namespace.h>
+> +#include <linux/kref.h>
+> +#include <linux/slab.h>
+> +#include <linux/ima.h>
+> +#include <linux/mount.h>
+> +
+> +#include "ima.h"
+> +
+> +static struct ima_namespace *create_ima_ns(void)
+> +{
+> +	struct ima_namespace *ima_ns;
+> +
+> +	ima_ns = kmalloc(sizeof(*ima_ns), GFP_KERNEL);
+> +	if (ima_ns)
+> +		kref_init(&ima_ns->kref);
+> +
+> +	return ima_ns;
+> +}
+> +
+> +/**
+> + * Clone a new ns copying an original ima namespace, setting refcount to 1
+> + *
+> + * @old_ns: old ima namespace to clone
+> + * @user_ns: user namespace that current task runs in
+> + * Return ERR_PTR(-ENOMEM) on error (failure to kmalloc), new ns otherwise
+> + */
+> +static struct ima_namespace *clone_ima_ns(struct user_namespace *user_ns,
+> +					  struct ima_namespace *old_ns)
+> +{
+> +	struct ima_namespace *ns;
+> +
+> +	ns = create_ima_ns();
+> +	if (!ns)
+> +		return ERR_PTR(-ENOMEM);
+> +
+> +	get_ima_ns(old_ns);
+> +	ns->parent = old_ns;
+> +	ns->user_ns = get_user_ns(user_ns);
+> +
+> +	ima_init_namespace(ns);
+> +
+> +	return ns;
+> +}
+> +
+> +/**
+> + * Copy task's ima namespace, or clone it if flags specifies CLONE_NEWNS.
+> + *
+> + * @flags: flags used in the clone syscall
+> + * @user_ns: user namespace that current task runs in
+> + * @old_ns: old ima namespace to clone
+> + */
+> +
+> +struct ima_namespace *copy_ima(struct user_namespace *user_ns,
+> +			       struct ima_namespace *old_ns)
+> +{
+> +	struct ima_namespace *new_ns;
+> +
+> +	BUG_ON(!old_ns);
+> +	get_ima_ns(old_ns);
+> +
+> +	new_ns = clone_ima_ns(user_ns, old_ns);
+> +	put_ima_ns(old_ns);
+> +
+> +	return new_ns;
+> +}
+> +
+> +static void destroy_ima_ns(struct ima_namespace *ns)
+> +{
+> +	put_user_ns(ns->user_ns);
+> +	put_ima_ns(ns->parent);
+> +	kfree(ns);
+> +}
+> +
+> +void free_ima_ns(struct kref *kref)
+> +{
+> +	struct ima_namespace *ns;
+> +
+> +	ns = container_of(kref, struct ima_namespace, kref);
+> +	BUG_ON(ns == &init_ima_ns);
+> +
+> +	destroy_ima_ns(ns);
+> +}
