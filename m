@@ -1,25 +1,22 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC PATCH v2 1/3] ima: extend clone() with IMA namespace support
-Date: Thu, 15 Mar 2018 15:35:06 -0500
-Message-ID: <87d10513id.fsf__18928.846580866$1521146043$gmane$org@xmission.com>
-References: <20180309201421.6150-1-stefanb@linux.vnet.ibm.com>
-	<20180309201421.6150-2-stefanb@linux.vnet.ibm.com>
-	<87vadxfwqj.fsf@xmission.com>
-	<c18b6e92-57f0-5994-eb60-5fadc6671832@linux.vnet.ibm.com>
-	<1521135192.5348.64.camel@HansenPartnership.com>
-	<2183a3b4-6270-d2e9-70ad-a7399eb1681c@linux.vnet.ibm.com>
-	<1521139535.5348.89.camel@HansenPartnership.com>
-	<0dc5b856-8dc6-7b5a-eeac-febd19f6498c@linux.vnet.ibm.com>
-	<1521140467.5348.94.camel@HansenPartnership.com>
-	<056e5b9e-b4d3-1862-baea-06dda4bd0713@linux.vnet.ibm.com>
-	<87sh915eo0.fsf@xmission.com>
-	<19ecc296-b584-4e1a-5369-30090fbc7880@linux.vnet.ibm.com>
+From: Waiman Long <longman-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH] ipc: Remove IPCMNI
+Date: Thu, 15 Mar 2018 17:46:21 -0400
+Message-ID: <7d3a1f93-f8e5-5325-f9a7-0079f7777b6f@redhat.com>
+References: <1520885744-1546-1-git-send-email-longman@redhat.com>
+	<1520885744-1546-5-git-send-email-longman@redhat.com>
+	<87woyfyh57.fsf@xmission.com>
+	<5d4a858a-3136-5ef4-76fe-a61e7f2aed56@redhat.com>
+	<87o9jru3bf.fsf@xmission.com>
+	<935a7c50-50cc-2dc0-33bb-92c000d039bc@redhat.com>
+	<87woyego2u.fsf_-_@xmission.com>
+	<047c6ed6-6581-b543-ba3d-cadc543d3d25@redhat.com>
+	<87h8ph6u67.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <19ecc296-b584-4e1a-5369-30090fbc7880-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> (Stefan
-	Berger's message of "Thu, 15 Mar 2018 15:49:02 -0400")
+In-Reply-To: <87h8ph6u67.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -29,122 +26,190 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, david.safford-JJi787mZWgc@public.gmane.org, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Matthew Wilcox <willy-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, "Luis R. Rodriguez" <mcgrof-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
-
-> On 03/15/2018 03:20 PM, Eric W. Biederman wrote:
->> Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
->>
->>> On 03/15/2018 03:01 PM, James Bottomley wrote:
->>>> On Thu, 2018-03-15 at 14:51 -0400, Stefan Berger wrote:
->>>>> On 03/15/2018 02:45 PM, James Bottomley wrote:
->>>> [...]
->>>>>>>> going to need some type of keyring namespace and there's
->>>>>>>> already
->>>>>>>> one hanging off the user_ns:
->>>>>>>>
->>>>>>>> commit f36f8c75ae2e7d4da34f4c908cebdb4aa42c977e
->>>>>>>> Author: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
->>>>>>>> Date:   Tue Sep 24 10:35:19 2013 +0100
->>>>>>>>
->>>>>>>>         KEYS: Add per-user_namespace registers for persistent
->>>>>>>> per-UID
->>>>>>>> kerberos caches
->>>>>>> The benefit for IMA would be that this would then tie the keys
->>>>>>> needed for appraising to the IMA namespace's policy.
->>>>>>> However, if you have an appraise policy in your IMA namespace,
->>>>>>> which is now hooked to the user namespace, and you join that user
->>>>>>> namespace but your files don't have signatures, nothing will
->>>>>>> execute anymore. That's now a side effect of joining this user
->>>>>>> namespace unless we have a magic  exception. My feeling is,
->>>>>>> people may not like that...
->>>>>> Agree, but I think the magic might be to populate the ima keyring
->>>>>> with the parent on user_ns creation.  That way the user_ns owner
->>>>>> can delete the parent keys if they don't like them, but by default
->>>>>> the parent appraisal policy should just work.
->>>>> That may add keys to your keyring but doesn't get you signatures on
->>>>> your  files.
->>>> But it doesn't need to.  The only way we'd get a failure is if the file
->>>> is already being appraised and we lose access to the key.  If the
->>> Well, the configuration I talked about above was assuming that we have
->>> an appraisal policy active in the IMA namespace, which is now tied to
->>> the user namespace that was just joined.
+On 03/15/2018 03:00 PM, Eric W. Biederman wrote:
+> Waiman Long <longman-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+>
+>> On 03/14/2018 08:49 PM, Eric W. Biederman wrote:
+>>> The define IPCMNI was originally the size of a statically sized array in
+>>> the kernel and that has long since been removed.  Therefore there is no
+>>> fundamental reason for IPCMNI.
 >>>
->>> If we are fine with the side effects of an IMA policy active as part
->>> of a user namespace then let's go with it. The side effects in case of
->>> an active IMA appraisal may then be that files cannot be
->>> read/accessed, or file measurements or IMA auditing may occur.
+>>> The only remaining use IPCMNI serves is as a convoluted way to format
+>>> the ipc id to userspace.  It does not appear that anything except for
+>>> the CHECKPOINT_RESTORE code even cares about this variety of assignment
+>>> and the CHECKPOINT_RESTORE code only cares about this weirdness because
+>>> it has to restore these peculiar ids.
 >>>
->>> The alternative is we have an independent IMA namespace. If one joins
->>> the USER namespace and there are no IMA-related side effects. If one
->>> joins the IMA namespace its IMA policy should start being enforced. If
->>> the current active USER namespace has the keys that go with the
->>> signatures of the filesystem, then we're fine from the appraisal
->>> perspective. If not, then IMA namespace joining may prevent file
->>> accesses.
+>>> Therefore make the assignment of ipc ids match the description in
+>>> Advanced Programming in the Unix Environment and assign the next id
+>>> until INT_MAX is hit then loop around to the lower ids.
 >>>
->>>> parent policy isn't appraisal, entering the IMA NS won't cause
->>> Why parent policy? The policy of the namespace that was joined should
->>> be the active one, no ?
->> Unless I am completely blind we should never stop enforcing the parent's
->> polciy.  We should only add policy to enforce for the scope of a
->> container.
+>>> This can be implemented trivially with the current code using idr_alloc_cyclic.
+>>>
+>>> To make it possible to keep checkpoint/restore working I have renamed
+>>> the sysctls from xxx_next_id to xxx_nextid.  That is enough change that
+>>> a smart CRIU implementation can see that what is exported has changed,
+>>> and act accordingly.  New kernels will be able to restore the old id's.
+>>>
+>>> This code still needs some real world testing to verify my assumptions.
+>>> And some work with the CRIU implementations to actually add the code
+>>> that deals with the new for of id assignment.
+>>>
+>>> Updates: 03f595668017 ("ipc: add sysctl to specify desired next object id")
+>>> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>>> ---
+>>>
+>>> Waiman please take a look at this and run it through some tests etc,
+>>> I am pretty certain something like this patch is all you need to do
+>>> to sort out ipc assignment.  Not messing with sysctls needed.
+>>>
+>>>  include/linux/ipc.h           |  2 --
+>>>  include/linux/ipc_namespace.h |  1 -
+>>>  ipc/ipc_sysctl.c              |  6 ++--
+>>>  ipc/namespace.c               | 11 ++----
+>>>  ipc/util.c                    | 80 ++++++++++---------------------------------
+>>>  ipc/util.h                    | 11 +-----
+>>>  6 files changed, 25 insertions(+), 86 deletions(-)
+>>>
+>>> diff --git a/include/linux/ipc.h b/include/linux/ipc.h
+>>> index 821b2f260992..6cc2df7f7ac9 100644
+>>> --- a/include/linux/ipc.h
+>>> +++ b/include/linux/ipc.h
+>>> @@ -8,8 +8,6 @@
+>>>  #include <uapi/linux/ipc.h>
+>>>  #include <linux/refcount.h>
+>>>  
+>>> -#define IPCMNI 32768  /* <= MAX_INT limit for ipc arrays (including sysctl changes) */
+>>> -
+>>>  /* used by in-kernel data structures */
+>>>  struct kern_ipc_perm {
+>>>  	spinlock_t	lock;
+>>> diff --git a/include/linux/ipc_namespace.h b/include/linux/ipc_namespace.h
+>>> index b5630c8eb2f3..cab33b6a8236 100644
+>>> --- a/include/linux/ipc_namespace.h
+>>> +++ b/include/linux/ipc_namespace.h
+>>> @@ -15,7 +15,6 @@ struct user_namespace;
+>>>  
+>>>  struct ipc_ids {
+>>>  	int in_use;
+>>> -	unsigned short seq;
+>>>  	bool tables_initialized;
+>>>  	struct rw_semaphore rwsem;
+>>>  	struct idr ipcs_idr;
+>>> diff --git a/ipc/ipc_sysctl.c b/ipc/ipc_sysctl.c
+>>> index 8ad93c29f511..a599963d58bf 100644
+>>> --- a/ipc/ipc_sysctl.c
+>>> +++ b/ipc/ipc_sysctl.c
+>>> @@ -176,7 +176,7 @@ static struct ctl_table ipc_kern_table[] = {
+>>>  	},
+>>>  #ifdef CONFIG_CHECKPOINT_RESTORE
+>>>  	{
+>>> -		.procname	= "sem_next_id",
+>>> +		.procname	= "sem_nextid",
+>>>  		.data		= &init_ipc_ns.ids[IPC_SEM_IDS].next_id,
+>>>  		.maxlen		= sizeof(init_ipc_ns.ids[IPC_SEM_IDS].next_id),
+>>>  		.mode		= 0644,
+>>> @@ -185,7 +185,7 @@ static struct ctl_table ipc_kern_table[] = {
+>>>  		.extra2		= &int_max,
+>>>  	},
+>>>  	{
+>>> -		.procname	= "msg_next_id",
+>>> +		.procname	= "msg_nextid",
+>>>  		.data		= &init_ipc_ns.ids[IPC_MSG_IDS].next_id,
+>>>  		.maxlen		= sizeof(init_ipc_ns.ids[IPC_MSG_IDS].next_id),
+>>>  		.mode		= 0644,
+>>> @@ -194,7 +194,7 @@ static struct ctl_table ipc_kern_table[] = {
+>>>  		.extra2		= &int_max,
+>>>  	},
+>>>  	{
+>>> -		.procname	= "shm_next_id",
+>>> +		.procname	= "shm_nextid",
+>>>  		.data		= &init_ipc_ns.ids[IPC_SHM_IDS].next_id,
+>>>  		.maxlen		= sizeof(init_ipc_ns.ids[IPC_SHM_IDS].next_id),
+>>>  		.mode		= 0644,
+>> So you are changing the names of existing sysctl parameters. Will it be
+>> better to add new sysctl to indicate that the rule has changed
+>> instead?
+> In practice I am replacing one set of sysctls with another, that work
+> very similarly but not quite the same.  As we can't keep the existing
+> semantics removing the old sysctl seems correct.  Likewise adding
+> a new sysctl with slightly changed semantics seems correct.
 >
-> What we want is an independent policy for each IMA namespace.
+> This needs an accompanying patch to CRIU to see which sysctls are
+> available and to change it's behavior based upon that.  The practical
+> question is what makes it easiest not to confuse CRIU.
 >
-> What we don't want is that root can abuse his power to spawn new namespaces and
-> circumvent a file appraisal policy on the host (in init_ima_ns). Because of that
-> root's activities are subject to the IMA policy of the currently active IMA
-> namespace and the one of init_ima_ns (and possibly all the ones in between). If
-> root is working in a child IMA namespace and file appraisal fails due to the
-> policy in init_ima_ns and keys found in .ima or _ima keyrings attached to
-> init_user_ns, the file access will be denied.
+> Not having the sysctl should be something that CRIU detects today
+> and the old versions should fail gracefully.  But testing is needed.
+> Adding a new sysctl to say the behavior has changed and reusing the
+> old names won't have the same effect of disabling existing versions
+> of CRIU.
+
+That is fine as long as CRIU is the only user.
+
 >
-> Besides that root's activities will always be measured and audited following the
-> policy in init_ima_ns. This tries to prevent that root spawns an IMA namespace
-> with a NULL policy and does things in the TCB and tries to escape the
-> logging.
-
-That sounds exactly like my definition of hierarchical namespace
-enforcement.
-
-And please keep in mind that everyone is allowed to use CLONE_NEWNS now.
-You just have to spawn a new user namespace first so you have the caps.
-
->> In practice this is just the containers policy as the container is most
->> likely a do whatever you want to in the parent policy.  But not always
->> and not explicitly.
->>
->> Mount namespaces are not hierarchical, user namespaces are.  Which makes
->> them much more appropriate for being part of nested policy enforcement.
+>> I don't know the history why the id management of SysV IPC was designed
+>> in such a convoluted way, but the patch does make sense to me.
+> I don't have the full history and we might wind up finding more as we
+> run this patch through it's paces.
 >
-> We don't want additive or hierarchical policies - at least I don't. They should
-> be independent. Only exception are activities of root that are always
-> iteratively evaluated against policies of the current IMA NS and the init_ima_ns
-> and possibly all the ones in between.
-
-I believe that is what I meant by a nested/hiearchical policy
-enforcement.
-
->>  From previous conversations I remember that there is a legitimate
->> bootstrap problem for IMA.  That needs to be looked at, and I am not
->> seeing that mentioned.
+> The earliest history I know is what I read in Advanced Programming in
+> the Unix Environment (which predates linux).  It described the ipc ids
+> as assigned from a counter that wraps.  I thought like my patch
+> implements. On closer reading it has a counter that increases each time
+> the slot is used, and then wraps.  Exactly like Linux before my patch.
+> *Grrr*
 >
-> IMA's log should not have a gap. So ideally we shouldn't have to write something
-> into sysfs to spawn a new IMA namespace so that we don't miss whatever setup may
-> have happened to get there, including the writing into procfs. IMA should be
-> there right from the start. So a clone flag would be ideal for that.
+> The existing structure of the bifurcated is present in Linux 1.0.  At
+> that time SHMMNI was 256.  SHMMNI was the size of a static array of shm
+> segments.  The high 24 bits held a sequence number that was incremented
+> when a segment was removed at the time.  Presumably the upper bits were
+> incremented to avoid swiftly reusing the same shm ids.
+>
+> Hmm.  I took a quick look at FreeBSD10 and it has the exact same split
+> in the id.  So userspace may actually depend upon that split.
 
-Please make that securityfs not sysfs.  Sysfs should be about the
-hardware not these higher level software details.  I really don't want
-to have to namespace sysfs more than I already have.
+Backward compatibility is the part that I am most worry about this
+patch. That is also the reason I asked why the ID is generated in such a
+way.
 
-As for the no gaps requirement.  That is a powerful lever for ruling out
-solutions that don't work as well.
+My original thinking was to have an extended mode where the IPCMNI
+becomes 8M from 32k. That will reduce the sequence number from 16 bits
+to 8 bits. The extended mode is enabled by adding, for example, a boot
+option. So this will be an opt-in feature instead of as a default.
 
+>
+> Which comes down to the fundamental question what depends upon what.
+> How do other operating systems like Solaris handle this?
 
+I don't know how Solaris handle this, but I know they support up to 2^24
+shm segments.
 
-Eric
+>
+> Does any nix flavor support more that 16bits worth of shm segments?
+>
+> The API has been deprecated for the last 20 years and we are still
+> keeping it alive.  Sigh.
+>
+> Still there is fundamentally only one thing the kernel can do if we wish
+> to increase the number of shm segments.
+>
+> Please take my patch and test it out and see if you can find anything
+> that cares about the change. Except for needing id reuse to be
+> infrequent I can not imagine that there is anything that cares.
+>
+> It could very reasonably be argued that my when shmmni is < INT_MAX
+> my patch implements a version of the existing algorithm.  As we go
+> through all of the possible ids before we reuse any of them.
+>
+> Eric
+>
+Thanks for the patch, I am still thinking about what is the best way to
+handle this.
+
+Cheers,
+Longman
