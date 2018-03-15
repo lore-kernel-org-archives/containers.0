@@ -1,16 +1,16 @@
-From: Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [RFC 0/3] seccomp trap to userspace
-Date: Thu, 15 Mar 2018 17:30:11 +0000
-Message-ID: <CALCETrVDj97L2VBbQNrPwJD7Z2VZcC3ffgVv-UgmY=kZz6yZZA@mail.gmail.com>
-References: <CALCETrVnvbZLx5v=DMu2N1JtR+ys507X5CYBi-qQnus3VMQdwg@mail.gmail.com>
-	<20180315170509.GA32766@mail.hallyn.com>
-	<CALCETrXPcCNbpFJhXktkVS9gOPpmnU_bbY6Z8RrsBarq0dP4Lg@mail.gmail.com>
-	<20180315172558.GA28108@gmail.com>
+From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+Subject: Re: [RFC PATCH v2 1/3] ima: extend clone() with IMA namespace support
+Date: Thu, 15 Mar 2018 10:33:12 -0700
+Message-ID: <1521135192.5348.64.camel@HansenPartnership.com>
+References: <20180309201421.6150-1-stefanb@linux.vnet.ibm.com>
+	<20180309201421.6150-2-stefanb@linux.vnet.ibm.com>
+	<87vadxfwqj.fsf@xmission.com>
+	<c18b6e92-57f0-5994-eb60-5fadc6671832@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20180315172558.GA28108-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <c18b6e92-57f0-5994-eb60-5fadc6671832-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,95 +20,65 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Christian Brauner <christian.brauner-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Akihiro Suda <suda.akihiro-Zyj7fXuS5i5L9jVzuh4AOg@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Tyler Hicks <tyhicks-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, david.safford-JJi787mZWgc@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-ima-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Mar 15, 2018 at 5:25 PM, Christian Brauner
-<christian.brauner-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org> wrote:
-> On Thu, Mar 15, 2018 at 05:11:32PM +0000, Andy Lutomirski wrote:
->> On Thu, Mar 15, 2018 at 5:05 PM, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
->> > Quoting Andy Lutomirski (luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org):
->> >> On Thu, Mar 15, 2018 at 4:09 PM, Christian Brauner
->> >> <christian.brauner-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org> wrote:
->> >> > On Sun, Feb 04, 2018 at 11:49:43AM +0100, Tycho Andersen wrote:
->> >> >> Several months ago at Linux Plumber's, we had a discussion about adding a
->> >> >> feature to seccomp which would allow seccomp to trigger a notification for some
->> >> >> other process. Here's a draft of that feature.
->> >> >>
->> >> >> Patch 1 contains the bulk of it, patches 2 & 3 offer an alternative way to
->> >> >> acquire the fd that receives notifications via ptrace (the method in patch 1
->> >> >> poses some problems). Other suggestions for how to acquire one of these fds
->> >> >> would be welcome.
->> >> >>
->> >> >> Take a close look at the synchronization. I think I've got it right, but I
->> >> >> probably don't :)
->> >> >>
->> >> >> Thanks!
->> >> >>
->> >> >> Tycho Andersen (3):
->> >> >>   seccomp: add a return code to trap to userspace
->> >> >>   seccomp: hoist out filter resolving logic
->> >> >>   seccomp: add a way to get a listener fd from ptrace
->> >> >>
->> >> >>  arch/Kconfig                                  |   7 +
->> >> >>  include/linux/seccomp.h                       |  14 +-
->> >> >>  include/uapi/linux/ptrace.h                   |   1 +
->> >> >>  include/uapi/linux/seccomp.h                  |  18 +-
->> >> >>  kernel/ptrace.c                               |   4 +
->> >> >>  kernel/seccomp.c                              | 467 ++++++++++++++++++++++++--
->> >> >>  tools/testing/selftests/seccomp/seccomp_bpf.c | 180 +++++++++-
->> >> >>  7 files changed, 653 insertions(+), 38 deletions(-)
->> >> >
->> >> > Hey,
->> >> >
->> >> > So, I've been following the discussion silently in the background and I
->> >> > see that it got sidetracked into seccomp + ebpf. While I can see that
->> >> > there is value in adding epbf support to seccomp I'd really like to see
->> >> > this decoupled from this patchset. Afaict, this patchset would just work
->> >> > fine without the ebpf portion (but I might be just have missed the
->> >> > point). So if possible I would like to see a second version of this with
->> >> > the comments accounted for and - if possible - have this up for merging
->> >> > independent of the ebpf patchset that's floating around.
->> >> >
->> >>
->> >> The issue is that it might be (and, then again, might not be) nicer to
->> >> to *synchronously* call out to the monitor in the filter.  eBPF can do
->> >> that very cleanly, whereas classic BPF can't.
->> >
->> > Hm, synchronously - that brings to mind a thought...  I should re-look at
->> > Tycho's patches first, but, if I'm in a container, start some syscall that
->> > gets trapped to userspace, then I hit ctrl-c.  I'd like to be able to have
->> > the handler be interrupted and have it return -EINTR.  Is that going to
->> > be possible with the synchronous approach?
->>
->> I think so, but it should be possible with the classic async approach
->> too.  The main issue is the difference between a classic filter like
->> this (pseudocode):
->>
->> if (nr == SYS_mount) return TRAP_TO_USERSPACE;
->>
->> and the eBPF variant:
->>
->> if (nr == SYS_mount) trap_to_userspace();
->>
->> I admit that it's still not 100% clear to me that the latter is
->> genuinely more useful than the former.
->
-> We've just discussed this on irc and the fact that most problems can be
-> addressed by interfaces we already have makes it questionable what ebpf
-> brings to the game here. Especially since the discussion gave the
-> impression that if ebpf ever makes it to seccomp it will basically be
-> because it allows a nice implementation of the trap to userspace. If
-> it's even unclear whether it is really the better choice for this task
-> then we could consider to no try and make this patchset use it. (I
-> probably sound way more polemic than I intend to.)
->
-
-No argument from me.
-
-To be clear, I don't think that trap to userspace should block on eBPF
-at all.  It was just a coincidence that both patches showed up around
-the same time, and if they actually work well together, then it could
-make sense to combine them.  But if trap to userspace ends up working
-perfectly without eBPF, that's fine too.
+T24gVGh1LCAyMDE4LTAzLTE1IGF0IDExOjI2IC0wNDAwLCBTdGVmYW4gQmVyZ2VyIHdyb3RlOgo+
+IE9uIDAzLzE1LzIwMTggMDY6NDAgQU0sIEVyaWMgVy4gQmllZGVybWFuIHdyb3RlOgo+ID4gCj4g
+PiBTdGVmYW4gQmVyZ2VyIDxzdGVmYW5iQGxpbnV4LnZuZXQuaWJtLmNvbT4gd3JpdGVzOgo+ID4g
+Cj4gPiA+IAo+ID4gPiBGcm9tOiBZdXFpb25nIFN1biA8c3VueUB1cy5pYm0uY29tPgo+ID4gPiAK
+PiA+ID4gQWRkIG5ldyBDT05GSUdfSU1BX05TIGNvbmZpZyBvcHRpb24uwqDCoExldCBjbG9uZSgp
+IGNyZWF0ZSBhIG5ldwo+ID4gPiBJTUEgbmFtZXNwYWNlIHVwb24gQ0xPTkVfTkVXTlMgZmxhZy4g
+QWRkIGltYV9ucyBkYXRhIHN0cnVjdHVyZSBpbgo+ID4gPiBuc3Byb3h5LiDCoGltYV9ucyBpcyBh
+bGxvY2F0ZWQgYW5kIGZyZWVkIHVwb24gSU1BIG5hbWVzcGFjZQo+ID4gPiBjcmVhdGlvbiBhbmQg
+ZXhpdC4gwqBDdXJyZW50bHksIHRoZSBpbWFfbnMgY29udGFpbnMgbm8gdXNlZnVsIElNQQo+ID4g
+PiBkYXRhIGJ1dCBvbmx5IGEgZHVtbXkgaW50ZXJmYWNlLiBUaGlzIHBhdGNoIGNyZWF0ZXMgdGhl
+IGZyYW1ld29yawo+ID4gPiBmb3IgbmFtZXNwYWNpbmcgdGhlIGRpZmZlcmVudCBhc3BlY3RzIG9m
+IElNQSAoZWcuIElNQS1hdWRpdCwgSU1BLQo+ID4gPiBtZWFzdXJlbWVudCwgSU1BLWFwcHJhaXNh
+bCkuCj4gPiBJTUEgaXMgbm90IHBhdGggYmFzZWQuwqDCoFRoZSBvbmx5IHRoaW5nIHRoYXQgYmVs
+b25ncyB0byBhIG1vdW50Cj4gPiBuYW1lc3BhY2UgYXJlIHBhdGhzLsKgwqBUaGVyZWZvcmUgSU1B
+IGlzIGNvbXBsZXRlbHkgaW5hcHByb3ByaWF0ZSB0bwo+ID4gYmUgam9pbnQgd2l0aCBhIG1vdW50
+IG5hbWVzcGFjZS4KCkp1c3QgdG8gYmUgY2xlYXI6IFRoZSBtb3VudCBuYW1lc3BhY2UgaXMgbm90
+IG9ubHkgYWJvdXQgcGF0aHMgaXQncyBhbHNvCmFib3V0IHN1YnRyZWUgcHJvcGVydGllcy4gwqBI
+b3dldmVyLCB0aGUgcG9pbnQgc3RpbGwgc3RhbmRzIHRoYXQgSU1BIGhhcwphIGRlcGVuZGVuY3kg
+b24gbmVpdGhlci4KCj4gSU1BIG1lYXN1cmVzIHRoZSBmaWxlcyBkZXNjcmliZWQgYnkgdGhlc2Ug
+cGF0aHMuIFRoZSBmaWxlcyBhbHNvIG1heQo+IGhvbGQgc2lnbmF0dXJlcyAoc2VjdXJpdHkuaW1h
+IHhhdHRyKSBuZWVkZWQgZm9yIElNQSBhcHByYWlzYWwuCgpUaGUgeGF0dHIgaXMgYW4gaW5vZGUg
+cHJvcGVydHksIHdoaWNoIGlzbid0IG5hbWVzcGFjZWQgYnkgdGhlIG1vdW50X25zLgoKV2hlbiB3
+ZSBoYWQgdGhpcyBkaXNjdXNzaW9uIGxhc3QgeWVhciwgd2UgdGFsa2VkIGFib3V0IHBvc3NpYmx5
+IHVzaW5nCnRoZSB1c2VyX25zIGluc3RlYWQuIMKgSXQgbWFrZXMgc2Vuc2UgYmVjYXVzZSBmb3Ig
+SU1BIHNpZ25hdHVyZXMgeW91J3JlCmdvaW5nIHRvIG5lZWQgc29tZSB0eXBlIG9mIGtleXJpbmcg
+bmFtZXNwYWNlIGFuZCB0aGVyZSdzIGFscmVhZHkgb25lCmhhbmdpbmcgb2ZmIHRoZSB1c2VyX25z
+OgoKY29tbWl0IGYzNmY4Yzc1YWUyZTdkNGRhMzRmNGM5MDhjZWJkYjRhYTQyYzk3N2UKQXV0aG9y
+OiBEYXZpZCBIb3dlbGxzIDxkaG93ZWxsc0ByZWRoYXQuY29tPgpEYXRlOsKgwqDCoFR1ZSBTZXAg
+MjQgMTA6MzU6MTkgMjAxMyArMDEwMAoKwqDCoMKgwqBLRVlTOiBBZGQgcGVyLXVzZXJfbmFtZXNw
+YWNlIHJlZ2lzdGVycyBmb3IgcGVyc2lzdGVudCBwZXItVUlECmtlcmJlcm9zIGNhY2hlcwoKPiA+
+IEkgc2F3IHRoYXQgU2VyZ2UgZXZlbiByZWNlbnRseSBtZW50aW9uZWQgdGhhdCB5b3UgbmVlZCB0
+byB0YWtlCj4gPiB0aGlzIGFzcGVjdCBvZiB0aGUgY2hhbmdlcyBiYWNrIHRvIHRoZSBkcmF3aW5n
+IGJvYXJkLsKgwqBXaXRoIG15Cj4gPiBuYW1lc3BhY2UgbWFpbnRhaW5lciBoYXQgb24gSSByZXBl
+YXQgdGhhdC4KPiAKPiBEcmF3aW5nIGJvYXJkIGlzIGhlcmUgbm93ICh0dW5pbmcgb24gdGhlIHRl
+eHQuLi4pOgo+IAo+IGh0dHA6Ly9rZXJuc2VjLm9yZy93aWtpL2luZGV4LnBocC9JTUFfTmFtZXNw
+YWNpbmdfZGVzaWduX2NvbnNpZGVyYXRpbwo+IG5zCgpZb3UgbWVudGlvbiBhbiBhYnVzZSBjYXNl
+IGhlcmUgd2hpY2ggaXMgYmFzaWNhbGx5IGEgd2F5IG9mIHJlbGF4aW5nCnNlY3VyaXR5IHBvbGlj
+eS4gwqBDYW5ub3Qgd2UgZml4IHRoYXQgYnkgbWFraW5nIHBvbGljeSBoaWVyYXJjaGljYWwsIHNv
+CmEgY2hpbGQgbmFtZXNwYWNlIG11c3QgaGF2ZSB0aGUgc2FtZSBvciBhIG1vcmUgc3RyaWN0IHBv
+bGljeSB0aGFuIHRoZQpwYXJlbnQ/Cgo+ID4gwqBGcm9tIGEgMTAsMDAwIGZvb3QgdmlldyBJIGNh
+biBhbHJlYWR5IHRlbGwgdGhhdCB0aGlzIGlzIGhvcGVsZXNzLgo+ID4gU28gZm9yIGJpbmRpbmcg
+SU1BIG5hbXNwYWNlcyBhbmQgQ0xPTkVfTkVXTlM6Cj4gPiAKPiA+IE5hY2tlZC1ieTogIkVyaWMg
+Vy4gQmllZGVybWFuIiA8ZWJpZWRlcm1AeG1pc3Npb24uY29tPgo+ID4gCj4gPiBJIGFtIG5vdCBu
+YWNraW5nIElNQSBuYW1lc3BhY2luZyBqdXN0IGluYXBwcm9wcmlhdGVseSB0eWluZyBpbWEKPiA+
+IG5hbWVzcGFjZXMgdG8gbW91bnQgbmFtZXNwYWNlcy7CoMKgVGhlc2Ugc2hvdWxkIGJlIGNvbXBs
+ZXRlbHkKPiA+IHNlcGFyYXRlIGVudGl0aWVzLgo+IAo+IExldCdzIHNheSB3ZSBnbyBkb3duIHRo
+ZSByb2FkIG9mIHNwYXduaW5nIGl0IGluZGVwZW5kZW50bHkuIENhbiB3ZQo+IHVzZSB0aGUgdW51
+c2VkIGNsb25lIGZsYWcgMHgxMDAwPyBPciBzaG91bGQgd2UgY29tZSB1cCB3aXRoIG5ld8KgCj4g
+dW5zaGFyZTIoKS9jbG9uZTIoKSBzeXNjYWxscyB0byBleHRlbmQgdGhlIGNsb25lIGJpdHMgdG8g
+NjQgYml0PyBPcgo+IHVzZSBhIHN5c2ZzL3NlY3VyaXR5ZnMgZmlsZSB0byBzcGF3biBhIG5ldyBJ
+TUEgbmFtZXNwYWNlPyBNYWtlIHRoaXMgYQo+IGdlbmVyaWMgZmlsZSBub3QgYW4gSU1BIHNwZWNp
+ZmljIG9uZT8KCklmLCBhcyBhIHJlc3VsdCBvZiBkaXNjdXNzaW9ucywgaXQgdHVybnMgb3V0IHRo
+YXQgYSBzZXBhcmF0ZSBuYW1lc3BhY2UKaXMgdGhlIGNvcnJlY3Qgd2F5IHRvIHByb2NlZWQsIEkn
+bSBzdXJlIHdlIGNhbiBzb3J0IG91dCB0aGUgZGV0YWlscyBvZgpob3cgd2UgY29wZSB3aXRoIHRo
+ZSBmbGFnIHBhdWNpdHkgcHJvYmxlbS4KCkphbWVzCgoKX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVy
+c0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlv
+bi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
