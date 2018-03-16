@@ -1,8 +1,8 @@
 From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC PATCH ghak32 V2 07/13] audit: add container aux record to
-	watch/tree/mark
-Date: Fri, 16 Mar 2018 05:00:34 -0400
-Message-ID: <737f914a88d048b9985984c0ce1f946c30ca374c.1521179281.git.rgb@redhat.com>
+Subject: [RFC PATCH ghak32 V2 08/13] audit: add containerid support for
+	tty_audit
+Date: Fri, 16 Mar 2018 05:00:35 -0400
+Message-ID: <d3d3c9366154d1160e3c2d6151a75091be4c0018.1521179281.git.rgb__44835.7395398945$1521191110$gmane$org@redhat.com>
 References: <cover.1521179281.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,109 +24,37 @@ To: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFL
 Cc: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, madzcar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add container ID auxiliary record to mark, watch and tree rule
-configuration standalone records.
+Add container ID auxiliary record to tty logging rule event standalone
+records.
 
 Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- kernel/audit_fsnotify.c |  5 ++++-
- kernel/audit_tree.c     |  5 ++++-
- kernel/audit_watch.c    | 33 +++++++++++++++++++--------------
- 3 files changed, 27 insertions(+), 16 deletions(-)
+ drivers/tty/tty_audit.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/kernel/audit_fsnotify.c b/kernel/audit_fsnotify.c
-index 52f368b..18c110d 100644
---- a/kernel/audit_fsnotify.c
-+++ b/kernel/audit_fsnotify.c
-@@ -124,10 +124,11 @@ static void audit_mark_log_rule_change(struct audit_fsnotify_mark *audit_mark, c
- {
- 	struct audit_buffer *ab;
- 	struct audit_krule *rule = audit_mark->rule;
+diff --git a/drivers/tty/tty_audit.c b/drivers/tty/tty_audit.c
+index e30aa6b..48ee4b7 100644
+--- a/drivers/tty/tty_audit.c
++++ b/drivers/tty/tty_audit.c
+@@ -66,8 +66,9 @@ static void tty_audit_log(const char *description, dev_t dev,
+ 	uid_t uid = from_kuid(&init_user_ns, task_uid(tsk));
+ 	uid_t loginuid = from_kuid(&init_user_ns, audit_get_loginuid(tsk));
+ 	unsigned int sessionid = audit_get_sessionid(tsk);
 +	struct audit_context *context = audit_alloc_local();
  
- 	if (!audit_enabled)
- 		return;
--	ab = audit_log_start(NULL, GFP_NOFS, AUDIT_CONFIG_CHANGE);
-+	ab = audit_log_start(context, GFP_NOFS, AUDIT_CONFIG_CHANGE);
- 	if (unlikely(!ab))
- 		return;
- 	audit_log_format(ab, "auid=%u ses=%u op=%s",
-@@ -138,6 +139,8 @@ static void audit_mark_log_rule_change(struct audit_fsnotify_mark *audit_mark, c
- 	audit_log_key(ab, rule->filterkey);
- 	audit_log_format(ab, " list=%d res=1", rule->listnr);
- 	audit_log_end(ab);
-+	audit_log_container_info(context, "config", audit_get_containerid(current));
+-	ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_TTY);
++	ab = audit_log_start(context, GFP_KERNEL, AUDIT_TTY);
+ 	if (ab) {
+ 		char name[sizeof(tsk->comm)];
+ 
+@@ -80,6 +81,8 @@ static void tty_audit_log(const char *description, dev_t dev,
+ 		audit_log_n_hex(ab, data, size);
+ 		audit_log_end(ab);
+ 	}
++	audit_log_container_info(context, "tty", audit_get_containerid(tsk));
 +	audit_free_context(context);
  }
  
- void audit_remove_mark(struct audit_fsnotify_mark *audit_mark)
-diff --git a/kernel/audit_tree.c b/kernel/audit_tree.c
-index 67e6956..7c085be 100644
---- a/kernel/audit_tree.c
-+++ b/kernel/audit_tree.c
-@@ -496,8 +496,9 @@ static int tag_chunk(struct inode *inode, struct audit_tree *tree)
- static void audit_tree_log_remove_rule(struct audit_krule *rule)
- {
- 	struct audit_buffer *ab;
-+	struct audit_context *context = audit_alloc_local();
- 
--	ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
-+	ab = audit_log_start(context, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
- 	if (unlikely(!ab))
- 		return;
- 	audit_log_format(ab, "op=remove_rule");
-@@ -506,6 +507,8 @@ static void audit_tree_log_remove_rule(struct audit_krule *rule)
- 	audit_log_key(ab, rule->filterkey);
- 	audit_log_format(ab, " list=%d res=1", rule->listnr);
- 	audit_log_end(ab);
-+	audit_log_container_info(context, "config", audit_get_containerid(current));
-+	audit_free_context(context);
- }
- 
- static void kill_rules(struct audit_tree *tree)
-diff --git a/kernel/audit_watch.c b/kernel/audit_watch.c
-index 9eb8b35..60d75a2 100644
---- a/kernel/audit_watch.c
-+++ b/kernel/audit_watch.c
-@@ -238,20 +238,25 @@ static struct audit_watch *audit_dupe_watch(struct audit_watch *old)
- 
- static void audit_watch_log_rule_change(struct audit_krule *r, struct audit_watch *w, char *op)
- {
--	if (audit_enabled) {
--		struct audit_buffer *ab;
--		ab = audit_log_start(NULL, GFP_NOFS, AUDIT_CONFIG_CHANGE);
--		if (unlikely(!ab))
--			return;
--		audit_log_format(ab, "auid=%u ses=%u op=%s",
--				 from_kuid(&init_user_ns, audit_get_loginuid(current)),
--				 audit_get_sessionid(current), op);
--		audit_log_format(ab, " path=");
--		audit_log_untrustedstring(ab, w->path);
--		audit_log_key(ab, r->filterkey);
--		audit_log_format(ab, " list=%d res=1", r->listnr);
--		audit_log_end(ab);
--	}
-+	struct audit_buffer *ab;
-+	struct audit_context *context = audit_alloc_local();
-+
-+	if (!audit_enabled)
-+		return;
-+
-+	ab = audit_log_start(context, GFP_NOFS, AUDIT_CONFIG_CHANGE);
-+	if (unlikely(!ab))
-+		return;
-+	audit_log_format(ab, "auid=%u ses=%u op=%s",
-+			 from_kuid(&init_user_ns, audit_get_loginuid(current)),
-+			 audit_get_sessionid(current), op);
-+	audit_log_format(ab, " path=");
-+	audit_log_untrustedstring(ab, w->path);
-+	audit_log_key(ab, r->filterkey);
-+	audit_log_format(ab, " list=%d res=1", r->listnr);
-+	audit_log_end(ab);
-+	audit_log_container_info(context, "config", audit_get_containerid(current));
-+	audit_free_context(context);
- }
- 
- /* Update inode info in audit rules based on filesystem event. */
+ /**
 -- 
 1.8.3.1
