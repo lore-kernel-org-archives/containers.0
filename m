@@ -1,22 +1,22 @@
-From: Christian Brauner <christian.brauner-cl+VPiYnx/1AfugRpC6u6w@public.gmane.org>
-Subject: Re: [RFC 0/3] seccomp trap to userspace
-Date: Fri, 16 Mar 2018 17:40:48 +0100
-Message-ID: <20180316164048.GA30454__12427.488275762$1521218341$gmane$org@mailbox.org>
-References: <20180204104946.25559-1-tycho@tycho.ws>
-	<20180315160924.GA12744@gmail.com>
-	<CALCETrVnvbZLx5v=DMu2N1JtR+ys507X5CYBi-qQnus3VMQdwg@mail.gmail.com>
-	<20180315170509.GA32766@mail.hallyn.com>
-	<CALCETrXPcCNbpFJhXktkVS9gOPpmnU_bbY6Z8RrsBarq0dP4Lg@mail.gmail.com>
-	<20180315173524.k7vwnvnhomg2j5yv@smitten>
-	<CALCETrWH7HbY2gS6O_cYKfp9QqqWBWVcHb++GaP3uUiSO9oo6g@mail.gmail.com>
-	<20180316144751.GA3304@mailbox.org>
-	<D73E5C37-DC92-4D58-A163-0B20143AAEEB@amacapital.net>
+From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC PATCH v2 1/3] ima: extend clone() with IMA namespace support
+Date: Fri, 16 Mar 2018 13:04:16 -0400
+Message-ID: <7e015d3c-4fab-3d69-711b-2ebbad07018f@linux.vnet.ibm.com>
+References: <20180309201421.6150-1-stefanb@linux.vnet.ibm.com>
+	<20180309201421.6150-2-stefanb@linux.vnet.ibm.com>
+	<87vadxfwqj.fsf@xmission.com>
+	<c18b6e92-57f0-5994-eb60-5fadc6671832@linux.vnet.ibm.com>
+	<1521135192.5348.64.camel@HansenPartnership.com>
+	<2183a3b4-6270-d2e9-70ad-a7399eb1681c@linux.vnet.ibm.com>
+	<1521139535.5348.89.camel@HansenPartnership.com>
+	<0dc5b856-8dc6-7b5a-eeac-febd19f6498c@linux.vnet.ibm.com>
+	<1521140467.5348.94.camel@HansenPartnership.com>
+	<056e5b9e-b4d3-1862-baea-06dda4bd0713@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <D73E5C37-DC92-4D58-A163-0B20143AAEEB-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+In-Reply-To: <056e5b9e-b4d3-1862-baea-06dda4bd0713-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,68 +26,61 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Akihiro Suda <suda.akihiro-Zyj7fXuS5i5L9jVzuh4AOg@public.gmane.org>, Christian Brauner <christian.brauner-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Tyler Hicks <tyhicks-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, david.safford-JJi787mZWgc@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gRnJpLCBNYXIgMTYsIDIwMTggYXQgMDk6MDE6NDdBTSAtMDcwMCwgQW5keSBMdXRvbWlyc2tp
-IHdyb3RlOgo+IAo+IAo+ID4gT24gTWFyIDE2LCAyMDE4LCBhdCA3OjQ3IEFNLCBDaHJpc3RpYW4g
-QnJhdW5lciA8Y2hyaXN0aWFuLmJyYXVuZXJAbWFpbGJveC5vcmc+IHdyb3RlOgo+ID4gCj4gPj4g
-T24gRnJpLCBNYXIgMTYsIDIwMTggYXQgMTI6NDY6NTVBTSArMDAwMCwgQW5keSBMdXRvbWlyc2tp
-IHdyb3RlOgo+IAo+IAo+IEkgYmV0IEkgY29uZnVzZWQgZXZlcnlvbmUgd2l0aCBhIGJsYXRhbnQg
-dHlwbzoKPiAKPiA+PiAKPiA+PiBIbW0sIEkgdGhpbmsgd2UgaGF2ZSB0byBiZSB2ZXJ5IGNhcmVm
-dWwgdG8gYXZvaWQgbmFzdHkgcmFjZXMuICBJIHRoaW5rCj4gPj4gdGhlIGNvcnJlY3QgYXBwcm9h
-Y2ggaXMgdG8gbm90aWNlIHRoZSBzaWduYWwgYW5kIHNlbmQgYSBtZXNzYWdlIHRvIHRoZQo+ID4+
-IGxpc3RlbmVyIHRoYXQgYSBzaWduYWwgaXMgcGVuZGluZyBidXQgdG8gdGFrZSBubyBhZGRpdGlv
-bmFsIGFjdGlvbi4KPiA+PiBJZiB0aGUgaGFuZGxlciBlbmRzIHVwIGNvbXBsZXRpbmcgdGhlIHN5
-c2NhbGwgd2l0aCBhIHN1Y2Nlc3NmdWwKPiA+PiByZXR1cm4sIHdlIGRvbid0IHdhbnQgdG8gcmVw
-bGFjZSBpdCB3aXRoIC1FSU5UUi4gIElPVyB0aGUgY29kZSBsb29rcwo+ID4+IGtpbmQgb2YgbGlr
-ZToKPiA+PiAKPiA+PiBzZW5kX3RvX2xpc3RlbmVyKCJoZXkgSSBnb3QgYSBzaWduYWwiKTsKPiAK
-PiBUaGF0IHNob3VsZCBiZSDigJxoZXkgSSBnb3QgYSBzeXNjYWxs4oCdLiAgIETigJlvaCEKCkhh
-IG9rLCB0aGF0J3Mgd2hhdCBsZWQgbWUgdG8gYmVsaWV2ZSB0aGF0IGxpc3RlbmVyICE9IGhhbmRs
-ZXIgYW5kIEkgd2FzCnRyeWluZyB0byBtYWtlIHNlbnNlIG9mIHRoaXNlLiA6KQoKVGhhbmtzIQpD
-aHJpc3RpYW4KCj4gCj4gPj4gd2FpdF9yZXQgPSB3YWl0X2ludGVycnVwdGlibGUgZm9yIHRoZSBs
-aXN0ZW5lciB0byByZXBseTsKPiA+PiBpZiAod2FpdF9yZXQgPT0gLUVJTlRSKSB7Cj4gPiAKPiA+
-IEhtLCBzbyBmcm9tIHRoZSBwc2V1ZG8tY29kZSBpdCBsb29rcyBsaWtlOiBUaGUgaGFuZGxlciB3
-b3VsZCBpbmZvcm0gdGhlCj4gPiBsaXN0ZW5lciB0aGF0IGl0IHJlY2VpdmVkIGEgc2lnbmFsIChl
-aXRoZXIgZnJvbSB0aGUgc3lzY2FsbCByZXF1ZXN0ZXIgb3IKPiA+IGZyb20gc29tZXdoZXJlIGVs
-c2UpIGFuZCB0aGVuIHdhaXQgZm9yIHRoZSBsaXN0ZW5lciB0byByZXBseSB0byB0aGF0Cj4gPiBt
-ZXNzYWdlLiAgVGhpcyB3b3VsZCBhbGxvdyB0aGUgbGlzdGVuZXIgdG8gZGVjaWRlIHdoYXQgYWN0
-aW9uIGl0IHdhbnRzCj4gPiB0aGUgaGFuZGxlciB0byB0YWtlIGJhc2VkIG9uIHRoZSBzaWduYWws
-IGkuZS4gZWl0aGVyIGNhbmNlbCB0aGUgcmVxdWVzdAo+ID4gb3IgcmV0cnk/ICBUaGUgY29tbWVu
-dCBtYWtlcyBpdCBzb3VuZCBsaWtlIHRoYXQgdGhlIGhhbmRsZXIgZG9lc24ndAo+ID4gcmVhbGx5
-IHdhaXQgb24gdGhlIGxpc3RlbmVyIHdoZW4gaXQgcmVjZWl2ZXMgYSBzaWduYWwgaXQgc2ltcGx5
-IG1vdmVzCj4gPiBvbi4KPiAKPiBJdCBrZWVwcyB3YWl0aW5nIGtpbGxhYmx5IGJ1dCBub3QgaW50
-ZXJydXB0aWJseS4gCj4gCj4gPiBTbyBubyAidGFraW5nIG5vIGFkZGl0aW9uYWwgYWN0aW9uIiBo
-ZXJlIG1lYW5zIG5vdCBoYXZlIHRoZSBoYW5kbGVyCj4gPiBkZWNpZGUgdG8gYWJvcnQgYnV0IHRo
-ZSBsaXN0ZW5lcj8KPiAKPiBJZiBieSDigJxoYW5kbGVy4oCdIHlvdSBtZWFuIGtlcm5lbCwgdGhl
-biB5ZXMuIAo+IAo+IFRoZXJl4oCZcyBubyB1c2Vyc3BhY2Ugc3lzY2FsbCBoYW5kbGVyIGludm9s
-dmVkLiBGcm9tIHRoZSBrZXJuZWzigJlzIHBlcnNwZWN0aXZlLCBhIHN5c2NhbGwgaXMgbmV2ZXIg
-c3RpbGwgaW4gcHJvZ3Jlc3Mgd2hlbiBhIHNpZ25hbCBoYW5kbGVyIGlzIGludm9rZWQg4oCUIHdl
-IG9ubHkgYWN0dWFsbHkgaW52b2tlIHN5c2NhbGwgaGFuZGxlcnMgaW4gcHJlcGFyZV9leGl0X3Rv
-X3VzZXJtb2RlKCkgb3IgdGhlIG5vbi14ODYgZXF1aXZhbGVudCBhbmQgdGhlIGZ1bmN0aW9ucyBp
-dCBjYWxscy4gV2hpbGUgYSBzeXNjYWxsIGlzIHJ1bm5pbmcsIHRoZSBrZXJuZWwgbWlnaHQgbm90
-aWNlIHRoYXQgYSBzaWduYWwgaXMgcGVuZGluZyBhbmQgZG8gb25lIG9mIGEgZmV3IHRoaW5nczoK
-PiAKPiAxLiBKdXN0IGtlZXAgZ29pbmcuIE5vdCBhbGwgc3lzY2FsbHMgY2FuIGJlIGludGVycnVw
-dGVkLiAKPiAKPiAyLiBUcnkgdG8gZmluaXNoIGVhcmx5LiBJZiBhIHNlbmQoKSBjYWxsIGhhcyBh
-bHJlYWR5IHNlbnQgc29tZSBidXQgbm90IGFsbCBkYXRhLCBpdCBjYW4gc3RvcCB3YWl0aW5nIGFu
-ZCByZXR1cm4gdGhlIG51bWJlciBvZiBieXRlcyBzZW50Lgo+IAo+IDMuIEFib3J0IHdpdGggLUVJ
-TlRSLgo+IAo+IDQuIEFib3J0IHdpdGggLUVSRVNUQVJUU1lTIG9yIG9uZSBvZiBpdHMgcmVsYXRp
-dmVzLiBUaGVzZSBmaWRkbGUgd2l0aCB1c2VyIHJlZ2lzdGVycyBpbiBhIHNvbWV3aGF0IHVucGxl
-YXNhbnQgd2F5IHRvIHByZXRlbmQgdGhhdCB0aGUgc3lzY2FsbCBuZXZlciBhY3R1YWxseSBoYXBw
-ZW5lZC4gIFRoaXMgd29ya3MgZm9yIHN5c2NhbGxzIHRoYXQgd2FpdCB3aXRoIGFuIGFic29sdXRl
-IHRpbWVvdXQsIGZvciBleGFtcGxlLiAKPiAKPiA1LiBTZXQgdXAgcmVzdGFydF9zeXNjYWxsKCkg
-bWFnaWMsIHJld3JpdGUgcmVncyBzbyBpdCBsb29rcyBsaWtlIHRoZSB1c2VyIHdhcyBhYm91dCB0
-byBjYWxsIHJlc3RhcnRfc3lzY2FsbCgpIHdoZW4gdGhlIHNpZ25hbCBoYXBwZW5lZCwgYW5kIGFi
-b3J0LiAKPiAKPiBJbiBhbGwgY2FzZXMsIHRoZSBzaWduYWwgaXMgZGVhbHQgd2l0aCBhZnRlcndh
-cmRzLiBUaGlzIGNvdWxkIHJlc3VsdCBpbiBjaGFuZ2luZyByZWdzIHRvIGNhbGwgdGhlIGhhbmRs
-ZXIgb3IgaW4gc2ltcGx5IHJldHVybmluZy4gCj4gCj4gMS0zIHNob3VsZCB3b3JrIGZ1bGx5IGlu
-IHNlY2NvbXAuIFRoZSBvbmx5IGlzc3VlIGlzIHRoYXQgdGhlIGtlcm5lbCBkb2VzbuKAmXQga25v
-dyAqd2hpY2gqIHRvIGRvLCBub3IgY2FuIHRoZSBrZXJuZWwgZm9yY2UgdGhlIGxpc3RlbmVyIHRv
-IGFib3J0IGNsZWFubHksIHNvIEkgdGhpbmsgd2UgaGF2ZSAgbm8gcmVhbCBjaG9pY2UgYnV0IHRv
-IGxldCB0aGUgbGlzdGVuZXIgZGVjaWRlLiAKPiAKPiA0IGNvdWxkIGJlIHN1cHBvcnRlZCBqdXN0
-IGxpa2UgMS0zLiA1IGlzIGF3ZnVsLCBhbmQgSSBkb27igJl0IHRoaW5rIHdlIHNob3VsZCBzdXBw
-b3J0IGl0IGZvciB1c2VyIGxpc3RlbmVycy4gCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlz
-dHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3Jn
-L21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On 03/15/2018 03:15 PM, Stefan Berger wrote:
+> On 03/15/2018 03:01 PM, James Bottomley wrote:
+>> On Thu, 2018-03-15 at 14:51 -0400, Stefan Berger wrote:
+>>> On 03/15/2018 02:45 PM, James Bottomley wrote:
+>> [...]
+>>>>>> going to need some type of keyring namespace and there's
+>>>>>> already
+>>>>>> one hanging off the user_ns:
+>>>>>>
+>>>>>> commit f36f8c75ae2e7d4da34f4c908cebdb4aa42c977e
+>>>>>> Author: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+>>>>>> Date:   Tue Sep 24 10:35:19 2013 +0100
+>>>>>>
+>>>>>>        KEYS: Add per-user_namespace registers for persistent
+>>>>>> per-UID
+>>>>>> kerberos caches
+>>>>> The benefit for IMA would be that this would then tie the keys
+>>>>> needed for appraising to the IMA namespace's policy.
+>>>>> However, if you have an appraise policy in your IMA namespace,
+>>>>> which is now hooked to the user namespace, and you join that user
+>>>>> namespace but your files don't have signatures, nothing will
+>>>>> execute anymore. That's now a side effect of joining this user
+>>>>> namespace unless we have a magic  exception. My feeling is,
+>>>>> people may not like that...
+>>>> Agree, but I think the magic might be to populate the ima keyring
+>>>> with the parent on user_ns creation.  That way the user_ns owner
+>>>> can delete the parent keys if they don't like them, but by default
+>>>> the parent appraisal policy should just work.
+>>> That may add keys to your keyring but doesn't get you signatures on
+>>> your  files.
+>> But it doesn't need to.  The only way we'd get a failure is if the file
+>> is already being appraised and we lose access to the key.  If the
+>
+> Well, the configuration I talked about above was assuming that we have 
+> an appraisal policy active in the IMA namespace, which is now tied to 
+> the user namespace that was just joined.
+>
+> If we are fine with the side effects of an IMA policy active as part 
+> of a user namespace then let's go with it. The side effects in case of 
+> an active IMA appraisal may then be that files cannot be 
+> read/accessed, or file measurements or IMA auditing may occur.
+>
+> The alternative is we have an independent IMA namespace. If one joins 
+> the USER namespace and there are no IMA-related side effects. If one 
+> joins the IMA namespace its IMA policy should start being enforced. If 
+> the current active USER namespace has the keys that go with the 
+> signatures of the filesystem, then we're fine from the appraisal 
+> perspective. If not, then IMA namespace joining may prevent file 
+> accesses.
+
+With these differences pointed out, which path do we want to go now ? 
+Eric ? James ?
+
+    Stefan
