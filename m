@@ -1,8 +1,8 @@
 From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC PATCH ghak32 V2 08/13] audit: add containerid support for
-	tty_audit
-Date: Fri, 16 Mar 2018 05:00:35 -0400
-Message-ID: <d3d3c9366154d1160e3c2d6151a75091be4c0018.1521179281.git.rgb__44835.7395398945$1521191110$gmane$org@redhat.com>
+Subject: [RFC PATCH ghak32 V2 09/13] audit: add containerid support for
+	config/feature/user records
+Date: Fri, 16 Mar 2018 05:00:36 -0400
+Message-ID: <c34a7a95eb045a62e2443457979db9d7afbd9aee.1521179281.git.rgb__5396.74709220908$1521191116$gmane$org@redhat.com>
 References: <cover.1521179281.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,34 +24,217 @@ To: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFL
 Cc: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, madzcar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add container ID auxiliary record to tty logging rule event standalone
-records.
+Add container ID auxiliary records to configuration change, feature set change
+and user generated standalone records.
 
 Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- drivers/tty/tty_audit.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ kernel/audit.c       | 50 ++++++++++++++++++++++++++++++++++++++++----------
+ kernel/auditfilter.c |  5 ++++-
+ 2 files changed, 44 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/tty/tty_audit.c b/drivers/tty/tty_audit.c
-index e30aa6b..48ee4b7 100644
---- a/drivers/tty/tty_audit.c
-+++ b/drivers/tty/tty_audit.c
-@@ -66,8 +66,9 @@ static void tty_audit_log(const char *description, dev_t dev,
- 	uid_t uid = from_kuid(&init_user_ns, task_uid(tsk));
- 	uid_t loginuid = from_kuid(&init_user_ns, audit_get_loginuid(tsk));
- 	unsigned int sessionid = audit_get_sessionid(tsk);
+diff --git a/kernel/audit.c b/kernel/audit.c
+index b238be5..08662b4 100644
+--- a/kernel/audit.c
++++ b/kernel/audit.c
+@@ -400,8 +400,9 @@ static int audit_log_config_change(char *function_name, u32 new, u32 old,
+ {
+ 	struct audit_buffer *ab;
+ 	int rc = 0;
 +	struct audit_context *context = audit_alloc_local();
  
--	ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_TTY);
-+	ab = audit_log_start(context, GFP_KERNEL, AUDIT_TTY);
- 	if (ab) {
- 		char name[sizeof(tsk->comm)];
+-	ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
++	ab = audit_log_start(context, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
+ 	if (unlikely(!ab))
+ 		return rc;
+ 	audit_log_format(ab, "%s=%u old=%u", function_name, new, old);
+@@ -411,6 +412,8 @@ static int audit_log_config_change(char *function_name, u32 new, u32 old,
+ 		allow_changes = 0; /* Something weird, deny request */
+ 	audit_log_format(ab, " res=%d", allow_changes);
+ 	audit_log_end(ab);
++	audit_log_container_info(context, "config", audit_get_containerid(current));
++	audit_free_context(context);
+ 	return rc;
+ }
  
-@@ -80,6 +81,8 @@ static void tty_audit_log(const char *description, dev_t dev,
- 		audit_log_n_hex(ab, data, size);
- 		audit_log_end(ab);
+@@ -1058,7 +1061,8 @@ static int audit_netlink_ok(struct sk_buff *skb, u16 msg_type)
+ 	return err;
+ }
+ 
+-static void audit_log_common_recv_msg(struct audit_buffer **ab, u16 msg_type)
++static void audit_log_common_recv_msg(struct audit_context *context,
++				      struct audit_buffer **ab, u16 msg_type)
+ {
+ 	uid_t uid = from_kuid(&init_user_ns, current_uid());
+ 	pid_t pid = task_tgid_nr(current);
+@@ -1068,7 +1072,7 @@ static void audit_log_common_recv_msg(struct audit_buffer **ab, u16 msg_type)
+ 		return;
  	}
-+	audit_log_container_info(context, "tty", audit_get_containerid(tsk));
+ 
+-	*ab = audit_log_start(NULL, GFP_KERNEL, msg_type);
++	*ab = audit_log_start(context, GFP_KERNEL, msg_type);
+ 	if (unlikely(!*ab))
+ 		return;
+ 	audit_log_format(*ab, "pid=%d uid=%u", pid, uid);
+@@ -1097,11 +1101,12 @@ static void audit_log_feature_change(int which, u32 old_feature, u32 new_feature
+ 				     u32 old_lock, u32 new_lock, int res)
+ {
+ 	struct audit_buffer *ab;
++	struct audit_context *context = audit_alloc_local();
+ 
+ 	if (audit_enabled == AUDIT_OFF)
+ 		return;
+ 
+-	ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_FEATURE_CHANGE);
++	ab = audit_log_start(context, GFP_KERNEL, AUDIT_FEATURE_CHANGE);
+ 	if (!ab)
+ 		return;
+ 	audit_log_task_info(ab, current);
+@@ -1109,6 +1114,8 @@ static void audit_log_feature_change(int which, u32 old_feature, u32 new_feature
+ 			 audit_feature_names[which], !!old_feature, !!new_feature,
+ 			 !!old_lock, !!new_lock, res);
+ 	audit_log_end(ab);
++	audit_log_container_info(context, "feature", audit_get_containerid(current));
++	audit_free_context(context);
+ }
+ 
+ static int audit_set_feature(struct sk_buff *skb)
+@@ -1337,13 +1344,15 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 
+ 		err = audit_filter(msg_type, AUDIT_FILTER_USER);
+ 		if (err == 1) { /* match or error */
++			struct audit_context *context = audit_alloc_local();
++
+ 			err = 0;
+ 			if (msg_type == AUDIT_USER_TTY) {
+ 				err = tty_audit_push();
+ 				if (err)
+ 					break;
+ 			}
+-			audit_log_common_recv_msg(&ab, msg_type);
++			audit_log_common_recv_msg(context, &ab, msg_type);
+ 			if (msg_type != AUDIT_USER_TTY)
+ 				audit_log_format(ab, " msg='%.*s'",
+ 						 AUDIT_MESSAGE_TEXT_MAX,
+@@ -1359,6 +1368,9 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 				audit_log_n_untrustedstring(ab, data, size);
+ 			}
+ 			audit_log_end(ab);
++			audit_log_container_info(context, "user",
++						 audit_get_containerid(current));
++			audit_free_context(context);
+ 		}
+ 		break;
+ 	case AUDIT_ADD_RULE:
+@@ -1366,9 +1378,14 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 		if (nlmsg_len(nlh) < sizeof(struct audit_rule_data))
+ 			return -EINVAL;
+ 		if (audit_enabled == AUDIT_LOCKED) {
+-			audit_log_common_recv_msg(&ab, AUDIT_CONFIG_CHANGE);
++			struct audit_context *context = audit_alloc_local();
++
++			audit_log_common_recv_msg(context, &ab, AUDIT_CONFIG_CHANGE);
+ 			audit_log_format(ab, " audit_enabled=%d res=0", audit_enabled);
+ 			audit_log_end(ab);
++			audit_log_container_info(context, "config",
++						 audit_get_containerid(current));
++			audit_free_context(context);
+ 			return -EPERM;
+ 		}
+ 		err = audit_rule_change(msg_type, seq, data, nlmsg_len(nlh));
+@@ -1376,17 +1393,23 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 	case AUDIT_LIST_RULES:
+ 		err = audit_list_rules_send(skb, seq);
+ 		break;
+-	case AUDIT_TRIM:
++	case AUDIT_TRIM: {
++		struct audit_context *context = audit_alloc_local();
+ 		audit_trim_trees();
+-		audit_log_common_recv_msg(&ab, AUDIT_CONFIG_CHANGE);
++		audit_log_common_recv_msg(context, &ab, AUDIT_CONFIG_CHANGE);
+ 		audit_log_format(ab, " op=trim res=1");
+ 		audit_log_end(ab);
++		audit_log_container_info(context, "config",
++					 audit_get_containerid(current));
++		audit_free_context(context);
+ 		break;
++	}
+ 	case AUDIT_MAKE_EQUIV: {
+ 		void *bufp = data;
+ 		u32 sizes[2];
+ 		size_t msglen = nlmsg_len(nlh);
+ 		char *old, *new;
++		struct audit_context *context = audit_alloc_local();
+ 
+ 		err = -EINVAL;
+ 		if (msglen < 2 * sizeof(u32))
+@@ -1408,7 +1431,7 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 		/* OK, here comes... */
+ 		err = audit_tag_tree(old, new);
+ 
+-		audit_log_common_recv_msg(&ab, AUDIT_CONFIG_CHANGE);
++		audit_log_common_recv_msg(context, &ab, AUDIT_CONFIG_CHANGE);
+ 
+ 		audit_log_format(ab, " op=make_equiv old=");
+ 		audit_log_untrustedstring(ab, old);
+@@ -1418,6 +1441,9 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 		audit_log_end(ab);
+ 		kfree(old);
+ 		kfree(new);
++		audit_log_container_info(context, "config",
++					 audit_get_containerid(current));
++		audit_free_context(context);
+ 		break;
+ 	}
+ 	case AUDIT_SIGNAL_INFO:
+@@ -1459,6 +1485,7 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 		struct audit_tty_status s, old;
+ 		struct audit_buffer	*ab;
+ 		unsigned int t;
++		struct audit_context *context = audit_alloc_local();
+ 
+ 		memset(&s, 0, sizeof(s));
+ 		/* guard against past and future API changes */
+@@ -1477,12 +1504,15 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 		old.enabled = t & AUDIT_TTY_ENABLE;
+ 		old.log_passwd = !!(t & AUDIT_TTY_LOG_PASSWD);
+ 
+-		audit_log_common_recv_msg(&ab, AUDIT_CONFIG_CHANGE);
++		audit_log_common_recv_msg(context, &ab, AUDIT_CONFIG_CHANGE);
+ 		audit_log_format(ab, " op=tty_set old-enabled=%d new-enabled=%d"
+ 				 " old-log_passwd=%d new-log_passwd=%d res=%d",
+ 				 old.enabled, s.enabled, old.log_passwd,
+ 				 s.log_passwd, !err);
+ 		audit_log_end(ab);
++		audit_log_container_info(context, "config",
++					 audit_get_containerid(current));
++		audit_free_context(context);
+ 		break;
+ 	}
+ 	default:
+diff --git a/kernel/auditfilter.c b/kernel/auditfilter.c
+index c4c8746..5f7f4d6 100644
+--- a/kernel/auditfilter.c
++++ b/kernel/auditfilter.c
+@@ -1109,11 +1109,12 @@ static void audit_log_rule_change(char *action, struct audit_krule *rule, int re
+ 	struct audit_buffer *ab;
+ 	uid_t loginuid = from_kuid(&init_user_ns, audit_get_loginuid(current));
+ 	unsigned int sessionid = audit_get_sessionid(current);
++	struct audit_context *context = audit_alloc_local();
+ 
+ 	if (!audit_enabled)
+ 		return;
+ 
+-	ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
++	ab = audit_log_start(context, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
+ 	if (!ab)
+ 		return;
+ 	audit_log_format(ab, "auid=%u ses=%u" ,loginuid, sessionid);
+@@ -1122,6 +1123,8 @@ static void audit_log_rule_change(char *action, struct audit_krule *rule, int re
+ 	audit_log_key(ab, rule->filterkey);
+ 	audit_log_format(ab, " list=%d res=%d", rule->listnr, res);
+ 	audit_log_end(ab);
++	audit_log_container_info(context, "config", audit_get_containerid(current));
 +	audit_free_context(context);
  }
  
