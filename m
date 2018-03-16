@@ -1,7 +1,7 @@
-From: Christian Brauner <christian.brauner-cl+VPiYnx/1AfugRpC6u6w@public.gmane.org>
+From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 Subject: Re: [RFC 0/3] seccomp trap to userspace
-Date: Fri, 16 Mar 2018 15:47:51 +0100
-Message-ID: <20180316144751.GA3304@mailbox.org>
+Date: Fri, 16 Mar 2018 09:01:47 -0700
+Message-ID: <D73E5C37-DC92-4D58-A163-0B20143AAEEB__21205.6520548233$1521215999$gmane$org@amacapital.net>
 References: <20180204104946.25559-1-tycho@tycho.ws>
 	<20180315160924.GA12744@gmail.com>
 	<CALCETrVnvbZLx5v=DMu2N1JtR+ys507X5CYBi-qQnus3VMQdwg@mail.gmail.com>
@@ -9,12 +9,12 @@ References: <20180204104946.25559-1-tycho@tycho.ws>
 	<CALCETrXPcCNbpFJhXktkVS9gOPpmnU_bbY6Z8RrsBarq0dP4Lg@mail.gmail.com>
 	<20180315173524.k7vwnvnhomg2j5yv@smitten>
 	<CALCETrWH7HbY2gS6O_cYKfp9QqqWBWVcHb++GaP3uUiSO9oo6g@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+	<20180316144751.GA3304@mailbox.org>
+Mime-Version: 1.0 (1.0)
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CALCETrWH7HbY2gS6O_cYKfp9QqqWBWVcHb++GaP3uUiSO9oo6g-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20180316144751.GA3304-cl+VPiYnx/1AfugRpC6u6w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,112 +24,63 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Akihiro Suda <suda.akihiro-Zyj7fXuS5i5L9jVzuh4AOg@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Christian Brauner <christian.brauner-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Tyler Hicks <tyhicks-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Christian Brauner <christian.brauner-cl+VPiYnx/1AfugRpC6u6w@public.gmane.org>
+Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Akihiro Suda <suda.akihiro-Zyj7fXuS5i5L9jVzuh4AOg@public.gmane.org>, Christian Brauner <christian.brauner-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Tyler Hicks <tyhicks-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Mar 16, 2018 at 12:46:55AM +0000, Andy Lutomirski wrote:
-> On Thu, Mar 15, 2018 at 5:35 PM, Tycho Andersen <tycho-E0fblnxP3wo@public.gmane.org> wrote:
-> > Hi Andy,
-> >
-> > On Thu, Mar 15, 2018 at 05:11:32PM +0000, Andy Lutomirski wrote:
-> >> On Thu, Mar 15, 2018 at 5:05 PM, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
-> >> > Hm, synchronously - that brings to mind a thought...  I should re-look at
-> >> > Tycho's patches first, but, if I'm in a container, start some syscall that
-> >> > gets trapped to userspace, then I hit ctrl-c.  I'd like to be able to have
-> >> > the handler be interrupted and have it return -EINTR.  Is that going to
-> >> > be possible with the synchronous approach?
-> >>
-> >> I think so, but it should be possible with the classic async approach
-> >> too.  The main issue is the difference between a classic filter like
-> >> this (pseudocode):
-> >>
-> >> if (nr == SYS_mount) return TRAP_TO_USERSPACE;
-> >>
-> >> and the eBPF variant:
-> >>
-> >> if (nr == SYS_mount) trap_to_userspace();
-> >
-> > Sargun started a private design discussion thread that I don't think
-> > you were on, but Alexei said something to the effect of "eBPF programs
-> > will never wait on userspace", so I'm not sure we can do something
-> > like this in an eBPF program. I'm cc-ing him here again to confirm,
-> > but I doubt things have changed.
-> >
-> >> I admit that it's still not 100% clear to me that the latter is
-> >> genuinely more useful than the former.
-> >>
-> >> The case where I think the synchronous function call is a huge win is this one:
-> >>
-> >> if (nr  == SYS_mount) {
-> >>   log("Someone called mount with args %lx\n", ...);
-> >>   return RET_KILL;
-> >> }
-> >>
-> >> The idea being that the log message wouldn't show up in the kernel log
-> >> -- it would get sent to the listener socket belonging to whoever
-> >> created the filter, and that process could then go and log it
-> >> properly.  This would work perfectly in containers and in totally
-> >> unprivileged applications like Chromium.
-> >
-> > The current implementation can't do exactly this, but you could do:
-> >
-> > if (nr == SYS_mount) {
-> >     log(...);
-> >     kill(pid, SIGKILL);
-> > }
-> >
-> > from the handler instead.
-> >
-> > I guess Serge is asking a slightly different question: what if the
-> > task gets e.g. SIGINT from the user doing a ^C or SIGALARM or
-> > something, we should probably send the handler some sort of message or
-> > interrupt to let it know that the syscall was cancelled. Right now the
-> > current set doesn't behave that way, and the handler will just
-> > continue on its merry way and get an EINVAL when it tries to respond
-> > with the cancelled cookie.
-> 
-> Hmm, I think we have to be very careful to avoid nasty races.  I think
-> the correct approach is to notice the signal and send a message to the
-> listener that a signal is pending but to take no additional action.
-> If the handler ends up completing the syscall with a successful
-> return, we don't want to replace it with -EINTR.  IOW the code looks
-> kind of like:
-> 
-> send_to_listener("hey I got a signal");
-> wait_ret = wait_interruptible for the listener to reply;
-> if (wait_ret == -EINTR) {
-
-Hm, so from the pseudo-code it looks like: The handler would inform the
-listener that it received a signal (either from the syscall requester or
-from somewhere else) and then wait for the listener to reply to that
-message.  This would allow the listener to decide what action it wants
-the handler to take based on the signal, i.e. either cancel the request
-or retry?  The comment makes it sound like that the handler doesn't
-really wait on the listener when it receives a signal it simply moves
-on.
-So no "taking no additional action" here means not have the handler
-decide to abort but the listener?
-
-Sorry if I'm being dense.
-
-Christian
-
->   send_to_listener("hey there's a signal");
->   wait_ret = wait_killable for the listener to reply to the original request;
-> }
-> 
-> if (wait_ret == -EINTR) {
->   /* hmm, this next line might not actually be necessary, but it's
-> harmless and possibly useful */
->   send_to_listener("hey we're going away");
->   /* and stop waiting */
-> }
-> 
-> ... actually handle the result.
-> 
-> --Andy
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+Cgo+IE9uIE1hciAxNiwgMjAxOCwgYXQgNzo0NyBBTSwgQ2hyaXN0aWFuIEJyYXVuZXIgPGNocmlz
+dGlhbi5icmF1bmVyQG1haWxib3gub3JnPiB3cm90ZToKPiAKPj4gT24gRnJpLCBNYXIgMTYsIDIw
+MTggYXQgMTI6NDY6NTVBTSArMDAwMCwgQW5keSBMdXRvbWlyc2tpIHdyb3RlOgoKCkkgYmV0IEkg
+Y29uZnVzZWQgZXZlcnlvbmUgd2l0aCBhIGJsYXRhbnQgdHlwbzoKCj4+IAo+PiBIbW0sIEkgdGhp
+bmsgd2UgaGF2ZSB0byBiZSB2ZXJ5IGNhcmVmdWwgdG8gYXZvaWQgbmFzdHkgcmFjZXMuICBJIHRo
+aW5rCj4+IHRoZSBjb3JyZWN0IGFwcHJvYWNoIGlzIHRvIG5vdGljZSB0aGUgc2lnbmFsIGFuZCBz
+ZW5kIGEgbWVzc2FnZSB0byB0aGUKPj4gbGlzdGVuZXIgdGhhdCBhIHNpZ25hbCBpcyBwZW5kaW5n
+IGJ1dCB0byB0YWtlIG5vIGFkZGl0aW9uYWwgYWN0aW9uLgo+PiBJZiB0aGUgaGFuZGxlciBlbmRz
+IHVwIGNvbXBsZXRpbmcgdGhlIHN5c2NhbGwgd2l0aCBhIHN1Y2Nlc3NmdWwKPj4gcmV0dXJuLCB3
+ZSBkb24ndCB3YW50IHRvIHJlcGxhY2UgaXQgd2l0aCAtRUlOVFIuICBJT1cgdGhlIGNvZGUgbG9v
+a3MKPj4ga2luZCBvZiBsaWtlOgo+PiAKPj4gc2VuZF90b19saXN0ZW5lcigiaGV5IEkgZ290IGEg
+c2lnbmFsIik7CgpUaGF0IHNob3VsZCBiZSDigJxoZXkgSSBnb3QgYSBzeXNjYWxs4oCdLiAgIETi
+gJlvaCEKCj4+IHdhaXRfcmV0ID0gd2FpdF9pbnRlcnJ1cHRpYmxlIGZvciB0aGUgbGlzdGVuZXIg
+dG8gcmVwbHk7Cj4+IGlmICh3YWl0X3JldCA9PSAtRUlOVFIpIHsKPiAKPiBIbSwgc28gZnJvbSB0
+aGUgcHNldWRvLWNvZGUgaXQgbG9va3MgbGlrZTogVGhlIGhhbmRsZXIgd291bGQgaW5mb3JtIHRo
+ZQo+IGxpc3RlbmVyIHRoYXQgaXQgcmVjZWl2ZWQgYSBzaWduYWwgKGVpdGhlciBmcm9tIHRoZSBz
+eXNjYWxsIHJlcXVlc3RlciBvcgo+IGZyb20gc29tZXdoZXJlIGVsc2UpIGFuZCB0aGVuIHdhaXQg
+Zm9yIHRoZSBsaXN0ZW5lciB0byByZXBseSB0byB0aGF0Cj4gbWVzc2FnZS4gIFRoaXMgd291bGQg
+YWxsb3cgdGhlIGxpc3RlbmVyIHRvIGRlY2lkZSB3aGF0IGFjdGlvbiBpdCB3YW50cwo+IHRoZSBo
+YW5kbGVyIHRvIHRha2UgYmFzZWQgb24gdGhlIHNpZ25hbCwgaS5lLiBlaXRoZXIgY2FuY2VsIHRo
+ZSByZXF1ZXN0Cj4gb3IgcmV0cnk/ICBUaGUgY29tbWVudCBtYWtlcyBpdCBzb3VuZCBsaWtlIHRo
+YXQgdGhlIGhhbmRsZXIgZG9lc24ndAo+IHJlYWxseSB3YWl0IG9uIHRoZSBsaXN0ZW5lciB3aGVu
+IGl0IHJlY2VpdmVzIGEgc2lnbmFsIGl0IHNpbXBseSBtb3Zlcwo+IG9uLgoKSXQga2VlcHMgd2Fp
+dGluZyBraWxsYWJseSBidXQgbm90IGludGVycnVwdGlibHkuIAoKPiBTbyBubyAidGFraW5nIG5v
+IGFkZGl0aW9uYWwgYWN0aW9uIiBoZXJlIG1lYW5zIG5vdCBoYXZlIHRoZSBoYW5kbGVyCj4gZGVj
+aWRlIHRvIGFib3J0IGJ1dCB0aGUgbGlzdGVuZXI/CgpJZiBieSDigJxoYW5kbGVy4oCdIHlvdSBt
+ZWFuIGtlcm5lbCwgdGhlbiB5ZXMuIAoKVGhlcmXigJlzIG5vIHVzZXJzcGFjZSBzeXNjYWxsIGhh
+bmRsZXIgaW52b2x2ZWQuIEZyb20gdGhlIGtlcm5lbOKAmXMgcGVyc3BlY3RpdmUsIGEgc3lzY2Fs
+bCBpcyBuZXZlciBzdGlsbCBpbiBwcm9ncmVzcyB3aGVuIGEgc2lnbmFsIGhhbmRsZXIgaXMgaW52
+b2tlZCDigJQgd2Ugb25seSBhY3R1YWxseSBpbnZva2Ugc3lzY2FsbCBoYW5kbGVycyBpbiBwcmVw
+YXJlX2V4aXRfdG9fdXNlcm1vZGUoKSBvciB0aGUgbm9uLXg4NiBlcXVpdmFsZW50IGFuZCB0aGUg
+ZnVuY3Rpb25zIGl0IGNhbGxzLiBXaGlsZSBhIHN5c2NhbGwgaXMgcnVubmluZywgdGhlIGtlcm5l
+bCBtaWdodCBub3RpY2UgdGhhdCBhIHNpZ25hbCBpcyBwZW5kaW5nIGFuZCBkbyBvbmUgb2YgYSBm
+ZXcgdGhpbmdzOgoKMS4gSnVzdCBrZWVwIGdvaW5nLiBOb3QgYWxsIHN5c2NhbGxzIGNhbiBiZSBp
+bnRlcnJ1cHRlZC4gCgoyLiBUcnkgdG8gZmluaXNoIGVhcmx5LiBJZiBhIHNlbmQoKSBjYWxsIGhh
+cyBhbHJlYWR5IHNlbnQgc29tZSBidXQgbm90IGFsbCBkYXRhLCBpdCBjYW4gc3RvcCB3YWl0aW5n
+IGFuZCByZXR1cm4gdGhlIG51bWJlciBvZiBieXRlcyBzZW50LgoKMy4gQWJvcnQgd2l0aCAtRUlO
+VFIuCgo0LiBBYm9ydCB3aXRoIC1FUkVTVEFSVFNZUyBvciBvbmUgb2YgaXRzIHJlbGF0aXZlcy4g
+VGhlc2UgZmlkZGxlIHdpdGggdXNlciByZWdpc3RlcnMgaW4gYSBzb21ld2hhdCB1bnBsZWFzYW50
+IHdheSB0byBwcmV0ZW5kIHRoYXQgdGhlIHN5c2NhbGwgbmV2ZXIgYWN0dWFsbHkgaGFwcGVuZWQu
+ICBUaGlzIHdvcmtzIGZvciBzeXNjYWxscyB0aGF0IHdhaXQgd2l0aCBhbiBhYnNvbHV0ZSB0aW1l
+b3V0LCBmb3IgZXhhbXBsZS4gCgo1LiBTZXQgdXAgcmVzdGFydF9zeXNjYWxsKCkgbWFnaWMsIHJl
+d3JpdGUgcmVncyBzbyBpdCBsb29rcyBsaWtlIHRoZSB1c2VyIHdhcyBhYm91dCB0byBjYWxsIHJl
+c3RhcnRfc3lzY2FsbCgpIHdoZW4gdGhlIHNpZ25hbCBoYXBwZW5lZCwgYW5kIGFib3J0LiAKCklu
+IGFsbCBjYXNlcywgdGhlIHNpZ25hbCBpcyBkZWFsdCB3aXRoIGFmdGVyd2FyZHMuIFRoaXMgY291
+bGQgcmVzdWx0IGluIGNoYW5naW5nIHJlZ3MgdG8gY2FsbCB0aGUgaGFuZGxlciBvciBpbiBzaW1w
+bHkgcmV0dXJuaW5nLiAKCjEtMyBzaG91bGQgd29yayBmdWxseSBpbiBzZWNjb21wLiBUaGUgb25s
+eSBpc3N1ZSBpcyB0aGF0IHRoZSBrZXJuZWwgZG9lc27igJl0IGtub3cgKndoaWNoKiB0byBkbywg
+bm9yIGNhbiB0aGUga2VybmVsIGZvcmNlIHRoZSBsaXN0ZW5lciB0byBhYm9ydCBjbGVhbmx5LCBz
+byBJIHRoaW5rIHdlIGhhdmUgIG5vIHJlYWwgY2hvaWNlIGJ1dCB0byBsZXQgdGhlIGxpc3RlbmVy
+IGRlY2lkZS4gCgo0IGNvdWxkIGJlIHN1cHBvcnRlZCBqdXN0IGxpa2UgMS0zLiA1IGlzIGF3ZnVs
+LCBhbmQgSSBkb27igJl0IHRoaW5rIHdlIHNob3VsZCBzdXBwb3J0IGl0IGZvciB1c2VyIGxpc3Rl
+bmVycy4gCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNv
+bnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5v
+cmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29u
+dGFpbmVycw==
