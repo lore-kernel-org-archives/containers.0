@@ -1,16 +1,11 @@
 From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC PATCH ghak32 V2 13/13] debug audit: read container ID of a
-	process
-Date: Fri, 16 Mar 2018 05:00:40 -0400
-Message-ID: <1081821010c124fe4e35984ec3dac1654453bb7c.1521179281.git.rgb__24620.1290902265$1521191146$gmane$org@redhat.com>
-References: <cover.1521179281.git.rgb@redhat.com>
+Subject: [PATCH ghau40 v2 0/5] add support for audit container ID
+Date: Fri, 16 Mar 2018 05:12:24 -0400
+Message-ID: <1521191549-19764-1-git-send-email-rgb__29220.816496718$1521191759$gmane$org@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <cover.1521179281.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-In-Reply-To: <cover.1521179281.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-References: <cover.1521179281.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,69 +19,35 @@ To: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFL
 Cc: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, madzcar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add support for reading the container ID from the proc filesystem.
+Add support for audit kernel container IDs to userspace tools.
 
-This is a read from the proc entry of the form /proc/PID/containerid
-where PID is the process ID of the task whose container ID is sought.
+See: https://github.com/linux-audit/audit-userspace/issues/40
+See: https://github.com/linux-audit/audit-kernel/issues/32
+See: https://github.com/linux-audit/audit-testsuite/issues/64
 
-The read expects up to a u64 value (unset: 18446744073709551615).
+Richard Guy Briggs (5):
+  AUDIT_CONTAINER message type basic support
+  AUDIT_CONTAINER_INFO message type basic support
+  auditctl: add support for containerid filter
+  add ausearch containerid support
+  start normalization containerid support
 
-Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- fs/proc/base.c | 20 ++++++++++++++++++--
- 1 file changed, 18 insertions(+), 2 deletions(-)
+ auparse/normalize_record_map.h |   1 +
+ docs/auditctl.8                |   3 +
+ lib/fieldtab.h                 |   1 +
+ lib/libaudit.c                 |  36 +++++++++
+ lib/libaudit.h                 |  15 ++++
+ lib/msg_typetab.h              |   2 +
+ lib/netlink.c                  |   1 +
+ src/auditctl-listing.c         |  21 +++++
+ src/aureport-options.c         |   1 +
+ src/ausearch-llist.c           |   2 +
+ src/ausearch-llist.h           |   1 +
+ src/ausearch-match.c           |   3 +
+ src/ausearch-options.c         |  46 ++++++++++-
+ src/ausearch-options.h         |   1 +
+ src/ausearch-parse.c           | 171 +++++++++++++++++++++++++++++++++++++++++
+ 15 files changed, 304 insertions(+), 1 deletion(-)
 
-diff --git a/fs/proc/base.c b/fs/proc/base.c
-index 6ce4fbe..f66d1e2 100644
---- a/fs/proc/base.c
-+++ b/fs/proc/base.c
-@@ -1300,6 +1300,21 @@ static ssize_t proc_sessionid_read(struct file * file, char __user * buf,
- 	.llseek		= generic_file_llseek,
- };
- 
-+static ssize_t proc_containerid_read(struct file *file, char __user *buf,
-+				  size_t count, loff_t *ppos)
-+{
-+	struct inode *inode = file_inode(file);
-+	struct task_struct *task = get_proc_task(inode);
-+	ssize_t length;
-+	char tmpbuf[TMPBUFLEN*2];
-+
-+	if (!task)
-+		return -ESRCH;
-+	length = scnprintf(tmpbuf, TMPBUFLEN*2, "%llu", audit_get_containerid(task));
-+	put_task_struct(task);
-+	return simple_read_from_buffer(buf, count, ppos, tmpbuf, length);
-+}
-+
- static ssize_t proc_containerid_write(struct file *file, const char __user *buf,
- 				   size_t count, loff_t *ppos)
- {
-@@ -1330,6 +1345,7 @@ static ssize_t proc_containerid_write(struct file *file, const char __user *buf,
- }
- 
- static const struct file_operations proc_containerid_operations = {
-+	.read		= proc_containerid_read,
- 	.write		= proc_containerid_write,
- 	.llseek		= generic_file_llseek,
- };
-@@ -2996,7 +3012,7 @@ static int proc_pid_patch_state(struct seq_file *m, struct pid_namespace *ns,
- #ifdef CONFIG_AUDITSYSCALL
- 	REG("loginuid",   S_IWUSR|S_IRUGO, proc_loginuid_operations),
- 	REG("sessionid",  S_IRUGO, proc_sessionid_operations),
--	REG("containerid", S_IWUSR, proc_containerid_operations),
-+	REG("containerid", S_IWUSR|S_IRUSR, proc_containerid_operations),
- #endif
- #ifdef CONFIG_FAULT_INJECTION
- 	REG("make-it-fail", S_IRUGO|S_IWUSR, proc_fault_inject_operations),
-@@ -3391,7 +3407,7 @@ static int proc_tid_comm_permission(struct inode *inode, int mask)
- #ifdef CONFIG_AUDITSYSCALL
- 	REG("loginuid",  S_IWUSR|S_IRUGO, proc_loginuid_operations),
- 	REG("sessionid",  S_IRUGO, proc_sessionid_operations),
--	REG("containerid", S_IWUSR, proc_containerid_operations),
-+	REG("containerid", S_IWUSR|S_IRUSR, proc_containerid_operations),
- #endif
- #ifdef CONFIG_FAULT_INJECTION
- 	REG("make-it-fail", S_IRUGO|S_IWUSR, proc_fault_inject_operations),
 -- 
 1.8.3.1
