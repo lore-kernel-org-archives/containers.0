@@ -1,16 +1,11 @@
 From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC PATCH V1 01/12] audit: add container id
-Date: Thu, 15 Mar 2018 23:58:37 -0400
-Message-ID: <20180316035837.ddnqvbyrbp3fdk7e__3485.17854367874$1521172908$gmane$org@madcap2.tricolour.ca>
-References: <cover.1519930146.git.rgb@redhat.com>
-	<2e5d93ee46feca915a101c2fc3062da674a98223.1519930146.git.rgb@redhat.com>
-	<216d1ab1-531b-9185-2e31-34f162f08aad@linux.vnet.ibm.com>
+Subject: [RFC PATCH ghak32 V2 00/13] audit: implement container id
+Date: Fri, 16 Mar 2018 05:00:27 -0400
+Message-ID: <cover.1521179281.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <216d1ab1-531b-9185-2e31-34f162f08aad-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,170 +15,122 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, madzcar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org
+To: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, madzcar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 2018-03-15 16:27, Stefan Berger wrote:
-> On 03/01/2018 02:41 PM, Richard Guy Briggs wrote:
-> > Implement the proc fs write to set the audit container ID of a process,
-> > emitting an AUDIT_CONTAINER record to document the event.
-> > 
-> > This is a write from the container orchestrator task to a proc entry of
-> > the form /proc/PID/containerid where PID is the process ID of the newly
-> > created task that is to become the first task in a container, or an
-> > additional task added to a container.
-> > 
-> > The write expects up to a u64 value (unset: 18446744073709551615).
-> > 
-> > This will produce a record such as this:
-> > type=UNKNOWN[1333] msg=audit(1519903238.968:261): op=set pid=596 uid=0 subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 auid=0 tty=pts0 ses=1 opid=596 old-contid=18446744073709551615 contid=123455 res=0
-> > 
-> > The "op" field indicates an initial set.  The "pid" to "ses" fields are
-> > the orchestrator while the "opid" field is the object's PID, the process
-> > being "contained".  Old and new container ID values are given in the
-> > "contid" fields, while res indicates its success.
-> > 
-> > It is not permitted to self-set, unset or re-set the container ID.  A
-> > child inherits its parent's container ID, but then can be set only once
-> > after.
-> > 
-> > See: https://github.com/linux-audit/audit-kernel/issues/32
-> > 
-> > 
-> >   /* audit_rule_data supports filter rules with both integer and string
-> >    * fields.  It corresponds with AUDIT_ADD_RULE, AUDIT_DEL_RULE and
-> > diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-> > index 4e0a4ac..0ee1e59 100644
-> > --- a/kernel/auditsc.c
-> > +++ b/kernel/auditsc.c
-> > @@ -2073,6 +2073,92 @@ int audit_set_loginuid(kuid_t loginuid)
-> >   	return rc;
-> >   }
-> > 
-> > +static int audit_set_containerid_perm(struct task_struct *task, u64 containerid)
-> > +{
-> > +	struct task_struct *parent;
-> > +	u64 pcontainerid, ccontainerid;
-> > +	pid_t ppid;
-> > +
-> > +	/* Don't allow to set our own containerid */
-> > +	if (current == task)
-> > +		return -EPERM;
-> > +	/* Don't allow the containerid to be unset */
-> > +	if (!cid_valid(containerid))
-> > +		return -EINVAL;
-> > +	/* if we don't have caps, reject */
-> > +	if (!capable(CAP_AUDIT_CONTROL))
-> > +		return -EPERM;
-> > +	/* if containerid is unset, allow */
-> > +	if (!audit_containerid_set(task))
-> > +		return 0;
-> 
-> I am wondering whether there should be a check for the target process that
-> will receive the containerid to not have CAP_SYS_ADMIN that would otherwise
-> allow it to arbitrarily unshare()/clone() and leave the set of namespaces
-> that may make up the container whose containerid we assign here?
+Implement audit kernel container ID.
 
-This is a reasonable question.  This has been debated and I understood
-the conclusion was that without a clear definition of a "container", the
-task still remains in that container that just now has more
-sub-namespaces (in the case of hierarchical namespaces), we don't want
-to restrict it in such a way and that allows it to create nested
-containers.  I see setns being more problematic if it could switch to
-another existing namespace that was set up by the orchestrator for a
-different container.  The coming v2 patchset acknowledges this situation
-with the network namespace being potentially shared by multiple
-containers.
+This patchset is a second RFC based on the proposal document (V3)
+posted:
+	https://www.redhat.com/archives/linux-audit/2018-January/msg00014.html
 
-This is the motivation for the code below that allows to set the
-containerid even if it is already inherited from its parent.
+The first patch implements the proc fs write to set the audit container
+ID of a process, emitting an AUDIT_CONTAINER record to announce the
+registration of that container ID on that process.  This patch requires
+userspace support for record acceptance and proper type display.
 
-> > +	/* it is already set, and not inherited from the parent, reject */
-> > +	ccontainerid = audit_get_containerid(task);
-> > +	rcu_read_lock();
-> > +	parent = rcu_dereference(task->real_parent);
-> > +	rcu_read_unlock();
-> > +	task_lock(parent);
-> > +	pcontainerid = audit_get_containerid(parent);
-> > +	ppid = task_tgid_nr(parent);
->
-> ppid not needed...
+The second checks for children or co-threads and refuses to set the
+container ID if either are present.  (This policy could be changed to
+set both with the same container ID provided they meet the rest of the
+requirements.)
 
-Thanks for catching this.  It was the vestige of a failed devel
-experiment that didn't flush that useless appendage.  :-)
+The third implements the auxiliary record AUDIT_CONTAINER_INFO if a
+container ID is identifiable with an event.  This patch requires
+userspace support for proper type display.
 
-> > +	task_unlock(parent);
-> > +	if (ccontainerid != pcontainerid)
-> > +		return -EPERM;
-> > +	return 0;
-> > +}
-> > +
-> > +static void audit_log_set_containerid(struct task_struct *task, u64 oldcontainerid,
-> > +				      u64 containerid, int rc)
-> > +{
-> > +	struct audit_buffer *ab;
-> > +	uid_t uid;
-> > +	struct tty_struct *tty;
-> > +
-> > +	if (!audit_enabled)
-> > +		return;
-> > +
-> > +	ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_CONTAINER);
-> > +	if (!ab)
-> > +		return;
-> > +
-> > +	uid = from_kuid(&init_user_ns, task_uid(current));
-> > +	tty = audit_get_tty(current);
-> > +
-> > +	audit_log_format(ab, "op=set pid=%d uid=%u", task_tgid_nr(current), uid);
-> > +	audit_log_task_context(ab);
-> > +	audit_log_format(ab, " auid=%u tty=%s ses=%u opid=%d old-contid=%llu contid=%llu res=%d",
-> > +			 from_kuid(&init_user_ns, audit_get_loginuid(current)),
-> > +			 tty ? tty_name(tty) : "(none)", audit_get_sessionid(current),
-> > +			 task_tgid_nr(task), oldcontainerid, containerid, !rc);
-> > +
-> > +	audit_put_tty(tty);
-> > +	audit_log_end(ab);
-> > +}
-> > +
-> > +/**
-> > + * audit_set_containerid - set current task's audit_context containerid
-> > + * @containerid: containerid value
-> > + *
-> > + * Returns 0 on success, -EPERM on permission failure.
-> > + *
-> > + * Called (set) from fs/proc/base.c::proc_containerid_write().
-> > + */
-> > +int audit_set_containerid(struct task_struct *task, u64 containerid)
-> > +{
-> > +	u64 oldcontainerid;
-> > +	int rc;
-> > +
-> > +	oldcontainerid = audit_get_containerid(task);
-> > +
-> > +	rc = audit_set_containerid_perm(task, containerid);
-> > +	if (!rc) {
-> > +		task_lock(task);
-> > +		task->containerid = containerid;
-> > +		task_unlock(task);
-> > +	}
-> > +
-> > +	audit_log_set_containerid(task, oldcontainerid, containerid, rc);
-> > +	return rc;
-> > +}
-> > +
-> >   /**
-> >    * __audit_mq_open - record audit data for a POSIX MQ open
-> >    * @oflag: open flag
-> 
-> 
+The fourth adds container ID filtering to the exit, exclude and user
+lists.  This patch requires auditctil userspace support for the
+--containerid option.
 
-- RGB
+The 5th adds signal and ptrace support.
 
---
-Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Sr. S/W Engineer, Kernel Security, Base Operating Systems
-Remote, Ottawa, Red Hat Canada
-IRC: rgb, SunRaycer
-Voice: +1.647.777.2635, Internal: (81) 32635
+The 6th creates a local audit context to be able to bind a standalone
+record with a locally created auxiliary record.
+
+The 7th, 8th, 9th, 10th patches add container ID records to standalone
+records.  Some of these may end up being syscall auxiliary records and
+won't need this specific support since they'll be supported via
+syscalls.
+
+The 11th adds network namespace container ID labelling based on member
+tasks' container ID labels.
+
+The 12th adds container ID support to standalone netfilter records that
+don't have a task context and lists each container to which that net
+namespace belongs.
+
+The 13th implements reading the container ID from the proc filesystem
+for debugging.  This patch isn't planned for upstream inclusion.
+
+Feedback please!
+
+Example: Set a container ID of 123456 to the "sleep" task:
+	sleep 2&  
+	child=$!
+	echo 123456 > /proc/$child/containerid; echo $?
+	ausearch -ts recent -m container
+	echo child:$child contid:$( cat /proc/$child/containerid)
+This should produce a record such as:
+	type=CONTAINER msg=audit(1521122590.315:222): op=set pid=689 uid=0 subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 auid=0 tty=pts0 ses=3 opid=707 old-contid=18446744073709551615 contid=123456 res=1
+
+Example: Set a filter on a container ID 123459 on /tmp/tmpcontainerid:
+	containerid=123459
+	key=tmpcontainerid
+	auditctl -a exit,always -F dir=/tmp -F perm=wa -F containerid=$containerid -F key=$key
+	perl -e "sleep 1; open(my \$tmpfile, '>', \"/tmp/$key\"); close(\$tmpfile);" &
+	child=$!
+	echo $containerid > /proc/$child/containerid
+	sleep 2
+	ausearch -i -ts recent -k $key
+	auditctl -d exit,always -F dir=/tmp -F perm=wa -F containerid=$containerid -F key=$key
+	rm -f /tmp/$key
+This should produce an event such as:
+	type=CONTAINER_INFO msg=audit(1521122591.614:227): op=task contid=123459
+	type=PROCTITLE msg=audit(1521122591.614:227): proctitle=7065726C002D6500736C65657020313B206F70656E286D792024746D7066696C652C20273E272C20222F746D702F746D70636F6E7461696E6572696422293B20636C6F73652824746D7066696C65293B
+	type=PATH msg=audit(1521122591.614:227): item=1 name="/tmp/tmpcontainerid" inode=18427 dev=00:26 mode=0100644 ouid=0 ogid=0 rdev=00:00 obj=unconfined_u:object_r:user_tmp_t:s0 nametype=CREATE cap_fp=0000000000000000 cap_fi=0000000000000000 cap_fe=0 cap_fver=0
+	type=PATH msg=audit(1521122591.614:227): item=0 name="/tmp/" inode=13513 dev=00:26 mode=041777 ouid=0 ogid=0 rdev=00:00 obj=system_u:object_r:tmp_t:s0 nametype=PARENT cap_fp=0000000000000000 cap_fi=0000000000000000 cap_fe=0 cap_fver=0
+	type=CWD msg=audit(1521122591.614:227): cwd="/root"
+	type=SYSCALL msg=audit(1521122591.614:227): arch=c000003e syscall=257 success=yes exit=3 a0=ffffffffffffff9c a1=55db90a28900 a2=241 a3=1b6 items=2 ppid=689 pid=724 auid=0 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=3 comm="perl" exe="/usr/bin/perl" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key="tmpcontainerid"
+
+See:
+	https://github.com/linux-audit/audit-kernel/issues/32
+	https://github.com/linux-audit/audit-userspace/issues/40
+	https://github.com/linux-audit/audit-testsuite/issues/64
+
+Richard Guy Briggs (13):
+  audit: add container id
+  audit: check children and threading before allowing containerid
+  audit: log container info of syscalls
+  audit: add containerid filtering
+  audit: add containerid support for ptrace and signals
+  audit: add support for non-syscall auxiliary records
+  audit: add container aux record to watch/tree/mark
+  audit: add containerid support for tty_audit
+  audit: add containerid support for config/feature/user records
+  audit: add containerid support for seccomp and anom_abend records
+  audit: add support for containerid to network namespaces
+  audit: NETFILTER_PKT: record each container ID associated with a netNS
+  debug audit: read container ID of a process
+
+ drivers/tty/tty_audit.c     |   5 +-
+ fs/proc/base.c              |  53 ++++++++++++++++
+ include/linux/audit.h       |  43 +++++++++++++
+ include/linux/init_task.h   |   4 +-
+ include/linux/sched.h       |   1 +
+ include/net/net_namespace.h |  12 ++++
+ include/uapi/linux/audit.h  |   8 ++-
+ kernel/audit.c              |  75 ++++++++++++++++++++---
+ kernel/audit.h              |   3 +
+ kernel/audit_fsnotify.c     |   5 +-
+ kernel/audit_tree.c         |   5 +-
+ kernel/audit_watch.c        |  33 +++++-----
+ kernel/auditfilter.c        |  52 +++++++++++++++-
+ kernel/auditsc.c            | 145 ++++++++++++++++++++++++++++++++++++++++++--
+ kernel/nsproxy.c            |   6 ++
+ net/core/net_namespace.c    |  45 ++++++++++++++
+ net/netfilter/xt_AUDIT.c    |  15 ++++-
+ 17 files changed, 473 insertions(+), 37 deletions(-)
+
+-- 
+1.8.3.1
