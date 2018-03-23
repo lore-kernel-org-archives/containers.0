@@ -1,15 +1,15 @@
 From: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
-Subject: Re: [REVIEW][PATCH 03/11] msg/security: Pass kern_ipc_perm not
-	msg_queue into the msg_queue security hooks
-Date: Fri, 23 Mar 2018 14:55:09 -0700
-Message-ID: <bb73b0ea-bcda-a996-8f14-48d9dd1b0940__30465.5826803812$1521841999$gmane$org@schaufler-ca.com>
+Subject: Re: [REVIEW][PATCH 01/11] sem/security: Pass kern_ipc_perm not
+	sem_array into the sem security hooks
+Date: Fri, 23 Mar 2018 14:46:02 -0700
+Message-ID: <bdf6ed62-b75c-1920-d5ce-ea08428d03d0__40114.3043571666$1521843257$gmane$org@schaufler-ca.com>
 References: <87vadmobdw.fsf_-_@xmission.com>
-	<20180323191614.32489-3-ebiederm@xmission.com>
+	<20180323191614.32489-1-ebiederm@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20180323191614.32489-3-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <20180323191614.32489-1-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -25,463 +25,444 @@ Cc: esyr-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jannh-hpIqsD4AKlfQT0dZR+AlfA@p
 List-Id: containers.vger.kernel.org
 
 On 3/23/2018 12:16 PM, Eric W. Biederman wrote:
-> All of the implementations of security hooks that take msg_queue only
-> access q_perm the struct kern_ipc_perm member.  This means the
-> dependencies of the msg_queue security hooks can be simplified by
-> passing the kern_ipc_perm member of msg_queue.
+> All of the implementations of security hooks that take sem_array only
+> access sem_perm the struct kern_ipc_perm member.  This means the
+> dependencies of the sem security hooks can be simplified by passing
+> the kern_ipc_perm member of sem_array.
 >
-> Making this change will allow struct msg_queue to become private to
-> ipc/msg.c.
+> Making this change will allow struct sem and struct sem_array
+> to become private to ipc/sem.c.
 >
 > Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 > ---
->  include/linux/lsm_hooks.h  | 12 ++++++------
->  include/linux/security.h   | 25 ++++++++++++-------------
->  ipc/msg.c                  | 18 ++++++++----------
->  security/security.c        | 12 ++++++------
->  security/selinux/hooks.c   | 36 ++++++++++++++++++------------------
->  security/smack/smack_lsm.c | 24 ++++++++++++------------
-
-Can I reference the comments I made in PATCH 01 of this set
-regarding the Smack changes? The problem in all of your changes
-is the same. You aren't preserving the naming conventions, and
-you've left in some code that is just silly.
-
-
-
->  6 files changed, 62 insertions(+), 65 deletions(-)
+>  include/linux/lsm_hooks.h  | 10 +++++-----
+>  include/linux/security.h   | 21 ++++++++++-----------
+>  ipc/sem.c                  | 19 ++++++++-----------
+>  security/security.c        | 10 +++++-----
+>  security/selinux/hooks.c   | 28 ++++++++++++++--------------
+>  security/smack/smack_lsm.c | 22 +++++++++++-----------
+>  6 files changed, 53 insertions(+), 57 deletions(-)
 >
 > diff --git a/include/linux/lsm_hooks.h b/include/linux/lsm_hooks.h
-> index cac7a8082c43..bde167fa2c51 100644
+> index 7161d8e7ee79..e4a94863a88c 100644
 > --- a/include/linux/lsm_hooks.h
 > +++ b/include/linux/lsm_hooks.h
-> @@ -1575,13 +1575,13 @@ union security_list_options {
->  	int (*msg_msg_alloc_security)(struct msg_msg *msg);
->  	void (*msg_msg_free_security)(struct msg_msg *msg);
+> @@ -1592,11 +1592,11 @@ union security_list_options {
+>  	int (*shm_shmat)(struct shmid_kernel *shp, char __user *shmaddr,
+>  				int shmflg);
 >  
-> -	int (*msg_queue_alloc_security)(struct msg_queue *msq);
-> -	void (*msg_queue_free_security)(struct msg_queue *msq);
-> -	int (*msg_queue_associate)(struct msg_queue *msq, int msqflg);
-> -	int (*msg_queue_msgctl)(struct msg_queue *msq, int cmd);
-> -	int (*msg_queue_msgsnd)(struct msg_queue *msq, struct msg_msg *msg,
-> +	int (*msg_queue_alloc_security)(struct kern_ipc_perm *msq);
-> +	void (*msg_queue_free_security)(struct kern_ipc_perm *msq);
-> +	int (*msg_queue_associate)(struct kern_ipc_perm *msq, int msqflg);
-> +	int (*msg_queue_msgctl)(struct kern_ipc_perm *msq, int cmd);
-> +	int (*msg_queue_msgsnd)(struct kern_ipc_perm *msq, struct msg_msg *msg,
->  				int msqflg);
-> -	int (*msg_queue_msgrcv)(struct msg_queue *msq, struct msg_msg *msg,
-> +	int (*msg_queue_msgrcv)(struct kern_ipc_perm *msq, struct msg_msg *msg,
->  				struct task_struct *target, long type,
->  				int mode);
+> -	int (*sem_alloc_security)(struct sem_array *sma);
+> -	void (*sem_free_security)(struct sem_array *sma);
+> -	int (*sem_associate)(struct sem_array *sma, int semflg);
+> -	int (*sem_semctl)(struct sem_array *sma, int cmd);
+> -	int (*sem_semop)(struct sem_array *sma, struct sembuf *sops,
+> +	int (*sem_alloc_security)(struct kern_ipc_perm *sma);
+> +	void (*sem_free_security)(struct kern_ipc_perm *sma);
+> +	int (*sem_associate)(struct kern_ipc_perm *sma, int semflg);
+> +	int (*sem_semctl)(struct kern_ipc_perm *sma, int cmd);
+> +	int (*sem_semop)(struct kern_ipc_perm *sma, struct sembuf *sops,
+>  				unsigned nsops, int alter);
 >  
+>  	int (*netlink_send)(struct sock *sk, struct sk_buff *skb);
 > diff --git a/include/linux/security.h b/include/linux/security.h
-> index f390755808ea..128e1e4a5346 100644
+> index 73f1ef625d40..fa7adac4b99a 100644
 > --- a/include/linux/security.h
 > +++ b/include/linux/security.h
-> @@ -50,7 +50,6 @@ struct iattr;
->  struct fown_struct;
->  struct file_operations;
->  struct msg_msg;
-> -struct msg_queue;
->  struct xattr;
->  struct xfrm_sec_ctx;
->  struct mm_struct;
-> @@ -353,13 +352,13 @@ int security_ipc_permission(struct kern_ipc_perm *ipcp, short flag);
->  void security_ipc_getsecid(struct kern_ipc_perm *ipcp, u32 *secid);
->  int security_msg_msg_alloc(struct msg_msg *msg);
->  void security_msg_msg_free(struct msg_msg *msg);
-> -int security_msg_queue_alloc(struct msg_queue *msq);
-> -void security_msg_queue_free(struct msg_queue *msq);
-> -int security_msg_queue_associate(struct msg_queue *msq, int msqflg);
-> -int security_msg_queue_msgctl(struct msg_queue *msq, int cmd);
-> -int security_msg_queue_msgsnd(struct msg_queue *msq,
-> +int security_msg_queue_alloc(struct kern_ipc_perm *msq);
-> +void security_msg_queue_free(struct kern_ipc_perm *msq);
-> +int security_msg_queue_associate(struct kern_ipc_perm *msq, int msqflg);
-> +int security_msg_queue_msgctl(struct kern_ipc_perm *msq, int cmd);
-> +int security_msg_queue_msgsnd(struct kern_ipc_perm *msq,
->  			      struct msg_msg *msg, int msqflg);
-> -int security_msg_queue_msgrcv(struct msg_queue *msq, struct msg_msg *msg,
-> +int security_msg_queue_msgrcv(struct kern_ipc_perm *msq, struct msg_msg *msg,
->  			      struct task_struct *target, long type, int mode);
->  int security_shm_alloc(struct kern_ipc_perm *shp);
->  void security_shm_free(struct kern_ipc_perm *shp);
-> @@ -1043,32 +1042,32 @@ static inline int security_msg_msg_alloc(struct msg_msg *msg)
->  static inline void security_msg_msg_free(struct msg_msg *msg)
+> @@ -36,7 +36,6 @@ struct linux_binprm;
+>  struct cred;
+>  struct rlimit;
+>  struct siginfo;
+> -struct sem_array;
+>  struct sembuf;
+>  struct kern_ipc_perm;
+>  struct audit_context;
+> @@ -368,11 +367,11 @@ void security_shm_free(struct shmid_kernel *shp);
+>  int security_shm_associate(struct shmid_kernel *shp, int shmflg);
+>  int security_shm_shmctl(struct shmid_kernel *shp, int cmd);
+>  int security_shm_shmat(struct shmid_kernel *shp, char __user *shmaddr, int shmflg);
+> -int security_sem_alloc(struct sem_array *sma);
+> -void security_sem_free(struct sem_array *sma);
+> -int security_sem_associate(struct sem_array *sma, int semflg);
+> -int security_sem_semctl(struct sem_array *sma, int cmd);
+> -int security_sem_semop(struct sem_array *sma, struct sembuf *sops,
+> +int security_sem_alloc(struct kern_ipc_perm *sma);
+> +void security_sem_free(struct kern_ipc_perm *sma);
+> +int security_sem_associate(struct kern_ipc_perm *sma, int semflg);
+> +int security_sem_semctl(struct kern_ipc_perm *sma, int cmd);
+> +int security_sem_semop(struct kern_ipc_perm *sma, struct sembuf *sops,
+>  			unsigned nsops, int alter);
+>  void security_d_instantiate(struct dentry *dentry, struct inode *inode);
+>  int security_getprocattr(struct task_struct *p, char *name, char **value);
+> @@ -1103,25 +1102,25 @@ static inline int security_shm_shmat(struct shmid_kernel *shp,
+>  	return 0;
+>  }
+>  
+> -static inline int security_sem_alloc(struct sem_array *sma)
+> +static inline int security_sem_alloc(struct kern_ipc_perm *sma)
+>  {
+>  	return 0;
+>  }
+>  
+> -static inline void security_sem_free(struct sem_array *sma)
+> +static inline void security_sem_free(struct kern_ipc_perm *sma)
 >  { }
 >  
-> -static inline int security_msg_queue_alloc(struct msg_queue *msq)
-> +static inline int security_msg_queue_alloc(struct kern_ipc_perm *msq)
+> -static inline int security_sem_associate(struct sem_array *sma, int semflg)
+> +static inline int security_sem_associate(struct kern_ipc_perm *sma, int semflg)
 >  {
 >  	return 0;
 >  }
 >  
-> -static inline void security_msg_queue_free(struct msg_queue *msq)
-> +static inline void security_msg_queue_free(struct kern_ipc_perm *msq)
->  { }
->  
-> -static inline int security_msg_queue_associate(struct msg_queue *msq,
-> +static inline int security_msg_queue_associate(struct kern_ipc_perm *msq,
->  					       int msqflg)
+> -static inline int security_sem_semctl(struct sem_array *sma, int cmd)
+> +static inline int security_sem_semctl(struct kern_ipc_perm *sma, int cmd)
 >  {
 >  	return 0;
 >  }
 >  
-> -static inline int security_msg_queue_msgctl(struct msg_queue *msq, int cmd)
-> +static inline int security_msg_queue_msgctl(struct kern_ipc_perm *msq, int cmd)
+> -static inline int security_sem_semop(struct sem_array *sma,
+> +static inline int security_sem_semop(struct kern_ipc_perm *sma,
+>  				     struct sembuf *sops, unsigned nsops,
+>  				     int alter)
 >  {
->  	return 0;
->  }
->  
-> -static inline int security_msg_queue_msgsnd(struct msg_queue *msq,
-> +static inline int security_msg_queue_msgsnd(struct kern_ipc_perm *msq,
->  					    struct msg_msg *msg, int msqflg)
->  {
->  	return 0;
->  }
->  
-> -static inline int security_msg_queue_msgrcv(struct msg_queue *msq,
-> +static inline int security_msg_queue_msgrcv(struct kern_ipc_perm *msq,
->  					    struct msg_msg *msg,
->  					    struct task_struct *target,
->  					    long type, int mode)
-> diff --git a/ipc/msg.c b/ipc/msg.c
-> index 0dcc6699dc53..cdfab0825fce 100644
-> --- a/ipc/msg.c
-> +++ b/ipc/msg.c
-> @@ -101,7 +101,7 @@ static void msg_rcu_free(struct rcu_head *head)
+> diff --git a/ipc/sem.c b/ipc/sem.c
+> index a4af04979fd2..01f5c63670ae 100644
+> --- a/ipc/sem.c
+> +++ b/ipc/sem.c
+> @@ -265,7 +265,7 @@ static void sem_rcu_free(struct rcu_head *head)
 >  	struct kern_ipc_perm *p = container_of(head, struct kern_ipc_perm, rcu);
->  	struct msg_queue *msq = container_of(p, struct msg_queue, q_perm);
+>  	struct sem_array *sma = container_of(p, struct sem_array, sem_perm);
 >  
-> -	security_msg_queue_free(msq);
-> +	security_msg_queue_free(&msq->q_perm);
->  	kvfree(msq);
+> -	security_sem_free(sma);
+> +	security_sem_free(&sma->sem_perm);
+>  	kvfree(sma);
 >  }
 >  
-> @@ -127,7 +127,7 @@ static int newque(struct ipc_namespace *ns, struct ipc_params *params)
->  	msq->q_perm.key = key;
+> @@ -495,7 +495,7 @@ static int newary(struct ipc_namespace *ns, struct ipc_params *params)
+>  	sma->sem_perm.key = key;
 >  
->  	msq->q_perm.security = NULL;
-> -	retval = security_msg_queue_alloc(msq);
-> +	retval = security_msg_queue_alloc(&msq->q_perm);
+>  	sma->sem_perm.security = NULL;
+> -	retval = security_sem_alloc(sma);
+> +	retval = security_sem_alloc(&sma->sem_perm);
 >  	if (retval) {
->  		kvfree(msq);
+>  		kvfree(sma);
 >  		return retval;
-> @@ -258,9 +258,7 @@ static void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
+> @@ -535,10 +535,7 @@ static int newary(struct ipc_namespace *ns, struct ipc_params *params)
 >   */
->  static inline int msg_security(struct kern_ipc_perm *ipcp, int msgflg)
+>  static inline int sem_security(struct kern_ipc_perm *ipcp, int semflg)
 >  {
-> -	struct msg_queue *msq = container_of(ipcp, struct msg_queue, q_perm);
+> -	struct sem_array *sma;
 > -
-> -	return security_msg_queue_associate(msq, msgflg);
-> +	return security_msg_queue_associate(ipcp, msgflg);
+> -	sma = container_of(ipcp, struct sem_array, sem_perm);
+> -	return security_sem_associate(sma, semflg);
+> +	return security_sem_associate(ipcp, semflg);
 >  }
 >  
->  SYSCALL_DEFINE2(msgget, key_t, key, int, msgflg)
-> @@ -380,7 +378,7 @@ static int msgctl_down(struct ipc_namespace *ns, int msqid, int cmd,
+>  /*
+> @@ -1209,7 +1206,7 @@ static int semctl_stat(struct ipc_namespace *ns, int semid,
+>  	if (ipcperms(ns, &sma->sem_perm, S_IRUGO))
+>  		goto out_unlock;
 >  
->  	msq = container_of(ipcp, struct msg_queue, q_perm);
+> -	err = security_sem_semctl(sma, cmd);
+> +	err = security_sem_semctl(&sma->sem_perm, cmd);
+>  	if (err)
+>  		goto out_unlock;
 >  
-> -	err = security_msg_queue_msgctl(msq, cmd);
-> +	err = security_msg_queue_msgctl(&msq->q_perm, cmd);
+> @@ -1300,7 +1297,7 @@ static int semctl_setval(struct ipc_namespace *ns, int semid, int semnum,
+>  		return -EACCES;
+>  	}
+>  
+> -	err = security_sem_semctl(sma, SETVAL);
+> +	err = security_sem_semctl(&sma->sem_perm, SETVAL);
+>  	if (err) {
+>  		rcu_read_unlock();
+>  		return -EACCES;
+> @@ -1354,7 +1351,7 @@ static int semctl_main(struct ipc_namespace *ns, int semid, int semnum,
+>  	if (ipcperms(ns, &sma->sem_perm, cmd == SETALL ? S_IWUGO : S_IRUGO))
+>  		goto out_rcu_wakeup;
+>  
+> -	err = security_sem_semctl(sma, cmd);
+> +	err = security_sem_semctl(&sma->sem_perm, cmd);
+>  	if (err)
+>  		goto out_rcu_wakeup;
+>  
+> @@ -1545,7 +1542,7 @@ static int semctl_down(struct ipc_namespace *ns, int semid,
+>  
+>  	sma = container_of(ipcp, struct sem_array, sem_perm);
+>  
+> -	err = security_sem_semctl(sma, cmd);
+> +	err = security_sem_semctl(&sma->sem_perm, cmd);
 >  	if (err)
 >  		goto out_unlock1;
 >  
-> @@ -502,7 +500,7 @@ static int msgctl_stat(struct ipc_namespace *ns, int msqid,
->  	if (ipcperms(ns, &msq->q_perm, S_IRUGO))
->  		goto out_unlock;
+> @@ -1962,7 +1959,7 @@ static long do_semtimedop(int semid, struct sembuf __user *tsops,
+>  		goto out_free;
+>  	}
 >  
-> -	err = security_msg_queue_msgctl(msq, cmd);
-> +	err = security_msg_queue_msgctl(&msq->q_perm, cmd);
->  	if (err)
->  		goto out_unlock;
->  
-> @@ -718,7 +716,7 @@ static inline int pipelined_send(struct msg_queue *msq, struct msg_msg *msg,
->  
->  	list_for_each_entry_safe(msr, t, &msq->q_receivers, r_list) {
->  		if (testmsg(msg, msr->r_msgtype, msr->r_mode) &&
-> -		    !security_msg_queue_msgrcv(msq, msg, msr->r_tsk,
-> +		    !security_msg_queue_msgrcv(&msq->q_perm, msg, msr->r_tsk,
->  					       msr->r_msgtype, msr->r_mode)) {
->  
->  			list_del(&msr->r_list);
-> @@ -784,7 +782,7 @@ static long do_msgsnd(int msqid, long mtype, void __user *mtext,
->  			goto out_unlock0;
->  		}
->  
-> -		err = security_msg_queue_msgsnd(msq, msg, msgflg);
-> +		err = security_msg_queue_msgsnd(&msq->q_perm, msg, msgflg);
->  		if (err)
->  			goto out_unlock0;
->  
-> @@ -960,7 +958,7 @@ static struct msg_msg *find_msg(struct msg_queue *msq, long *msgtyp, int mode)
->  
->  	list_for_each_entry(msg, &msq->q_messages, m_list) {
->  		if (testmsg(msg, *msgtyp, mode) &&
-> -		    !security_msg_queue_msgrcv(msq, msg, current,
-> +		    !security_msg_queue_msgrcv(&msq->q_perm, msg, current,
->  					       *msgtyp, mode)) {
->  			if (mode == SEARCH_LESSEQUAL && msg->m_type != 1) {
->  				*msgtyp = msg->m_type - 1;
+> -	error = security_sem_semop(sma, sops, nsops, alter);
+> +	error = security_sem_semop(&sma->sem_perm, sops, nsops, alter);
+>  	if (error) {
+>  		rcu_read_unlock();
+>  		goto out_free;
 > diff --git a/security/security.c b/security/security.c
-> index 77b69bd6f234..02d734e69955 100644
+> index 1cd8526cb0b7..d3b9aeb6b73b 100644
 > --- a/security/security.c
 > +++ b/security/security.c
-> @@ -1163,33 +1163,33 @@ void security_msg_msg_free(struct msg_msg *msg)
->  	call_void_hook(msg_msg_free_security, msg);
+> @@ -1220,27 +1220,27 @@ int security_shm_shmat(struct shmid_kernel *shp, char __user *shmaddr, int shmfl
+>  	return call_int_hook(shm_shmat, 0, shp, shmaddr, shmflg);
 >  }
 >  
-> -int security_msg_queue_alloc(struct msg_queue *msq)
-> +int security_msg_queue_alloc(struct kern_ipc_perm *msq)
+> -int security_sem_alloc(struct sem_array *sma)
+> +int security_sem_alloc(struct kern_ipc_perm *sma)
 >  {
->  	return call_int_hook(msg_queue_alloc_security, 0, msq);
+>  	return call_int_hook(sem_alloc_security, 0, sma);
 >  }
 >  
-> -void security_msg_queue_free(struct msg_queue *msq)
-> +void security_msg_queue_free(struct kern_ipc_perm *msq)
+> -void security_sem_free(struct sem_array *sma)
+> +void security_sem_free(struct kern_ipc_perm *sma)
 >  {
->  	call_void_hook(msg_queue_free_security, msq);
+>  	call_void_hook(sem_free_security, sma);
 >  }
 >  
-> -int security_msg_queue_associate(struct msg_queue *msq, int msqflg)
-> +int security_msg_queue_associate(struct kern_ipc_perm *msq, int msqflg)
+> -int security_sem_associate(struct sem_array *sma, int semflg)
+> +int security_sem_associate(struct kern_ipc_perm *sma, int semflg)
 >  {
->  	return call_int_hook(msg_queue_associate, 0, msq, msqflg);
+>  	return call_int_hook(sem_associate, 0, sma, semflg);
 >  }
 >  
-> -int security_msg_queue_msgctl(struct msg_queue *msq, int cmd)
-> +int security_msg_queue_msgctl(struct kern_ipc_perm *msq, int cmd)
+> -int security_sem_semctl(struct sem_array *sma, int cmd)
+> +int security_sem_semctl(struct kern_ipc_perm *sma, int cmd)
 >  {
->  	return call_int_hook(msg_queue_msgctl, 0, msq, cmd);
+>  	return call_int_hook(sem_semctl, 0, sma, cmd);
 >  }
 >  
-> -int security_msg_queue_msgsnd(struct msg_queue *msq,
-> +int security_msg_queue_msgsnd(struct kern_ipc_perm *msq,
->  			       struct msg_msg *msg, int msqflg)
+> -int security_sem_semop(struct sem_array *sma, struct sembuf *sops,
+> +int security_sem_semop(struct kern_ipc_perm *sma, struct sembuf *sops,
+>  			unsigned nsops, int alter)
 >  {
->  	return call_int_hook(msg_queue_msgsnd, 0, msq, msg, msqflg);
->  }
->  
-> -int security_msg_queue_msgrcv(struct msg_queue *msq, struct msg_msg *msg,
-> +int security_msg_queue_msgrcv(struct kern_ipc_perm *msq, struct msg_msg *msg,
->  			       struct task_struct *target, long type, int mode)
->  {
->  	return call_int_hook(msg_queue_msgrcv, 0, msq, msg, target, type, mode);
+>  	return call_int_hook(sem_semop, 0, sma, sops, nsops, alter);
 > diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
-> index 14f9e6c08273..925e546b5a87 100644
+> index 8644d864e3c1..cce994e9fc0a 100644
 > --- a/security/selinux/hooks.c
 > +++ b/security/selinux/hooks.c
-> @@ -5532,52 +5532,52 @@ static void selinux_msg_msg_free_security(struct msg_msg *msg)
+> @@ -5767,53 +5767,53 @@ static int selinux_shm_shmat(struct shmid_kernel *shp,
 >  }
 >  
->  /* message queue security operations */
-> -static int selinux_msg_queue_alloc_security(struct msg_queue *msq)
-> +static int selinux_msg_queue_alloc_security(struct kern_ipc_perm *msq)
+>  /* Semaphore security operations */
+> -static int selinux_sem_alloc_security(struct sem_array *sma)
+> +static int selinux_sem_alloc_security(struct kern_ipc_perm *sma)
 >  {
 >  	struct ipc_security_struct *isec;
 >  	struct common_audit_data ad;
 >  	u32 sid = current_sid();
 >  	int rc;
 >  
-> -	rc = ipc_alloc_security(&msq->q_perm, SECCLASS_MSGQ);
-> +	rc = ipc_alloc_security(msq, SECCLASS_MSGQ);
+> -	rc = ipc_alloc_security(&sma->sem_perm, SECCLASS_SEM);
+> +	rc = ipc_alloc_security(sma, SECCLASS_SEM);
 >  	if (rc)
 >  		return rc;
 >  
-> -	isec = msq->q_perm.security;
-> +	isec = msq->security;
+> -	isec = sma->sem_perm.security;
+> +	isec = sma->security;
 >  
 >  	ad.type = LSM_AUDIT_DATA_IPC;
-> -	ad.u.ipc_id = msq->q_perm.key;
-> +	ad.u.ipc_id = msq->key;
+> -	ad.u.ipc_id = sma->sem_perm.key;
+> +	ad.u.ipc_id = sma->key;
 >  
->  	rc = avc_has_perm(sid, isec->sid, SECCLASS_MSGQ,
->  			  MSGQ__CREATE, &ad);
+>  	rc = avc_has_perm(sid, isec->sid, SECCLASS_SEM,
+>  			  SEM__CREATE, &ad);
 >  	if (rc) {
-> -		ipc_free_security(&msq->q_perm);
-> +		ipc_free_security(msq);
+> -		ipc_free_security(&sma->sem_perm);
+> +		ipc_free_security(sma);
 >  		return rc;
 >  	}
 >  	return 0;
 >  }
 >  
-> -static void selinux_msg_queue_free_security(struct msg_queue *msq)
-> +static void selinux_msg_queue_free_security(struct kern_ipc_perm *msq)
+> -static void selinux_sem_free_security(struct sem_array *sma)
+> +static void selinux_sem_free_security(struct kern_ipc_perm *sma)
 >  {
-> -	ipc_free_security(&msq->q_perm);
-> +	ipc_free_security(msq);
+> -	ipc_free_security(&sma->sem_perm);
+> +	ipc_free_security(sma);
 >  }
 >  
-> -static int selinux_msg_queue_associate(struct msg_queue *msq, int msqflg)
-> +static int selinux_msg_queue_associate(struct kern_ipc_perm *msq, int msqflg)
+> -static int selinux_sem_associate(struct sem_array *sma, int semflg)
+> +static int selinux_sem_associate(struct kern_ipc_perm *sma, int semflg)
 >  {
 >  	struct ipc_security_struct *isec;
 >  	struct common_audit_data ad;
 >  	u32 sid = current_sid();
 >  
-> -	isec = msq->q_perm.security;
-> +	isec = msq->security;
+> -	isec = sma->sem_perm.security;
+> +	isec = sma->security;
 >  
 >  	ad.type = LSM_AUDIT_DATA_IPC;
-> -	ad.u.ipc_id = msq->q_perm.key;
-> +	ad.u.ipc_id = msq->key;
+> -	ad.u.ipc_id = sma->sem_perm.key;
+> +	ad.u.ipc_id = sma->key;
 >  
->  	return avc_has_perm(sid, isec->sid, SECCLASS_MSGQ,
->  			    MSGQ__ASSOCIATE, &ad);
+>  	return avc_has_perm(sid, isec->sid, SECCLASS_SEM,
+>  			    SEM__ASSOCIATE, &ad);
 >  }
 >  
-> -static int selinux_msg_queue_msgctl(struct msg_queue *msq, int cmd)
-> +static int selinux_msg_queue_msgctl(struct kern_ipc_perm *msq, int cmd)
+>  /* Note, at this point, sma is locked down */
+> -static int selinux_sem_semctl(struct sem_array *sma, int cmd)
+> +static int selinux_sem_semctl(struct kern_ipc_perm *sma, int cmd)
 >  {
 >  	int err;
->  	int perms;
-> @@ -5602,11 +5602,11 @@ static int selinux_msg_queue_msgctl(struct msg_queue *msq, int cmd)
+>  	u32 perms;
+> @@ -5851,11 +5851,11 @@ static int selinux_sem_semctl(struct sem_array *sma, int cmd)
 >  		return 0;
 >  	}
 >  
-> -	err = ipc_has_perm(&msq->q_perm, perms);
-> +	err = ipc_has_perm(msq, perms);
+> -	err = ipc_has_perm(&sma->sem_perm, perms);
+> +	err = ipc_has_perm(sma, perms);
 >  	return err;
 >  }
 >  
-> -static int selinux_msg_queue_msgsnd(struct msg_queue *msq, struct msg_msg *msg, int msqflg)
-> +static int selinux_msg_queue_msgsnd(struct kern_ipc_perm *msq, struct msg_msg *msg, int msqflg)
+> -static int selinux_sem_semop(struct sem_array *sma,
+> +static int selinux_sem_semop(struct kern_ipc_perm *sma,
+>  			     struct sembuf *sops, unsigned nsops, int alter)
 >  {
->  	struct ipc_security_struct *isec;
->  	struct msg_security_struct *msec;
-> @@ -5614,7 +5614,7 @@ static int selinux_msg_queue_msgsnd(struct msg_queue *msq, struct msg_msg *msg,
->  	u32 sid = current_sid();
->  	int rc;
+>  	u32 perms;
+> @@ -5865,7 +5865,7 @@ static int selinux_sem_semop(struct sem_array *sma,
+>  	else
+>  		perms = SEM__READ;
 >  
-> -	isec = msq->q_perm.security;
-> +	isec = msq->security;
->  	msec = msg->security;
->  
->  	/*
-> @@ -5632,7 +5632,7 @@ static int selinux_msg_queue_msgsnd(struct msg_queue *msq, struct msg_msg *msg,
->  	}
->  
->  	ad.type = LSM_AUDIT_DATA_IPC;
-> -	ad.u.ipc_id = msq->q_perm.key;
-> +	ad.u.ipc_id = msq->key;
->  
->  	/* Can this process write to the queue? */
->  	rc = avc_has_perm(sid, isec->sid, SECCLASS_MSGQ,
-> @@ -5649,7 +5649,7 @@ static int selinux_msg_queue_msgsnd(struct msg_queue *msq, struct msg_msg *msg,
->  	return rc;
+> -	return ipc_has_perm(&sma->sem_perm, perms);
+> +	return ipc_has_perm(sma, perms);
 >  }
 >  
-> -static int selinux_msg_queue_msgrcv(struct msg_queue *msq, struct msg_msg *msg,
-> +static int selinux_msg_queue_msgrcv(struct kern_ipc_perm *msq, struct msg_msg *msg,
->  				    struct task_struct *target,
->  				    long type, int mode)
->  {
-> @@ -5659,11 +5659,11 @@ static int selinux_msg_queue_msgrcv(struct msg_queue *msq, struct msg_msg *msg,
->  	u32 sid = task_sid(target);
->  	int rc;
->  
-> -	isec = msq->q_perm.security;
-> +	isec = msq->security;
->  	msec = msg->security;
->  
->  	ad.type = LSM_AUDIT_DATA_IPC;
-> -	ad.u.ipc_id = msq->q_perm.key;
-> +	ad.u.ipc_id = msq->key;
->  
->  	rc = avc_has_perm(sid, isec->sid,
->  			  SECCLASS_MSGQ, MSGQ__READ, &ad);
+>  static int selinux_ipc_permission(struct kern_ipc_perm *ipcp, short flag)
 > diff --git a/security/smack/smack_lsm.c b/security/smack/smack_lsm.c
-> index a3398c7f32c9..d960c2ea8d79 100644
+> index 03fdecba93bb..0402b8c1aec1 100644
 > --- a/security/smack/smack_lsm.c
 > +++ b/security/smack/smack_lsm.c
-> @@ -3210,9 +3210,9 @@ static int smack_sem_semop(struct kern_ipc_perm *sma, struct sembuf *sops,
+> @@ -3077,9 +3077,9 @@ static int smack_shm_shmat(struct shmid_kernel *shp, char __user *shmaddr,
+>   *
+>   * Returns a pointer to the smack value
+>   */
+> -static struct smack_known *smack_of_sem(struct sem_array *sma)
+> +static struct smack_known *smack_of_sem(struct kern_ipc_perm *sma)
+>  {
+> -	return (struct smack_known *)sma->sem_perm.security;
+> +	return (struct smack_known *)sma->security;
+>  }
+
+This function no longer makes sense and should be removed.
+
+>  
+>  /**
+> @@ -3088,9 +3088,9 @@ static struct smack_known *smack_of_sem(struct sem_array *sma)
 >   *
 >   * Returns 0
 >   */
-> -static int smack_msg_queue_alloc_security(struct msg_queue *msq)
-> +static int smack_msg_queue_alloc_security(struct kern_ipc_perm *msq)
+> -static int smack_sem_alloc_security(struct sem_array *sma)
+> +static int smack_sem_alloc_security(struct kern_ipc_perm *sma)
 >  {
-> -	struct kern_ipc_perm *kisp = &msq->q_perm;
-> +	struct kern_ipc_perm *kisp = msq;
+> -	struct kern_ipc_perm *isp = &sma->sem_perm;
+> +	struct kern_ipc_perm *isp = sma;
 >  	struct smack_known *skp = smk_of_current();
 >  
->  	kisp->security = skp;
-> @@ -3225,9 +3225,9 @@ static int smack_msg_queue_alloc_security(struct msg_queue *msq)
+>  	isp->security = skp;
+
+A kern_ipc_perm pointer is conventionally named isp in this code.
+
+How about instead:
+
+-static int smack_sem_alloc_security(struct sem_array *sma)
++static int smack_sem_alloc_security(struct kern_ipc_perm *isp)
+ {
+-	struct kern_ipc_perm *isp = &sma->sem_perm;
+
+
+> @@ -3103,9 +3103,9 @@ static int smack_sem_alloc_security(struct sem_array *sma)
 >   *
 >   * Clears the blob pointer
 >   */
-> -static void smack_msg_queue_free_security(struct msg_queue *msq)
-> +static void smack_msg_queue_free_security(struct kern_ipc_perm *msq)
+> -static void smack_sem_free_security(struct sem_array *sma)
+> +static void smack_sem_free_security(struct kern_ipc_perm *sma)
 >  {
-> -	struct kern_ipc_perm *kisp = &msq->q_perm;
-> +	struct kern_ipc_perm *kisp = msq;
+> -	struct kern_ipc_perm *isp = &sma->sem_perm;
+> +	struct kern_ipc_perm *isp = sma;
+
+-static void smack_sem_free_security(struct sem_array *sma)
++static void smack_sem_free_security(struct kern_ipc_perm *isp)
+ {
+-	struct kern_ipc_perm *isp = &sma->sem_perm;
+
 >  
->  	kisp->security = NULL;
+>  	isp->security = NULL;
 >  }
-> @@ -3238,9 +3238,9 @@ static void smack_msg_queue_free_security(struct msg_queue *msq)
+> @@ -3117,7 +3117,7 @@ static void smack_sem_free_security(struct sem_array *sma)
 >   *
->   * Returns a pointer to the smack label entry
+>   * Returns 0 if current has the requested access, error code otherwise
 >   */
-> -static struct smack_known *smack_of_msq(struct msg_queue *msq)
-> +static struct smack_known *smack_of_msq(struct kern_ipc_perm *msq)
+> -static int smk_curacc_sem(struct sem_array *sma, int access)
+> +static int smk_curacc_sem(struct kern_ipc_perm *sma, int access)
+
+
+-static int smk_curacc_sem(struct sem_array *sma, int access)
++static int smk_curacc_sem(struct kern_ipc_perm *isp, int access)
+
+
 >  {
-> -	return (struct smack_known *)msq->q_perm.security;
-> +	return (struct smack_known *)msq->security;
->  }
->  
->  /**
-> @@ -3250,7 +3250,7 @@ static struct smack_known *smack_of_msq(struct msg_queue *msq)
->   *
->   * return 0 if current has access, error otherwise
->   */
-> -static int smk_curacc_msq(struct msg_queue *msq, int access)
-> +static int smk_curacc_msq(struct kern_ipc_perm *msq, int access)
->  {
->  	struct smack_known *msp = smack_of_msq(msq);
+>  	struct smack_known *ssp = smack_of_sem(sma);
+
+	struct smack_known *ssp = smack_of_ipc(isp);
+
 >  	struct smk_audit_info ad;
-> @@ -3258,7 +3258,7 @@ static int smk_curacc_msq(struct msg_queue *msq, int access)
+> @@ -3125,7 +3125,7 @@ static int smk_curacc_sem(struct sem_array *sma, int access)
 >  
 >  #ifdef CONFIG_AUDIT
 >  	smk_ad_init(&ad, __func__, LSM_AUDIT_DATA_IPC);
-> -	ad.a.u.ipc_id = msq->q_perm.id;
-> +	ad.a.u.ipc_id = msq->id;
+> -	ad.a.u.ipc_id = sma->sem_perm.id;
+> +	ad.a.u.ipc_id = sma->id;
+
+-	ad.a.u.ipc_id = isp->sem_perm.id;
++	ad.a.u.ipc_id = isp->id;
+
 >  #endif
->  	rc = smk_curacc(msp, access, &ad);
->  	rc = smk_bu_current("msq", msp, access, rc);
-> @@ -3272,7 +3272,7 @@ static int smk_curacc_msq(struct msg_queue *msq, int access)
+>  	rc = smk_curacc(ssp, access, &ad);
+>  	rc = smk_bu_current("sem", ssp, access, rc);
+> @@ -3139,7 +3139,7 @@ static int smk_curacc_sem(struct sem_array *sma, int access)
 >   *
 >   * Returns 0 if current has the requested access, error code otherwise
 >   */
-> -static int smack_msg_queue_associate(struct msg_queue *msq, int msqflg)
-> +static int smack_msg_queue_associate(struct kern_ipc_perm *msq, int msqflg)
+> -static int smack_sem_associate(struct sem_array *sma, int semflg)
+> +static int smack_sem_associate(struct kern_ipc_perm *sma, int semflg)
+
++static int smack_sem_associate(struct kern_ipc_perm *isp, int semflg)
+
+and related adjustments following.
+
 >  {
 >  	int may;
 >  
-> @@ -3287,7 +3287,7 @@ static int smack_msg_queue_associate(struct msg_queue *msq, int msqflg)
+> @@ -3154,7 +3154,7 @@ static int smack_sem_associate(struct sem_array *sma, int semflg)
 >   *
 >   * Returns 0 if current has the requested access, error code otherwise
 >   */
-> -static int smack_msg_queue_msgctl(struct msg_queue *msq, int cmd)
-> +static int smack_msg_queue_msgctl(struct kern_ipc_perm *msq, int cmd)
+> -static int smack_sem_semctl(struct sem_array *sma, int cmd)
+> +static int smack_sem_semctl(struct kern_ipc_perm *sma, int cmd)
+
++static int smack_sem_semctl(struct kern_ipc_perm *isp, int cmd)
+
+and related adjustments following.
+
 >  {
 >  	int may;
 >  
-> @@ -3321,7 +3321,7 @@ static int smack_msg_queue_msgctl(struct msg_queue *msq, int cmd)
+> @@ -3198,7 +3198,7 @@ static int smack_sem_semctl(struct sem_array *sma, int cmd)
 >   *
->   * Returns 0 if current has the requested access, error code otherwise
+>   * Returns 0 if access is allowed, error code otherwise
 >   */
-> -static int smack_msg_queue_msgsnd(struct msg_queue *msq, struct msg_msg *msg,
-> +static int smack_msg_queue_msgsnd(struct kern_ipc_perm *msq, struct msg_msg *msg,
->  				  int msqflg)
+> -static int smack_sem_semop(struct sem_array *sma, struct sembuf *sops,
+> +static int smack_sem_semop(struct kern_ipc_perm *sma, struct sembuf *sops,
+>  			   unsigned nsops, int alter)
 >  {
->  	int may;
-> @@ -3340,7 +3340,7 @@ static int smack_msg_queue_msgsnd(struct msg_queue *msq, struct msg_msg *msg,
->   *
->   * Returns 0 if current has read and write access, error code otherwise
->   */
-> -static int smack_msg_queue_msgrcv(struct msg_queue *msq, struct msg_msg *msg,
-> +static int smack_msg_queue_msgrcv(struct kern_ipc_perm *msq, struct msg_msg *msg,
->  			struct task_struct *target, long type, int mode)
->  {
->  	return smk_curacc_msq(msq, MAY_READWRITE);
+>  	return smk_curacc_sem(sma, MAY_READWRITE);
+
++static int smack_sem_semop(struct kern_ipc_perm *isp, struct sembuf *sops,
+ 			   unsigned nsops, int alter)
+ {
+-	return smk_curacc_sem(sma, MAY_READWRITE);
++	return smk_curacc_sem(isp, MAY_READWRITE);
