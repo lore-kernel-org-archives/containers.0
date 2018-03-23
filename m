@@ -1,8 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [REVIEW][PATCH 10/11] ipc/msg: Fix msgctl(..., IPC_STAT,
+Subject: [REVIEW][PATCH 11/11] ipc/sem: Fix semctl(..., GETPID,
 	...) between pid namespaces
-Date: Fri, 23 Mar 2018 14:16:13 -0500
-Message-ID: <20180323191614.32489-10-ebiederm__17284.8517810509$1521832615$gmane$org@xmission.com>
+Date: Fri, 23 Mar 2018 14:16:14 -0500
+Message-ID: <20180323191614.32489-11-ebiederm@xmission.com>
 References: <87vadmobdw.fsf_-_@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,139 +22,142 @@ To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 Cc: esyr-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jannh-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, prakash.sangappa-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Nagarathnam Muthusamy <nagarathnam.muthusamy-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Today msg_lspid and msg_lrpid are remembered in the pid namespace of
-the creator and the processes that last send or received a sysvipc
-message.  If you have processes in multiple pid namespaces that is
-just wrong.  The process ids reported will not make the least bit of
-sense.
+Today the last process to update a semaphore is remembered and
+reported in the pid namespace of that process.  If there are processes
+in any other pid namespace querying that process id with GETPID the
+result will be unusable nonsense as it does not make any
+sense in your own pid namespace.
 
-This fix is slightly more susceptible to a performance problem than
-the related fix for System V shared memory.  By definition the pids
-are updated by msgsnd and msgrcv, the fast path of System V message
-queues.  The only concern over the previous implementation is the
-incrementing and decrementing of the pid reference count.  As that is
-the only difference and multiple updates by of the task_tgid by
-threads in the same process have been shown in af_unix sockets to
-create a cache line ping-pong between cpus of the same processor.
+Due to ipc_update_pid I don't think you will be able to get System V
+ipc semaphores into a troublesome cache line ping-pong.  Using struct
+pids from separate process are not a problem because they do not share
+a cache line.  Using struct pid from different threads of the same
+process are unlikely to be a problem as the reference count update
+can be avoided.
 
-In this case I don't expect cache lines holding pid reference counts
-to ping pong between cpus.  As senders and receivers update different
-pids there is a natural separation there.  Further if multiple threads
-of the same process either send or receive messages the pid will be
-updated to the same value and ipc_update_pid will avoid the reference
-count update.
+Further linux futexes are a much better tool for the job of mutual
+exclusion between processes than System V semaphores.  So I expect
+programs that  are performance limited by their interprocess mutual
+exclusion primitive will be using futexes.
 
-Which means in the common case I expect msg_lspid and msg_lrpid to
-remain constant, and reference counts not to be updated when messages
-are sent.
+So while it is possible that enhancing the storage of the last
+rocess of a System V semaphore from an integer to a struct pid
+will cause a performance regression because of the effect
+of frequently updating the pid reference count.  I don't expect
+that to happen in practice.
 
-In rare cases it may be possible to trigger the issue which was
-observed for af_unix sockets, but it will require multiple processes
-with multiple threads to be either sending or receiving messages.  It
-just does not feel likely that anyone would do that in practice.
-
-This change updates msgctl(..., IPC_STAT, ...) to return msg_lspid and
-msg_lrpid in the pid namespace of the process calling stat.
-
-This change also updates cat /proc/sysvipc/msg to return print msg_lspid
-and msg_lrpid in the pid namespace of the process that opened the proc
-file.
+This change updates semctl(..., GETPID, ...) to return the
+process id of the last process to update a semphore inthe
+pid namespace of the calling process.
 
 Fixes: b488893a390e ("pid namespaces: changes to show virtual ids to user")
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- ipc/msg.c | 23 +++++++++++++----------
- 1 file changed, 13 insertions(+), 10 deletions(-)
+ ipc/sem.c | 22 ++++++++++++----------
+ 1 file changed, 12 insertions(+), 10 deletions(-)
 
-diff --git a/ipc/msg.c b/ipc/msg.c
-index af5a963306c4..825ad585a6ff 100644
---- a/ipc/msg.c
-+++ b/ipc/msg.c
-@@ -52,8 +52,8 @@ struct msg_queue {
- 	unsigned long q_cbytes;		/* current number of bytes on queue */
- 	unsigned long q_qnum;		/* number of messages in queue */
- 	unsigned long q_qbytes;		/* max number of bytes on queue */
--	pid_t q_lspid;			/* pid of last msgsnd */
--	pid_t q_lrpid;			/* last receive pid */
-+	struct pid *q_lspid;		/* pid of last msgsnd */
-+	struct pid *q_lrpid;		/* last receive pid */
- 
- 	struct list_head q_messages;
- 	struct list_head q_receivers;
-@@ -154,7 +154,7 @@ static int newque(struct ipc_namespace *ns, struct ipc_params *params)
- 	msq->q_ctime = ktime_get_real_seconds();
- 	msq->q_cbytes = msq->q_qnum = 0;
- 	msq->q_qbytes = ns->msg_ctlmnb;
--	msq->q_lspid = msq->q_lrpid = 0;
-+	msq->q_lspid = msq->q_lrpid = NULL;
- 	INIT_LIST_HEAD(&msq->q_messages);
- 	INIT_LIST_HEAD(&msq->q_receivers);
- 	INIT_LIST_HEAD(&msq->q_senders);
-@@ -267,6 +267,8 @@ static void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
- 		free_msg(msg);
- 	}
- 	atomic_sub(msq->q_cbytes, &ns->msg_bytes);
-+	ipc_update_pid(&msq->q_lspid, NULL);
-+	ipc_update_pid(&msq->q_lrpid, NULL);
- 	ipc_rcu_putref(&msq->q_perm, msg_rcu_free);
- }
- 
-@@ -536,8 +538,8 @@ static int msgctl_stat(struct ipc_namespace *ns, int msqid,
- 	p->msg_cbytes = msq->q_cbytes;
- 	p->msg_qnum   = msq->q_qnum;
- 	p->msg_qbytes = msq->q_qbytes;
--	p->msg_lspid  = msq->q_lspid;
--	p->msg_lrpid  = msq->q_lrpid;
-+	p->msg_lspid  = pid_vnr(msq->q_lspid);
-+	p->msg_lrpid  = pid_vnr(msq->q_lrpid);
- 
- 	ipc_unlock_object(&msq->q_perm);
- 	rcu_read_unlock();
-@@ -741,7 +743,7 @@ static inline int pipelined_send(struct msg_queue *msq, struct msg_msg *msg,
- 				wake_q_add(wake_q, msr->r_tsk);
- 				WRITE_ONCE(msr->r_msg, ERR_PTR(-E2BIG));
- 			} else {
--				msq->q_lrpid = task_pid_vnr(msr->r_tsk);
-+				ipc_update_pid(&msq->q_lrpid, task_pid(msr->r_tsk));
- 				msq->q_rtime = get_seconds();
- 
- 				wake_q_add(wake_q, msr->r_tsk);
-@@ -842,7 +844,7 @@ static long do_msgsnd(int msqid, long mtype, void __user *mtext,
- 
- 	}
- 
--	msq->q_lspid = task_tgid_vnr(current);
-+	ipc_update_pid(&msq->q_lspid, task_tgid(current));
- 	msq->q_stime = get_seconds();
- 
- 	if (!pipelined_send(msq, msg, &wake_q)) {
-@@ -1060,7 +1062,7 @@ static long do_msgrcv(int msqid, void __user *buf, size_t bufsz, long msgtyp, in
- 			list_del(&msg->m_list);
- 			msq->q_qnum--;
- 			msq->q_rtime = get_seconds();
--			msq->q_lrpid = task_tgid_vnr(current);
-+			ipc_update_pid(&msq->q_lrpid, task_tgid(current));
- 			msq->q_cbytes -= msg->m_ts;
- 			atomic_sub(msg->m_ts, &ns->msg_bytes);
- 			atomic_dec(&ns->msg_hdrs);
-@@ -1202,6 +1204,7 @@ void msg_exit_ns(struct ipc_namespace *ns)
- #ifdef CONFIG_PROC_FS
- static int sysvipc_msg_proc_show(struct seq_file *s, void *it)
+diff --git a/ipc/sem.c b/ipc/sem.c
+index d661c491b0a5..47b263960524 100644
+--- a/ipc/sem.c
++++ b/ipc/sem.c
+@@ -98,7 +98,7 @@ struct sem {
+ 	 *  - semctl, via SETVAL and SETALL.
+ 	 *  - at task exit when performing undo adjustments (see exit_sem).
+ 	 */
+-	int	sempid;
++	struct pid *sempid;
+ 	spinlock_t	lock;	/* spinlock for fine-grained semtimedop */
+ 	struct list_head pending_alter; /* pending single-sop operations */
+ 					/* that alter the semaphore */
+@@ -128,7 +128,7 @@ struct sem_queue {
+ 	struct list_head	list;	 /* queue of pending operations */
+ 	struct task_struct	*sleeper; /* this process */
+ 	struct sem_undo		*undo;	 /* undo structure */
+-	int			pid;	 /* process id of requesting process */
++	struct pid		*pid;	 /* process id of requesting process */
+ 	int			status;	 /* completion status of operation */
+ 	struct sembuf		*sops;	 /* array of pending operations */
+ 	struct sembuf		*blocking; /* the operation that blocked */
+@@ -628,7 +628,8 @@ SYSCALL_DEFINE3(semget, key_t, key, int, nsems, int, semflg)
+  */
+ static int perform_atomic_semop_slow(struct sem_array *sma, struct sem_queue *q)
  {
-+	struct pid_namespace *pid_ns = ipc_seq_pid_ns(s);
- 	struct user_namespace *user_ns = seq_user_ns(s);
- 	struct kern_ipc_perm *ipcp = it;
- 	struct msg_queue *msq = container_of(ipcp, struct msg_queue, q_perm);
-@@ -1213,8 +1216,8 @@ static int sysvipc_msg_proc_show(struct seq_file *s, void *it)
- 		   msq->q_perm.mode,
- 		   msq->q_cbytes,
- 		   msq->q_qnum,
--		   msq->q_lspid,
--		   msq->q_lrpid,
-+		   pid_nr_ns(msq->q_lspid, pid_ns),
-+		   pid_nr_ns(msq->q_lrpid, pid_ns),
- 		   from_kuid_munged(user_ns, msq->q_perm.uid),
- 		   from_kgid_munged(user_ns, msq->q_perm.gid),
- 		   from_kuid_munged(user_ns, msq->q_perm.cuid),
+-	int result, sem_op, nsops, pid;
++	int result, sem_op, nsops;
++	struct pid *pid;
+ 	struct sembuf *sop;
+ 	struct sem *curr;
+ 	struct sembuf *sops;
+@@ -666,7 +667,7 @@ static int perform_atomic_semop_slow(struct sem_array *sma, struct sem_queue *q)
+ 	sop--;
+ 	pid = q->pid;
+ 	while (sop >= sops) {
+-		sma->sems[sop->sem_num].sempid = pid;
++		ipc_update_pid(&sma->sems[sop->sem_num].sempid, pid);
+ 		sop--;
+ 	}
+ 
+@@ -753,7 +754,7 @@ static int perform_atomic_semop(struct sem_array *sma, struct sem_queue *q)
+ 			un->semadj[sop->sem_num] = undo;
+ 		}
+ 		curr->semval += sem_op;
+-		curr->sempid = q->pid;
++		ipc_update_pid(&curr->sempid, q->pid);
+ 	}
+ 
+ 	return 0;
+@@ -1160,6 +1161,7 @@ static void freeary(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
+ 			unlink_queue(sma, q);
+ 			wake_up_sem_queue_prepare(q, -EIDRM, &wake_q);
+ 		}
++		ipc_update_pid(&sem->sempid, NULL);
+ 	}
+ 
+ 	/* Remove the semaphore set from the IDR */
+@@ -1352,7 +1354,7 @@ static int semctl_setval(struct ipc_namespace *ns, int semid, int semnum,
+ 		un->semadj[semnum] = 0;
+ 
+ 	curr->semval = val;
+-	curr->sempid = task_tgid_vnr(current);
++	ipc_update_pid(&curr->sempid, task_tgid(current));
+ 	sma->sem_ctime = ktime_get_real_seconds();
+ 	/* maybe some queued-up processes were waiting for this */
+ 	do_smart_update(sma, NULL, 0, 0, &wake_q);
+@@ -1473,7 +1475,7 @@ static int semctl_main(struct ipc_namespace *ns, int semid, int semnum,
+ 
+ 		for (i = 0; i < nsems; i++) {
+ 			sma->sems[i].semval = sem_io[i];
+-			sma->sems[i].sempid = task_tgid_vnr(current);
++			ipc_update_pid(&sma->sems[i].sempid, task_tgid(current));
+ 		}
+ 
+ 		ipc_assert_locked_object(&sma->sem_perm);
+@@ -1505,7 +1507,7 @@ static int semctl_main(struct ipc_namespace *ns, int semid, int semnum,
+ 		err = curr->semval;
+ 		goto out_unlock;
+ 	case GETPID:
+-		err = curr->sempid;
++		err = pid_vnr(curr->sempid);
+ 		goto out_unlock;
+ 	case GETNCNT:
+ 		err = count_semcnt(sma, semnum, 0);
+@@ -2024,7 +2026,7 @@ static long do_semtimedop(int semid, struct sembuf __user *tsops,
+ 	queue.sops = sops;
+ 	queue.nsops = nsops;
+ 	queue.undo = un;
+-	queue.pid = task_tgid_vnr(current);
++	queue.pid = task_tgid(current);
+ 	queue.alter = alter;
+ 	queue.dupsop = dupsop;
+ 
+@@ -2318,7 +2320,7 @@ void exit_sem(struct task_struct *tsk)
+ 					semaphore->semval = 0;
+ 				if (semaphore->semval > SEMVMX)
+ 					semaphore->semval = SEMVMX;
+-				semaphore->sempid = task_tgid_vnr(current);
++				ipc_update_pid(&semaphore->sempid, task_tgid(current));
+ 			}
+ 		}
+ 		/* maybe some queued-up processes were waiting for this */
 -- 
 2.14.1
