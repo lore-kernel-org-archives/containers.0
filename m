@@ -1,8 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [REVIEW][PATCH 08/11] ipc/util: Helpers for making the sysvipc
-	operations pid namespace aware
-Date: Fri, 23 Mar 2018 14:16:11 -0500
-Message-ID: <20180323191614.32489-8-ebiederm@xmission.com>
+Subject: [REVIEW][PATCH 09/11] ipc/shm: Fix shmctl(..., IPC_STAT,
+	...) between pid namespaces.
+Date: Fri, 23 Mar 2018 14:16:12 -0500
+Message-ID: <20180323191614.32489-9-ebiederm__27603.4153219827$1521832607$gmane$org@xmission.com>
 References: <87vadmobdw.fsf_-_@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,118 +22,126 @@ To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 Cc: esyr-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jannh-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, prakash.sangappa-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Nagarathnam Muthusamy <nagarathnam.muthusamy-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Capture the pid namespace when /proc/sysvipc/msg /proc/sysvipc/shm
-and /proc/sysvipc/sem are opened, and make it available through
-the new helper ipc_seq_pid_ns.
+Today shm_cpid and shm_lpid are remembered in the pid namespace of the
+creator and the processes that last touched a sysvipc shared memory
+segment.   If you have processes in multiple pid namespaces that
+is just wrong, and I don't know how this has been over-looked for
+so long.
 
-This makes it possible to report the pids in these files in the
-pid namespace of the opener of the files.
+As only creation and shared memory attach and shared memory detach
+update the pids I do not expect there to be a repeat of the issues
+when struct pid was attached to each af_unix skb, which in some
+notable cases cut the performance in half.  The problem was threads of
+the same process updating same struct pid from different cpus causing
+the cache line to be highly contended and bounce between cpus.
 
-Implement ipc_update_pid.  A simple impline helper that will only update
-a struct pid pointer if the new value does not equal the old value.  This
-removes the need for wordy code sequences like:
+As creation, attach, and detach are expected to be rare operations for
+sysvipc shared memory segments I do not expect that kind of cache line
+ping pong to cause probems.  In addition because the pid is at a fixed
+location in the structure instead of being dynamic on a skb, the
+reference count of the pid does not need to be updated on each
+operation if the pid is the same.  This ability to simply skip the pid
+reference count changes if the pid is unchanging further reduces the
+likelihood of the a cache line holding a pid reference count
+ping-ponging between cpus.
 
-	old = object->pid;
-	object->pid = new;
-	put_pid(old);
-
-and
-
-	old = object->pid;
-	if (old != new) {
-		object->pid = new;
-		put_pid(old);
-	}
-
-Allowing the following to be written instead:
-
-	ipc_update_pid(&object->pid, new);
-
-Which is easier to read and ensures that the pid reference count is
-not touched the old and the new values are the same.  Not touching
-the reference count in this case is important to help avoid issues
-like af_unix experienced, where multiple threads of the same
-process managed to bounce the struct pid between cpu cache lines,
-but updating the pids reference count.
-
+Fixes: b488893a390e ("pid namespaces: changes to show virtual ids to user")
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- ipc/util.c |  9 +++++++++
- ipc/util.h | 11 +++++++++++
- 2 files changed, 20 insertions(+)
+ ipc/shm.c | 25 +++++++++++++++----------
+ 1 file changed, 15 insertions(+), 10 deletions(-)
 
-diff --git a/ipc/util.c b/ipc/util.c
-index 4ed5a17dd06f..3783b7991cc7 100644
---- a/ipc/util.c
-+++ b/ipc/util.c
-@@ -747,9 +747,16 @@ int ipc_parse_version(int *cmd)
- #ifdef CONFIG_PROC_FS
- struct ipc_proc_iter {
- 	struct ipc_namespace *ns;
-+	struct pid_namespace *pid_ns;
- 	struct ipc_proc_iface *iface;
- };
+diff --git a/ipc/shm.c b/ipc/shm.c
+index 0565669ebe5c..932b7e411c6c 100644
+--- a/ipc/shm.c
++++ b/ipc/shm.c
+@@ -57,8 +57,8 @@ struct shmid_kernel /* private to the kernel */
+ 	time64_t		shm_atim;
+ 	time64_t		shm_dtim;
+ 	time64_t		shm_ctim;
+-	pid_t			shm_cprid;
+-	pid_t			shm_lprid;
++	struct pid		*shm_cprid;
++	struct pid		*shm_lprid;
+ 	struct user_struct	*mlock_user;
  
-+struct pid_namespace *ipc_seq_pid_ns(struct seq_file *s)
-+{
-+	struct ipc_proc_iter *iter = s->private;
-+	return iter->pid_ns;
-+}
-+
- /*
-  * This routine locks the ipc structure found at least at position pos.
-  */
-@@ -872,6 +879,7 @@ static int sysvipc_proc_open(struct inode *inode, struct file *file)
+ 	/* The task created the shm object.  NULL if the task is dead. */
+@@ -226,7 +226,7 @@ static int __shm_open(struct vm_area_struct *vma)
+ 		return PTR_ERR(shp);
  
- 	iter->iface = PDE_DATA(inode);
- 	iter->ns    = get_ipc_ns(current->nsproxy->ipc_ns);
-+	iter->pid_ns = get_pid_ns(task_active_pid_ns(current));
- 
+ 	shp->shm_atim = ktime_get_real_seconds();
+-	shp->shm_lprid = task_tgid_vnr(current);
++	ipc_update_pid(&shp->shm_lprid, task_tgid(current));
+ 	shp->shm_nattch++;
+ 	shm_unlock(shp);
  	return 0;
+@@ -267,6 +267,8 @@ static void shm_destroy(struct ipc_namespace *ns, struct shmid_kernel *shp)
+ 		user_shm_unlock(i_size_read(file_inode(shm_file)),
+ 				shp->mlock_user);
+ 	fput(shm_file);
++	ipc_update_pid(&shp->shm_cprid, NULL);
++	ipc_update_pid(&shp->shm_lprid, NULL);
+ 	ipc_rcu_putref(&shp->shm_perm, shm_rcu_free);
  }
-@@ -881,6 +889,7 @@ static int sysvipc_proc_release(struct inode *inode, struct file *file)
- 	struct seq_file *seq = file->private_data;
- 	struct ipc_proc_iter *iter = seq->private;
- 	put_ipc_ns(iter->ns);
-+	put_pid_ns(iter->pid_ns);
- 	return seq_release_private(inode, file);
+ 
+@@ -311,7 +313,7 @@ static void shm_close(struct vm_area_struct *vma)
+ 	if (WARN_ON_ONCE(IS_ERR(shp)))
+ 		goto done; /* no-op */
+ 
+-	shp->shm_lprid = task_tgid_vnr(current);
++	ipc_update_pid(&shp->shm_lprid, task_tgid(current));
+ 	shp->shm_dtim = ktime_get_real_seconds();
+ 	shp->shm_nattch--;
+ 	if (shm_may_destroy(ns, shp))
+@@ -614,8 +616,8 @@ static int newseg(struct ipc_namespace *ns, struct ipc_params *params)
+ 	if (IS_ERR(file))
+ 		goto no_file;
+ 
+-	shp->shm_cprid = task_tgid_vnr(current);
+-	shp->shm_lprid = 0;
++	shp->shm_cprid = get_pid(task_tgid(current));
++	shp->shm_lprid = NULL;
+ 	shp->shm_atim = shp->shm_dtim = 0;
+ 	shp->shm_ctim = ktime_get_real_seconds();
+ 	shp->shm_segsz = size;
+@@ -648,6 +650,8 @@ static int newseg(struct ipc_namespace *ns, struct ipc_params *params)
+ 		user_shm_unlock(size, shp->mlock_user);
+ 	fput(file);
+ no_file:
++	ipc_update_pid(&shp->shm_cprid, NULL);
++	ipc_update_pid(&shp->shm_lprid, NULL);
+ 	call_rcu(&shp->shm_perm.rcu, shm_rcu_free);
+ 	return error;
  }
+@@ -970,8 +974,8 @@ static int shmctl_stat(struct ipc_namespace *ns, int shmid,
+ 	tbuf->shm_atime	= shp->shm_atim;
+ 	tbuf->shm_dtime	= shp->shm_dtim;
+ 	tbuf->shm_ctime	= shp->shm_ctim;
+-	tbuf->shm_cpid	= shp->shm_cprid;
+-	tbuf->shm_lpid	= shp->shm_lprid;
++	tbuf->shm_cpid	= pid_vnr(shp->shm_cprid);
++	tbuf->shm_lpid	= pid_vnr(shp->shm_lprid);
+ 	tbuf->shm_nattch = shp->shm_nattch;
  
-diff --git a/ipc/util.h b/ipc/util.h
-index 959c10eb9cc1..e39ed9705f99 100644
---- a/ipc/util.h
-+++ b/ipc/util.h
-@@ -23,6 +23,7 @@ int msg_init(void);
- void shm_init(void);
- 
- struct ipc_namespace;
-+struct pid_namespace;
- 
- #ifdef CONFIG_POSIX_MQUEUE
- extern void mq_clear_sbinfo(struct ipc_namespace *ns);
-@@ -86,6 +87,7 @@ int ipc_init_ids(struct ipc_ids *);
+ 	ipc_unlock_object(&shp->shm_perm);
+@@ -1605,6 +1609,7 @@ SYSCALL_DEFINE1(shmdt, char __user *, shmaddr)
  #ifdef CONFIG_PROC_FS
- void __init ipc_init_proc_interface(const char *path, const char *header,
- 		int ids, int (*show)(struct seq_file *, void *));
-+struct pid_namespace *ipc_seq_pid_ns(struct seq_file *);
- #else
- #define ipc_init_proc_interface(path, header, ids, show) do {} while (0)
- #endif
-@@ -150,6 +152,15 @@ struct kern_ipc_perm *ipcctl_pre_down_nolock(struct ipc_namespace *ns,
- 					     struct ipc_ids *ids, int id, int cmd,
- 					     struct ipc64_perm *perm, int extra_perm);
- 
-+static inline void ipc_update_pid(struct pid **pos, struct pid *pid)
-+{
-+	struct pid *old = *pos;
-+	if (old != pid) {
-+		*pos = get_pid(pid);
-+		put_pid(old);
-+	}
-+}
-+
- #ifndef CONFIG_ARCH_WANT_IPC_PARSE_VERSION
- /* On IA-64, we always use the "64-bit version" of the IPC structures.  */
- # define ipc_parse_version(cmd)	IPC_64
+ static int sysvipc_shm_proc_show(struct seq_file *s, void *it)
+ {
++	struct pid_namespace *pid_ns = ipc_seq_pid_ns(s);
+ 	struct user_namespace *user_ns = seq_user_ns(s);
+ 	struct kern_ipc_perm *ipcp = it;
+ 	struct shmid_kernel *shp;
+@@ -1627,8 +1632,8 @@ static int sysvipc_shm_proc_show(struct seq_file *s, void *it)
+ 		   shp->shm_perm.id,
+ 		   shp->shm_perm.mode,
+ 		   shp->shm_segsz,
+-		   shp->shm_cprid,
+-		   shp->shm_lprid,
++		   pid_nr_ns(shp->shm_cprid, pid_ns),
++		   pid_nr_ns(shp->shm_lprid, pid_ns),
+ 		   shp->shm_nattch,
+ 		   from_kuid_munged(user_ns, shp->shm_perm.uid),
+ 		   from_kgid_munged(user_ns, shp->shm_perm.gid),
 -- 
 2.14.1
