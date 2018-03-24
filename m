@@ -1,16 +1,17 @@
-From: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-Subject: Re: [PATCH 1/2] fs: Extend mount_ns with support for a fast
-	namespace to vfsmount function
-Date: Fri, 23 Mar 2018 23:15:11 +0000
-Message-ID: <20180323231511.GK30522__20050.7253328853$1521846805$gmane$org@ZenIV.linux.org.uk>
-References: <20180323060457.sxgsd3j2obi33fyw@gordon>
-	<87k1u3ti9e.fsf@xmission.com> <87fu4qo4ff.fsf_-_@xmission.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [REVIEW][PATCH 03/11] msg/security: Pass kern_ipc_perm not
+	msg_queue into the msg_queue security hooks
+Date: Sat, 24 Mar 2018 00:37:19 -0500
+Message-ID: <87efkam3u8.fsf@xmission.com>
+References: <87vadmobdw.fsf_-_@xmission.com>
+	<20180323191614.32489-3-ebiederm@xmission.com>
+	<bb73b0ea-bcda-a996-8f14-48d9dd1b0940@schaufler-ca.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87fu4qo4ff.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <bb73b0ea-bcda-a996-8f14-48d9dd1b0940-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org> (Casey
+	Schaufler's message of "Fri, 23 Mar 2018 14:55:09 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,45 +21,42 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
+Cc: esyr-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jannh-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, prakash.sangappa-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Nagarathnam Muthusamy <nagarathnam.muthusamy-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Mar 23, 2018 at 04:41:40PM -0500, Eric W. Biederman wrote:
+Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org> writes:
 
->  struct dentry *mount_ns(struct file_system_type *fs_type,
->  	int flags, void *data, void *ns, struct user_namespace *user_ns,
-> +	struct vfsmount *(*ns_to_mnt)(void *ns),
->  	int (*fill_super)(struct super_block *, void *, int))
->  {
->  	struct super_block *sb;
-> -
-> +	int (*test_super)(struct super_block *, void *) = ns_test_super;
->  	/* Don't allow mounting unless the caller has CAP_SYS_ADMIN
->  	 * over the namespace.
->  	 */
->  	if (!(flags & SB_KERNMOUNT) && !ns_capable(user_ns, CAP_SYS_ADMIN))
->  		return ERR_PTR(-EPERM);
->  
-> -	sb = sget_userns(fs_type, ns_test_super, ns_set_super, flags,
-> -			 user_ns, ns);
-> +	if (ns_to_mnt) {
-> +		test_super = NULL;
-> +		if (!(flags & SB_KERNMOUNT)) {
-> +			struct vfsmount *m = ns_to_mnt(ns);
-> +			if (IS_ERR(m))
-> +				return ERR_CAST(m);
-> +			atomic_inc(&m->mnt_sb->s_active);
-> +			down_write(&m->mnt_sb->s_umount);
-> +			return dget(m->mnt_root);
+> On 3/23/2018 12:16 PM, Eric W. Biederman wrote:
+>> All of the implementations of security hooks that take msg_queue only
+>> access q_perm the struct kern_ipc_perm member.  This means the
+>> dependencies of the msg_queue security hooks can be simplified by
+>> passing the kern_ipc_perm member of msg_queue.
+>>
+>> Making this change will allow struct msg_queue to become private to
+>> ipc/msg.c.
+>>
+>> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>> ---
+>>  include/linux/lsm_hooks.h  | 12 ++++++------
+>>  include/linux/security.h   | 25 ++++++++++++-------------
+>>  ipc/msg.c                  | 18 ++++++++----------
+>>  security/security.c        | 12 ++++++------
+>>  security/selinux/hooks.c   | 36 ++++++++++++++++++------------------
+>>  security/smack/smack_lsm.c | 24 ++++++++++++------------
+>
+> Can I reference the comments I made in PATCH 01 of this set
+> regarding the Smack changes? The problem in all of your changes
+> is the same. You aren't preserving the naming conventions, and
+> you've left in some code that is just silly.
 
-This is completely wrong.  Look:
-	* SB_KERNMOUNT and !SB_KERNMOUNT cases are almost entirely isolated;
-completely so once that ns_to_mnt becomes unconditionally non-NULL.  
-	* in !SB_KERNMOUNT passing ns_to_mnt() is pointless - you might as
-well pass existing vfsmount (or ERR_PTR()) and use _that_.  fill_super()
-is not used at all in that case.
-	* is SB_KERNMOUNT ns_to_mnt serves only as a flag, eventually
-constant true.
+Being silly like that is actually important to make a sweeping patch
+like that boring and trivial to show that it is correct.  Anything
+that is not a rule based transformation is much more likely to hide
+a bug.  So for the push down of the type change I think it was the right
+way to go.
 
-So let's split it in two helpers and give them sane arguments.
+That said I am happy to add a clean up patch that makes the obvious
+cleanups and simplifications to smack_lsm.c.
+
+Eric
