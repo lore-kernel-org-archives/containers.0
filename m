@@ -1,7 +1,7 @@
-From: Davidlohr Bueso <dave-h16yJtLeMjHk1uMJSBkQmQ@public.gmane.org>
+From: Manfred Spraul <manfred-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>
 Subject: Re: [RFC][PATCH] ipc: Remove IPCMNI
-Date: Wed, 28 Mar 2018 19:14:09 -0700
-Message-ID: <20180329021409.gcjjrmviw2lckbfk@linux-n805>
+Date: Thu, 29 Mar 2018 10:47:45 +0200
+Message-ID: <3e201de2-bed2-6f7d-0783-700d095142e0__12551.1433733211$1522313171$gmane$org@colorfullife.com>
 References: <1520885744-1546-1-git-send-email-longman@redhat.com>
 	<1520885744-1546-5-git-send-email-longman@redhat.com>
 	<87woyfyh57.fsf@xmission.com>
@@ -12,12 +12,13 @@ References: <1520885744-1546-1-git-send-email-longman@redhat.com>
 	<047c6ed6-6581-b543-ba3d-cadc543d3d25@redhat.com>
 	<87h8ph6u67.fsf@xmission.com>
 	<7d3a1f93-f8e5-5325-f9a7-0079f7777b6f@redhat.com>
+	<20180329021409.gcjjrmviw2lckbfk@linux-n805>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <7d3a1f93-f8e5-5325-f9a7-0079f7777b6f-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20180329021409.gcjjrmviw2lckbfk@linux-n805>
+Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,204 +28,64 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Waiman Long <longman-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Manfred Spraul <manfred-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Matthew Wilcox <willy-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, "Luis R. Rodriguez" <mcgrof-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: Davidlohr Bueso <dave-h16yJtLeMjHk1uMJSBkQmQ@public.gmane.org>, Waiman Long <longman-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Matthew Wilcox <willy-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, "Luis R. Rodriguez" <mcgrof-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Cc'ing mtk, Manfred and linux-api.
-
-See below.
-
-On Thu, 15 Mar 2018, Waiman Long wrote:
-
->On 03/15/2018 03:00 PM, Eric W. Biederman wrote:
->> Waiman Long <longman-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
->>
->>> On 03/14/2018 08:49 PM, Eric W. Biederman wrote:
->>>> The define IPCMNI was originally the size of a statically sized array in
->>>> the kernel and that has long since been removed.  Therefore there is no
->>>> fundamental reason for IPCMNI.
->>>>
->>>> The only remaining use IPCMNI serves is as a convoluted way to format
->>>> the ipc id to userspace.  It does not appear that anything except for
->>>> the CHECKPOINT_RESTORE code even cares about this variety of assignment
->>>> and the CHECKPOINT_RESTORE code only cares about this weirdness because
->>>> it has to restore these peculiar ids.
->>>>
->>>> Therefore make the assignment of ipc ids match the description in
->>>> Advanced Programming in the Unix Environment and assign the next id
->>>> until INT_MAX is hit then loop around to the lower ids.
->>>>
->>>> This can be implemented trivially with the current code using idr_alloc_cyclic.
->>>>
->>>> To make it possible to keep checkpoint/restore working I have renamed
->>>> the sysctls from xxx_next_id to xxx_nextid.  That is enough change that
->>>> a smart CRIU implementation can see that what is exported has changed,
->>>> and act accordingly.  New kernels will be able to restore the old id's.
->>>>
->>>> This code still needs some real world testing to verify my assumptions.
->>>> And some work with the CRIU implementations to actually add the code
->>>> that deals with the new for of id assignment.
->>>>
->>>> Updates: 03f595668017 ("ipc: add sysctl to specify desired next object id")
->>>> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
->>>> ---
->>>>
->>>> Waiman please take a look at this and run it through some tests etc,
->>>> I am pretty certain something like this patch is all you need to do
->>>> to sort out ipc assignment.  Not messing with sysctls needed.
->>>>
->>>>  include/linux/ipc.h           |  2 --
->>>>  include/linux/ipc_namespace.h |  1 -
->>>>  ipc/ipc_sysctl.c              |  6 ++--
->>>>  ipc/namespace.c               | 11 ++----
->>>>  ipc/util.c                    | 80 ++++++++++---------------------------------
->>>>  ipc/util.h                    | 11 +-----
->>>>  6 files changed, 25 insertions(+), 86 deletions(-)
->>>>
->>>> diff --git a/include/linux/ipc.h b/include/linux/ipc.h
->>>> index 821b2f260992..6cc2df7f7ac9 100644
->>>> --- a/include/linux/ipc.h
->>>> +++ b/include/linux/ipc.h
->>>> @@ -8,8 +8,6 @@
->>>>  #include <uapi/linux/ipc.h>
->>>>  #include <linux/refcount.h>
->>>>
->>>> -#define IPCMNI 32768  /* <= MAX_INT limit for ipc arrays (including sysctl changes) */
->>>> -
->>>>  /* used by in-kernel data structures */
->>>>  struct kern_ipc_perm {
->>>>  	spinlock_t	lock;
->>>> diff --git a/include/linux/ipc_namespace.h b/include/linux/ipc_namespace.h
->>>> index b5630c8eb2f3..cab33b6a8236 100644
->>>> --- a/include/linux/ipc_namespace.h
->>>> +++ b/include/linux/ipc_namespace.h
->>>> @@ -15,7 +15,6 @@ struct user_namespace;
->>>>
->>>>  struct ipc_ids {
->>>>  	int in_use;
->>>> -	unsigned short seq;
->>>>  	bool tables_initialized;
->>>>  	struct rw_semaphore rwsem;
->>>>  	struct idr ipcs_idr;
->>>> diff --git a/ipc/ipc_sysctl.c b/ipc/ipc_sysctl.c
->>>> index 8ad93c29f511..a599963d58bf 100644
->>>> --- a/ipc/ipc_sysctl.c
->>>> +++ b/ipc/ipc_sysctl.c
->>>> @@ -176,7 +176,7 @@ static struct ctl_table ipc_kern_table[] = {
->>>>  	},
->>>>  #ifdef CONFIG_CHECKPOINT_RESTORE
->>>>  	{
->>>> -		.procname	= "sem_next_id",
->>>> +		.procname	= "sem_nextid",
->>>>  		.data		= &init_ipc_ns.ids[IPC_SEM_IDS].next_id,
->>>>  		.maxlen		= sizeof(init_ipc_ns.ids[IPC_SEM_IDS].next_id),
->>>>  		.mode		= 0644,
->>>> @@ -185,7 +185,7 @@ static struct ctl_table ipc_kern_table[] = {
->>>>  		.extra2		= &int_max,
->>>>  	},
->>>>  	{
->>>> -		.procname	= "msg_next_id",
->>>> +		.procname	= "msg_nextid",
->>>>  		.data		= &init_ipc_ns.ids[IPC_MSG_IDS].next_id,
->>>>  		.maxlen		= sizeof(init_ipc_ns.ids[IPC_MSG_IDS].next_id),
->>>>  		.mode		= 0644,
->>>> @@ -194,7 +194,7 @@ static struct ctl_table ipc_kern_table[] = {
->>>>  		.extra2		= &int_max,
->>>>  	},
->>>>  	{
->>>> -		.procname	= "shm_next_id",
->>>> +		.procname	= "shm_nextid",
->>>>  		.data		= &init_ipc_ns.ids[IPC_SHM_IDS].next_id,
->>>>  		.maxlen		= sizeof(init_ipc_ns.ids[IPC_SHM_IDS].next_id),
->>>>  		.mode		= 0644,
->>> So you are changing the names of existing sysctl parameters. Will it be
->>> better to add new sysctl to indicate that the rule has changed
->>> instead?
->> In practice I am replacing one set of sysctls with another, that work
->> very similarly but not quite the same.  As we can't keep the existing
->> semantics removing the old sysctl seems correct.  Likewise adding
->> a new sysctl with slightly changed semantics seems correct.
->>
->> This needs an accompanying patch to CRIU to see which sysctls are
->> available and to change it's behavior based upon that.  The practical
->> question is what makes it easiest not to confuse CRIU.
->>
->> Not having the sysctl should be something that CRIU detects today
->> and the old versions should fail gracefully.  But testing is needed.
->> Adding a new sysctl to say the behavior has changed and reusing the
->> old names won't have the same effect of disabling existing versions
->> of CRIU.
->
->That is fine as long as CRIU is the only user.
->
->>
->>> I don't know the history why the id management of SysV IPC was designed
->>> in such a convoluted way, but the patch does make sense to me.
->> I don't have the full history and we might wind up finding more as we
->> run this patch through it's paces.
->>
->> The earliest history I know is what I read in Advanced Programming in
->> the Unix Environment (which predates linux).  It described the ipc ids
->> as assigned from a counter that wraps.  I thought like my patch
->> implements. On closer reading it has a counter that increases each time
->> the slot is used, and then wraps.  Exactly like Linux before my patch.
->> *Grrr*
->>
->> The existing structure of the bifurcated is present in Linux 1.0.  At
->> that time SHMMNI was 256.  SHMMNI was the size of a static array of shm
->> segments.  The high 24 bits held a sequence number that was incremented
->> when a segment was removed at the time.  Presumably the upper bits were
->> incremented to avoid swiftly reusing the same shm ids.
->>
->> Hmm.  I took a quick look at FreeBSD10 and it has the exact same split
->> in the id.  So userspace may actually depend upon that split.
->
->Backward compatibility is the part that I am most worry about this
->patch. That is also the reason I asked why the ID is generated in such a
->way.
-
-I share these fears.
-
-Thanks,
-Davidlohr
-
->
->My original thinking was to have an extended mode where the IPCMNI
->becomes 8M from 32k. That will reduce the sequence number from 16 bits
->to 8 bits. The extended mode is enabled by adding, for example, a boot
->option. So this will be an opt-in feature instead of as a default.
->
->>
->> Which comes down to the fundamental question what depends upon what.
->> How do other operating systems like Solaris handle this?
->
->I don't know how Solaris handle this, but I know they support up to 2^24
->shm segments.
->
->>
->> Does any nix flavor support more that 16bits worth of shm segments?
->>
->> The API has been deprecated for the last 20 years and we are still
->> keeping it alive.  Sigh.
->>
->> Still there is fundamentally only one thing the kernel can do if we wish
->> to increase the number of shm segments.
->>
->> Please take my patch and test it out and see if you can find anything
->> that cares about the change. Except for needing id reuse to be
->> infrequent I can not imagine that there is anything that cares.
->>
->> It could very reasonably be argued that my when shmmni is < INT_MAX
->> my patch implements a version of the existing algorithm.  As we go
->> through all of the possible ids before we reuse any of them.
->>
->> Eric
->>
->Thanks for the patch, I am still thinking about what is the best way to
->handle this.
->
->Cheers,
->Longman
->
->
+SGVsbG8gdG9nZXRoZXIsCgpPbiAwMy8yOS8yMDE4IDA0OjE0IEFNLCBEYXZpZGxvaHIgQnVlc28g
+d3JvdGU6Cj4gQ2MnaW5nIG10aywgTWFuZnJlZCBhbmQgbGludXgtYXBpLgo+Cj4gU2VlIGJlbG93
+Lgo+Cj4gT24gVGh1LCAxNSBNYXIgMjAxOCwgV2FpbWFuIExvbmcgd3JvdGU6Cj4KPj4gT24gMDMv
+MTUvMjAxOCAwMzowMCBQTSwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4+PiBXYWltYW4gTG9u
+ZyA8bG9uZ21hbkByZWRoYXQuY29tPiB3cml0ZXM6Cj4+Pgo+Pj4+IE9uIDAzLzE0LzIwMTggMDg6
+NDkgUE0sIEVyaWMgVy4gQmllZGVybWFuIHdyb3RlOgo+Pj4+PiBUaGUgZGVmaW5lIElQQ01OSSB3
+YXMgb3JpZ2luYWxseSB0aGUgc2l6ZSBvZiBhIHN0YXRpY2FsbHkgc2l6ZWQgCj4+Pj4+IGFycmF5
+IGluCj4+Pj4+IHRoZSBrZXJuZWwgYW5kIHRoYXQgaGFzIGxvbmcgc2luY2UgYmVlbiByZW1vdmVk
+LiBUaGVyZWZvcmUgdGhlcmUgCj4+Pj4+IGlzIG5vCj4+Pj4+IGZ1bmRhbWVudGFsIHJlYXNvbiBm
+b3IgSVBDTU5JLgo+Pj4+Pgo+Pj4+PiBUaGUgb25seSByZW1haW5pbmcgdXNlIElQQ01OSSBzZXJ2
+ZXMgaXMgYXMgYSBjb252b2x1dGVkIHdheSB0byBmb3JtYXQKPj4+Pj4gdGhlIGlwYyBpZCB0byB1
+c2Vyc3BhY2UuwqAgSXQgZG9lcyBub3QgYXBwZWFyIHRoYXQgYW55dGhpbmcgZXhjZXB0IGZvcgo+
+Pj4+PiB0aGUgQ0hFQ0tQT0lOVF9SRVNUT1JFIGNvZGUgZXZlbiBjYXJlcyBhYm91dCB0aGlzIHZh
+cmlldHkgb2YgCj4+Pj4+IGFzc2lnbm1lbnQKPj4+Pj4gYW5kIHRoZSBDSEVDS1BPSU5UX1JFU1RP
+UkUgY29kZSBvbmx5IGNhcmVzIGFib3V0IHRoaXMgd2VpcmRuZXNzIAo+Pj4+PiBiZWNhdXNlCj4+
+Pj4+IGl0IGhhcyB0byByZXN0b3JlIHRoZXNlIHBlY3VsaWFyIGlkcy4KPj4+Pj4KTXkgYXNzdW1w
+dGlvbiBpcyB0aGF0IGlmIGFuIGFycmF5IGlzIHJlY3JlYXRlZCwgaXQgc2hvdWxkIGdldCBhIApk
+aWZmZXJlbnQgaWQuCiDCoMKgwqAgYT1zZW1nZXQoMTIzNCwsKTsKIMKgwqDCoCBzZW1jdGwoYSws
+SVBDX1JNSUQpOwogwqDCoMKgIGI9c2VtZ2V0KDEyMzQsLCk7Cm5vdyBhIT1iLgoKUmF0aW9uYWw6
+IHNlbW9wKCkgY2FsbHMgb25seSByZWZlciB0byB0aGUgYXJyYXkgYnkgdGhlIGlkLgpJZiB0aGVy
+ZSBpcyBhIHN0YWxlIHByb2Nlc3MgaW4gdGhlIHN5c3RlbSB0aGF0IHRyaWVzIHRvIGFjY2VzcyB0
+aGUgIm9sZCIgCmFycmF5IGFuZCB0aGUgbmV3IGFycmF5IGhhcyB0aGUgc2FtZSBpZCwgdGhlbiB0
+aGUgbG9ja2luZyBnZXRzIGNvcnJ1cHRlZC4KPj4+Pj4gVGhlcmVmb3JlIG1ha2UgdGhlIGFzc2ln
+bm1lbnQgb2YgaXBjIGlkcyBtYXRjaCB0aGUgZGVzY3JpcHRpb24gaW4KPj4+Pj4gQWR2YW5jZWQg
+UHJvZ3JhbW1pbmcgaW4gdGhlIFVuaXggRW52aXJvbm1lbnQgYW5kIGFzc2lnbiB0aGUgbmV4dCBp
+ZAo+Pj4+PiB1bnRpbCBJTlRfTUFYIGlzIGhpdCB0aGVuIGxvb3AgYXJvdW5kIHRvIHRoZSBsb3dl
+ciBpZHMuCj4+Pj4+Ck9rLCBzb3VuZHMgZ29vZC4KVGhhdCB3YXkgd2UgcmVhbGx5IGN5Y2xlIHRo
+cm91Z2ggSU5UX01BWCwgcmlnaHQgbm93IGE9PWIgd291bGQgaGFwcGVuIAphZnRlciAxMjhrIFJN
+SUQgY2FsbHMuCj4+Pj4+IFRoaXMgY2FuIGJlIGltcGxlbWVudGVkIHRyaXZpYWxseSB3aXRoIHRo
+ZSBjdXJyZW50IGNvZGUgdXNpbmcgCj4+Pj4+IGlkcl9hbGxvY19jeWNsaWMuCj4+Pj4+CklzIHRo
+ZXJlIGEgcGVyZm9ybWFuY2UgaW1wYWN0PwpSaWdodCBub3csIHRoZSBpZHIgdHJlZSBpcyBvbmx5
+IGxhcmdlIGlmIHRoZXJlIGFyZSBsb3RzIG9mIG9iamVjdHMuCldoYXQgaGFwcGVucyBpZiB3ZSBo
+YXZlIG9ubHkgMSBvYmplY3QsIHdpdGggaWQ9SU5UX01BWC0xPwoKc2Vtb3AoKSB0aGF0IGRvIG5v
+dCBzbGVlcCBhcmUgZmFpcmx5IGZhc3QuClRoZSBzYW1lIGFwcGxpZXMgZm9yIG1zZ3NuZC9tc2dy
+Y3YsIGlmIHRoZSBtZXNzYWdlIGlzIHNtYWxsIGVub3VnaC4KCkBEYXZpZGxvaHI6CkRvIHlvdSBr
+bm93IGlmIHRoZXJlIGFyZSBhcHBsaWNhdGlvbiB0aGF0IGZyZXF1ZW50bHkgY2FsbCBzZW1vcCgp
+IGFuZCBpdCAKZG9lc24ndCBoYXZlIHRvIHNsZWVwPwogRnJvbSB0aGUgc2NhbGFiaWxpdHkgdGhh
+dCB3YXMgcHVzaGVkIGludG8gdGhlIGtlcm5lbCwgSSBhc3N1bWUgdGhhdCAKdGhpcyBleGlzdHMu
+CgpJIGhhdmUgbXlzZWxmIG9ubHkgY2hlY2tlZCBwb3N0Z3Jlc3FsLCBhbmQgcG9zdGdyZXNxbCBh
+bHdheXMgc2xlZXBzLgooYW5kIHRoaXMgd2FzIGxvbmcgYWdvKQo+Pj4+PiBUbyBtYWtlIGl0IHBv
+c3NpYmxlIHRvIGtlZXAgY2hlY2twb2ludC9yZXN0b3JlIHdvcmtpbmcgSSBoYXZlIHJlbmFtZWQK
+Pj4+Pj4gdGhlIHN5c2N0bHMgZnJvbSB4eHhfbmV4dF9pZCB0byB4eHhfbmV4dGlkLsKgIFRoYXQg
+aXMgZW5vdWdoIGNoYW5nZSAKPj4+Pj4gdGhhdAo+Pj4+PiBhIHNtYXJ0IENSSVUgaW1wbGVtZW50
+YXRpb24gY2FuIHNlZSB0aGF0IHdoYXQgaXMgZXhwb3J0ZWQgaGFzIAo+Pj4+PiBjaGFuZ2VkLAo+
+Pj4+PiBhbmQgYWN0IGFjY29yZGluZ2x5LsKgIE5ldyBrZXJuZWxzIHdpbGwgYmUgYWJsZSB0byBy
+ZXN0b3JlIHRoZSBvbGQgCj4+Pj4+IGlkJ3MuCj4+Pj4+Cj4+Pj4+IFRoaXMgY29kZSBzdGlsbCBu
+ZWVkcyBzb21lIHJlYWwgd29ybGQgdGVzdGluZyB0byB2ZXJpZnkgbXkgCj4+Pj4+IGFzc3VtcHRp
+b25zLgo+Pj4+PiBBbmQgc29tZSB3b3JrIHdpdGggdGhlIENSSVUgaW1wbGVtZW50YXRpb25zIHRv
+IGFjdHVhbGx5IGFkZCB0aGUgY29kZQo+Pj4+PiB0aGF0IGRlYWxzIHdpdGggdGhlIG5ldyBmb3Ig
+b2YgaWQgYXNzaWdubWVudC4KPj4+Pj4KSXQgbWVhbnMgdGhhdCBhbGwgZXhpc3RpbmcgY2hlY2tw
+b2ludC9yZXN0b3JlIGFwcGxpY2F0aW9uIHdpbGwgbm90IHdvcmsgCndpdGggYSBuZXcga2VybmVs
+LgpFdmVyeW9uZSBtdXN0IGZpcnN0IHVwZGF0ZSB0aGUgY2hlY2twb2ludC9yZXN0b3JlIGFwcGxp
+Y2F0aW9uLCB0aGVuIAp1cGRhdGUgdGhlIGtlcm5lbC4KCklzIHRoaXMgYWNjZXB0YWJsZT8KCi0t
+CiDCoMKgwqAgTWFuZnJlZApfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZv
+dW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xp
+c3RpbmZvL2NvbnRhaW5lcnM=
