@@ -1,8 +1,12 @@
-From: Matthew Wilcox <willy-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [RFC][PATCH] ipc: Remove IPCMNI
-Date: Thu, 29 Mar 2018 12:32:54 -0700
-Message-ID: <20180329193254.GA22300__36952.677431009$1522351899$gmane$org@bombadil.infradead.org>
-References: <87o9jru3bf.fsf@xmission.com>
+Date: Thu, 29 Mar 2018 15:08:01 -0500
+Message-ID: <87y3ia3ase.fsf__22085.4489518844$1522354046$gmane$org@xmission.com>
+References: <1520885744-1546-1-git-send-email-longman@redhat.com>
+	<1520885744-1546-5-git-send-email-longman@redhat.com>
+	<87woyfyh57.fsf@xmission.com>
+	<5d4a858a-3136-5ef4-76fe-a61e7f2aed56@redhat.com>
+	<87o9jru3bf.fsf@xmission.com>
 	<935a7c50-50cc-2dc0-33bb-92c000d039bc@redhat.com>
 	<87woyego2u.fsf_-_@xmission.com>
 	<047c6ed6-6581-b543-ba3d-cadc543d3d25@redhat.com>
@@ -10,14 +14,12 @@ References: <87o9jru3bf.fsf@xmission.com>
 	<7d3a1f93-f8e5-5325-f9a7-0079f7777b6f@redhat.com>
 	<20180329021409.gcjjrmviw2lckbfk@linux-n805>
 	<3e201de2-bed2-6f7d-0783-700d095142e0@colorfullife.com>
-	<20180329105601.GA597@bombadil.infradead.org>
-	<05772f83-d680-aea1-b222-cef2430dcc83@colorfullife.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <05772f83-d680-aea1-b222-cef2430dcc83-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>
+In-Reply-To: <3e201de2-bed2-6f7d-0783-700d095142e0-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org> (Manfred
+	Spraul's message of "Thu, 29 Mar 2018 10:47:45 +0200")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -28,68 +30,73 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Manfred Spraul <manfred-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>
-Cc: Davidlohr Bueso <dave-h16yJtLeMjHk1uMJSBkQmQ@public.gmane.org>, Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "Luis R. Rodriguez" <mcgrof-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Waiman Long <longman-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Davidlohr Bueso <dave-h16yJtLeMjHk1uMJSBkQmQ@public.gmane.org>, Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Matthew Wilcox <willy-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, "Luis R. Rodriguez" <mcgrof-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Waiman Long <longman-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Mar 29, 2018 at 08:07:44PM +0200, Manfred Spraul wrote:
-> Hello Mathew,
-> 
-> On 03/29/2018 12:56 PM, Matthew Wilcox wrote:
-> > On Thu, Mar 29, 2018 at 10:47:45AM +0200, Manfred Spraul wrote:
-> > > > > > > > This can be implemented trivially with the current code
-> > > > > > > > using idr_alloc_cyclic.
-> > > Is there a performance impact?
-> > > Right now, the idr tree is only large if there are lots of objects.
-> > > What happens if we have only 1 object, with id=INT_MAX-1?
-> > The radix tree uses a branching factor of 64 entries (6 bits) per level.
-> > The maximum ID is 31 bits (positive signed 32-bit integer).  So the
-> > worst case for a single object is 6 pointer dereferences to find the
-> > object anywhere in the range (INT_MAX/2 - INT_MAX].  That will read 12
-> > cachelines.  If we were to constrain ourselves to a maximum of INT_MAX/2
-> > (30 bits), we'd reduce that to 5 pointer dereferences and 10 cachelines.
-> I'm concerned about the up to 6 branches.
-> But this is just guessing, we need a test with a realistic workload.
-
-Yes, and once there's a realistic workload, I'll be happy to prioritise
-adapting the data structure to reduce the pointer chases.
-
-FWIW, the plan is this:
-
-There's currently an unused 32-bit field (on 64-bit machines) which I plan
-to make the 'base' field.  So at each step down the tree, one subtracts
-that field from the index in order to decide which slot to look at next.
-Something like this:
-
-index=0x3000'0000
-(root) -> order=24
-          offset=48 -> order=18
-                       offset=0 -> order=12
-                                   offset=0 -> order=6
-                                               offset=0 -> order=0
-                                                           offset=0 -> data
-
-compresses to a single node:
-(root) -> order=0
-          base=3000'0000
-          offset=0 -> data
-
-If one has one entry at 5 and another entry at 0x3000'0000, the tree
-looks like this (three nodes):
-
-(root) -> order=24
-          base=0
-          offset=0  -> order=0
-                       base=0
-                       offset=5 -> entry1
-          offset=48 -> order=0
-                       base=0
-                       offset=0 -> entry2
-
-The trick is making sure that looking up offset 0x300'1000 returns NULL
-and not entry2, but I can make that work.
-
-An alternative is to go to something a little more libJudy and have
-mutating internal nodes in the tree that can represent this kind of
-situation in a more compact form.  There's a tradeoff to be made between
-simplicity of implementation, cost of insertion, cost of lookup and
-memory consumption.  I don't know where the right balance point is yet.
+TWFuZnJlZCBTcHJhdWwgPG1hbmZyZWRAY29sb3JmdWxsaWZlLmNvbT4gd3JpdGVzOgoKPj4+Pj4g
+T24gMDMvMTQvMjAxOCAwODo0OSBQTSwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4+Pj4+PiBU
+byBtYWtlIGl0IHBvc3NpYmxlIHRvIGtlZXAgY2hlY2twb2ludC9yZXN0b3JlIHdvcmtpbmcgSSBo
+YXZlIHJlbmFtZWQKPj4+Pj4+IHRoZSBzeXNjdGxzIGZyb20geHh4X25leHRfaWQgdG8geHh4X25l
+eHRpZC7CoCBUaGF0IGlzIGVub3VnaCBjaGFuZ2UgdGhhdAo+Pj4+Pj4gYSBzbWFydCBDUklVIGlt
+cGxlbWVudGF0aW9uIGNhbiBzZWUgdGhhdCB3aGF0IGlzIGV4cG9ydGVkIGhhcyBjaGFuZ2VkLAo+
+Pj4+Pj4gYW5kIGFjdCBhY2NvcmRpbmdseS7CoCBOZXcga2VybmVscyB3aWxsIGJlIGFibGUgdG8g
+cmVzdG9yZSB0aGUgb2xkIGlkJ3MuCj4+Pj4+Pgo+Pj4+Pj4gVGhpcyBjb2RlIHN0aWxsIG5lZWRz
+IHNvbWUgcmVhbCB3b3JsZCB0ZXN0aW5nIHRvIHZlcmlmeSBteSBhc3N1bXB0aW9ucy4KPj4+Pj4+
+IEFuZCBzb21lIHdvcmsgd2l0aCB0aGUgQ1JJVSBpbXBsZW1lbnRhdGlvbnMgdG8gYWN0dWFsbHkg
+YWRkIHRoZSBjb2RlCj4+Pj4+PiB0aGF0IGRlYWxzIHdpdGggdGhlIG5ldyBmb3Igb2YgaWQgYXNz
+aWdubWVudC4KPj4+Pj4+Cj4gSXQgbWVhbnMgdGhhdCBhbGwgZXhpc3RpbmcgY2hlY2twb2ludC9y
+ZXN0b3JlIGFwcGxpY2F0aW9uIHdpbGwgbm90IHdvcmsgd2l0aCBhCj4gbmV3IGtlcm5lbC4KPiBF
+dmVyeW9uZSBtdXN0IGZpcnN0IHVwZGF0ZSB0aGUgY2hlY2twb2ludC9yZXN0b3JlIGFwcGxpY2F0
+aW9uLCB0aGVuIHVwZGF0ZSB0aGUKPiBrZXJuZWwuCj4KPiBJcyB0aGlzIGFjY2VwdGFibGU/CgpU
+aGVyZSBpcyBubyBuZWFkLgoKSSBqdXN0IHJlcmVhZCB0aHJvdWdoIGhvdyBuZXh0X2lkIGlzIGlt
+cGxlbWVudGF0ZWQgaW4gaXBjL3V0aWwuYyBhbmQgSQpoYWQgYmVlbiByZWFkaW5nIGl0IHdyb25n
+LiAgVGhlcmUgaXMgbm8gbmVlZCB0byBjaGFuZ2UgdGhlIHN5c2N0bC4KCldoYXQgY3JpdSBuZWVk
+cyBpcyBhbiBpbnRlcmZhY2UgdGhhdCBzcGVjaWZpZXMgdGhlIG5leHRfaWQgdG8gYWxsb2NhdGUK
+Ym90aCB0aGUgaGlnaCBhbmQgdGhlIGxvdyBiaXRzIGFuZCB0aGF0IGlzIHdoYXQgdGhpcyB0aGUg
+c3lzY3RsCnByb3ZpZGVzLgoKVGhlIGltcGxlbWVuYXRpb24gY291bGQgdXNlIGEgbGl0dGxlIGNs
+ZWFudXAgc28gaXQgaXMgZWFzaWVyIHRvCnVuZGVyc3RhbmQgc29tZXRoaW5nIGxpa2UgdGhpcyBw
+ZXJoYXBzOgoKZGlmZiAtLWdpdCBhL2lwYy91dGlsLmMgYi9pcGMvdXRpbC5jCmluZGV4IDM3ODNi
+Nzk5MWNjNy4uMmQ0ZWM2ZTViNzBiIDEwMDY0NAotLS0gYS9pcGMvdXRpbC5jCisrKyBiL2lwYy91
+dGlsLmMKQEAgLTE5Miw0NiArMTkyLDMyIEBAIHN0YXRpYyBzdHJ1Y3Qga2Vybl9pcGNfcGVybSAq
+aXBjX2ZpbmRrZXkoc3RydWN0IGlwY19pZHMgKmlkcywga2V5X3Qga2V5KQogCXJldHVybiBOVUxM
+OwogfQogCi0jaWZkZWYgQ09ORklHX0NIRUNLUE9JTlRfUkVTVE9SRQotLyoKLSAqIFNwZWNpZnkg
+ZGVzaXJlZCBpZCBmb3IgbmV4dCBhbGxvY2F0ZWQgSVBDIG9iamVjdC4KLSAqLwotI2RlZmluZSBp
+cGNfaWRyX2FsbG9jKGlkcywgbmV3KQkJCQkJCVwKLQlpZHJfYWxsb2MoJihpZHMpLT5pcGNzX2lk
+ciwgKG5ldyksCQkJCVwKLQkJICAoaWRzKS0+bmV4dF9pZCA8IDAgPyAwIDogaXBjaWRfdG9faWR4
+KChpZHMpLT5uZXh0X2lkKSxcCi0JCSAgMCwgR0ZQX05PV0FJVCkKLQotc3RhdGljIGlubGluZSBp
+bnQgaXBjX2J1aWxkaWQoaW50IGlkLCBzdHJ1Y3QgaXBjX2lkcyAqaWRzLAotCQkJICAgICAgc3Ry
+dWN0IGtlcm5faXBjX3Blcm0gKm5ldykKLXsKLQlpZiAoaWRzLT5uZXh0X2lkIDwgMCkgeyAvKiBk
+ZWZhdWx0LCBiZWhhdmUgYXMgIUNIRUNLUE9JTlRfUkVTVE9SRSAqLwotCQluZXctPnNlcSA9IGlk
+cy0+c2VxKys7Ci0JCWlmIChpZHMtPnNlcSA+IElQQ0lEX1NFUV9NQVgpCi0JCQlpZHMtPnNlcSA9
+IDA7Ci0JfSBlbHNlIHsKLQkJbmV3LT5zZXEgPSBpcGNpZF90b19zZXF4KGlkcy0+bmV4dF9pZCk7
+Ci0JCWlkcy0+bmV4dF9pZCA9IC0xOwotCX0KIAotCXJldHVybiBTRVFfTVVMVElQTElFUiAqIG5l
+dy0+c2VxICsgaWQ7Ci19Ci0KLSNlbHNlCi0jZGVmaW5lIGlwY19pZHJfYWxsb2MoaWRzLCBuZXcp
+CQkJCQlcCi0JaWRyX2FsbG9jKCYoaWRzKS0+aXBjc19pZHIsIChuZXcpLCAwLCAwLCBHRlBfTk9X
+QUlUKQotCi1zdGF0aWMgaW5saW5lIGludCBpcGNfYnVpbGRpZChpbnQgaWQsIHN0cnVjdCBpcGNf
+aWRzICppZHMsCi0JCQkgICAgICBzdHJ1Y3Qga2Vybl9pcGNfcGVybSAqbmV3KQorc3RhdGljIGlu
+bGluZSBpbnQgaXBjX2lkcl9hbGxvYyhzdHJ1Y3QgaXBjX2lkcyAqaWRzLCBzdHJ1Y3Qga2Vybl9p
+cGNfcGVybSAqbmV3KQogeworCWludCBpZDsKKyNpZmRlZiBDT05GSUdfQ0hFQ0tQT0lOVF9SRVNU
+T1JFCisJaWYgKHVubGlrZWx5KG5ldy0+aWQgPj0gMCkpIHsKKwkJaW50IGlkeCA9IGlwY2lkX3Rv
+X2lkeChuZXctPmlkKTsKKwkJaWQgPSBpZHJfYWxsb2MoJmlkcy0+aXBjc19pZHIsIG5ldywgaWR4
+LCAwLCBHRlBfTk9XQUlUKTsKKwkJaWYgKGlkIDwgMCkKKwkJCXJldHVybiBpZDsKKwkJaWYgKGlk
+ICE9IGlkeCkgeworCQkJaWRyX3JlbW92ZSgmaWRzLT5pcGNzX2lkciwgaWQpOworCQkJcmV0dXJu
+IC1FQlVTWTsKKwkJfQorCQluZXctPnNlcSA9IGlwY2lkX3RvX3NlcXgobmV3LT5pZCk7CisJCXJl
+dHVybiBpZDsKKwl9CisjZW5kaWYKKwlpZCA9IGlkcl9hbGxvYygmaWRzLT5pcGNzX2lkciwgbmV3
+LCAwLCAwLCBHRlBfTk9XQUlUKTsKIAluZXctPnNlcSA9IGlkcy0+c2VxKys7CiAJaWYgKGlkcy0+
+c2VxID4gSVBDSURfU0VRX01BWCkKIAkJaWRzLT5zZXEgPSAwOwotCi0JcmV0dXJuIFNFUV9NVUxU
+SVBMSUVSICogbmV3LT5zZXEgKyBpZDsKKwluZXctPmlkID0gU0VRX01VTFRJUExJRVIgKiBuZXct
+PnNlcSArIGlkOworCXJldHVybiBpZDsKIH0KIAotI2VuZGlmIC8qIENPTkZJR19DSEVDS1BPSU5U
+X1JFU1RPUkUgKi8KLQogLyoqCiAgKiBpcGNfYWRkaWQgLSBhZGQgYW4gaXBjIGlkZW50aWZpZXIK
+ICAqIEBpZHM6IGlwYyBpZGVudGlmaWVyIHNldApAQCAtMjY5LDYgKzI1NSwxMCBAQCBpbnQgaXBj
+X2FkZGlkKHN0cnVjdCBpcGNfaWRzICppZHMsIHN0cnVjdCBrZXJuX2lwY19wZXJtICpuZXcsIGlu
+dCBsaW1pdCkKIAluZXctPmN1aWQgPSBuZXctPnVpZCA9IGV1aWQ7CiAJbmV3LT5naWQgPSBuZXct
+PmNnaWQgPSBlZ2lkOwogCisJbmV3LT5pZCA9IGlkcy0+bmV4dF9pZDsKKwlpZiAobmV3LT5pZCA+
+PSAwKQorCQlpZHMtPm5leHRfaWQgPSAtMTsKKwogCWlkID0gaXBjX2lkcl9hbGxvYyhpZHMsIG5l
+dyk7CiAJaWRyX3ByZWxvYWRfZW5kKCk7CiAKQEAgLTI5MCw4ICsyODAsNiBAQCBpbnQgaXBjX2Fk
+ZGlkKHN0cnVjdCBpcGNfaWRzICppZHMsIHN0cnVjdCBrZXJuX2lwY19wZXJtICpuZXcsIGludCBs
+aW1pdCkKIAlpZiAoaWQgPiBpZHMtPm1heF9pZCkKIAkJaWRzLT5tYXhfaWQgPSBpZDsKIAotCW5l
+dy0+aWQgPSBpcGNfYnVpbGRpZChpZCwgaWRzLCBuZXcpOwotCiAJcmV0dXJuIGlkOwogfQogCgpF
+cmljCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRh
+aW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcK
+aHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFp
+bmVycw==
