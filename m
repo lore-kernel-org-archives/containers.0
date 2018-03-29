@@ -1,24 +1,16 @@
-From: Manfred Spraul <manfred-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>
-Subject: Re: [RFC][PATCH] ipc: Remove IPCMNI
-Date: Thu, 29 Mar 2018 10:47:45 +0200
-Message-ID: <3e201de2-bed2-6f7d-0783-700d095142e0__12551.1433733211$1522313171$gmane$org@colorfullife.com>
-References: <1520885744-1546-1-git-send-email-longman@redhat.com>
-	<1520885744-1546-5-git-send-email-longman@redhat.com>
-	<87woyfyh57.fsf@xmission.com>
-	<5d4a858a-3136-5ef4-76fe-a61e7f2aed56@redhat.com>
-	<87o9jru3bf.fsf@xmission.com>
-	<935a7c50-50cc-2dc0-33bb-92c000d039bc@redhat.com>
-	<87woyego2u.fsf_-_@xmission.com>
-	<047c6ed6-6581-b543-ba3d-cadc543d3d25@redhat.com>
-	<87h8ph6u67.fsf@xmission.com>
-	<7d3a1f93-f8e5-5325-f9a7-0079f7777b6f@redhat.com>
-	<20180329021409.gcjjrmviw2lckbfk@linux-n805>
+From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC PATCH ghak32 V2 01/13] audit: add container id
+Date: Thu, 29 Mar 2018 05:01:32 -0400
+Message-ID: <20180329090132.r3qfomigkw3hbwbw@madcap2.tricolour.ca>
+References: <cover.1521179281.git.rgb@redhat.com>
+	<e284617ad667ad8f17958dd8babb87fe1b4d7205.1521179281.git.rgb@redhat.com>
+	<20180328123912.49b11c98@lwn.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; Format="flowed"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20180329021409.gcjjrmviw2lckbfk@linux-n805>
-Content-Language: en-US
+Content-Disposition: inline
+In-Reply-To: <20180328123912.49b11c98-T1hC0tSOHrs@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -28,64 +20,52 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Davidlohr Bueso <dave-h16yJtLeMjHk1uMJSBkQmQ@public.gmane.org>, Waiman Long <longman-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Matthew Wilcox <willy-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, "Luis R. Rodriguez" <mcgrof-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>
+Cc: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, madzcar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SGVsbG8gdG9nZXRoZXIsCgpPbiAwMy8yOS8yMDE4IDA0OjE0IEFNLCBEYXZpZGxvaHIgQnVlc28g
-d3JvdGU6Cj4gQ2MnaW5nIG10aywgTWFuZnJlZCBhbmQgbGludXgtYXBpLgo+Cj4gU2VlIGJlbG93
-Lgo+Cj4gT24gVGh1LCAxNSBNYXIgMjAxOCwgV2FpbWFuIExvbmcgd3JvdGU6Cj4KPj4gT24gMDMv
-MTUvMjAxOCAwMzowMCBQTSwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4+PiBXYWltYW4gTG9u
-ZyA8bG9uZ21hbkByZWRoYXQuY29tPiB3cml0ZXM6Cj4+Pgo+Pj4+IE9uIDAzLzE0LzIwMTggMDg6
-NDkgUE0sIEVyaWMgVy4gQmllZGVybWFuIHdyb3RlOgo+Pj4+PiBUaGUgZGVmaW5lIElQQ01OSSB3
-YXMgb3JpZ2luYWxseSB0aGUgc2l6ZSBvZiBhIHN0YXRpY2FsbHkgc2l6ZWQgCj4+Pj4+IGFycmF5
-IGluCj4+Pj4+IHRoZSBrZXJuZWwgYW5kIHRoYXQgaGFzIGxvbmcgc2luY2UgYmVlbiByZW1vdmVk
-LiBUaGVyZWZvcmUgdGhlcmUgCj4+Pj4+IGlzIG5vCj4+Pj4+IGZ1bmRhbWVudGFsIHJlYXNvbiBm
-b3IgSVBDTU5JLgo+Pj4+Pgo+Pj4+PiBUaGUgb25seSByZW1haW5pbmcgdXNlIElQQ01OSSBzZXJ2
-ZXMgaXMgYXMgYSBjb252b2x1dGVkIHdheSB0byBmb3JtYXQKPj4+Pj4gdGhlIGlwYyBpZCB0byB1
-c2Vyc3BhY2UuwqAgSXQgZG9lcyBub3QgYXBwZWFyIHRoYXQgYW55dGhpbmcgZXhjZXB0IGZvcgo+
-Pj4+PiB0aGUgQ0hFQ0tQT0lOVF9SRVNUT1JFIGNvZGUgZXZlbiBjYXJlcyBhYm91dCB0aGlzIHZh
-cmlldHkgb2YgCj4+Pj4+IGFzc2lnbm1lbnQKPj4+Pj4gYW5kIHRoZSBDSEVDS1BPSU5UX1JFU1RP
-UkUgY29kZSBvbmx5IGNhcmVzIGFib3V0IHRoaXMgd2VpcmRuZXNzIAo+Pj4+PiBiZWNhdXNlCj4+
-Pj4+IGl0IGhhcyB0byByZXN0b3JlIHRoZXNlIHBlY3VsaWFyIGlkcy4KPj4+Pj4KTXkgYXNzdW1w
-dGlvbiBpcyB0aGF0IGlmIGFuIGFycmF5IGlzIHJlY3JlYXRlZCwgaXQgc2hvdWxkIGdldCBhIApk
-aWZmZXJlbnQgaWQuCiDCoMKgwqAgYT1zZW1nZXQoMTIzNCwsKTsKIMKgwqDCoCBzZW1jdGwoYSws
-SVBDX1JNSUQpOwogwqDCoMKgIGI9c2VtZ2V0KDEyMzQsLCk7Cm5vdyBhIT1iLgoKUmF0aW9uYWw6
-IHNlbW9wKCkgY2FsbHMgb25seSByZWZlciB0byB0aGUgYXJyYXkgYnkgdGhlIGlkLgpJZiB0aGVy
-ZSBpcyBhIHN0YWxlIHByb2Nlc3MgaW4gdGhlIHN5c3RlbSB0aGF0IHRyaWVzIHRvIGFjY2VzcyB0
-aGUgIm9sZCIgCmFycmF5IGFuZCB0aGUgbmV3IGFycmF5IGhhcyB0aGUgc2FtZSBpZCwgdGhlbiB0
-aGUgbG9ja2luZyBnZXRzIGNvcnJ1cHRlZC4KPj4+Pj4gVGhlcmVmb3JlIG1ha2UgdGhlIGFzc2ln
-bm1lbnQgb2YgaXBjIGlkcyBtYXRjaCB0aGUgZGVzY3JpcHRpb24gaW4KPj4+Pj4gQWR2YW5jZWQg
-UHJvZ3JhbW1pbmcgaW4gdGhlIFVuaXggRW52aXJvbm1lbnQgYW5kIGFzc2lnbiB0aGUgbmV4dCBp
-ZAo+Pj4+PiB1bnRpbCBJTlRfTUFYIGlzIGhpdCB0aGVuIGxvb3AgYXJvdW5kIHRvIHRoZSBsb3dl
-ciBpZHMuCj4+Pj4+Ck9rLCBzb3VuZHMgZ29vZC4KVGhhdCB3YXkgd2UgcmVhbGx5IGN5Y2xlIHRo
-cm91Z2ggSU5UX01BWCwgcmlnaHQgbm93IGE9PWIgd291bGQgaGFwcGVuIAphZnRlciAxMjhrIFJN
-SUQgY2FsbHMuCj4+Pj4+IFRoaXMgY2FuIGJlIGltcGxlbWVudGVkIHRyaXZpYWxseSB3aXRoIHRo
-ZSBjdXJyZW50IGNvZGUgdXNpbmcgCj4+Pj4+IGlkcl9hbGxvY19jeWNsaWMuCj4+Pj4+CklzIHRo
-ZXJlIGEgcGVyZm9ybWFuY2UgaW1wYWN0PwpSaWdodCBub3csIHRoZSBpZHIgdHJlZSBpcyBvbmx5
-IGxhcmdlIGlmIHRoZXJlIGFyZSBsb3RzIG9mIG9iamVjdHMuCldoYXQgaGFwcGVucyBpZiB3ZSBo
-YXZlIG9ubHkgMSBvYmplY3QsIHdpdGggaWQ9SU5UX01BWC0xPwoKc2Vtb3AoKSB0aGF0IGRvIG5v
-dCBzbGVlcCBhcmUgZmFpcmx5IGZhc3QuClRoZSBzYW1lIGFwcGxpZXMgZm9yIG1zZ3NuZC9tc2dy
-Y3YsIGlmIHRoZSBtZXNzYWdlIGlzIHNtYWxsIGVub3VnaC4KCkBEYXZpZGxvaHI6CkRvIHlvdSBr
-bm93IGlmIHRoZXJlIGFyZSBhcHBsaWNhdGlvbiB0aGF0IGZyZXF1ZW50bHkgY2FsbCBzZW1vcCgp
-IGFuZCBpdCAKZG9lc24ndCBoYXZlIHRvIHNsZWVwPwogRnJvbSB0aGUgc2NhbGFiaWxpdHkgdGhh
-dCB3YXMgcHVzaGVkIGludG8gdGhlIGtlcm5lbCwgSSBhc3N1bWUgdGhhdCAKdGhpcyBleGlzdHMu
-CgpJIGhhdmUgbXlzZWxmIG9ubHkgY2hlY2tlZCBwb3N0Z3Jlc3FsLCBhbmQgcG9zdGdyZXNxbCBh
-bHdheXMgc2xlZXBzLgooYW5kIHRoaXMgd2FzIGxvbmcgYWdvKQo+Pj4+PiBUbyBtYWtlIGl0IHBv
-c3NpYmxlIHRvIGtlZXAgY2hlY2twb2ludC9yZXN0b3JlIHdvcmtpbmcgSSBoYXZlIHJlbmFtZWQK
-Pj4+Pj4gdGhlIHN5c2N0bHMgZnJvbSB4eHhfbmV4dF9pZCB0byB4eHhfbmV4dGlkLsKgIFRoYXQg
-aXMgZW5vdWdoIGNoYW5nZSAKPj4+Pj4gdGhhdAo+Pj4+PiBhIHNtYXJ0IENSSVUgaW1wbGVtZW50
-YXRpb24gY2FuIHNlZSB0aGF0IHdoYXQgaXMgZXhwb3J0ZWQgaGFzIAo+Pj4+PiBjaGFuZ2VkLAo+
-Pj4+PiBhbmQgYWN0IGFjY29yZGluZ2x5LsKgIE5ldyBrZXJuZWxzIHdpbGwgYmUgYWJsZSB0byBy
-ZXN0b3JlIHRoZSBvbGQgCj4+Pj4+IGlkJ3MuCj4+Pj4+Cj4+Pj4+IFRoaXMgY29kZSBzdGlsbCBu
-ZWVkcyBzb21lIHJlYWwgd29ybGQgdGVzdGluZyB0byB2ZXJpZnkgbXkgCj4+Pj4+IGFzc3VtcHRp
-b25zLgo+Pj4+PiBBbmQgc29tZSB3b3JrIHdpdGggdGhlIENSSVUgaW1wbGVtZW50YXRpb25zIHRv
-IGFjdHVhbGx5IGFkZCB0aGUgY29kZQo+Pj4+PiB0aGF0IGRlYWxzIHdpdGggdGhlIG5ldyBmb3Ig
-b2YgaWQgYXNzaWdubWVudC4KPj4+Pj4KSXQgbWVhbnMgdGhhdCBhbGwgZXhpc3RpbmcgY2hlY2tw
-b2ludC9yZXN0b3JlIGFwcGxpY2F0aW9uIHdpbGwgbm90IHdvcmsgCndpdGggYSBuZXcga2VybmVs
-LgpFdmVyeW9uZSBtdXN0IGZpcnN0IHVwZGF0ZSB0aGUgY2hlY2twb2ludC9yZXN0b3JlIGFwcGxp
-Y2F0aW9uLCB0aGVuIAp1cGRhdGUgdGhlIGtlcm5lbC4KCklzIHRoaXMgYWNjZXB0YWJsZT8KCi0t
-CiDCoMKgwqAgTWFuZnJlZApfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZv
-dW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xp
-c3RpbmZvL2NvbnRhaW5lcnM=
+On 2018-03-28 12:39, Jonathan Corbet wrote:
+> On Fri, 16 Mar 2018 05:00:28 -0400
+> Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> > Implement the proc fs write to set the audit container ID of a process,
+> > emitting an AUDIT_CONTAINER record to document the event.
+> 
+> A little detail, but still...
+
+I am understanding that you would prefer more context (as opposed to
+operational detail) in the description, laying out the use case for this
+patch(set)?
+
+> > +static int audit_set_containerid_perm(struct task_struct *task, u64 containerid)
+> > +{
+> > +	struct task_struct *parent;
+> > +	u64 pcontainerid, ccontainerid;
+> > +
+> > +	/* Don't allow to set our own containerid */
+> > +	if (current == task)
+> > +		return -EPERM;
+> > +	/* Don't allow the containerid to be unset */
+> > +	if (!cid_valid(containerid))
+> > +		return -EINVAL;
+> 
+> I went looking for cid_valid(), but it turns out you don't add it until
+> patch 5.  That, I expect, will not be good for bisectability (or patch
+> review).
+
+Nice catch, thanks Jon.  That is very likely another victim of a git
+rebase to re-order afterthoughts in the right place.  I'll need to be
+more careful of that class of bug, rethink my workflow, or script builds
+to verify each commit is compilable.
+
+> Thanks,
+> 
+> jon
+
+- RGB
+
+--
+Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Sr. S/W Engineer, Kernel Security, Base Operating Systems
+Remote, Ottawa, Red Hat Canada
+IRC: rgb, SunRaycer
+Voice: +1.647.777.2635, Internal: (81) 32635
