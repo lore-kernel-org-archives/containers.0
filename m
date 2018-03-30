@@ -1,25 +1,18 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC][PATCH] ipc: Remove IPCMNI
-Date: Thu, 29 Mar 2018 15:08:01 -0500
-Message-ID: <87y3ia3ase.fsf__22085.4489518844$1522354046$gmane$org@xmission.com>
-References: <1520885744-1546-1-git-send-email-longman@redhat.com>
-	<1520885744-1546-5-git-send-email-longman@redhat.com>
-	<87woyfyh57.fsf@xmission.com>
-	<5d4a858a-3136-5ef4-76fe-a61e7f2aed56@redhat.com>
-	<87o9jru3bf.fsf@xmission.com>
-	<935a7c50-50cc-2dc0-33bb-92c000d039bc@redhat.com>
-	<87woyego2u.fsf_-_@xmission.com>
-	<047c6ed6-6581-b543-ba3d-cadc543d3d25@redhat.com>
-	<87h8ph6u67.fsf@xmission.com>
-	<7d3a1f93-f8e5-5325-f9a7-0079f7777b6f@redhat.com>
-	<20180329021409.gcjjrmviw2lckbfk@linux-n805>
-	<3e201de2-bed2-6f7d-0783-700d095142e0@colorfullife.com>
+From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC PATCH ghak32 V2 01/13] audit: add container id
+Date: Fri, 30 Mar 2018 01:06:39 -0400
+Message-ID: <20180330050639.tjptq3fz35hcw76s__49575.8657380522$1522386629$gmane$org@madcap2.tricolour.ca>
+References: <cover.1521179281.git.rgb@redhat.com>
+	<e284617ad667ad8f17958dd8babb87fe1b4d7205.1521179281.git.rgb@redhat.com>
+	<20180328123912.49b11c98@lwn.net>
+	<20180329090132.r3qfomigkw3hbwbw@madcap2.tricolour.ca>
+	<20180329070327.7f4c92c8@lwn.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <3e201de2-bed2-6f7d-0783-700d095142e0-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org> (Manfred
-	Spraul's message of "Thu, 29 Mar 2018 10:47:45 +0200")
+Content-Disposition: inline
+In-Reply-To: <20180329070327.7f4c92c8-T1hC0tSOHrs@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -29,74 +22,32 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Manfred Spraul <manfred-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>
-Cc: Davidlohr Bueso <dave-h16yJtLeMjHk1uMJSBkQmQ@public.gmane.org>, Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Matthew Wilcox <willy-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, "Luis R. Rodriguez" <mcgrof-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Waiman Long <longman-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-TWFuZnJlZCBTcHJhdWwgPG1hbmZyZWRAY29sb3JmdWxsaWZlLmNvbT4gd3JpdGVzOgoKPj4+Pj4g
-T24gMDMvMTQvMjAxOCAwODo0OSBQTSwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4+Pj4+PiBU
-byBtYWtlIGl0IHBvc3NpYmxlIHRvIGtlZXAgY2hlY2twb2ludC9yZXN0b3JlIHdvcmtpbmcgSSBo
-YXZlIHJlbmFtZWQKPj4+Pj4+IHRoZSBzeXNjdGxzIGZyb20geHh4X25leHRfaWQgdG8geHh4X25l
-eHRpZC7CoCBUaGF0IGlzIGVub3VnaCBjaGFuZ2UgdGhhdAo+Pj4+Pj4gYSBzbWFydCBDUklVIGlt
-cGxlbWVudGF0aW9uIGNhbiBzZWUgdGhhdCB3aGF0IGlzIGV4cG9ydGVkIGhhcyBjaGFuZ2VkLAo+
-Pj4+Pj4gYW5kIGFjdCBhY2NvcmRpbmdseS7CoCBOZXcga2VybmVscyB3aWxsIGJlIGFibGUgdG8g
-cmVzdG9yZSB0aGUgb2xkIGlkJ3MuCj4+Pj4+Pgo+Pj4+Pj4gVGhpcyBjb2RlIHN0aWxsIG5lZWRz
-IHNvbWUgcmVhbCB3b3JsZCB0ZXN0aW5nIHRvIHZlcmlmeSBteSBhc3N1bXB0aW9ucy4KPj4+Pj4+
-IEFuZCBzb21lIHdvcmsgd2l0aCB0aGUgQ1JJVSBpbXBsZW1lbnRhdGlvbnMgdG8gYWN0dWFsbHkg
-YWRkIHRoZSBjb2RlCj4+Pj4+PiB0aGF0IGRlYWxzIHdpdGggdGhlIG5ldyBmb3Igb2YgaWQgYXNz
-aWdubWVudC4KPj4+Pj4+Cj4gSXQgbWVhbnMgdGhhdCBhbGwgZXhpc3RpbmcgY2hlY2twb2ludC9y
-ZXN0b3JlIGFwcGxpY2F0aW9uIHdpbGwgbm90IHdvcmsgd2l0aCBhCj4gbmV3IGtlcm5lbC4KPiBF
-dmVyeW9uZSBtdXN0IGZpcnN0IHVwZGF0ZSB0aGUgY2hlY2twb2ludC9yZXN0b3JlIGFwcGxpY2F0
-aW9uLCB0aGVuIHVwZGF0ZSB0aGUKPiBrZXJuZWwuCj4KPiBJcyB0aGlzIGFjY2VwdGFibGU/CgpU
-aGVyZSBpcyBubyBuZWFkLgoKSSBqdXN0IHJlcmVhZCB0aHJvdWdoIGhvdyBuZXh0X2lkIGlzIGlt
-cGxlbWVudGF0ZWQgaW4gaXBjL3V0aWwuYyBhbmQgSQpoYWQgYmVlbiByZWFkaW5nIGl0IHdyb25n
-LiAgVGhlcmUgaXMgbm8gbmVlZCB0byBjaGFuZ2UgdGhlIHN5c2N0bC4KCldoYXQgY3JpdSBuZWVk
-cyBpcyBhbiBpbnRlcmZhY2UgdGhhdCBzcGVjaWZpZXMgdGhlIG5leHRfaWQgdG8gYWxsb2NhdGUK
-Ym90aCB0aGUgaGlnaCBhbmQgdGhlIGxvdyBiaXRzIGFuZCB0aGF0IGlzIHdoYXQgdGhpcyB0aGUg
-c3lzY3RsCnByb3ZpZGVzLgoKVGhlIGltcGxlbWVuYXRpb24gY291bGQgdXNlIGEgbGl0dGxlIGNs
-ZWFudXAgc28gaXQgaXMgZWFzaWVyIHRvCnVuZGVyc3RhbmQgc29tZXRoaW5nIGxpa2UgdGhpcyBw
-ZXJoYXBzOgoKZGlmZiAtLWdpdCBhL2lwYy91dGlsLmMgYi9pcGMvdXRpbC5jCmluZGV4IDM3ODNi
-Nzk5MWNjNy4uMmQ0ZWM2ZTViNzBiIDEwMDY0NAotLS0gYS9pcGMvdXRpbC5jCisrKyBiL2lwYy91
-dGlsLmMKQEAgLTE5Miw0NiArMTkyLDMyIEBAIHN0YXRpYyBzdHJ1Y3Qga2Vybl9pcGNfcGVybSAq
-aXBjX2ZpbmRrZXkoc3RydWN0IGlwY19pZHMgKmlkcywga2V5X3Qga2V5KQogCXJldHVybiBOVUxM
-OwogfQogCi0jaWZkZWYgQ09ORklHX0NIRUNLUE9JTlRfUkVTVE9SRQotLyoKLSAqIFNwZWNpZnkg
-ZGVzaXJlZCBpZCBmb3IgbmV4dCBhbGxvY2F0ZWQgSVBDIG9iamVjdC4KLSAqLwotI2RlZmluZSBp
-cGNfaWRyX2FsbG9jKGlkcywgbmV3KQkJCQkJCVwKLQlpZHJfYWxsb2MoJihpZHMpLT5pcGNzX2lk
-ciwgKG5ldyksCQkJCVwKLQkJICAoaWRzKS0+bmV4dF9pZCA8IDAgPyAwIDogaXBjaWRfdG9faWR4
-KChpZHMpLT5uZXh0X2lkKSxcCi0JCSAgMCwgR0ZQX05PV0FJVCkKLQotc3RhdGljIGlubGluZSBp
-bnQgaXBjX2J1aWxkaWQoaW50IGlkLCBzdHJ1Y3QgaXBjX2lkcyAqaWRzLAotCQkJICAgICAgc3Ry
-dWN0IGtlcm5faXBjX3Blcm0gKm5ldykKLXsKLQlpZiAoaWRzLT5uZXh0X2lkIDwgMCkgeyAvKiBk
-ZWZhdWx0LCBiZWhhdmUgYXMgIUNIRUNLUE9JTlRfUkVTVE9SRSAqLwotCQluZXctPnNlcSA9IGlk
-cy0+c2VxKys7Ci0JCWlmIChpZHMtPnNlcSA+IElQQ0lEX1NFUV9NQVgpCi0JCQlpZHMtPnNlcSA9
-IDA7Ci0JfSBlbHNlIHsKLQkJbmV3LT5zZXEgPSBpcGNpZF90b19zZXF4KGlkcy0+bmV4dF9pZCk7
-Ci0JCWlkcy0+bmV4dF9pZCA9IC0xOwotCX0KIAotCXJldHVybiBTRVFfTVVMVElQTElFUiAqIG5l
-dy0+c2VxICsgaWQ7Ci19Ci0KLSNlbHNlCi0jZGVmaW5lIGlwY19pZHJfYWxsb2MoaWRzLCBuZXcp
-CQkJCQlcCi0JaWRyX2FsbG9jKCYoaWRzKS0+aXBjc19pZHIsIChuZXcpLCAwLCAwLCBHRlBfTk9X
-QUlUKQotCi1zdGF0aWMgaW5saW5lIGludCBpcGNfYnVpbGRpZChpbnQgaWQsIHN0cnVjdCBpcGNf
-aWRzICppZHMsCi0JCQkgICAgICBzdHJ1Y3Qga2Vybl9pcGNfcGVybSAqbmV3KQorc3RhdGljIGlu
-bGluZSBpbnQgaXBjX2lkcl9hbGxvYyhzdHJ1Y3QgaXBjX2lkcyAqaWRzLCBzdHJ1Y3Qga2Vybl9p
-cGNfcGVybSAqbmV3KQogeworCWludCBpZDsKKyNpZmRlZiBDT05GSUdfQ0hFQ0tQT0lOVF9SRVNU
-T1JFCisJaWYgKHVubGlrZWx5KG5ldy0+aWQgPj0gMCkpIHsKKwkJaW50IGlkeCA9IGlwY2lkX3Rv
-X2lkeChuZXctPmlkKTsKKwkJaWQgPSBpZHJfYWxsb2MoJmlkcy0+aXBjc19pZHIsIG5ldywgaWR4
-LCAwLCBHRlBfTk9XQUlUKTsKKwkJaWYgKGlkIDwgMCkKKwkJCXJldHVybiBpZDsKKwkJaWYgKGlk
-ICE9IGlkeCkgeworCQkJaWRyX3JlbW92ZSgmaWRzLT5pcGNzX2lkciwgaWQpOworCQkJcmV0dXJu
-IC1FQlVTWTsKKwkJfQorCQluZXctPnNlcSA9IGlwY2lkX3RvX3NlcXgobmV3LT5pZCk7CisJCXJl
-dHVybiBpZDsKKwl9CisjZW5kaWYKKwlpZCA9IGlkcl9hbGxvYygmaWRzLT5pcGNzX2lkciwgbmV3
-LCAwLCAwLCBHRlBfTk9XQUlUKTsKIAluZXctPnNlcSA9IGlkcy0+c2VxKys7CiAJaWYgKGlkcy0+
-c2VxID4gSVBDSURfU0VRX01BWCkKIAkJaWRzLT5zZXEgPSAwOwotCi0JcmV0dXJuIFNFUV9NVUxU
-SVBMSUVSICogbmV3LT5zZXEgKyBpZDsKKwluZXctPmlkID0gU0VRX01VTFRJUExJRVIgKiBuZXct
-PnNlcSArIGlkOworCXJldHVybiBpZDsKIH0KIAotI2VuZGlmIC8qIENPTkZJR19DSEVDS1BPSU5U
-X1JFU1RPUkUgKi8KLQogLyoqCiAgKiBpcGNfYWRkaWQgLSBhZGQgYW4gaXBjIGlkZW50aWZpZXIK
-ICAqIEBpZHM6IGlwYyBpZGVudGlmaWVyIHNldApAQCAtMjY5LDYgKzI1NSwxMCBAQCBpbnQgaXBj
-X2FkZGlkKHN0cnVjdCBpcGNfaWRzICppZHMsIHN0cnVjdCBrZXJuX2lwY19wZXJtICpuZXcsIGlu
-dCBsaW1pdCkKIAluZXctPmN1aWQgPSBuZXctPnVpZCA9IGV1aWQ7CiAJbmV3LT5naWQgPSBuZXct
-PmNnaWQgPSBlZ2lkOwogCisJbmV3LT5pZCA9IGlkcy0+bmV4dF9pZDsKKwlpZiAobmV3LT5pZCA+
-PSAwKQorCQlpZHMtPm5leHRfaWQgPSAtMTsKKwogCWlkID0gaXBjX2lkcl9hbGxvYyhpZHMsIG5l
-dyk7CiAJaWRyX3ByZWxvYWRfZW5kKCk7CiAKQEAgLTI5MCw4ICsyODAsNiBAQCBpbnQgaXBjX2Fk
-ZGlkKHN0cnVjdCBpcGNfaWRzICppZHMsIHN0cnVjdCBrZXJuX2lwY19wZXJtICpuZXcsIGludCBs
-aW1pdCkKIAlpZiAoaWQgPiBpZHMtPm1heF9pZCkKIAkJaWRzLT5tYXhfaWQgPSBpZDsKIAotCW5l
-dy0+aWQgPSBpcGNfYnVpbGRpZChpZCwgaWRzLCBuZXcpOwotCiAJcmV0dXJuIGlkOwogfQogCgpF
-cmljCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRh
-aW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcK
-aHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFp
-bmVycw==
+On 2018-03-29 07:03, Jonathan Corbet wrote:
+> On Thu, 29 Mar 2018 05:01:32 -0400
+> Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> 
+> > > A little detail, but still...  
+> > 
+> > I am understanding that you would prefer more context (as opposed to
+> > operational detail) in the description, laying out the use case for this
+> > patch(set)?
+> 
+> No, sorry, "a little detail" was referring to my comment.  The use case,
+> I believe, has been well described.
+
+Ah!  "A minor nit".  :-)
+
+> jon
+
+- RGB
+
+--
+Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Sr. S/W Engineer, Kernel Security, Base Operating Systems
+Remote, Ottawa, Red Hat Canada
+IRC: rgb, SunRaycer
+Voice: +1.647.777.2635, Internal: (81) 32635
