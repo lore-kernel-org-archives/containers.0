@@ -1,18 +1,13 @@
-From: Manfred Spraul <manfred-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>
-Subject: Re: [REVIEW][PATCH 11/11] ipc/sem: Fix semctl(..., GETPID, ...)
-	between pid namespaces
-Date: Mon, 2 Apr 2018 13:11:54 +0200
-Message-ID: <334d0390-88e9-b950-b07e-ad69c0516e5b__9019.00034300542$1522667411$gmane$org@colorfullife.com>
-References: <87vadmobdw.fsf_-_@xmission.com>
-	<20180323191614.32489-11-ebiederm@xmission.com>
-	<20180329005209.fnzr3hzvyr4oy3wi@linux-n805>
-	<20180330190951.nfcdwuzp42bl2lfy@linux-n805>
+From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC PATCH v3 1/3] ima: extend clone() with IMA namespace support
+Date: Mon, 2 Apr 2018 07:20:54 -0400
+Message-ID: <d7e1b214-6565-6c0b-9cdc-2b3dec361161__49765.7648906626$1522667969$gmane$org@linux.vnet.ibm.com>
+References: <201803291744.w2THiZoV005866@wind.enjellic.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; Format="flowed"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20180330190951.nfcdwuzp42bl2lfy@linux-n805>
-Content-Language: en-US
+In-Reply-To: <201803291744.w2THiZoV005866-DHO+NtfOqB5PEDpkEIzg7wC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,75 +17,205 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Davidlohr Bueso <dave-h16yJtLeMjHk1uMJSBkQmQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: esyr-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jannh-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, prakash.sangappa-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Nagarathnam Muthusamy <nagarathnam.muthusamy-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: greg-R92VP3DqSWVWk0Htik3J/w@public.gmane.org
+Cc: mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, david.safford-JJi787mZWgc@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SGksCgpPbiAwMy8zMC8yMDE4IDA5OjA5IFBNLCBEYXZpZGxvaHIgQnVlc28gd3JvdGU6Cj4gT24g
-V2VkLCAyOCBNYXIgMjAxOCwgRGF2aWRsb2hyIEJ1ZXNvIHdyb3RlOgo+Cj4+IE9uIEZyaSwgMjMg
-TWFyIDIwMTgsIEVyaWMgVy4gQmllZGVybWFuIHdyb3RlOgo+Pgo+Pj4gVG9kYXkgdGhlIGxhc3Qg
-cHJvY2VzcyB0byB1cGRhdGUgYSBzZW1hcGhvcmUgaXMgcmVtZW1iZXJlZCBhbmQKPj4+IHJlcG9y
-dGVkIGluIHRoZSBwaWQgbmFtZXNwYWNlIG9mIHRoYXQgcHJvY2Vzcy7CoCBJZiB0aGVyZSBhcmUg
-cHJvY2Vzc2VzCj4+PiBpbiBhbnkgb3RoZXIgcGlkIG5hbWVzcGFjZSBxdWVyeWluZyB0aGF0IHBy
-b2Nlc3MgaWQgd2l0aCBHRVRQSUQgdGhlCj4+PiByZXN1bHQgd2lsbCBiZSB1bnVzYWJsZSBub25z
-ZW5zZSBhcyBpdCBkb2VzIG5vdCBtYWtlIGFueQo+Pj4gc2Vuc2UgaW4geW91ciBvd24gcGlkIG5h
-bWVzcGFjZS4KPj4KPj4gWWVhaCB0aGF0IHNvdW5kcyBwcmV0dHkgd3JvbmcuCj4+Cj4+Pgo+Pj4g
-RHVlIHRvIGlwY191cGRhdGVfcGlkIEkgZG9uJ3QgdGhpbmsgeW91IHdpbGwgYmUgYWJsZSB0byBn
-ZXQgU3lzdGVtIFYKPj4+IGlwYyBzZW1hcGhvcmVzIGludG8gYSB0cm91Ymxlc29tZSBjYWNoZSBs
-aW5lIHBpbmctcG9uZy7CoCBVc2luZyBzdHJ1Y3QKPj4+IHBpZHMgZnJvbSBzZXBhcmF0ZSBwcm9j
-ZXNzIGFyZSBub3QgYSBwcm9ibGVtIGJlY2F1c2UgdGhleSBkbyBub3Qgc2hhcmUKPj4+IGEgY2Fj
-aGUgbGluZS7CoCBVc2luZyBzdHJ1Y3QgcGlkIGZyb20gZGlmZmVyZW50IHRocmVhZHMgb2YgdGhl
-IHNhbWUKPj4+IHByb2Nlc3MgYXJlIHVubGlrZWx5IHRvIGJlIGEgcHJvYmxlbSBhcyB0aGUgcmVm
-ZXJlbmNlIGNvdW50IHVwZGF0ZQo+Pj4gY2FuIGJlIGF2b2lkZWQuCj4+Pgo+Pj4gRnVydGhlciBs
-aW51eCBmdXRleGVzIGFyZSBhIG11Y2ggYmV0dGVyIHRvb2wgZm9yIHRoZSBqb2Igb2YgbXV0dWFs
-Cj4+PiBleGNsdXNpb24gYmV0d2VlbiBwcm9jZXNzZXMgdGhhbiBTeXN0ZW0gViBzZW1hcGhvcmVz
-LsKgIFNvIEkgZXhwZWN0Cj4+PiBwcm9ncmFtcyB0aGF0wqAgYXJlIHBlcmZvcm1hbmNlIGxpbWl0
-ZWQgYnkgdGhlaXIgaW50ZXJwcm9jZXNzIG11dHVhbAo+Pj4gZXhjbHVzaW9uIHByaW1pdGl2ZSB3
-aWxsIGJlIHVzaW5nIGZ1dGV4ZXMuCj4+ClRoZSBwZXJmb3JtYW5jZSBvZiBzeXN2IHNlbSBhbmQg
-ZnV0ZXhlcyBmb3IgdGhlIGNvbnRlbmRlZCBjYXNlIGlzIG1vcmUgCm9yIGxlc3MgaWRlbnRpY2Fs
-LCBpdCBkZXBlbmRzIG9uIHRoZSBDT05GSUdfIG9wdGlvbnMgd2hhdCBpcyBmYXN0ZXIuCgpBbmQg
-dGhpcyBpcyBvYnZpb3VzLCBib3RoIHByaW1pdGl2ZXMgbXVzdCBkbyB0aGUgc2FtZSB0YXNrczoK
-c2xlZXA6Ci0gbG9va3VwIGEga2VybmVsIHBvaW50ZXIgZnJvbSBhIHVzZXIgc3BhY2UgcmVmZXJl
-bmNlCi0gYWNxdWlyZSBhIGxvY2ssIGRvIHNvbWUgaG91c2VrZWVwaW5nLCB1bmxvY2sgYW5kIHNs
-ZWVwCndha2V1cDoKLSBsb29rdXAgYSBrZXJuZWwgcG9pbnRlciBmcm9tIGEgdXNlciBzcGFjZSBy
-ZWZlcmVuY2UKLSBhY3F1aXJlIGEgbG9jaywgZG8gc29tZSBob3VzZWtlZXBpbmcsIGVzcGVjaWFs
-bHkgdW5saW5rIHRoZSB0byBiZSAKd29rZW4gdXAgdGFzaywgdW5sb2NrIGFuZCB3YWtldXAKClRo
-ZSB3b2tlbiB1cCB0YXNrIGhhcyBub3RoaW5nIHRvIGRvLCBpdCByZXR1cm5zIGltbWVkaWF0ZWx5
-IHRvIHVzZXIgc3BhY2UuCgpJSVJDIGZvciB0aGUgdW5jb250ZW5kZWQgY2FzZSwgc3lzdnNlbSB3
-YXMgYXQgfjMwMCBjcHUgY3ljbGVzLCBidXQgdGhhdCAKbnVtYmVyIGlzIGEgZmV3IHllYXJzIG9s
-ZCwgYW5kIEkgZG9uJ3Qga25vdyB3aGF0IGlzIHRoZSBpbXBhY3Qgb2Ygc3BlY3RyZS4KVGhlIGZ1
-dGV4IGNvZGUgaXMgb2J2aW91c2x5IGZhc3Rlci4KQnV0IEkgZG9uJ3Qga25vdyB3aGljaCByZWFs
-LXdvcmxkIGFwcGxpY2F0aW9ucyBkbyB0aGVpciBvd24gCm9wdGltaXphdGlvbnMgZm9yIHRoZSB1
-bmNvbnRlbmRlZCBjYXNlIGJlZm9yZSB1c2luZyBzeXN2c2VtLgoKVGh1cyB0aGUgb25seSAicmVh
-bCIgY2hhbGxlbmdlIGlzIHRvIG1pbmltaXplIGNhY2hlIGxpbmUgdHJhc2hpbmcuCgo+PiBZb3Ug
-d291bGQgYmUgd3JvbmcuIFRoZXJlIGFyZSBwbGVudHkgb2YgcmVhbCB3b3JrbG9hZHMgb3V0IHRo
-ZXJlCj4+IHRoYXQgZG8gbm90IHVzZSBmdXRleGVzIGFuZCBhcmUgY2FyZSBhYm91dCBwZXJmb3Jt
-YW5jZTsgaW4gdGhlIGVuZAo+PiBmdXRleGVzIGFyZSBvbmx5IGdvb2QgZm9yIHRoZSB1bmNvbnRl
-bmRlZCBjYXNlcywgaXQgY2FuIGFsc28KPj4gZGVzdHJveSBudW1hIGJveGVzIGlmIHlvdSBjb25z
-aWRlciB0aGUgZ2xvYmFsIGhhc2ggdGFibGUuIEV4cGVyaWVuY2UKPj4gYXMgc2hvd24gbWUgdGhh
-dCBzeXN2aXBjIHNlbXMgYXJlIHF1aXRlIHN0aWxsIHVzZWQuCj4+Cj4+Pgo+Pj4gU28gd2hpbGUg
-aXQgaXMgcG9zc2libGUgdGhhdCBlbmhhbmNpbmcgdGhlIHN0b3JhZ2Ugb2YgdGhlIGxhc3QKPj4+
-IHJvY2VzcyBvZiBhIFN5c3RlbSBWIHNlbWFwaG9yZSBmcm9tIGFuIGludGVnZXIgdG8gYSBzdHJ1
-Y3QgcGlkCj4+PiB3aWxsIGNhdXNlIGEgcGVyZm9ybWFuY2UgcmVncmVzc2lvbiBiZWNhdXNlIG9m
-IHRoZSBlZmZlY3QKPj4+IG9mIGZyZXF1ZW50bHkgdXBkYXRpbmcgdGhlIHBpZCByZWZlcmVuY2Ug
-Y291bnQuwqAgSSBkb24ndCBleHBlY3QKPj4+IHRoYXQgdG8gaGFwcGVuIGluIHByYWN0aWNlLgo+
-Pgo+PiBIb3cncyB0aGF0PyBOb3cgdGhhbmtzIHRvIGlwY191cGRhdGVfcGlkKCkgZm9yIGVhY2gg
-c2Vtb3AgdGhlIHVzZXIKPj4gcGFzc2VzLCBwZXJmb3JtX2F0b21pY19zZW1vcCgpIHdpbGwgZG8g
-dHdvIGF0b21pYyB1cGRhdGVzIGZvciB0aGUKPj4gY2FzZXMgd2hlcmUgdGhlcmUgYXJlIG11bHRp
-cGxlIHByb2Nlc3NlcyB1cGRhdGluZyB0aGUgc2VtLiBUaGlzIGlzCj4+IG5vdCB1bmNvbW1vbi4K
-Pj4KPj4gQ291bGQgeW91IHBsZWFzZSBwcm92aWRlIHNvbWUgbnVtYmVycy4KPgpbLi4uXQo+IFNv
-IGF0IGxlYXN0IGZvciBhIGxhcmdlIGJveCB0aGlzIHBhdGNoIGh1cnRzIHRoZSBjYXNlcyB3aGVy
-ZSB0aGVyZSBpcyBsb3cKPiB0byBtZWRpdW0gY3B1IHVzYWdlIChubyBtb3JlIHRoYW4gfjggcHJv
-Y2Vzc2VzIG9uIGEgNDAgY29yZSBib3gpIGluIGEgbm9uCj4gdHJpdmlhbCB3YXkuIEZvciBtb3Jl
-IHByb2Nlc3NlcyBpdCBkb2Vzbid0IG1hdHRlci4gV2UgY2FuIGNvbmZpcm0gdGhhdCAKPiB0aGUK
-PiBjYXNlIGZvciB0aHJlYWRzIGlzIGlycmVsZXZhbnQuIFdoaWxlIEknbSBub3QgaGFwcHkgYWJv
-dXQgdGhlIDMwJSAKPiByZWdyZXNzaW9uCj4gSSBndWVzcyB3ZSBjYW4gbGl2ZSB3aXRoIHRoaXMu
-Cj4KPiBNYW5mcmVkLCBhbnkgdGhvdWdodHM/Cj4KQnVnZml4aW5nIGhhcyBhbHdheXMgZmlyc3Qg
-cHJpb3JpdHksIGFuZCBhIDMwJSByZWdyZXNzaW9uIGluIG9uZSAKbWljcm9iZW5jaG1hcmsgZG9l
-c24ndCBzZWVtIHRvIGJlIHRoYXQgYmFkLgoKVGh1cyBJIHdvdWxkIHByb3Bvc2UgdGhhdCB3ZSBm
-aXggU0VNUElEIGZpcnN0LCBhbmQgX2lmXyBzb21lb25lIG5vdGljZXMgCmEgbm90aWNlYWJsZSBy
-ZWdyZXNzaW9uLCB0aGVuIHdlIG11c3QgaW1wcm92ZSB0aGUgY29kZS4KCi0tCiDCoMKgwqAgTWFu
-ZnJlZApfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250
-YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3Jn
-Cmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRh
-aW5lcnM=
+On 03/29/2018 01:44 PM, Dr. Greg Wettstein wrote:
+> On Mar 28,  8:44am, Stefan Berger wrote:
+> } Subject: Re: [RFC PATCH v3 1/3] ima: extend clone() with IMA namespace sup
+>
+> Good morning, I hope the week is going well for everyone.
+>
+>> On 03/28/2018 08:14 AM, Dr. Greg Wettstein wrote:
+>>> On Wed, Mar 28, 2018 at 07:10:12AM -0400, Stefan Berger wrote:
+>>>
+>>> Good morning, I hope the day is starting out well for everyone.
+>>>
+>>>> On 03/27/2018 07:01 PM, Eric W. Biederman wrote:
+>>>>> Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
+>>>>>
+>>>>>> From: Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+>>>>>>
+>>>>>> Add new CONFIG_IMA_NS config option.  Let clone() create a new IMA
+>>>>>> namespace upon CLONE_NEWUSER flag. Attach the ima_ns data structure
+>>>>>> to user_namespace. ima_ns is allocated and freed upon IMA namespace
+>>>>>> creation and exit, which is tied to USER namespace creation and exit.
+>>>>>> Currently, the ima_ns contains no useful IMA data but only a dummy
+>>>>>> interface. This patch creates the framework for namespacing the different
+>>>>>> aspects of IMA (eg. IMA-audit, IMA-measurement, IMA-appraisal).
+>>>>> Tying IMA to the user namespace is far better than tying IMA
+>>>>> to the mount namespace.  It may even be the proper answer.
+>>>>>
+>>>>> You had asked what it would take to unstick this so you won't have
+>>>>> problems next time you post and I did not get as far as answering.
+>>>>>
+>>>>> I had a conversation a while back with Mimi and I believe what was
+>>>>> agreed was that IMA to start doing it's thing early needs a write
+>>>>> to securityfs/imafs.
+>>>> Above you say 'proper answer' for user namespace. Now this sounds like
+>>>> making it independent.
+>>>>
+>>>>> As such I expect the best way to create the ima namespace is by simply
+>>>>> writing to securityfs/imafs.  Possibly before the user namespace is
+>>>>> even unshared.  That would allow IMA to keep track of things from
+>>>>> before a container is created.
+>>>> So you are saying to not tie it to user namespace but make it an
+>>>> independent namespace and to not use a clone flag (0x1000) but use
+>>>> the filesystem to spawn a new namespace. Should that be an IMA
+>>>> specific file or a file that can be shared with other subsystems?
+>>> We've been platforming solutions for about 18 months now on top of a
+>>> namespaced IMA implementation that we developed and carry against the
+>>> 4.4.x kernel.  Technically its not an IMA namespace, but rather a
+>>> behavioral namespace, since we implement information exchange event
+>>> modeling, conceptually though its all the same and its origins were
+>>> IMA.
+>> Are you intending to make this publicly available and/or contribute
+>> it ?
+> An interesting question and one that will be the subject of a meeting
+> this afternoon.
+
+What is the outcome of this meeting ?
+
+>
+> The namespace implementation is probably of limited value but the
+> modeling engine would arguably be utility in open-source form.  We
+> built the ima/behavior namespace implementation since it is a very
+> practical requirement for a deterministically modeled os/application
+> stack.
+
+It's hard to figure out from what you are saying to determine what you 
+doing in user space and what is done in the kernel.
+
+>
+> The current namespace work will satisfy a very broad constituency but
+> we needed an implementation 18 months ago.  Consensus and expediency
+> are always conflicting goals.  We are only trying to offer some
+> insight from practical experience if the community ever wants to
+> consider a vision larger then file integrity.
+
+I think you may have to become a bit more concrete for others to see 
+what you are doing.
+
+>
+>>> In some configurations we run unmodified Docker containers inside the
+>>> behavioral/IMA namespace.  So if experience is a useful metric the
+>>> 'integrity' namespace needs to be a first class entity and not
+>>> subordinate or tied to any other resource namespaces.  We would also
+>>> recommend, again based on our experiences, the use of a clone flag.
+>> We have been using a clone flag in the first implementation, the
+>> mount flag afterwards.We treat containers independent of the host,
+>> meaning that it has its own policy, independent of the host, and
+>> allows for signed files inside containers to enable
+>> IMA-appraisal. It does require modifications to user space
+>> applications like Docker that have to pick up the file signatures.
+> Our opinion is worth what it is printed on of course, but we would
+> strongly advocate that a clone flag be used with no dependencies in
+> whatever becomes the final implementation.  I think it is important to
+> stress that integrity is but one aspect of platform behavior, which is
+> ultimately what needs to be modeled from a security perspective.
+
+Either clone flag or some pseudo file that spawns a new namespace upon 
+wirte() may be able do it.
+
+> Our modeling engine is process chain specific, ie. host independent,
+> as well.  We do export the hardware aggregate measurement so the
+> namespace specific behavior measurement can be linked to a hardware
+> trust root if that is desired.
+
+Do you tie it to a TPM? Do you log and measure?
+
+>
+> We had originally modified runc to clone the behavior/integrity
+> namespace but a lot of experience led us to wrap the entire container
+> invocation into its own integrity envelope.  Adding a clone flag to
+> the orchestration utility is straight forward, adding support for
+
+Yes.
+
+> running the modeling/integrity engine in a TEE is a bit more of a
+> lift.  Getting tooling and infrastructure upstream is always a
+> challenge as everyone knows, particularly as these ecosystems grow.
+
+I am not sure what exactly that means.
+
+
+>
+>>> FWIW, at this point we have hoisted a lot of the integrity
+>>> functionality out of the kernel and up into userspace so it can be run
+>>> in a trusted execution environment.  There are always the issues with
+>>> kernel<->userspace communication, particularly of the symmetric
+>>> variety, but userspace seems to be a much better place for a lot of
+>>> this functionality.  If the ELF module discussion is any indication it
+>> Like what functionality? Are you supporting IMA-appraisal? Are you
+>> doing IMA-measurements? What about IMA-audit? Following our intended
+>> IMA namespacing, all of this would be done in the kernel following
+>> an IMA policy parsed by the kernel.
+> As I commented before, we started with IMA and that effort morphed
+> into platform behavior modeling, which simplistically, is an integrity
+
+I am not sure what integrity has to do with platform behavior. To me 
+integrity is more a state of the system. Behavior goes more into the 
+area of what software does, like whether it behaves unexpected and 
+attempts to steal data, which would be something like malware. Though 
+IMA does not address behavior. If you are doing all this in user space, 
+I'd be curious to see what and how you are doing this.
+
+> measurement that is the linear extension sum of the information
+> exchange events mediated by the operating system.  That leads to a
+
+What are 'information exchange events' in your system?
+
+> model that is mechanistically simpler implements a superset of the
+> guarantees one gets with IMA-*.  Most importantly it allows almost a
+> complete userspace implementation, which is important if one envisions
+> the notion of a cloud wide integrity orchestration environment.
+
+When you model 'platform behavior' for a cloud environment, how do you 
+know what software a cloud tenant is attempting to run on the system? Do 
+you differentiate between 'good' and 'bad' behavior of software and how 
+do you do that?
+
+>
+> The Holy Grail in all of this, of course, is the notion of defining a
+> metric for per process trust.  We link all off this to a per-process
+> security module (LSM) we wrote that reacts to the output of the
+> modeling engine.  Alan, Linus and others had previously discussed the
+
+Do you have a more in-depth description of your modeling engine and what 
+it does?
+
+> importance of defining what a 'trusted process' is in the context of
+> how to make a decision on what criteria should be used for turning off
+> KPTI.
+>
+> It is a decidedly different way of looking at the problem, which of
+> course, has its own inherent challenges... :-)
+
+Thanks for your descriptions. I find them a bit too vague to build upon 
+at this point ... :-)
+
+>
+>> Stefan
+> Have a good weekend.
+
+Thanks.
+
+   Stefan
+
+>
+> Dr. Greg
+>
+> }-- End of excerpt from Stefan Berger
+>
+> As always,
+> Dr. G.W. Wettstein, Ph.D.   Enjellic Systems Development, LLC.
+> 4206 N. 19th Ave.           Specializing in information infra-structure
+> Fargo, ND  58102            development.
+> PH: 701-281-1686
+> FAX: 701-281-3949           EMAIL: greg-R92VP3DqSWVWk0Htik3J/w@public.gmane.org
+> ------------------------------------------------------------------------------
+> "The real question is not whether machines think but whether men do."
+>                                  -- B. F. Skinner
+>                                     _Contingencies of Reinforcement_
+>
