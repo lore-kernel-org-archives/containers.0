@@ -1,20 +1,18 @@
-From: James Morris <jmorris-gx6/JNMH7DfYtjvyW6yDsg@public.gmane.org>
-Subject: Re: [REVIEW][PATCH 12/11] ipc: Directly call the security hook in
-	ipc_ops.associate
-Date: Sat, 31 Mar 2018 13:13:22 +1100 (AEDT)
-Message-ID: <alpine.LRH.2.21.1803311313010.7769@namei.org>
-References: <1520875093-18174-1-git-send-email-nagarathnam.muthusamy@oracle.com>
-	<87vadzqqq6.fsf@xmission.com>
-	<990e88fa-ab50-9645-b031-14e1afbf7ccc@oracle.com>
-	<877eqejowd.fsf@xmission.com>
-	<3a46a03d-e4dd-59b6-e25f-0020be1b1dc9@oracle.com>
-	<87a7v2z2qa.fsf@xmission.com> <87vadmobdw.fsf_-_@xmission.com>
-	<877eq2m3or.fsf_-_@xmission.com>
+From: Manfred Spraul <manfred-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>
+Subject: Re: [REVIEW][PATCH 11/11] ipc/sem: Fix semctl(..., GETPID, ...)
+	between pid namespaces
+Date: Mon, 2 Apr 2018 13:11:54 +0200
+Message-ID: <334d0390-88e9-b950-b07e-ad69c0516e5b__9019.00034300542$1522667411$gmane$org@colorfullife.com>
+References: <87vadmobdw.fsf_-_@xmission.com>
+	<20180323191614.32489-11-ebiederm@xmission.com>
+	<20180329005209.fnzr3hzvyr4oy3wi@linux-n805>
+	<20180330190951.nfcdwuzp42bl2lfy@linux-n805>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <877eq2m3or.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <20180330190951.nfcdwuzp42bl2lfy@linux-n805>
+Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,24 +22,75 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: jannh-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, esyr-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, prakash.sangappa-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Nagarathnam Muthusamy <nagarathnam.muthusamy-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Davidlohr Bueso <dave-h16yJtLeMjHk1uMJSBkQmQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: esyr-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jannh-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, prakash.sangappa-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Nagarathnam Muthusamy <nagarathnam.muthusamy-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sat, 24 Mar 2018, Eric W. Biederman wrote:
-
-> 
-> After the last round of cleanups the shm, sem, and msg associate
-> operations just became trivial wrappers around the appropriate security
-> method.  Simplify things further by just calling the security method
-> directly.
-> 
-> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-
-
-Reviewed-by: James Morris <james.morris-0li6OtcxBFHby3iVrkZq2A@public.gmane.org>
-
-
--- 
-James Morris
-<jmorris-gx6/JNMH7DfYtjvyW6yDsg@public.gmane.org>
+SGksCgpPbiAwMy8zMC8yMDE4IDA5OjA5IFBNLCBEYXZpZGxvaHIgQnVlc28gd3JvdGU6Cj4gT24g
+V2VkLCAyOCBNYXIgMjAxOCwgRGF2aWRsb2hyIEJ1ZXNvIHdyb3RlOgo+Cj4+IE9uIEZyaSwgMjMg
+TWFyIDIwMTgsIEVyaWMgVy4gQmllZGVybWFuIHdyb3RlOgo+Pgo+Pj4gVG9kYXkgdGhlIGxhc3Qg
+cHJvY2VzcyB0byB1cGRhdGUgYSBzZW1hcGhvcmUgaXMgcmVtZW1iZXJlZCBhbmQKPj4+IHJlcG9y
+dGVkIGluIHRoZSBwaWQgbmFtZXNwYWNlIG9mIHRoYXQgcHJvY2Vzcy7CoCBJZiB0aGVyZSBhcmUg
+cHJvY2Vzc2VzCj4+PiBpbiBhbnkgb3RoZXIgcGlkIG5hbWVzcGFjZSBxdWVyeWluZyB0aGF0IHBy
+b2Nlc3MgaWQgd2l0aCBHRVRQSUQgdGhlCj4+PiByZXN1bHQgd2lsbCBiZSB1bnVzYWJsZSBub25z
+ZW5zZSBhcyBpdCBkb2VzIG5vdCBtYWtlIGFueQo+Pj4gc2Vuc2UgaW4geW91ciBvd24gcGlkIG5h
+bWVzcGFjZS4KPj4KPj4gWWVhaCB0aGF0IHNvdW5kcyBwcmV0dHkgd3JvbmcuCj4+Cj4+Pgo+Pj4g
+RHVlIHRvIGlwY191cGRhdGVfcGlkIEkgZG9uJ3QgdGhpbmsgeW91IHdpbGwgYmUgYWJsZSB0byBn
+ZXQgU3lzdGVtIFYKPj4+IGlwYyBzZW1hcGhvcmVzIGludG8gYSB0cm91Ymxlc29tZSBjYWNoZSBs
+aW5lIHBpbmctcG9uZy7CoCBVc2luZyBzdHJ1Y3QKPj4+IHBpZHMgZnJvbSBzZXBhcmF0ZSBwcm9j
+ZXNzIGFyZSBub3QgYSBwcm9ibGVtIGJlY2F1c2UgdGhleSBkbyBub3Qgc2hhcmUKPj4+IGEgY2Fj
+aGUgbGluZS7CoCBVc2luZyBzdHJ1Y3QgcGlkIGZyb20gZGlmZmVyZW50IHRocmVhZHMgb2YgdGhl
+IHNhbWUKPj4+IHByb2Nlc3MgYXJlIHVubGlrZWx5IHRvIGJlIGEgcHJvYmxlbSBhcyB0aGUgcmVm
+ZXJlbmNlIGNvdW50IHVwZGF0ZQo+Pj4gY2FuIGJlIGF2b2lkZWQuCj4+Pgo+Pj4gRnVydGhlciBs
+aW51eCBmdXRleGVzIGFyZSBhIG11Y2ggYmV0dGVyIHRvb2wgZm9yIHRoZSBqb2Igb2YgbXV0dWFs
+Cj4+PiBleGNsdXNpb24gYmV0d2VlbiBwcm9jZXNzZXMgdGhhbiBTeXN0ZW0gViBzZW1hcGhvcmVz
+LsKgIFNvIEkgZXhwZWN0Cj4+PiBwcm9ncmFtcyB0aGF0wqAgYXJlIHBlcmZvcm1hbmNlIGxpbWl0
+ZWQgYnkgdGhlaXIgaW50ZXJwcm9jZXNzIG11dHVhbAo+Pj4gZXhjbHVzaW9uIHByaW1pdGl2ZSB3
+aWxsIGJlIHVzaW5nIGZ1dGV4ZXMuCj4+ClRoZSBwZXJmb3JtYW5jZSBvZiBzeXN2IHNlbSBhbmQg
+ZnV0ZXhlcyBmb3IgdGhlIGNvbnRlbmRlZCBjYXNlIGlzIG1vcmUgCm9yIGxlc3MgaWRlbnRpY2Fs
+LCBpdCBkZXBlbmRzIG9uIHRoZSBDT05GSUdfIG9wdGlvbnMgd2hhdCBpcyBmYXN0ZXIuCgpBbmQg
+dGhpcyBpcyBvYnZpb3VzLCBib3RoIHByaW1pdGl2ZXMgbXVzdCBkbyB0aGUgc2FtZSB0YXNrczoK
+c2xlZXA6Ci0gbG9va3VwIGEga2VybmVsIHBvaW50ZXIgZnJvbSBhIHVzZXIgc3BhY2UgcmVmZXJl
+bmNlCi0gYWNxdWlyZSBhIGxvY2ssIGRvIHNvbWUgaG91c2VrZWVwaW5nLCB1bmxvY2sgYW5kIHNs
+ZWVwCndha2V1cDoKLSBsb29rdXAgYSBrZXJuZWwgcG9pbnRlciBmcm9tIGEgdXNlciBzcGFjZSBy
+ZWZlcmVuY2UKLSBhY3F1aXJlIGEgbG9jaywgZG8gc29tZSBob3VzZWtlZXBpbmcsIGVzcGVjaWFs
+bHkgdW5saW5rIHRoZSB0byBiZSAKd29rZW4gdXAgdGFzaywgdW5sb2NrIGFuZCB3YWtldXAKClRo
+ZSB3b2tlbiB1cCB0YXNrIGhhcyBub3RoaW5nIHRvIGRvLCBpdCByZXR1cm5zIGltbWVkaWF0ZWx5
+IHRvIHVzZXIgc3BhY2UuCgpJSVJDIGZvciB0aGUgdW5jb250ZW5kZWQgY2FzZSwgc3lzdnNlbSB3
+YXMgYXQgfjMwMCBjcHUgY3ljbGVzLCBidXQgdGhhdCAKbnVtYmVyIGlzIGEgZmV3IHllYXJzIG9s
+ZCwgYW5kIEkgZG9uJ3Qga25vdyB3aGF0IGlzIHRoZSBpbXBhY3Qgb2Ygc3BlY3RyZS4KVGhlIGZ1
+dGV4IGNvZGUgaXMgb2J2aW91c2x5IGZhc3Rlci4KQnV0IEkgZG9uJ3Qga25vdyB3aGljaCByZWFs
+LXdvcmxkIGFwcGxpY2F0aW9ucyBkbyB0aGVpciBvd24gCm9wdGltaXphdGlvbnMgZm9yIHRoZSB1
+bmNvbnRlbmRlZCBjYXNlIGJlZm9yZSB1c2luZyBzeXN2c2VtLgoKVGh1cyB0aGUgb25seSAicmVh
+bCIgY2hhbGxlbmdlIGlzIHRvIG1pbmltaXplIGNhY2hlIGxpbmUgdHJhc2hpbmcuCgo+PiBZb3Ug
+d291bGQgYmUgd3JvbmcuIFRoZXJlIGFyZSBwbGVudHkgb2YgcmVhbCB3b3JrbG9hZHMgb3V0IHRo
+ZXJlCj4+IHRoYXQgZG8gbm90IHVzZSBmdXRleGVzIGFuZCBhcmUgY2FyZSBhYm91dCBwZXJmb3Jt
+YW5jZTsgaW4gdGhlIGVuZAo+PiBmdXRleGVzIGFyZSBvbmx5IGdvb2QgZm9yIHRoZSB1bmNvbnRl
+bmRlZCBjYXNlcywgaXQgY2FuIGFsc28KPj4gZGVzdHJveSBudW1hIGJveGVzIGlmIHlvdSBjb25z
+aWRlciB0aGUgZ2xvYmFsIGhhc2ggdGFibGUuIEV4cGVyaWVuY2UKPj4gYXMgc2hvd24gbWUgdGhh
+dCBzeXN2aXBjIHNlbXMgYXJlIHF1aXRlIHN0aWxsIHVzZWQuCj4+Cj4+Pgo+Pj4gU28gd2hpbGUg
+aXQgaXMgcG9zc2libGUgdGhhdCBlbmhhbmNpbmcgdGhlIHN0b3JhZ2Ugb2YgdGhlIGxhc3QKPj4+
+IHJvY2VzcyBvZiBhIFN5c3RlbSBWIHNlbWFwaG9yZSBmcm9tIGFuIGludGVnZXIgdG8gYSBzdHJ1
+Y3QgcGlkCj4+PiB3aWxsIGNhdXNlIGEgcGVyZm9ybWFuY2UgcmVncmVzc2lvbiBiZWNhdXNlIG9m
+IHRoZSBlZmZlY3QKPj4+IG9mIGZyZXF1ZW50bHkgdXBkYXRpbmcgdGhlIHBpZCByZWZlcmVuY2Ug
+Y291bnQuwqAgSSBkb24ndCBleHBlY3QKPj4+IHRoYXQgdG8gaGFwcGVuIGluIHByYWN0aWNlLgo+
+Pgo+PiBIb3cncyB0aGF0PyBOb3cgdGhhbmtzIHRvIGlwY191cGRhdGVfcGlkKCkgZm9yIGVhY2gg
+c2Vtb3AgdGhlIHVzZXIKPj4gcGFzc2VzLCBwZXJmb3JtX2F0b21pY19zZW1vcCgpIHdpbGwgZG8g
+dHdvIGF0b21pYyB1cGRhdGVzIGZvciB0aGUKPj4gY2FzZXMgd2hlcmUgdGhlcmUgYXJlIG11bHRp
+cGxlIHByb2Nlc3NlcyB1cGRhdGluZyB0aGUgc2VtLiBUaGlzIGlzCj4+IG5vdCB1bmNvbW1vbi4K
+Pj4KPj4gQ291bGQgeW91IHBsZWFzZSBwcm92aWRlIHNvbWUgbnVtYmVycy4KPgpbLi4uXQo+IFNv
+IGF0IGxlYXN0IGZvciBhIGxhcmdlIGJveCB0aGlzIHBhdGNoIGh1cnRzIHRoZSBjYXNlcyB3aGVy
+ZSB0aGVyZSBpcyBsb3cKPiB0byBtZWRpdW0gY3B1IHVzYWdlIChubyBtb3JlIHRoYW4gfjggcHJv
+Y2Vzc2VzIG9uIGEgNDAgY29yZSBib3gpIGluIGEgbm9uCj4gdHJpdmlhbCB3YXkuIEZvciBtb3Jl
+IHByb2Nlc3NlcyBpdCBkb2Vzbid0IG1hdHRlci4gV2UgY2FuIGNvbmZpcm0gdGhhdCAKPiB0aGUK
+PiBjYXNlIGZvciB0aHJlYWRzIGlzIGlycmVsZXZhbnQuIFdoaWxlIEknbSBub3QgaGFwcHkgYWJv
+dXQgdGhlIDMwJSAKPiByZWdyZXNzaW9uCj4gSSBndWVzcyB3ZSBjYW4gbGl2ZSB3aXRoIHRoaXMu
+Cj4KPiBNYW5mcmVkLCBhbnkgdGhvdWdodHM/Cj4KQnVnZml4aW5nIGhhcyBhbHdheXMgZmlyc3Qg
+cHJpb3JpdHksIGFuZCBhIDMwJSByZWdyZXNzaW9uIGluIG9uZSAKbWljcm9iZW5jaG1hcmsgZG9l
+c24ndCBzZWVtIHRvIGJlIHRoYXQgYmFkLgoKVGh1cyBJIHdvdWxkIHByb3Bvc2UgdGhhdCB3ZSBm
+aXggU0VNUElEIGZpcnN0LCBhbmQgX2lmXyBzb21lb25lIG5vdGljZXMgCmEgbm90aWNlYWJsZSBy
+ZWdyZXNzaW9uLCB0aGVuIHdlIG11c3QgaW1wcm92ZSB0aGUgY29kZS4KCi0tCiDCoMKgwqAgTWFu
+ZnJlZApfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250
+YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3Jn
+Cmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRh
+aW5lcnM=
