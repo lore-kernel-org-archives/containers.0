@@ -1,16 +1,17 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+From: Marian Marinov <kernel-6AxghH7DbtA@public.gmane.org>
 Subject: Re: [PATCH] uts_namespace: Move boot_id in uts namespace
-Date: Wed, 04 Apr 2018 19:35:46 -0500
-Message-ID: <876056bicd.fsf@xmission.com>
+Date: Thu, 5 Apr 2018 04:23:44 +0300
+Message-ID: <49d8b5b1-6f10-d9d8-9778-eb71556bc98d@kyup.com>
 References: <1522408620-10578-1-git-send-email-kernel@kyup.com>
 	<87vad7hsdb.fsf@xmission.com>
 	<e6fe4cc7-eed0-fbe2-98af-31c95e35805a@kyup.com>
+	<876056bicd.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <e6fe4cc7-eed0-fbe2-98af-31c95e35805a-6AxghH7DbtA@public.gmane.org> (Marian Marinov's
-	message of "Thu, 5 Apr 2018 02:43:00 +0300")
+In-Reply-To: <876056bicd.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,104 +21,132 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Marian Marinov <kernel-6AxghH7DbtA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Marian Marinov <kernel-6AxghH7DbtA@public.gmane.org> writes:
-
-> On 04/04/2018 07:02 PM, Eric W. Biederman wrote:
->> Angel Shtilianov <kernel-6AxghH7DbtA@public.gmane.org> writes:
->> 
->>> Currently the same boot_id is reported for all containers running
->>> on a host node, including the host node itself. Even after restarting
->>> a container it will still have the same persistent boot_id.
->>>
->>> This can cause troubles in cases where you have multiple containers
->>> from the same cluster on one host node. The software inside each
->>> container will get the same boot_id and thus fail to join the cluster,
->>> after the first container from the node has already joined.
->>>
->>> UTS namespace on other hand keeps the machine specific data, so it
->>> seems to be the correct place to move the boot_id and instantiate it,
->>> so each container will have unique id for its own boot lifetime, if
->>> it has its own uts namespace.
->> 
->> Technically this really needs to use the sysctl infrastructure that
->> allows you to register different files in different namespaces.  That
->> way the value you read from proc_do_uuid will be based on who opens the
->> file not on who is reading the file.
->
-> Ok, so would you accept a patch that reimplements boot_id trough the sysctl infrastructure?
-
-Assuming I am convinced this makes sense to do on the semantic level.
-
->> Practically why does a bind mount on top of boot_id work?  What makes
->> this a general problem worth solving in the kernel?  Why is hiding the
->> fact that you are running the same instance of the same kernel a useful
->> thing? That is the reality.
->
-> The problem is, that the distros do not know that they are in
-> container and don't know that they have to bind mount something on top
-> of boot_id.  You need to tell Docker, LXC/LXD and all other container
-> runtimes that they need to do this bind mount for boot_id.
-
-Yes.  Anything like this is the responsibility of the container runtime
-one way or another.   Magic to get around fixing the small set of
-container runtimes you care about is a questionable activity.
-
-> I consider this to be a general issue, that lacks good general
-> solution in userspace.  The kernel is providing this boot_id
-> interface, but it is giving wrong data in the context of containers.
-
-I disagree.  Namespaces have never been about hiding that you are on a
-given machine or a single machine.  They are about encapsulating global
-identifers so that process migration can happen, and so that processes
-can be better isolated.  The boot_id is not an identify of an object in
-the kernel at all, and it is designed to be trully globally unique
-across time and space so I am not at all certain that it makes the least
-bit of sense to do anything with a boot_id.
-
-
-That said my memory of boot_id is that was added so that emacs (and
-related programs) could create lock files on nfs and could tell if the
-current machine owns the file, and if so be able to tell if the owner
-of the lock file is alive.
-
-So there is an argument to be made that boot_id is to coarse.  That
-argument suggest that boot_id is a pid_namespace property.
-
-I have not looked at the users of boot_id, and I don't have a definition
-of boot_id that makes me think it is too coarse.
-
-If you can provide a clear description of what the semantics are and
-what they should be for boot_id showing how boot_id fits into a
-namespace, making it clear what should happen with checkpoint/restart.
-We can definitely look at changing how the kernel supports boot_id.
-
-The reason I suggested the bind mount is there are lots of cases where
-people want to lie to applications about the reality of what is going on
-for whatever reason, and we leave those lies to userspace.  Things
-like changing the contents of /proc/cpuinfo.
-
-> Proposing to fix this problem in userspace seams like ignoring the
-> issue.  You could have said to the Consul guys, that they should
-> simply stop using boot_id, because it doesn't work correctly on
-> containers.
-
-I don't know the Consul guys.   From a quick google search I see that
-Consul is an open source project that is aims to be distributed and
-highly available.  It seems a reasonable case to look at to motivate
-changes to boot_id.
-
-That said if I want to be highly available I would find every node
-having the same boot_id to be very worrying, and very useful.  It allows
-detecting if no hardware redundancy is present in a situation.  That
-certainly seems like a good thing.
-
-If you just want to test Consul then hacking boot_id with a bind mount
-seems the right thing.  If you really want to run Consul in production
-I am curious to know how removing the ability to detect if you are on
-the same kernel as another piece of Consul is a good thing.
-
-Eric
+T24gMDQvMDUvMjAxOCAwMzozNSBBTSwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4gTWFyaWFu
+IE1hcmlub3YgPGtlcm5lbEBreXVwLmNvbT4gd3JpdGVzOgo+IAo+PiBPbiAwNC8wNC8yMDE4IDA3
+OjAyIFBNLCBFcmljIFcuIEJpZWRlcm1hbiB3cm90ZToKPj4+IEFuZ2VsIFNodGlsaWFub3YgPGtl
+cm5lbEBreXVwLmNvbT4gd3JpdGVzOgo+Pj4KPj4+PiBDdXJyZW50bHkgdGhlIHNhbWUgYm9vdF9p
+ZCBpcyByZXBvcnRlZCBmb3IgYWxsIGNvbnRhaW5lcnMgcnVubmluZwo+Pj4+IG9uIGEgaG9zdCBu
+b2RlLCBpbmNsdWRpbmcgdGhlIGhvc3Qgbm9kZSBpdHNlbGYuIEV2ZW4gYWZ0ZXIgcmVzdGFydGlu
+Zwo+Pj4+IGEgY29udGFpbmVyIGl0IHdpbGwgc3RpbGwgaGF2ZSB0aGUgc2FtZSBwZXJzaXN0ZW50
+IGJvb3RfaWQuCj4+Pj4KPj4+PiBUaGlzIGNhbiBjYXVzZSB0cm91YmxlcyBpbiBjYXNlcyB3aGVy
+ZSB5b3UgaGF2ZSBtdWx0aXBsZSBjb250YWluZXJzCj4+Pj4gZnJvbSB0aGUgc2FtZSBjbHVzdGVy
+IG9uIG9uZSBob3N0IG5vZGUuIFRoZSBzb2Z0d2FyZSBpbnNpZGUgZWFjaAo+Pj4+IGNvbnRhaW5l
+ciB3aWxsIGdldCB0aGUgc2FtZSBib290X2lkIGFuZCB0aHVzIGZhaWwgdG8gam9pbiB0aGUgY2x1
+c3RlciwKPj4+PiBhZnRlciB0aGUgZmlyc3QgY29udGFpbmVyIGZyb20gdGhlIG5vZGUgaGFzIGFs
+cmVhZHkgam9pbmVkLgo+Pj4+Cj4+Pj4gVVRTIG5hbWVzcGFjZSBvbiBvdGhlciBoYW5kIGtlZXBz
+IHRoZSBtYWNoaW5lIHNwZWNpZmljIGRhdGEsIHNvIGl0Cj4+Pj4gc2VlbXMgdG8gYmUgdGhlIGNv
+cnJlY3QgcGxhY2UgdG8gbW92ZSB0aGUgYm9vdF9pZCBhbmQgaW5zdGFudGlhdGUgaXQsCj4+Pj4g
+c28gZWFjaCBjb250YWluZXIgd2lsbCBoYXZlIHVuaXF1ZSBpZCBmb3IgaXRzIG93biBib290IGxp
+ZmV0aW1lLCBpZgo+Pj4+IGl0IGhhcyBpdHMgb3duIHV0cyBuYW1lc3BhY2UuCj4+Pgo+Pj4gVGVj
+aG5pY2FsbHkgdGhpcyByZWFsbHkgbmVlZHMgdG8gdXNlIHRoZSBzeXNjdGwgaW5mcmFzdHJ1Y3R1
+cmUgdGhhdAo+Pj4gYWxsb3dzIHlvdSB0byByZWdpc3RlciBkaWZmZXJlbnQgZmlsZXMgaW4gZGlm
+ZmVyZW50IG5hbWVzcGFjZXMuICBUaGF0Cj4+PiB3YXkgdGhlIHZhbHVlIHlvdSByZWFkIGZyb20g
+cHJvY19kb191dWlkIHdpbGwgYmUgYmFzZWQgb24gd2hvIG9wZW5zIHRoZQo+Pj4gZmlsZSBub3Qg
+b24gd2hvIGlzIHJlYWRpbmcgdGhlIGZpbGUuCj4+Cj4+IE9rLCBzbyB3b3VsZCB5b3UgYWNjZXB0
+IGEgcGF0Y2ggdGhhdCByZWltcGxlbWVudHMgYm9vdF9pZCB0cm91Z2ggdGhlIHN5c2N0bCBpbmZy
+YXN0cnVjdHVyZT8KPiAKPiBBc3N1bWluZyBJIGFtIGNvbnZpbmNlZCB0aGlzIG1ha2VzIHNlbnNl
+IHRvIGRvIG9uIHRoZSBzZW1hbnRpYyBsZXZlbC4KPiAKPj4+IFByYWN0aWNhbGx5IHdoeSBkb2Vz
+IGEgYmluZCBtb3VudCBvbiB0b3Agb2YgYm9vdF9pZCB3b3JrPyAgV2hhdCBtYWtlcwo+Pj4gdGhp
+cyBhIGdlbmVyYWwgcHJvYmxlbSB3b3J0aCBzb2x2aW5nIGluIHRoZSBrZXJuZWw/ICBXaHkgaXMg
+aGlkaW5nIHRoZQo+Pj4gZmFjdCB0aGF0IHlvdSBhcmUgcnVubmluZyB0aGUgc2FtZSBpbnN0YW5j
+ZSBvZiB0aGUgc2FtZSBrZXJuZWwgYSB1c2VmdWwKPj4+IHRoaW5nPyBUaGF0IGlzIHRoZSByZWFs
+aXR5Lgo+Pgo+PiBUaGUgcHJvYmxlbSBpcywgdGhhdCB0aGUgZGlzdHJvcyBkbyBub3Qga25vdyB0
+aGF0IHRoZXkgYXJlIGluCj4+IGNvbnRhaW5lciBhbmQgZG9uJ3Qga25vdyB0aGF0IHRoZXkgaGF2
+ZSB0byBiaW5kIG1vdW50IHNvbWV0aGluZyBvbiB0b3AKPj4gb2YgYm9vdF9pZC4gIFlvdSBuZWVk
+IHRvIHRlbGwgRG9ja2VyLCBMWEMvTFhEIGFuZCBhbGwgb3RoZXIgY29udGFpbmVyCj4+IHJ1bnRp
+bWVzIHRoYXQgdGhleSBuZWVkIHRvIGRvIHRoaXMgYmluZCBtb3VudCBmb3IgYm9vdF9pZC4KPiAK
+PiBZZXMuICBBbnl0aGluZyBsaWtlIHRoaXMgaXMgdGhlIHJlc3BvbnNpYmlsaXR5IG9mIHRoZSBj
+b250YWluZXIgcnVudGltZQo+IG9uZSB3YXkgb3IgYW5vdGhlci4gICBNYWdpYyB0byBnZXQgYXJv
+dW5kIGZpeGluZyB0aGUgc21hbGwgc2V0IG9mCj4gY29udGFpbmVyIHJ1bnRpbWVzIHlvdSBjYXJl
+IGFib3V0IGlzIGEgcXVlc3Rpb25hYmxlIGFjdGl2aXR5Lgo+IAo+PiBJIGNvbnNpZGVyIHRoaXMg
+dG8gYmUgYSBnZW5lcmFsIGlzc3VlLCB0aGF0IGxhY2tzIGdvb2QgZ2VuZXJhbAo+PiBzb2x1dGlv
+biBpbiB1c2Vyc3BhY2UuICBUaGUga2VybmVsIGlzIHByb3ZpZGluZyB0aGlzIGJvb3RfaWQKPj4g
+aW50ZXJmYWNlLCBidXQgaXQgaXMgZ2l2aW5nIHdyb25nIGRhdGEgaW4gdGhlIGNvbnRleHQgb2Yg
+Y29udGFpbmVycy4KPiAKPiBJIGRpc2FncmVlLiAgTmFtZXNwYWNlcyBoYXZlIG5ldmVyIGJlZW4g
+YWJvdXQgaGlkaW5nIHRoYXQgeW91IGFyZSBvbiBhCj4gZ2l2ZW4gbWFjaGluZSBvciBhIHNpbmds
+ZSBtYWNoaW5lLiAgVGhleSBhcmUgYWJvdXQgZW5jYXBzdWxhdGluZyBnbG9iYWwKPiBpZGVudGlm
+ZXJzIHNvIHRoYXQgcHJvY2VzcyBtaWdyYXRpb24gY2FuIGhhcHBlbiwgYW5kIHNvIHRoYXQgcHJv
+Y2Vzc2VzCj4gY2FuIGJlIGJldHRlciBpc29sYXRlZC4gIFRoZSBib290X2lkIGlzIG5vdCBhbiBp
+ZGVudGlmeSBvZiBhbiBvYmplY3QgaW4KPiB0aGUga2VybmVsIGF0IGFsbCwgYW5kIGl0IGlzIGRl
+c2lnbmVkIHRvIGJlIHRydWxseSBnbG9iYWxseSB1bmlxdWUKPiBhY3Jvc3MgdGltZSBhbmQgc3Bh
+Y2Ugc28gSSBhbSBub3QgYXQgYWxsIGNlcnRhaW4gdGhhdCBpdCBtYWtlcyB0aGUgbGVhc3QKPiBi
+aXQgb2Ygc2Vuc2UgdG8gZG8gYW55dGhpbmcgd2l0aCBhIGJvb3RfaWQuCj4gCj4gCj4gVGhhdCBz
+YWlkIG15IG1lbW9yeSBvZiBib290X2lkIGlzIHRoYXQgd2FzIGFkZGVkIHNvIHRoYXQgZW1hY3Mg
+KGFuZAo+IHJlbGF0ZWQgcHJvZ3JhbXMpIGNvdWxkIGNyZWF0ZSBsb2NrIGZpbGVzIG9uIG5mcyBh
+bmQgY291bGQgdGVsbCBpZiB0aGUKPiBjdXJyZW50IG1hY2hpbmUgb3ducyB0aGUgZmlsZSwgYW5k
+IGlmIHNvIGJlIGFibGUgdG8gdGVsbCBpZiB0aGUgb3duZXIKPiBvZiB0aGUgbG9jayBmaWxlIGlz
+IGFsaXZlLgo+IAo+IFNvIHRoZXJlIGlzIGFuIGFyZ3VtZW50IHRvIGJlIG1hZGUgdGhhdCBib290
+X2lkIGlzIHRvIGNvYXJzZS4gIFRoYXQKPiBhcmd1bWVudCBzdWdnZXN0IHRoYXQgYm9vdF9pZCBp
+cyBhIHBpZF9uYW1lc3BhY2UgcHJvcGVydHkuCj4gCj4gSSBoYXZlIG5vdCBsb29rZWQgYXQgdGhl
+IHVzZXJzIG9mIGJvb3RfaWQsIGFuZCBJIGRvbid0IGhhdmUgYSBkZWZpbml0aW9uCj4gb2YgYm9v
+dF9pZCB0aGF0IG1ha2VzIG1lIHRoaW5rIGl0IGlzIHRvbyBjb2Fyc2UuCj4gCj4gSWYgeW91IGNh
+biBwcm92aWRlIGEgY2xlYXIgZGVzY3JpcHRpb24gb2Ygd2hhdCB0aGUgc2VtYW50aWNzIGFyZSBh
+bmQKPiB3aGF0IHRoZXkgc2hvdWxkIGJlIGZvciBib290X2lkIHNob3dpbmcgaG93IGJvb3RfaWQg
+Zml0cyBpbnRvIGEKPiBuYW1lc3BhY2UsIG1ha2luZyBpdCBjbGVhciB3aGF0IHNob3VsZCBoYXBw
+ZW4gd2l0aCBjaGVja3BvaW50L3Jlc3RhcnQuCj4gV2UgY2FuIGRlZmluaXRlbHkgbG9vayBhdCBj
+aGFuZ2luZyBob3cgdGhlIGtlcm5lbCBzdXBwb3J0cyBib290X2lkLgo+IAo+IFRoZSByZWFzb24g
+SSBzdWdnZXN0ZWQgdGhlIGJpbmQgbW91bnQgaXMgdGhlcmUgYXJlIGxvdHMgb2YgY2FzZXMgd2hl
+cmUKPiBwZW9wbGUgd2FudCB0byBsaWUgdG8gYXBwbGljYXRpb25zIGFib3V0IHRoZSByZWFsaXR5
+IG9mIHdoYXQgaXMgZ29pbmcgb24KPiBmb3Igd2hhdGV2ZXIgcmVhc29uLCBhbmQgd2UgbGVhdmUg
+dGhvc2UgbGllcyB0byB1c2Vyc3BhY2UuICBUaGluZ3MKPiBsaWtlIGNoYW5naW5nIHRoZSBjb250
+ZW50cyBvZiAvcHJvYy9jcHVpbmZvLgoKRXZlbiB0aG91IHByZXZpb3VzbHkgd2UgaGF2ZSBzZW50
+IHBhdGNoZXMgdGhhdCBhcmUgc3VwcG9zZWQgdG8gbGllIHRvIHRoZSBzb2Z0d2FyZSBydW5uaW5n
+IGluc2lkZSBhIGNvbnRhaW5lciwgdGhpcyBvbmUgaXMgbm90IG9mIHRoaXMgc29ydC4KCllvdSBh
+cmUgcG9pbnRpbmcgdG8gRW1hY3MgYW5kIEknbSB0YWxraW5nIGFib3V0IENvbnN1bCBodHRwczov
+L3d3dy5jb25zdWwuaW8vClN5c3RlbWQgaXMgYWxzbyB1c2luZyBib290X2lkLiAiam91cm5hbGN0
+bCAtLWxpc3QtYm9vdHMiIGFjdHVhbGx5IHVzZXMgdGhlIGJvb3RfaWQgdG8gZGlzdGluZ3Vpc2gg
+YmV0d2VlbiBkaWZmZXJlbnQgYm9vdHMuCgogIC0yIGNhZjA1MjRhMWQzOTRjZTBiZGJjZmY3NWI5
+NDQ0NGZlIFR1ZSAyMDE1LTAyLTAzIDIxOjQ4OjUyIFVUQ+KAlFR1ZSAyMDE1LTAyLTAzIDIyOjE3
+OjAwIFVUQwogIC0xIDEzODgzZDE4MGRjMDQyMGRiMGFiY2I1ZmEyNmQ2MTk4IFR1ZSAyMDE1LTAy
+LTAzIDIyOjE3OjAzIFVUQ+KAlFR1ZSAyMDE1LTAyLTAzIDIyOjE5OjA4IFVUQwogICAwIGJlZDcx
+OGIxN2E3MzQxNWZhZGUwZTRlN2Y0YmVhNjA5IFR1ZSAyMDE1LTAyLTAzIDIyOjE5OjEyIFVUQ+KA
+lFR1ZSAyMDE1LTAyLTAzIDIzOjAxOjAxIFVUQwoKVGhlcmUgbWF5IGJlIGEgbG90IG9mIG90aGVy
+IHNvZnR3YXJlLCB0aGF0IHdlIGRvbid0IGtub3cgYWJvdXQsIHRoYXQgaXMgdXNpbmcgYm9vdF9p
+ZCBhcyBhIGdvb2QgbWVjaGFuaXNtIHRvIGRpc3Rpbmd1aXNoIHVuaXF1ZW5lc3Mgb2YgbWFjaGlu
+ZXMuCgpJbiBjYXNlIG9mIGNvbnN1bCwgaXQgdXNlcyB0aGUgYm9vdF9pZCBhcyBhIHVuaXF1ZSBJ
+RCBmb3IgdGhlIG5vZGUuCk9uIG91ciBzeXN0ZW1zLCB3ZSBoYXZlIG11bHRpcGxlIGNvbnRhaW5l
+cnMgcmVzaWRpbmcgb24gdGhlIHNhbWUgaG9zdCBub2RlLCB0aGF0IG1heSBiZSBwYXJ0IG9mIHRo
+ZSBzYW1lIENvbnN1bCBzZXR1cC4KT25lIG9wdGlvbiB3b3VsZCBiZSB0byB0ZWxsIGVhY2ggY3Vz
+dG9tZXIgdGhhdCBpbnN0YWxscyBjb25zdWwsIHRvIHNldHVwIGJpbmQgbW91bnRzIGZvciB0aGUg
+Ym9vdF9pZC4gSG93ZXZlciBmb3IgdGhlIGN1c3RvbWVyLCBmaW5kaW5nIG91dCB0aGF0IGJvb3Rf
+aWQgaXMgdGhlIGFjdHVhbCBwcm9ibGVtLCBpcyBub24tdHJpdmlhbCB0YXNrLgpBbmQgYWxzbyBp
+ZiB0aGUgdXNlciBpcyB1c2luZyBzeXN0ZW1kLCBzZXR0aW5nIHVwIGJpbmQgbW91bnQgYWZ0ZXIg
+dGhlIGNvbnRhaW5lciBoYXMgc3RhcnRlZCBpcyBwYXJ0bHkgdXNlbGVzcywgc2luY2UgdGhlIGxv
+ZyBhbHJlYWR5IGhhcyB0aGUgd3JvbmcgYm9vdF9pZC4KCkFub3RoZXIgb3B0aW9uIHdvdWxkIGJl
+IHRvIGdlbmVyYXRlIHVuaXF1ZSBJRCBiZWZvcmUgc3RhcnRpbmcgZWFjaCBjb250YWluZXIgYW5k
+IGJpbmQgbW91bnRpbmcgdGhhdCBvbiB0b3Agb2YgYm9vdF9pZCwgZHVyaW5nIHRoZSBib290IG9m
+IGVhY2ggY29udGFpbmVyLgpCdXQgdGhpcyBtZWFucyB0aGF0IGVhY2ggcnVudGltZSBzaG91bGQg
+a25vdyB0aGF0IGl0IGhhcyB0byBkbyB0aGF0LCBvciBhdCBsZWFzdCB0aGUgYWRtaW4gc2hvdWxk
+IGJlIGF3YXJlIHRoYXQgc3VjaCBhIHByb2JsZW0gbWF5IGV4aXN0cy4KCkZpeGluZyB0aGlzIGlu
+c2lkZSB0aGUga2VybmVsLCBhdCBsZWFzdCBob3cgSSBzZWUgaXQsIGlzIGEgdHJpdmlhbCBqb2Iu
+IEkgZG9uJ3QgdW5kZXJzdGFuZCB3aHkgdGhlIGtlcm5lbCB3b3VsZCBub3QgY29vcGVyYXRlIHdp
+dGggdGhlIHVzZXJzcGFjZS4KCkkgcmVhbGx5IGRvbid0IGNhcmUgaWYgaXQgaXMgaW5zaWRlIHRo
+ZSBwaWQgb3IgdGhlIHV0cyBuYW1lc3BhY2UsIGFzIGxvbmcgYXMgaXQgaXMgcGVyLW5hbWVzcGFj
+ZS4KCgoKPiAKPj4gUHJvcG9zaW5nIHRvIGZpeCB0aGlzIHByb2JsZW0gaW4gdXNlcnNwYWNlIHNl
+YW1zIGxpa2UgaWdub3JpbmcgdGhlCj4+IGlzc3VlLiAgWW91IGNvdWxkIGhhdmUgc2FpZCB0byB0
+aGUgQ29uc3VsIGd1eXMsIHRoYXQgdGhleSBzaG91bGQKPj4gc2ltcGx5IHN0b3AgdXNpbmcgYm9v
+dF9pZCwgYmVjYXVzZSBpdCBkb2Vzbid0IHdvcmsgY29ycmVjdGx5IG9uCj4+IGNvbnRhaW5lcnMu
+Cj4gCj4gSSBkb24ndCBrbm93IHRoZSBDb25zdWwgZ3V5cy4gICBGcm9tIGEgcXVpY2sgZ29vZ2xl
+IHNlYXJjaCBJIHNlZSB0aGF0Cj4gQ29uc3VsIGlzIGFuIG9wZW4gc291cmNlIHByb2plY3QgdGhh
+dCBpcyBhaW1zIHRvIGJlIGRpc3RyaWJ1dGVkIGFuZAo+IGhpZ2hseSBhdmFpbGFibGUuICBJdCBz
+ZWVtcyBhIHJlYXNvbmFibGUgY2FzZSB0byBsb29rIGF0IHRvIG1vdGl2YXRlCj4gY2hhbmdlcyB0
+byBib290X2lkLgo+IAo+IFRoYXQgc2FpZCBpZiBJIHdhbnQgdG8gYmUgaGlnaGx5IGF2YWlsYWJs
+ZSBJIHdvdWxkIGZpbmQgZXZlcnkgbm9kZQo+IGhhdmluZyB0aGUgc2FtZSBib290X2lkIHRvIGJl
+IHZlcnkgd29ycnlpbmcsIGFuZCB2ZXJ5IHVzZWZ1bC4gIEl0IGFsbG93cwo+IGRldGVjdGluZyBp
+ZiBubyBoYXJkd2FyZSByZWR1bmRhbmN5IGlzIHByZXNlbnQgaW4gYSBzaXR1YXRpb24uICBUaGF0
+Cj4gY2VydGFpbmx5IHNlZW1zIGxpa2UgYSBnb29kIHRoaW5nLgo+IAo+IElmIHlvdSBqdXN0IHdh
+bnQgdG8gdGVzdCBDb25zdWwgdGhlbiBoYWNraW5nIGJvb3RfaWQgd2l0aCBhIGJpbmQgbW91bnQK
+PiBzZWVtcyB0aGUgcmlnaHQgdGhpbmcuICBJZiB5b3UgcmVhbGx5IHdhbnQgdG8gcnVuIENvbnN1
+bCBpbiBwcm9kdWN0aW9uCj4gSSBhbSBjdXJpb3VzIHRvIGtub3cgaG93IHJlbW92aW5nIHRoZSBh
+YmlsaXR5IHRvIGRldGVjdCBpZiB5b3UgYXJlIG9uCj4gdGhlIHNhbWUga2VybmVsIGFzIGFub3Ro
+ZXIgcGllY2Ugb2YgQ29uc3VsIGlzIGEgZ29vZCB0aGluZy4KPiAKPiBFcmljCj4gCgoKLS0gCk1h
+cmlhbiBNYXJpbm92CkNvLWZvdW5kZXIgJiBDVE8gb2YgS3l1cC5jb20KSmFiYmVyL0dUYWxrOiBo
+YWNrbWFuQGphYmJlci5vcmcKSVJROiA3NTU2MjAxCklSQzogaGFja21hbiBAIGlyYy5mcmVlbm9k
+ZS5uZXQKTW9iaWxlOiArMzU5IDg4NiA2NjAgMjcwCl9fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNA
+bGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24u
+b3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
