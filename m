@@ -1,12 +1,15 @@
-From: Christian Brauner <christian.brauner-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: [PATCH net-next 2/2 MERGED] netns: send uevent messages
-Date: Thu, 5 Apr 2018 16:57:27 +0200
-Message-ID: <20180405145726.GB13789@gmail.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH] Fix /proc/[pid]/ns permissions
+Date: Thu, 05 Apr 2018 14:17:15 -0500
+Message-ID: <87h8op79ac.fsf__6826.83120617202$1522955807$gmane$org@xmission.com>
+References: <20180405171502.14347-1-dbanerje@akamai.com>
+	<31CF3F25-8A82-426B-BFA0-6225C39334F5@akamai.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <31CF3F25-8A82-426B-BFA0-6225C39334F5-JqFfY2XvxFXQT0dZR+AlfA@public.gmane.org> (Debabrata
+	Banerjee's message of "Thu, 5 Apr 2018 18:23:16 +0000")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,218 +19,73 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Banerjee, Debabrata" <dbanerje-JqFfY2XvxFXQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
------ Forwarded message from Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> -----
-
-Date: Mon, 19 Mar 2018 13:17:31 +0100
-From: Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org, avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org, ktkhai-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH net-next 2/2 v4] netns: send uevent messages
-X-Mailer: git-send-email 2.15.1
-
-This patch adds a receive method to NETLINK_KOBJECT_UEVENT netlink sockets
-to allow sending uevent messages into the network namespace the socket
-belongs to.
-
-Currently non-initial network namespaces are already isolated and don't
-receive uevents. There are a number of cases where it is beneficial for a
-sufficiently privileged userspace process to send a uevent into a network
-namespace.
-
-One such use case would be debugging and fuzzing of a piece of software
-which listens and reacts to uevents. By running a copy of that software
-inside a network namespace, specific uevents could then be presented to it.
-More concretely, this would allow for easy testing of udevd/ueventd.
-
-This will also allow some piece of software to run components inside a
-separate network namespace and then effectively filter what that software
-can receive. Some examples of software that do directly listen to uevents
-and that we have in the past attempted to run inside a network namespace
-are rbd (CEPH client) or the X server.
-
-Implementation:
-The implementation has been kept as simple as possible from the kernel's
-perspective. Specifically, a simple input method uevent_net_rcv() is added
-to NETLINK_KOBJECT_UEVENT sockets which completely reuses existing
-af_netlink infrastructure and does neither add an additional netlink family
-nor requires any user-visible changes.
-
-For example, by using netlink_rcv_skb() we can make use of existing netlink
-infrastructure to report back informative error messages to userspace.
-
-Furthermore, this implementation does not introduce any overhead for
-existing uevent generating codepaths. The struct netns got a new uevent
-socket member that records the uevent socket associated with that network
-namespace including its position in the uevent socket list. Since we record
-the uevent socket for each network namespace in struct net we don't have to
-walk the whole uevent socket list. Instead we can directly retrieve the
-relevant uevent socket and send the message. At exit time we can now also
-trivially remove the uevent socket from the uevent socket list. This keeps
-the codepath very performant without introducing needless overhead and even
-makes older codepaths faster.
-
-Uevent sequence numbers are kept global. When a uevent message is sent to
-another network namespace the implementation will simply increment the
-global uevent sequence number and append it to the received uevent. This
-has the advantage that the kernel will never need to parse the received
-uevent message to replace any existing uevent sequence numbers. Instead it
-is up to the userspace process to remove any existing uevent sequence
-numbers in case the uevent message to be sent contains any.
-
-Security:
-In order for a caller to send uevent messages to a target network namespace
-the caller must have CAP_SYS_ADMIN in the owning user namespace of the
-target network namespace. Additionally, any received uevent message is
-verified to not exceed size UEVENT_BUFFER_SIZE. This includes the space
-needed to append the uevent sequence number.
-
-Testing:
-This patch has been tested and verified to work with the following udev
-implementations:
-1. CentOS 6 with udevd version 147
-2. Debian Sid with systemd-udevd version 237
-3. Android 7.1.1 with ueventd
-
-Signed-off-by: Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
----
-Changelog v3->v4:
-* patch unchanged
-
-Changelog v2->v3:
-* Use reverse christmas tree ordering for local variables.
-
-Changelog v1->v2:
-* Add the whole struct uevent_sock to struct net not just the socket
-  member. Since struct uevent_sock records the position of the uevent
-  socket in the uevent socket list we can trivially remove it from the
-  uevent socket list during cleanup. This speeds up the old removal
-  codepath. list_del() will hit __list_del_entry_valid() in its call chain
-  which will validate that the element is a member of the list. If it isn't
-  it will take care that the list is not modified.
-
-Changelog v0->v1:
-* Hold mutex_lock() until uevent is sent to preserve uevent message
-  ordering. See udev and commit for reference:
-
-  commit 7b60a18da393ed70db043a777fd9e6d5363077c4
-  Author: Andrew Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-  Date:   Wed Mar 7 14:49:56 2012 +0400
-
-      uevent: send events in correct order according to seqnum (v3)
-
-      The queue handling in the udev daemon assumes that the events are
-      ordered.
----
- lib/kobject_uevent.c | 79 +++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 78 insertions(+), 1 deletion(-)
-
-diff --git a/lib/kobject_uevent.c b/lib/kobject_uevent.c
-index 8dd992e8638d..15ea216a67ce 100644
---- a/lib/kobject_uevent.c
-+++ b/lib/kobject_uevent.c
-@@ -25,6 +25,7 @@
- #include <linux/uuid.h>
- #include <linux/ctype.h>
- #include <net/sock.h>
-+#include <net/netlink.h>
- #include <net/net_namespace.h>
- 
- 
-@@ -604,12 +605,88 @@ int add_uevent_var(struct kobj_uevent_env *env, const char *format, ...)
- EXPORT_SYMBOL_GPL(add_uevent_var);
- 
- #if defined(CONFIG_NET)
-+static int uevent_net_broadcast(struct sock *usk, struct sk_buff *skb,
-+				struct netlink_ext_ack *extack)
-+{
-+	/* u64 to chars: 2^64 - 1 = 21 chars */
-+	char buf[sizeof("SEQNUM=") + 21];
-+	struct sk_buff *skbc;
-+	int ret;
-+
-+	/* bump and prepare sequence number */
-+	ret = snprintf(buf, sizeof(buf), "SEQNUM=%llu", ++uevent_seqnum);
-+	if (ret < 0 || (size_t)ret >= sizeof(buf))
-+		return -ENOMEM;
-+	ret++;
-+
-+	/* verify message does not overflow */
-+	if ((skb->len + ret) > UEVENT_BUFFER_SIZE) {
-+		NL_SET_ERR_MSG(extack, "uevent message too big");
-+		return -EINVAL;
-+	}
-+
-+	/* copy skb and extend to accommodate sequence number */
-+	skbc = skb_copy_expand(skb, 0, ret, GFP_KERNEL);
-+	if (!skbc)
-+		return -ENOMEM;
-+
-+	/* append sequence number */
-+	skb_put_data(skbc, buf, ret);
-+
-+	/* remove msg header */
-+	skb_pull(skbc, NLMSG_HDRLEN);
-+
-+	/* set portid 0 to inform userspace message comes from kernel */
-+	NETLINK_CB(skbc).portid = 0;
-+	NETLINK_CB(skbc).dst_group = 1;
-+
-+	ret = netlink_broadcast(usk, skbc, 0, 1, GFP_KERNEL);
-+	/* ENOBUFS should be handled in userspace */
-+	if (ret == -ENOBUFS || ret == -ESRCH)
-+		ret = 0;
-+
-+	return ret;
-+}
-+
-+static int uevent_net_rcv_skb(struct sk_buff *skb, struct nlmsghdr *nlh,
-+			      struct netlink_ext_ack *extack)
-+{
-+	struct net *net;
-+	int ret;
-+
-+	if (!nlmsg_data(nlh))
-+		return -EINVAL;
-+
-+	/*
-+	 * Verify that we are allowed to send messages to the target
-+	 * network namespace. The caller must have CAP_SYS_ADMIN in the
-+	 * owning user namespace of the target network namespace.
-+	 */
-+	net = sock_net(NETLINK_CB(skb).sk);
-+	if (!netlink_ns_capable(skb, net->user_ns, CAP_SYS_ADMIN)) {
-+		NL_SET_ERR_MSG(extack, "missing CAP_SYS_ADMIN capability");
-+		return -EPERM;
-+	}
-+
-+	mutex_lock(&uevent_sock_mutex);
-+	ret = uevent_net_broadcast(net->uevent_sock->sk, skb, extack);
-+	mutex_unlock(&uevent_sock_mutex);
-+
-+	return ret;
-+}
-+
-+static void uevent_net_rcv(struct sk_buff *skb)
-+{
-+	netlink_rcv_skb(skb, &uevent_net_rcv_skb);
-+}
-+
- static int uevent_net_init(struct net *net)
- {
- 	struct uevent_sock *ue_sk;
- 	struct netlink_kernel_cfg cfg = {
- 		.groups	= 1,
--		.flags	= NL_CFG_F_NONROOT_RECV,
-+		.input = uevent_net_rcv,
-+		.flags	= NL_CFG_F_NONROOT_RECV
- 	};
- 
- 	ue_sk = kzalloc(sizeof(*ue_sk), GFP_KERNEL);
--- 
-2.15.1
-
-
------ End forwarded message -----
+IkJhbmVyamVlLCBEZWJhYnJhdGEiIDxkYmFuZXJqZUBha2FtYWkuY29tPiB3cml0ZXM6Cgo+IEFj
+dHVhbGx5LCB0aGlzIHBhdGNoIGlzIGluY29tcGxldGUuIHByb2NfbnNfZ2V0X2xpbmsoKSBhbmQK
+PiBwcm9jX25zX3JlYWRsaW5rKCkgZ2F0ZSBvbiBwdHJhY2VfbWF5X2FjY2Vzcyh0YXNrLAo+IFBU
+UkFDRV9NT0RFX1JFQURfRlNDUkVEUykuICBJJ20gbm90IHN1cmUgd2h5IHRoaXMgaXMgaGVyZSBl
+aXRoZXIuIEl0Cj4gc2VlbXMgcHJvYmxlbWF0aWMgdGhhdCBhZnRlciBhIHVzZXIgY3JlYXRlcyBh
+IHBpZCBuYW1lc3BhY2UsIHRoYXQgYQo+IHVzZXIgY2Fubm90IHRlbGwgYW55bW9yZSB3aGljaCBu
+YW1lc3BhY2UgbmV3IHBpZHMgYmVsb25ncyB0bywKPiBpbmNsdWRpbmcgdGhlIHBhcmVudCBuYW1l
+c3BhY2UgYWZ0ZXIgcHJjdGwoKS4gU29tZSBtZWNoYW5pc20gaXMKPiByZXF1aXJlZCBoZXJlLiBJ
+ZiBucy0+aW51bSBmcm9tIG5zX2dldF9uYW1lKCkgaXMgc2VjcmV0LCB0aGVuIGF0IGxlYXN0Cj4g
+YSBmbGFnIGlmIGl0IGlzIGluIHlvdXIgbmFtZXNwYWNlLgoKPiDvu79PbiA0LzUvMTgsIDE6MTUg
+UE0sICJEZWJhYnJhdGEgQmFuZXJqZWUiIDxkYmFuZXJqZUBha2FtYWkuY29tPiB3cm90ZToKPgo+
+ICAgICBUaGlzIHNlZW1zIGxpa2UgYSBidWcgc2luY2UgdGhlIG9yaWdpbmFsIGNvbW1pdCA2YjRl
+MzA2YWEzZGMuIEhhdmluZyBucwo+ICAgICBkaXJlY3RvcnkgYmUgZXhlY3V0YWJsZSBidXQgbm90
+IHJlYWRhYmxlIGRvZXMgbm90IG1ha2Ugc2Vuc2UuIEZ1cnRoZXIsCj4gICAgIGl0IGJyZWFrcyB1
+c2Vyc3BhY2Ugd2hlbiBpdCBuZWVkcyB0byBrbm93IHdoaWNoIG5hbWVzcGFjZSBpdCBiZWxvbmdz
+Cj4gICAgIHRvLiBGb3IgZXhhbXBsZSwgc2V0dGluZyBhIHByb2Nlc3MgdG8gcHJjdGwoUFJfU0VU
+X0RVTVBBQkxFLCAwKQo+ICAgICBpbW1lZGlhdGVseSBoaWRlcyB0aGUgbmFtZXNwYWNlIGZyb20g
+dGhhdCB1c2VyLCBicmVha2luZyB0aGUgbGF0ZXN0Cj4gICAgIHBncmVwIHdpdGggbmFtZXNwYWNl
+IHN1cHBvcnQuCj4gICAgIAo+ICAgICBUaGUgbWFpbiBwcm9ibGVtIGhlcmUgaXMgdGhhdCB1bmxp
+a2Ugb3RoZXIgbmFtZXNwYWNlcywgcGlkIG5hbWVzcGFjZXMKPiAgICAgYXBwZWFyIGZsYXQgYXMg
+eW91IGZvbGxvdyB0aGUgcGFyZW50cyB1cHdhcmRzIGluIHRoZSBoZWlyYXJjaHkuIEl0IGlzCj4g
+ICAgIGltcG9ydGFudCB0byBiZSBhYmxlIHRvIHRlbGwgdGhhdCBhIHByb2Nlc3MgaXMgaW4geW91
+ciBuYW1lc3BhY2UsIGEKPiAgICAgY2hpbGQgbmFtZXNwYWNlLCBvciBhbiBlbnRpcmVseSBkaWZm
+ZXJlbnQgbmFtZXNwYWNlLiBJbiB0aGUgbGF0dGVyCj4gICAgIGNhc2UsIHRoZSBwaWQgaXMgYWxy
+ZWFkeSBoaWRkZW4gZnJvbSB5b3UsIHRodXMgdGhlc2UgcGVybWlzc2lvbiBkb24ndAo+ICAgICBt
+YXR0ZXIuCgpJIGFncmVlIHRoZXJlIGlzIGFuIGluY29uc2lzdGVuY3kgb24gdGhlIGRpcmVjdG9y
+eSBwZXJtaXNzaW9ucyBmb3IKdGhlIG5zIGRpcmVjdG9yeSB0aGF0IGNvdWxkIHJlYXNvbmFibHkg
+YmUgZml4ZWQuCgpwcmN0bChQUl9TRVRfRFVNUEFCTEUsIDApIGlzIGFuIGludGVyZXN0aW5nLiAg
+RnVuZGFtZW50YWxseSBpdCBpcyBhYm91dCBub3QKbGV0dGluZyB1bnByaXZpbGVnZWQgdGFza3Mg
+cG9rZSBhYm91dCB3aXRoIHRoZSBwcm9jZXNzLCBhbmQgaXQgaXMgdGhlCm1lY2hhbmlzbSB1c2Vk
+IGJ5IHNldHVpZC9zZXRnaWQgZXhlYy4gICBJZiB5b3UgYXJlIHJvb3QgaW4gdGhlIHVzZXIKbmFt
+ZXNwYWNlIG9mIHRoZSB0YXNrIG9yIHlvdXIgdWlkIGNyZWF0ZWQgdGhlIHVzZXIgbmFtZXNwYWNl
+IG9yIGFuCmFuY2VzdG9yIHVzZXIgbmFtZXNwYWNlIHlvdSBzaG91bGQgYmUgYWJsZSB0byBpbnNw
+ZWN0IHRoZSBwcm9jZXNzLgoKV2hhdCBoYXBwZW5zIHdpdGggZHVtcGFibGUgaXMgYWxzbyBnb2lu
+ZyB0byB2YXJ5IGEgbGl0dGxlIGJpdCBkZXBlbmRpbmcKb24gaG93IHJlY2VudCB5b3VyIGtlcm5l
+bCBpcy4gIFRoZSBkdW1wYWJsZSBzdGF0dXMgd2FzIG5vdCByZWFsbHkKbmFtZXNwYWNlZCB1bnRp
+bCByZWNlbnRseS4KClRoZXJlIG1pZ2h0IGFsc28gYmUgc29tZSBpc3N1ZXMgZnJvbSB5YW1hIG9y
+IG90aGVyIGxzbXMgdGhhdCBsb3ZlIHRvCmxpbWl0IHB0cmFjZS4gIFRob3VnaCBpdCBzb3VuZHMg
+bGlrZSB5b3VyIGlzc3VlIGlzIHRoZSBkdW1wYWJpbGl0eS4KClRoZSBjaGVjayAicHRyYWNlX21h
+eV9hY2Nlc3ModGFzaywgUFRSQUNFX01PREVfUkVBRF9GU0NSRURTKSIgaXMgdGhlCnN0YW5kYXJk
+IGNoZWNrIGZvciBhY2Nlc3NpbmcgYW55dGhpbmcgZXZlbiBhIGxpdHRsZSBiaXQgc2Vuc2l0aXZl
+IG9mCmEgcHJvY2VzcywgYW5kIHRoYXQgc2VlbXMgYXBwcm9wcmlhdGUgaGVyZS4KCkVyaWMKCj4g
+ICAgIAo+ICAgICBDQzogRXJpYyBXLiBCaWVkZXJtYW4gPGViaWVkZXJtQHhtaXNzaW9uLmNvbT4K
+PiAgICAgQ0M6IERhbmllbCBMZXpjYW5vIDxkYW5pZWwubGV6Y2Fub0BmcmVlLmZyPgo+ICAgICAK
+PiAgICAgU2lnbmVkLW9mZi1ieTogRGViYWJyYXRhIEJhbmVyamVlIDxkYmFuZXJqZUBha2FtYWku
+Y29tPgo+ICAgICAtLS0KPiAgICAgIGZzL3Byb2MvYmFzZS5jIHwgMiArLQo+ICAgICAgMSBmaWxl
+IGNoYW5nZWQsIDEgaW5zZXJ0aW9uKCspLCAxIGRlbGV0aW9uKC0pCj4gICAgIAo+ICAgICBkaWZm
+IC0tZ2l0IGEvZnMvcHJvYy9iYXNlLmMgYi9mcy9wcm9jL2Jhc2UuYwo+ICAgICBpbmRleCBkNTMy
+NDY4NjNjZmIuLjIyOTVhYzBkOGUxYyAxMDA2NDQKPiAgICAgLS0tIGEvZnMvcHJvYy9iYXNlLmMK
+PiAgICAgKysrIGIvZnMvcHJvYy9iYXNlLmMKPiAgICAgQEAgLTI5MjIsNyArMjkyMiw3IEBAIHN0
+YXRpYyBjb25zdCBzdHJ1Y3QgcGlkX2VudHJ5IHRnaWRfYmFzZV9zdHVmZltdID0gewo+ICAgICAg
+CURJUigiZmQiLCAgICAgICAgIFNfSVJVU1J8U19JWFVTUiwgcHJvY19mZF9pbm9kZV9vcGVyYXRp
+b25zLCBwcm9jX2ZkX29wZXJhdGlvbnMpLAo+ICAgICAgCURJUigibWFwX2ZpbGVzIiwgIFNfSVJV
+U1J8U19JWFVTUiwgcHJvY19tYXBfZmlsZXNfaW5vZGVfb3BlcmF0aW9ucywgcHJvY19tYXBfZmls
+ZXNfb3BlcmF0aW9ucyksCj4gICAgICAJRElSKCJmZGluZm8iLCAgICAgU19JUlVTUnxTX0lYVVNS
+LCBwcm9jX2ZkaW5mb19pbm9kZV9vcGVyYXRpb25zLCBwcm9jX2ZkaW5mb19vcGVyYXRpb25zKSwK
+PiAgICAgLQlESVIoIm5zIiwJICBTX0lSVVNSfFNfSVhVR08sIHByb2NfbnNfZGlyX2lub2RlX29w
+ZXJhdGlvbnMsIHByb2NfbnNfZGlyX29wZXJhdGlvbnMpLAo+ICAgICArCURJUigibnMiLAkgIFNf
+SVJVR098U19JWFVHTywgcHJvY19uc19kaXJfaW5vZGVfb3BlcmF0aW9ucywgcHJvY19uc19kaXJf
+b3BlcmF0aW9ucyksCj4gICAgICAjaWZkZWYgQ09ORklHX05FVAo+ICAgICAgCURJUigibmV0Iiwg
+ICAgICAgIFNfSVJVR098U19JWFVHTywgcHJvY19uZXRfaW5vZGVfb3BlcmF0aW9ucywgcHJvY19u
+ZXRfb3BlcmF0aW9ucyksCj4gICAgICAjZW5kaWYKPiAgICAgLS0gCj4gICAgIDIuMTYuMgo+ICAg
+ICAKPiAgICAgCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+CkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlv
+bi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8v
+Y29udGFpbmVycw==
