@@ -1,16 +1,12 @@
-From: Christian Brauner <christian.brauner-pcWmUGGWqqcdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH] [RFC][WIP] namespace.c: Allow some unprivileged proc
-	mounts when not fully visible
-Date: Thu, 5 Apr 2018 16:19:26 +0200
-Message-ID: <20180405141926.GA15202__37835.0488645539$1522938193$gmane$org@mailbox.org>
-References: <20180404115311.725-1-alban@kinvolk.io>
-	<87tvsrjai0.fsf@xmission.com>
+From: Christian Brauner <christian.brauner-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: [PATCH net-next 1/2 MERGED] net: add uevent socket member
+Date: Thu, 5 Apr 2018 16:56:40 +0200
+Message-ID: <20180405145639.GA13789@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <87tvsrjai0.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,120 +16,118 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Iago Lopez Galeiras <iago-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daniel J Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Akihiro Suda <suda.akihiro-Zyj7fXuS5i5L9jVzuh4AOg@public.gmane.org>, Alban Crequy <alban.crequy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michael Crosby <crosbymichael-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Stephen J Day <stephen.day-FCduhRhOUaTQT0dZR+AlfA@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jess Frazelle <acidburn-0li6OtcxBFHby3iVrkZq2A@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Apr 04, 2018 at 09:45:43AM -0500, Eric W. Biederman wrote:
-> Alban Crequy <alban.crequy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
-> 
-> > Since Linux v4.2 with commit 1b852bceb0d1 ("mnt: Refactor the logic for
-> > mounting sysfs and proc in a user namespace"), new mounts of proc or
-> > sysfs in non init userns are only allowed when there is at least one
-> > fully-visible proc or sysfs mount.
-> >
-> > This is to enforce that proc/sysfs files masked by a mount are still
-> > masked in a new mount in a unprivileged userns. The locked mount logic
-> > for bind mounts (has_locked_children()) was not enough in the case of
-> > proc/sysfs new mounts because some files in proc (/proc/kcore) exist as
-> > a singleton rather than being owned by a specific proc mount.
-> >
-> > Unfortunately, this blocks me from using userns from within a Docker
-> > container because Docker containers mask entries such as /proc/kcore. My
+----- Forwarded message from Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> -----
 
-I honestly wonder what the benefit of this is supposed to be. If the
-container retains CAP_SYS_ADMIN (privileged or unprivileged) these
-mounts can all be unmounted. If the container drops CAP_SYS_ADMIN
-you won't be able to {u}mount anymore but you also won't be able to use
-any CLONE_* flags anymore. So clone(), setns(), unshare() are useless
-too. If you're unprivileged overmounting e.g. /proc/kcore won't give
-you any additional security benefits since you can't read it anyway. So
-this only seems useful when the container is privileged and some form of
-LSM is protecting those mount points. But for these cases the only thing
-I have to say is: it's 2018 that is 5 years past CLONE_NEWUSER so don't
-run privileged containers and pretend that it can be done securely in
-any way.
-But I might be missing cases where this would be really really useful
-involving unprivileged containers too.
-This is really not directed at you Ablan, I'm just wondering about this
-in general and I seem to have a polemic day. :)
+Date: Mon, 19 Mar 2018 13:17:30 +0100
+From: Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org, avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org, ktkhai-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH net-next 1/2 v4] net: add uevent socket member
+X-Mailer: git-send-email 2.15.1
 
-Christian
+This commit adds struct uevent_sock to struct net. Since struct uevent_sock
+records the position of the uevent socket in the uevent socket list we can
+trivially remove it from the uevent socket list during cleanup. This speeds
+up the old removal codepath.
+Note, list_del() will hit __list_del_entry_valid() in its call chain which
+will validate that the element is a member of the list. If it isn't it will
+take care that the list is not modified.
 
-> > use case is to build container images with arbitrary commands (such as
-> > using "RUN" commands in Dockerfiles) without privileges and from within
-> > a Docker container. Those arbitrary commands could be shell scripts that
-> > require /proc.
-> 
-> This is an understandable problem.  /proc/kcore is a file that policy
-> has a very reasonable right to make inaccessible.  Allowing unprivileged
-> users to bypass the policy setup by root is not ok, and is the whole
-> point of the restrictions.
-> 
-> 
-> I need to hear why you can't fix Docker.  Why your subcommand needs to
-> mount proc in the first place.  Neither have been mentioned.  So far
-> this looks like ``my sysadmin told me no, can I have a kernel patch to
-> get around that''.  Not something I support at all.
-> 
-> 
-> 
-> Before we get a kernel change for something like this there need to be
-> clear evidence this raises to the point of something that is really
-> going to be used and will have multiple users, and the proposal will
-> be simple and maintainble.
-> 
-> Hiding files in /proc simply because they were mounted over in the
-> parent proc does not qualify as simple or maintainble by any means.
-> Way too much mixing of the layers.  Needing to read from the parent
-> proc to find which files were already hidden makes this doubly complex.
-> 
-> Files like /proc/kcore can not be hidden always and automatically
-> because their attributes can change so they may reasonably be made
-> available to users who are not the global root.
-> 
-> The only option I have seen proposed that might qualify as something
-> general purpose and simple is a new filesystem that is just the process
-> directories of proc.  As there would in essence be no files that would
-> need restrictions it would be safe to allow anyone to mount without
-> restriction.
-> 
-> > The following commands show my problem:
-> >
-> > $ sudo docker run -ti --rm --cap-add=SYS_ADMIN busybox sh -c 'unshare -U -r -p -m -f mount -t proc proc /home && echo ok'
-> > mount: permission denied (are you root?)
-> >
-> > $ sudo docker run -ti --rm --cap-add=SYS_ADMIN busybox sh -c 'mkdir -p /unmasked-proc && mount -t proc proc /unmasked-proc && unshare -U -r -p -m -f mount -t proc proc /home && echo ok'
-> > ok
-> 
-> Actually this does not show your problem because it does not reveal why
-> you need to mount proc.
-> 
-> That is a ``Doctor it hurts when I do this'' example where the Doctor
-> will reasonably tell you ``Don't do that then''.
-> 
-> 
-> > For my use case, I will need to support at least the following entries:
-> >
-> > $ sudo docker run -ti --rm busybox sh -c 'mount|grep /proc/'
-> > proc on /proc/asound type proc (ro,nosuid,nodev,noexec,relatime)
-> > proc on /proc/bus type proc (ro,nosuid,nodev,noexec,relatime)
-> > proc on /proc/fs type proc (ro,nosuid,nodev,noexec,relatime)
-> > proc on /proc/irq type proc (ro,nosuid,nodev,noexec,relatime)
-> > proc on /proc/sys type proc (ro,nosuid,nodev,noexec,relatime)
-> > proc on /proc/sysrq-trigger type proc (ro,nosuid,nodev,noexec,relatime)
-> > tmpfs on /proc/kcore type tmpfs (rw,context="...",nosuid,mode=755)
-> > tmpfs on /proc/latency_stats type tmpfs (rw,context="...",nosuid,mode=755)
-> > tmpfs on /proc/timer_list type tmpfs (rw,context="...",nosuid,mode=755)
-> > tmpfs on /proc/sched_debug type tmpfs (rw,context="...",nosuid,mode=755)
-> > tmpfs on /proc/scsi type tmpfs (ro,seclabel,relatime)
-> 
-> It looks like a cruft free cousin of proc that is just processes would
-> be applicable to your usecase.
-> 
-> Eric
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+Signed-off-by: Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+---
+Changelog v3->v4:
+* non-functional change: remove return from function returning void
+
+Changelog v2->v3:
+* patch added
+  This patch was split out of the follow up patch
+  Subject: [PATCH 2/2 v3] netns: send uevent messages
+
+Changelog v1->v2:
+* patch not present
+
+Changelog v0->v1:
+* patch not present
+---
+ include/net/net_namespace.h |  4 +++-
+ lib/kobject_uevent.c        | 17 +++++++----------
+ 2 files changed, 10 insertions(+), 11 deletions(-)
+
+diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
+index f306b2aa15a4..abd7d91bffac 100644
+--- a/include/net/net_namespace.h
++++ b/include/net/net_namespace.h
+@@ -40,7 +40,7 @@ struct net_device;
+ struct sock;
+ struct ctl_table_header;
+ struct net_generic;
+-struct sock;
++struct uevent_sock;
+ struct netns_ipvs;
+ 
+ 
+@@ -79,6 +79,8 @@ struct net {
+ 	struct sock 		*rtnl;			/* rtnetlink socket */
+ 	struct sock		*genl_sock;
+ 
++	struct uevent_sock	*uevent_sock;		/* uevent socket */
++
+ 	struct list_head 	dev_base_head;
+ 	struct hlist_head 	*dev_name_head;
+ 	struct hlist_head	*dev_index_head;
+diff --git a/lib/kobject_uevent.c b/lib/kobject_uevent.c
+index 9fe6ec8fda28..8dd992e8638d 100644
+--- a/lib/kobject_uevent.c
++++ b/lib/kobject_uevent.c
+@@ -32,11 +32,13 @@ u64 uevent_seqnum;
+ #ifdef CONFIG_UEVENT_HELPER
+ char uevent_helper[UEVENT_HELPER_PATH_LEN] = CONFIG_UEVENT_HELPER_PATH;
+ #endif
+-#ifdef CONFIG_NET
++
+ struct uevent_sock {
+ 	struct list_head list;
+ 	struct sock *sk;
+ };
++
++#ifdef CONFIG_NET
+ static LIST_HEAD(uevent_sock_list);
+ #endif
+ 
+@@ -621,6 +623,9 @@ static int uevent_net_init(struct net *net)
+ 		kfree(ue_sk);
+ 		return -ENODEV;
+ 	}
++
++	net->uevent_sock = ue_sk;
++
+ 	mutex_lock(&uevent_sock_mutex);
+ 	list_add_tail(&ue_sk->list, &uevent_sock_list);
+ 	mutex_unlock(&uevent_sock_mutex);
+@@ -629,17 +634,9 @@ static int uevent_net_init(struct net *net)
+ 
+ static void uevent_net_exit(struct net *net)
+ {
+-	struct uevent_sock *ue_sk;
++	struct uevent_sock *ue_sk = net->uevent_sock;
+ 
+ 	mutex_lock(&uevent_sock_mutex);
+-	list_for_each_entry(ue_sk, &uevent_sock_list, list) {
+-		if (sock_net(ue_sk->sk) == net)
+-			goto found;
+-	}
+-	mutex_unlock(&uevent_sock_mutex);
+-	return;
+-
+-found:
+ 	list_del(&ue_sk->list);
+ 	mutex_unlock(&uevent_sock_mutex);
+ 
+-- 
+2.15.1
+
+
+----- End forwarded message -----
