@@ -1,16 +1,10 @@
-From: Michael Ellerman <mpe-Gsx/Oe8HsFggBc27wqDAHg@public.gmane.org>
-Subject: Re: [PATCH 4/4 v5 RESEND] selftests: add devpts selftests
-Date: Tue, 10 Apr 2018 19:34:36 +1000
-Message-ID: <87bmerbe1f.fsf__29632.7779688456$1523352774$gmane$org@concordia.ellerman.id.au>
-References: <20180313165527.24038-1-christian.brauner@ubuntu.com>
-	<20180313165527.24038-5-christian.brauner@ubuntu.com>
-	<87efjnbn0j.fsf@concordia.ellerman.id.au>
-	<20180410084208.GA14520@mailbox.org>
+From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Announcing LXC, LXD and LXCFS 3.0 LTS
+Date: Wed, 11 Apr 2018 23:25:00 +0200
+Message-ID: <20180411212500.GI12419__37994.9810369455$1523482315$gmane$org@castiana>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============7535836655746949388=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20180410084208.GA14520-cl+VPiYnx/1AfugRpC6u6w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,60 +14,118 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Cc: gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
+To: lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org
+Cc: lxc-users-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, containers-cunTk1MwBs98uUxBSJOaYoYkZiVZrdSR2LY78lusg7I@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> writes:
-> On Tue, Apr 10, 2018 at 04:20:44PM +1000, Michael Ellerman wrote:
->> Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> writes:
->> > diff --git a/tools/testing/selftests/Makefile b/tools/testing/selftests/Makefile
->> > index 7442dfb73b7f..dbda89c9d9b9 100644
->> > --- a/tools/testing/selftests/Makefile
->> > +++ b/tools/testing/selftests/Makefile
->> > @@ -7,6 +7,7 @@ TARGETS += cpufreq
->> >  TARGETS += cpu-hotplug
->> >  TARGETS += efivarfs
->> >  TARGETS += exec
->> > +TARGETS += filesystems
->>    ^ This, and ...
->> 
->> > diff --git a/tools/testing/selftests/filesystems/Makefile b/tools/testing/selftests/filesystems/Makefile
->> > index 13a73bf725b5..4e6d09fb166f 100644
->> > --- a/tools/testing/selftests/filesystems/Makefile
->> > +++ b/tools/testing/selftests/filesystems/Makefile
->> > @@ -1,5 +1,5 @@
->> >  # SPDX-License-Identifier: GPL-2.0
->> > -TEST_PROGS := dnotify_test
->> > +TEST_PROGS := dnotify_test devpts_pts
->>                  ^
->>                  this ...
->> 
->> Have the unfortunate effect of running dnotify_test as part of the
->> default selftest run.
->> 
->> dnotify_test boils down to:
->> 
->> 	while (1) {
->> 		pause();
->> 		printf("Got event on fd=%d\n", event_fd);
->> 	}
->> 
->> 
->> ie. an infinite loop :)
->
-> Hi Michael,
->
-> Ugh, didn't notice this before. Weird test.
 
-No worries. It looks like it was copied from Documentation where it was
-really just sample code, rather than a test.
- 
->> I'll send a patch to fix it.
->
-> Excellent, you can likely route it through Greg's tty tree.
+--===============7535836655746949388==
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="HcccYpVZDxQ8hzPO"
+Content-Disposition: inline
 
-I've sent it to the kselftest list as well as Greg, so whoever wants to
-merge it is fine by me.
 
-cheers
+--HcccYpVZDxQ8hzPO
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+The LXC, LXD and LXCFS teams are proud to announce the release of the
+3.0 version of all three projects.
+
+This is an LTS release which comes with 5 years of upstream support for
+bugfixes and security updates, in this case until June 2023.
+
+We'd like to note that despite the major version bump, no APIs have been
+broken and both liblxc and the LXD REST API remain backward compatible.
+
+Our existing 2.0 LTS will now be getting one last major bugfix update
+over the next month or so before going into a much slower maintenance
+phase where only critical bugfixes, special requests and security fixes
+get backported.
+
+
+LXD highlights (since LXD 2.21):
+
+ - Support for clustering LXD servers together
+ - New tool to convert existing systems into containers
+ - Support for NVIDIA runtime & library passthrough
+ - Hotplug support for unix-char and unix-block devices
+ - Local copy/move of storage volumes
+ - Remote transfer of storage volumes
+ - A new `proxy` device type to forward TCP connections
+ - Event based notification in the /dev/lxd API
+ - Replaced our command line parser
+ - New lifecycle events for tracking/auditing
+
+LXC highlights (since LXC 2.1):
+
+ - Introduction of some new configuration keys (see list in announcement)
+ - Improved CLI
+ - Support for CGroupV2
+ - Template scripts have been moved out of tree
+ - Support for using images generated by our new `distrobuilder` tool
+ - Support for using OCI images for application containers
+ - Ring buffer based console logging
+ - Argument filtering in Seccomp policies
+ - Daemonized application containers
+ - Deprecation and rename of some config keys (`lxc-update-config` to conve=
+rt)
+ - Removal of legacy CGroup drivers (cgmanager & cgfs in favor of cgfsng)
+ - Removal of the aufs storage backend (use overlayfs)
+
+LXCFS highlights (since LXCFS 2.0):
+
+ - libpam-cgfs has been moved over to LXC
+
+
+The announcements for the 3 projects can be found here:
+
+ - LXD 3.0: https://discuss.linuxcontainers.org/t/lxd-3-0-0-has-been-releas=
+ed/1491
+ - LXC 3.0: https://discuss.linuxcontainers.org/t/lxc-3-0-0-has-been-releas=
+ed/1449
+ - LXCFS 3.0: https://discuss.linuxcontainers.org/t/lxcfs-3-0-0-has-been-re=
+leased/1440
+
+
+We'd like to thank all of our contributors and our amazing community for
+their contributions, bug reports and help testing those releases!
+
+On behalf of the LXC, LXD and LXCFS teams,
+
+St=E9phane Graber
+
+--HcccYpVZDxQ8hzPO
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCgAdFiEEYC9WdmPlk7y9FPM4xjiXTWR5LWcFAlrOfSgACgkQxjiXTWR5
+LWfeqw//dEryEPoKeju57bkuthbJyg0VJclYnKIz7XvmkF89TV8jivQZ1fVPL488
+jZT+Mhv44HIf3xtsSHC+vpOXDNJFEwWr7af9xqhn3KaMI+70a9zrdaDDGBQiyEVa
+tyFP8MFKmcKHsYKTBeDNTCkLzK5iagrqtXOv+HRqJk6rr8I3eZ3vs826lOQp/AKe
+1sj1uiwsGUVa/Szd9PezpmfXXRZndcZ2bxJQHYhdnsDEE5DPX1OXoYg5Ni9uAcF7
+QdDvmhh9yrX+gJvofq1WweN+RDoVBCm+/61lWc9xNGpxQSYFquI/uim+hHEVcEU5
+DojGMwaNF08zxQurLHdkZcnh9acYGMQNAmnLN9RnOA2IoS9LlaMnRFhnmHaxYqWS
+E/xyYRXKW6r1Qry4c5REmZ7/ycJXCcc37TUmuDOl9kWqgwryAqbZp1ULF/kG/Gme
+mx8R78vdb5x7HzH/0eYARFA6Vx/QaKIZt3pHxfoTI/J6SBa2P+G3BXBdtvw12yGX
+MCrJDiWCDLiQvjXswT4hmQ6T1s1ApYniCWzODcyEZki+x5eJEuj+vRYjoALWB32c
+yGsRWq1hUDh1vPXjAJP/RC2VPT7E7KsceujWzCO+Wek3MxhX+ktwj20GpHpD5Xcz
+c9jAYJ1gjl2XEf846w4Sf9eSnI45SLgktMt+juyfrmrv/Enfe58=
+=4AzN
+-----END PGP SIGNATURE-----
+
+--HcccYpVZDxQ8hzPO--
+
+--===============7535836655746949388==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============7535836655746949388==--
