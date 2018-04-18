@@ -1,20 +1,19 @@
-From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC PATCH V1 01/12] audit: add container id
-Date: Wed, 18 Apr 2018 15:51:36 -0400
-Message-ID: <20180418195136.sbogbumlputhbvfx__34421.0511692383$1524081366$gmane$org@madcap2.tricolour.ca>
-References: <cover.1519930146.git.rgb@redhat.com>
-	<2e5d93ee46feca915a101c2fc3062da674a98223.1519930146.git.rgb@redhat.com>
-	<216d1ab1-531b-9185-2e31-34f162f08aad@linux.vnet.ibm.com>
-	<20180316035837.ddnqvbyrbp3fdk7e@madcap2.tricolour.ca>
-	<f966fa52-da4b-3d74-0848-1f0b08e57fd9@linux.vnet.ibm.com>
-	<20180418192359.n4q53bvsdhrjftjg@madcap2.tricolour.ca>
-	<c1ec93a2-b398-373c-55da-b2be8e60c6b6@linux.vnet.ibm.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [RFC PATCH v3 1/3] ima: extend clone() with IMA namespace support
+Date: Wed, 18 Apr 2018 15:12:45 -0500
+Message-ID: <87wox4s282.fsf@xmission.com>
+References: <1522159038-14175-1-git-send-email-stefanb@linux.vnet.ibm.com>
+	<1522159038-14175-2-git-send-email-stefanb@linux.vnet.ibm.com>
+	<87sh8lcecn.fsf@xmission.com>
+	<1523636702.3272.63.camel@linux.vnet.ibm.com>
+	<d8c30d7d-c679-9323-7a25-d3148e9b96c6@canonical.com>
+	<1524081472.3272.319.camel@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <c1ec93a2-b398-373c-55da-b2be8e60c6b6-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <1524081472.3272.319.camel-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> (Mimi Zohar's
+	message of "Wed, 18 Apr 2018 15:57:52 -0400")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,119 +23,43 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
+To: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: John Johansen <john.johansen-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, david.safford-JJi787mZWgc@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org, linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 2018-04-18 15:39, Stefan Berger wrote:
-> On 04/18/2018 03:23 PM, Richard Guy Briggs wrote:
-> > On 2018-04-18 14:45, Stefan Berger wrote:
-> > > On 03/15/2018 11:58 PM, Richard Guy Briggs wrote:
-> > > > On 2018-03-15 16:27, Stefan Berger wrote:
-> > > > > On 03/01/2018 02:41 PM, Richard Guy Briggs wrote:
-> > > > > > Implement the proc fs write to set the audit container ID of a process,
-> > > > > > emitting an AUDIT_CONTAINER record to document the event.
-> > > > > > 
-> > > > > > This is a write from the container orchestrator task to a proc entry of
-> > > > > > the form /proc/PID/containerid where PID is the process ID of the newly
-> > > > > > created task that is to become the first task in a container, or an
-> > > > > > additional task added to a container.
-> > > > > > 
-> > > > > > The write expects up to a u64 value (unset: 18446744073709551615).
-> > > > > > 
-> > > > > > This will produce a record such as this:
-> > > > > > type=UNKNOWN[1333] msg=audit(1519903238.968:261): op=set pid=596 uid=0 subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 auid=0 tty=pts0 ses=1 opid=596 old-contid=18446744073709551615 contid=123455 res=0
-> > > > > > 
-> > > > > > The "op" field indicates an initial set.  The "pid" to "ses" fields are
-> > > > > > the orchestrator while the "opid" field is the object's PID, the process
-> > > > > > being "contained".  Old and new container ID values are given in the
-> > > > > > "contid" fields, while res indicates its success.
-> > > > > > 
-> > > > > > It is not permitted to self-set, unset or re-set the container ID.  A
-> > > > > > child inherits its parent's container ID, but then can be set only once
-> > > > > > after.
-> > > > > > 
-> > > > > > See: https://github.com/linux-audit/audit-kernel/issues/32
-> > > > > > 
-> > > > > > 
-> > > > > >     /* audit_rule_data supports filter rules with both integer and string
-> > > > > >      * fields.  It corresponds with AUDIT_ADD_RULE, AUDIT_DEL_RULE and
-> > > > > > diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-> > > > > > index 4e0a4ac..0ee1e59 100644
-> > > > > > --- a/kernel/auditsc.c
-> > > > > > +++ b/kernel/auditsc.c
-> > > > > > @@ -2073,6 +2073,92 @@ int audit_set_loginuid(kuid_t loginuid)
-> > > > > >     	return rc;
-> > > > > >     }
-> > > > > > 
-> > > > > > +static int audit_set_containerid_perm(struct task_struct *task, u64 containerid)
-> > > > > > +{
-> > > > > > +	struct task_struct *parent;
-> > > > > > +	u64 pcontainerid, ccontainerid;
-> > > > > > +	pid_t ppid;
-> > > > > > +
-> > > > > > +	/* Don't allow to set our own containerid */
-> > > > > > +	if (current == task)
-> > > > > > +		return -EPERM;
-> > > > > > +	/* Don't allow the containerid to be unset */
-> > > > > > +	if (!cid_valid(containerid))
-> > > > > > +		return -EINVAL;
-> > > > > > +	/* if we don't have caps, reject */
-> > > > > > +	if (!capable(CAP_AUDIT_CONTROL))
-> > > > > > +		return -EPERM;
-> > > > > > +	/* if containerid is unset, allow */
-> > > > > > +	if (!audit_containerid_set(task))
-> > > > > > +		return 0;
-> > > > > I am wondering whether there should be a check for the target process that
-> > > > > will receive the containerid to not have CAP_SYS_ADMIN that would otherwise
-> > > > > allow it to arbitrarily unshare()/clone() and leave the set of namespaces
-> > > > > that may make up the container whose containerid we assign here?
-> > > > This is a reasonable question.  This has been debated and I understood
-> > > > the conclusion was that without a clear definition of a "container", the
-> > > > task still remains in that container that just now has more
-> > > > sub-namespaces (in the case of hierarchical namespaces), we don't want
-> > > > to restrict it in such a way and that allows it to create nested
-> > > > containers.  I see setns being more problematic if it could switch to
-> > > > another existing namespace that was set up by the orchestrator for a
-> > > > different container.  The coming v2 patchset acknowledges this situation
-> > > > with the network namespace being potentially shared by multiple
-> > > > containers.
-> > > Are you going to post v2 soon? We would like to build on top of it for IMA
-> > > namespacing and auditing inside of IMA namespaces.
-> > I don't know if it addresses your specific needs, but V2 was posted on
-> > March 16th along with userspace patches:
-> > 	https://www.redhat.com/archives/linux-audit/2018-March/msg00110.html
-> > 	https://www.redhat.com/archives/linux-audit/2018-March/msg00124.html
-> > 
-> > V3 is pending.
-> Thanks. I hadn't actually looked at primarily due to the ghak and ghau in
-> the title. Whatever these may mean.
-
-They are Github issue numbers:
-GHAK: GitHub Audit Kernel
-GHAU: GitHub Audit Userspace
-GHAD: GitHub Audit Documentation
-GHAT: GitHub Audit Testsuite
-
-> Does V2 or will V3 prevent a privileged process to setns() to a whole
-> different set of namespaces and still be audited with that initial container
-> id ?
-
-No, not significantly different from V1 in that respect.
-
-It does not prevent setns(), but will maintain its containerid.
-
-It will prevent games by blocking a child and parent from setting each
-other's containerids.
-
-It does check that the task being conainered does not yet have any
-children or peer threads.
-
-- RGB
-
---
-Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Sr. S/W Engineer, Kernel Security, Base Operating Systems
-Remote, Ottawa, Red Hat Canada
-IRC: rgb, SunRaycer
-Voice: +1.647.777.2635, Internal: (81) 32635
+TWltaSBab2hhciA8em9oYXJAbGludXgudm5ldC5pYm0uY29tPiB3cml0ZXM6Cgo+IE9uIFdlZCwg
+MjAxOC0wNC0xOCBhdCAwOTowOSAtMDcwMCwgSm9obiBKb2hhbnNlbiB3cm90ZToKPj4gT24gMDQv
+MTMvMjAxOCAwOToyNSBBTSwgTWltaSBab2hhciB3cm90ZToKPj4gPiBbQ2MnaW5nIEpvaG4gSm9o
+YW5zZW5dCj4+ID4gCj4+ID4gT24gVHVlLCAyMDE4LTAzLTI3IGF0IDE4OjAxIC0wNTAwLCBFcmlj
+IFcuIEJpZWRlcm1hbiB3cm90ZToKPj4gPiBbLi4uXQo+PiA+PiBBcyBzdWNoIEkgZXhwZWN0IHRo
+ZSBiZXN0IHdheSB0byBjcmVhdGUgdGhlIGltYSBuYW1lc3BhY2UgaXMgYnkgc2ltcGx5Cj4+ID4+
+IHdyaXRpbmcgdG8gc2VjdXJpdHlmcy9pbWFmcy4gIFBvc3NpYmx5IGJlZm9yZSB0aGUgdXNlciBu
+YW1lc3BhY2UgaXMKPj4gPj4gZXZlbiB1bnNoYXJlZC4gIFRoYXQgd291bGQgYWxsb3cgSU1BIHRv
+IGtlZXAgdHJhY2sgb2YgdGhpbmdzIGZyb20KPj4gPj4gYmVmb3JlIGEgY29udGFpbmVyIGlzIGNy
+ZWF0ZWQuCj4+ID4gCj4+IAo+PiBJIGRvIHRoaW5rIHRoaXMgaXMgZ2VuZXJhbGx5IHRoZSByaWdo
+dCBhcHByb2FjaCBmb3IgTFNNcyB3aGVuIGxvb2tpbmcKPj4gZm9yd2FyZCB0byBMU00gc3RhY2tp
+bmcgYW5kIG1vcmUgTFNNcy4KPj4gCj4+IAo+PiA+IE15IGluaXRpYWwgdGhvdWdodCB3YXMgdG8g
+c3RhZ2UgSU1BIG5hbWVzcGFjaW5nIHdpdGgganVzdCBJTUEtYXVkaXQKPj4gPiBmaXJzdCwgZm9s
+bG93ZWQgYnkgZWl0aGVyIElNQS1tZWFzdXJlbWVudCBvciBJTUEtYXBwcmFpc2FsLiDCoFRoaXMK
+Pj4gPiB3b3VsZCBhbGxvdyB1cyB0byBnZXQgdGhlIGJhc2ljIElNQSBuYW1lc3BhY2luZyBmcmFt
+ZXdvcmsgd29ya2luZyBhbmQKPj4gPiBkZWZlciBkZWFsaW5nIHdpdGggdGhlIHNlY3VyaXR5ZnMg
+cmVsYXRlZCBuYW1lc3BhY2luZyBvZiB0aGUgSU1BCj4+ID4gcG9saWN5IGFuZCBtZWFzdXJlbWVu
+dCBsaXN0IGlzc3VlcyB0byBsYXRlci4KPj4gPiAKPj4gPiBCeSB0eWluZyBJTUEgbmFtZXNwYWNp
+bmcgdG8gYSBzZWN1cml0eWZzIGltYS91bnNoYXJlIGZpbGUsIHdlIHdvdWxkCj4+ID4gbmVlZCB0
+byBhZGRyZXNzIHRoZSBzZWN1cml0eWZzIGlzc3VlcyBmaXJzdC4KPj4gPiAKPj4gCj4+IHdlbGwg
+aXQgZGVwZW5kcyBvbiB3aGF0IHlvdSB3YW50IHRvIGRvLiBJdCB3b3VsZCBiZSBwb3NzaWJsZSB0
+byBoYXZlCj4+IGEgc2ltcGxlIGZpbGUgKG5vdCBhIGp1bXAgbGluaykgd2l0aGluIHNlY3VyaXR5
+ZnMgdGhhdCBJTUEgY291bGQgdXNlCj4+IHdpdGhvdXQgaGF2aW5nIHRvIGRlYWwgd2l0aCBhbGwg
+dGhlIHNlY3VyaXR5ZnMgaXNzdWVzIGZpcnN0LiBIb3dldmVyIGl0Cj4+IGRvZXMgcmVxdWlyZSB0
+aGF0IHNlY3VyaXR5ZnMgKG5vdCBuZWNlc3NhcmlseSBpbWFmcykgYmUgdmlzaWJsZSB3aXRoaW4K
+Pj4gdGhlIG1vdW50IG5hbWVzcGFjZSBvZiB0aGUgdGFzayBkb2luZyB0aGUgc2V0dXAuCj4KPiBF
+cmljLCB3b3VsZCB5b3UgYmUgT0sgd2l0aCB0aGF0PwoKUm91Z2hseS4gIE15IHVuZGVyc3RhbmRp
+bmcgaXMgdGhhdCB5b3UgaGF2ZSB0byBoYXZlIGEgd3JpdGUgdG8gc29tZQpmaWxlc3lzdGVtIHRv
+IHNldCB0aGUgaW1hIHBvbGljeS4KCkkgd2FzIGV4cGVjdGluZyBoYXZpbmcgdG8gd3JpdGUgYW4g
+ImNyZWF0ZSBpbWEgbmFtZXNwYWNlIiB2YWx1ZQp0byB0aGUgZmlsZXN5c3RlbSB3b3VsZCBub3Qg
+YmUgYW55IHNwZWNpYWwgZWZmb3J0LgoKTm93IGl0IHNvdW5kcyBsaWtlIHByb3ZpZGluZyB0aGUg
+ImNyZWF0ZSBhbiBpbWEgbmFtZXNwYWNlIiBpcyBnb2luZyB0bwpiZSBhIHNwZWNpYWwgY2FzZSwg
+YW5kIHRoYXQgZG9lcyBub3Qgc291bmQgY29ycmVjdC4KCkVyaWMKX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29u
+dGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91
+bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
