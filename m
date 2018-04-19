@@ -1,20 +1,16 @@
-From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC PATCH v3 1/3] ima: extend clone() with IMA namespace support
-Date: Thu, 19 Apr 2018 07:03:37 -0400
-Message-ID: <2103bbb9-3f2a-78f8-f7ad-28859659973f__20804.6299092986$1524135724$gmane$org@linux.vnet.ibm.com>
-References: <1522159038-14175-1-git-send-email-stefanb@linux.vnet.ibm.com>
-	<1522159038-14175-2-git-send-email-stefanb@linux.vnet.ibm.com>
-	<87sh8lcecn.fsf@xmission.com>
-	<1523636702.3272.63.camel@linux.vnet.ibm.com>
-	<d8c30d7d-c679-9323-7a25-d3148e9b96c6@canonical.com>
-	<1524081472.3272.319.camel@linux.vnet.ibm.com>
-	<87wox4s282.fsf@xmission.com>
-	<8895cb9c-7b9e-2f82-e3d8-a15f5fc26e25@canonical.com>
+From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC PATCH ghak32 V2 04/13] audit: add containerid filtering
+Date: Thu, 19 Apr 2018 08:17:38 -0400
+Message-ID: <20180419121738.ekiy27bpyel6o3zu__11408.2752414562$1524140516$gmane$org@madcap2.tricolour.ca>
+References: <cover.1521179281.git.rgb@redhat.com>
+	<b933f93762435990e9b1e6d5aebf15f186ac8951.1521179281.git.rgb@redhat.com>
+	<CAHC9VhRVGTCVJxG3Etcs-aOpr71A7xGsn5VPhskUG35rmQ7WUw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <8895cb9c-7b9e-2f82-e3d8-a15f5fc26e25-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <CAHC9VhRVGTCVJxG3Etcs-aOpr71A7xGsn5VPhskUG35rmQ7WUw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,100 +20,226 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: John Johansen <john.johansen-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, david.safford-JJi787mZWgc@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>
+Cc: simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 04/18/2018 05:32 PM, John Johansen wrote:
-> On 04/18/2018 01:12 PM, Eric W. Biederman wrote:
->> Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
->>
->>> On Wed, 2018-04-18 at 09:09 -0700, John Johansen wrote:
->>>> On 04/13/2018 09:25 AM, Mimi Zohar wrote:
->>>>> [Cc'ing John Johansen]
->>>>>
->>>>> On Tue, 2018-03-27 at 18:01 -0500, Eric W. Biederman wrote:
->>>>> [...]
->>>>>> As such I expect the best way to create the ima namespace is by simply
->>>>>> writing to securityfs/imafs.  Possibly before the user namespace is
->>>>>> even unshared.  That would allow IMA to keep track of things from
->>>>>> before a container is created.
->>>> I do think this is generally the right approach for LSMs when looking
->>>> forward to LSM stacking and more LSMs.
->>>>
->>>>
->>>>> My initial thought was to stage IMA namespacing with just IMA-audit
->>>>> first, followed by either IMA-measurement or IMA-appraisal.  This
->>>>> would allow us to get the basic IMA namespacing framework working and
->>>>> defer dealing with the securityfs related namespacing of the IMA
->>>>> policy and measurement list issues to later.
->>>>>
->>>>> By tying IMA namespacing to a securityfs ima/unshare file, we would
->>>>> need to address the securityfs issues first.
->>>>>
->>>> well it depends on what you want to do. It would be possible to have
->>>> a simple file (not a jump link) within securityfs that IMA could use
->>>> without having to deal with all the securityfs issues first. However it
->>>> does require that securityfs (not necessarily imafs) be visible within
->>>> the mount namespace of the task doing the setup.
->>> Eric, would you be OK with that?
->> Roughly.  My understanding is that you have to have a write to some
->> filesystem to set the ima policy.
->>
->> I was expecting having to write an "create ima namespace" value
->> to the filesystem would not be any special effort.
->>
->> Now it sounds like providing the "create an ima namespace" is going to
->> be a special case, and that does not sound correct.
->>
-> not necessarily special case, but they do need to settle on an interface
-> that will work for them, and will work with the order they want to land
-> things. I was just trying to point out that there are fs solutions that
-> can work without having deal with the full securityfs/imafs namespacing
-> solution landing first.
->
-> While create a file directly in securityfs that lives along side the imafs
-> dir.
-> ima_create_ns
-> ima/
-> does feel like a special case. It could work
->
-> what I was thinking of when I proposed a simple is to do it within the ima
-> dir, say
-> ima/create_ns
+On 2018-04-18 20:24, Paul Moore wrote:
+> On Fri, Mar 16, 2018 at 5:00 AM, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> > Implement container ID filtering using the AUDIT_CONTAINERID field name
+> > to send an 8-character string representing a u64 since the value field
+> > is only u32.
+> >
+> > Sending it as two u32 was considered, but gathering and comparing two
+> > fields was more complex.
+> 
+> My only worry here is that you aren't really sending a string in the
+> ASCII sense, you are sending an 8 byte buffer (that better be NUL
+> terminated) that happens to be an unsigned 64-bit integer.  To be
+> clear, I'm okay with that (it's protected by AUDIT_CONTAINERID), and
+> the code is okay with that, I just want us to pause for a minute and
+> make sure that is an okay thing to do long term.
 
-Having looked at SELinux and how Steve does it, I chose 'unshare' as the 
-filename and put it into the neighborhood of  existing IMA securityfs 
-files: /sys/kernel/security/ima/unshare. Write a '1' to it and you'll 
-have an IMA namespace upon the next fork()/clone().
+I already went through that process and warned of it 7 weeks ago.  As
+already noted, That was preferable to two seperate u32 fields that
+depend on each other making comparisons more complicated.  Using two
+seperate fields to configure the rule could be gated for validity, then
+the result stored in a special rule field, but I wasn't keen about that
+approach.
 
->
-> For now its just a single file but once imafs becomes "virtualized" to a
-> namespace view, each dir that imafs jumplinks to contains a instance of the
-> file.
+> > The feature indicator is AUDIT_FEATURE_BITMAP_CONTAINERID_FILTER.
+> >
+> > This requires support from userspace to be useful.
+> > See: https://github.com/linux-audit/audit-userspace/issues/40
+> > Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> > ---
+> >  include/linux/audit.h      |  1 +
+> >  include/uapi/linux/audit.h |  5 ++++-
+> >  kernel/audit.h             |  1 +
+> >  kernel/auditfilter.c       | 47 ++++++++++++++++++++++++++++++++++++++++++++++
+> >  kernel/auditsc.c           |  3 +++
+> >  5 files changed, 56 insertions(+), 1 deletion(-)
+> >
+> > diff --git a/include/linux/audit.h b/include/linux/audit.h
+> > index 3acbe9d..f10ca1b 100644
+> > --- a/include/linux/audit.h
+> > +++ b/include/linux/audit.h
+> > @@ -76,6 +76,7 @@ struct audit_field {
+> >         u32                             type;
+> >         union {
+> >                 u32                     val;
+> > +               u64                     val64;
+> >                 kuid_t                  uid;
+> >                 kgid_t                  gid;
+> >                 struct {
+> > diff --git a/include/uapi/linux/audit.h b/include/uapi/linux/audit.h
+> > index e83ccbd..8443a8f 100644
+> > --- a/include/uapi/linux/audit.h
+> > +++ b/include/uapi/linux/audit.h
+> > @@ -262,6 +262,7 @@
+> >  #define AUDIT_LOGINUID_SET     24
+> >  #define AUDIT_SESSIONID        25      /* Session ID */
+> >  #define AUDIT_FSTYPE   26      /* FileSystem Type */
+> > +#define AUDIT_CONTAINERID      27      /* Container ID */
+> >
+> >                                 /* These are ONLY useful when checking
+> >                                  * at syscall exit time (AUDIT_AT_EXIT). */
+> > @@ -342,6 +343,7 @@ enum {
+> >  #define AUDIT_FEATURE_BITMAP_SESSIONID_FILTER  0x00000010
+> >  #define AUDIT_FEATURE_BITMAP_LOST_RESET                0x00000020
+> >  #define AUDIT_FEATURE_BITMAP_FILTER_FS         0x00000040
+> > +#define AUDIT_FEATURE_BITMAP_CONTAINERID_FILTER        0x00000080
+> >
+> >  #define AUDIT_FEATURE_BITMAP_ALL (AUDIT_FEATURE_BITMAP_BACKLOG_LIMIT | \
+> >                                   AUDIT_FEATURE_BITMAP_BACKLOG_WAIT_TIME | \
+> > @@ -349,7 +351,8 @@ enum {
+> >                                   AUDIT_FEATURE_BITMAP_EXCLUDE_EXTEND | \
+> >                                   AUDIT_FEATURE_BITMAP_SESSIONID_FILTER | \
+> >                                   AUDIT_FEATURE_BITMAP_LOST_RESET | \
+> > -                                 AUDIT_FEATURE_BITMAP_FILTER_FS)
+> > +                                 AUDIT_FEATURE_BITMAP_FILTER_FS | \
+> > +                                 AUDIT_FEATURE_BITMAP_CONTAINERID_FILTER)
+> >
+> >  /* deprecated: AUDIT_VERSION_* */
+> >  #define AUDIT_VERSION_LATEST           AUDIT_FEATURE_BITMAP_ALL
+> > diff --git a/kernel/audit.h b/kernel/audit.h
+> > index 214e149..aaa651a 100644
+> > --- a/kernel/audit.h
+> > +++ b/kernel/audit.h
+> > @@ -234,6 +234,7 @@ static inline int audit_hash_ino(u32 ino)
+> >
+> >  extern int audit_match_class(int class, unsigned syscall);
+> >  extern int audit_comparator(const u32 left, const u32 op, const u32 right);
+> > +extern int audit_comparator64(const u64 left, const u32 op, const u64 right);
+> >  extern int audit_uid_comparator(kuid_t left, u32 op, kuid_t right);
+> >  extern int audit_gid_comparator(kgid_t left, u32 op, kgid_t right);
+> >  extern int parent_len(const char *path);
+> > diff --git a/kernel/auditfilter.c b/kernel/auditfilter.c
+> > index d7a807e..c4c8746 100644
+> > --- a/kernel/auditfilter.c
+> > +++ b/kernel/auditfilter.c
+> > @@ -410,6 +410,7 @@ static int audit_field_valid(struct audit_entry *entry, struct audit_field *f)
+> >         /* FALL THROUGH */
+> >         case AUDIT_ARCH:
+> >         case AUDIT_FSTYPE:
+> > +       case AUDIT_CONTAINERID:
+> >                 if (f->op != Audit_not_equal && f->op != Audit_equal)
+> >                         return -EINVAL;
+> >                 break;
+> > @@ -584,6 +585,14 @@ static struct audit_entry *audit_data_to_entry(struct audit_rule_data *data,
+> >                         }
+> >                         entry->rule.exe = audit_mark;
+> >                         break;
+> > +               case AUDIT_CONTAINERID:
+> > +                       if (f->val != sizeof(u64))
+> > +                               goto exit_free;
+> > +                       str = audit_unpack_string(&bufp, &remain, f->val);
+> > +                       if (IS_ERR(str))
+> > +                               goto exit_free;
+> > +                       f->val64 = ((u64 *)str)[0];
+> > +                       break;
+> >                 }
+> >         }
+> >
+> > @@ -666,6 +675,11 @@ static struct audit_rule_data *audit_krule_to_data(struct audit_krule *krule)
+> >                         data->buflen += data->values[i] =
+> >                                 audit_pack_string(&bufp, audit_mark_path(krule->exe));
+> >                         break;
+> > +               case AUDIT_CONTAINERID:
+> > +                       data->buflen += data->values[i] = sizeof(u64);
+> > +                       for (i = 0; i < sizeof(u64); i++)
+> > +                               ((char *)bufp)[i] = ((char *)&f->val64)[i];
+> > +                       break;
+> >                 case AUDIT_LOGINUID_SET:
+> >                         if (krule->pflags & AUDIT_LOGINUID_LEGACY && !f->val) {
+> >                                 data->fields[i] = AUDIT_LOGINUID;
+> > @@ -752,6 +766,10 @@ static int audit_compare_rule(struct audit_krule *a, struct audit_krule *b)
+> >                         if (!gid_eq(a->fields[i].gid, b->fields[i].gid))
+> >                                 return 1;
+> >                         break;
+> > +               case AUDIT_CONTAINERID:
+> > +                       if (a->fields[i].val64 != b->fields[i].val64)
+> > +                               return 1;
+> > +                       break;
+> >                 default:
+> >                         if (a->fields[i].val != b->fields[i].val)
+> >                                 return 1;
+> > @@ -1210,6 +1228,31 @@ int audit_comparator(u32 left, u32 op, u32 right)
+> >         }
+> >  }
+> >
+> > +int audit_comparator64(u64 left, u32 op, u64 right)
+> > +{
+> > +       switch (op) {
+> > +       case Audit_equal:
+> > +               return (left == right);
+> > +       case Audit_not_equal:
+> > +               return (left != right);
+> > +       case Audit_lt:
+> > +               return (left < right);
+> > +       case Audit_le:
+> > +               return (left <= right);
+> > +       case Audit_gt:
+> > +               return (left > right);
+> > +       case Audit_ge:
+> > +               return (left >= right);
+> > +       case Audit_bitmask:
+> > +               return (left & right);
+> > +       case Audit_bittest:
+> > +               return ((left & right) == right);
+> > +       default:
+> > +               BUG();
+> > +               return 0;
+> > +       }
+> > +}
+> > +
+> >  int audit_uid_comparator(kuid_t left, u32 op, kuid_t right)
+> >  {
+> >         switch (op) {
+> > @@ -1348,6 +1391,10 @@ int audit_filter(int msgtype, unsigned int listtype)
+> >                                 result = audit_comparator(audit_loginuid_set(current),
+> >                                                           f->op, f->val);
+> >                                 break;
+> > +                       case AUDIT_CONTAINERID:
+> > +                               result = audit_comparator64(audit_get_containerid(current),
+> > +                                                             f->op, f->val64);
+> > +                               break;
+> >                         case AUDIT_MSGTYPE:
+> >                                 result = audit_comparator(msgtype, f->op, f->val);
+> >                                 break;
+> > diff --git a/kernel/auditsc.c b/kernel/auditsc.c
+> > index 65be110..2bba324 100644
+> > --- a/kernel/auditsc.c
+> > +++ b/kernel/auditsc.c
+> > @@ -614,6 +614,9 @@ static int audit_filter_rules(struct task_struct *tsk,
+> >                 case AUDIT_LOGINUID_SET:
+> >                         result = audit_comparator(audit_loginuid_set(tsk), f->op, f->val);
+> >                         break;
+> > +               case AUDIT_CONTAINERID:
+> > +                       result = audit_comparator64(audit_get_containerid(tsk), f->op, f->val64);
+> > +                       break;
+> >                 case AUDIT_SUBJ_USER:
+> >                 case AUDIT_SUBJ_ROLE:
+> >                 case AUDIT_SUBJ_TYPE:
+> > --
+> > 1.8.3.1
+> >
+> > --
+> > Linux-audit mailing list
+> > Linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+> > https://www.redhat.com/mailman/listinfo/linux-audit
+> 
+> 
+> 
+> -- 
+> paul moore
+> www.paul-moore.com
 
-Right. We need to virtualize our IMA securityfs entries pretty soon 
-afterwards so that we can start setting policies in an IMA namespace. At 
-the beginning we would not be able to create nested IMA namespaces if a 
-user namespace is involved. My current patches that attempt to do this 
-basically implement it by getting out of securityfs for namespace 
-support and hooking it onto sysfs. On the host we would still use 
-securityfs.
+- RGB
 
->
->
-> Or they could avoid securityfs/imafs entirely and leverage a file in
-> procfs
-
-If we want to it that way for all other subsystems that do not use a 
-clone() flag, we should maybe decide on that now...
-
->
-> /proc/<pid>/attr/{current,exec,...}
->
-> currently those are claimed by the LSMs but new file could be added or
-> perhaps even better we could lift the some code from the LSM stacking work
-> to provide an ima specific dir
->
->    /proc/<pid>/attr/ima/{current,exec,...}
->
+--
+Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Sr. S/W Engineer, Kernel Security, Base Operating Systems
+Remote, Ottawa, Red Hat Canada
+IRC: rgb, SunRaycer
+Voice: +1.647.777.2635, Internal: (81) 32635
