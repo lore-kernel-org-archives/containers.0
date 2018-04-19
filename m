@@ -1,15 +1,15 @@
 From: Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>
-Subject: Re: [RFC PATCH ghak32 V2 06/13] audit: add support for non-syscall
-	auxiliary records
-Date: Wed, 18 Apr 2018 20:39:12 -0400
-Message-ID: <CAHC9VhQbPbnrbxCD1fyTSxWgrXXXYnZw_=nbOhfMCO5Q5eSsWQ__16084.3275873505$1524098239$gmane$org@mail.gmail.com>
+Subject: Re: [RFC PATCH ghak32 V2 07/13] audit: add container aux record to
+	watch/tree/mark
+Date: Wed, 18 Apr 2018 20:42:43 -0400
+Message-ID: <CAHC9VhTzp-r2TFytt1zTEpeGK=O5dEnLPFw-CdsM1ttpY0a30g__35340.4990550645$1524098465$gmane$org@mail.gmail.com>
 References: <cover.1521179281.git.rgb@redhat.com>
-	<ee2a945fb09a939b3c214f45e49dab6a770d83e6.1521179281.git.rgb@redhat.com>
+	<737f914a88d048b9985984c0ce1f946c30ca374c.1521179281.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <ee2a945fb09a939b3c214f45e49dab6a770d83e6.1521179281.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <737f914a88d048b9985984c0ce1f946c30ca374c.1521179281.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,82 +24,116 @@ Cc: simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA
 List-Id: containers.vger.kernel.org
 
 On Fri, Mar 16, 2018 at 5:00 AM, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> Standalone audit records have the timestamp and serial number generated
-> on the fly and as such are unique, making them standalone.  This new
-> function audit_alloc_local() generates a local audit context that will
-> be used only for a standalone record and its auxiliary record(s).  The
-> context is discarded immediately after the local associated records are
-> produced.
+> Add container ID auxiliary record to mark, watch and tree rule
+> configuration standalone records.
 >
 > Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 > ---
->  include/linux/audit.h |  8 ++++++++
->  kernel/auditsc.c      | 20 +++++++++++++++++++-
->  2 files changed, 27 insertions(+), 1 deletion(-)
+>  kernel/audit_fsnotify.c |  5 ++++-
+>  kernel/audit_tree.c     |  5 ++++-
+>  kernel/audit_watch.c    | 33 +++++++++++++++++++--------------
+>  3 files changed, 27 insertions(+), 16 deletions(-)
 >
-> diff --git a/include/linux/audit.h b/include/linux/audit.h
-> index ed16bb6..c0b83cb 100644
-> --- a/include/linux/audit.h
-> +++ b/include/linux/audit.h
-> @@ -227,7 +227,9 @@ static inline int audit_log_container_info(struct audit_context *context,
->  /* These are defined in auditsc.c */
->                                 /* Public API */
->  extern int  audit_alloc(struct task_struct *task);
-> +extern struct audit_context *audit_alloc_local(void);
->  extern void __audit_free(struct task_struct *task);
-> +extern void audit_free_context(struct audit_context *context);
->  extern void __audit_syscall_entry(int major, unsigned long a0, unsigned long a1,
->                                   unsigned long a2, unsigned long a3);
->  extern void __audit_syscall_exit(int ret_success, long ret_value);
-> @@ -472,6 +474,12 @@ static inline int audit_alloc(struct task_struct *task)
+> diff --git a/kernel/audit_fsnotify.c b/kernel/audit_fsnotify.c
+> index 52f368b..18c110d 100644
+> --- a/kernel/audit_fsnotify.c
+> +++ b/kernel/audit_fsnotify.c
+> @@ -124,10 +124,11 @@ static void audit_mark_log_rule_change(struct audit_fsnotify_mark *audit_mark, c
 >  {
->         return 0;
->  }
-> +static inline struct audit_context *audit_alloc_local(void)
-> +{
-> +       return NULL;
-> +}
-> +static inline void audit_free_context(struct audit_context *context)
-> +{ }
->  static inline void audit_free(struct task_struct *task)
->  { }
->  static inline void audit_syscall_entry(int major, unsigned long a0,
-> diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-> index 2932ef1..7103d23 100644
-> --- a/kernel/auditsc.c
-> +++ b/kernel/auditsc.c
-> @@ -959,8 +959,26 @@ int audit_alloc(struct task_struct *tsk)
->         return 0;
->  }
+>         struct audit_buffer *ab;
+>         struct audit_krule *rule = audit_mark->rule;
+> +       struct audit_context *context = audit_alloc_local();
 >
-> -static inline void audit_free_context(struct audit_context *context)
-> +struct audit_context *audit_alloc_local(void)
->  {
-> +       struct audit_context *context;
-> +
-> +       if (!audit_ever_enabled)
-> +               return NULL; /* Return if not auditing. */
-> +
-> +       context = audit_alloc_context(AUDIT_RECORD_CONTEXT);
-> +       if (!context)
-> +               return NULL;
-> +       context->serial = audit_serial();
-> +       context->ctime = current_kernel_time64();
-> +       context->in_syscall = 1;
-> +       return context;
-> +}
-> +
-> +inline void audit_free_context(struct audit_context *context)
-> +{
-> +       if (!context)
-> +               return;
->         audit_free_names(context);
->         unroll_tree_refs(context, NULL, 0);
->         free_tree_refs(context);
+>         if (!audit_enabled)
+>                 return;
 
-I'm reserving the option to comment on this idea further as I make my
-way through the patchset, but audit_free_context() definitely
-shouldn't be declared as an inline function.
+Move the audit_alloc_local() after the audit_enabled check.
+
+> -       ab = audit_log_start(NULL, GFP_NOFS, AUDIT_CONFIG_CHANGE);
+> +       ab = audit_log_start(context, GFP_NOFS, AUDIT_CONFIG_CHANGE);
+>         if (unlikely(!ab))
+>                 return;
+>         audit_log_format(ab, "auid=%u ses=%u op=%s",
+> @@ -138,6 +139,8 @@ static void audit_mark_log_rule_change(struct audit_fsnotify_mark *audit_mark, c
+>         audit_log_key(ab, rule->filterkey);
+>         audit_log_format(ab, " list=%d res=1", rule->listnr);
+>         audit_log_end(ab);
+> +       audit_log_container_info(context, "config", audit_get_containerid(current));
+> +       audit_free_context(context);
+>  }
+>
+>  void audit_remove_mark(struct audit_fsnotify_mark *audit_mark)
+> diff --git a/kernel/audit_tree.c b/kernel/audit_tree.c
+> index 67e6956..7c085be 100644
+> --- a/kernel/audit_tree.c
+> +++ b/kernel/audit_tree.c
+> @@ -496,8 +496,9 @@ static int tag_chunk(struct inode *inode, struct audit_tree *tree)
+>  static void audit_tree_log_remove_rule(struct audit_krule *rule)
+>  {
+>         struct audit_buffer *ab;
+> +       struct audit_context *context = audit_alloc_local();
+
+Sort of independent of the audit container ID work, but shouldn't we
+have an audit_enabled check here?
+
+> -       ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
+> +       ab = audit_log_start(context, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
+>         if (unlikely(!ab))
+>                 return;
+>         audit_log_format(ab, "op=remove_rule");
+> @@ -506,6 +507,8 @@ static void audit_tree_log_remove_rule(struct audit_krule *rule)
+>         audit_log_key(ab, rule->filterkey);
+>         audit_log_format(ab, " list=%d res=1", rule->listnr);
+>         audit_log_end(ab);
+> +       audit_log_container_info(context, "config", audit_get_containerid(current));
+> +       audit_free_context(context);
+>  }
+>
+>  static void kill_rules(struct audit_tree *tree)
+> diff --git a/kernel/audit_watch.c b/kernel/audit_watch.c
+> index 9eb8b35..60d75a2 100644
+> --- a/kernel/audit_watch.c
+> +++ b/kernel/audit_watch.c
+> @@ -238,20 +238,25 @@ static struct audit_watch *audit_dupe_watch(struct audit_watch *old)
+>
+>  static void audit_watch_log_rule_change(struct audit_krule *r, struct audit_watch *w, char *op)
+>  {
+> -       if (audit_enabled) {
+> -               struct audit_buffer *ab;
+> -               ab = audit_log_start(NULL, GFP_NOFS, AUDIT_CONFIG_CHANGE);
+> -               if (unlikely(!ab))
+> -                       return;
+> -               audit_log_format(ab, "auid=%u ses=%u op=%s",
+> -                                from_kuid(&init_user_ns, audit_get_loginuid(current)),
+> -                                audit_get_sessionid(current), op);
+> -               audit_log_format(ab, " path=");
+> -               audit_log_untrustedstring(ab, w->path);
+> -               audit_log_key(ab, r->filterkey);
+> -               audit_log_format(ab, " list=%d res=1", r->listnr);
+> -               audit_log_end(ab);
+> -       }
+> +       struct audit_buffer *ab;
+> +       struct audit_context *context = audit_alloc_local();
+> +
+> +       if (!audit_enabled)
+> +               return;
+
+Same as above, do the allocation after the audit_enabled check.
+
+> +       ab = audit_log_start(context, GFP_NOFS, AUDIT_CONFIG_CHANGE);
+> +       if (unlikely(!ab))
+> +               return;
+> +       audit_log_format(ab, "auid=%u ses=%u op=%s",
+> +                        from_kuid(&init_user_ns, audit_get_loginuid(current)),
+> +                        audit_get_sessionid(current), op);
+> +       audit_log_format(ab, " path=");
+> +       audit_log_untrustedstring(ab, w->path);
+> +       audit_log_key(ab, r->filterkey);
+> +       audit_log_format(ab, " list=%d res=1", r->listnr);
+> +       audit_log_end(ab);
+> +       audit_log_container_info(context, "config", audit_get_containerid(current));
+> +       audit_free_context(context);
+>  }
 
 -- 
 paul moore
