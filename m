@@ -1,17 +1,22 @@
-From: Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>
-Subject: Re: [RFC PATCH ghak32 V2 12/13] audit: NETFILTER_PKT: record each
-	container ID associated with a netNS
-Date: Thu, 19 Apr 2018 09:13:17 -0400
-Message-ID: <CAHC9VhSjvS81AZ55dtQVtuwJw1wSy2iJHyzERh9T6p0CR72ULA@mail.gmail.com>
-References: <cover.1521179281.git.rgb@redhat.com>
-	<66adde01c1dda792aff99a457eea576a0b08ca98.1521179281.git.rgb@redhat.com>
-	<CAHC9VhR3BNRr24BPxud0X_eyFmSxUOh9bwjWNU4Z=rnDR0fENA@mail.gmail.com>
-	<20180419124550.7uknp4oebvwoo67s@madcap2.tricolour.ca>
+From: John Johansen <john.johansen-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: Re: [RFC PATCH v3 1/3] ima: extend clone() with IMA namespace support
+Date: Thu, 19 Apr 2018 08:35:55 -0700
+Message-ID: <f84ae8af-fa5b-9f31-fbef-5a49f90dd45a__10742.5317205072$1524152053$gmane$org@canonical.com>
+References: <1522159038-14175-1-git-send-email-stefanb@linux.vnet.ibm.com>
+	<1522159038-14175-2-git-send-email-stefanb@linux.vnet.ibm.com>
+	<87sh8lcecn.fsf@xmission.com>
+	<1523636702.3272.63.camel@linux.vnet.ibm.com>
+	<d8c30d7d-c679-9323-7a25-d3148e9b96c6@canonical.com>
+	<1524081472.3272.319.camel@linux.vnet.ibm.com>
+	<87wox4s282.fsf@xmission.com>
+	<8895cb9c-7b9e-2f82-e3d8-a15f5fc26e25@canonical.com>
+	<2103bbb9-3f2a-78f8-f7ad-28859659973f@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20180419124550.7uknp4oebvwoo67s-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org>
+In-Reply-To: <2103bbb9-3f2a-78f8-f7ad-28859659973f-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Content-Language: en-GB
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,116 +26,82 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
+To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, david.safford-JJi787mZWgc@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Apr 19, 2018 at 8:45 AM, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> On 2018-04-18 22:10, Paul Moore wrote:
->> On Fri, Mar 16, 2018 at 5:00 AM, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
->> > Add container ID auxiliary record(s) to NETFILTER_PKT event standalone
->> > records.  Iterate through all potential container IDs associated with a
->> > network namespace.
->> >
->> > Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
->> > ---
->> >  kernel/audit.c           |  1 +
->> >  kernel/auditsc.c         |  2 ++
->> >  net/netfilter/xt_AUDIT.c | 15 ++++++++++++++-
->> >  3 files changed, 17 insertions(+), 1 deletion(-)
->> >
->> > diff --git a/kernel/audit.c b/kernel/audit.c
->> > index 08662b4..3c77e47 100644
->> > --- a/kernel/audit.c
->> > +++ b/kernel/audit.c
->> > @@ -2102,6 +2102,7 @@ int audit_log_container_info(struct audit_context *context,
->> >         audit_log_end(ab);
->> >         return 0;
->> >  }
->> > +EXPORT_SYMBOL(audit_log_container_info);
->> >
->> >  void audit_log_key(struct audit_buffer *ab, char *key)
->> >  {
->> > diff --git a/kernel/auditsc.c b/kernel/auditsc.c
->> > index 208da962..af68d01 100644
->> > --- a/kernel/auditsc.c
->> > +++ b/kernel/auditsc.c
->> > @@ -975,6 +975,7 @@ struct audit_context *audit_alloc_local(void)
->> >         context->in_syscall = 1;
->> >         return context;
->> >  }
->> > +EXPORT_SYMBOL(audit_alloc_local);
->> >
->> >  inline void audit_free_context(struct audit_context *context)
->> >  {
->> > @@ -989,6 +990,7 @@ inline void audit_free_context(struct audit_context *context)
->> >         audit_proctitle_free(context);
->> >         kfree(context);
->> >  }
->> > +EXPORT_SYMBOL(audit_free_context);
->> >
->> >  static int audit_log_pid_context(struct audit_context *context, pid_t pid,
->> >                                  kuid_t auid, kuid_t uid, unsigned int sessionid,
->> > diff --git a/net/netfilter/xt_AUDIT.c b/net/netfilter/xt_AUDIT.c
->> > index c502419..edaa456 100644
->> > --- a/net/netfilter/xt_AUDIT.c
->> > +++ b/net/netfilter/xt_AUDIT.c
->> > @@ -71,10 +71,14 @@ static bool audit_ip6(struct audit_buffer *ab, struct sk_buff *skb)
->> >  {
->> >         struct audit_buffer *ab;
->> >         int fam = -1;
->> > +       struct audit_context *context = audit_alloc_local();
->> > +       struct audit_containerid *cont;
->> > +       int i = 0;
->> > +       struct net *net;
->> >
->> >         if (audit_enabled == 0)
->> >                 goto errout;
->>
->> Do I need to say it?  I probably should ... the allocation should
->> happen after the audit_enabled check.
->
-> Already fixed in V3 in my tree a couple of weeks ago...
-
-... which you never posted, at least not anywhere I've seen.  Which
-effectively means I wasted a good chunk of time reviewing this code
-late last night.  Awesome.
-
-> More timely review please?
-
-More patience on your part?
-
->> > -       ab = audit_log_start(NULL, GFP_ATOMIC, AUDIT_NETFILTER_PKT);
->> > +       ab = audit_log_start(context, GFP_ATOMIC, AUDIT_NETFILTER_PKT);
->> >         if (ab == NULL)
->> >                 goto errout;
->> >
->> > @@ -104,7 +108,16 @@ static bool audit_ip6(struct audit_buffer *ab, struct sk_buff *skb)
->> >
->> >         audit_log_end(ab);
->> >
->> > +       net = sock_net(NETLINK_CB(skb).sk);
->> > +       list_for_each_entry(cont, &net->audit_containerid, list) {
->> > +               char buf[14];
->> > +
->> > +               sprintf(buf, "net%u", i++);
->> > +               audit_log_container_info(context, buf, cont->id);
->> > +       }
->>
->> It seems like this could (should?) be hidden inside an audit function,
->> e.g. audit_log_net_containers() or something like that.
->
-> Perhaps...  It was open-coded since at this point there are no other
-> users.  That'll make this tidier though.
-
-If the code was all contained within a single subsystem them I would
-generally agree that open coding is preferable, but since we are
-crossing a subsystem boundary I think it would be preferable to
-abstract away the details into a separate function.
-
-This will probably also be necessary once you change to using the
-audit_net/net_generic mechanism.
-
--- 
-paul moore
-www.paul-moore.com
+T24gMDQvMTkvMjAxOCAwNDowMyBBTSwgU3RlZmFuIEJlcmdlciB3cm90ZToKPiBPbiAwNC8xOC8y
+MDE4IDA1OjMyIFBNLCBKb2huIEpvaGFuc2VuIHdyb3RlOgo+PiBPbiAwNC8xOC8yMDE4IDAxOjEy
+IFBNLCBFcmljIFcuIEJpZWRlcm1hbiB3cm90ZToKPj4+IE1pbWkgWm9oYXIgPHpvaGFyQGxpbnV4
+LnZuZXQuaWJtLmNvbT4gd3JpdGVzOgo+Pj4KPj4+PiBPbiBXZWQsIDIwMTgtMDQtMTggYXQgMDk6
+MDkgLTA3MDAsIEpvaG4gSm9oYW5zZW4gd3JvdGU6Cj4+Pj4+IE9uIDA0LzEzLzIwMTggMDk6MjUg
+QU0sIE1pbWkgWm9oYXIgd3JvdGU6Cj4+Pj4+PiBbQ2MnaW5nIEpvaG4gSm9oYW5zZW5dCj4+Pj4+
+Pgo+Pj4+Pj4gT24gVHVlLCAyMDE4LTAzLTI3IGF0IDE4OjAxIC0wNTAwLCBFcmljIFcuIEJpZWRl
+cm1hbiB3cm90ZToKPj4+Pj4+IFsuLi5dCj4+Pj4+Pj4gQXMgc3VjaCBJIGV4cGVjdCB0aGUgYmVz
+dCB3YXkgdG8gY3JlYXRlIHRoZSBpbWEgbmFtZXNwYWNlIGlzIGJ5IHNpbXBseQo+Pj4+Pj4+IHdy
+aXRpbmcgdG8gc2VjdXJpdHlmcy9pbWFmcy7CoCBQb3NzaWJseSBiZWZvcmUgdGhlIHVzZXIgbmFt
+ZXNwYWNlIGlzCj4+Pj4+Pj4gZXZlbiB1bnNoYXJlZC7CoCBUaGF0IHdvdWxkIGFsbG93IElNQSB0
+byBrZWVwIHRyYWNrIG9mIHRoaW5ncyBmcm9tCj4+Pj4+Pj4gYmVmb3JlIGEgY29udGFpbmVyIGlz
+IGNyZWF0ZWQuCj4+Pj4+IEkgZG8gdGhpbmsgdGhpcyBpcyBnZW5lcmFsbHkgdGhlIHJpZ2h0IGFw
+cHJvYWNoIGZvciBMU01zIHdoZW4gbG9va2luZwo+Pj4+PiBmb3J3YXJkIHRvIExTTSBzdGFja2lu
+ZyBhbmQgbW9yZSBMU01zLgo+Pj4+Pgo+Pj4+Pgo+Pj4+Pj4gTXkgaW5pdGlhbCB0aG91Z2h0IHdh
+cyB0byBzdGFnZSBJTUEgbmFtZXNwYWNpbmcgd2l0aCBqdXN0IElNQS1hdWRpdAo+Pj4+Pj4gZmly
+c3QsIGZvbGxvd2VkIGJ5IGVpdGhlciBJTUEtbWVhc3VyZW1lbnQgb3IgSU1BLWFwcHJhaXNhbC7C
+oCBUaGlzCj4+Pj4+PiB3b3VsZCBhbGxvdyB1cyB0byBnZXQgdGhlIGJhc2ljIElNQSBuYW1lc3Bh
+Y2luZyBmcmFtZXdvcmsgd29ya2luZyBhbmQKPj4+Pj4+IGRlZmVyIGRlYWxpbmcgd2l0aCB0aGUg
+c2VjdXJpdHlmcyByZWxhdGVkIG5hbWVzcGFjaW5nIG9mIHRoZSBJTUEKPj4+Pj4+IHBvbGljeSBh
+bmQgbWVhc3VyZW1lbnQgbGlzdCBpc3N1ZXMgdG8gbGF0ZXIuCj4+Pj4+Pgo+Pj4+Pj4gQnkgdHlp
+bmcgSU1BIG5hbWVzcGFjaW5nIHRvIGEgc2VjdXJpdHlmcyBpbWEvdW5zaGFyZSBmaWxlLCB3ZSB3
+b3VsZAo+Pj4+Pj4gbmVlZCB0byBhZGRyZXNzIHRoZSBzZWN1cml0eWZzIGlzc3VlcyBmaXJzdC4K
+Pj4+Pj4+Cj4+Pj4+IHdlbGwgaXQgZGVwZW5kcyBvbiB3aGF0IHlvdSB3YW50IHRvIGRvLiBJdCB3
+b3VsZCBiZSBwb3NzaWJsZSB0byBoYXZlCj4+Pj4+IGEgc2ltcGxlIGZpbGUgKG5vdCBhIGp1bXAg
+bGluaykgd2l0aGluIHNlY3VyaXR5ZnMgdGhhdCBJTUEgY291bGQgdXNlCj4+Pj4+IHdpdGhvdXQg
+aGF2aW5nIHRvIGRlYWwgd2l0aCBhbGwgdGhlIHNlY3VyaXR5ZnMgaXNzdWVzIGZpcnN0LiBIb3dl
+dmVyIGl0Cj4+Pj4+IGRvZXMgcmVxdWlyZSB0aGF0IHNlY3VyaXR5ZnMgKG5vdCBuZWNlc3Nhcmls
+eSBpbWFmcykgYmUgdmlzaWJsZSB3aXRoaW4KPj4+Pj4gdGhlIG1vdW50IG5hbWVzcGFjZSBvZiB0
+aGUgdGFzayBkb2luZyB0aGUgc2V0dXAuCj4+Pj4gRXJpYywgd291bGQgeW91IGJlIE9LIHdpdGgg
+dGhhdD8KPj4+IFJvdWdobHkuwqAgTXkgdW5kZXJzdGFuZGluZyBpcyB0aGF0IHlvdSBoYXZlIHRv
+IGhhdmUgYSB3cml0ZSB0byBzb21lCj4+PiBmaWxlc3lzdGVtIHRvIHNldCB0aGUgaW1hIHBvbGlj
+eS4KPj4+Cj4+PiBJIHdhcyBleHBlY3RpbmcgaGF2aW5nIHRvIHdyaXRlIGFuICJjcmVhdGUgaW1h
+IG5hbWVzcGFjZSIgdmFsdWUKPj4+IHRvIHRoZSBmaWxlc3lzdGVtIHdvdWxkIG5vdCBiZSBhbnkg
+c3BlY2lhbCBlZmZvcnQuCj4+Pgo+Pj4gTm93IGl0IHNvdW5kcyBsaWtlIHByb3ZpZGluZyB0aGUg
+ImNyZWF0ZSBhbiBpbWEgbmFtZXNwYWNlIiBpcyBnb2luZyB0bwo+Pj4gYmUgYSBzcGVjaWFsIGNh
+c2UsIGFuZCB0aGF0IGRvZXMgbm90IHNvdW5kIGNvcnJlY3QuCj4+Pgo+PiBub3QgbmVjZXNzYXJp
+bHkgc3BlY2lhbCBjYXNlLCBidXQgdGhleSBkbyBuZWVkIHRvIHNldHRsZSBvbiBhbiBpbnRlcmZh
+Y2UKPj4gdGhhdCB3aWxsIHdvcmsgZm9yIHRoZW0sIGFuZCB3aWxsIHdvcmsgd2l0aCB0aGUgb3Jk
+ZXIgdGhleSB3YW50IHRvIGxhbmQKPj4gdGhpbmdzLiBJIHdhcyBqdXN0IHRyeWluZyB0byBwb2lu
+dCBvdXQgdGhhdCB0aGVyZSBhcmUgZnMgc29sdXRpb25zIHRoYXQKPj4gY2FuIHdvcmsgd2l0aG91
+dCBoYXZpbmcgZGVhbCB3aXRoIHRoZSBmdWxsIHNlY3VyaXR5ZnMvaW1hZnMgbmFtZXNwYWNpbmcK
+Pj4gc29sdXRpb24gbGFuZGluZyBmaXJzdC4KPj4KPj4gV2hpbGUgY3JlYXRlIGEgZmlsZSBkaXJl
+Y3RseSBpbiBzZWN1cml0eWZzIHRoYXQgbGl2ZXMgYWxvbmcgc2lkZSB0aGUgaW1hZnMKPj4gZGly
+Lgo+PiBpbWFfY3JlYXRlX25zCj4+IGltYS8KPj4gZG9lcyBmZWVsIGxpa2UgYSBzcGVjaWFsIGNh
+c2UuIEl0IGNvdWxkIHdvcmsKPj4KPj4gd2hhdCBJIHdhcyB0aGlua2luZyBvZiB3aGVuIEkgcHJv
+cG9zZWQgYSBzaW1wbGUgaXMgdG8gZG8gaXQgd2l0aGluIHRoZSBpbWEKPj4gZGlyLCBzYXkKPj4g
+aW1hL2NyZWF0ZV9ucwo+IAo+IEhhdmluZyBsb29rZWQgYXQgU0VMaW51eCBhbmQgaG93IFN0ZXZl
+IGRvZXMgaXQsIEkgY2hvc2UgJ3Vuc2hhcmUnIGFzIHRoZSBmaWxlbmFtZSBhbmQgcHV0IGl0IGlu
+dG8gdGhlIG5laWdoYm9yaG9vZCBvZsKgIGV4aXN0aW5nIElNQSBzZWN1cml0eWZzIGZpbGVzOiAv
+c3lzL2tlcm5lbC9zZWN1cml0eS9pbWEvdW5zaGFyZS4gV3JpdGUgYSAnMScgdG8gaXQgYW5kIHlv
+dSdsbCBoYXZlIGFuIElNQSBuYW1lc3BhY2UgdXBvbiB0aGUgbmV4dCBmb3JrKCkvY2xvbmUoKS4K
+PiAKPj4KPj4gRm9yIG5vdyBpdHMganVzdCBhIHNpbmdsZSBmaWxlIGJ1dCBvbmNlIGltYWZzIGJl
+Y29tZXMgInZpcnR1YWxpemVkIiB0byBhCj4+IG5hbWVzcGFjZSB2aWV3LCBlYWNoIGRpciB0aGF0
+IGltYWZzIGp1bXBsaW5rcyB0byBjb250YWlucyBhIGluc3RhbmNlIG9mIHRoZQo+PiBmaWxlLgo+
+IAo+IFJpZ2h0LiBXZSBuZWVkIHRvIHZpcnR1YWxpemUgb3VyIElNQSBzZWN1cml0eWZzIGVudHJp
+ZXMgcHJldHR5IHNvb24gYWZ0ZXJ3YXJkcyBzbyB0aGF0IHdlIGNhbiBzdGFydCBzZXR0aW5nIHBv
+bGljaWVzIGluIGFuIElNQSBuYW1lc3BhY2UuIEF0IHRoZSBiZWdpbm5pbmcgd2Ugd291bGQgbm90
+IGJlIGFibGUgdG8gY3JlYXRlIG5lc3RlZCBJTUEgbmFtZXNwYWNlcyBpZiBhIHVzZXIgbmFtZXNw
+YWNlIGlzIGludm9sdmVkLiBNeSBjdXJyZW50IHBhdGNoZXMgdGhhdCBhdHRlbXB0IHRvIGRvIHRo
+aXMgYmFzaWNhbGx5IGltcGxlbWVudCBpdCBieSBnZXR0aW5nIG91dCBvZiBzZWN1cml0eWZzIGZv
+ciBuYW1lc3BhY2Ugc3VwcG9ydCBhbmQgaG9va2luZyBpdCBvbnRvIHN5c2ZzLiBPbiB0aGUgaG9z
+dCB3ZSB3b3VsZCBzdGlsbCB1c2Ugc2VjdXJpdHlmcy4KPiAKPj4KPj4KPj4gT3IgdGhleSBjb3Vs
+ZCBhdm9pZCBzZWN1cml0eWZzL2ltYWZzIGVudGlyZWx5IGFuZCBsZXZlcmFnZSBhIGZpbGUgaW4K
+Pj4gcHJvY2ZzCj4gCj4gSWYgd2Ugd2FudCB0byBpdCB0aGF0IHdheSBmb3IgYWxsIG90aGVyIHN1
+YnN5c3RlbXMgdGhhdCBkbyBub3QgdXNlIGEgY2xvbmUoKSBmbGFnLCB3ZSBzaG91bGQgbWF5YmUg
+ZGVjaWRlIG9uIHRoYXQgbm93Li4uCj4gCgpJdCBzb3VuZHMgbGlrZSBpdHMgYWxyZWFkeSBkZWNp
+ZGVkLCB3aXRoIGltYSBhbmQgc2VsaW51eCBnb2luZyB3aXRoIGFuIHVuc2hhcmUgZmlsZSB3aXRo
+aW4gdGhlaXIgb3duIGZzLgoKQXBwQXJtb3Igd2VudCBhIGRpZmZlcmVudCByb3V0ZSBhbHJlYWR5
+LCBzcGxpdHRpbmcgbmFtZXNwYWNlIGNyZWF0aW9uIChta2RpciBpbiB0aGUgYXBwYXJtb3JmcyBw
+b2xpY3kvbmFtZXNwYWNlIGRpcikgYW5kIHRoZSB0YXNrIGVudGVyaW5nIHRoZSBuYW1lc3BhY2Ug
+d2l0aCBhIHdyaXRlIGFwcGFybW9yJ3MgZXF1aXYgb2Ygc2V0ZXhlY2Nvbi4KCl9fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBs
+aXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5s
+aW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
