@@ -1,22 +1,17 @@
-From: John Johansen <john.johansen-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: [RFC PATCH v3 1/3] ima: extend clone() with IMA namespace support
-Date: Thu, 19 Apr 2018 08:35:55 -0700
-Message-ID: <f84ae8af-fa5b-9f31-fbef-5a49f90dd45a__10742.5317205072$1524152053$gmane$org@canonical.com>
-References: <1522159038-14175-1-git-send-email-stefanb@linux.vnet.ibm.com>
-	<1522159038-14175-2-git-send-email-stefanb@linux.vnet.ibm.com>
-	<87sh8lcecn.fsf@xmission.com>
-	<1523636702.3272.63.camel@linux.vnet.ibm.com>
-	<d8c30d7d-c679-9323-7a25-d3148e9b96c6@canonical.com>
-	<1524081472.3272.319.camel@linux.vnet.ibm.com>
-	<87wox4s282.fsf@xmission.com>
-	<8895cb9c-7b9e-2f82-e3d8-a15f5fc26e25@canonical.com>
-	<2103bbb9-3f2a-78f8-f7ad-28859659973f@linux.vnet.ibm.com>
+From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC PATCH ghak32 V2 10/13] audit: add containerid support for
+	seccomp and anom_abend records
+Date: Thu, 19 Apr 2018 20:42:18 -0400
+Message-ID: <20180420004218.tgndd474wgueyjzk__19917.0252927162$1524185206$gmane$org@madcap2.tricolour.ca>
+References: <cover.1521179281.git.rgb@redhat.com>
+	<11174597083f89352f1d6491ec94e27f882625d9.1521179281.git.rgb@redhat.com>
+	<CAHC9VhS6MKoLkzpfcmYBSNnvrtbL2FOF5PX9uOfivSVEWykkQg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <2103bbb9-3f2a-78f8-f7ad-28859659973f-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Content-Language: en-GB
+Content-Disposition: inline
+In-Reply-To: <CAHC9VhS6MKoLkzpfcmYBSNnvrtbL2FOF5PX9uOfivSVEWykkQg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,82 +21,88 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, david.safford-JJi787mZWgc@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gMDQvMTkvMjAxOCAwNDowMyBBTSwgU3RlZmFuIEJlcmdlciB3cm90ZToKPiBPbiAwNC8xOC8y
-MDE4IDA1OjMyIFBNLCBKb2huIEpvaGFuc2VuIHdyb3RlOgo+PiBPbiAwNC8xOC8yMDE4IDAxOjEy
-IFBNLCBFcmljIFcuIEJpZWRlcm1hbiB3cm90ZToKPj4+IE1pbWkgWm9oYXIgPHpvaGFyQGxpbnV4
-LnZuZXQuaWJtLmNvbT4gd3JpdGVzOgo+Pj4KPj4+PiBPbiBXZWQsIDIwMTgtMDQtMTggYXQgMDk6
-MDkgLTA3MDAsIEpvaG4gSm9oYW5zZW4gd3JvdGU6Cj4+Pj4+IE9uIDA0LzEzLzIwMTggMDk6MjUg
-QU0sIE1pbWkgWm9oYXIgd3JvdGU6Cj4+Pj4+PiBbQ2MnaW5nIEpvaG4gSm9oYW5zZW5dCj4+Pj4+
-Pgo+Pj4+Pj4gT24gVHVlLCAyMDE4LTAzLTI3IGF0IDE4OjAxIC0wNTAwLCBFcmljIFcuIEJpZWRl
-cm1hbiB3cm90ZToKPj4+Pj4+IFsuLi5dCj4+Pj4+Pj4gQXMgc3VjaCBJIGV4cGVjdCB0aGUgYmVz
-dCB3YXkgdG8gY3JlYXRlIHRoZSBpbWEgbmFtZXNwYWNlIGlzIGJ5IHNpbXBseQo+Pj4+Pj4+IHdy
-aXRpbmcgdG8gc2VjdXJpdHlmcy9pbWFmcy7CoCBQb3NzaWJseSBiZWZvcmUgdGhlIHVzZXIgbmFt
-ZXNwYWNlIGlzCj4+Pj4+Pj4gZXZlbiB1bnNoYXJlZC7CoCBUaGF0IHdvdWxkIGFsbG93IElNQSB0
-byBrZWVwIHRyYWNrIG9mIHRoaW5ncyBmcm9tCj4+Pj4+Pj4gYmVmb3JlIGEgY29udGFpbmVyIGlz
-IGNyZWF0ZWQuCj4+Pj4+IEkgZG8gdGhpbmsgdGhpcyBpcyBnZW5lcmFsbHkgdGhlIHJpZ2h0IGFw
-cHJvYWNoIGZvciBMU01zIHdoZW4gbG9va2luZwo+Pj4+PiBmb3J3YXJkIHRvIExTTSBzdGFja2lu
-ZyBhbmQgbW9yZSBMU01zLgo+Pj4+Pgo+Pj4+Pgo+Pj4+Pj4gTXkgaW5pdGlhbCB0aG91Z2h0IHdh
-cyB0byBzdGFnZSBJTUEgbmFtZXNwYWNpbmcgd2l0aCBqdXN0IElNQS1hdWRpdAo+Pj4+Pj4gZmly
-c3QsIGZvbGxvd2VkIGJ5IGVpdGhlciBJTUEtbWVhc3VyZW1lbnQgb3IgSU1BLWFwcHJhaXNhbC7C
-oCBUaGlzCj4+Pj4+PiB3b3VsZCBhbGxvdyB1cyB0byBnZXQgdGhlIGJhc2ljIElNQSBuYW1lc3Bh
-Y2luZyBmcmFtZXdvcmsgd29ya2luZyBhbmQKPj4+Pj4+IGRlZmVyIGRlYWxpbmcgd2l0aCB0aGUg
-c2VjdXJpdHlmcyByZWxhdGVkIG5hbWVzcGFjaW5nIG9mIHRoZSBJTUEKPj4+Pj4+IHBvbGljeSBh
-bmQgbWVhc3VyZW1lbnQgbGlzdCBpc3N1ZXMgdG8gbGF0ZXIuCj4+Pj4+Pgo+Pj4+Pj4gQnkgdHlp
-bmcgSU1BIG5hbWVzcGFjaW5nIHRvIGEgc2VjdXJpdHlmcyBpbWEvdW5zaGFyZSBmaWxlLCB3ZSB3
-b3VsZAo+Pj4+Pj4gbmVlZCB0byBhZGRyZXNzIHRoZSBzZWN1cml0eWZzIGlzc3VlcyBmaXJzdC4K
-Pj4+Pj4+Cj4+Pj4+IHdlbGwgaXQgZGVwZW5kcyBvbiB3aGF0IHlvdSB3YW50IHRvIGRvLiBJdCB3
-b3VsZCBiZSBwb3NzaWJsZSB0byBoYXZlCj4+Pj4+IGEgc2ltcGxlIGZpbGUgKG5vdCBhIGp1bXAg
-bGluaykgd2l0aGluIHNlY3VyaXR5ZnMgdGhhdCBJTUEgY291bGQgdXNlCj4+Pj4+IHdpdGhvdXQg
-aGF2aW5nIHRvIGRlYWwgd2l0aCBhbGwgdGhlIHNlY3VyaXR5ZnMgaXNzdWVzIGZpcnN0LiBIb3dl
-dmVyIGl0Cj4+Pj4+IGRvZXMgcmVxdWlyZSB0aGF0IHNlY3VyaXR5ZnMgKG5vdCBuZWNlc3Nhcmls
-eSBpbWFmcykgYmUgdmlzaWJsZSB3aXRoaW4KPj4+Pj4gdGhlIG1vdW50IG5hbWVzcGFjZSBvZiB0
-aGUgdGFzayBkb2luZyB0aGUgc2V0dXAuCj4+Pj4gRXJpYywgd291bGQgeW91IGJlIE9LIHdpdGgg
-dGhhdD8KPj4+IFJvdWdobHkuwqAgTXkgdW5kZXJzdGFuZGluZyBpcyB0aGF0IHlvdSBoYXZlIHRv
-IGhhdmUgYSB3cml0ZSB0byBzb21lCj4+PiBmaWxlc3lzdGVtIHRvIHNldCB0aGUgaW1hIHBvbGlj
-eS4KPj4+Cj4+PiBJIHdhcyBleHBlY3RpbmcgaGF2aW5nIHRvIHdyaXRlIGFuICJjcmVhdGUgaW1h
-IG5hbWVzcGFjZSIgdmFsdWUKPj4+IHRvIHRoZSBmaWxlc3lzdGVtIHdvdWxkIG5vdCBiZSBhbnkg
-c3BlY2lhbCBlZmZvcnQuCj4+Pgo+Pj4gTm93IGl0IHNvdW5kcyBsaWtlIHByb3ZpZGluZyB0aGUg
-ImNyZWF0ZSBhbiBpbWEgbmFtZXNwYWNlIiBpcyBnb2luZyB0bwo+Pj4gYmUgYSBzcGVjaWFsIGNh
-c2UsIGFuZCB0aGF0IGRvZXMgbm90IHNvdW5kIGNvcnJlY3QuCj4+Pgo+PiBub3QgbmVjZXNzYXJp
-bHkgc3BlY2lhbCBjYXNlLCBidXQgdGhleSBkbyBuZWVkIHRvIHNldHRsZSBvbiBhbiBpbnRlcmZh
-Y2UKPj4gdGhhdCB3aWxsIHdvcmsgZm9yIHRoZW0sIGFuZCB3aWxsIHdvcmsgd2l0aCB0aGUgb3Jk
-ZXIgdGhleSB3YW50IHRvIGxhbmQKPj4gdGhpbmdzLiBJIHdhcyBqdXN0IHRyeWluZyB0byBwb2lu
-dCBvdXQgdGhhdCB0aGVyZSBhcmUgZnMgc29sdXRpb25zIHRoYXQKPj4gY2FuIHdvcmsgd2l0aG91
-dCBoYXZpbmcgZGVhbCB3aXRoIHRoZSBmdWxsIHNlY3VyaXR5ZnMvaW1hZnMgbmFtZXNwYWNpbmcK
-Pj4gc29sdXRpb24gbGFuZGluZyBmaXJzdC4KPj4KPj4gV2hpbGUgY3JlYXRlIGEgZmlsZSBkaXJl
-Y3RseSBpbiBzZWN1cml0eWZzIHRoYXQgbGl2ZXMgYWxvbmcgc2lkZSB0aGUgaW1hZnMKPj4gZGly
-Lgo+PiBpbWFfY3JlYXRlX25zCj4+IGltYS8KPj4gZG9lcyBmZWVsIGxpa2UgYSBzcGVjaWFsIGNh
-c2UuIEl0IGNvdWxkIHdvcmsKPj4KPj4gd2hhdCBJIHdhcyB0aGlua2luZyBvZiB3aGVuIEkgcHJv
-cG9zZWQgYSBzaW1wbGUgaXMgdG8gZG8gaXQgd2l0aGluIHRoZSBpbWEKPj4gZGlyLCBzYXkKPj4g
-aW1hL2NyZWF0ZV9ucwo+IAo+IEhhdmluZyBsb29rZWQgYXQgU0VMaW51eCBhbmQgaG93IFN0ZXZl
-IGRvZXMgaXQsIEkgY2hvc2UgJ3Vuc2hhcmUnIGFzIHRoZSBmaWxlbmFtZSBhbmQgcHV0IGl0IGlu
-dG8gdGhlIG5laWdoYm9yaG9vZCBvZsKgIGV4aXN0aW5nIElNQSBzZWN1cml0eWZzIGZpbGVzOiAv
-c3lzL2tlcm5lbC9zZWN1cml0eS9pbWEvdW5zaGFyZS4gV3JpdGUgYSAnMScgdG8gaXQgYW5kIHlv
-dSdsbCBoYXZlIGFuIElNQSBuYW1lc3BhY2UgdXBvbiB0aGUgbmV4dCBmb3JrKCkvY2xvbmUoKS4K
-PiAKPj4KPj4gRm9yIG5vdyBpdHMganVzdCBhIHNpbmdsZSBmaWxlIGJ1dCBvbmNlIGltYWZzIGJl
-Y29tZXMgInZpcnR1YWxpemVkIiB0byBhCj4+IG5hbWVzcGFjZSB2aWV3LCBlYWNoIGRpciB0aGF0
-IGltYWZzIGp1bXBsaW5rcyB0byBjb250YWlucyBhIGluc3RhbmNlIG9mIHRoZQo+PiBmaWxlLgo+
-IAo+IFJpZ2h0LiBXZSBuZWVkIHRvIHZpcnR1YWxpemUgb3VyIElNQSBzZWN1cml0eWZzIGVudHJp
-ZXMgcHJldHR5IHNvb24gYWZ0ZXJ3YXJkcyBzbyB0aGF0IHdlIGNhbiBzdGFydCBzZXR0aW5nIHBv
-bGljaWVzIGluIGFuIElNQSBuYW1lc3BhY2UuIEF0IHRoZSBiZWdpbm5pbmcgd2Ugd291bGQgbm90
-IGJlIGFibGUgdG8gY3JlYXRlIG5lc3RlZCBJTUEgbmFtZXNwYWNlcyBpZiBhIHVzZXIgbmFtZXNw
-YWNlIGlzIGludm9sdmVkLiBNeSBjdXJyZW50IHBhdGNoZXMgdGhhdCBhdHRlbXB0IHRvIGRvIHRo
-aXMgYmFzaWNhbGx5IGltcGxlbWVudCBpdCBieSBnZXR0aW5nIG91dCBvZiBzZWN1cml0eWZzIGZv
-ciBuYW1lc3BhY2Ugc3VwcG9ydCBhbmQgaG9va2luZyBpdCBvbnRvIHN5c2ZzLiBPbiB0aGUgaG9z
-dCB3ZSB3b3VsZCBzdGlsbCB1c2Ugc2VjdXJpdHlmcy4KPiAKPj4KPj4KPj4gT3IgdGhleSBjb3Vs
-ZCBhdm9pZCBzZWN1cml0eWZzL2ltYWZzIGVudGlyZWx5IGFuZCBsZXZlcmFnZSBhIGZpbGUgaW4K
-Pj4gcHJvY2ZzCj4gCj4gSWYgd2Ugd2FudCB0byBpdCB0aGF0IHdheSBmb3IgYWxsIG90aGVyIHN1
-YnN5c3RlbXMgdGhhdCBkbyBub3QgdXNlIGEgY2xvbmUoKSBmbGFnLCB3ZSBzaG91bGQgbWF5YmUg
-ZGVjaWRlIG9uIHRoYXQgbm93Li4uCj4gCgpJdCBzb3VuZHMgbGlrZSBpdHMgYWxyZWFkeSBkZWNp
-ZGVkLCB3aXRoIGltYSBhbmQgc2VsaW51eCBnb2luZyB3aXRoIGFuIHVuc2hhcmUgZmlsZSB3aXRo
-aW4gdGhlaXIgb3duIGZzLgoKQXBwQXJtb3Igd2VudCBhIGRpZmZlcmVudCByb3V0ZSBhbHJlYWR5
-LCBzcGxpdHRpbmcgbmFtZXNwYWNlIGNyZWF0aW9uIChta2RpciBpbiB0aGUgYXBwYXJtb3JmcyBw
-b2xpY3kvbmFtZXNwYWNlIGRpcikgYW5kIHRoZSB0YXNrIGVudGVyaW5nIHRoZSBuYW1lc3BhY2Ug
-d2l0aCBhIHdyaXRlIGFwcGFybW9yJ3MgZXF1aXYgb2Ygc2V0ZXhlY2Nvbi4KCl9fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBs
-aXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5s
-aW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On 2018-04-18 21:31, Paul Moore wrote:
+> On Fri, Mar 16, 2018 at 5:00 AM, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> > Add container ID auxiliary records to secure computing and abnormal end
+> > standalone records.
+> >
+> > Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> > ---
+> >  kernel/auditsc.c | 10 ++++++++--
+> >  1 file changed, 8 insertions(+), 2 deletions(-)
+> >
+> > diff --git a/kernel/auditsc.c b/kernel/auditsc.c
+> > index 7103d23..2f02ed9 100644
+> > --- a/kernel/auditsc.c
+> > +++ b/kernel/auditsc.c
+> > @@ -2571,6 +2571,7 @@ static void audit_log_task(struct audit_buffer *ab)
+> >  void audit_core_dumps(long signr)
+> >  {
+> >         struct audit_buffer *ab;
+> > +       struct audit_context *context = audit_alloc_local();
+> 
+> Looking quickly at do_coredump() I *believe* we can use current here.
+> 
+> >         if (!audit_enabled)
+> >                 return;
+> > @@ -2578,19 +2579,22 @@ void audit_core_dumps(long signr)
+> >         if (signr == SIGQUIT)   /* don't care for those */
+> >                 return;
+> >
+> > -       ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_ANOM_ABEND);
+> > +       ab = audit_log_start(context, GFP_KERNEL, AUDIT_ANOM_ABEND);
+> >         if (unlikely(!ab))
+> >                 return;
+> >         audit_log_task(ab);
+> >         audit_log_format(ab, " sig=%ld res=1", signr);
+> >         audit_log_end(ab);
+> > +       audit_log_container_info(context, "abend", audit_get_containerid(current));
+> > +       audit_free_context(context);
+> >  }
+> >
+> >  void __audit_seccomp(unsigned long syscall, long signr, int code)
+> >  {
+> >         struct audit_buffer *ab;
+> > +       struct audit_context *context = audit_alloc_local();
+> 
+> We can definitely use current here.
+
+Ok, so both syscall aux records.  That elimintes this patch from the
+set, can go in independently.
+
+> > -       ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_SECCOMP);
+> > +       ab = audit_log_start(context, GFP_KERNEL, AUDIT_SECCOMP);
+> >         if (unlikely(!ab))
+> >                 return;
+> >         audit_log_task(ab);
+> > @@ -2598,6 +2602,8 @@ void __audit_seccomp(unsigned long syscall, long signr, int code)
+> >                          signr, syscall_get_arch(), syscall,
+> >                          in_compat_syscall(), KSTK_EIP(current), code);
+> >         audit_log_end(ab);
+> > +       audit_log_container_info(context, "seccomp", audit_get_containerid(current));
+> > +       audit_free_context(context);
+> >  }
+> >
+> >  struct list_head *audit_killed_trees(void)
+> 
+> -- 
+> paul moore
+> www.paul-moore.com
+> 
+> --
+> Linux-audit mailing list
+> Linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+> https://www.redhat.com/mailman/listinfo/linux-audit
+
+- RGB
+
+--
+Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Sr. S/W Engineer, Kernel Security, Base Operating Systems
+Remote, Ottawa, Red Hat Canada
+IRC: rgb, SunRaycer
+Voice: +1.647.777.2635, Internal: (81) 32635
