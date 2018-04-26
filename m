@@ -1,20 +1,22 @@
-From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC PATCH ghak32 V2 01/13] audit: add container id
-Date: Tue, 24 Apr 2018 20:40:31 -0400
-Message-ID: <20180425004031.zutsno6hvmpq3crd__25774.6108495214$1524617101$gmane$org@madcap2.tricolour.ca>
-References: <cover.1521179281.git.rgb@redhat.com>
-	<e284617ad667ad8f17958dd8babb87fe1b4d7205.1521179281.git.rgb@redhat.com>
-	<CAHC9VhTyvxxj2e2Gn+iyW6iLLeYB7hp8a+JvfeMmJ2nUPqtEaw@mail.gmail.com>
-	<20180421143443.faaput5g2rn6ul7p@madcap2.tricolour.ca>
-	<CAHC9VhQkJBU-f-AuEnGF1BA2QW6nCJ_yr_EqBR02-1y9+XQZ5A@mail.gmail.com>
-	<20180424020200.imonhbkwtb73luxl@madcap2.tricolour.ca>
-	<CAHC9VhSZd7V9avx6K5g6CQ7mkj1T8ti7Nqq=OoWVwPznkesD1w@mail.gmail.com>
+From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC PATCH v3 1/3] ima: extend clone() with IMA namespace support
+Date: Thu, 26 Apr 2018 17:18:43 -0400
+Message-ID: <0d2b2635-d7fb-d240-7dd0-2a81014c58ba__4663.26983082599$1524777427$gmane$org@linux.vnet.ibm.com>
+References: <1522159038-14175-1-git-send-email-stefanb@linux.vnet.ibm.com>
+	<1522159038-14175-2-git-send-email-stefanb@linux.vnet.ibm.com>
+	<87sh8lcecn.fsf@xmission.com>
+	<1523636702.3272.63.camel@linux.vnet.ibm.com>
+	<d8c30d7d-c679-9323-7a25-d3148e9b96c6@canonical.com>
+	<1524081472.3272.319.camel@linux.vnet.ibm.com>
+	<87wox4s282.fsf@xmission.com>
+	<8895cb9c-7b9e-2f82-e3d8-a15f5fc26e25@canonical.com>
+	<2103bbb9-3f2a-78f8-f7ad-28859659973f@linux.vnet.ibm.com>
+	<f84ae8af-fa5b-9f31-fbef-5a49f90dd45a@canonical.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CAHC9VhSZd7V9avx6K5g6CQ7mkj1T8ti7Nqq=OoWVwPznkesD1w-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <f84ae8af-fa5b-9f31-fbef-5a49f90dd45a-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,305 +26,90 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>
-Cc: simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
+To: John Johansen <john.johansen-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org, tycho-FCduhRhOUaTQT0dZR+AlfA@public.gmane.org, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, david.safford-JJi787mZWgc@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 2018-04-24 15:01, Paul Moore wrote:
-> On Mon, Apr 23, 2018 at 10:02 PM, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> > On 2018-04-23 19:15, Paul Moore wrote:
-> >> On Sat, Apr 21, 2018 at 10:34 AM, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> >> > On 2018-04-18 19:47, Paul Moore wrote:
-> >> >> On Fri, Mar 16, 2018 at 5:00 AM, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> >> >> > Implement the proc fs write to set the audit container ID of a process,
-> >> >> > emitting an AUDIT_CONTAINER record to document the event.
-> >> >> >
-> >> >> > This is a write from the container orchestrator task to a proc entry of
-> >> >> > the form /proc/PID/containerid where PID is the process ID of the newly
-> >> >> > created task that is to become the first task in a container, or an
-> >> >> > additional task added to a container.
-> >> >> >
-> >> >> > The write expects up to a u64 value (unset: 18446744073709551615).
-> >> >> >
-> >> >> > This will produce a record such as this:
-> >> >> > type=CONTAINER msg=audit(1519903238.968:261): op=set pid=596 uid=0 subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 auid=0 tty=pts0 ses=1 opid=596 old-contid=18446744073709551615 contid=123455 res=0
-> >> >> >
-> >> >> > The "op" field indicates an initial set.  The "pid" to "ses" fields are
-> >> >> > the orchestrator while the "opid" field is the object's PID, the process
-> >> >> > being "contained".  Old and new container ID values are given in the
-> >> >> > "contid" fields, while res indicates its success.
-> >> >> >
-> >> >> > It is not permitted to self-set, unset or re-set the container ID.  A
-> >> >> > child inherits its parent's container ID, but then can be set only once
-> >> >> > after.
-> >> >> >
-> >> >> > See: https://github.com/linux-audit/audit-kernel/issues/32
-> >> >> >
-> >> >> > Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> >> >> > ---
-> >> >> >  fs/proc/base.c             | 37 ++++++++++++++++++++
-> >> >> >  include/linux/audit.h      | 16 +++++++++
-> >> >> >  include/linux/init_task.h  |  4 ++-
-> >> >> >  include/linux/sched.h      |  1 +
-> >> >> >  include/uapi/linux/audit.h |  2 ++
-> >> >> >  kernel/auditsc.c           | 84 ++++++++++++++++++++++++++++++++++++++++++++++
-> >> >> >  6 files changed, 143 insertions(+), 1 deletion(-)
-> 
-> ...
-> 
-> >> >> >  /* audit_rule_data supports filter rules with both integer and string
-> >> >> >   * fields.  It corresponds with AUDIT_ADD_RULE, AUDIT_DEL_RULE and
-> >> >> > diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-> >> >> > index 4e0a4ac..29c8482 100644
-> >> >> > --- a/kernel/auditsc.c
-> >> >> > +++ b/kernel/auditsc.c
-> >> >> > @@ -2073,6 +2073,90 @@ int audit_set_loginuid(kuid_t loginuid)
-> >> >> >         return rc;
-> >> >> >  }
-> >> >> >
-> >> >> > +static int audit_set_containerid_perm(struct task_struct *task, u64 containerid)
-> >> >> > +{
-> >> >> > +       struct task_struct *parent;
-> >> >> > +       u64 pcontainerid, ccontainerid;
-> >> >> > +
-> >> >> > +       /* Don't allow to set our own containerid */
-> >> >> > +       if (current == task)
-> >> >> > +               return -EPERM;
-> >> >>
-> >> >> Why not?  Is there some obvious security concern that I missing?
-> >> >
-> >> > We then lose the distinction in the AUDIT_CONTAINER record between the
-> >> > initiating PID and the target PID.  This was outlined in the proposal.
-> >>
-> >> I just went back and reread the v3 proposal and I still don't see a
-> >> good explanation of this.  Why is this bad?  What's the security
-> >> concern?
-> >
-> > I don't remember, specifically.  Maybe this has been addressed by the
-> > check for children/threads or identical parent container ID.  So, I'm
-> > reluctantly willing to remove that check for now.
-> 
-> Okay.  For the record, if someone can explain to me why this
-> restriction saves us from some terrible situation I'm all for leaving
-> it.  I'm just opposed to restrictions without solid reasoning behind
-> them.
-> 
-> >> > Having said that, I'm still not sure we have protected sufficiently from
-> >> > a child turning around and setting it's parent's as yet unset or
-> >> > inherited audit container ID.
-> >>
-> >> Yes, I believe we only want to let a task set the audit container for
-> >> it's children (or itself/threads if we decide to allow that, see
-> >> above).  There *has* to be a function to check to see if a task if a
-> >> child of a given task ... right? ... although this is likely to be a
-> >> pointer traversal and locking nightmare ... hmmm.
-> >
-> > Isn't that just (struct task_struct)parent == (struct
-> > task_struct)child->parent (or ->real_parent)?
-> >
-> > And now that I say that, it is covered by the following patch's child
-> > check, so as long as we keep that, we should be fine.
-> 
-> I was thinking of checking not just current's immediate children, but
-> any of it's descendants as I believe that is what we want to limit,
-> yes?  I just worry that it isn't really practical to perform that
-> check.
+On 04/19/2018 11:35 AM, John Johansen wrote:
+> On 04/19/2018 04:03 AM, Stefan Berger wrote:
+>> On 04/18/2018 05:32 PM, John Johansen wrote:
+>>> On 04/18/2018 01:12 PM, Eric W. Biederman wrote:
+>>>> Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
+>>>>
+>>>>> On Wed, 2018-04-18 at 09:09 -0700, John Johansen wrote:
+>>>>>> On 04/13/2018 09:25 AM, Mimi Zohar wrote:
+>>>>>>> [Cc'ing John Johansen]
+>>>>>>>
+>>>>>>> On Tue, 2018-03-27 at 18:01 -0500, Eric W. Biederman wrote:
+>>>>>>> [...]
+>>>>>>>> As such I expect the best way to create the ima namespace is by simply
+>>>>>>>> writing to securityfs/imafs.  Possibly before the user namespace is
+>>>>>>>> even unshared.  That would allow IMA to keep track of things from
+>>>>>>>> before a container is created.
+>>>>>> I do think this is generally the right approach for LSMs when looking
+>>>>>> forward to LSM stacking and more LSMs.
+>>>>>>
+>>>>>>
+>>>>>>> My initial thought was to stage IMA namespacing with just IMA-audit
+>>>>>>> first, followed by either IMA-measurement or IMA-appraisal.  This
+>>>>>>> would allow us to get the basic IMA namespacing framework working and
+>>>>>>> defer dealing with the securityfs related namespacing of the IMA
+>>>>>>> policy and measurement list issues to later.
+>>>>>>>
+>>>>>>> By tying IMA namespacing to a securityfs ima/unshare file, we would
+>>>>>>> need to address the securityfs issues first.
+>>>>>>>
+>>>>>> well it depends on what you want to do. It would be possible to have
+>>>>>> a simple file (not a jump link) within securityfs that IMA could use
+>>>>>> without having to deal with all the securityfs issues first. However it
+>>>>>> does require that securityfs (not necessarily imafs) be visible within
+>>>>>> the mount namespace of the task doing the setup.
+>>>>> Eric, would you be OK with that?
+>>>> Roughly.  My understanding is that you have to have a write to some
+>>>> filesystem to set the ima policy.
+>>>>
+>>>> I was expecting having to write an "create ima namespace" value
+>>>> to the filesystem would not be any special effort.
+>>>>
+>>>> Now it sounds like providing the "create an ima namespace" is going to
+>>>> be a special case, and that does not sound correct.
+>>>>
+>>> not necessarily special case, but they do need to settle on an interface
+>>> that will work for them, and will work with the order they want to land
+>>> things. I was just trying to point out that there are fs solutions that
+>>> can work without having deal with the full securityfs/imafs namespacing
+>>> solution landing first.
+>>>
+>>> While create a file directly in securityfs that lives along side the imafs
+>>> dir.
+>>> ima_create_ns
+>>> ima/
+>>> does feel like a special case. It could work
+>>>
+>>> what I was thinking of when I proposed a simple is to do it within the ima
+>>> dir, say
+>>> ima/create_ns
+>> Having looked at SELinux and how Steve does it, I chose 'unshare' as the filename and put it into the neighborhood of  existing IMA securityfs files: /sys/kernel/security/ima/unshare. Write a '1' to it and you'll have an IMA namespace upon the next fork()/clone().
+>>
+>>> For now its just a single file but once imafs becomes "virtualized" to a
+>>> namespace view, each dir that imafs jumplinks to contains a instance of the
+>>> file.
+>> Right. We need to virtualize our IMA securityfs entries pretty soon afterwards so that we can start setting policies in an IMA namespace. At the beginning we would not be able to create nested IMA namespaces if a user namespace is involved. My current patches that attempt to do this basically implement it by getting out of securityfs for namespace support and hooking it onto sysfs. On the host we would still use securityfs.
+>>
+>>>
+>>> Or they could avoid securityfs/imafs entirely and leverage a file in
+>>> procfs
+>> If we want to it that way for all other subsystems that do not use a clone() flag, we should maybe decide on that now...
+>>
+> It sounds like its already decided, with ima and selinux going with an unshare file within their own fs.
+>
+> AppArmor went a different route already, splitting namespace creation (mkdir in the apparmorfs policy/namespace dir) and the task entering the namespace with a write apparmor's equiv of setexeccon.
+>
+I am supporting procfs entries for the IMA namespace spawned by writing 
+a boolean '1' into IMA's securityfs 'unshare' file. It would allow to 
+use setns(fd, 0), obviously with the 0 parameter. I think this is an 
+important function to support considering entering a set of namespace. I 
+am just wondering about the 0 parameter. We don't have a CLONE flag for 
+it, so there's not other way to support it then. Does it matter ?
 
-The child check I'm talking about prevents setting a task's audit
-container ID if it *has* any children or threads, so if it has children
-it is automatically disqualified and its grandchildren are irrelevant.
-
-> >> >> I ask because I suppose it might be possible for some container
-> >> >> runtime to do a fork, setup some of the environment and them exec the
-> >> >> container (before you answer the obvious "namespaces!" please remember
-> >> >> we're not trying to define containers).
-> >> >
-> >> > I don't think namespaces have any bearing on this concern since none are
-> >> > required.
-> >> >
-> >> >> > +       /* Don't allow the containerid to be unset */
-> >> >> > +       if (!cid_valid(containerid))
-> >> >> > +               return -EINVAL;
-> >> >> > +       /* if we don't have caps, reject */
-> >> >> > +       if (!capable(CAP_AUDIT_CONTROL))
-> >> >> > +               return -EPERM;
-> >> >> > +       /* if containerid is unset, allow */
-> >> >> > +       if (!audit_containerid_set(task))
-> >> >> > +               return 0;
-> >> >> > +       /* it is already set, and not inherited from the parent, reject */
-> >> >> > +       ccontainerid = audit_get_containerid(task);
-> >> >> > +       rcu_read_lock();
-> >> >> > +       parent = rcu_dereference(task->real_parent);
-> >> >> > +       rcu_read_unlock();
-> >> >> > +       task_lock(parent);
-> >> >> > +       pcontainerid = audit_get_containerid(parent);
-> >> >> > +       task_unlock(parent);
-> >> >> > +       if (ccontainerid != pcontainerid)
-> >> >> > +               return -EPERM;
-> >> >> > +       return 0;
-> 
-> I'm looking at the parent checks again and I wonder if the logic above
-> is what we really want.  Maybe it is, but I'm not sure.
-> 
-> Things I'm wondering about:
-> 
-> * "ccontainerid" and "containerid" are too close in name, I kept
-> confusing myself when looking at this code.  Please change one.  Bonus
-> points if it is shorter.
-
-Would c_containerid and p_containerid be ok?  child_cid and parent_cid?
-I'd really like it to have the same root as the parameter handed in so
-teh code is easier to follow.  It would be nice to have that across
-caller to local, but that's challenging.
-
-I've been tempted to use contid or even cid everywhere instead of
-containerid.  Perhaps the longer name doesn't bother me because I
-like its uniqueness and I learned touch-typing in grade 9 and I like
-100+ character wide terminals?  ;-)
-
-> * What if the orchestrator wants to move the task to a new container?
-> Right now it looks like you can only do that once, then then the
-> task's audit container ID will no longer be the same as real_parent
-
-A task's audit container ID can be unset or inherited, and then set
-only once.  After that, if you want it moved to a new container you
-can't and your only option is to spawn another peer to that task or a
-child of it and set that new task's audit container ID.
-
-Currently, the method of detecting if its audit container ID has been
-set (rather than inherited) was to check its parent's audit container
-ID.  The only reason to change this might be if the audit container ID
-were not inheritable, but then we lose the accountability of a task
-spawning another process and being able to leave its child's audit
-container ID unset and unaccountable to any existing container.  I think
-the relationship to the parent is crucial, and if something wants to
-change audit container ID it can, by spawning childrent and leaving a
-trail of container IDs in its parent processes.  (So what if a parent
-dies?)
-
-> ... or does the orchestrator change that?  *Can* the orchestrator
-> change real_parent (I suspect the answer is "no")?
-
-I don't think the orchestrator is able to change real_parent.  I've
-forgotten why there is a ->parent and ->real_parent and how they can
-change.  One is for the wait signal.  I don't remember the purpose of
-the other.
-
-If the parent dies before the child, the child will be re-parented on
-its grandparent if the parent doesn't hang around zombified, if I
-understand correctly.  If anything, a parent dying would likely further
-restrict the ability to set a task's audit container ID because a parent
-with an identical ID could vanish.
-
-> * I think the key is the relationship between current and task, not
-> between task and task->real_parent.  I believe what we really care
-> about is that task is a descendant of current.  We might also want to
-> allow current to change the audit container ID if it holds
-> CAP_AUDIT_CONTROL, regardless of it's relationship with task.
-
-Currently, a process with CAP_AUDIT_CONTROL can set the audit container
-ID of any task that hasn't got children or threads, isn't itself, and
-its audit container ID is inherited or unset.  This was to try to
-prevent games with parents and children scratching each other's backs.
-
-I would feel more comfortable if only descendants were settable, so
-adding that restriction sounds like a good idea to me other than the
-tree-climbing excercise and overhead involved.
-
-> >> >> > +static void audit_log_set_containerid(struct task_struct *task, u64 oldcontainerid,
-> >> >> > +                                     u64 containerid, int rc)
-> >> >> > +{
-> >> >> > +       struct audit_buffer *ab;
-> >> >> > +       uid_t uid;
-> >> >> > +       struct tty_struct *tty;
-> >> >> > +
-> >> >> > +       if (!audit_enabled)
-> >> >> > +               return;
-> >> >> > +
-> >> >> > +       ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_CONTAINER);
-> >> >> > +       if (!ab)
-> >> >> > +               return;
-> >> >> > +
-> >> >> > +       uid = from_kuid(&init_user_ns, task_uid(current));
-> >> >> > +       tty = audit_get_tty(current);
-> >> >> > +
-> >> >> > +       audit_log_format(ab, "op=set pid=%d uid=%u", task_tgid_nr(current), uid);
-> >> >> > +       audit_log_task_context(ab);
-> >> >> > +       audit_log_format(ab, " auid=%u tty=%s ses=%u opid=%d old-contid=%llu contid=%llu res=%d",
-> >> >> > +                        from_kuid(&init_user_ns, audit_get_loginuid(current)),
-> >> >> > +                        tty ? tty_name(tty) : "(none)", audit_get_sessionid(current),
-> >> >> > +                        task_tgid_nr(task), oldcontainerid, containerid, !rc);
-> >> >> > +
-> >> >> > +       audit_put_tty(tty);
-> >> >> > +       audit_log_end(ab);
-> >> >> > +}
-> >> >> > +
-> >> >> > +/**
-> >> >> > + * audit_set_containerid - set current task's audit_context containerid
-> >> >> > + * @containerid: containerid value
-> >> >> > + *
-> >> >> > + * Returns 0 on success, -EPERM on permission failure.
-> >> >> > + *
-> >> >> > + * Called (set) from fs/proc/base.c::proc_containerid_write().
-> >> >> > + */
-> >> >> > +int audit_set_containerid(struct task_struct *task, u64 containerid)
-> >> >> > +{
-> >> >> > +       u64 oldcontainerid;
-> >> >> > +       int rc;
-> >> >> > +
-> >> >> > +       oldcontainerid = audit_get_containerid(task);
-> >> >> > +
-> >> >> > +       rc = audit_set_containerid_perm(task, containerid);
-> >> >> > +       if (!rc) {
-> >> >> > +               task_lock(task);
-> >> >> > +               task->containerid = containerid;
-> >> >> > +               task_unlock(task);
-> >> >> > +       }
-> >> >> > +
-> >> >> > +       audit_log_set_containerid(task, oldcontainerid, containerid, rc);
-> >> >> > +       return rc;
-> >> >>
-> >> >> Why are audit_set_containerid_perm() and audit_log_containerid()
-> >> >> separate functions?
-> >> >
-> >> > (I assume you mean audit_log_set_containerid()?)
-> >>
-> >> Yep.  My fingers got tired typing in that function name and decided a
-> >> shortcut was necessary.
-> >>
-> >> > It seemed clearer that all the permission checking was in one function
-> >> > and its return code could be used to report the outcome when logging the
-> >> > (attempted) action.  This is the same structure as audit_set_loginuid()
-> >> > and it made sense.
-> >>
-> >> When possible I really like it when the permission checks are in the
-> >> same function as the code which does the work; it's less likely to get
-> >> abused that way (you have to willfully bypass the access checks).  The
-> >> exceptions might be if you wanted to reuse the access control code, or
-> >> insert a modular access mechanism (e.g. LSMs).
-> >
-> > I don't follow how it could be abused.  The return code from the perm
-> > check gates setting the value and is used in the success field in the
-> > log.
-> 
-> If the permission checks are in the same function body as the code
-> which does the work you have to either split the function, or rewrite
-> it, if you want to bypass the permission checks.  It may be more of a
-> style issue than an actual safety issue, but the comments about
-> single-use functions in the same scope is the tie breaker.
-
-Perhaps I'm just being quite dense, but I just don't follow what the
-problem is and how you suggest fixing it.  A bunch of gotos to a label
-such as "out:" to log the refused action?  That seems messy and
-unstructured.
-
-> paul moore
-
-- RGB
-
---
-Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Sr. S/W Engineer, Kernel Security, Base Operating Systems
-Remote, Ottawa, Red Hat Canada
-IRC: rgb, SunRaycer
-Voice: +1.647.777.2635, Internal: (81) 32635
+    Stefan
