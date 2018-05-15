@@ -1,13 +1,15 @@
-From: Y Song <ys114321-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH] [RFC] bpf: tracing: new helper bpf_get_current_cgroup_ino
-Date: Mon, 14 May 2018 12:38:39 -0700
-Message-ID: <CAH3MdRUe7K8zJHuGAfnY6_VEkBLAWY1F_WaJgcLs4qDdQv1bTA__47133.6255818189$1526326640$gmane$org@mail.gmail.com>
-References: <20180513173318.21680-1-alban@kinvolk.io>
+From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC PATCH v4 3/5] ima: differentiate auditing policy rules
+	from "audit" actions
+Date: Tue, 15 May 2018 09:40:55 -0400
+Message-ID: <1526391655.3937.151.camel__1017.33582928336$1526391576$gmane$org@linux.vnet.ibm.com>
+References: <20180511144230.75384-1-stefanb@linux.vnet.ibm.com>
+	<20180511144230.75384-4-stefanb@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20180513173318.21680-1-alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
+In-Reply-To: <20180511144230.75384-4-stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,137 +19,51 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alban Crequy <alban.crequy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org, sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, david.safford-JJi787mZWgc@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, john.johansen-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sun, May 13, 2018 at 10:33 AM, Alban Crequy <alban.crequy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
-> From: Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
->
-> bpf_get_current_cgroup_ino() allows BPF trace programs to get the inode
-> of the cgroup where the current process resides.
->
-> My use case is to get statistics about syscalls done by a specific
-> Kubernetes container. I have a tracepoint on raw_syscalls/sys_enter and
-> a BPF map containing the cgroup inode that I want to trace. I use
-> bpf_get_current_cgroup_ino() and I quickly return from the tracepoint if
-> the inode is not in the BPF hash map.
-
-Alternatively, the kernel already has bpf_current_task_under_cgroup helper
-which uses a cgroup array to store cgroup fd's. If the current task is
-in the hierarchy of a particular cgroup, the helper will return true.
-
-One difference between your helper and bpf_current_task_under_cgroup() is
-that your helper tests against a particular cgroup, not including its
-children, but
-bpf_current_task_under_cgroup() will return true even the task is in a
-nested cgroup.
-
-Maybe this will work for you?
-
->
-> Without this BPF helper, I would need to keep track of all pids in the
-> container. The Netlink proc connector can be used to follow process
-> creation and destruction but it is racy.
->
-> This patch only looks at the memory cgroup, which was enough for me
-> since each Kubernetes container is placed in a different mem cgroup.
-> For a generic implementation, I'm not sure how to proceed: it seems I
-> would need to use 'for_each_root(root)' (see example in
-> proc_cgroup_show() from kernel/cgroup/cgroup.c) but I don't know if
-> taking the cgroup mutex is possible in the BPF helper function. It might
-> be ok in the tracepoint raw_syscalls/sys_enter but could the mutex
-> already be taken in some other tracepoints?
-
-mutex is not allowed in a helper since it can block.
-
->
-> Signed-off-by: Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
-> ---
->  include/uapi/linux/bpf.h | 11 ++++++++++-
->  kernel/trace/bpf_trace.c | 25 +++++++++++++++++++++++++
->  2 files changed, 35 insertions(+), 1 deletion(-)
->
-> diff --git a/include/uapi/linux/bpf.h b/include/uapi/linux/bpf.h
-> index c5ec89732a8d..38ac3959cdf3 100644
-> --- a/include/uapi/linux/bpf.h
-> +++ b/include/uapi/linux/bpf.h
-> @@ -755,6 +755,14 @@ union bpf_attr {
->   *     @addr: pointer to struct sockaddr to bind socket to
->   *     @addr_len: length of sockaddr structure
->   *     Return: 0 on success or negative error code
-> + *
-> + * u64 bpf_get_current_cgroup_ino(hierarchy, flags)
-> + *     Get the cgroup{1,2} inode of current task under the specified hierarchy.
-> + *     @hierarchy: cgroup hierarchy
-
-Not sure what is the value to specify hierarchy here.
-A cgroup directory fd?
-
-> + *     @flags: reserved for future use
-> + *     Return:
-> + *       == 0 error
-
-looks like < 0 means error.
-
-> + *        > 0 inode of the cgroup
-               >= 0 means good?
->   */
->  #define __BPF_FUNC_MAPPER(FN)          \
->         FN(unspec),                     \
-> @@ -821,7 +829,8 @@ union bpf_attr {
->         FN(msg_apply_bytes),            \
->         FN(msg_cork_bytes),             \
->         FN(msg_pull_data),              \
-> -       FN(bind),
-> +       FN(bind),                       \
-> +       FN(get_current_cgroup_ino),
->
->  /* integer value in 'imm' field of BPF_CALL instruction selects which helper
->   * function eBPF program intends to call
-> diff --git a/kernel/trace/bpf_trace.c b/kernel/trace/bpf_trace.c
-> index 56ba0f2a01db..9bf92a786639 100644
-> --- a/kernel/trace/bpf_trace.c
-> +++ b/kernel/trace/bpf_trace.c
-> @@ -524,6 +524,29 @@ static const struct bpf_func_proto bpf_probe_read_str_proto = {
->         .arg3_type      = ARG_ANYTHING,
->  };
->
-> +BPF_CALL_2(bpf_get_current_cgroup_ino, u32, hierarchy, u64, flags)
-> +{
-> +       // TODO: pick the correct hierarchy instead of the mem controller
-> +       struct cgroup *cgrp = task_cgroup(current, memory_cgrp_id);
-> +
-> +       if (unlikely(!cgrp))
-> +               return -EINVAL;
-> +       if (unlikely(hierarchy))
-> +               return -EINVAL;
-> +       if (unlikely(flags))
-> +               return -EINVAL;
-> +
-> +       return cgrp->kn->id.ino;
-> +}
-> +
-> +static const struct bpf_func_proto bpf_get_current_cgroup_ino_proto = {
-> +       .func           = bpf_get_current_cgroup_ino,
-> +       .gpl_only       = false,
-> +       .ret_type       = RET_INTEGER,
-> +       .arg1_type      = ARG_DONTCARE,
-> +       .arg2_type      = ARG_DONTCARE,
-> +};
-> +
->  static const struct bpf_func_proto *
->  tracing_func_proto(enum bpf_func_id func_id, const struct bpf_prog *prog)
->  {
-> @@ -564,6 +587,8 @@ tracing_func_proto(enum bpf_func_id func_id, const struct bpf_prog *prog)
->                 return &bpf_get_prandom_u32_proto;
->         case BPF_FUNC_probe_read_str:
->                 return &bpf_probe_read_str_proto;
-> +       case BPF_FUNC_get_current_cgroup_ino:
-> +               return &bpf_get_current_cgroup_ino_proto;
->         default:
->                 return NULL;
->         }
-> --
-> 2.14.3
->
+SGkgU3RlZmFuLAoKT24gRnJpLCAyMDE4LTA1LTExIGF0IDEwOjQyIC0wNDAwLCBTdGVmYW4gQmVy
+Z2VyIHdyb3RlOgo+IEZyb206IE1pbWkgWm9oYXIgPHpvaGFyQGxpbnV4LnZuZXQuaWJtLmNvbT4K
+PiAKPiBUaGUgQVVESVRfSU5URUdSSVRZX1JVTEUgaXMgdXNlZCBmb3IgYXVkaXRpbmcgSU1BIHBv
+bGljeSBydWxlcyBhbmQKPiB0aGUgSU1BICJhdWRpdCIgcG9saWN5IGFjdGlvbi4gIFRoaXMgcGF0
+Y2ggZGVmaW5lcyBBVURJVF9JTlRFR1JJVFlfUE9MSUNZCj4gdG8gcmVmbGVjdCB0aGUgSU1BIHBv
+bGljeSBydWxlcy4KPiAKPiBTaWduZWQtb2ZmLWJ5OiBNaW1pIFpvaGFyIDx6b2hhckBsaW51eC52
+bmV0LmlibS5jb20+CgpXZSBkbyBuZWVkIHRvIHNlcGFyYXRlIG91dCBhdWRpdGluZyB0aGUgSU1B
+IHBvbGljeSBydWxlcyBmcm9tIHRoZQoiSU1BLWF1ZGl0IiBtZXNzYWdlcy4gwqBCYXNlZCBvbiB0
+aGUgSU1BIHBvbGljeSBydWxlIGFzcGVjdCBvZiB0aGUKZGlzY3Vzc2lvbnMgWzFdLCDCoEkgd291
+bGQgcmVhbGx5IGFwcHJlY2lhdGUgaWYgeW91IGNvdWxkIHdvcmsgd2l0aApSaWNoYXJkIGFuZCBT
+dGV2ZSBvbiB0aGUgbmV3IElNQSBwb2xpY3kgcnVsZSBhdWRpdCBmb3JtYXQuCgpUaGlzIGNoYW5n
+ZSBjYW4gYmUgdXBzdHJlYW1lZCBpbmRlcGVuZGVudGx5IG9mIGVpdGhlciB0aGUgSU1BCm5hbWVz
+cGFjaW5nIG9yIHRoZSBhdWRpdCBjb250YWluZXJpZCBwYXRjaCBzZXRzLiDCoFRoZSBzb29uZXIg
+d2UgbWFrZQp0aGlzIGNoYW5nZSBhbmQgdXBzdHJlYW0gaXQsIHRoZSBiZXR0ZXIuCgpbMV3CoGh0
+dHBzOi8vd3d3LnJlZGhhdC5jb20vYXJjaGl2ZXMvbGludXgtYXVkaXQvMjAxOC1NYXJjaC9tc2cw
+MDA5Mi5odG1sCgp0aGFua3MsCgpNaW1pCgo+IC0tLQo+ICBpbmNsdWRlL3VhcGkvbGludXgvYXVk
+aXQuaCAgICAgICAgICB8IDMgKystCj4gIHNlY3VyaXR5L2ludGVncml0eS9pbWEvaW1hX3BvbGlj
+eS5jIHwgMiArLQo+ICAyIGZpbGVzIGNoYW5nZWQsIDMgaW5zZXJ0aW9ucygrKSwgMiBkZWxldGlv
+bnMoLSkKPiAKPiBkaWZmIC0tZ2l0IGEvaW5jbHVkZS91YXBpL2xpbnV4L2F1ZGl0LmggYi9pbmNs
+dWRlL3VhcGkvbGludXgvYXVkaXQuaAo+IGluZGV4IDRlNjFhOWUwNTEzMi4uODk2NmU3ZmYxYzRj
+IDEwMDY0NAo+IC0tLSBhL2luY2x1ZGUvdWFwaS9saW51eC9hdWRpdC5oCj4gKysrIGIvaW5jbHVk
+ZS91YXBpL2xpbnV4L2F1ZGl0LmgKPiBAQCAtMTQ2LDcgKzE0Niw4IEBACj4gICNkZWZpbmUgQVVE
+SVRfSU5URUdSSVRZX1NUQVRVUwkgICAgMTgwMiAvKiBJbnRlZ3JpdHkgZW5hYmxlIHN0YXR1cyAq
+Lwo+ICAjZGVmaW5lIEFVRElUX0lOVEVHUklUWV9IQVNICSAgICAxODAzIC8qIEludGVncml0eSBI
+QVNIIHR5cGUgKi8KPiAgI2RlZmluZSBBVURJVF9JTlRFR1JJVFlfUENSCSAgICAxODA0IC8qIFBD
+UiBpbnZhbGlkYXRpb24gbXNncyAqLwo+IC0jZGVmaW5lIEFVRElUX0lOVEVHUklUWV9SVUxFCSAg
+ICAxODA1IC8qIHBvbGljeSBydWxlICovCj4gKyNkZWZpbmUgQVVESVRfSU5URUdSSVRZX1JVTEUJ
+ICAgIDE4MDUgLyogSU1BICJhdWRpdCIgYWN0aW9uIHBvbGljeSBtc2dzICAqLwo+ICsjZGVmaW5l
+IEFVRElUX0lOVEVHUklUWV9QT0xJQ1kJICAgIDE4MDYgLyogSU1BIHBvbGljeSBydWxlcyAqLwo+
+IAo+ICAjZGVmaW5lIEFVRElUX0tFUk5FTAkJMjAwMAkvKiBBc3luY2hyb25vdXMgYXVkaXQgcmVj
+b3JkLiBOT1QgQSBSRVFVRVNULiAqLwo+IAo+IGRpZmYgLS1naXQgYS9zZWN1cml0eS9pbnRlZ3Jp
+dHkvaW1hL2ltYV9wb2xpY3kuYyBiL3NlY3VyaXR5L2ludGVncml0eS9pbWEvaW1hX3BvbGljeS5j
+Cj4gaW5kZXggOTE1ZjU1NzJjNmZmLi4zYTE0MTJkYjAyYTMgMTAwNjQ0Cj4gLS0tIGEvc2VjdXJp
+dHkvaW50ZWdyaXR5L2ltYS9pbWFfcG9saWN5LmMKPiArKysgYi9zZWN1cml0eS9pbnRlZ3JpdHkv
+aW1hL2ltYV9wb2xpY3kuYwo+IEBAIC02MTksNyArNjE5LDcgQEAgc3RhdGljIGludCBpbWFfcGFy
+c2VfcnVsZShjaGFyICpydWxlLCBzdHJ1Y3QgaW1hX3J1bGVfZW50cnkgKmVudHJ5KQo+ICAJYm9v
+bCB1aWRfdG9rZW47Cj4gIAlpbnQgcmVzdWx0ID0gMDsKPiAKPiAtCWFiID0gYXVkaXRfbG9nX3N0
+YXJ0KE5VTEwsIEdGUF9LRVJORUwsIEFVRElUX0lOVEVHUklUWV9SVUxFKTsKPiArCWFiID0gYXVk
+aXRfbG9nX3N0YXJ0KE5VTEwsIEdGUF9LRVJORUwsIEFVRElUX0lOVEVHUklUWV9QT0xJQ1kpOwo+
+IAo+ICAJZW50cnktPnVpZCA9IElOVkFMSURfVUlEOwo+ICAJZW50cnktPmZvd25lciA9IElOVkFM
+SURfVUlEOwoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18K
+Q29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9u
+Lm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9j
+b250YWluZXJz
