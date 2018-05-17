@@ -1,18 +1,16 @@
 From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] audit: add containerid support for IMA-audit
-Date: Thu, 17 May 2018 17:30:01 -0400
-Message-ID: <20180517213001.62caslkjwv575xgl__2743.30196339196$1526592942$gmane$org@madcap2.tricolour.ca>
-References: <1520257393.10396.291.camel@linux.vnet.ibm.com>
-	<20180305135008.po6lheqnmkqqo6q4@madcap2.tricolour.ca>
-	<1520259854.10396.313.camel@linux.vnet.ibm.com>
-	<20180308112104.z67wohdvjqemy7wy@madcap2.tricolour.ca>
-	<efb6c164-febe-67bb-43a9-795476c4902f@linux.vnet.ibm.com>
+Subject: Re: [RFC PATCH ghak32 V2 03/13] audit: log container info of syscalls
+Date: Thu, 17 May 2018 17:41:02 -0400
+Message-ID: <20180517214102.qhg4gofwrbsn2eru__2534.45607745579$1526593209$gmane$org@madcap2.tricolour.ca>
+References: <cover.1521179281.git.rgb@redhat.com>
+	<6768d20c636df65534f8d325529669bb30a58382.1521179281.git.rgb@redhat.com>
+	<20180517170907.3d9f7c1a@ivy-bridge>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <efb6c164-febe-67bb-43a9-795476c4902f-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <20180517170907.3d9f7c1a@ivy-bridge>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,240 +20,141 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-integrity <linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 2018-05-17 10:18, Stefan Berger wrote:
-> On 03/08/2018 06:21 AM, Richard Guy Briggs wrote:
-> > On 2018-03-05 09:24, Mimi Zohar wrote:
-> > > On Mon, 2018-03-05 at 08:50 -0500, Richard Guy Briggs wrote:
-> > > > On 2018-03-05 08:43, Mimi Zohar wrote:
-> > > > > Hi Richard,
-> > > > > =
+On 2018-05-17 17:09, Steve Grubb wrote:
+> On Fri, 16 Mar 2018 05:00:30 -0400
+> Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> 
+> > Create a new audit record AUDIT_CONTAINER_INFO to document the
+> > container ID of a process if it is present.
+> 
+> As mentioned in a previous email, I think AUDIT_CONTAINER is more
+> suitable for the container record. One more comment below...
+> 
+> > Called from audit_log_exit(), syscalls are covered.
+> > 
+> > A sample raw event:
+> > type=SYSCALL msg=audit(1519924845.499:257): arch=c000003e syscall=257
+> > success=yes exit=3 a0=ffffff9c a1=56374e1cef30 a2=241 a3=1b6 items=2
+> > ppid=606 pid=635 auid=0 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0
+> > sgid=0 fsgid=0 tty=pts0 ses=3 comm="bash" exe="/usr/bin/bash"
+> > subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+> > key="tmpcontainerid" type=CWD msg=audit(1519924845.499:257):
+> > cwd="/root" type=PATH msg=audit(1519924845.499:257): item=0
+> > name="/tmp/" inode=13863 dev=00:27 mode=041777 ouid=0 ogid=0
+> > rdev=00:00 obj=system_u:object_r:tmp_t:s0 nametype= PARENT
+> > cap_fp=0000000000000000 cap_fi=0000000000000000 cap_fe=0 cap_fver=0
+> > type=PATH msg=audit(1519924845.499:257): item=1
+> > name="/tmp/tmpcontainerid" inode=17729 dev=00:27 mode=0100644 ouid=0
+> > ogid=0 rdev=00:00 obj=unconfined_u:object_r:user_tmp_t:s0
+> > nametype=CREATE cap_fp=0000000000000000 cap_fi=0000000000000000
+> > cap_fe=0 cap_fver=0 type=PROCTITLE msg=audit(1519924845.499:257):
+> > proctitle=62617368002D6300736C65657020313B206563686F2074657374203E202F746D702F746D70636F6E7461696E65726964
+> > type=CONTAINER_INFO msg=audit(1519924845.499:257): op=task
+> > contid=123458
+> > 
+> > See: https://github.com/linux-audit/audit-kernel/issues/32
+> > Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> > ---
+> >  include/linux/audit.h      |  5 +++++
+> >  include/uapi/linux/audit.h |  1 +
+> >  kernel/audit.c             | 20 ++++++++++++++++++++
+> >  kernel/auditsc.c           |  2 ++
+> >  4 files changed, 28 insertions(+)
+> > 
+> > diff --git a/include/linux/audit.h b/include/linux/audit.h
+> > index fe4ba3f..3acbe9d 100644
+> > --- a/include/linux/audit.h
+> > +++ b/include/linux/audit.h
+> > @@ -154,6 +154,8 @@ extern void
+> > audit_log_link_denied(const char *operation, extern int
+> > audit_log_task_context(struct audit_buffer *ab); extern void
+> > audit_log_task_info(struct audit_buffer *ab, struct task_struct *tsk);
+> > +extern int audit_log_container_info(struct task_struct *tsk,
+> > +				     struct audit_context *context);
+> >  
+> >  extern int		    audit_update_lsm_rules(void);
+> >  
+> > @@ -205,6 +207,9 @@ static inline int audit_log_task_context(struct
+> > audit_buffer *ab) static inline void audit_log_task_info(struct
+> > audit_buffer *ab, struct task_struct *tsk)
+> >  { }
+> > +static inline int audit_log_container_info(struct task_struct *tsk,
+> > +					    struct audit_context
+> > *context); +{ }
+> >  #define audit_enabled 0
+> >  #endif /* CONFIG_AUDIT */
+> >  
+> > diff --git a/include/uapi/linux/audit.h b/include/uapi/linux/audit.h
+> > index 921a71f..e83ccbd 100644
+> > --- a/include/uapi/linux/audit.h
+> > +++ b/include/uapi/linux/audit.h
+> > @@ -115,6 +115,7 @@
+> >  #define AUDIT_REPLACE		1329	/* Replace auditd
+> > if this packet unanswerd */ #define AUDIT_KERN_MODULE
+> > 1330	/* Kernel Module events */ #define
+> > AUDIT_FANOTIFY		1331	/* Fanotify access decision
+> > */ +#define AUDIT_CONTAINER_INFO	1332	/* Container ID
+> > information */ #define AUDIT_AVC		1400	/* SE
+> > Linux avc denial or grant */ #define AUDIT_SELINUX_ERR
+> > 1401	/* Internal SE Linux Errors */ diff --git
+> > a/kernel/audit.c b/kernel/audit.c index 3f2f143..a12f21f 100644
+> > --- a/kernel/audit.c
+> > +++ b/kernel/audit.c
+> > @@ -2049,6 +2049,26 @@ void audit_log_session_info(struct
+> > audit_buffer *ab) audit_log_format(ab, " auid=%u ses=%u", auid,
+> > sessionid); }
+> >  
+> > +/*
+> > + * audit_log_container_info - report container info
+> > + * @tsk: task to be recorded
+> > + * @context: task or local context for record
+> > + */
+> > +int audit_log_container_info(struct task_struct *tsk, struct
+> > audit_context *context) +{
+> > +	struct audit_buffer *ab;
+> > +
+> > +	if (!audit_containerid_set(tsk))
+> > +		return 0;
+> > +	/* Generate AUDIT_CONTAINER_INFO with container ID */
+> > +	ab = audit_log_start(context, GFP_KERNEL,
+> > AUDIT_CONTAINER_INFO);
+> > +	if (!ab)
+> > +		return -ENOMEM;
+> > +	audit_log_format(ab, "contid=%llu",
+> > audit_get_containerid(tsk));
+> > +	audit_log_end(ab);
+> > +	return 0;
+> > +}
+> > +
+> >  void audit_log_key(struct audit_buffer *ab, char *key)
+> >  {
+> >  	audit_log_format(ab, " key=");
+> > diff --git a/kernel/auditsc.c b/kernel/auditsc.c
+> > index a6b0a52..65be110 100644
+> > --- a/kernel/auditsc.c
+> > +++ b/kernel/auditsc.c
+> > @@ -1453,6 +1453,8 @@ static void audit_log_exit(struct audit_context
+> > *context, struct task_struct *ts 
+> >  	audit_log_proctitle(tsk, context);
+> >  
+> > +	audit_log_container_info(tsk, context);
+> 
+> Would there be any problem moving audit_log_container_info before
+> audit_log_proctitle? There are some assumptions that proctitle is the
+> last record in some situations.
 
-> > > > > This patch has been compiled, but not runtime tested.
-> > > > Ok, great, thank you.  I assume you are offering this patch to be
-> > > > included in this patchset?
-> > > Yes, thank you.
-> > > =
+I see no problem doing that.
 
-> > > > I'll have a look to see where it fits in the
-> > > > IMA record.  It might be better if it were an AUDIT_CONTAINER_INFO
-> > > > auxiliary record, but I'll have a look at the circumstances of the
-> > > > event.
-> > I had a look at the context of this record to see if adding the contid
-> > field to it made sense.  I think the only records for which the contid
-> > field makes sense are the two newly proposed records, AUDIT_CONTAINER
-> > which introduces the container ID and the and AUDIT_CONTAINER_INFO which
-> > documents the presence of the container ID in a process event (or
-> > process-less network event).  All others should use the auxiliary record
-> > AUDIT_CONTAINER_INFO rather than include the contid field directly
-> > itself.  There are several reasons for this including record length, the
-> > ability to filter unwanted records, the difficulty of changing the order
-> > of or removing fields in the future.
-> > =
-
-> > Syscalls get this information automatically if the container ID is set
-> > for a task via the AUDIT_CONTAINER_INFO auxiliary record.  Generally a
-> > syscall event is one that uses the task's audit_context while a
-> > standalone event uses NULL or builds a local audit_context that is
-> > discarded immediately after the local use.
-> > =
-
-> > Looking at the two cases of AUDIT_INTEGRITY_RULE record generation, it
-> > appears that they should be split into two distinct audit record types.
-> > =
-
-> > The record created in ima_audit_measurement() is a syscall record that
-> > could possibly stand on its own since the subject attributes are
-> > present.  If it remains a syscall auxiliary record it will automatically
-> > have the AUDIT_CONTAINER_INFO record accompany it anyways.  If it is
-> > decided to detach it (which would save cpu/netlink/disk bandwidth but is
-> > not recommended due to not wanting to throw away any other syscall
-> > information or other involved records (PATH, CWD, etc...) then a local
-> > audit_context would be created for the AUDIT_INTEGRITY_RULE and
-> > AUDIT_CONTAINERID_INFO records only and immediately discarded.
-> =
-
-> What does 'detach it' mean? Does it mean we're not using
-> current->audit_context?
-
-Exactly.
-
-> > The record created in ima_parse_rule() is not currently a syscall record
-> > since it is passed an audit_context of NULL and it has a very different
-> > format that does not include any subject attributes (except subj_*=3D).
-> > At first glance it appears this one should be a syscall accompanied
-> > auxiliary record.  Either way it should have an AUDIT_CONTAINER_INFO
-> =
-
-> Do you have an example (pointer) to the format for a 'syscall accompanied
-> auxiliary record'?
-
-Any that uses current->audit_context (or recently proposed
-audit_context() function) will be a syscall auxiliary record.  Well
-formed record formats are <fieldname>=3D<value> and named as listed:
-
-	https://github.com/linux-audit/audit-documentation/wiki/SPEC-Writing-Good-=
-Events
-	https://github.com/linux-audit/audit-documentation/blob/master/specs/field=
-s/field-dictionary.csv
-	=
-
-> > auxiliary record either by being converted to a syscall auxiliary record
-> > by using current->audit_context rather than NULL when calling
-> > audit_log_start(), or creating a local audit_context and calling
-> =
-
-> ima_parse_rule() is invoked when setting a policy by writing it into
-> /sys/kernel/security/ima/policy. We unfortunately don't have the
-> current->audit_context in this case.
-
-Sure you do.  What process writes to that file?  That's the one we care
-about, unless it is somehow handed off to a queue and processed later in
-a different context.
-
-> > audit_log_container_info() then releasing the local context.  This
-> > version of the record has additional concerns covered here:
-> > https://github.com/linux-audit/audit-kernel/issues/52
-> =
-
-> Following the discussion there and the concern with breaking user space, =
-how
-> can we split up the AUDIT_INTEGRITY_RULE that is used in
-> ima_audit_measurement() and ima_parse_rule(), without 'breaking user spac=
-e'?
-
-Arguably userspace is already broken by this wildly diverging pair of
-formats for the same record.
-
-> A message produced by ima_parse_rule() looks like this here:
-> =
-
-> type=3DINTEGRITY_RULE msg=3Daudit(1526566213.870:305): action=3D"dont_mea=
-sure"
-> fsmagic=3D"0x9fa0" res=3D1
-> =
-
-> in contrast to that an INTEGRITY_PCR record type:
-> =
-
-> type=3DINTEGRITY_PCR msg=3Daudit(1526566235.193:334): pid=3D1615 uid=3D0 =
-auid=3D0
-> ses=3D2 subj=3Dunconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
-> op=3D"invalid_pcr" cause=3D"open_writers" comm=3D"scp"
-> name=3D"/var/log/audit/audit.log" dev=3D"dm-0" ino=3D1962625 res=3D1
-> =
-
-> Should some of the fields from INTEGRITY_PCR also appear in INTEGRITY_RUL=
-E?
-
-Not necessarily.  There are a number of records in the PCR record that
-would be redundant when connected to a syscall record, but removing them
-is discouraged to avoid breaking parsers that expect them.
-
-I don't see any need to touch the PCR record.
-
-> If so, which ones? We could probably refactor the current=A0
-> integrity_audit_message() and have ima_parse_rule() call into it to get
-> those fields as well. I suppose adding new fields to it wouldn't be
-> considered breaking user space?
-
-Changing the order of existing fields or inserting fields could break
-stuff and is strongly discouraged without a good reason, but appending
-fields is usually the right way to add information.
-
-There are exceptions, and in this case, I'd pick the "more standard" of
-the formats for AUDIT_INTEGRITY_RULE (ima_audit_measurement?) and stick
-with that, abandoning the other format, renaming the less standard
-version of the record (ima_parse_rule?) and perhpas adopting that
-abandonned format for the new record type while using
-current->audit_context.
-
-Does this help?
-
-> =A0=A0=A0 Stefan
-> =
-
-> > Can you briefly describe the circumstances under which these two
-> > different identically-numbered records are produced as a first step
-> > towards splitting them into two distict records?
-> > =
-
-> > The four AUDIT_INTEGRITY _METADATA, _PCR, _DATA and _STATUS records
-> > appear to be already properly covered for AUDIT_CONTAINER_INFO records
-> > by being syscall auxiliary records.  The AUDIT_INTEGRITY_HASH record
-> > appears to be unused.
-> > =
-
-> > > > Can you suggest a procedure to test it?
-> > > Like IMA-measurement and IMA-appraisal, IMA-audit is enabled based on
-> > > policy. The example IMA policy, below, includes IMA-audit messages for
-> > > files executed. 'cat' the policy to /sys/kernel/security/ima/policy.
-> > > =
-
-> > > /etc/ima/ima-policy:
-> > > audit func=3DBPRM_CHECK
-> > > =
-
-> > > There's a FireEye blog titled "Extending Linux Executable Logging With
-> > > The Integrity Measurement Architecture"* that explains how to augment
-> > > their existing system security analytics with file hashes.
-> > > =
-
-> > > *=A0https://www.fireeye.com/blog/threat-research/2016/11/extending_li=
-nux
-> > > _exec.html
-> > > =
-
-> > > =
-
-> > > Mimi
-> > > =
-
-> > > > > If the containerid is defined, include it in the IMA-audit record.
-> > > > > =
-
-> > > > > Signed-off-by: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> > > > > ---
-> > > > >   security/integrity/ima/ima_api.c | 3 +++
-> > > > >   1 file changed, 3 insertions(+)
-> > > > > =
-
-> > > > > diff --git a/security/integrity/ima/ima_api.c b/security/integrit=
-y/ima/ima_api.c
-> > > > > index 33b4458cdbef..41d29a06f28f 100644
-> > > > > --- a/security/integrity/ima/ima_api.c
-> > > > > +++ b/security/integrity/ima/ima_api.c
-> > > > > @@ -335,6 +335,9 @@ void ima_audit_measurement(struct integrity_i=
-int_cache *iint,
-> > > > >   	audit_log_untrustedstring(ab, algo_hash);
-> > > > >   	audit_log_task_info(ab, current);
-> > > > > +	if (audit_containerid_set(current))
-> > > > > +		audit_log_format(ab, " contid=3D%llu",
-> > > > > +				 audit_get_containerid(current));
-> > > > >   	audit_log_end(ab);
-> > > > >   	iint->flags |=3D IMA_AUDITED;
-> > > > > -- =
-
-> > > > > 2.7.5
-> > > > > =
-
-> > > > - RGB
-> > - RGB
-> > =
-
-> > --
-> > Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> > Sr. S/W Engineer, Kernel Security, Base Operating Systems
-> > Remote, Ottawa, Red Hat Canada
-> > IRC: rgb, SunRaycer
-> > Voice: +1.647.777.2635, Internal: (81) 32635
-> > =
-
-> =
-
+> Thanks,
+> -Steve
+> 
+> >  	/* Send end of event record to help user space know we are
+> > finished */ ab = audit_log_start(context, GFP_KERNEL, AUDIT_EOE);
+> >  	if (ab)
 
 - RGB
 
