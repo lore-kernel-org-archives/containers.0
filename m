@@ -1,21 +1,16 @@
-From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH] audit: add containerid support for IMA-audit
-Date: Fri, 18 May 2018 09:54:47 -0400
-Message-ID: <ef567d60-42f7-0a87-8597-1ef381e15be0__49735.2637969472$1526651604$gmane$org@linux.vnet.ibm.com>
-References: <1520257393.10396.291.camel@linux.vnet.ibm.com>
-	<20180305135008.po6lheqnmkqqo6q4@madcap2.tricolour.ca>
-	<1520259854.10396.313.camel@linux.vnet.ibm.com>
-	<20180308112104.z67wohdvjqemy7wy@madcap2.tricolour.ca>
-	<efb6c164-febe-67bb-43a9-795476c4902f@linux.vnet.ibm.com>
-	<20180517213001.62caslkjwv575xgl@madcap2.tricolour.ca>
-	<86df5c2c-9db3-21b9-b91b-30a4f53f9504@linux.vnet.ibm.com>
-	<1526647996.3632.164.camel@linux.vnet.ibm.com>
+From: Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC PATCH ghak32 V2 01/13] audit: add container id
+Date: Fri, 18 May 2018 09:56:36 -0400
+Message-ID: <20180518095636.56ff322d@ivy-bridge>
+References: <cover.1521179281.git.rgb@redhat.com>
+	<e284617ad667ad8f17958dd8babb87fe1b4d7205.1521179281.git.rgb@redhat.com>
+	<20180517170053.7d4afa87@ivy-bridge>
+	<20180517215600.dyswlkvqdtgjwr5y@madcap2.tricolour.ca>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; Format="flowed"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1526647996.3632.164.camel-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Content-Language: en-MW
+In-Reply-To: <20180517215600.dyswlkvqdtgjwr5y-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,70 +20,35 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-integrity <linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gMDUvMTgvMjAxOCAwODo1MyBBTSwgTWltaSBab2hhciB3cm90ZToKPiBPbiBGcmksIDIwMTgt
-MDUtMTggYXQgMDc6NDkgLTA0MDAsIFN0ZWZhbiBCZXJnZXIgd3JvdGU6Cj4+IE9uIDA1LzE3LzIw
-MTggMDU6MzAgUE0sIFJpY2hhcmQgR3V5IEJyaWdncyB3cm90ZToKPiBbLi4uXQo+Cj4+Pj4+IGF1
-eGlsaWFyeSByZWNvcmQgZWl0aGVyIGJ5IGJlaW5nIGNvbnZlcnRlZCB0byBhIHN5c2NhbGwgYXV4
-aWxpYXJ5IHJlY29yZAo+Pj4+PiBieSB1c2luZyBjdXJyZW50LT5hdWRpdF9jb250ZXh0IHJhdGhl
-ciB0aGFuIE5VTEwgd2hlbiBjYWxsaW5nCj4+Pj4+IGF1ZGl0X2xvZ19zdGFydCgpLCBvciBjcmVh
-dGluZyBhIGxvY2FsIGF1ZGl0X2NvbnRleHQgYW5kIGNhbGxpbmcKPj4+PiBpbWFfcGFyc2VfcnVs
-ZSgpIGlzIGludm9rZWQgd2hlbiBzZXR0aW5nIGEgcG9saWN5IGJ5IHdyaXRpbmcgaXQgaW50bwo+
-Pj4+IC9zeXMva2VybmVsL3NlY3VyaXR5L2ltYS9wb2xpY3kuIFdlIHVuZm9ydHVuYXRlbHkgZG9u
-J3QgaGF2ZSB0aGUKPj4+PiBjdXJyZW50LT5hdWRpdF9jb250ZXh0IGluIHRoaXMgY2FzZS4KPj4+
-IFN1cmUgeW91IGRvLiAgV2hhdCBwcm9jZXNzIHdyaXRlcyB0byB0aGF0IGZpbGU/ICBUaGF0J3Mg
-dGhlIG9uZSB3ZSBjYXJlCj4+PiBhYm91dCwgdW5sZXNzIGl0IGlzIHNvbWVob3cgaGFuZGVkIG9m
-ZiB0byBhIHF1ZXVlIGFuZCBwcm9jZXNzZWQgbGF0ZXIgaW4KPj4+IGEgZGlmZmVyZW50IGNvbnRl
-eHQuCj4+IEkganVzdCBwcmludGsnZCBpdCBhZ2Fpbi4gY3VycmVudC0+YXVkaXRfY29udGV4dCBp
-cyBOVUxMIGluIHRoaXMgY2FzZS4KPiBUaGUgYnVpbHRpbiBwb2xpY3kgcnVsZXMgYXJlIGxvYWRl
-ZCBhdCBfX2luaXQuIMKgU3Vic2VxdWVudGx5IGEgY3VzdG9tCj4gcG9saWN5IGNhbiByZXBsYWNl
-IHRoZSBidWlsdGluIHBvbGljeSBydWxlcyBieSB3cml0aW5nIHRvIHRoZQo+IHNlY3VyaXR5ZnMg
-ZmlsZS4gwqBJcyB0aGUgYXVkaXRfY29udGV4dCBOVUxMIGluIGJvdGggY2FzZXM/CgpUaGUgYnVp
-bHRpbiBwb2xpY3kgcnVsZXMgYXJlIG5vdCBwYXJzZWQgZnJvbSB3aGF0IEkgY2FuIHNlZS4gVGhl
-eSBzZWVtIAp0byBiZSBlbmNvZGVkIGluIHRoZSBmb3JtYXQgdGhlIHBhcnNlciB3b3VsZCBwcm9k
-dWNlLgoKSSBnZXQgY3VycmVudC0+YXVkaXRfY29udGV4dCA9PSBOVUxMIGluIHRoZSBjYXNlIHRo
-ZSB1c2VyIGNhdCdzIHRoZSAKcG9saWN5IGludG8gSU1BJ3MgcG9saWN5IHNlY3VyaXR5ZnMgZmls
-ZS4KCj4KPgo+Cj4+Pj4gSWYgc28sIHdoaWNoIG9uZXM/IFdlIGNvdWxkIHByb2JhYmx5IHJlZmFj
-dG9yIHRoZSBjdXJyZW50Cj4+Pj4gaW50ZWdyaXR5X2F1ZGl0X21lc3NhZ2UoKSBhbmQgaGF2ZSBp
-bWFfcGFyc2VfcnVsZSgpIGNhbGwgaW50byBpdCB0byBnZXQKPj4+PiB0aG9zZSBmaWVsZHMgYXMg
-d2VsbC4gSSBzdXBwb3NlIGFkZGluZyBuZXcgZmllbGRzIHRvIGl0IHdvdWxkbid0IGJlCj4+Pj4g
-Y29uc2lkZXJlZCBicmVha2luZyB1c2VyIHNwYWNlPwo+Pj4gQ2hhbmdpbmcgdGhlIG9yZGVyIG9m
-IGV4aXN0aW5nIGZpZWxkcyBvciBpbnNlcnRpbmcgZmllbGRzIGNvdWxkIGJyZWFrCj4+PiBzdHVm
-ZiBhbmQgaXMgc3Ryb25nbHkgZGlzY291cmFnZWQgd2l0aG91dCBhIGdvb2QgcmVhc29uLCBidXQg
-YXBwZW5kaW5nCj4+PiBmaWVsZHMgaXMgdXN1YWxseSB0aGUgcmlnaHQgd2F5IHRvIGFkZCBpbmZv
-cm1hdGlvbi4KPj4+Cj4+PiBUaGVyZSBhcmUgZXhjZXB0aW9ucywgYW5kIGluIHRoaXMgY2FzZSwg
-SSdkIHBpY2sgdGhlICJtb3JlIHN0YW5kYXJkIiBvZgo+Pj4gdGhlIGZvcm1hdHMgZm9yIEFVRElU
-X0lOVEVHUklUWV9SVUxFIChpbWFfYXVkaXRfbWVhc3VyZW1lbnQ/KSBhbmQgc3RpY2sKPj4+IHdp
-dGggdGhhdCwgYWJhbmRvbmluZyB0aGUgb3RoZXIgZm9ybWF0LCByZW5hbWluZyB0aGUgbGVzcyBz
-dGFuZGFyZAo+Pj4gdmVyc2lvbiBvZiB0aGUgcmVjb3JkIChpbWFfcGFyc2VfcnVsZT8pIGFuZCBw
-ZXJocGFzIGFkb3B0aW5nIHRoYXQKPj4+IGFiYW5kb25uZWQgZm9ybWF0IGZvciB0aGUgbmV3IHJl
-Y29yZCB0eXBlIHdoaWxlIHVzaW5nCj4+PiBjdXJyZW50LT5hdWRpdF9jb250ZXh0Lgo+IFRoaXMg
-c291bmRzIHJpZ2h0LCBvdGhlciB0aGFuICJ0eXBlPUlOVEVHUklUWV9SVUxFIiAoMTgwNSkgZm9y
-Cj4gaW1hX2F1ZGl0X21lYXN1cmVtZW50KCkuIMKgQ291bGQgd2UgcmVuYW1lIHR5cGU9MTgwNSB0
-byBiZQoKU28gZG8gd2Ugd2FudCB0byBjaGFuZ2UgYm90aD8gSSB0aG91Z2h0IHRoYXQgd2hhdCAK
-aW1hX2F1ZGl0X21lYXN1cmVtZW50KCkgcHJvZHVjZXMgbG9va3Mgb2sgYnV0IG1heSBub3QgaGF2
-ZSBhIGdvb2QgbmFtZSAKZm9yIHRoZSAndHlwZScuIE5vdyBpbiB0aGlzIGNhc2UgSSB3b3VsZCBu
-b3Qgd2FudCB0byAnYnJlYWsgdXNlciBzcGFjZScuIApUaGUgb25seSBjaGFuZ2UgSSB3YXMgZ29p
-bmcgdG8gbWFrZSB3YXMgdG8gd2hhdCBpbWFfcGFyc2VfcnVsZSgpIHByb2R1Y2VzLgoKPiBJTlRF
-R1JJVFlfQVVESVQgb3IgSU5URUdSSVRZX0lNQV9BVURJVD8gwqBUaGUgbmV3IHR5cGU9MTgwNiBh
-dWRpdAo+IG1lc3NhZ2UgY291bGQgYmUgbmFtZWQgSU5URUdSSVRZX1JVTEUgb3IsIGlmIHRoYXQg
-d291bGQgYmUgY29uZnVzaW5nLAo+IElOVEVHUklUWV9QT0xJQ1lfUlVMRS4KCkZvciAxODA2LCBh
-cyB3ZSB3b3VsZCB1c2UgaXQgaW4gaW1hX3BhcnNlX3J1bGUoKSwgd2UgY291bGQgY2hhbmdlIHRo
-YXQgCmluIHlvdXIgcGF0Y2ggdG8gSU5URUdSSVRZX1BPTElDWV9SVUxFLiBJTUFfUE9MSUNZX1JV
-TEUgbWF5IGJlIGJldHRlciAKZm9yIElNQSB0byBwcm9kdWNlIGJ1dCB0aGF0J3MgaW5jb25zaXN0
-ZW50IHRoZW4uCgo+Cj4+IDE4MDYgd291bGQgYmUgaW4gc3luYyB3aXRoIElOVEVHUklUWV9SVUxF
-IG5vdyBmb3IgcHJvY2VzcyByZWxhdGVkIGluZm8uCj4+IElmIHRoaXMgbG9va3MgZ29vZCwgSSds
-bCByZW1vdmUgdGhlIGRlcGVuZGVuY3kgb24geW91ciBsb2NhbCBjb250ZXh0Cj4+IGNyZWF0aW9u
-IGFuZCBwb3N0IHRoZSBzZXJpZXMuCj4+Cj4+IFRoZSBqdXN0aWZpY2F0aW9uIGZvciB0aGUgY2hh
-bmdlIGlzIHRoYXQgdGhlIElOVEVHUklUWV9SVUxFLCBhcyBwcm9kdWNlZAo+PiBieSBpbWFfcGFy
-c2VfcnVsZSgpLCBpcyBicm9rZW4uCj4gUG9zdCB3aGljaCBzZXJpZXM/IMKgVGhlIElNQSBuYW1l
-c3BhY2luZyBwYXRjaCBzZXQ/IMKgVGhpcyBjaGFuZ2Ugc2hvdWxkCj4gYmUgdXBzdHJlYW1lZCBp
-bmRlcGVuZGVudGx5IG9mIElNQSBuYW1lc3BhY2luZy4KCldpdGhvdXQgUmljaGFyZCdzIGxvY2Fs
-IGNvbnRleHQgcGF0Y2ggaXQgbWF5IGp1c3QgYmUgb25lIG9yIHR3byBwYXRjaGVzLgoKIMKgwqAg
-U3RlZmFuCgo+Cj4gTWltaQoKCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgt
-Zm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4v
-bGlzdGluZm8vY29udGFpbmVycw==
+On Thu, 17 May 2018 17:56:00 -0400
+Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+
+> > During syscall events, the path info is returned in a a record
+> > simply called AUDIT_PATH, cwd info is returned in AUDIT_CWD. So,
+> > rather than calling the record that gets attached to everything
+> > AUDIT_CONTAINER_INFO, how about simply AUDIT_CONTAINER.  
+> 
+> Considering the container initiation record is different than the
+> record to document the container involved in an otherwise normal
+> syscall, we need two names.  I don't have a strong opinion what they
+> are.
+> 
+> I'd prefer AUDIT_CONTAIN and AUDIT_CONTAINER_INFO so that the two
+> are different enough to be visually distinct while leaving
+> AUDIT_CONTAINERID for the field type in patch 4 ("audit: add
+> containerid filtering")
+
+How about AUDIT_CONTAINER for the auxiliary record? The one that starts
+the container, I don't have a strong opinion on. Could be
+AUDIT_CONTAINER_INIT, AUDIT_CONTAINER_START, AUDIT_CONTAINERID,
+AUDIT_CONTAINER_ID, or something else. The API call that sets the ID
+for filtering could be AUDIT_CID or AUDIT_CONTID if that helps decide
+what the initial event might be. Normally, it should match the field
+being filtered.
+
+Best Regards,
+-Steve
