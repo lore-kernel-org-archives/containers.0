@@ -1,23 +1,16 @@
-From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH] audit: add containerid support for IMA-audit
-Date: Fri, 18 May 2018 10:52:34 -0400
-Message-ID: <1347e0c5-40c9-34a4-9c54-60bd2917b2d7__9920.5037732192$1526655061$gmane$org@linux.vnet.ibm.com>
-References: <1520257393.10396.291.camel@linux.vnet.ibm.com>
-	<20180305135008.po6lheqnmkqqo6q4@madcap2.tricolour.ca>
-	<1520259854.10396.313.camel@linux.vnet.ibm.com>
-	<20180308112104.z67wohdvjqemy7wy@madcap2.tricolour.ca>
-	<efb6c164-febe-67bb-43a9-795476c4902f@linux.vnet.ibm.com>
-	<20180517213001.62caslkjwv575xgl@madcap2.tricolour.ca>
-	<86df5c2c-9db3-21b9-b91b-30a4f53f9504@linux.vnet.ibm.com>
-	<1526647996.3632.164.camel@linux.vnet.ibm.com>
-	<ef567d60-42f7-0a87-8597-1ef381e15be0@linux.vnet.ibm.com>
-	<1526654395.3632.196.camel@linux.vnet.ibm.com>
+From: Tycho Andersen <tycho-E0fblnxP3wo@public.gmane.org>
+Subject: Re: [PATCH v2 3/4] seccomp: add a way to get a listener fd from ptrace
+Date: Fri, 18 May 2018 09:10:28 -0600
+Message-ID: <20180518151028.GA7699__38633.1678521403$1526656133$gmane$org@cisco>
+References: <20180517151218.12850-1-tycho@tycho.ws>
+	<20180517151218.12850-4-tycho@tycho.ws>
+	<20180518140556.GC26297@mailbox.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; Format="flowed"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1526654395.3632.196.camel-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Content-Language: en-MW
+Content-Disposition: inline
+In-Reply-To: <20180518140556.GC26297-cl+VPiYnx/1AfugRpC6u6w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,50 +20,29 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-integrity <linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Christian Brauner <christian-STijNZzMWpgWenYVfaLwtA@public.gmane.org>
+Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Akihiro Suda <suda.akihiro-Zyj7fXuS5i5L9jVzuh4AOg@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Tyler Hicks <tyhicks-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "Tobin C . Harding" <me-xzjC0nNlxno@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gMDUvMTgvMjAxOCAxMDozOSBBTSwgTWltaSBab2hhciB3cm90ZToKPiBPbiBGcmksIDIwMTgt
-MDUtMTggYXQgMDk6NTQgLTA0MDAsIFN0ZWZhbiBCZXJnZXIgd3JvdGU6Cj4+IE9uIDA1LzE4LzIw
-MTggMDg6NTMgQU0sIE1pbWkgWm9oYXIgd3JvdGU6Cj4gWy4uXQo+Cj4+Pj4+PiBJZiBzbywgd2hp
-Y2ggb25lcz8gV2UgY291bGQgcHJvYmFibHkgcmVmYWN0b3IgdGhlIGN1cnJlbnQKPj4+Pj4+IGlu
-dGVncml0eV9hdWRpdF9tZXNzYWdlKCkgYW5kIGhhdmUgaW1hX3BhcnNlX3J1bGUoKSBjYWxsIGlu
-dG8gaXQgdG8gZ2V0Cj4+Pj4+PiB0aG9zZSBmaWVsZHMgYXMgd2VsbC4gSSBzdXBwb3NlIGFkZGlu
-ZyBuZXcgZmllbGRzIHRvIGl0IHdvdWxkbid0IGJlCj4+Pj4+PiBjb25zaWRlcmVkIGJyZWFraW5n
-IHVzZXIgc3BhY2U/Cj4+Pj4+IENoYW5naW5nIHRoZSBvcmRlciBvZiBleGlzdGluZyBmaWVsZHMg
-b3IgaW5zZXJ0aW5nIGZpZWxkcyBjb3VsZCBicmVhawo+Pj4+PiBzdHVmZiBhbmQgaXMgc3Ryb25n
-bHkgZGlzY291cmFnZWQgd2l0aG91dCBhIGdvb2QgcmVhc29uLCBidXQgYXBwZW5kaW5nCj4+Pj4+
-IGZpZWxkcyBpcyB1c3VhbGx5IHRoZSByaWdodCB3YXkgdG8gYWRkIGluZm9ybWF0aW9uLgo+Pj4+
-Pgo+Pj4+PiBUaGVyZSBhcmUgZXhjZXB0aW9ucywgYW5kIGluIHRoaXMgY2FzZSwgSSdkIHBpY2sg
-dGhlICJtb3JlIHN0YW5kYXJkIiBvZgo+Pj4+PiB0aGUgZm9ybWF0cyBmb3IgQVVESVRfSU5URUdS
-SVRZX1JVTEUgKGltYV9hdWRpdF9tZWFzdXJlbWVudD8pIGFuZCBzdGljawo+Pj4+PiB3aXRoIHRo
-YXQsIGFiYW5kb25pbmcgdGhlIG90aGVyIGZvcm1hdCwgcmVuYW1pbmcgdGhlIGxlc3Mgc3RhbmRh
-cmQKPj4+Pj4gdmVyc2lvbiBvZiB0aGUgcmVjb3JkIChpbWFfcGFyc2VfcnVsZT8pIGFuZCBwZXJo
-cGFzIGFkb3B0aW5nIHRoYXQKPj4+Pj4gYWJhbmRvbm5lZCBmb3JtYXQgZm9yIHRoZSBuZXcgcmVj
-b3JkIHR5cGUgd2hpbGUgdXNpbmcKPj4+Pj4gY3VycmVudC0+YXVkaXRfY29udGV4dC4KPj4+IFRo
-aXMgc291bmRzIHJpZ2h0LCBvdGhlciB0aGFuICJ0eXBlPUlOVEVHUklUWV9SVUxFIiAoMTgwNSkg
-Zm9yCj4+PiBpbWFfYXVkaXRfbWVhc3VyZW1lbnQoKS4gwqBDb3VsZCB3ZSByZW5hbWUgdHlwZT0x
-ODA1IHRvIGJlCj4+IFNvIGRvIHdlIHdhbnQgdG8gY2hhbmdlIGJvdGg/IEkgdGhvdWdodCB0aGF0
-IHdoYXQKPj4gaW1hX2F1ZGl0X21lYXN1cmVtZW50KCkgcHJvZHVjZXMgbG9va3Mgb2sgYnV0IG1h
-eSBub3QgaGF2ZSBhIGdvb2QgbmFtZQo+PiBmb3IgdGhlICd0eXBlJy4gTm93IGluIHRoaXMgY2Fz
-ZSBJIHdvdWxkIG5vdCB3YW50IHRvICdicmVhayB1c2VyIHNwYWNlJy4KPj4gVGhlIG9ubHkgY2hh
-bmdlIEkgd2FzIGdvaW5nIHRvIG1ha2Ugd2FzIHRvIHdoYXQgaW1hX3BhcnNlX3J1bGUoKSBwcm9k
-dWNlcy4KPiBUaGUgb25seSBjaGFuZ2UgZm9yIG5vdyBpcyBzZXBhcmF0aW5nIHRoZSBJTUEgcG9s
-aWN5IHJ1bGVzIGZyb20gdGhlCj4gSU1BLWF1ZGl0IG1lc3NhZ2VzLgo+Cj4gUmljaGFyZCwgd2hl
-biB0aGUgY29udGFpbmVyaWQgaXMgYXBwZW5kZWQgdG8gdGhlIElNQS1hdWRpdCBtZXNzYWdlcywK
-PiB3b3VsZCB3ZSBtYWtlIHRoZSBhdWRpdCB0eXBlIG5hbWUgY2hhbmdlIHRoZW4/Cj4KPj4+IElO
-VEVHUklUWV9BVURJVCBvciBJTlRFR1JJVFlfSU1BX0FVRElUPyDCoFRoZSBuZXcgdHlwZT0xODA2
-IGF1ZGl0Cj4+PiBtZXNzYWdlIGNvdWxkIGJlIG5hbWVkIElOVEVHUklUWV9SVUxFIG9yLCBpZiB0
-aGF0IHdvdWxkIGJlIGNvbmZ1c2luZywKPj4+IElOVEVHUklUWV9QT0xJQ1lfUlVMRS4KPj4gRm9y
-IDE4MDYsIGFzIHdlIHdvdWxkIHVzZSBpdCBpbiBpbWFfcGFyc2VfcnVsZSgpLCB3ZSBjb3VsZCBj
-aGFuZ2UgdGhhdAo+PiBpbiB5b3VyIHBhdGNoIHRvIElOVEVHUklUWV9QT0xJQ1lfUlVMRS4gSU1B
-X1BPTElDWV9SVUxFIG1heSBiZSBiZXR0ZXIKPj4gZm9yIElNQSB0byBwcm9kdWNlIGJ1dCB0aGF0
-J3MgaW5jb25zaXN0ZW50IHRoZW4uCj4gT2sKCk9uZSBvdGhlciBxdWVzdGlvbiBpcyB3aGV0aGVy
-IElNQSdzIGF1ZGl0IGNhbGxzIHNob3VsZCBhbGwgYWRoZXJlIHRvIApDT05GSUdfSU5URUdSSVRZ
-X0FVRElULiBNb3N0IGRvIGJ1dCB0aG9zZSB0d28gdGhhdCBjdXJyZW50bHkgdXNlIApBVURJVF9J
-TlRFR1JJVFlfUlVMRSBkbyBub3QuIFNob3VsZCB0aGF0IGJlIGNoYW5nZWQgYXMgd2VsbD8KCiDC
-oMKgwqAgU3RlZmFuCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5k
-YXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3Rp
-bmZvL2NvbnRhaW5lcnM=
+On Fri, May 18, 2018 at 04:05:56PM +0200, Christian Brauner wrote:
+> On Thu, May 17, 2018 at 09:12:17AM -0600, Tycho Andersen wrote:
+> > As an alternative to SECCOMP_FILTER_FLAG_GET_LISTENER, perhaps a ptrace()
+> > version which can acquire filters is useful. There are at least two reasons
+> > this is preferable, even though it uses ptrace:
+> > 
+> > 1. You can control tasks that aren't cooperating with you
+> > 2. You can control tasks whose filters block sendmsg() and socket(); if the
+> >    task installs a filter which blocks these calls, there's no way with
+> >    SECCOMP_FILTER_FLAG_GET_LISTENER to get the fd out to the privileged task.
+> 
+> I get the problem I guess the question we need to answer is do we care
+> enought to bring ptrace into this? Not really objecting, just asking. :)
+> If blocking sendmsg() or socket() becomes an issue because people like
+> to shoot themselves in the foot we can surely add this option later.
+
+It doesn't seem that unreasonable to me to want to filter socket() or
+sendmsg() though, so designing an API that doesn't support that from
+the get-go seems like a bad idea. But that's why there are two
+alternatives, so we can argue about it :)
+
+Tycho
