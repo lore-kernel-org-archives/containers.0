@@ -1,16 +1,19 @@
-From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC PATCH ghak32 V2 01/13] audit: add container id
-Date: Thu, 17 May 2018 17:56:00 -0400
-Message-ID: <20180517215600.dyswlkvqdtgjwr5y__10098.7533842728$1526594101$gmane$org@madcap2.tricolour.ca>
-References: <cover.1521179281.git.rgb@redhat.com>
-	<e284617ad667ad8f17958dd8babb87fe1b4d7205.1521179281.git.rgb@redhat.com>
-	<20180517170053.7d4afa87@ivy-bridge>
+From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH] audit: add containerid support for IMA-audit
+Date: Fri, 18 May 2018 07:49:45 -0400
+Message-ID: <86df5c2c-9db3-21b9-b91b-30a4f53f9504__9122.43873249299$1526644091$gmane$org@linux.vnet.ibm.com>
+References: <1520257393.10396.291.camel@linux.vnet.ibm.com>
+	<20180305135008.po6lheqnmkqqo6q4@madcap2.tricolour.ca>
+	<1520259854.10396.313.camel@linux.vnet.ibm.com>
+	<20180308112104.z67wohdvjqemy7wy@madcap2.tricolour.ca>
+	<efb6c164-febe-67bb-43a9-795476c4902f@linux.vnet.ibm.com>
+	<20180517213001.62caslkjwv575xgl@madcap2.tricolour.ca>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20180517170053.7d4afa87@ivy-bridge>
+In-Reply-To: <20180517213001.62caslkjwv575xgl-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org>
+Content-Language: en-MW
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,374 +23,192 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
+To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-integrity <linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 2018-05-17 17:00, Steve Grubb wrote:
-> On Fri, 16 Mar 2018 05:00:28 -0400
-> Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> 
-> > Implement the proc fs write to set the audit container ID of a
-> > process, emitting an AUDIT_CONTAINER record to document the event.
-> > 
-> > This is a write from the container orchestrator task to a proc entry
-> > of the form /proc/PID/containerid where PID is the process ID of the
-> > newly created task that is to become the first task in a container,
-> > or an additional task added to a container.
-> > 
-> > The write expects up to a u64 value (unset: 18446744073709551615).
-> > 
-> > This will produce a record such as this:
-> > type=CONTAINER msg=audit(1519903238.968:261): op=set pid=596 uid=0
-> > subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 auid=0
-> > tty=pts0 ses=1 opid=596 old-contid=18446744073709551615 contid=123455
-> > res=0
-> 
-> The was one thing I was wondering about. Currently when we set the
-> loginuid, the record is AUDIT_LOGINUID. The corollary is that when we
-> set the container id, the event should be AUDIT_CONTAINERID or
-> AUDIT_CONTAINER_ID.
-
-The record type is actually AUDIT_LOGIN.  The field type is
-AUDIT_LOGINUID.  Given that correction, I think we're fine and could
-potentially violently agree.  The existing naming is consistent.
-
-> During syscall events, the path info is returned in a a record simply
-> called AUDIT_PATH, cwd info is returned in AUDIT_CWD. So, rather than
-> calling the record that gets attached to everything
-> AUDIT_CONTAINER_INFO, how about simply AUDIT_CONTAINER.
-
-Considering the container initiation record is different than the record
-to document the container involved in an otherwise normal syscall, we
-need two names.  I don't have a strong opinion what they are.
-
-I'd prefer AUDIT_CONTAINER and AUDIT_CONTAINER_INFO so that the two are
-different enough to be visually distinct while leaving
-AUDIT_CONTAINERID for the field type in patch 4 ("audit: add containerid
-filtering")
-
-> > The "op" field indicates an initial set.  The "pid" to "ses" fields
-> > are the orchestrator while the "opid" field is the object's PID, the
-> > process being "contained".  Old and new container ID values are given
-> > in the "contid" fields, while res indicates its success.
-> > 
-> > It is not permitted to self-set, unset or re-set the container ID.  A
-> > child inherits its parent's container ID, but then can be set only
-> > once after.
-> > 
-> > See: https://github.com/linux-audit/audit-kernel/issues/32
-> > 
-> > Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> > ---
-> >  fs/proc/base.c             | 37 ++++++++++++++++++++
-> >  include/linux/audit.h      | 16 +++++++++
-> >  include/linux/init_task.h  |  4 ++-
-> >  include/linux/sched.h      |  1 +
-> >  include/uapi/linux/audit.h |  2 ++
-> >  kernel/auditsc.c           | 84
-> > ++++++++++++++++++++++++++++++++++++++++++++++ 6 files changed, 143
-> > insertions(+), 1 deletion(-)
-> > 
-> > diff --git a/fs/proc/base.c b/fs/proc/base.c
-> > index 60316b5..6ce4fbe 100644
-> > --- a/fs/proc/base.c
-> > +++ b/fs/proc/base.c
-> > @@ -1299,6 +1299,41 @@ static ssize_t proc_sessionid_read(struct file
-> > * file, char __user * buf, .read		= proc_sessionid_read,
-> >  	.llseek		= generic_file_llseek,
-> >  };
-> > +
-> > +static ssize_t proc_containerid_write(struct file *file, const char
-> > __user *buf,
-> > +				   size_t count, loff_t *ppos)
-> > +{
-> > +	struct inode *inode = file_inode(file);
-> > +	u64 containerid;
-> > +	int rv;
-> > +	struct task_struct *task = get_proc_task(inode);
-> > +
-> > +	if (!task)
-> > +		return -ESRCH;
-> > +	if (*ppos != 0) {
-> > +		/* No partial writes. */
-> > +		put_task_struct(task);
-> > +		return -EINVAL;
-> > +	}
-> > +
-> > +	rv = kstrtou64_from_user(buf, count, 10, &containerid);
-> > +	if (rv < 0) {
-> > +		put_task_struct(task);
-> > +		return rv;
-> > +	}
-> > +
-> > +	rv = audit_set_containerid(task, containerid);
-> > +	put_task_struct(task);
-> > +	if (rv < 0)
-> > +		return rv;
-> > +	return count;
-> > +}
-> > +
-> > +static const struct file_operations proc_containerid_operations = {
-> > +	.write		= proc_containerid_write,
-> > +	.llseek		= generic_file_llseek,
-> > +};
-> > +
-> >  #endif
-> >  
-> >  #ifdef CONFIG_FAULT_INJECTION
-> > @@ -2961,6 +2996,7 @@ static int proc_pid_patch_state(struct seq_file
-> > *m, struct pid_namespace *ns, #ifdef CONFIG_AUDITSYSCALL
-> >  	REG("loginuid",   S_IWUSR|S_IRUGO, proc_loginuid_operations),
-> >  	REG("sessionid",  S_IRUGO, proc_sessionid_operations),
-> > +	REG("containerid", S_IWUSR, proc_containerid_operations),
-> >  #endif
-> >  #ifdef CONFIG_FAULT_INJECTION
-> >  	REG("make-it-fail", S_IRUGO|S_IWUSR,
-> > proc_fault_inject_operations), @@ -3355,6 +3391,7 @@ static int
-> > proc_tid_comm_permission(struct inode *inode, int mask) #ifdef
-> > CONFIG_AUDITSYSCALL REG("loginuid",  S_IWUSR|S_IRUGO,
-> > proc_loginuid_operations), REG("sessionid",  S_IRUGO,
-> > proc_sessionid_operations),
-> > +	REG("containerid", S_IWUSR, proc_containerid_operations),
-> >  #endif
-> >  #ifdef CONFIG_FAULT_INJECTION
-> >  	REG("make-it-fail", S_IRUGO|S_IWUSR,
-> > proc_fault_inject_operations), diff --git a/include/linux/audit.h
-> > b/include/linux/audit.h index af410d9..fe4ba3f 100644
-> > --- a/include/linux/audit.h
-> > +++ b/include/linux/audit.h
-> > @@ -29,6 +29,7 @@
-> >  
-> >  #define AUDIT_INO_UNSET ((unsigned long)-1)
-> >  #define AUDIT_DEV_UNSET ((dev_t)-1)
-> > +#define INVALID_CID AUDIT_CID_UNSET
-> >  
-> >  struct audit_sig_info {
-> >  	uid_t		uid;
-> > @@ -321,6 +322,7 @@ static inline void audit_ptrace(struct
-> > task_struct *t) extern int auditsc_get_stamp(struct audit_context
-> > *ctx, struct timespec64 *t, unsigned int *serial);
-> >  extern int audit_set_loginuid(kuid_t loginuid);
-> > +extern int audit_set_containerid(struct task_struct *tsk, u64
-> > containerid); 
-> >  static inline kuid_t audit_get_loginuid(struct task_struct *tsk)
-> >  {
-> > @@ -332,6 +334,11 @@ static inline unsigned int
-> > audit_get_sessionid(struct task_struct *tsk) return tsk->sessionid;
-> >  }
-> >  
-> > +static inline u64 audit_get_containerid(struct task_struct *tsk)
-> > +{
-> > +	return tsk->containerid;
-> > +}
-> > +
-> >  extern void __audit_ipc_obj(struct kern_ipc_perm *ipcp);
-> >  extern void __audit_ipc_set_perm(unsigned long qbytes, uid_t uid,
-> > gid_t gid, umode_t mode); extern void __audit_bprm(struct
-> > linux_binprm *bprm); @@ -517,6 +524,10 @@ static inline unsigned int
-> > audit_get_sessionid(struct task_struct *tsk) {
-> >  	return -1;
-> >  }
-> > +static inline kuid_t audit_get_containerid(struct task_struct *tsk)
-> > +{
-> > +	return INVALID_CID;
-> > +}
-> >  static inline void audit_ipc_obj(struct kern_ipc_perm *ipcp)
-> >  { }
-> >  static inline void audit_ipc_set_perm(unsigned long qbytes, uid_t
-> > uid, @@ -581,6 +592,11 @@ static inline bool
-> > audit_loginuid_set(struct task_struct *tsk) return
-> > uid_valid(audit_get_loginuid(tsk)); }
-> >  
-> > +static inline bool audit_containerid_set(struct task_struct *tsk)
-> > +{
-> > +	return audit_get_containerid(tsk) != INVALID_CID;
-> > +}
-> > +
-> >  static inline void audit_log_string(struct audit_buffer *ab, const
-> > char *buf) {
-> >  	audit_log_n_string(ab, buf, strlen(buf));
-> > diff --git a/include/linux/init_task.h b/include/linux/init_task.h
-> > index 6a53262..046bd0a 100644
-> > --- a/include/linux/init_task.h
-> > +++ b/include/linux/init_task.h
-> > @@ -18,6 +18,7 @@
-> >  #include <linux/sched/rt.h>
-> >  #include <linux/livepatch.h>
-> >  #include <linux/mm_types.h>
-> > +#include <linux/audit.h>
-> >  
-> >  #include <asm/thread_info.h>
-> >  
-> > @@ -120,7 +121,8 @@
-> >  #ifdef CONFIG_AUDITSYSCALL
-> >  #define INIT_IDS \
-> >  	.loginuid = INVALID_UID, \
-> > -	.sessionid = (unsigned int)-1,
-> > +	.sessionid = (unsigned int)-1, \
-> > +	.containerid = INVALID_CID,
-> >  #else
-> >  #define INIT_IDS
-> >  #endif
-> > diff --git a/include/linux/sched.h b/include/linux/sched.h
-> > index d258826..1b82191 100644
-> > --- a/include/linux/sched.h
-> > +++ b/include/linux/sched.h
-> > @@ -796,6 +796,7 @@ struct task_struct {
-> >  #ifdef CONFIG_AUDITSYSCALL
-> >  	kuid_t				loginuid;
-> >  	unsigned int			sessionid;
-> > +	u64				containerid;
-> >  #endif
-> >  	struct seccomp			seccomp;
-> >  
-> > diff --git a/include/uapi/linux/audit.h b/include/uapi/linux/audit.h
-> > index 4e61a9e..921a71f 100644
-> > --- a/include/uapi/linux/audit.h
-> > +++ b/include/uapi/linux/audit.h
-> > @@ -71,6 +71,7 @@
-> >  #define AUDIT_TTY_SET		1017	/* Set TTY auditing
-> > status */ #define AUDIT_SET_FEATURE	1018	/* Turn an
-> > audit feature on or off */ #define AUDIT_GET_FEATURE
-> > 1019	/* Get which features are enabled */ +#define
-> > AUDIT_CONTAINER		1020	/* Define the container id
-> > and information */ #define AUDIT_FIRST_USER_MSG	1100	/*
-> > Userspace messages mostly uninteresting to kernel */ #define
-> > AUDIT_USER_AVC		1107	/* We filter this
-> > differently */ @@ -465,6 +466,7 @@ struct audit_tty_status { };
-> >  
-> >  #define AUDIT_UID_UNSET (unsigned int)-1
-> > +#define AUDIT_CID_UNSET ((u64)-1)
-> >  
-> >  /* audit_rule_data supports filter rules with both integer and string
-> >   * fields.  It corresponds with AUDIT_ADD_RULE, AUDIT_DEL_RULE and
-> > diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-> > index 4e0a4ac..29c8482 100644
-> > --- a/kernel/auditsc.c
-> > +++ b/kernel/auditsc.c
-> > @@ -2073,6 +2073,90 @@ int audit_set_loginuid(kuid_t loginuid)
-> >  	return rc;
-> >  }
-> >  
-> > +static int audit_set_containerid_perm(struct task_struct *task, u64
-> > containerid) +{
-> > +	struct task_struct *parent;
-> > +	u64 pcontainerid, ccontainerid;
-> > +
-> > +	/* Don't allow to set our own containerid */
-> > +	if (current == task)
-> > +		return -EPERM;
-> > +	/* Don't allow the containerid to be unset */
-> > +	if (!cid_valid(containerid))
-> > +		return -EINVAL;
-> > +	/* if we don't have caps, reject */
-> > +	if (!capable(CAP_AUDIT_CONTROL))
-> > +		return -EPERM;
-> > +	/* if containerid is unset, allow */
-> > +	if (!audit_containerid_set(task))
-> > +		return 0;
-> > +	/* it is already set, and not inherited from the parent,
-> > reject */
-> > +	ccontainerid = audit_get_containerid(task);
-> > +	rcu_read_lock();
-> > +	parent = rcu_dereference(task->real_parent);
-> > +	rcu_read_unlock();
-> > +	task_lock(parent);
-> > +	pcontainerid = audit_get_containerid(parent);
-> > +	task_unlock(parent);
-> > +	if (ccontainerid != pcontainerid)
-> > +		return -EPERM;
-> > +	return 0;
-> > +}
-> > +
-> > +static void audit_log_set_containerid(struct task_struct *task, u64
-> > oldcontainerid,
-> > +				      u64 containerid, int rc)
-> > +{
-> > +	struct audit_buffer *ab;
-> > +	uid_t uid;
-> > +	struct tty_struct *tty;
-> > +
-> > +	if (!audit_enabled)
-> > +		return;
-> > +
-> > +	ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_CONTAINER);
-> > +	if (!ab)
-> > +		return;
-> > +
-> > +	uid = from_kuid(&init_user_ns, task_uid(current));
-> > +	tty = audit_get_tty(current);
-> > +
-> > +	audit_log_format(ab, "op=set pid=%d uid=%u",
-> > task_tgid_nr(current), uid);
-> > +	audit_log_task_context(ab);
-> > +	audit_log_format(ab, " auid=%u tty=%s ses=%u opid=%d
-> > old-contid=%llu contid=%llu res=%d",
-> 
-> The preferred ordering would be: op, opid, old-contid, contid, pid, uid,
-> tty, ses, subj, comm, exe, res. This groups the searchable fields
-> together using the most common ordering so that parsing is simple.
-
-There has been a suggestion to make this a syscall-connected record, and
-if that is the case, we'd simply drop all the fields that would be
-duplicated by the syscall record.  Otherwise, I'll use your suggested
-order.
-
-As you may recall this suggestion was also made for the AUDIT_LOGIN
-record.
-
-> Thanks,
-> -Steve
-> 
-> > +			 from_kuid(&init_user_ns,
-> > audit_get_loginuid(current)),
-> > +			 tty ? tty_name(tty) : "(none)",
-> > audit_get_sessionid(current),
-> > +			 task_tgid_nr(task), oldcontainerid,
-> > containerid, !rc); +
-> > +	audit_put_tty(tty);
-> > +	audit_log_end(ab);
-> > +}
-> > +
-> > +/**
-> > + * audit_set_containerid - set current task's audit_context
-> > containerid
-> > + * @containerid: containerid value
-> > + *
-> > + * Returns 0 on success, -EPERM on permission failure.
-> > + *
-> > + * Called (set) from fs/proc/base.c::proc_containerid_write().
-> > + */
-> > +int audit_set_containerid(struct task_struct *task, u64 containerid)
-> > +{
-> > +	u64 oldcontainerid;
-> > +	int rc;
-> > +
-> > +	oldcontainerid = audit_get_containerid(task);
-> > +
-> > +	rc = audit_set_containerid_perm(task, containerid);
-> > +	if (!rc) {
-> > +		task_lock(task);
-> > +		task->containerid = containerid;
-> > +		task_unlock(task);
-> > +	}
-> > +
-> > +	audit_log_set_containerid(task, oldcontainerid, containerid,
-> > rc);
-> > +	return rc;
-> > +}
-> > +
-> >  /**
-> >   * __audit_mq_open - record audit data for a POSIX MQ open
-> >   * @oflag: open flag
-> 
-
-- RGB
-
---
-Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Sr. S/W Engineer, Kernel Security, Base Operating Systems
-Remote, Ottawa, Red Hat Canada
-IRC: rgb, SunRaycer
-Voice: +1.647.777.2635, Internal: (81) 32635
+T24gMDUvMTcvMjAxOCAwNTozMCBQTSwgUmljaGFyZCBHdXkgQnJpZ2dzIHdyb3RlOgo+IE9uIDIw
+MTgtMDUtMTcgMTA6MTgsIFN0ZWZhbiBCZXJnZXIgd3JvdGU6Cj4+IE9uIDAzLzA4LzIwMTggMDY6
+MjEgQU0sIFJpY2hhcmQgR3V5IEJyaWdncyB3cm90ZToKPj4+IE9uIDIwMTgtMDMtMDUgMDk6MjQs
+IE1pbWkgWm9oYXIgd3JvdGU6Cj4+Pj4gT24gTW9uLCAyMDE4LTAzLTA1IGF0IDA4OjUwIC0wNTAw
+LCBSaWNoYXJkIEd1eSBCcmlnZ3Mgd3JvdGU6Cj4+Pj4+IE9uIDIwMTgtMDMtMDUgMDg6NDMsIE1p
+bWkgWm9oYXIgd3JvdGU6Cj4+Pj4+PiBIaSBSaWNoYXJkLAo+Pj4+Pj4KPj4+Pj4+IFRoaXMgcGF0
+Y2ggaGFzIGJlZW4gY29tcGlsZWQsIGJ1dCBub3QgcnVudGltZSB0ZXN0ZWQuCj4+Pj4+IE9rLCBn
+cmVhdCwgdGhhbmsgeW91LiAgSSBhc3N1bWUgeW91IGFyZSBvZmZlcmluZyB0aGlzIHBhdGNoIHRv
+IGJlCj4+Pj4+IGluY2x1ZGVkIGluIHRoaXMgcGF0Y2hzZXQ/Cj4+Pj4gWWVzLCB0aGFuayB5b3Uu
+Cj4+Pj4KPj4+Pj4gSSdsbCBoYXZlIGEgbG9vayB0byBzZWUgd2hlcmUgaXQgZml0cyBpbiB0aGUK
+Pj4+Pj4gSU1BIHJlY29yZC4gIEl0IG1pZ2h0IGJlIGJldHRlciBpZiBpdCB3ZXJlIGFuIEFVRElU
+X0NPTlRBSU5FUl9JTkZPCj4+Pj4+IGF1eGlsaWFyeSByZWNvcmQsIGJ1dCBJJ2xsIGhhdmUgYSBs
+b29rIGF0IHRoZSBjaXJjdW1zdGFuY2VzIG9mIHRoZQo+Pj4+PiBldmVudC4KPj4+IEkgaGFkIGEg
+bG9vayBhdCB0aGUgY29udGV4dCBvZiB0aGlzIHJlY29yZCB0byBzZWUgaWYgYWRkaW5nIHRoZSBj
+b250aWQKPj4+IGZpZWxkIHRvIGl0IG1hZGUgc2Vuc2UuICBJIHRoaW5rIHRoZSBvbmx5IHJlY29y
+ZHMgZm9yIHdoaWNoIHRoZSBjb250aWQKPj4+IGZpZWxkIG1ha2VzIHNlbnNlIGFyZSB0aGUgdHdv
+IG5ld2x5IHByb3Bvc2VkIHJlY29yZHMsIEFVRElUX0NPTlRBSU5FUgo+Pj4gd2hpY2ggaW50cm9k
+dWNlcyB0aGUgY29udGFpbmVyIElEIGFuZCB0aGUgYW5kIEFVRElUX0NPTlRBSU5FUl9JTkZPIHdo
+aWNoCj4+PiBkb2N1bWVudHMgdGhlIHByZXNlbmNlIG9mIHRoZSBjb250YWluZXIgSUQgaW4gYSBw
+cm9jZXNzIGV2ZW50IChvcgo+Pj4gcHJvY2Vzcy1sZXNzIG5ldHdvcmsgZXZlbnQpLiAgQWxsIG90
+aGVycyBzaG91bGQgdXNlIHRoZSBhdXhpbGlhcnkgcmVjb3JkCj4+PiBBVURJVF9DT05UQUlORVJf
+SU5GTyByYXRoZXIgdGhhbiBpbmNsdWRlIHRoZSBjb250aWQgZmllbGQgZGlyZWN0bHkKPj4+IGl0
+c2VsZi4gIFRoZXJlIGFyZSBzZXZlcmFsIHJlYXNvbnMgZm9yIHRoaXMgaW5jbHVkaW5nIHJlY29y
+ZCBsZW5ndGgsIHRoZQo+Pj4gYWJpbGl0eSB0byBmaWx0ZXIgdW53YW50ZWQgcmVjb3JkcywgdGhl
+IGRpZmZpY3VsdHkgb2YgY2hhbmdpbmcgdGhlIG9yZGVyCj4+PiBvZiBvciByZW1vdmluZyBmaWVs
+ZHMgaW4gdGhlIGZ1dHVyZS4KPj4+Cj4+PiBTeXNjYWxscyBnZXQgdGhpcyBpbmZvcm1hdGlvbiBh
+dXRvbWF0aWNhbGx5IGlmIHRoZSBjb250YWluZXIgSUQgaXMgc2V0Cj4+PiBmb3IgYSB0YXNrIHZp
+YSB0aGUgQVVESVRfQ09OVEFJTkVSX0lORk8gYXV4aWxpYXJ5IHJlY29yZC4gIEdlbmVyYWxseSBh
+Cj4+PiBzeXNjYWxsIGV2ZW50IGlzIG9uZSB0aGF0IHVzZXMgdGhlIHRhc2sncyBhdWRpdF9jb250
+ZXh0IHdoaWxlIGEKPj4+IHN0YW5kYWxvbmUgZXZlbnQgdXNlcyBOVUxMIG9yIGJ1aWxkcyBhIGxv
+Y2FsIGF1ZGl0X2NvbnRleHQgdGhhdCBpcwo+Pj4gZGlzY2FyZGVkIGltbWVkaWF0ZWx5IGFmdGVy
+IHRoZSBsb2NhbCB1c2UuCj4+Pgo+Pj4gTG9va2luZyBhdCB0aGUgdHdvIGNhc2VzIG9mIEFVRElU
+X0lOVEVHUklUWV9SVUxFIHJlY29yZCBnZW5lcmF0aW9uLCBpdAo+Pj4gYXBwZWFycyB0aGF0IHRo
+ZXkgc2hvdWxkIGJlIHNwbGl0IGludG8gdHdvIGRpc3RpbmN0IGF1ZGl0IHJlY29yZCB0eXBlcy4K
+Pj4+Cj4+PiBUaGUgcmVjb3JkIGNyZWF0ZWQgaW4gaW1hX2F1ZGl0X21lYXN1cmVtZW50KCkgaXMg
+YSBzeXNjYWxsIHJlY29yZCB0aGF0Cj4+PiBjb3VsZCBwb3NzaWJseSBzdGFuZCBvbiBpdHMgb3du
+IHNpbmNlIHRoZSBzdWJqZWN0IGF0dHJpYnV0ZXMgYXJlCj4+PiBwcmVzZW50LiAgSWYgaXQgcmVt
+YWlucyBhIHN5c2NhbGwgYXV4aWxpYXJ5IHJlY29yZCBpdCB3aWxsIGF1dG9tYXRpY2FsbHkKPj4+
+IGhhdmUgdGhlIEFVRElUX0NPTlRBSU5FUl9JTkZPIHJlY29yZCBhY2NvbXBhbnkgaXQgYW55d2F5
+cy4gIElmIGl0IGlzCj4+PiBkZWNpZGVkIHRvIGRldGFjaCBpdCAod2hpY2ggd291bGQgc2F2ZSBj
+cHUvbmV0bGluay9kaXNrIGJhbmR3aWR0aCBidXQgaXMKPj4+IG5vdCByZWNvbW1lbmRlZCBkdWUg
+dG8gbm90IHdhbnRpbmcgdG8gdGhyb3cgYXdheSBhbnkgb3RoZXIgc3lzY2FsbAo+Pj4gaW5mb3Jt
+YXRpb24gb3Igb3RoZXIgaW52b2x2ZWQgcmVjb3JkcyAoUEFUSCwgQ1dELCBldGMuLi4pIHRoZW4g
+YSBsb2NhbAo+Pj4gYXVkaXRfY29udGV4dCB3b3VsZCBiZSBjcmVhdGVkIGZvciB0aGUgQVVESVRf
+SU5URUdSSVRZX1JVTEUgYW5kCj4+PiBBVURJVF9DT05UQUlORVJJRF9JTkZPIHJlY29yZHMgb25s
+eSBhbmQgaW1tZWRpYXRlbHkgZGlzY2FyZGVkLgo+PiBXaGF0IGRvZXMgJ2RldGFjaCBpdCcgbWVh
+bj8gRG9lcyBpdCBtZWFuIHdlJ3JlIG5vdCB1c2luZwo+PiBjdXJyZW50LT5hdWRpdF9jb250ZXh0
+Pwo+IEV4YWN0bHkuCj4KPj4+IFRoZSByZWNvcmQgY3JlYXRlZCBpbiBpbWFfcGFyc2VfcnVsZSgp
+IGlzIG5vdCBjdXJyZW50bHkgYSBzeXNjYWxsIHJlY29yZAo+Pj4gc2luY2UgaXQgaXMgcGFzc2Vk
+IGFuIGF1ZGl0X2NvbnRleHQgb2YgTlVMTCBhbmQgaXQgaGFzIGEgdmVyeSBkaWZmZXJlbnQKPj4+
+IGZvcm1hdCB0aGF0IGRvZXMgbm90IGluY2x1ZGUgYW55IHN1YmplY3QgYXR0cmlidXRlcyAoZXhj
+ZXB0IHN1YmpfKj0pLgo+Pj4gQXQgZmlyc3QgZ2xhbmNlIGl0IGFwcGVhcnMgdGhpcyBvbmUgc2hv
+dWxkIGJlIGEgc3lzY2FsbCBhY2NvbXBhbmllZAo+Pj4gYXV4aWxpYXJ5IHJlY29yZC4gIEVpdGhl
+ciB3YXkgaXQgc2hvdWxkIGhhdmUgYW4gQVVESVRfQ09OVEFJTkVSX0lORk8KPj4gRG8geW91IGhh
+dmUgYW4gZXhhbXBsZSAocG9pbnRlcikgdG8gdGhlIGZvcm1hdCBmb3IgYSAnc3lzY2FsbCBhY2Nv
+bXBhbmllZAo+PiBhdXhpbGlhcnkgcmVjb3JkJz8KPiBBbnkgdGhhdCB1c2VzIGN1cnJlbnQtPmF1
+ZGl0X2NvbnRleHQgKG9yIHJlY2VudGx5IHByb3Bvc2VkCj4gYXVkaXRfY29udGV4dCgpIGZ1bmN0
+aW9uKSB3aWxsIGJlIGEgc3lzY2FsbCBhdXhpbGlhcnkgcmVjb3JkLiAgV2VsbAo+IGZvcm1lZCBy
+ZWNvcmQgZm9ybWF0cyBhcmUgPGZpZWxkbmFtZT49PHZhbHVlPiBhbmQgbmFtZWQgYXMgbGlzdGVk
+Ogo+Cj4gCWh0dHBzOi8vZ2l0aHViLmNvbS9saW51eC1hdWRpdC9hdWRpdC1kb2N1bWVudGF0aW9u
+L3dpa2kvU1BFQy1Xcml0aW5nLUdvb2QtRXZlbnRzCj4gCWh0dHBzOi8vZ2l0aHViLmNvbS9saW51
+eC1hdWRpdC9hdWRpdC1kb2N1bWVudGF0aW9uL2Jsb2IvbWFzdGVyL3NwZWNzL2ZpZWxkcy9maWVs
+ZC1kaWN0aW9uYXJ5LmNzdgo+IAkKPj4+IGF1eGlsaWFyeSByZWNvcmQgZWl0aGVyIGJ5IGJlaW5n
+IGNvbnZlcnRlZCB0byBhIHN5c2NhbGwgYXV4aWxpYXJ5IHJlY29yZAo+Pj4gYnkgdXNpbmcgY3Vy
+cmVudC0+YXVkaXRfY29udGV4dCByYXRoZXIgdGhhbiBOVUxMIHdoZW4gY2FsbGluZwo+Pj4gYXVk
+aXRfbG9nX3N0YXJ0KCksIG9yIGNyZWF0aW5nIGEgbG9jYWwgYXVkaXRfY29udGV4dCBhbmQgY2Fs
+bGluZwo+PiBpbWFfcGFyc2VfcnVsZSgpIGlzIGludm9rZWQgd2hlbiBzZXR0aW5nIGEgcG9saWN5
+IGJ5IHdyaXRpbmcgaXQgaW50bwo+PiAvc3lzL2tlcm5lbC9zZWN1cml0eS9pbWEvcG9saWN5LiBX
+ZSB1bmZvcnR1bmF0ZWx5IGRvbid0IGhhdmUgdGhlCj4+IGN1cnJlbnQtPmF1ZGl0X2NvbnRleHQg
+aW4gdGhpcyBjYXNlLgo+IFN1cmUgeW91IGRvLiAgV2hhdCBwcm9jZXNzIHdyaXRlcyB0byB0aGF0
+IGZpbGU/ICBUaGF0J3MgdGhlIG9uZSB3ZSBjYXJlCj4gYWJvdXQsIHVubGVzcyBpdCBpcyBzb21l
+aG93IGhhbmRlZCBvZmYgdG8gYSBxdWV1ZSBhbmQgcHJvY2Vzc2VkIGxhdGVyIGluCj4gYSBkaWZm
+ZXJlbnQgY29udGV4dC4KCkkganVzdCBwcmludGsnZCBpdCBhZ2Fpbi4gY3VycmVudC0+YXVkaXRf
+Y29udGV4dCBpcyBOVUxMIGluIHRoaXMgY2FzZS4KCj4KPj4+IGF1ZGl0X2xvZ19jb250YWluZXJf
+aW5mbygpIHRoZW4gcmVsZWFzaW5nIHRoZSBsb2NhbCBjb250ZXh0LiAgVGhpcwo+Pj4gdmVyc2lv
+biBvZiB0aGUgcmVjb3JkIGhhcyBhZGRpdGlvbmFsIGNvbmNlcm5zIGNvdmVyZWQgaGVyZToKPj4+
+IGh0dHBzOi8vZ2l0aHViLmNvbS9saW51eC1hdWRpdC9hdWRpdC1rZXJuZWwvaXNzdWVzLzUyCj4+
+IEZvbGxvd2luZyB0aGUgZGlzY3Vzc2lvbiB0aGVyZSBhbmQgdGhlIGNvbmNlcm4gd2l0aCBicmVh
+a2luZyB1c2VyIHNwYWNlLCBob3cKPj4gY2FuIHdlIHNwbGl0IHVwIHRoZSBBVURJVF9JTlRFR1JJ
+VFlfUlVMRSB0aGF0IGlzIHVzZWQgaW4KPj4gaW1hX2F1ZGl0X21lYXN1cmVtZW50KCkgYW5kIGlt
+YV9wYXJzZV9ydWxlKCksIHdpdGhvdXQgJ2JyZWFraW5nIHVzZXIgc3BhY2UnPwo+IEFyZ3VhYmx5
+IHVzZXJzcGFjZSBpcyBhbHJlYWR5IGJyb2tlbiBieSB0aGlzIHdpbGRseSBkaXZlcmdpbmcgcGFp
+ciBvZgo+IGZvcm1hdHMgZm9yIHRoZSBzYW1lIHJlY29yZC4KPgo+PiBBIG1lc3NhZ2UgcHJvZHVj
+ZWQgYnkgaW1hX3BhcnNlX3J1bGUoKSBsb29rcyBsaWtlIHRoaXMgaGVyZToKPj4KPj4gdHlwZT1J
+TlRFR1JJVFlfUlVMRSBtc2c9YXVkaXQoMTUyNjU2NjIxMy44NzA6MzA1KTogYWN0aW9uPSJkb250
+X21lYXN1cmUiCj4+IGZzbWFnaWM9IjB4OWZhMCIgcmVzPTEKPj4KPj4gaW4gY29udHJhc3QgdG8g
+dGhhdCBhbiBJTlRFR1JJVFlfUENSIHJlY29yZCB0eXBlOgo+Pgo+PiB0eXBlPUlOVEVHUklUWV9Q
+Q1IgbXNnPWF1ZGl0KDE1MjY1NjYyMzUuMTkzOjMzNCk6IHBpZD0xNjE1IHVpZD0wIGF1aWQ9MAo+
+PiBzZXM9MiBzdWJqPXVuY29uZmluZWRfdTp1bmNvbmZpbmVkX3I6dW5jb25maW5lZF90OnMwLXMw
+OmMwLmMxMDIzCj4+IG9wPSJpbnZhbGlkX3BjciIgY2F1c2U9Im9wZW5fd3JpdGVycyIgY29tbT0i
+c2NwIgo+PiBuYW1lPSIvdmFyL2xvZy9hdWRpdC9hdWRpdC5sb2ciIGRldj0iZG0tMCIgaW5vPTE5
+NjI2MjUgcmVzPTEKPj4KPj4gU2hvdWxkIHNvbWUgb2YgdGhlIGZpZWxkcyBmcm9tIElOVEVHUklU
+WV9QQ1IgYWxzbyBhcHBlYXIgaW4gSU5URUdSSVRZX1JVTEU/Cj4gTm90IG5lY2Vzc2FyaWx5LiAg
+VGhlcmUgYXJlIGEgbnVtYmVyIG9mIHJlY29yZHMgaW4gdGhlIFBDUiByZWNvcmQgdGhhdAo+IHdv
+dWxkIGJlIHJlZHVuZGFudCB3aGVuIGNvbm5lY3RlZCB0byBhIHN5c2NhbGwgcmVjb3JkLCBidXQg
+cmVtb3ZpbmcgdGhlbQo+IGlzIGRpc2NvdXJhZ2VkIHRvIGF2b2lkIGJyZWFraW5nIHBhcnNlcnMg
+dGhhdCBleHBlY3QgdGhlbS4KPgo+IEkgZG9uJ3Qgc2VlIGFueSBuZWVkIHRvIHRvdWNoIHRoZSBQ
+Q1IgcmVjb3JkLgoKSSB3YXNuJ3QgZ29pbmcgdG8gdG91Y2ggdGhlIFBDUiByZWNvcmQuCgoKPj4g
+SWYgc28sIHdoaWNoIG9uZXM/IFdlIGNvdWxkIHByb2JhYmx5IHJlZmFjdG9yIHRoZSBjdXJyZW50
+Cj4+IGludGVncml0eV9hdWRpdF9tZXNzYWdlKCkgYW5kIGhhdmUgaW1hX3BhcnNlX3J1bGUoKSBj
+YWxsIGludG8gaXQgdG8gZ2V0Cj4+IHRob3NlIGZpZWxkcyBhcyB3ZWxsLiBJIHN1cHBvc2UgYWRk
+aW5nIG5ldyBmaWVsZHMgdG8gaXQgd291bGRuJ3QgYmUKPj4gY29uc2lkZXJlZCBicmVha2luZyB1
+c2VyIHNwYWNlPwo+IENoYW5naW5nIHRoZSBvcmRlciBvZiBleGlzdGluZyBmaWVsZHMgb3IgaW5z
+ZXJ0aW5nIGZpZWxkcyBjb3VsZCBicmVhawo+IHN0dWZmIGFuZCBpcyBzdHJvbmdseSBkaXNjb3Vy
+YWdlZCB3aXRob3V0IGEgZ29vZCByZWFzb24sIGJ1dCBhcHBlbmRpbmcKPiBmaWVsZHMgaXMgdXN1
+YWxseSB0aGUgcmlnaHQgd2F5IHRvIGFkZCBpbmZvcm1hdGlvbi4KPgo+IFRoZXJlIGFyZSBleGNl
+cHRpb25zLCBhbmQgaW4gdGhpcyBjYXNlLCBJJ2QgcGljayB0aGUgIm1vcmUgc3RhbmRhcmQiIG9m
+Cj4gdGhlIGZvcm1hdHMgZm9yIEFVRElUX0lOVEVHUklUWV9SVUxFIChpbWFfYXVkaXRfbWVhc3Vy
+ZW1lbnQ/KSBhbmQgc3RpY2sKPiB3aXRoIHRoYXQsIGFiYW5kb25pbmcgdGhlIG90aGVyIGZvcm1h
+dCwgcmVuYW1pbmcgdGhlIGxlc3Mgc3RhbmRhcmQKPiB2ZXJzaW9uIG9mIHRoZSByZWNvcmQgKGlt
+YV9wYXJzZV9ydWxlPykgYW5kIHBlcmhwYXMgYWRvcHRpbmcgdGhhdAo+IGFiYW5kb25uZWQgZm9y
+bWF0IGZvciB0aGUgbmV3IHJlY29yZCB0eXBlIHdoaWxlIHVzaW5nCj4gY3VycmVudC0+YXVkaXRf
+Y29udGV4dC4KClNpbmNlIGN1cnJlbnQtPmF1ZGl0X2NvbnRleHQgaXMgTlVMTCBJIGJ1aWx0IG9u
+IHlvdXIgcGF0Y2gsIGJ1dCBJIGFtIG5vdCAKc3VyZSB3aGV0aGVyIGl0IGlzIGp1c3RpZnlhYmxl
+IHRvIHVzZSB0aGF0IGJlZm9yZSB5b3VyIGNvbnRhaW5lciBpZCAKc2VyaWVzIGlzIGFwcGxpZWQu
+CgpUaGlzIGlzIHdoYXQgaW1hX3BhcnNlX3J1bGUoKSBwcm9kdWNlcyBub3cgYWZ0ZXIgaGF2aW5n
+IGl0IGNhbGwgCmF1ZGl0X2xvZ190YXNrX2luZm8oKSBhcyB3ZWxsIGFuZCBieSBpbnRyb2R1Y2lu
+ZyAxODA2IGZvciAKaW1hX3BhcnNlX3J1bGUoKSBvbmx5ICggaHR0cHM6Ly9sa21sLm9yZy9sa21s
+LzIwMTgvNS8xMS8zODYgKToKCnR5cGU9VU5LTk9XTlsxODA2XSBtc2c9YXVkaXQoMTUyNjY0Mzcw
+Mi4zMjg6MzA0KTogYWN0aW9uPSJkb250X21lYXN1cmUiIApmc21hZ2ljPSIweDlmYTAiIHJlcz0x
+IHBwaWQ9MTU2MyBwaWQ9MTU5NSBhdWlkPTAgdWlkPTAgZ2lkPTAgZXVpZD0wIApzdWlkPTAgZnN1
+aWQ9MCBlZ2lkPTAgc2dpZD0wIGZzZ2lkPTAgdHR5PXR0eTIgc2VzPTIgY29tbT0iY2F0IiAKZXhl
+PSIvdXNyL2Jpbi9jYXQiIApzdWJqPXVuY29uZmluZWRfdTp1bmNvbmZpbmVkX3I6dW5jb25maW5l
+ZF90OnMwLXMwOmMwLmMxMDIzCgpbYmVmb3JlOiB0eXBlPUlOVEVHUklUWV9SVUxFIG1zZz1hdWRp
+dCgxNTI2NTY2MjEzLjg3MDozMDUpOiAKYWN0aW9uPSJkb250X21lYXN1cmUiIGZzbWFnaWM9IjB4
+OWZhMCIgcmVzPTFdCgpGb3IgY29tcGFyaXNvbiB0aGUgSU5URUdSSVRZX1JVTEU6Cgp0eXBlPUlO
+VEVHUklUWV9SVUxFIG1zZz1hdWRpdCgxNTI2NjQyNTA0LjA3NDozMzEpOiBmaWxlPSIvdXNyL2Jp
+bi9zc2giIApoYXNoPSJzaGEyNTY6NGFiYzI1NTg0MjRiOWNhNjFjMzRhZjQzMTY5ZDliOWUxNzRk
+NzgyNWJmNjBjOWM3NmJlMzc3NTQ5MDgxZGI1YiIgCnBwaWQ9MTYyMyBwaWQ9MTYyNCBhdWlkPTAg
+dWlkPTAgZ2lkPTAgZXVpZD0wIHN1aWQ9MCBmc3VpZD0wIGVnaWQ9MCAKc2dpZD0wIGZzZ2lkPTAg
+dHR5PXR0eTIgc2VzPTIgY29tbT0ic2NwIiBleGU9Ii91c3IvYmluL3NjcCIgCnN1Ymo9dW5jb25m
+aW5lZF91OnVuY29uZmluZWRfcjp1bmNvbmZpbmVkX3Q6czAtczA6YzAuYzEwMjMKCgoxODA2IHdv
+dWxkIGJlIGluIHN5bmMgd2l0aCBJTlRFR1JJVFlfUlVMRSBub3cgZm9yIHByb2Nlc3MgcmVsYXRl
+ZCBpbmZvLiAKSWYgdGhpcyBsb29rcyBnb29kLCBJJ2xsIHJlbW92ZSB0aGUgZGVwZW5kZW5jeSBv
+biB5b3VyIGxvY2FsIGNvbnRleHQgCmNyZWF0aW9uIGFuZCBwb3N0IHRoZSBzZXJpZXMuCgpUaGUg
+anVzdGlmaWNhdGlvbiBmb3IgdGhlIGNoYW5nZSBpcyB0aGF0IHRoZSBJTlRFR1JJVFlfUlVMRSwg
+YXMgcHJvZHVjZWQgCmJ5IGltYV9wYXJzZV9ydWxlKCksIGlzIGJyb2tlbi4KCiDCoMKgwqAgU3Rl
+ZmFuCgoKPgo+IERvZXMgdGhpcyBoZWxwPwo+Cj4+ICDCoMKgwqAgU3RlZmFuCj4+Cj4+PiBDYW4g
+eW91IGJyaWVmbHkgZGVzY3JpYmUgdGhlIGNpcmN1bXN0YW5jZXMgdW5kZXIgd2hpY2ggdGhlc2Ug
+dHdvCj4+PiBkaWZmZXJlbnQgaWRlbnRpY2FsbHktbnVtYmVyZWQgcmVjb3JkcyBhcmUgcHJvZHVj
+ZWQgYXMgYSBmaXJzdCBzdGVwCj4+PiB0b3dhcmRzIHNwbGl0dGluZyB0aGVtIGludG8gdHdvIGRp
+c3RpY3QgcmVjb3Jkcz8KPj4+Cj4+PiBUaGUgZm91ciBBVURJVF9JTlRFR1JJVFkgX01FVEFEQVRB
+LCBfUENSLCBfREFUQSBhbmQgX1NUQVRVUyByZWNvcmRzCj4+PiBhcHBlYXIgdG8gYmUgYWxyZWFk
+eSBwcm9wZXJseSBjb3ZlcmVkIGZvciBBVURJVF9DT05UQUlORVJfSU5GTyByZWNvcmRzCj4+PiBi
+eSBiZWluZyBzeXNjYWxsIGF1eGlsaWFyeSByZWNvcmRzLiAgVGhlIEFVRElUX0lOVEVHUklUWV9I
+QVNIIHJlY29yZAo+Pj4gYXBwZWFycyB0byBiZSB1bnVzZWQuCj4+Pgo+Pj4+PiBDYW4geW91IHN1
+Z2dlc3QgYSBwcm9jZWR1cmUgdG8gdGVzdCBpdD8KPj4+PiBMaWtlIElNQS1tZWFzdXJlbWVudCBh
+bmQgSU1BLWFwcHJhaXNhbCwgSU1BLWF1ZGl0IGlzIGVuYWJsZWQgYmFzZWQgb24KPj4+PiBwb2xp
+Y3kuIFRoZSBleGFtcGxlIElNQSBwb2xpY3ksIGJlbG93LCBpbmNsdWRlcyBJTUEtYXVkaXQgbWVz
+c2FnZXMgZm9yCj4+Pj4gZmlsZXMgZXhlY3V0ZWQuICdjYXQnIHRoZSBwb2xpY3kgdG8gL3N5cy9r
+ZXJuZWwvc2VjdXJpdHkvaW1hL3BvbGljeS4KPj4+Pgo+Pj4+IC9ldGMvaW1hL2ltYS1wb2xpY3k6
+Cj4+Pj4gYXVkaXQgZnVuYz1CUFJNX0NIRUNLCj4+Pj4KPj4+PiBUaGVyZSdzIGEgRmlyZUV5ZSBi
+bG9nIHRpdGxlZCAiRXh0ZW5kaW5nIExpbnV4IEV4ZWN1dGFibGUgTG9nZ2luZyBXaXRoCj4+Pj4g
+VGhlIEludGVncml0eSBNZWFzdXJlbWVudCBBcmNoaXRlY3R1cmUiKiB0aGF0IGV4cGxhaW5zIGhv
+dyB0byBhdWdtZW50Cj4+Pj4gdGhlaXIgZXhpc3Rpbmcgc3lzdGVtIHNlY3VyaXR5IGFuYWx5dGlj
+cyB3aXRoIGZpbGUgaGFzaGVzLgo+Pj4+Cj4+Pj4gKsKgaHR0cHM6Ly93d3cuZmlyZWV5ZS5jb20v
+YmxvZy90aHJlYXQtcmVzZWFyY2gvMjAxNi8xMS9leHRlbmRpbmdfbGludXgKPj4+PiBfZXhlYy5o
+dG1sCj4+Pj4KPj4+Pgo+Pj4+IE1pbWkKPj4+Pgo+Pj4+Pj4gSWYgdGhlIGNvbnRhaW5lcmlkIGlz
+IGRlZmluZWQsIGluY2x1ZGUgaXQgaW4gdGhlIElNQS1hdWRpdCByZWNvcmQuCj4+Pj4+Pgo+Pj4+
+Pj4gU2lnbmVkLW9mZi1ieTogTWltaSBab2hhciA8em9oYXJAbGludXgudm5ldC5pYm0uY29tPgo+
+Pj4+Pj4gLS0tCj4+Pj4+PiAgICBzZWN1cml0eS9pbnRlZ3JpdHkvaW1hL2ltYV9hcGkuYyB8IDMg
+KysrCj4+Pj4+PiAgICAxIGZpbGUgY2hhbmdlZCwgMyBpbnNlcnRpb25zKCspCj4+Pj4+Pgo+Pj4+
+Pj4gZGlmZiAtLWdpdCBhL3NlY3VyaXR5L2ludGVncml0eS9pbWEvaW1hX2FwaS5jIGIvc2VjdXJp
+dHkvaW50ZWdyaXR5L2ltYS9pbWFfYXBpLmMKPj4+Pj4+IGluZGV4IDMzYjQ0NThjZGJlZi4uNDFk
+MjlhMDZmMjhmIDEwMDY0NAo+Pj4+Pj4gLS0tIGEvc2VjdXJpdHkvaW50ZWdyaXR5L2ltYS9pbWFf
+YXBpLmMKPj4+Pj4+ICsrKyBiL3NlY3VyaXR5L2ludGVncml0eS9pbWEvaW1hX2FwaS5jCj4+Pj4+
+PiBAQCAtMzM1LDYgKzMzNSw5IEBAIHZvaWQgaW1hX2F1ZGl0X21lYXN1cmVtZW50KHN0cnVjdCBp
+bnRlZ3JpdHlfaWludF9jYWNoZSAqaWludCwKPj4+Pj4+ICAgIAlhdWRpdF9sb2dfdW50cnVzdGVk
+c3RyaW5nKGFiLCBhbGdvX2hhc2gpOwo+Pj4+Pj4gICAgCWF1ZGl0X2xvZ190YXNrX2luZm8oYWIs
+IGN1cnJlbnQpOwo+Pj4+Pj4gKwlpZiAoYXVkaXRfY29udGFpbmVyaWRfc2V0KGN1cnJlbnQpKQo+
+Pj4+Pj4gKwkJYXVkaXRfbG9nX2Zvcm1hdChhYiwgIiBjb250aWQ9JWxsdSIsCj4+Pj4+PiArCQkJ
+CSBhdWRpdF9nZXRfY29udGFpbmVyaWQoY3VycmVudCkpOwo+Pj4+Pj4gICAgCWF1ZGl0X2xvZ19l
+bmQoYWIpOwo+Pj4+Pj4gICAgCWlpbnQtPmZsYWdzIHw9IElNQV9BVURJVEVEOwo+Pj4+Pj4gLS0g
+Cj4+Pj4+PiAyLjcuNQo+Pj4+Pj4KPj4+Pj4gLSBSR0IKPj4+IC0gUkdCCj4+Pgo+Pj4gLS0KPj4+
+IFJpY2hhcmQgR3V5IEJyaWdncyA8cmdiQHJlZGhhdC5jb20+Cj4+PiBTci4gUy9XIEVuZ2luZWVy
+LCBLZXJuZWwgU2VjdXJpdHksIEJhc2UgT3BlcmF0aW5nIFN5c3RlbXMKPj4+IFJlbW90ZSwgT3R0
+YXdhLCBSZWQgSGF0IENhbmFkYQo+Pj4gSVJDOiByZ2IsIFN1blJheWNlcgo+Pj4gVm9pY2U6ICsx
+LjY0Ny43NzcuMjYzNSwgSW50ZXJuYWw6ICg4MSkgMzI2MzUKPj4+Cj4gLSBSR0IKPgo+IC0tCj4g
+UmljaGFyZCBHdXkgQnJpZ2dzIDxyZ2JAcmVkaGF0LmNvbT4KPiBTci4gUy9XIEVuZ2luZWVyLCBL
+ZXJuZWwgU2VjdXJpdHksIEJhc2UgT3BlcmF0aW5nIFN5c3RlbXMKPiBSZW1vdGUsIE90dGF3YSwg
+UmVkIEhhdCBDYW5hZGEKPiBJUkM6IHJnYiwgU3VuUmF5Y2VyCj4gVm9pY2U6ICsxLjY0Ny43Nzcu
+MjYzNSwgSW50ZXJuYWw6ICg4MSkgMzI2MzUKPgoKX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0Bs
+aXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5v
+cmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
