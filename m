@@ -1,8 +1,9 @@
-From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [PATCH] audit: add containerid support for IMA-audit
-Date: Fri, 18 May 2018 12:00:26 -0400
-Message-ID: <20180518160026.i5cxkg4eggu2yqpz__39847.499333746$1526659163$gmane$org@madcap2.tricolour.ca>
-References: <20180305135008.po6lheqnmkqqo6q4@madcap2.tricolour.ca>
+Date: Fri, 18 May 2018 12:34:24 -0400
+Message-ID: <1526661264.3404.55.camel__29130.189427133$1526661184$gmane$org@linux.vnet.ibm.com>
+References: <1520257393.10396.291.camel@linux.vnet.ibm.com>
+	<20180305135008.po6lheqnmkqqo6q4@madcap2.tricolour.ca>
 	<1520259854.10396.313.camel@linux.vnet.ibm.com>
 	<20180308112104.z67wohdvjqemy7wy@madcap2.tricolour.ca>
 	<efb6c164-febe-67bb-43a9-795476c4902f@linux.vnet.ibm.com>
@@ -11,13 +12,12 @@ References: <20180305135008.po6lheqnmkqqo6q4@madcap2.tricolour.ca>
 	<1526647996.3632.164.camel@linux.vnet.ibm.com>
 	<ef567d60-42f7-0a87-8597-1ef381e15be0@linux.vnet.ibm.com>
 	<1526654395.3632.196.camel@linux.vnet.ibm.com>
-	<1347e0c5-40c9-34a4-9c54-60bd2917b2d7@linux.vnet.ibm.com>
+	<20180518155659.porewd6moctumkys@madcap2.tricolour.ca>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1347e0c5-40c9-34a4-9c54-60bd2917b2d7-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <20180518155659.porewd6moctumkys-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,91 +27,60 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-integrity <linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-integrity <linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 2018-05-18 10:52, Stefan Berger wrote:
-> On 05/18/2018 10:39 AM, Mimi Zohar wrote:
-> > On Fri, 2018-05-18 at 09:54 -0400, Stefan Berger wrote:
-> > > On 05/18/2018 08:53 AM, Mimi Zohar wrote:
-> > [..]
-> > =
-
-> > > > > > > If so, which ones? We could probably refactor the current
-> > > > > > > integrity_audit_message() and have ima_parse_rule() call into=
- it to get
-> > > > > > > those fields as well. I suppose adding new fields to it would=
-n't be
-> > > > > > > considered breaking user space?
-> > > > > > Changing the order of existing fields or inserting fields could=
- break
-> > > > > > stuff and is strongly discouraged without a good reason, but ap=
-pending
-> > > > > > fields is usually the right way to add information.
-> > > > > > =
-
-> > > > > > There are exceptions, and in this case, I'd pick the "more stan=
-dard" of
-> > > > > > the formats for AUDIT_INTEGRITY_RULE (ima_audit_measurement?) a=
-nd stick
-> > > > > > with that, abandoning the other format, renaming the less stand=
-ard
-> > > > > > version of the record (ima_parse_rule?) and perhpas adopting th=
-at
-> > > > > > abandonned format for the new record type while using
-> > > > > > current->audit_context.
-> > > > This sounds right, other than "type=3DINTEGRITY_RULE" (1805) for
-> > > > ima_audit_measurement(). =A0Could we rename type=3D1805 to be
-> > > So do we want to change both? I thought that what
-> > > ima_audit_measurement() produces looks ok but may not have a good name
-> > > for the 'type'. Now in this case I would not want to 'break user spac=
-e'.
-> > > The only change I was going to make was to what ima_parse_rule() prod=
-uces.
-> > The only change for now is separating the IMA policy rules from the
-> > IMA-audit messages.
-> > =
-
-> > Richard, when the containerid is appended to the IMA-audit messages,
-> > would we make the audit type name change then?
-> > =
-
-> > > > INTEGRITY_AUDIT or INTEGRITY_IMA_AUDIT? =A0The new type=3D1806 audit
-> > > > message could be named INTEGRITY_RULE or, if that would be confusin=
-g,
-> > > > INTEGRITY_POLICY_RULE.
-> > > For 1806, as we would use it in ima_parse_rule(), we could change that
-> > > in your patch to INTEGRITY_POLICY_RULE. IMA_POLICY_RULE may be better
-> > > for IMA to produce but that's inconsistent then.
-> > Ok
-> =
-
-> One other question is whether IMA's audit calls should all adhere to
-> CONFIG_INTEGRITY_AUDIT.
-
-If I understand your question correctly, then no, since each one is a
-different type of record, hence the half dozen IMA record types:
-#define AUDIT_INTEGRITY_DATA        1800 /* Data integrity verification */
-#define AUDIT_INTEGRITY_METADATA    1801 /* Metadata integrity verification=
- */
-#define AUDIT_INTEGRITY_STATUS      1802 /* Integrity enable status */
-#define AUDIT_INTEGRITY_HASH        1803 /* Integrity HASH type */
-#define AUDIT_INTEGRITY_PCR         1804 /* PCR invalidation msgs */
-#define AUDIT_INTEGRITY_RULE        1805 /* policy rule */
-
-> Most do but those two that currently use
-> AUDIT_INTEGRITY_RULE do not. Should that be changed as well?
-
-As far as I can tell, all the other IMA audit record types are fine.
-
-> =A0=A0=A0 Stefan
-
-- RGB
-
---
-Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Sr. S/W Engineer, Kernel Security, Base Operating Systems
-Remote, Ottawa, Red Hat Canada
-IRC: rgb, SunRaycer
-Voice: +1.647.777.2635, Internal: (81) 32635
+T24gRnJpLCAyMDE4LTA1LTE4IGF0IDExOjU2IC0wNDAwLCBSaWNoYXJkIEd1eSBCcmlnZ3Mgd3Jv
+dGU6Cj4gT24gMjAxOC0wNS0xOCAxMDozOSwgTWltaSBab2hhciB3cm90ZToKPiA+IE9uIEZyaSwg
+MjAxOC0wNS0xOCBhdCAwOTo1NCAtMDQwMCwgU3RlZmFuIEJlcmdlciB3cm90ZToKPiA+ID4gT24g
+MDUvMTgvMjAxOCAwODo1MyBBTSwgTWltaSBab2hhciB3cm90ZToKPiA+IAo+ID4gWy4uXQo+ID4g
+Cj4gPiA+ID4+Pj4gSWYgc28sIHdoaWNoIG9uZXM/IFdlIGNvdWxkIHByb2JhYmx5IHJlZmFjdG9y
+IHRoZSBjdXJyZW50Cj4gPiA+ID4+Pj4gaW50ZWdyaXR5X2F1ZGl0X21lc3NhZ2UoKSBhbmQgaGF2
+ZSBpbWFfcGFyc2VfcnVsZSgpIGNhbGwgaW50byBpdCB0byBnZXQKPiA+ID4gPj4+PiB0aG9zZSBm
+aWVsZHMgYXMgd2VsbC4gSSBzdXBwb3NlIGFkZGluZyBuZXcgZmllbGRzIHRvIGl0IHdvdWxkbid0
+IGJlCj4gPiA+ID4+Pj4gY29uc2lkZXJlZCBicmVha2luZyB1c2VyIHNwYWNlPwo+ID4gPiA+Pj4g
+Q2hhbmdpbmcgdGhlIG9yZGVyIG9mIGV4aXN0aW5nIGZpZWxkcyBvciBpbnNlcnRpbmcgZmllbGRz
+IGNvdWxkIGJyZWFrCj4gPiA+ID4+PiBzdHVmZiBhbmQgaXMgc3Ryb25nbHkgZGlzY291cmFnZWQg
+d2l0aG91dCBhIGdvb2QgcmVhc29uLCBidXQgYXBwZW5kaW5nCj4gPiA+ID4+PiBmaWVsZHMgaXMg
+dXN1YWxseSB0aGUgcmlnaHQgd2F5IHRvIGFkZCBpbmZvcm1hdGlvbi4KPiA+ID4gPj4+Cj4gPiA+
+ID4+PiBUaGVyZSBhcmUgZXhjZXB0aW9ucywgYW5kIGluIHRoaXMgY2FzZSwgSSdkIHBpY2sgdGhl
+ICJtb3JlIHN0YW5kYXJkIiBvZgo+ID4gPiA+Pj4gdGhlIGZvcm1hdHMgZm9yIEFVRElUX0lOVEVH
+UklUWV9SVUxFIChpbWFfYXVkaXRfbWVhc3VyZW1lbnQ/KSBhbmQgc3RpY2sKPiA+ID4gPj4+IHdp
+dGggdGhhdCwgYWJhbmRvbmluZyB0aGUgb3RoZXIgZm9ybWF0LCByZW5hbWluZyB0aGUgbGVzcyBz
+dGFuZGFyZAo+ID4gPiA+Pj4gdmVyc2lvbiBvZiB0aGUgcmVjb3JkIChpbWFfcGFyc2VfcnVsZT8p
+IGFuZCBwZXJocGFzIGFkb3B0aW5nIHRoYXQKPiA+ID4gPj4+IGFiYW5kb25uZWQgZm9ybWF0IGZv
+ciB0aGUgbmV3IHJlY29yZCB0eXBlIHdoaWxlIHVzaW5nCj4gPiA+ID4+PiBjdXJyZW50LT5hdWRp
+dF9jb250ZXh0Lgo+ID4gPiA+IFRoaXMgc291bmRzIHJpZ2h0LCBvdGhlciB0aGFuICJ0eXBlPUlO
+VEVHUklUWV9SVUxFIiAoMTgwNSkgZm9yCj4gPiA+ID4gaW1hX2F1ZGl0X21lYXN1cmVtZW50KCku
+IMKgQ291bGQgd2UgcmVuYW1lIHR5cGU9MTgwNSB0byBiZQo+ID4gPiAKPiA+ID4gU28gZG8gd2Ug
+d2FudCB0byBjaGFuZ2UgYm90aD8gSSB0aG91Z2h0IHRoYXQgd2hhdCAKPiA+ID4gaW1hX2F1ZGl0
+X21lYXN1cmVtZW50KCkgcHJvZHVjZXMgbG9va3Mgb2sgYnV0IG1heSBub3QgaGF2ZSBhIGdvb2Qg
+bmFtZSAKPiA+ID4gZm9yIHRoZSAndHlwZScuIE5vdyBpbiB0aGlzIGNhc2UgSSB3b3VsZCBub3Qg
+d2FudCB0byAnYnJlYWsgdXNlciBzcGFjZScuCj4gPiA+IFRoZSBvbmx5IGNoYW5nZSBJIHdhcyBn
+b2luZyB0byBtYWtlIHdhcyB0byB3aGF0IGltYV9wYXJzZV9ydWxlKCkgcHJvZHVjZXMuCj4gPiAK
+PiA+IFRoZSBvbmx5IGNoYW5nZSBmb3Igbm93IGlzIHNlcGFyYXRpbmcgdGhlIElNQSBwb2xpY3kg
+cnVsZXMgZnJvbSB0aGUKPiA+IElNQS1hdWRpdCBtZXNzYWdlcy4KPiA+IAo+ID4gUmljaGFyZCwg
+d2hlbiB0aGUgY29udGFpbmVyaWQgaXMgYXBwZW5kZWQgdG8gdGhlIElNQS1hdWRpdCBtZXNzYWdl
+cywKPiA+IHdvdWxkIHdlIG1ha2UgdGhlIGF1ZGl0IHR5cGUgbmFtZSBjaGFuZ2UgdGhlbj8KPiAK
+PiBObywgZ28gYWhlYWQgYW5kIG1ha2UgdGhlIGNoYW5nZSBub3cuICBJJ20gZXhwZWN0aW5nIHRo
+YXQgdGhlCj4gY29udGFpbmVyaWQgcmVjb3JkIHdpbGwganVzdCBiZSBhbm90aGVyIGF1eGlsaWFy
+eSByZWNvcmQgYW5kIHNob3VsZCBub3QKPiBhZmZlY3QgeW91IGZvbGtzLgoKVG8gc3VtbWFyaXpl
+LCB3ZSBuZWVkIHRvIGRpc2FtYmlndWF0ZSB0aGUgMTgwNSwgYXMgYm90aAppbWFfcGFyc2VfcnVs
+ZSgpIGFuZCBpbWFfYXVkaXRfbWVhc3VyZW1lbnQoKSBhcmUgdXNpbmcgdGhlIHNhbWUgbnVtYmVy
+CndpdGggZGlmZmVyZW50IGZvcm1hdHMuwqDCoFRoZSBtYWluIHVzYWdlIG9mIDE4MDUgdGhhdCB3
+ZSBhcmUgYXdhcmUgb2YKaXMgaW1hX2F1ZGl0X21lYXN1cmVtZW50KCkuwqDCoFlldCB0aGUgInR5
+cGU9IiBuYW1lIGZvcgppbWFfYXVkaXRfbWVhc3VyZW1lbnQoKSBzaG91bGQgYmUgSU5URUdSSVRZ
+X0lNQV9BVURJVCwgbm90CklOVEVHUklUWV9SVUxFLgoKb3B0aW9uIDE6IGJyZWFrcyBib3RoIHVz
+ZXMKMTgwNSAtIElOVEVHUklUWV9JTUFfQVVESVQgLSBpbWFfYXVkaXRfbWVhc3VyZW1lbnQoKQox
+ODA2IC0gSU5URUdSSVRZX1BPTElDWV9SVUxFIC0gaW1hX3BhcnNlX3J1bGUoKQoKb3B0aW9uIDI6
+IGJyZWFrcyB0aGUgbW9zdCBjb21tb24gdXNhZ2UKMTgwNSAtIElOVEVHUklUWV9SVUxFIC0gaW1h
+X3BhcnNlX3J1bGUoKQoxODA2IC0gSU5URUdSSVRZX0lNQV9BVURJVCAtIGltYV9hdWRpdF9tZWFz
+dXJlbWVudCgpCgpvcHRpb24gMzogbGVhdmVzIHRoZSBtb3N0IGNvbW1vbiB1c2FnZSB3aXRoIHRo
+ZSB3cm9uZyBuYW1lLCBhbmQgYnJlYWtzCnRoZSBvdGhlciBsZXNzIGNvbW1vbiB1c2FnZQoxODA1
+IC0gSU5URUdSSVRZX1JVTEUgLSBpbWFfYXVkaXRfbWVhc3VyZW1lbnQoKQoxODA2IC0gSU5URUdS
+SVRZX1BPTElDWV9SVUxFIC0gaW1hX3BhcnNlX3J1bGUoKQoKU28gb3B0aW9uIDMgaXMgdGhlIGJl
+c3Qgb3B0aW9uPwoKTWltaQoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1m
+b3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9s
+aXN0aW5mby9jb250YWluZXJz
