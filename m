@@ -1,15 +1,15 @@
 From: Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] audit: add containerid support for IMA-audit
-Date: Mon, 21 May 2018 14:40:40 -0400
-Message-ID: <16251997.Lr3lOVDqLJ__43999.0736464553$1526927921$gmane$org@x2>
-References: <1520257393.10396.291.camel@linux.vnet.ibm.com>
-	<5705556.pzqfGOkdjC@x2>
-	<7abd3460-0797-f003-12c7-7329beb0835b@linux.vnet.ibm.com>
+Subject: Re: [RFC PATCH ghak32 V2 13/13] debug audit: read container ID of a
+	process
+Date: Mon, 21 May 2018 15:16:01 -0400
+Message-ID: <3001737.MkQ41rgtZF__19055.8907729157$1526930062$gmane$org@x2>
+References: <cover.1521179281.git.rgb@redhat.com>
+	<1081821010c124fe4e35984ec3dac1654453bb7c.1521179281.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <7abd3460-0797-f003-12c7-7329beb0835b-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <1081821010c124fe4e35984ec3dac1654453bb7c.1521179281.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,102 +19,77 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-Audit Mailing List <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-integrity <linux-integrity-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello Stefan,
+On Friday, March 16, 2018 5:00:40 AM EDT Richard Guy Briggs wrote:
+> Add support for reading the container ID from the proc filesystem.
 
-On Monday, May 21, 2018 2:04:08 PM EDT Stefan Berger wrote:
-> On 05/21/2018 01:21 PM, Steve Grubb wrote:
-> > On Friday, May 18, 2018 12:34:24 PM EDT Mimi Zohar wrote:
-> >> On Fri, 2018-05-18 at 11:56 -0400, Richard Guy Briggs wrote:
-> >>> On 2018-05-18 10:39, Mimi Zohar wrote:
-> >>>> On Fri, 2018-05-18 at 09:54 -0400, Stefan Berger wrote:
-> >>>>> On 05/18/2018 08:53 AM, Mimi Zohar wrote:
-> >>>> [..]
-> >>>> 
-> >>>>>>>>> If so, which ones? We could probably refactor the current
-> >>>>>>>>> integrity_audit_message() and have ima_parse_rule() call into it
-> >>>>>>>>> to get those fields as well. I suppose adding new fields to it
-> >>>>>>>>> wouldn't be considered breaking user space?
-> >>>>>>>> 
-> >>>>>>>> Changing the order of existing fields or inserting fields could
-> >>>>>>>> break stuff and is strongly discouraged without a good reason, but
-> >>>>>>>> appending fields is usually the right way to add information.
-> >>>>>>>> 
-> >>>>>>>> There are exceptions, and in this case, I'd pick the "more
-> >>>>>>>> standard" of the formats for AUDIT_INTEGRITY_RULE
-> >>>>>>>> (ima_audit_measurement?) and stick with that, abandoning the other
-> >>>>>>>> format, renaming the less standard version of the record
-> >>>>>>>> (ima_parse_rule?) and perhpas adopting that abandonned format for
-> >>>>>>>> the new record type while using current->audit_context.
-> >>>>>> 
-> >>>>>> This sounds right, other than "type=INTEGRITY_RULE" (1805) for
-> >>>>>> ima_audit_measurement().  Could we rename type=1805 to be
-> >>>>> 
-> >>>>> So do we want to change both? I thought that what
-> >>>>> ima_audit_measurement() produces looks ok but may not have a good
-> >>>>> name for the 'type'. Now in this case I would not want to 'break user
-> >>>>> space'. The only change I was going to make was to what
-> >>>>> ima_parse_rule() produces.
-> >>>> 
-> >>>> The only change for now is separating the IMA policy rules from the
-> >>>> IMA-audit messages.
-> >>>> 
-> >>>> Richard, when the containerid is appended to the IMA-audit messages,
-> >>>> would we make the audit type name change then?
-> >>> 
-> >>> No, go ahead and make the change now.  I'm expecting that the
-> >>> containerid record will just be another auxiliary record and should not
-> >>> affect you folks.
-> >> 
-> >> To summarize, we need to disambiguate the 1805, as both
-> >> ima_parse_rule() and ima_audit_measurement() are using the same number
-> >> with different formats.  The main usage of 1805 that we are aware of
-> >> is ima_audit_measurement().  Yet the "type=" name for
-> >> ima_audit_measurement() should be INTEGRITY_IMA_AUDIT, not
-> >> INTEGRITY_RULE.
-> >> 
-> >> option 1: breaks both uses
-> >> 1805 - INTEGRITY_IMA_AUDIT - ima_audit_measurement()
-> >> 1806 - INTEGRITY_POLICY_RULE - ima_parse_rule()
-> >> 
-> >> option 2: breaks the most common usage
-> >> 1805 - INTEGRITY_RULE - ima_parse_rule()
-> >> 1806 - INTEGRITY_IMA_AUDIT - ima_audit_measurement()
-> >> 
-> >> option 3: leaves the most common usage with the wrong name, and breaks
-> >> the other less common usage
-> >> 1805 - INTEGRITY_RULE - ima_audit_measurement()
-> >> 1806 - INTEGRITY_POLICY_RULE - ima_parse_rule()
-> >> 
-> >> So option 3 is the best option?
-> >> 
-> >  From a user space perspective, I don't care as long the event is well
-> >  formed
->
-> Are you saying this because of the tools you referred to that require
-> proper ordering and all fields need to be available?
-
-Its because the order was established a long time ago. User space tools still 
-expect that ordering.
- 
-> > (No unnecessary untrusted string logging) and we have the required fields
-> > for searching: pid, uid, auid, tty, session, subj, comm, exe, & res. And
-> > the object is identifiable in the event.
-> 
-> There's at least one documented user that showed the existing format...
-> 
-> https://www.fireeye.com/blog/threat-research/2016/11/extending_linux_exec.h
-> tml
-
-Hmm. I see. If that event was ever sent to linux-audit mail list for 
-feedback, we would have had some discussion because it's not a proper event. 
-The order of the fields changed, new fields were added, untrusted string 
-logging is being used, field names are not documented in the field name 
-dictionary, existing field names are not being used, subject information is 
-incomplete, results is missing, and its not entirely clear what the object 
-is.
+I think this could be useful in general. Please consider this to be part of 
+the full patch set and not something merely used to debug the patches.
 
 -Steve
+
+> This is a read from the proc entry of the form /proc/PID/containerid
+> where PID is the process ID of the task whose container ID is sought.
+> 
+> The read expects up to a u64 value (unset: 18446744073709551615).
+> 
+> Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> ---
+>  fs/proc/base.c | 20 ++++++++++++++++++--
+>  1 file changed, 18 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/proc/base.c b/fs/proc/base.c
+> index 6ce4fbe..f66d1e2 100644
+> --- a/fs/proc/base.c
+> +++ b/fs/proc/base.c
+> @@ -1300,6 +1300,21 @@ static ssize_t proc_sessionid_read(struct file *
+> file, char __user * buf, .llseek		= generic_file_llseek,
+>  };
+> 
+> +static ssize_t proc_containerid_read(struct file *file, char __user *buf,
+> +				  size_t count, loff_t *ppos)
+> +{
+> +	struct inode *inode = file_inode(file);
+> +	struct task_struct *task = get_proc_task(inode);
+> +	ssize_t length;
+> +	char tmpbuf[TMPBUFLEN*2];
+> +
+> +	if (!task)
+> +		return -ESRCH;
+> +	length = scnprintf(tmpbuf, TMPBUFLEN*2, "%llu",
+> audit_get_containerid(task)); +	put_task_struct(task);
+> +	return simple_read_from_buffer(buf, count, ppos, tmpbuf, length);
+> +}
+> +
+>  static ssize_t proc_containerid_write(struct file *file, const char __user
+> *buf, size_t count, loff_t *ppos)
+>  {
+> @@ -1330,6 +1345,7 @@ static ssize_t proc_containerid_write(struct file
+> *file, const char __user *buf, }
+> 
+>  static const struct file_operations proc_containerid_operations = {
+> +	.read		= proc_containerid_read,
+>  	.write		= proc_containerid_write,
+>  	.llseek		= generic_file_llseek,
+>  };
+> @@ -2996,7 +3012,7 @@ static int proc_pid_patch_state(struct seq_file *m,
+> struct pid_namespace *ns, #ifdef CONFIG_AUDITSYSCALL
+>  	REG("loginuid",   S_IWUSR|S_IRUGO, proc_loginuid_operations),
+>  	REG("sessionid",  S_IRUGO, proc_sessionid_operations),
+> -	REG("containerid", S_IWUSR, proc_containerid_operations),
+> +	REG("containerid", S_IWUSR|S_IRUSR, proc_containerid_operations),
+>  #endif
+>  #ifdef CONFIG_FAULT_INJECTION
+>  	REG("make-it-fail", S_IRUGO|S_IWUSR, proc_fault_inject_operations),
+> @@ -3391,7 +3407,7 @@ static int proc_tid_comm_permission(struct inode
+> *inode, int mask) #ifdef CONFIG_AUDITSYSCALL
+>  	REG("loginuid",  S_IWUSR|S_IRUGO, proc_loginuid_operations),
+>  	REG("sessionid",  S_IRUGO, proc_sessionid_operations),
+> -	REG("containerid", S_IWUSR, proc_containerid_operations),
+> +	REG("containerid", S_IWUSR|S_IRUSR, proc_containerid_operations),
+>  #endif
+>  #ifdef CONFIG_FAULT_INJECTION
+>  	REG("make-it-fail", S_IRUGO|S_IWUSR, proc_fault_inject_operations),
