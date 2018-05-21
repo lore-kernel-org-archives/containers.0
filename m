@@ -1,15 +1,15 @@
 From: Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] audit: add containerid support for IMA-audit
-Date: Mon, 21 May 2018 14:30:18 -0400
-Message-ID: <4015765.rtofcNpGHU@x2>
+Date: Mon, 21 May 2018 14:40:40 -0400
+Message-ID: <16251997.Lr3lOVDqLJ__43999.0736464553$1526927921$gmane$org@x2>
 References: <1520257393.10396.291.camel@linux.vnet.ibm.com>
-	<2397631.78oLu0QVqb@x2>
-	<21646a72-e782-e33a-9e75-5cc98b241f36@linux.vnet.ibm.com>
+	<5705556.pzqfGOkdjC@x2>
+	<7abd3460-0797-f003-12c7-7329beb0835b@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <21646a72-e782-e33a-9e75-5cc98b241f36-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <7abd3460-0797-f003-12c7-7329beb0835b-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,101 +25,96 @@ List-Id: containers.vger.kernel.org
 
 Hello Stefan,
 
-On Monday, May 21, 2018 1:53:04 PM EDT Stefan Berger wrote:
-> On 05/21/2018 12:58 PM, Steve Grubb wrote:
-> > On Thursday, May 17, 2018 10:18:13 AM EDT Stefan Berger wrote:
-> >>> audit_log_container_info() then releasing the local context.  This
-> >>> version of the record has additional concerns covered here:
-> >>> https://github.com/linux-audit/audit-kernel/issues/52
+On Monday, May 21, 2018 2:04:08 PM EDT Stefan Berger wrote:
+> On 05/21/2018 01:21 PM, Steve Grubb wrote:
+> > On Friday, May 18, 2018 12:34:24 PM EDT Mimi Zohar wrote:
+> >> On Fri, 2018-05-18 at 11:56 -0400, Richard Guy Briggs wrote:
+> >>> On 2018-05-18 10:39, Mimi Zohar wrote:
+> >>>> On Fri, 2018-05-18 at 09:54 -0400, Stefan Berger wrote:
+> >>>>> On 05/18/2018 08:53 AM, Mimi Zohar wrote:
+> >>>> [..]
+> >>>> 
+> >>>>>>>>> If so, which ones? We could probably refactor the current
+> >>>>>>>>> integrity_audit_message() and have ima_parse_rule() call into it
+> >>>>>>>>> to get those fields as well. I suppose adding new fields to it
+> >>>>>>>>> wouldn't be considered breaking user space?
+> >>>>>>>> 
+> >>>>>>>> Changing the order of existing fields or inserting fields could
+> >>>>>>>> break stuff and is strongly discouraged without a good reason, but
+> >>>>>>>> appending fields is usually the right way to add information.
+> >>>>>>>> 
+> >>>>>>>> There are exceptions, and in this case, I'd pick the "more
+> >>>>>>>> standard" of the formats for AUDIT_INTEGRITY_RULE
+> >>>>>>>> (ima_audit_measurement?) and stick with that, abandoning the other
+> >>>>>>>> format, renaming the less standard version of the record
+> >>>>>>>> (ima_parse_rule?) and perhpas adopting that abandonned format for
+> >>>>>>>> the new record type while using current->audit_context.
+> >>>>>> 
+> >>>>>> This sounds right, other than "type=INTEGRITY_RULE" (1805) for
+> >>>>>> ima_audit_measurement().  Could we rename type=1805 to be
+> >>>>> 
+> >>>>> So do we want to change both? I thought that what
+> >>>>> ima_audit_measurement() produces looks ok but may not have a good
+> >>>>> name for the 'type'. Now in this case I would not want to 'break user
+> >>>>> space'. The only change I was going to make was to what
+> >>>>> ima_parse_rule() produces.
+> >>>> 
+> >>>> The only change for now is separating the IMA policy rules from the
+> >>>> IMA-audit messages.
+> >>>> 
+> >>>> Richard, when the containerid is appended to the IMA-audit messages,
+> >>>> would we make the audit type name change then?
+> >>> 
+> >>> No, go ahead and make the change now.  I'm expecting that the
+> >>> containerid record will just be another auxiliary record and should not
+> >>> affect you folks.
 > >> 
-> >> Following the discussion there and the concern with breaking user space,
-> >> how can we split up the AUDIT_INTEGRITY_RULE that is used in
-> >> ima_audit_measurement() and ima_parse_rule(), without 'breaking user
-> >> space'?
+> >> To summarize, we need to disambiguate the 1805, as both
+> >> ima_parse_rule() and ima_audit_measurement() are using the same number
+> >> with different formats.  The main usage of 1805 that we are aware of
+> >> is ima_audit_measurement().  Yet the "type=" name for
+> >> ima_audit_measurement() should be INTEGRITY_IMA_AUDIT, not
+> >> INTEGRITY_RULE.
 > >> 
-> >> A message produced by ima_parse_rule() looks like this here:
+> >> option 1: breaks both uses
+> >> 1805 - INTEGRITY_IMA_AUDIT - ima_audit_measurement()
+> >> 1806 - INTEGRITY_POLICY_RULE - ima_parse_rule()
 > >> 
-> >> type=INTEGRITY_RULE msg=audit(1526566213.870:305): action="dont_measure"
-> >> fsmagic="0x9fa0" res=1
-> > 
-> > Why is action and fsmagic being logged as untrusted strings? Untrusted
-> > strings are used when an unprivileged user can affect the contents of the
-> > field such as creating a file with space or special characters in the
-> > name.
-> > 
-> > Also, subject and object information is missing. Who loaded this rule?
-> > 
-> >> in contrast to that an INTEGRITY_PCR record type:
+> >> option 2: breaks the most common usage
+> >> 1805 - INTEGRITY_RULE - ima_parse_rule()
+> >> 1806 - INTEGRITY_IMA_AUDIT - ima_audit_measurement()
 > >> 
-> >> type=INTEGRITY_PCR msg=audit(1526566235.193:334): pid=1615 uid=0 auid=0
-> >> ses=2 subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
-> >> op="invalid_pcr" cause="open_writers" comm="scp"
-> >> name="/var/log/audit/audit.log" dev="dm-0" ino=1962625 res=1
-> > 
-> > Why is op & cause being logged as an untrusted string? This also has
-> > incomplete subject information.
-> 
-> It's calling audit_log_string() in both cases:
-> 
-> https://elixir.bootlin.com/linux/latest/source/security/integrity/integrity
-> _audit.c#L48
-
-I see. Looking things over, I see that it seems like it should do the right 
-thing. But the original purpose for this function is here:
-
-https://elixir.bootlin.com/linux/latest/source/kernel/audit.c#L1944
-
-This is where it is logging an untrusted string and has to decide to encode 
-it or just place it in quotes. If it has quotes, that means it's an untrusted 
-string but has no control characters in it. I think you want to use 
-audit_log_format() for any string that is trustworthy.
-
-
-As an aside, I wonder why audit_log_string() is in the API when it is a 
-helper to audit_log_untrustedstring() ?  Without understanding the rules of 
-untrusted strings, it can't be used correctly without re-inventing 
-audit_log_untrustedstring() by hand.
-
-
-> >> Should some of the fields from INTEGRITY_PCR also appear in
-> >> INTEGRITY_RULE? If so, which ones?
-> > 
-> > pid, uid, auid, tty, session, subj, comm, exe, res.  <- these are
-> > required to be searchable
-> > 
-> >> We could probably refactor the current  integrity_audit_message() and
-> >> have ima_parse_rule() call into it to get those fields as well. I
-> >> suppose adding new fields to it wouldn't be considered breaking user
-> >> space?
-> > 
-> > The audit user space utilities pretty much expects those fields in that
-> > order for any IMA originating events. You can add things like op or
-> > cause before
+> >> option 3: leaves the most common usage with the wrong name, and breaks
+> >> the other less common usage
+> >> 1805 - INTEGRITY_RULE - ima_audit_measurement()
+> >> 1806 - INTEGRITY_POLICY_RULE - ima_parse_rule()
+> >> 
+> >> So option 3 is the best option?
+> >> 
+> >  From a user space perspective, I don't care as long the event is well
+> >  formed
 >
-> We will call into audit_log_task, which will put the parameters into
-> correct order:
+> Are you saying this because of the tools you referred to that require
+> proper ordering and all fields need to be available?
+
+Its because the order was established a long time ago. User space tools still 
+expect that ordering.
+ 
+> > (No unnecessary untrusted string logging) and we have the required fields
+> > for searching: pid, uid, auid, tty, session, subj, comm, exe, & res. And
+> > the object is identifiable in the event.
 > 
-> auid uid gid ses subj pid comm exe
+> There's at least one documented user that showed the existing format...
+> 
+> https://www.fireeye.com/blog/threat-research/2016/11/extending_linux_exec.h
+> tml
 
-I'm telling you what the correct order is.  :-)  A long time ago, the IMA 
-system had audit events with the order I'm mentioning. For example, here's 
-one from a log I collected back in 2013:
+Hmm. I see. If that event was ever sent to linux-audit mail list for 
+feedback, we would have had some discussion because it's not a proper event. 
+The order of the fields changed, new fields were added, untrusted string 
+logging is being used, field names are not documented in the field name 
+dictionary, existing field names are not being used, subject information is 
+incomplete, results is missing, and its not entirely clear what the object 
+is.
 
-type=INTEGRITY_PCR msg=audit(1327409021.813:21): pid=1 uid=0 auid=4294967295 
-ses=4294967295 subj=kernel op="add_template_measure" cause="hash_added" 
-comm="init" name="01parse-kernel.sh" dev=rootfs ino=5413 res=0
-
-it was missing "tty" and "exe", but the order is as I mentioned. The 
-expectation is that INTEGRITY events maintain this established order across 
-all events.
-
-Thanks,
 -Steve
-
-
-> https://elixir.bootlin.com/linux/latest/source/kernel/auditsc.c#L2433
-> 
-> > that. The reason why you can do that is those additional fields are not
-> > required to be searchable by common criteria.
-> > 
-> > -Steve
