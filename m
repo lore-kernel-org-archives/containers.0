@@ -1,8 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [REVIEW][PATCH 1/6] vfs: Don't allow changing the link count of an
-	inode with an invalid uid or gid
-Date: Wed, 23 May 2018 18:25:33 -0500
-Message-ID: <20180523232538.4880-1-ebiederm__26587.8941784196$1527117882$gmane$org@xmission.com>
+Subject: [REVIEW][PATCH 3/6] fs: Allow superblock owner to replace invalid
+	owners of inodes
+Date: Wed, 23 May 2018 18:25:35 -0500
+Message-ID: <20180523232538.4880-3-ebiederm__34445.5900173218$1527117893$gmane$org@xmission.com>
 References: <87o9h6554f.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,52 +22,105 @@ To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Christian Brauner <christian-STijNZzMWpgWenYVfaLwtA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Changing the link count of an inode via unlink or link will cause a
-write back of that inode.  If the uids or gids are invalid (aka not known
-to the kernel) writing the inode back may change the uid or gid in the
-filesystem.   To prevent possible filesystem and to avoid the need for
-filesystem maintainers to worry about it don't allow operations on
-inodes with an invalid uid or gid.
+Allow users with CAP_SYS_CHOWN over the superblock of a filesystem to
+chown files when inode owner is invalid.  Ordinarily the
+capable_wrt_inode_uidgid check is sufficient to allow access to files
+but when the underlying filesystem has uids or gids that don't map to
+the current user namespace it is not enough, so the chown permission
+checks need to be extended to allow this case.
 
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Calling chown on filesystem nodes whose uid or gid don't map is
+necessary if those nodes are going to be modified as writing back
+inodes which contain uids or gids that don't map is likely to cause
+filesystem corruption of the uid or gid fields.
+
+Once chown has been called the existing capable_wrt_inode_uidgid
+checks are sufficient to allow the owner of a superblock to do anything
+the global root user can do with an appropriate set of capabilities.
+
+An ordinary filesystem mountable by a userns root will limit all uids
+and gids in s_user_ns or the INVALID_UID and INVALID_GID to flag all
+others.  So having this added permission limited to just INVALID_UID
+and INVALID_GID is sufficient to handle every case on an ordinary filesystem.
+
+Of the virtual filesystems at least proc is known to set s_user_ns to
+something other than &init_user_ns, while at the same time presenting
+some files owned by GLOBAL_ROOT_UID.  Those files the mounter of proc
+in a user namespace should not be able to chown to get access to.
+Limiting the relaxation in permission to just the minimum of allowing
+changing INVALID_UID and INVALID_GID prevents problems with cases like
+that.
+
+The original version of this patch was written by: Seth Forshee.  I
+have rewritten and rethought this patch enough so it's really not the
+same thing (certainly it needs a different description), but he
+deserves credit for getting out there and getting the conversation
+started, and finding the potential gotcha's and putting up with my
+semi-paranoid feedback.
+
+Inspired-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Acked-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/namei.c | 13 ++++++++++---
- 1 file changed, 10 insertions(+), 3 deletions(-)
+ fs/attr.c | 36 ++++++++++++++++++++++++++++--------
+ 1 file changed, 28 insertions(+), 8 deletions(-)
 
-diff --git a/fs/namei.c b/fs/namei.c
-index 186bd2464fd5..942c1f096f6b 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -984,13 +984,15 @@ static bool safe_hardlink_source(struct inode *inode)
-  */
- static int may_linkat(struct path *link)
- {
--	struct inode *inode;
-+	struct inode *inode = link->dentry->d_inode;
+diff --git a/fs/attr.c b/fs/attr.c
+index 12ffdb6fb63c..4220c98f41a5 100644
+--- a/fs/attr.c
++++ b/fs/attr.c
+@@ -18,6 +18,32 @@
+ #include <linux/evm.h>
+ #include <linux/ima.h>
+ 
++static bool chown_ok(const struct inode *inode, kuid_t uid)
++{
++	if (uid_eq(current_fsuid(), inode->i_uid) &&
++	    uid_eq(uid, inode->i_uid))
++		return true;
++	if (capable_wrt_inode_uidgid(inode, CAP_CHOWN))
++		return true;
++	if (uid_eq(inode->i_uid, INVALID_UID) &&
++	    ns_capable(inode->i_sb->s_user_ns, CAP_CHOWN));
++		return true;
++	return false;
++}
 +
-+	/* Inode writeback is not safe when the uid or gid are invalid. */
-+	if (!uid_valid(inode->i_uid) || !gid_valid(inode->i_gid))
-+		return -EOVERFLOW;
- 
- 	if (!sysctl_protected_hardlinks)
- 		return 0;
- 
--	inode = link->dentry->d_inode;
--
- 	/* Source inode owner (or CAP_FOWNER) can hardlink all they like,
- 	 * otherwise, it must be a safe source.
- 	 */
-@@ -2749,6 +2751,11 @@ static int may_delete(struct inode *dir, struct dentry *victim, bool isdir)
- 	BUG_ON(!inode);
- 
- 	BUG_ON(victim->d_parent->d_inode != dir);
++static bool chgrp_ok(const struct inode *inode, kgid_t gid)
++{
++	if (uid_eq(current_fsuid(), inode->i_uid) &&
++	    (in_group_p(gid) || gid_eq(gid, inode->i_gid)))
++		return true;
++	if (capable_wrt_inode_uidgid(inode, CAP_CHOWN))
++		return true;
++	if (gid_eq(inode->i_gid, INVALID_GID) &&
++	    ns_capable(inode->i_sb->s_user_ns, CAP_CHOWN));
++		return true;
++	return false;
++}
 +
-+	/* Inode writeback is not safe when the uid or gid are invalid. */
-+	if (!uid_valid(inode->i_uid) || !gid_valid(inode->i_gid))
-+		return -EOVERFLOW;
-+
- 	audit_inode_child(dir, victim, AUDIT_TYPE_CHILD_DELETE);
+ /**
+  * setattr_prepare - check if attribute changes to a dentry are allowed
+  * @dentry:	dentry to check
+@@ -52,17 +78,11 @@ int setattr_prepare(struct dentry *dentry, struct iattr *attr)
+ 		goto kill_priv;
  
- 	error = inode_permission(dir, MAY_WRITE | MAY_EXEC);
+ 	/* Make sure a caller can chown. */
+-	if ((ia_valid & ATTR_UID) &&
+-	    (!uid_eq(current_fsuid(), inode->i_uid) ||
+-	     !uid_eq(attr->ia_uid, inode->i_uid)) &&
+-	    !capable_wrt_inode_uidgid(inode, CAP_CHOWN))
++	if ((ia_valid & ATTR_UID) && !chown_ok(inode, attr->ia_uid))
+ 		return -EPERM;
+ 
+ 	/* Make sure caller can chgrp. */
+-	if ((ia_valid & ATTR_GID) &&
+-	    (!uid_eq(current_fsuid(), inode->i_uid) ||
+-	    (!in_group_p(attr->ia_gid) && !gid_eq(attr->ia_gid, inode->i_gid))) &&
+-	    !capable_wrt_inode_uidgid(inode, CAP_CHOWN))
++	if ((ia_valid & ATTR_GID) && !chgrp_ok(inode, attr->ia_gid))
+ 		return -EPERM;
+ 
+ 	/* Make sure a caller can chmod. */
 -- 
 2.14.1
