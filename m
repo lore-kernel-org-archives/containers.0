@@ -1,8 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [REVIEW][PATCH 3/6] fs: Allow superblock owner to replace invalid
-	owners of inodes
-Date: Wed, 23 May 2018 18:25:35 -0500
-Message-ID: <20180523232538.4880-3-ebiederm__34445.5900173218$1527117893$gmane$org@xmission.com>
+Subject: [REVIEW][PATCH 2/6] vfs: Allow userns root to call mknod on owned
+	filesystems.
+Date: Wed, 23 May 2018 18:25:34 -0500
+Message-ID: <20180523232538.4880-2-ebiederm__10182.9074010768$1527117901$gmane$org@xmission.com>
 References: <87o9h6554f.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,105 +22,29 @@ To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Christian Brauner <christian-STijNZzMWpgWenYVfaLwtA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Allow users with CAP_SYS_CHOWN over the superblock of a filesystem to
-chown files when inode owner is invalid.  Ordinarily the
-capable_wrt_inode_uidgid check is sufficient to allow access to files
-but when the underlying filesystem has uids or gids that don't map to
-the current user namespace it is not enough, so the chown permission
-checks need to be extended to allow this case.
+These filesystems already always set SB_I_NODEV so mknod will not be
+useful for gaining control of any devices no matter their permissions.
+This will allow overlayfs and applications to fakeroot to use device
+nodes to represent things on disk.
 
-Calling chown on filesystem nodes whose uid or gid don't map is
-necessary if those nodes are going to be modified as writing back
-inodes which contain uids or gids that don't map is likely to cause
-filesystem corruption of the uid or gid fields.
-
-Once chown has been called the existing capable_wrt_inode_uidgid
-checks are sufficient to allow the owner of a superblock to do anything
-the global root user can do with an appropriate set of capabilities.
-
-An ordinary filesystem mountable by a userns root will limit all uids
-and gids in s_user_ns or the INVALID_UID and INVALID_GID to flag all
-others.  So having this added permission limited to just INVALID_UID
-and INVALID_GID is sufficient to handle every case on an ordinary filesystem.
-
-Of the virtual filesystems at least proc is known to set s_user_ns to
-something other than &init_user_ns, while at the same time presenting
-some files owned by GLOBAL_ROOT_UID.  Those files the mounter of proc
-in a user namespace should not be able to chown to get access to.
-Limiting the relaxation in permission to just the minimum of allowing
-changing INVALID_UID and INVALID_GID prevents problems with cases like
-that.
-
-The original version of this patch was written by: Seth Forshee.  I
-have rewritten and rethought this patch enough so it's really not the
-same thing (certainly it needs a different description), but he
-deserves credit for getting out there and getting the conversation
-started, and finding the potential gotcha's and putting up with my
-semi-paranoid feedback.
-
-Inspired-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Acked-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/attr.c | 36 ++++++++++++++++++++++++++++--------
- 1 file changed, 28 insertions(+), 8 deletions(-)
+ fs/namei.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/fs/attr.c b/fs/attr.c
-index 12ffdb6fb63c..4220c98f41a5 100644
---- a/fs/attr.c
-+++ b/fs/attr.c
-@@ -18,6 +18,32 @@
- #include <linux/evm.h>
- #include <linux/ima.h>
+diff --git a/fs/namei.c b/fs/namei.c
+index 942c1f096f6b..20335896dcce 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -3679,7 +3679,8 @@ int vfs_mknod(struct inode *dir, struct dentry *dentry, umode_t mode, dev_t dev)
+ 	if (error)
+ 		return error;
  
-+static bool chown_ok(const struct inode *inode, kuid_t uid)
-+{
-+	if (uid_eq(current_fsuid(), inode->i_uid) &&
-+	    uid_eq(uid, inode->i_uid))
-+		return true;
-+	if (capable_wrt_inode_uidgid(inode, CAP_CHOWN))
-+		return true;
-+	if (uid_eq(inode->i_uid, INVALID_UID) &&
-+	    ns_capable(inode->i_sb->s_user_ns, CAP_CHOWN));
-+		return true;
-+	return false;
-+}
-+
-+static bool chgrp_ok(const struct inode *inode, kgid_t gid)
-+{
-+	if (uid_eq(current_fsuid(), inode->i_uid) &&
-+	    (in_group_p(gid) || gid_eq(gid, inode->i_gid)))
-+		return true;
-+	if (capable_wrt_inode_uidgid(inode, CAP_CHOWN))
-+		return true;
-+	if (gid_eq(inode->i_gid, INVALID_GID) &&
-+	    ns_capable(inode->i_sb->s_user_ns, CAP_CHOWN));
-+		return true;
-+	return false;
-+}
-+
- /**
-  * setattr_prepare - check if attribute changes to a dentry are allowed
-  * @dentry:	dentry to check
-@@ -52,17 +78,11 @@ int setattr_prepare(struct dentry *dentry, struct iattr *attr)
- 		goto kill_priv;
- 
- 	/* Make sure a caller can chown. */
--	if ((ia_valid & ATTR_UID) &&
--	    (!uid_eq(current_fsuid(), inode->i_uid) ||
--	     !uid_eq(attr->ia_uid, inode->i_uid)) &&
--	    !capable_wrt_inode_uidgid(inode, CAP_CHOWN))
-+	if ((ia_valid & ATTR_UID) && !chown_ok(inode, attr->ia_uid))
+-	if ((S_ISCHR(mode) || S_ISBLK(mode)) && !capable(CAP_MKNOD))
++	if ((S_ISCHR(mode) || S_ISBLK(mode)) &&
++	    !ns_capable(dentry->d_sb->s_user_ns, CAP_MKNOD))
  		return -EPERM;
  
- 	/* Make sure caller can chgrp. */
--	if ((ia_valid & ATTR_GID) &&
--	    (!uid_eq(current_fsuid(), inode->i_uid) ||
--	    (!in_group_p(attr->ia_gid) && !gid_eq(attr->ia_gid, inode->i_gid))) &&
--	    !capable_wrt_inode_uidgid(inode, CAP_CHOWN))
-+	if ((ia_valid & ATTR_GID) && !chgrp_ok(inode, attr->ia_gid))
- 		return -EPERM;
- 
- 	/* Make sure a caller can chmod. */
+ 	if (!dir->i_op->mknod)
 -- 
 2.14.1
