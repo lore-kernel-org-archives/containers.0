@@ -1,12 +1,14 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [REVIEW][PATCH 0/6] Wrapping up the vfs support for unprivileged
-	mounts
-Date: Wed, 23 May 2018 18:22:56 -0500
-Message-ID: <87o9h6554f.fsf__14184.7512605183$1527117686$gmane$org@xmission.com>
+From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Subject: [REVIEW][PATCH 1/6] vfs: Don't allow changing the link count of an
+	inode with an invalid uid or gid
+Date: Wed, 23 May 2018 18:25:33 -0500
+Message-ID: <20180523232538.4880-1-ebiederm__26587.8941784196$1527117882$gmane$org@xmission.com>
+References: <87o9h6554f.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <87o9h6554f.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,50 +19,55 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Christian Brauner <christian-STijNZzMWpgWenYVfaLwtA@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Christian Brauner <christian-STijNZzMWpgWenYVfaLwtA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Changing the link count of an inode via unlink or link will cause a
+write back of that inode.  If the uids or gids are invalid (aka not known
+to the kernel) writing the inode back may change the uid or gid in the
+filesystem.   To prevent possible filesystem and to avoid the need for
+filesystem maintainers to worry about it don't allow operations on
+inodes with an invalid uid or gid.
 
-Very slowly the work has been progressing to ensure the vfs has the
-necessary support for mounting filesystems without privilege.
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ fs/namei.c | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
 
-This patchset contains one more core piece of that work, ensuring a few
-more operations that would write back an inode and confuse an exisiting
-filesystem are denied.
-
-The rest of the changes actually enable userns root to do things with
-filesystems that the userns root has mounted.  Most of these have been
-waiting in the wings a long time, held back because I wanted the core
-of the patchset to be solid before I started allowing additional
-behavor.
-
-It is definitely time for these changes so the effect of s_user_ns
-becomes less theoretical.
-
-The change to allow mknod is new, but consistent with everything else
-and harmless as device nodes on filesystems mounted without privilege
-are ignored.
-
-Unless problems show up in the during review I plan to merge these changes.
-
-These changes are also available at:
-  git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git userns-test
-
-Eric W. Biederman (5):
-      vfs: Don't allow changing the link count of an inode with an invalid uid or gid
-      vfs: Allow userns root to call mknod on owned filesystems.
-      fs: Allow superblock owner to replace invalid owners of inodes
-      fs: Allow superblock owner to access do_remount_sb()
-      capabilities: Allow privileged user in s_user_ns to set security.* xattrs
-
-Seth Forshee (1):
-      fs: Allow CAP_SYS_ADMIN in s_user_ns to freeze and thaw filesystems
-
- fs/attr.c            | 36 ++++++++++++++++++++++++++++--------
- fs/ioctl.c           |  4 ++--
- fs/namei.c           | 16 ++++++++++++----
- fs/namespace.c       |  4 ++--
- security/commoncap.c |  8 ++++++--
- 5 files changed, 50 insertions(+), 18 deletions(-)
-
-Eric
+diff --git a/fs/namei.c b/fs/namei.c
+index 186bd2464fd5..942c1f096f6b 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -984,13 +984,15 @@ static bool safe_hardlink_source(struct inode *inode)
+  */
+ static int may_linkat(struct path *link)
+ {
+-	struct inode *inode;
++	struct inode *inode = link->dentry->d_inode;
++
++	/* Inode writeback is not safe when the uid or gid are invalid. */
++	if (!uid_valid(inode->i_uid) || !gid_valid(inode->i_gid))
++		return -EOVERFLOW;
+ 
+ 	if (!sysctl_protected_hardlinks)
+ 		return 0;
+ 
+-	inode = link->dentry->d_inode;
+-
+ 	/* Source inode owner (or CAP_FOWNER) can hardlink all they like,
+ 	 * otherwise, it must be a safe source.
+ 	 */
+@@ -2749,6 +2751,11 @@ static int may_delete(struct inode *dir, struct dentry *victim, bool isdir)
+ 	BUG_ON(!inode);
+ 
+ 	BUG_ON(victim->d_parent->d_inode != dir);
++
++	/* Inode writeback is not safe when the uid or gid are invalid. */
++	if (!uid_valid(inode->i_uid) || !gid_valid(inode->i_gid))
++		return -EOVERFLOW;
++
+ 	audit_inode_child(dir, victim, AUDIT_TYPE_CHILD_DELETE);
+ 
+ 	error = inode_permission(dir, MAY_WRITE | MAY_EXEC);
+-- 
+2.14.1
