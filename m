@@ -1,8 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [REVIEW][PATCH 4/6] fs: Allow superblock owner to access
-	do_remount_sb()
-Date: Wed, 23 May 2018 18:25:36 -0500
-Message-ID: <20180523232538.4880-4-ebiederm__34148.6523313963$1527117908$gmane$org@xmission.com>
+Subject: [REVIEW][PATCH 5/6] capabilities: Allow privileged user in s_user_ns
+	to set security.* xattrs
+Date: Wed, 23 May 2018 18:25:37 -0500
+Message-ID: <20180523232538.4880-5-ebiederm__10213.8691618622$1527117932$gmane$org@xmission.com>
 References: <87o9h6554f.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,41 +22,69 @@ To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Christian Brauner <christian-STijNZzMWpgWenYVfaLwtA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Superblock level remounts are currently restricted to global
-CAP_SYS_ADMIN, as is the path for changing the root mount to
-read only on umount. Loosen both of these permission checks to
-also allow CAP_SYS_ADMIN in any namespace which is privileged
-towards the userns which originally mounted the filesystem.
+A privileged user in s_user_ns will generally have the ability to
+manipulate the backing store and insert security.* xattrs into
+the filesystem directly. Therefore the kernel must be prepared to
+handle these xattrs from unprivileged mounts, and it makes little
+sense for commoncap to prevent writing these xattrs to the
+filesystem. The capability and LSM code have already been updated
+to appropriately handle xattrs from unprivileged mounts, so it
+is safe to loosen this restriction on setting xattrs.
+
+The exception to this logic is that writing xattrs to a mounted
+filesystem may also cause the LSM inode_post_setxattr or
+inode_setsecurity callbacks to be invoked. SELinux will deny the
+xattr update by virtue of applying mountpoint labeling to
+unprivileged userns mounts, and Smack will deny the writes for
+any user without global CAP_MAC_ADMIN, so loosening the
+capability check in commoncap is safe in this respect as well.
 
 Signed-off-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Acked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/namespace.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ security/commoncap.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/fs/namespace.c b/fs/namespace.c
-index 5f75969adff1..8ddd14806799 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -1590,7 +1590,7 @@ static int do_umount(struct mount *mnt, int flags)
- 		 * Special case for "unmounting" root ...
- 		 * we just try to remount it readonly.
- 		 */
--		if (!capable(CAP_SYS_ADMIN))
-+		if (!ns_capable(sb->s_user_ns, CAP_SYS_ADMIN))
- 			return -EPERM;
- 		down_write(&sb->s_umount);
- 		if (!sb_rdonly(sb))
-@@ -2333,7 +2333,7 @@ static int do_remount(struct path *path, int ms_flags, int sb_flags,
- 	down_write(&sb->s_umount);
- 	if (ms_flags & MS_BIND)
- 		err = change_mount_flags(path->mnt, ms_flags);
--	else if (!capable(CAP_SYS_ADMIN))
-+	else if (!ns_capable(sb->s_user_ns, CAP_SYS_ADMIN))
- 		err = -EPERM;
- 	else
- 		err = do_remount_sb(sb, sb_flags, data, 0);
+diff --git a/security/commoncap.c b/security/commoncap.c
+index 1ce701fcb3f3..f4c33abd9959 100644
+--- a/security/commoncap.c
++++ b/security/commoncap.c
+@@ -919,6 +919,8 @@ int cap_bprm_set_creds(struct linux_binprm *bprm)
+ int cap_inode_setxattr(struct dentry *dentry, const char *name,
+ 		       const void *value, size_t size, int flags)
+ {
++	struct user_namespace *user_ns = dentry->d_sb->s_user_ns;
++
+ 	/* Ignore non-security xattrs */
+ 	if (strncmp(name, XATTR_SECURITY_PREFIX,
+ 			sizeof(XATTR_SECURITY_PREFIX) - 1) != 0)
+@@ -931,7 +933,7 @@ int cap_inode_setxattr(struct dentry *dentry, const char *name,
+ 	if (strcmp(name, XATTR_NAME_CAPS) == 0)
+ 		return 0;
+ 
+-	if (!capable(CAP_SYS_ADMIN))
++	if (!ns_capable(user_ns, CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 	return 0;
+ }
+@@ -949,6 +951,8 @@ int cap_inode_setxattr(struct dentry *dentry, const char *name,
+  */
+ int cap_inode_removexattr(struct dentry *dentry, const char *name)
+ {
++	struct user_namespace *user_ns = dentry->d_sb->s_user_ns;
++
+ 	/* Ignore non-security xattrs */
+ 	if (strncmp(name, XATTR_SECURITY_PREFIX,
+ 			sizeof(XATTR_SECURITY_PREFIX) - 1) != 0)
+@@ -964,7 +968,7 @@ int cap_inode_removexattr(struct dentry *dentry, const char *name)
+ 		return 0;
+ 	}
+ 
+-	if (!capable(CAP_SYS_ADMIN))
++	if (!ns_capable(user_ns, CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 	return 0;
+ }
 -- 
 2.14.1
