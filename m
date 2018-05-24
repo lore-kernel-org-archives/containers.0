@@ -1,17 +1,17 @@
-From: Tycho Andersen <tycho-E0fblnxP3wo@public.gmane.org>
-Subject: Re: [PATCH v2 1/4] seccomp: add a return code to trap to userspace
-Date: Thu, 24 May 2018 09:28:27 -0600
-Message-ID: <20180524152827.GD21405__7441.47368609465$1527175752$gmane$org@cisco>
-References: <20180517151218.12850-1-tycho@tycho.ws>
-	<20180517151218.12850-2-tycho@tycho.ws>
-	<20180517153323.GA8586@redhat.com> <20180517153957.GA3831@cisco>
-	<20180517154637.GC8586@redhat.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [REVIEW][PATCH 4/6] fs: Allow superblock owner to access
+	do_remount_sb()
+Date: Thu, 24 May 2018 11:45:06 -0500
+Message-ID: <87603d3svh.fsf__45382.6481396847$1527180219$gmane$org@xmission.com>
+References: <87o9h6554f.fsf@xmission.com>
+	<20180523232538.4880-4-ebiederm@xmission.com>
+	<20180524155803.GB19932@mailbox.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20180517154637.GC8586-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20180524155803.GB19932-cl+VPiYnx/1AfugRpC6u6w@public.gmane.org> (Christian Brauner's message
+	of "Thu, 24 May 2018 17:58:03 +0200")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,24 +21,29 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: "Tobin C . Harding" <me-xzjC0nNlxno@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Akihiro Suda <suda.akihiro-Zyj7fXuS5i5L9jVzuh4AOg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Tyler Hicks <tyhicks-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+To: Christian Brauner <christian-STijNZzMWpgWenYVfaLwtA@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Oleg,
+Christian Brauner <christian-STijNZzMWpgWenYVfaLwtA@public.gmane.org> writes:
 
-On Thu, May 17, 2018 at 05:46:37PM +0200, Oleg Nesterov wrote:
-> On 05/17, Tycho Andersen wrote:
-> >
-> > > From lockdep pov this loop tries to take the same lock twice or more, it shoul
-> > > complain.
-> >
-> > I didn't, but I guess that's because it's not trying to take the same lock
-> > twice -- the pointer cur is changing in the loop.
-> 
-> Yes, I see. But this is the same lock for lockdep, it has the same class.
+> On Wed, May 23, 2018 at 06:25:36PM -0500, Eric W. Biederman wrote:
+>> Superblock level remounts are currently restricted to global
+>> CAP_SYS_ADMIN, as is the path for changing the root mount to
+>> read only on umount. Loosen both of these permission checks to
+>> also allow CAP_SYS_ADMIN in any namespace which is privileged
+>> towards the userns which originally mounted the filesystem.
+>
+> Acked-by: Christian Brauner <christian-STijNZzMWpgWenYVfaLwtA@public.gmane.org>
+>
+>> 
+>> Signed-off-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+>> Acked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+>
+> Note, I just talked to Serge. This should be Acked-by: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 
-I finally figured this out, I needed CONFIG_PROVE_LOCKING=y too,
-anyway, I've added the nesting annotations for v3. Thanks!
+Now you know how long these patches have been sitting waiting to get
+merged.
 
-Tycho
+Eric
