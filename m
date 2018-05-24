@@ -1,16 +1,17 @@
-From: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: [REVIEW][PATCH 2/6] vfs: Allow userns root to call mknod on
-	owned filesystems.
-Date: Thu, 24 May 2018 08:55:17 -0500
-Message-ID: <20180524135517.GQ3401__17099.7455054478$1527170005$gmane$org@ubuntu-xps13>
-References: <87o9h6554f.fsf@xmission.com>
-	<20180523232538.4880-2-ebiederm@xmission.com>
+From: Tycho Andersen <tycho-E0fblnxP3wo@public.gmane.org>
+Subject: Re: [PATCH v2 1/4] seccomp: add a return code to trap to userspace
+Date: Thu, 24 May 2018 09:28:27 -0600
+Message-ID: <20180524152827.GD21405__7441.47368609465$1527175752$gmane$org@cisco>
+References: <20180517151218.12850-1-tycho@tycho.ws>
+	<20180517151218.12850-2-tycho@tycho.ws>
+	<20180517153323.GA8586@redhat.com> <20180517153957.GA3831@cisco>
+	<20180517154637.GC8586@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20180523232538.4880-2-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <20180517154637.GC8586-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,27 +21,24 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Christian Brauner <christian-STijNZzMWpgWenYVfaLwtA@public.gmane.org>
+To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: "Tobin C . Harding" <me-xzjC0nNlxno@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Akihiro Suda <suda.akihiro-Zyj7fXuS5i5L9jVzuh4AOg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Tyler Hicks <tyhicks-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, May 23, 2018 at 06:25:34PM -0500, Eric W. Biederman wrote:
-> These filesystems already always set SB_I_NODEV so mknod will not be
-> useful for gaining control of any devices no matter their permissions.
-> This will allow overlayfs and applications to fakeroot to use device
-> nodes to represent things on disk.
+Hi Oleg,
+
+On Thu, May 17, 2018 at 05:46:37PM +0200, Oleg Nesterov wrote:
+> On 05/17, Tycho Andersen wrote:
+> >
+> > > From lockdep pov this loop tries to take the same lock twice or more, it shoul
+> > > complain.
+> >
+> > I didn't, but I guess that's because it's not trying to take the same lock
+> > twice -- the pointer cur is changing in the loop.
 > 
-> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> Yes, I see. But this is the same lock for lockdep, it has the same class.
 
-For a normal filesystem this does seem safe enough.
+I finally figured this out, I needed CONFIG_PROVE_LOCKING=y too,
+anyway, I've added the nesting annotations for v3. Thanks!
 
-However, I'd also like to see us allow unprivileged mounting for
-overlayfs, and there we need to worry about whether this would allow a
-mknod in an underlying filesystem which should not be allowed. That
-mknod will be subject to this same check in the underlying filesystem
-using the credentials of the user that mounted the overaly fs, which
-should be sufficient to ensure that the mknod is permitted.
-
-Thus this looks okay to me.
-
-Acked-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Tycho
