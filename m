@@ -1,16 +1,16 @@
-From: "Darrick J. Wong" <darrick.wong-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [REVIEW][PATCH 0/6] Wrapping up the vfs support for unprivileged
-	mounts
-Date: Thu, 24 May 2018 21:06:20 -0700
-Message-ID: <20180525040620.GD4507@magnolia>
-References: <87o9h6554f.fsf@xmission.com> <20180524214617.GG7712@thunk.org>
-	<87y3g8y6x9.fsf@xmission.com> <20180525035716.GE10363@dastard>
+From: Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
+Subject: Re: [PATCH] [RFC] bpf: tracing: new helper bpf_get_current_cgroup_ino
+Date: Fri, 25 May 2018 16:21:50 +0100
+Message-ID: <CADZs7q4xd1CwGULvYe2-Y2aYpwhiiw3upF=mAK0ve_-jrk1yFg@mail.gmail.com>
+References: <20180513173318.21680-1-alban@kinvolk.io>
+	<20180521162609.lpdrnozowmzdn57m@ast-mbp.dhcp.thefacebook.com>
+	<CAH3MdRWgruVq+3r+2pHTah-c2zTO03vPkepjWDZ0_KrYcroy9A@mail.gmail.com>
+	<CAH3MdRVdfw52atavT3KL8MpPw7zDM_hR6aUcqDP1PogLn_sH+w@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20180525035716.GE10363@dastard>
+In-Reply-To: <CAH3MdRVdfw52atavT3KL8MpPw7zDM_hR6aUcqDP1PogLn_sH+w-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,64 +20,209 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
-Cc: "Theodore Y. Ts'o" <tytso-3s7WtUTddSA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Christian Brauner <christian-STijNZzMWpgWenYVfaLwtA@public.gmane.org>
+To: Y Song <ys114321-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: =?UTF-8?Q?Iago_L=C3=B3pez_Galeiras?= <iago-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexei Starovoitov <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, May 25, 2018 at 01:57:16PM +1000, Dave Chinner wrote:
-> On Thu, May 24, 2018 at 06:23:30PM -0500, Eric W. Biederman wrote:
-> > "Theodore Y. Ts'o" <tytso-3s7WtUTddSA@public.gmane.org> writes:
-> > 
-> > > On Wed, May 23, 2018 at 06:22:56PM -0500, Eric W. Biederman wrote:
-> > >> 
-> > >> Very slowly the work has been progressing to ensure the vfs has the
-> > >> necessary support for mounting filesystems without privilege.
-> > >
-> > > What's the thinking behind how system administrators and/or file
-> > > systems would configure whether or not a particular file system type
-> > > will be allowed to be mounted w/o privilege?
-> > 
-> > The mechanism is .fs_flags in file_system_type.   If the FS_USERNS_MOUNT
-> > flag is set then root in a user namespace (AKA an unprivileged user)
-> > will be allowed to mount to mount the filesystem.
-> > 
-> > There are very real concerns about attacking a filesystem with an
-> > invalid filesystem image, or by a malicious protocol speaker.  So I
-> > don't want to enable anything without the file system maintainers
-> > consent and without a reasonable expecation that neither a system wide
-> > denial of service attack nor a privilege escalation attack is possible
-> > from if the filesystem is enabled.
-> > 
-> > So at a practical level what we have in the vfs is the non-fuse specific
-> > bits that enable unprivileged mounts of fuse.  Things like handling
-> > of unmapped uid and gids, how normally trusted xattrs are dealt with,
-> > etc.
-> > 
-> > A big practical one for me is that if either the uid or gid is not
-> > mapped the vfs avoids writing to the inode.
-> > 
-> > Right now my practical goal is to be able to say: "Go run your
-> > filesystem in userspace with fuse if you want stronger security
-> > guarantees."  I think that will be enough to make removable media
-> > reasonably safe from privilege escalation attacks.
-> > 
-> > There is enough code in most filesystems that I don't know what our
-> > chances of locking down very many of them are.  But I figure a few more
-> > of them are possible.
-> 
-> I'm not sure we need to - fusefs-lkl gives users the ability to
-> mount any of the kernel filesystems via fuse without us needing to
-> support unprivileged kernel mounts for those filesystems.
+On Wed, May 23, 2018 at 4:34 AM Y Song <ys114321-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
 
-/me wonders, is there a fusefs-lkl package for Linux?
+> I did a quick prototyping and the above interface seems working fine.
 
-(He says, knowing that freebsd has one... :))
+Thanks! I gave your kernel patch & userspace program a try and it works for
+me on cgroup-v2.
 
---D
+Also, I found out how to get my containers to use both cgroup-v1 and
+cgroup-v2 (by enabling systemd's hybrid cgroup mode and docker's
+'--exec-opt native.cgroupdriver=systemd' option). So I should be able to
+use the BPF helper function without having to add support for all the
+cgroup-v1 hierarchies.
 
-> Cheers,
-> 
-> Dave.
-> -- 
-> Dave Chinner
-> david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org
+> The kernel change:
+> ===============
+
+> [yhs@localhost bpf-next]$ git diff
+> diff --git a/include/uapi/linux/bpf.h b/include/uapi/linux/bpf.h
+> index 97446bbe2ca5..669b7383fddb 100644
+> --- a/include/uapi/linux/bpf.h
+> +++ b/include/uapi/linux/bpf.h
+> @@ -1976,7 +1976,8 @@ union bpf_attr {
+>          FN(fib_lookup),                 \
+>          FN(sock_hash_update),           \
+>          FN(msg_redirect_hash),          \
+> -       FN(sk_redirect_hash),
+> +       FN(sk_redirect_hash),           \
+> +       FN(get_current_cgroup_id),
+
+>   /* integer value in 'imm' field of BPF_CALL instruction selects which
+helper
+>    * function eBPF program intends to call
+> diff --git a/kernel/trace/bpf_trace.c b/kernel/trace/bpf_trace.c
+> index ce2cbbff27e4..e11e3298f911 100644
+> --- a/kernel/trace/bpf_trace.c
+> +++ b/kernel/trace/bpf_trace.c
+> @@ -493,6 +493,21 @@ static const struct bpf_func_proto
+> bpf_current_task_under_cgroup_proto = {
+>          .arg2_type      = ARG_ANYTHING,
+>   };
+
+> +BPF_CALL_0(bpf_get_current_cgroup_id)
+> +{
+> +       struct cgroup *cgrp = task_dfl_cgroup(current);
+> +       if (!cgrp)
+> +               return -EINVAL;
+> +
+> +       return cgrp->kn->id.id;
+> +}
+> +
+> +static const struct bpf_func_proto bpf_get_current_cgroup_id_proto = {
+> +       .func           = bpf_get_current_cgroup_id,
+> +       .gpl_only       = false,
+> +       .ret_type       = RET_INTEGER,
+> +};
+> +
+>   BPF_CALL_3(bpf_probe_read_str, void *, dst, u32, size,
+>             const void *, unsafe_ptr)
+>   {
+> @@ -563,6 +578,8 @@ tracing_func_proto(enum bpf_func_id func_id, const
+> struct bpf_prog *prog)
+>                  return &bpf_get_prandom_u32_proto;
+>          case BPF_FUNC_probe_read_str:
+>                  return &bpf_probe_read_str_proto;
+> +       case BPF_FUNC_get_current_cgroup_id:
+> +               return &bpf_get_current_cgroup_id_proto;
+>          default:
+>                  return NULL;
+>          }
+
+> The following program can be used to print out a cgroup id given a cgroup
+path.
+> [yhs@localhost cg]$ cat get_cgroup_id.c
+> #define _GNU_SOURCE
+> #include <stdio.h>
+> #include <stdlib.h>
+> #include <sys/types.h>
+> #include <sys/stat.h>
+> #include <fcntl.h>
+
+> int main(int argc, char **argv)
+> {
+>      int dirfd, err, flags, mount_id, fhsize;
+>      struct file_handle *fhp;
+>      char *pathname;
+
+>      if (argc != 2) {
+>          printf("usage: %s <cgroup_path>\n", argv[0]);
+>          return 1;
+>      }
+
+>      pathname = argv[1];
+>      dirfd = AT_FDCWD;
+>      flags = 0;
+
+>      fhsize = sizeof(*fhp);
+>      fhp = malloc(fhsize);
+>      if (!fhp)
+>          return 1;
+
+>      err = name_to_handle_at(dirfd, pathname, fhp, &mount_id, flags);
+>      if (err >= 0) {
+>          printf("error\n");
+>          return 1;
+>      }
+
+>      fhsize = sizeof(struct file_handle) + fhp->handle_bytes;
+>      fhp = realloc(fhp, fhsize);
+>      if (!fhp)
+>          return 1;
+
+>      err = name_to_handle_at(dirfd, pathname, fhp, &mount_id, flags);
+>      if (err < 0)
+>          perror("name_to_handle_at");
+>      else {
+>          int i;
+
+>          printf("dir = %s, mount_id = %d\n", pathname, mount_id);
+>          printf("handle_bytes = %d, handle_type = %d\n", fhp->handle_bytes,
+>              fhp->handle_type);
+>          if (fhp->handle_bytes != 8)
+>              return 1;
+
+>          printf("cgroup_id = 0x%llx\n", *(unsigned long long
+*)fhp->f_handle);
+>      }
+
+>      return 0;
+> }
+> [yhs@localhost cg]$
+
+> Given a cgroup path, the user can get cgroup_id and use it in their bpf
+> program for filtering purpose.
+
+> I run a simple program t.c
+>     int main() { while(1) sleep(1); return 0; }
+> in the cgroup v2 directory /home/yhs/tmp/yhs
+>     none on /home/yhs/tmp type cgroup2 (rw,relatime,seclabel)
+
+> $ ./get_cgroup_id /home/yhs/tmp/yhs
+> dir = /home/yhs/tmp/yhs, mount_id = 124
+> handle_bytes = 8, handle_type = 1
+> cgroup_id = 0x1000006b2
+
+> // the below command to get cgroup_id from the kernel for the
+> // process compiled with t.c and ran under /home/yhs/tmp/yhs:
+> $ sudo ./trace.py -p 4067 '__x64_sys_nanosleep "cgid = %llx", $cgid'
+> PID     TID     COMM            FUNC             -
+> 4067    4067    a.out           __x64_sys_nanosleep cgid = 1000006b2
+> 4067    4067    a.out           __x64_sys_nanosleep cgid = 1000006b2
+> 4067    4067    a.out           __x64_sys_nanosleep cgid = 1000006b2
+> ^C[yhs@localhost tools]$
+
+> The kernel and user space cgid matches. Will provide a
+> formal patch later.
+
+
+
+
+> On Mon, May 21, 2018 at 5:24 PM, Y Song <ys114321-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+> > On Mon, May 21, 2018 at 9:26 AM, Alexei Starovoitov
+> > <alexei.starovoitov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+> >> On Sun, May 13, 2018 at 07:33:18PM +0200, Alban Crequy wrote:
+> >>>
+> >>> +BPF_CALL_2(bpf_get_current_cgroup_ino, u32, hierarchy, u64, flags)
+> >>> +{
+> >>> +     // TODO: pick the correct hierarchy instead of the mem
+controller
+> >>> +     struct cgroup *cgrp = task_cgroup(current, memory_cgrp_id);
+> >>> +
+> >>> +     if (unlikely(!cgrp))
+> >>> +             return -EINVAL;
+> >>> +     if (unlikely(hierarchy))
+> >>> +             return -EINVAL;
+> >>> +     if (unlikely(flags))
+> >>> +             return -EINVAL;
+> >>> +
+> >>> +     return cgrp->kn->id.ino;
+> >>
+> >> ino only is not enough to identify cgroup. It needs generation number
+too.
+> >> I don't quite see how hierarchy and flags can be used in the future.
+> >> Also why limit it to memcg?
+> >>
+> >> How about something like this instead:
+> >>
+> >> BPF_CALL_2(bpf_get_current_cgroup_id)
+> >> {
+> >>         struct cgroup *cgrp = task_dfl_cgroup(current);
+> >>
+> >>         return cgrp->kn->id.id;
+> >> }
+> >> The user space can use fhandle api to get the same 64-bit id.
+> >
+> > I think this should work. This will also be useful to bcc as user
+> > space can encode desired id
+> > in the bpf program and compared that id to the current cgroup id, so we
+can have
+> > cgroup level tracing (esp. stat collection) support. To cope with
+> > cgroup hierarchy, user can use
+> > cgroup-array based approach or explicitly compare against multiple
+cgroup id's.
