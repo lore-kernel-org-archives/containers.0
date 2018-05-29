@@ -1,14 +1,11 @@
-From: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
-Subject: Re: [REVIEW][PATCH 0/6] Wrapping up the vfs support for unprivileged
-	mounts
-Date: Tue, 29 May 2018 17:40:50 +0200
-Message-ID: <CANxcAMt5f7=TV3Yqc6iavos=saGFOPKC4R4Yr9yGbKoVwq3YGw__11575.3014492386$1527608353$gmane$org@mail.gmail.com>
-References: <87o9h6554f.fsf@xmission.com>
+From: BCLEVR App <pt-BEk7lkDvvMLiB9QmIjCX8w@public.gmane.org>
+Subject: O Airbnb Dos Professores, Treinadores e Explicadores.
+Date: Tue, 29 May 2018 22:48:27 +0300
+Message-ID: <bf5ab0da33aaa33773da592f033195c7@pt.bclevr.info>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87o9h6554f.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,72 +15,84 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Christian Brauner <christian-STijNZzMWpgWenYVfaLwtA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
-
-On Thu, May 24, 2018 at 1:22 AM, Eric W. Biederman
-<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->
-> Very slowly the work has been progressing to ensure the vfs has the
-> necessary support for mounting filesystems without privilege.
->
-> This patchset contains one more core piece of that work, ensuring a few
-> more operations that would write back an inode and confuse an exisiting
-> filesystem are denied.
->
-> The rest of the changes actually enable userns root to do things with
-> filesystems that the userns root has mounted.  Most of these have been
-> waiting in the wings a long time, held back because I wanted the core
-> of the patchset to be solid before I started allowing additional
-> behavor.
->
-> It is definitely time for these changes so the effect of s_user_ns
-> becomes less theoretical.
->
-> The change to allow mknod is new, but consistent with everything else
-> and harmless as device nodes on filesystems mounted without privilege
-> are ignored.
->
-> Unless problems show up in the during review I plan to merge these changes.
-
-Thank you for the great work. I have been looking forward to seeing it.
-I have just gathered available relevant patches in my branch:
-
-https://github.com/kinvolk/linux/tree/dongsu/fuse-userns-for-4.18
-
-With this branch, I tested sshfs/fuse from non-init user namespace.
-It works fine as expected. So you can add:
-
-Tested-by: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
-
-Thanks!
-Dongsu
-
-> These changes are also available at:
->   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git userns-test
->
-> Eric W. Biederman (5):
->       vfs: Don't allow changing the link count of an inode with an invalid uid or gid
->       vfs: Allow userns root to call mknod on owned filesystems.
->       fs: Allow superblock owner to replace invalid owners of inodes
->       fs: Allow superblock owner to access do_remount_sb()
->       capabilities: Allow privileged user in s_user_ns to set security.* xattrs
->
-> Seth Forshee (1):
->       fs: Allow CAP_SYS_ADMIN in s_user_ns to freeze and thaw filesystems
->
->  fs/attr.c            | 36 ++++++++++++++++++++++++++++--------
->  fs/ioctl.c           |  4 ++--
->  fs/namei.c           | 16 ++++++++++++----
->  fs/namespace.c       |  4 ++--
->  security/commoncap.c |  8 ++++++--
->  5 files changed, 50 insertions(+), 18 deletions(-)
->
-> Eric
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+ICAgQkNMRVZSCiAgIFBvbW9zLXRlIEVtIENvbnRhY3RvIERpcmVjdG8gQ29tIE5vdm9zIENsaWVu
+dGVzIGUgTmVnw7NjaW9zIERpYXJpYW1lbnRlLgogICBBZGVyZSBKw6EgR3JhdHVpdGFtZW50ZSEK
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsxXUhlYWRlciAxCiAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICBIZWFkZXIgMiAgICBIZWFkZXIgMwoKICAgU09NT1MgQ09NTyBPIEFJUkJOQiwg
+TUFTIFBBUkEgU0VSVknDh09TIExPQ0FJUyBMSUdBRE9TIMOAUyBBVUxBUywgQ0VOVFJPUwogICBE
+RSBFU1RVRE9TLCBDTEFTU0VTLCBMScOHw5VFUywgVFJFSU5PUyBFIEVYUExJQ0HDh8OVRVMuCiAg
+IE8gQkNMRVZSIMOpIHVtYSBhcHAgcXVlIGxpZ2EgZGlyZWN0YW1lbnRlIGNsaWVudGVzIGNvbSBw
+cm9maXNzaW9uYWlzLiDDiQogICBkZXN0aW5hZGEgYSB0b2RvcyBvcyBwcm9maXNzaW9uYWlzIGxp
+YmVyYWlzLCBmcmVlbGFuY2VycywgcHJlc3RhZG9yZXMKICAgZGUgc2VydmnDp29zIG91IHBlc3Nv
+YXMgY29tIG5lZ8OzY2lvcyBwcsOzcHJpb3MgZSBwZXJtaXRlLXRlIGFuZ2FyaWFyCiAgIG5vdm9z
+IGNsaWVudGVzIGUgbmVnw7NjaW9zIHJhcGlkYW1lbnRlLgogICBbMl1CQ0xFVlJfMQogICBObyBC
+Q0xFVlIgZW5jb250cmFyw6FzIHbDoXJpb3MgdXRpbGl6YWRvcmVzIMOgIHByb2N1cmEgZGUgcHJv
+Zmlzc2lvbmFpcwogICBwYXJhIHJlYWxpemFyIG9zIHNldXMgcHJvamVjdG9zIGVtIHbDoXJpYXMg
+Y2F0ZWdvcmlhcy4gQXNzaW0gcXVlIHVtCiAgIHV0aWxpemFkb3IgZmHDp2EgdW0gcGVkaWRvIGRl
+IG9yw6dhbWVudG8gbmEgdHVhIMOhcmVhIGRlIHRyYWJhbGhvIGUKICAgbG9jYWxpemHDp8OjbyBy
+ZWNlYmVzIHVtIGVtYWlsIGUgcG9kZXMgY29tZcOnYXIgYSBmYXplciBuZWfDs2Npby4KICAgU2lt
+cGxlcywgcHLDoXRpY28gZSBlY29uw7NtaWNvLgogICBOdW5jYSBmb2kgdMOjbyBmw6FjaWwgYXVt
+ZW50YXIgYSB0dWEgY2FydGVpcmEgZGUgY2xpZW50ZXMuCiAgIENhdGVnb3JpYXMgTWFpcyBQb3B1
+bGFyZXMgZG9zIFBlZGlkb3MgRGUgU2VydmnDp28gUGFyYSBBdWxhcywgQ2xhc3NlcywKICAgTGnD
+p8O1ZXMsIFRyZWlub3MsIENlbnRyb3MgZGUgRXN0dWRvcyBlIEV4cGxpY2HDp8O1ZXM6CiAgIFsz
+XUJDTEVWUl8yCgogICAgICAgICAgw5psdGltb3MgUGVkaWRvcyBkZSBTZXJ2acOnb3MgTG9jYWlz
+IFN1Ym1ldGlkb3MgTm8gQkNMRVZSOgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFs0
+XUJDTEVWUl8zCiAgICAgICAgICAgICAgICAgICAgIFbDqiBvIE5vc3NvIFbDrWRlbyBkZSBDb21v
+IEZ1bmNpb25hIQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFs1XUJDTEVWUl80CiAg
+ICAgICAgICAgICAgICAgICAgIE8gUXVlIERpemVtIE9zIE5vc3NvcyBVdGlsaXphZG9yZXM6CiAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBCQ0xFVlJfNQoKICAgUGFyYSBQYXJ0aWN1
+bGFyZXM6CiAgIE5lY2Vzc2l0YXMgZGUgYWxndW0gc2VydmnDp28gb3UgcHJvZHV0bz8KICAgSW5k
+aWNhLW5vcyBvIHF1ZSBwcmV0ZW5kZXMgZSBlbSBhbGd1bWFzIGhvcmFzIHJlY2ViZXMgZ3JhdHVp
+dGFtZW50ZSA1CiAgIG9yw6dhbWVudG9zLgoKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgIEJDTEVWUl82CgogICAxLiBEaXotbm9zIGRvIHF1ZSBwcmVjaXNhcwogICBQcmltZWlybywg
+cmVzcG9uZGUgYSBhbGd1bWFzIHBlcmd1bnRhcyByw6FwaWRhcyBwYXJhIHBlcmNlYmVybW9zIHF1
+ZQogICB0aXBvIGRlIHByb2Zpc3Npb25hbCBwcm9jdXJhcy4KICAgMi4gQ29uc3VsdGEgb3Mgb3LD
+p2FtZW50b3MKICAgRGVudHJvIGRlIGFsZ3VtYXMgaG9yYXMgaXLDoXMgcmVjZWJlciBncmF0dWl0
+YW1lbnRlIGF0w6kgNSBvcsOnYW1lbnRvcwogICBwYXJhIG8gc2VydmnDp28gb3UgcHJvZHV0byBx
+dWUgcHJldGVuZGVzLgogICAzLiBDb250cmF0YSBvIHByb2Zpc3Npb25hbCBjZXJ0bwogICBDb21w
+YXJhIG9zIG9yw6dhbWVudG9zLCB2w6ogb3MgcGVyZmlzIGUgYXZhbGlhw6fDtWVzLiBRdWFuZG8g
+ZXN0aXZlcmVzCiAgIHByb250bywgY29udHJhdGEgbyBwcm9maXNzaW9uYWwgw6AgdHVhIG1lZGlk
+YS4KCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFs2XUJDTEVWUl83CgogICBQYXJh
+IFByb2Zpc3Npb25haXM6CiAgIFByZXN0YXMgYWxndW0gc2VydmnDp28gb3UgdmVuZGVzIGFsZ3Vt
+IHByb2R1dG8/IENyZXNjZSBvIHRldSBuZWfDs2NpbyBjb20KICAgbyBCQ0xFVlIuCgogICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgQkNMRVZSXzgKCiAgIE8gQkNMRVZSIMOpIGlkZWFs
+IHBhcmEgZnJlZWxhbmNlcnMsIHByb2Zpc3Npb25haXMsIHByZXN0YWRvcmVzIGRlCiAgIHNlcnZp
+w6dvcywgY29tZXJjaWFudGVzIGUgcGVzc29hcyBjb20gbmVnw7NjaW9zIHByw7Nwcmlvcy4KICAg
+MS4gQW5nYXJpYW1vcy10ZSBub3ZvcyBjbGllbnRlcwogICBBdmlzYW1vcy10ZSBlbSB0ZW1wbyBy
+ZWFsIHNlbXByZSBxdWUgYWxndcOpbSBuZWNlc3NpdGFyIGRvcyB0ZXVzCiAgIHNlcnZpw6dvcyBv
+dSBwcm9kdXRvcy4KICAgMi4gVHUgZGVjaWRlcy4gVHUgY29udHJvbGFzCiAgIENvbnN1bHRhIG9z
+IHBlZGlkb3MgcXVlIHRlIGVudmlhbW9zIGUgcmVzcG9uZGUgYXBlbmFzIGFvcyBxdWUgdGUKICAg
+aW50ZXJlc3NhcmVtLgoKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgWzddQkNMRVZS
+XzkKCiAgIDMuIENvbnF1aXN0YSBvIHRldSBwcsOzeGltbyBjbGllbnRlCiAgIEVudmlhIG9yw6dh
+bWVudG9zIGNvbSBtZW5zYWdlbSBwZXJzb25hbGl6YWRhIGUgdW0gcHJlw6dvIGVzdGltYWRvLgoK
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICBbOF1FTlRSQVIgTk8gQkNMRVZSCgogICDCqSAy
+MDE4IEJDTEVWUgogICBSdWEgUHJvZiBEciBDYXJsb3MgTGxveWQgMTQsIDLCuiBEdG8gNDcxNS0z
+MTkgQnJhZ2EsIFBvcnR1Z2FsCiAgIFs5XURlaXhhciBkZSByZWNlYmVyIGEgbm9zc2EgbmV3c2xl
+dHRlciB8IFsxMF1BYnJpciBlc3RhIG5ld3NsZXR0ZXIgbm8KICAgYnJvd3NlcgoKUmVmZXJlbmNl
+cwoKICAgMS4gTFlOWElNR01BUDpmaWxlOi8vbG9jYWxob3N0L3RtcC90bXBHdm8xVDMuaHRtbCNN
+YXAKICAgMi4gTFlOWElNR01BUDpmaWxlOi8vbG9jYWxob3N0L3RtcC90bXBHdm8xVDMuaHRtbCNN
+YXA1CiAgIDMuIExZTlhJTUdNQVA6ZmlsZTovL2xvY2FsaG9zdC90bXAvdG1wR3ZvMVQzLmh0bWwj
+TWFwMgogICA0LiBMWU5YSU1HTUFQOmZpbGU6Ly9sb2NhbGhvc3QvdG1wL3RtcEd2bzFUMy5odG1s
+I01hcDYKICAgNS4gaHR0cHM6Ly93d3cueW91dHViZS5jb20vd2F0Y2g/dj1XU3c4eXlEUDZvOAog
+ICA2LiBMWU5YSU1HTUFQOmZpbGU6Ly9sb2NhbGhvc3QvdG1wL3RtcEd2bzFUMy5odG1sI01hcDMK
+ICAgNy4gTFlOWElNR01BUDpmaWxlOi8vbG9jYWxob3N0L3RtcC90bXBHdm8xVDMuaHRtbCNNYXA0
+CiAgIDguIGh0dHA6Ly93d3cuYmNsZXZyLmluZm8vcHQuaHRtbAogICA5LiBodHRwczovL3B0LmJj
+bGV2ci5pbmZvL3BvbW1vL3VwZGF0ZS5waHA/ZW1haWw9Y29udGFpbmVyc0BsaXN0cy5saW51eC1m
+b3VuZGF0aW9uLm9yZyZjb2RlPTM3MzIzNDIwMzlmYTlkMjE1NjI5NzVhMTRjMmQ3ZmY2CiAgMTAu
+IGh0dHA6Ly93d3cuYmNsZXZyLmluZm8vbmV3cy9wdC8yMDE4L3B0XzAyLmh0bWwKCltVU0VNQVBd
+CmZpbGU6Ly9sb2NhbGhvc3QvdG1wL3RtcEd2bzFUMy5odG1sI01hcDYKICAgMS4gaHR0cDovL3d3
+dy5iY2xldnIuaW5mby9wdC5odG1sCgpbVVNFTUFQXQpmaWxlOi8vbG9jYWxob3N0L3RtcC90bXBH
+dm8xVDMuaHRtbCNNYXA1CiAgIDEuIGh0dHA6Ly93d3cuYmNsZXZyLmluZm8vcHQuaHRtbAoKW1VT
+RU1BUF0KZmlsZTovL2xvY2FsaG9zdC90bXAvdG1wR3ZvMVQzLmh0bWwjTWFwNAogICAxLiBodHRw
+Oi8vd3d3LmJjbGV2ci5pbmZvL3B0Lmh0bWwKCltVU0VNQVBdCmZpbGU6Ly9sb2NhbGhvc3QvdG1w
+L3RtcEd2bzFUMy5odG1sI01hcDMKICAgMS4gaHR0cDovL3d3dy5iY2xldnIuaW5mby9wdC5odG1s
+CgpbVVNFTUFQXQpmaWxlOi8vbG9jYWxob3N0L3RtcC90bXBHdm8xVDMuaHRtbCNNYXAyCiAgIDEu
+IGh0dHA6Ly93d3cuYmNsZXZyLmluZm8vcHQuaHRtbAoKW1VTRU1BUF0KZmlsZTovL2xvY2FsaG9z
+dC90bXAvdG1wR3ZvMVQzLmh0bWwjTWFwCiAgIDEuIGh0dHA6Ly93d3cuYmNsZXZyLmluZm8vcHQu
+aHRtbApfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250
+YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3Jn
+Cmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRh
+aW5lcnM=
