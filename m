@@ -1,90 +1,96 @@
-Return-Path: <SRS0=8SPi=CG=lists.linux-foundation.org=containers-bounces@kernel.org>
+Return-Path: <SRS0=ibnv=CH=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A698FC433E2
-	for <containers@archiver.kernel.org>; Fri, 28 Aug 2020 20:33:54 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D7B03C433E6
+	for <containers@archiver.kernel.org>; Sat, 29 Aug 2020 15:48:32 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 6D9DB2074A
-	for <containers@archiver.kernel.org>; Fri, 28 Aug 2020 20:33:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 9FC3620707
+	for <containers@archiver.kernel.org>; Sat, 29 Aug 2020 15:48:32 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=sargun.me header.i=@sargun.me header.b="xTxWwhEV"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6D9DB2074A
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=sargun.me header.i=@sargun.me header.b="k7Rx1dzo"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9FC3620707
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=sargun.me
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 360BC87F8B;
-	Fri, 28 Aug 2020 20:33:54 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 745E487DB2;
+	Sat, 29 Aug 2020 15:48:32 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 0Isy2T4wjavt; Fri, 28 Aug 2020 20:33:53 +0000 (UTC)
+	with ESMTP id rPgH4hZ1aCTt; Sat, 29 Aug 2020 15:48:31 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 4967485FED;
-	Fri, 28 Aug 2020 20:33:53 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id BD30687D5D;
+	Sat, 29 Aug 2020 15:48:31 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 2E5B7C07FF;
-	Fri, 28 Aug 2020 20:33:53 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 4E8A0C0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id ABA9EC07FF;
+	Sat, 29 Aug 2020 15:48:31 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 483E4C0051
  for <containers@lists.linux-foundation.org>;
- Fri, 28 Aug 2020 20:33:52 +0000 (UTC)
+ Sat, 29 Aug 2020 15:48:30 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 36C1D85FED
+ by fraxinus.osuosl.org (Postfix) with ESMTP id 3204884D3A
  for <containers@lists.linux-foundation.org>;
- Fri, 28 Aug 2020 20:33:52 +0000 (UTC)
+ Sat, 29 Aug 2020 15:48:30 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id KWgTAIxHhYLd
+ with ESMTP id TrPESLzpCXeN
  for <containers@lists.linux-foundation.org>;
- Fri, 28 Aug 2020 20:33:50 +0000 (UTC)
+ Sat, 29 Aug 2020 15:48:29 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-ed1-f49.google.com (mail-ed1-f49.google.com
- [209.85.208.49])
- by whitealder.osuosl.org (Postfix) with ESMTPS id D7CB2874F7
+Received: from mail-ed1-f65.google.com (mail-ed1-f65.google.com
+ [209.85.208.65])
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id 18CCB8486F
  for <containers@lists.linux-foundation.org>;
- Fri, 28 Aug 2020 20:33:49 +0000 (UTC)
-Received: by mail-ed1-f49.google.com with SMTP id ay8so238025edb.8
+ Sat, 29 Aug 2020 15:48:29 +0000 (UTC)
+Received: by mail-ed1-f65.google.com with SMTP id ay8so1730554edb.8
  for <containers@lists.linux-foundation.org>;
- Fri, 28 Aug 2020 13:33:49 -0700 (PDT)
+ Sat, 29 Aug 2020 08:48:28 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sargun.me; s=google;
  h=mime-version:references:in-reply-to:from:date:message-id:subject:to
- :cc; bh=DnLPewM/6z2Ca3eSBTJ09aPCoC3sIGnyctxFbXRMDVc=;
- b=xTxWwhEVyw428sCG3emMHL4+r803f5gZ8B9/ZOfnyxNZyr88E++NPbk6RKdwwjWEu0
- 0uzhJqnu5W0e4L05oaEN5TicKF7F8xt9gbNRJGOKSn6L0xe4TZRX2T6G4hV/QpE0JGbo
- PL/TB8O294IOThK4Xn8n1t5bYywWge1c/9uFg=
+ :cc; bh=64FN1MGxhBWlNF4OVlX0wMFKnJlgUYNSyVxv7Q1pPo0=;
+ b=k7Rx1dzobIX6aQK68EIO125za9REv/tKzSmvOJsTEbTdORCYfyxPnCZw76HogwspKa
+ oX++2gKzn9oTfxfE7K7rSwRNSXsj8fQvVOEvcsPUsDUviPPIx3Cqr6xv24FhD+7PlNi8
+ 5TT9WxRWnECSFDTgGmi+8qW8ahUxE2mOtLB/c=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
  h=x-gm-message-state:mime-version:references:in-reply-to:from:date
  :message-id:subject:to:cc;
- bh=DnLPewM/6z2Ca3eSBTJ09aPCoC3sIGnyctxFbXRMDVc=;
- b=d1ctlK6IFE5WCNDJE3muCRi6wbSF2zSiIDu9/M4FnyUgAxn/ZYXYeEnRy43EJkSleh
- 2pFX4ObkpdG5YVe+vEni1l1CGqY/hG5jMqbWZMAKvwEd4w9yVCyZWIp2u/csrOw7sc0S
- uIytb11Az5GptEicgGEUFwHti5TaND9uIC26qox/r+lBOvOAvMFyqubgPH6KHfi+yDdS
- 3ZpDVYEOVe9Blgitz6FUnTSO+FYCXvGjZ79JhKM2cfNlsEwWqfYy6+CXOtpZCuX34j6O
- DE6B4470RoPW4WxBElkuIem6sbjCzEbcl9JZnkeBD7nQdZhQiHSNwRwmo0qFhmOQIAnz
- PNyA==
-X-Gm-Message-State: AOAM53071ybuLII7vjarUpraiaGuaWDfrw8892s/V0dlFjjcz8ZM34NA
- O8gU1tFqjoDxNt1yyfylDBq8yQOe2MoVw8UBPrZQBQ==
-X-Google-Smtp-Source: ABdhPJx/4t9J2rkv9DdBoSWQ42Pn8H13Sx0erJv/PaR8G8TO/G9uKUPA66YvkGx2+hrO+vB8IJbki5+d1hsh3jt/jew=
-X-Received: by 2002:aa7:d517:: with SMTP id y23mr567107edq.210.1598646827947; 
- Fri, 28 Aug 2020 13:33:47 -0700 (PDT)
+ bh=64FN1MGxhBWlNF4OVlX0wMFKnJlgUYNSyVxv7Q1pPo0=;
+ b=hBfXmX7iu5YeRX/JYaAydewrNO67AoIbtNKzgvPbJ+dHyp3sJHx+VCoY86avPxw4AM
+ Nxbwi27fmJbziImG6Ue2F+gPgrvgMPf4G0Et7pz58cPaM/l8XWu7ZmplKVLIc/apmsk2
+ P48CCQ+SEJXZ68O66ngl5iNa9pVSfVCWbI4+5MkxldFNj82A/DwT5s5SWvnavwnvjBHr
+ TrxEVJEiN4oy8OFJ5b5KFtflSC/zWO+bRgTahDvbwNmCkwIKw6vjbNr4y8zN64lj+UPX
+ 3hrVE/NIICm3j+tYMk/Xp1BgPZ4kc50bLRi+Fcxfmg9MROgY49TGj0Y8LnlDUWcskRjt
+ WicA==
+X-Gm-Message-State: AOAM530PUzbEseAXJxk07VmXAVel0EplFkQWDPcMrK/roTqipkFww54s
+ tvpfPHY28pd4p7byBOE6UVlBhmlCypAD7a3rDJiTNlaryycTWA==
+X-Google-Smtp-Source: ABdhPJxKZJiaAQZfxxzd1r42MrxASEuooxd+Rd2LI8Gcysn1tys9iyEksvon0AdGBff2SOOv6BxcvCQ2S5QDLPyohfI=
+X-Received: by 2002:a17:906:3609:: with SMTP id
+ q9mr4020781ejb.138.1598715672580; 
+ Sat, 29 Aug 2020 08:41:12 -0700 (PDT)
 MIME-Version: 1.0
-References: <87imd2incs.fsf@x220.int.ebiederm.org>
-In-Reply-To: <87imd2incs.fsf@x220.int.ebiederm.org>
+References: <CAOQ4uxjXZdXZAaeiJ_p9n7NJziBv2yvWqSDs0hDd1ONUrVKxOQ@mail.gmail.com>
+ <87tuwmiy4j.fsf@x220.int.ebiederm.org>
+ <20200828155849.k46uk3x63aio3g3o@yavin.dot.cyphar.com>
+In-Reply-To: <20200828155849.k46uk3x63aio3g3o@yavin.dot.cyphar.com>
 From: Sargun Dhillon <sargun@sargun.me>
-Date: Fri, 28 Aug 2020 13:33:12 -0700
-Message-ID: <CAMp4zn9M783PTkq0q5BV5n2x=4P4ed4F6F9b7p7ex97=_3J0GA@mail.gmail.com>
-Subject: Re: Per user rlimits
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Linux Containers <containers@lists.linux-foundation.org>
+Date: Sat, 29 Aug 2020 08:40:36 -0700
+Message-ID: <CAMp4zn83CwpfuFq7+JSkYGZmFC03pUrt_30Wzn42AxqAaSDSpg@mail.gmail.com>
+Subject: Re: Overlayfs @Plumbers
+To: Aleksa Sarai <asarai@suse.de>
+Cc: Linux Containers <containers@lists.linux-foundation.org>,
+ "Eric W. Biederman" <ebiederm@xmission.com>,
+ overlayfs <linux-unionfs@vger.kernel.org>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -101,50 +107,58 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Fri, Aug 28, 2020 at 12:29 PM Eric W. Biederman
-<ebiederm@xmission.com> wrote:
+On Fri, Aug 28, 2020 at 8:59 AM Aleksa Sarai <asarai@suse.de> wrote:
 >
+> On 2020-08-28, Eric W. Biederman <ebiederm@xmission.com> wrote:
+> > Amir Goldstein <amir73il@gmail.com> writes:
+> >
+> > > Hi Guys,
+> > >
+> > > It's been nice to virtually meet with you yesterday.
+> > > Some of you wanted to follow up on overlayfs related issues.
+> > >
+> > > If you want to discuss, try to find me in one of the
+> > > https://meet.2020.linuxplumbersconf.org/hackrooms
+> > > today between 16:00-17:00 UTC
+> > > (No need to enter the room to see who's inside)
+> > >
+> > > If those times do not work for you, contact me and we can try
+> > > to schedule another time.
+> >
+> > Did this conversation wind up happening?  Do we need to reschedule?
 >
-> Just to scope how much work it would be to fix rlimits
-> so they are not a problem for user namespaces I took a quick
-> survey.
+> This conversation already happened in a Hackroom on Tuesday. I'm not
+> sure if the Hackrooms will have their recordings published, so maybe
+> Amir can post any of the takeaways we had?
 >
-> The rlimits can be found in
-> include/uapi/asm-generic/resource.h
->
-> There are a total of 16 rlimits.
-> There are only 4 rlimits that are enforced at anything other
-> than process granularity.
->
-> RLIMIT_NPROC
-> RLIMIT_MEMLOCK
-> RLIMIT_SIGPENDING
-> RLIMIT_MSGQUEUE
->
-> So it should not be difficult to fix those rlimits.
-What are your proposed semantics for what the "fix" would look like? Or
-are you saying that once we take on Christian's proposal of 64-bit kuid
-they would be trivial to fix? I think the reason we didn't move forward with
-fixing it is the only real thing we could agree upon is an rlimit namespace,
-and then you get into a question of why do these even exist, and should
-they just be cgroup(v2) controllers, and should calling setrlimit just
-be a wrapper around a cgroup(v2) controller that has a map of
-uid -> limit?
+> --
+> Aleksa Sarai
+> Senior Software Engineer (Containers)
+> SUSE Linux GmbH
+> <https://www.cyphar.com/>
 
->
-> I think the implementation of RLIMIT_MEMLOCK is highly suspect, and
-> might be worth reexamining, as RLMIT_MEMLOCK it interpreted differently
-> in different contexts.  For the limit there is mm->locked_vm,
-> user->lock_vm, and user->locked_shm.
->
-> Eric
->
->
->
-> _______________________________________________
-> Containers mailing list
-> Containers@lists.linux-foundation.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+I unfortunately missed this conversation. I wanted to bring up OverlayFS, and
+ephemeral upper dirs. We use overlayfs with Docker containers, and we waste
+a lot of time on writing things back to disk.
+
+We're not so peeved about the fact that OVL does any sync operations, as that's
+what our users have been used to. The big problem is on unmount, ovelfs decides
+syncing the upperdirs is a good idea. IIRC, this regression was
+introduced somewhere
+in the 4.X series.
+
+We've been carrying a patch to short-circuit this behaviour for a while now:
+https://github.com/Netflix-Skunkworks/linux/commit/edb195d9b73cc22d095078010a14a690f41ee253
+
+I know that this behaviour (and any behaviour that short-circuits
+O_SYNC / FUA is
+technically "wrong", but in this case, can we make an exception? I originally
+thought about using device mapper to remove the FUA bit from all BIOs, but it
+turns out that my underlying storage *always* persists data to disk,
+so every write
+takes...a long time.
+
+Amir, what's your take?
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
