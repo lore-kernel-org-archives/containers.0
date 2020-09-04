@@ -1,134 +1,88 @@
-Return-Path: <SRS0=WWmn=CL=lists.linux-foundation.org=containers-bounces@kernel.org>
+Return-Path: <SRS0=M9u6=CN=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_2 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 587F1C433E7
-	for <containers@archiver.kernel.org>; Wed,  2 Sep 2020 19:55:32 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D093CC433E2
+	for <containers@archiver.kernel.org>; Fri,  4 Sep 2020 14:34:54 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id EDD31206EB
-	for <containers@archiver.kernel.org>; Wed,  2 Sep 2020 19:55:31 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="smAOh1vp"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EDD31206EB
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=linux.ibm.com
+	by mail.kernel.org (Postfix) with ESMTPS id 939CB206D4
+	for <containers@archiver.kernel.org>; Fri,  4 Sep 2020 14:34:54 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 939CB206D4
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=enjellic.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id A7F3586AF4;
-	Wed,  2 Sep 2020 19:55:31 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 3qvjfKbT0hQU; Wed,  2 Sep 2020 19:55:31 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 1AC6D86ADF;
-	Wed,  2 Sep 2020 19:55:31 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id F04BBC0052;
-	Wed,  2 Sep 2020 19:55:30 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id E4C3FC0051
- for <containers@lists.linux-foundation.org>;
- Wed,  2 Sep 2020 19:55:29 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id D57E9203E2
- for <containers@lists.linux-foundation.org>;
- Wed,  2 Sep 2020 19:55:29 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 62FED20468;
+	Fri,  4 Sep 2020 14:34:54 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id eXm4ALgwD+9R; Fri,  4 Sep 2020 14:34:51 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by silver.osuosl.org (Postfix) with ESMTP id 6287520377;
+	Fri,  4 Sep 2020 14:34:51 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 35457C0891;
+	Fri,  4 Sep 2020 14:34:51 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id B57A9C0051
+ for <containers@lists.linux-foundation.org>;
+ Fri,  4 Sep 2020 14:34:48 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by whitealder.osuosl.org (Postfix) with ESMTP id B179586B9F
+ for <containers@lists.linux-foundation.org>;
+ Fri,  4 Sep 2020 14:34:48 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id Rkd6aXEB3K2h
+ with ESMTP id 6PfvbM-aB-uJ
  for <containers@lists.linux-foundation.org>;
- Wed,  2 Sep 2020 19:55:28 +0000 (UTC)
-X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com
- [148.163.156.1])
- by silver.osuosl.org (Postfix) with ESMTPS id 81A6C203A6
+ Fri,  4 Sep 2020 14:34:47 +0000 (UTC)
+X-Greylist: delayed 00:28:06 by SQLgrey-1.7.6
+Received: from wind.enjellic.com (wind.enjellic.com [76.10.64.91])
+ by whitealder.osuosl.org (Postfix) with ESMTP id 2C2A186CEC
  for <containers@lists.linux-foundation.org>;
- Wed,  2 Sep 2020 19:55:28 +0000 (UTC)
-Received: from pps.filterd (m0098396.ppops.net [127.0.0.1])
- by mx0a-001b2d01.pphosted.com (8.16.0.42/8.16.0.42) with SMTP id
- 082JcAus088084; Wed, 2 Sep 2020 15:55:09 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com;
- h=message-id : subject :
- from : to : cc : date : in-reply-to : references : content-type :
- mime-version : content-transfer-encoding; s=pp1;
- bh=0Ea0UcfMe7PHsrVD0pFOiv8VCaP3XQXJw+mmhy0kNNI=;
- b=smAOh1vp77+krhOR+OeLIDMQOZBPjysMP4piRZ0DlNug5kBuKNY29qDhcQlmpw2APScC
- MltcABAA2oB9SdFDxc1n+bTtAVK6owkaodfN+HiHrGZrz7Rz4I/wCWaMULSgIRX8Nx5B
- 2Xp2T+g+om7rgyTJlASCHtCYLxbc908pnFZCyWL7GvuYRiMGO6kBzZbPlfQvP1/fGRbd
- gycVy7KtNJ4Ck94fYmyxBnO+Z6vffeIHFk45mCj3fp4su0x3rH0RiQP4dTmmgGlM91b9
- Fu0kqEO4mjRYI5mEXMrJuuNebPUqCFWNGsHci1fz65eKbCVS3waZxiFvSeTMUWs5M8fA Hw== 
-Received: from pps.reinject (localhost [127.0.0.1])
- by mx0a-001b2d01.pphosted.com with ESMTP id 33afsubr8c-1
- (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
- Wed, 02 Sep 2020 15:55:09 -0400
-Received: from m0098396.ppops.net (m0098396.ppops.net [127.0.0.1])
- by pps.reinject (8.16.0.36/8.16.0.36) with SMTP id 082JcBUT088215;
- Wed, 2 Sep 2020 15:55:08 -0400
-Received: from ppma03ams.nl.ibm.com (62.31.33a9.ip4.static.sl-reverse.com
- [169.51.49.98])
- by mx0a-001b2d01.pphosted.com with ESMTP id 33afsubr7j-1
- (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
- Wed, 02 Sep 2020 15:55:08 -0400
-Received: from pps.filterd (ppma03ams.nl.ibm.com [127.0.0.1])
- by ppma03ams.nl.ibm.com (8.16.0.42/8.16.0.42) with SMTP id 082JpFm6029703;
- Wed, 2 Sep 2020 19:55:05 GMT
-Received: from b06avi18878370.portsmouth.uk.ibm.com
- (b06avi18878370.portsmouth.uk.ibm.com [9.149.26.194])
- by ppma03ams.nl.ibm.com with ESMTP id 337en8d261-1
- (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
- Wed, 02 Sep 2020 19:55:05 +0000
-Received: from b06wcsmtp001.portsmouth.uk.ibm.com
- (b06wcsmtp001.portsmouth.uk.ibm.com [9.149.105.160])
- by b06avi18878370.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP
- id 082Jt36962325230
- (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
- Wed, 2 Sep 2020 19:55:03 GMT
-Received: from b06wcsmtp001.portsmouth.uk.ibm.com (unknown [127.0.0.1])
- by IMSVA (Postfix) with ESMTP id 81FA4A405B;
- Wed,  2 Sep 2020 19:55:03 +0000 (GMT)
-Received: from b06wcsmtp001.portsmouth.uk.ibm.com (unknown [127.0.0.1])
- by IMSVA (Postfix) with ESMTP id 8C8FAA405F;
- Wed,  2 Sep 2020 19:54:59 +0000 (GMT)
-Received: from li-f45666cc-3089-11b2-a85c-c57d1a57929f.ibm.com (unknown
- [9.160.121.98])
- by b06wcsmtp001.portsmouth.uk.ibm.com (Postfix) with ESMTP;
- Wed,  2 Sep 2020 19:54:59 +0000 (GMT)
-Message-ID: <d77a6cd783319702fddd06783cb84fdeb86210a6.camel@linux.ibm.com>
+ Fri,  4 Sep 2020 14:34:47 +0000 (UTC)
+Received: from wind.enjellic.com (localhost [127.0.0.1])
+ by wind.enjellic.com (8.15.2/8.15.2) with ESMTP id 084E6Dui018627;
+ Fri, 4 Sep 2020 09:06:13 -0500
+Received: (from greg@localhost)
+ by wind.enjellic.com (8.15.2/8.15.2/Submit) id 084E6BWY018626;
+ Fri, 4 Sep 2020 09:06:11 -0500
+Date: Fri, 4 Sep 2020 09:06:11 -0500
+From: "Dr. Greg" <greg@enjellic.com>
+To: Mimi Zohar <zohar@linux.ibm.com>
 Subject: Re: [RFC PATCH 00/30] ima: Introduce IMA namespace
-From: Mimi Zohar <zohar@linux.ibm.com>
-To: Christian Brauner <christian.brauner@ubuntu.com>,
- krzysztof.struczynski@huawei.com
-Date: Wed, 02 Sep 2020 15:54:58 -0400
-In-Reply-To: <20200818164943.va3um7toztazcfud@wittgenstein>
-References: <N> <20200818152037.11869-1-krzysztof.struczynski@huawei.com>
- <20200818164943.va3um7toztazcfud@wittgenstein>
-X-Mailer: Evolution 3.28.5 (3.28.5-12.el8) 
+Message-ID: <20200904140611.GA18124@wind.enjellic.com>
+References: <20200818152037.11869-1-krzysztof.struczynski@huawei.com>
+ <1597767571.3898.15.camel@HansenPartnership.com>
+ <401a2f36149f450291d1742aeb6c2260@huawei.com>
+ <5331e60b5a1afb55e2bc778db1b95998466b687d.camel@linux.ibm.com>
 Mime-Version: 1.0
-X-TM-AS-GCONF: 00
-X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:6.0.235, 18.0.687
- definitions=2020-09-02_14:2020-09-02,
- 2020-09-02 signatures=0
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- suspectscore=0 spamscore=0
- adultscore=0 lowpriorityscore=0 clxscore=1011 phishscore=0 malwarescore=0
- mlxlogscore=999 priorityscore=1501 impostorscore=0 mlxscore=0 bulkscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
- definitions=main-2009020178
-Cc: mkayaalp@cs.binghamton.edu, sunyuqiong1988@gmail.com,
- containers@lists.linux-foundation.org, jannh@google.com,
- roberto.sassu@huawei.com, linux-kernel@vger.kernel.org,
- viro@zeniv.linux.org.uk, linux-security-module@vger.kernel.org,
- silviu.vlasceanu@huawei.com, ebiederm@xmission.com, dmitry.kasatkin@gmail.com,
- linux-integrity@vger.kernel.org, luto@amacapital.net,
- torvalds@linux-foundation.org
+Content-Disposition: inline
+In-Reply-To: <5331e60b5a1afb55e2bc778db1b95998466b687d.camel@linux.ibm.com>
+User-Agent: Mutt/1.4i
+X-Greylist: Sender passed SPF test, not delayed by milter-greylist-4.2.3
+ (wind.enjellic.com [127.0.0.1]); Fri, 04 Sep 2020 09:06:13 -0500 (CDT)
+Cc: "mkayaalp@cs.binghamton.edu" <mkayaalp@cs.binghamton.edu>,
+ "sunyuqiong1988@gmail.com" <sunyuqiong1988@gmail.com>,
+ "containers@lists.linux-foundation.org"
+ <containers@lists.linux-foundation.org>,
+ Roberto Sassu <roberto.sassu@huawei.com>,
+ "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+ Krzysztof Struczynski <krzysztof.struczynski@huawei.com>,
+ James Bottomley <James.Bottomley@HansenPartnership.com>,
+ "linux-security-module@vger.kernel.org"
+ <linux-security-module@vger.kernel.org>,
+ Silviu Vlasceanu <Silviu.Vlasceanu@huawei.com>,
+ "dmitry.kasatkin@gmail.com" <dmitry.kasatkin@gmail.com>,
+ "linux-integrity@vger.kernel.org" <linux-integrity@vger.kernel.org>,
+ nick.dusek@gmail.com
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -140,58 +94,112 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
+Reply-To: "Dr. Greg" <greg@enjellic.com>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Tue, 2020-08-18 at 18:49 +0200, Christian Brauner wrote:
-> On Tue, Aug 18, 2020 at 05:20:07PM +0200, krzysztof.struczynski@huawei.com wrote:
-> > From: Krzysztof Struczynski <krzysztof.struczynski@huawei.com>
+On Wed, Sep 02, 2020 at 02:53:17PM -0400, Mimi Zohar wrote:
+
+Good morning, I hope the week is ending well for everyone.
+
+> On Fri, 2020-08-21 at 15:13 +0000, Krzysztof Struczynski wrote:
+> > > From: James Bottomley [mailto:James.Bottomley@HansenPartnership.com]
+> > > On Tue, 2020-08-18 at 17:20 +0200, krzysztof.struczynski@huawei.com
+> > > wrote:
+> > > > The measurement list remains global, with the assumption that there
+> > > > is only one TPM in the system. Each IMA namespace has a unique ID,
+> > > > that allows to track measurements per IMA namespace. Processes in one
+> > > > namespace, have access only to the measurements from that namespace.
+> > > > The exception is made for the initial IMA namespace, whose processes
+> > > > have access to all entries.
+> > > 
+> > > So I think this can work in the use case where the system owner is
+> > > responsible for doing the logging and attestation and the tenants just
+> > > trust the owner without requiring an attestation.  However, in a multi-
+> > > tenant system you need a way for the attestation to be per-container
+> > > (because the combined list of who executed what would be a security
+> > > leak between tenants).  Since we can't virtualise the PCRs without
+> > > introducing a vtpm this is going to require a vtpm infrastructure like
+> > > that used for virtual machines and then we can do IMA logging per
+> > > container.
 > > 
-> > IMA has not been designed to work with containers. It handles every
-> > process in the same way, and it cannot distinguish if a process belongs to
-> > a container or not.
+> > I agree and wonder if we should decouple the attestation trust model,
+> > which depends on the specific use case (e.g. multi/single tenant,
+> > public/private cloud), from the IMA logic of linking the measurements to
+> > the container. Indeed, attestation from within the container might require
+> > anchoring to a vTPM/vPCR and the current measurement tagging mechanism can
+> > support several ways of anchoring them to a (virtual) root of trust.
 > > 
-> > Containers use namespaces to make it appear to the processes in the
-> > containers that they have their own isolated instance of the global
-> > resource. For IMA as well, it is desirable to let processes in the
+> > > I don't think the above has to be in your first patch set, we just have
+> > > to have an idea of how it could be done to show that nothing in this
+> > > patch set precludes a follow on from doing this.
+> > 
+> > Given that virtualizing trust anchors seems like a separate problem in
+> > which industry consensus is not easy to reach for all use cases, an
+> > anchoring mechanism should probably be a separate IMA feature.
+
+> Other trust anchors for "trusted keys" has been discussed, but I wasn't
+> aware of any discussion about other trust anchors for the IMA
+> measurement list.  The IMA measurement list is very much tied to a TPM.
 > 
-> IMA is brought up on a regular basis with "we want to have this" for
-> years and then non-one seems to really care enough.
+> Including container measurements in the host measurement list, will
+> unnecessarily cause the host measurement list to grow.  The decision of
+> what should and shouldn't be included in the host measurement list
+> shouldn't be defined by the container.
 
-There is a lot of interest in IMA namespacing, but the question always
-comes back to how to enable it.  Refer to  
-https://kernsec.org/wiki/index.php/IMA_Namespacing_design_considerations
- for Stefan's analysis.
+We have been shipping, and more importantly maintaining in the wild,
+systems with a namespaced IMA implementation for 4+ years now. We
+presented the foundations for all of this at the 2015 Linux Security
+Summit in Seattle.
 
-I understand "containers" is not a kernel construct, but from my very
-limited perspective, IMA namespacing only makes sense in the context of
-a "container".  The container owner may want to know which files have
-been accessed/executed (measurements, remote attestation) and/or
-constrain which files may be accessed/executed based on signatures
-(appraisal).
+For the purposes of further conversation, I should clarify and
+indicate that we have been shipping and maintaining what a namespaced
+IMA implementation turns into when all of the engineering challenges
+have been addressed with respect to workability issues, particularly
+in regards to keeping the resultant system from being too fragile to
+be effectively deployed and maintained.
 
-> 
-> I'm highly skeptical of the value of ~2500 lines of code even if it
-> includes a bunch of namespace boilerplate. It's yet another namespace,
-> and yet another security framework.
-> Why does IMA need to be a separate namespace? Keyrings are tied to user
-> namespaces why can't IMA be? 
+If practical experience is worth anything, I don't believe that
+namespacing the current IMA implementation is the optimum path
+forward.  With respect to developing operationally relevant trusted
+platforms, the objective needs to be modeling the behavior of
+namespaces spawned from a known root behavior.
 
-In the context of a container, the measurement list and IMA/EVM
-keyrings need to be setup before the first file is measured, signature
-verified, or file hash included in the audit log.
+The current IMA implementation provides a great deal of relevant
+infrastructure, but as these conversations have suggested, namespacing
+the current implementation is problematic given how entangled it has
+become with existing kernel infrastructure.  What is needed is
+something far simpler that delegates, on the basis of a namespace,
+security policy to something other then the kernel, consistent with
+what we have learned about policy over the last 29+ years of Linux
+development.
 
-> I believe Eric has even pointed that out
-> before.
-> 
-> Eric, thoughts?
+With respect to roots of trust, I don't think TPM's/fTPM's, virtual or
+otherwise, are going to be the relevant technology moving forward,
+although they will be part of the picture.
 
-Any help with the above scenario would very be much appreciated.
+Mimi has another post down thread that I will provide some more direct
+reflections on all of this for whatever value they may have.
 
-Mimi
+> Mimi
 
+Have a good day.
+
+Dr. Greg
+
+As always,
+Dr. Greg Wettstein, Ph.D, Worker      Autonomously self-defensive
+Enjellic Systems Development, LLC     IOT platforms and edge devices.
+4206 N. 19th Ave.
+Fargo, ND  58102
+PH: 701-281-1686                      EMAIL: dg@enjellic.com
+------------------------------------------------------------------------------
+"I had far rather walk, as I do, in daily terror of eternity, than feel
+ that this was only a children's game in which all of the contestants
+ would get equally worthless prizes in the end."
+                                -- T. S. Elliot
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
