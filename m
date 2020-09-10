@@ -1,84 +1,92 @@
-Return-Path: <SRS0=JB7L=CS=lists.linux-foundation.org=containers-bounces@kernel.org>
+Return-Path: <SRS0=3EFz=CT=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 73AF5C10DAA
-	for <containers@archiver.kernel.org>; Wed,  9 Sep 2020 10:12:02 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3513DC43461
+	for <containers@archiver.kernel.org>; Thu, 10 Sep 2020 15:06:47 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id BFFD321D7A
-	for <containers@archiver.kernel.org>; Wed,  9 Sep 2020 10:12:01 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BFFD321D7A
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=enjellic.com
+	by mail.kernel.org (Postfix) with ESMTPS id 368352078B
+	for <containers@archiver.kernel.org>; Thu, 10 Sep 2020 15:06:46 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=yandex.ru header.i=@yandex.ru header.b="V/ytugEo"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 368352078B
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ioremap.net
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 87DEF87051;
-	Wed,  9 Sep 2020 10:12:01 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id CA3198762C;
+	Thu, 10 Sep 2020 15:06:45 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id T26gJTyH3S5O; Wed,  9 Sep 2020 10:11:58 +0000 (UTC)
+	with ESMTP id vR0KDNATHjBF; Thu, 10 Sep 2020 15:06:44 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id D170287011;
-	Wed,  9 Sep 2020 10:11:58 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 91DCF87530;
+	Thu, 10 Sep 2020 15:06:44 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id E6E63C0052;
-	Wed,  9 Sep 2020 10:11:57 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 7FB1EC0052;
+	Thu, 10 Sep 2020 15:06:44 +0000 (UTC)
 Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 5C394C0051
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 833A7C0051
  for <containers@lists.linux-foundation.org>;
- Wed,  9 Sep 2020 10:11:56 +0000 (UTC)
+ Thu, 10 Sep 2020 15:06:42 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 4ACAA8748A
+ by hemlock.osuosl.org (Postfix) with ESMTP id 7F1938747A
  for <containers@lists.linux-foundation.org>;
- Wed,  9 Sep 2020 10:11:56 +0000 (UTC)
+ Thu, 10 Sep 2020 15:06:42 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id 31crtm6OGS8y
+ with ESMTP id gpuGGDb-QmSI
  for <containers@lists.linux-foundation.org>;
- Wed,  9 Sep 2020 10:11:55 +0000 (UTC)
-X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from wind.enjellic.com (wind.enjellic.com [76.10.64.91])
- by hemlock.osuosl.org (Postfix) with ESMTP id 3C56087484
+ Thu, 10 Sep 2020 15:06:39 +0000 (UTC)
+X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
+Received: from forward501o.mail.yandex.net (forward501o.mail.yandex.net
+ [37.140.190.203])
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 96A9D86FBB
  for <containers@lists.linux-foundation.org>;
- Wed,  9 Sep 2020 10:11:55 +0000 (UTC)
-Received: from wind.enjellic.com (localhost [127.0.0.1])
- by wind.enjellic.com (8.15.2/8.15.2) with ESMTP id 089ABMRJ016828;
- Wed, 9 Sep 2020 05:11:23 -0500
-Received: (from greg@localhost)
- by wind.enjellic.com (8.15.2/8.15.2/Submit) id 089ABLvd016827;
- Wed, 9 Sep 2020 05:11:21 -0500
-Date: Wed, 9 Sep 2020 05:11:21 -0500
-From: "Dr. Greg" <greg@enjellic.com>
-To: Luke Hinds <lhinds@redhat.com>
-Subject: Re: [RFC PATCH 00/30] ima: Introduce IMA namespace
-Message-ID: <20200909101120.GA16191@wind.enjellic.com>
-References: <20200818152037.11869-1-krzysztof.struczynski@huawei.com>
- <20200818164943.va3um7toztazcfud@wittgenstein>
- <d77a6cd783319702fddd06783cb84fdeb86210a6.camel@linux.ibm.com>
- <20200906171413.GA8305@wind.enjellic.com>
- <CAKrSGQR3Pw=Rad2RgUuCHqr0r2Nc6x2nLoo2cVAkD+_8Vbmd7A@mail.gmail.com>
-Mime-Version: 1.0
-Content-Disposition: inline
-In-Reply-To: <CAKrSGQR3Pw=Rad2RgUuCHqr0r2Nc6x2nLoo2cVAkD+_8Vbmd7A@mail.gmail.com>
-User-Agent: Mutt/1.4i
-X-Greylist: Sender passed SPF test, not delayed by milter-greylist-4.2.3
- (wind.enjellic.com [127.0.0.1]); Wed, 09 Sep 2020 05:11:23 -0500 (CDT)
-Cc: Mimi Zohar <zohar@linux.ibm.com>,
- Christian Brauner <christian.brauner@ubuntu.com>, mkayaalp@cs.binghamton.edu,
- sunyuqiong1988@gmail.com, krzysztof.struczynski@huawei.com,
- silviu.vlasceanu@huawei.com, nick.dusek@gmail.com, jannh@google.com,
- viro@zeniv.linux.org.uk, christian@brauner.io, dmitry.kasatkin@gmail.com,
- containers@lists.linux-foundation.org, roberto.sassu@huawei.com,
- Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, luto@amacapital.net,
- linux-security-module@vger.kernel.org, ebiederm@xmission.com,
- linux-integrity@vger.kernel.org, torvalds@linux-foundation.org
+ Thu, 10 Sep 2020 15:06:38 +0000 (UTC)
+Received: from mxback22j.mail.yandex.net (mxback22j.mail.yandex.net
+ [IPv6:2a02:6b8:0:1619::222])
+ by forward501o.mail.yandex.net (Yandex) with ESMTP id 2F9F91E813E1;
+ Thu, 10 Sep 2020 18:04:58 +0300 (MSK)
+Received: from localhost (localhost [::1])
+ by mxback22j.mail.yandex.net (mxback/Yandex) with ESMTP id yuFJ0ZBXym-4ufqTEsk;
+ Thu, 10 Sep 2020 18:04:57 +0300
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yandex.ru; s=mail;
+ t=1599750297; bh=0ftwVo7c7d1m6Nvsrwk4WUedFSZ31xbE99QkGp7/EPo=;
+ h=Message-Id:Cc:Subject:In-Reply-To:Date:References:To:From;
+ b=V/ytugEo5j0Ogzikpry5dGp1yRKidd1wMYJpGIoOWi4GuO6xYvCHVRftU7Sn+p4Tn
+ W8aqDjxrp3f1506374YessluSU+Tcev12Azm7PeK/XZuceXLMn08Phm0xKI9HVDtq6
+ vZSVChSFukLkTXNAQ6anajY4q/iw2a3M9n0zqiT8=
+Authentication-Results: mxback22j.mail.yandex.net;
+ dkim=pass header.i=@yandex.ru
+Received: by iva5-0eec708f962b.qloud-c.yandex.net with HTTP;
+ Thu, 10 Sep 2020 18:04:56 +0300
+From: Evgeniy Polyakov <zbr@ioremap.net>
+Envelope-From: drustafa@yandex.ru
+To: "ebiederm@xmission.com" <ebiederm@xmission.com>,
+ Matt Bennett <matt.bennett@alliedtelesis.co.nz>
+In-Reply-To: <87lfjn9s3v.fsf@x220.int.ebiederm.org>
+References: <20200702002635.8169-1-matt.bennett@alliedtelesis.co.nz>
+ <87k0zlspxs.fsf@x220.int.ebiederm.org>
+ <94defa61204731d7dce37edeb98069c8647722c2.camel@alliedtelesis.co.nz>
+ <87lfjn9s3v.fsf@x220.int.ebiederm.org>
+Subject: Re: [PATCH 0/5] RFC: connector: Add network namespace awareness
+X-Mailer: Yamail [ http://yandex.ru ] 5.0
+Date: Thu, 10 Sep 2020 18:04:56 +0300
+Message-Id: <74141599750086@mail.yandex.ru>
+MIME-Version: 1.0
+X-Content-Filtered-By: Mailman/MimeDel 2.1.15
+Cc: "netdev@vger.kernel.org" <netdev@vger.kernel.org>,
+ "containers@lists.linux-foundation.org"
+ <containers@lists.linux-foundation.org>,
+ "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -90,101 +98,38 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-Reply-To: "Dr. Greg" <greg@enjellic.com>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Mon, Sep 07, 2020 at 12:50:07PM +0100, Luke Hinds wrote:
-
-Good morning, I hope the week is going well for everyone.
-
-> On Sun, Sep 6, 2020 at 6:15 PM Dr. Greg <greg@enjellic.com> wrote:
-> > Just to be clear, we are not campaigning or advocating what we have
-> > done but are simply providing background for discussion.  We haven't
-> > campaigned this approach given how complex the kernel development has
-> > become, particurlarly with respect to security infrastructure.
-> >
-> > Candidly, given the politics of security technology being viewed as
-> > 'constraining' user rights, I think that a lot of forthcoming security
-> > technology may end up being out of tree moving forward.
-
-> I think it's prudent to look forward and plan diligently, but I would not
-> want perfect to be the enemy of good.
->
-> I approach this more from a user's perspective. We are using IMA in
-> https://keylime.dev to measure a host and would like to measure
-> within a container too. It's the most common request we hear from
-> our users.
->
-> Perhaps we all collaborate on a proposal extending Stefans work here:
-> https://kernsec.org/wiki/index.php/IMA_Namespacing_design_considerations
->
-> I have seen around 3-4 patches now get submitted, so work has been
-> done before, and as above, users are present too. We could then have
-> some consensus on how this should look and later patches might have
-> more success at landing.
->
-> Would anyone be interested in this and have recommendations on how
-> we could approach this?
-
-Obviously everyone is interested in sharpening their own knives so the
-first challenge will be defining where this theme of measurement and
-attestation needs to go.
-
-Our focus in all of this is from a platform behavior modeling
-perspective.  Our objective is to design platforms/containers that are
-capable of self-disciplining themselves in the event that they exhibit
-behavior inconsistent with the wishes of their designer.  Container
-measurement trivially falls out of this model.
-
-With respect to measurement namespaces, the first problem to be
-addressed is what takes custody and responsibility for the measurement
-events.  In classic IMA this is, of course, a TPM.  In our model we
-use a Trusted Execution Environment (TEE) as this entity.
-
-The TEE makes a decision as to whether or not the kernel should label
-a context of execution as being a 'bad actor' if it indicates a desire
-to exhibit a behavior inconsistent with a previously defined model.
-As I noted previously we have an SGX based solution that provides this
-infrastructure but have designed and are moving to a micro-controller
-based alternative, given the fact that SGX is now moving to a 'cloud
-only' solution.
-
-One of the pain points in all of this appears to be whether or not a
-measurement stream from a container should feed into the root
-measurement of the platform or be fed into a measurement/monitoring
-domain that can be attested against the root measurement of the
-platform.  Based on our experiences the latter model is the only one
-that is feasible or makes sense from an attestation perspective.
-
-So it would seem that a generic approach to directing the target of
-the measurement events would be the first objective.  If there is
-interest we can make a copy of our patch available as it supports both
-models.
-
-> - Luke
-
-Have a good day.
-
-Dr. Greg
-
-As always,
-Dr. Greg Wettstein, Ph.D, Worker      Autonomously self-defensive
-Enjellic Systems Development, LLC     IOT platforms and edge devices.
-4206 N. 19th Ave.
-Fargo, ND  58102
-PH: 701-281-1686                      EMAIL: dg@enjellic.com
-------------------------------------------------------------------------------
-"I created a hack to make the division come out right ... I was
- relieved because I thought I was coding wrong.
-
- Did you?  It took a guy (Thomas Nicely) with a Ph.D. doing heavy
- research in computational number theory to find it, yet you found it
- while working on a game in QuickBasic?"
-                                -- Slashdot
-_______________________________________________
-Containers mailing list
-Containers@lists.linux-foundation.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
+ICAgSGkgZXZlcnlvbmUKCiAgIMOCCgogICAxMy4wNy4yMDIwLCAyMTo0MiwgIkVyaWMgVy4gQmll
+ZGVybWFuIiA8ZWJpZWRlcm1AeG1pc3Npb24uY29tPjoKCiAgICAgw4IKICAgICDDgiBXaGljaCBt
+ZWFucyBhbiB1bnByaXZpbGVnZWQgdXNlciBjYW4gY3JlYXRlIGEgdXNlciBuYW1lc3BhY2UgYW5k
+CiAgICAgZ2V0CiAgICAgw4IgY29ubmVjdG9yIHRvIHJlcG9ydCB3aGljaGV2ZXIgaWRzIHRoZXkg
+d2FudCB0byB1c2VycyBpbiBhbm90aGVyCiAgICAgw4IgbmFtZXNwYWNlLiBBS0EgbGllLgogICAg
+IMOCCiAgICAgw4IgU28gdGhpcyBhcHBlYXJzIHRvIG1ha2UgY29ubmVjdG9yIGNvbXBsZXRlbHkg
+dW5yZWxpYWJsZS4KCiAgIMOCCgogICDDggoKICAgICBNeSBzZW5zZSBpcyB0aGF0IHRoZXJlIGFy
+ZSBmZXcgZW5vdWdoIHVzZXMgb2YgY29ubmVjdG9yIHRoYXQgaWYKICAgICBkb24ndAogICAgIG1p
+bmQgY2hhbmdpbmcgeW91ciBjb2RlIHNvIHRoYXQgaXQgd29ya3MgaW4gYSBjb250YWluZXIgKGFu
+ZCB0aGUKICAgICBwaWRmZAogICAgIHN1cHBvcnQgYXBwZWFycyB0byBhbHJlYWR5IHByb3ZpZGUg
+d2hhdCB5b3UgbmVlZCkgdGhhdCBpcyBwcm9iYWJseQogICAgIHRoZQogICAgIHBhc3Qgb2YgbGVh
+c3QgcmVzaXN0YW5jZS4KICAgICBJIGRvbid0IHRoaW5rIGl0IG1haW50YWluaW5nIGNvbm5lY3Rv
+ciBzdXBwb3J0IHdvdWxkIGJlIG11Y2ggbW9yZQogICAgIHdvcmsKICAgICB0aGFuIGl0IGlzIG5v
+dywgaWYgc29tZW9uZSB3ZW50IHRocm91Z2ggYW5kIGRpZCB0aGUgd29yayB0bwogICAgIGNhcmVm
+dWxseQogICAgIGNvbnZlcnQgdGhlIGNvZGUuIFNvIGlmIHNvbWVvbmUgcmVhbGx5IHdhbnRzIHRv
+IHVzZSBjb25uZWN0b3Igd2UgY2FuCiAgICAgbmFtZXNwYWNlIHRoZSBjb2RlLgogICAgIE90aGVy
+d2lzZSBpdCBpcyBwcm9iYWJseSBtYWtlcyBzZW5zZSB0byBsZXQgdGhlIGZldyB1c2VycyBncmFk
+dWFsbHkKICAgICBzdG9wCiAgICAgdXNpbmcgY29ubmVjdG9yIHNvIHRoZSBjb2RlIGNhbiBldmVu
+dHVhbGx5IGJlIHJlbW92ZWQuCgogICDDggoKICAgU3VjaCBhIG5pY2UgYnJpZ2h0IGZ1dHVyZSBm
+b3IgY29ubmVjdG9yIHlvdSBkZXBpY3QgaGVyZSBkaXNyZWdhcmRpbmcKICAgb3RoZXJzIHdvcmsK
+CiAgIGFuZCB0aGlzIGNvbnRyaWJ1dGlvbiBFcmljIDopCgogICDDggoKICAgSWYgd2UgY2FuIG92
+ZXJjb21lIHNob3dlZCBhYm92ZSBpc3N1ZSB3aXRoIGludmFsaWQgaWRzLCBjb25uZWN0b3Igc3Rp
+bGwKICAgY2FuIGdldCBhIGZldyBtb3JlIHllYXJzIHRvIGxpdmUsCgogICBkb24ndCB5b3Ugd2Fu
+dCB0byBnaXZlIGl0IGEgY2hhbmNlPwoKICAgw4IKCiAgICAgUGxlYXNlIGNoZWNrb3V0IG91dCB0
+aGUgcGlkZmQgc3VwcG9ydCBhbmQgdGVsbCB1cyBob3cgaXQgbWVldHMgeW91cgogICAgIG5lZWRz
+LiBJZiB0aGVyZSBpcyBzb21ldGhpbmcgdGhhdCBjb25uZWN0b3IgcmVhbGx5IGRvZXMgYmV0dGVy
+IGl0CiAgICAgd291bGQKICAgICBiZSBnb29kIHRvIGtub3cuCl9fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRh
+aW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5k
+YXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
