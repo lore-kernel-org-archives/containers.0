@@ -6,89 +6,86 @@ X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
 	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 63013C4346E
-	for <containers@archiver.kernel.org>; Mon, 21 Sep 2020 18:38:46 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5CA56C47095
+	for <containers@archiver.kernel.org>; Mon, 21 Sep 2020 19:16:38 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id D63A6207BC
-	for <containers@archiver.kernel.org>; Mon, 21 Sep 2020 18:38:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id A8212216C4
+	for <containers@archiver.kernel.org>; Mon, 21 Sep 2020 19:16:37 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=google.com header.i=@google.com header.b="GKj3LJZb"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D63A6207BC
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=google.com header.i=@google.com header.b="tewFT15A"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A8212216C4
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lists.linux-foundation.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 9511A84C4E;
-	Mon, 21 Sep 2020 18:38:45 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id upXXrbLVl139; Mon, 21 Sep 2020 18:38:44 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 993988466C;
-	Mon, 21 Sep 2020 18:38:44 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 90314C0859;
-	Mon, 21 Sep 2020 18:38:44 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 51B78C0051
- for <containers@lists.linux-foundation.org>;
- Mon, 21 Sep 2020 18:38:43 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 3E37E2079A
- for <containers@lists.linux-foundation.org>;
- Mon, 21 Sep 2020 18:38:43 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 2627D2034C;
+	Mon, 21 Sep 2020 19:16:37 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id 8EFg9+W81V+9; Mon, 21 Sep 2020 19:16:36 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by silver.osuosl.org (Postfix) with ESMTP id D978820134;
+	Mon, 21 Sep 2020 19:16:35 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id C9C4CC0889;
+	Mon, 21 Sep 2020 19:16:35 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id A5EE8C0051
+ for <containers@lists.linux-foundation.org>;
+ Mon, 21 Sep 2020 19:16:34 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by hemlock.osuosl.org (Postfix) with ESMTP id 8E0468708A
+ for <containers@lists.linux-foundation.org>;
+ Mon, 21 Sep 2020 19:16:34 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id PQjb7UqRDfe7
+ with ESMTP id ngV+PqBRR7+N
  for <containers@lists.linux-foundation.org>;
- Mon, 21 Sep 2020 18:38:42 +0000 (UTC)
+ Mon, 21 Sep 2020 19:16:33 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-ed1-f65.google.com (mail-ed1-f65.google.com
- [209.85.208.65])
- by silver.osuosl.org (Postfix) with ESMTPS id D753E2076E
+Received: from mail-ua1-f66.google.com (mail-ua1-f66.google.com
+ [209.85.222.66])
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 9383F87084
  for <containers@lists.linux-foundation.org>;
- Mon, 21 Sep 2020 18:38:41 +0000 (UTC)
-Received: by mail-ed1-f65.google.com with SMTP id w1so13846722edr.3
+ Mon, 21 Sep 2020 19:16:33 +0000 (UTC)
+Received: by mail-ua1-f66.google.com with SMTP id d18so4688131uav.4
  for <containers@lists.linux-foundation.org>;
- Mon, 21 Sep 2020 11:38:41 -0700 (PDT)
+ Mon, 21 Sep 2020 12:16:33 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=20161025;
  h=mime-version:references:in-reply-to:from:date:message-id:subject:to
- :cc; bh=C7G6A5IlEG2WC0nmoX7XdAtZ+v2I/zqqDO0euVW1SNE=;
- b=GKj3LJZbIecljJchWIPsVbgqFMg87glRuzFxDZUSnJCVadINrRQoPekzrtKM6pXFG4
- jWmJoGWdPsML6lH9FjKOKPIrPw63/cKOhXUp5e0TPpKeUNin829jFNlYXC5LjVUi7psX
- Q8fipqI46lZkA3SDqje4ta/W4Eh+vI3SKfAi5yGK5526zHVe4lUCgrqmAQiiqMQXKcXP
- 2qWHELpxN3jG2I/YmRVE/92CZfYkjr2vDdMUrejhZq+rTTRxVVnar1vEZXkj/I4Nld8N
- b5fF2BDFiRGJmzlxKgzu9iX8XLxJoLdMWZl0/TkOILYMjMeMo1Mmy0vuKiMc4RKUduOk
- a9ew==
+ :cc; bh=ZCDaY+bkm/0dH12hWKBLXs8sFNuKqvKh9NzTaSkJTSw=;
+ b=tewFT15AsEzpuKyvlpTu5R3peD/3EkklLECjakR0tkxwO97yjiKdU4IH4tHN3hhyD3
+ 8El1/BBXDcgFynjD5Kh8iAEB+581gGhRIWK6+0fU9rr/PSBeEehjECcdkFZ+PIDmLLYl
+ rEsk22wPgoyg7d/rLBTu5OZbJ+83zzMdRdOkhV5mdx6yiZ6RDpgvtKkDbn27HzYH4KX6
+ WHeM7BWTRstoznGogcI9Q3044Bc3qApw7s01eS9aSlWrxMQbYQvx7kZA3i3rBQVc7Gzd
+ Mb9X9iaZrpufnlQbS5KEFq1UjzhfD9zw9kXXRe9/6Pl6JUGHl0QpX6fnPrFE3jRHwtNl
+ 0cUw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
  h=x-gm-message-state:mime-version:references:in-reply-to:from:date
  :message-id:subject:to:cc;
- bh=C7G6A5IlEG2WC0nmoX7XdAtZ+v2I/zqqDO0euVW1SNE=;
- b=RgW1fuBDzG+J+9jzr8xZcsq3zPswfPNRTvfiiLiDs9i6rpOYA2ByJ0bmxPYS2w7JiP
- cir1B2pvO+WWlto5zEsnc2AQd5Bd872pLqDXVH6k/Y0Eyrv4MA7l6NhsjFpncYTtXU8x
- rtnSWzfq8OSczbdaEaPrpTFjjZ5NdGF6HEGkOsDOMtgYbQMX9x171eMWMCMpVzvUMMXD
- 9lUDWL1cy2+aR/YMlCVx5MeOP8cwWh0ev5uQkAGOrLbn7QG/4Td0oB1itvmLlNJPpqcp
- xsmVaZ9EDOzDKVvGsugF1swkEKraXJsqg18gLJI5pTfkMivyhEELgtjUnF3d4JcBCglU
- oigw==
-X-Gm-Message-State: AOAM531Qvb7bW9jPtdmwbenf/aGBa/lJ5n5K2vPYCd4gvyJQ9DrDXsVJ
- piCh3H6mJ0XOAZt5nG6NipIxzPMA0GUIC6RCTbsUbg==
-X-Google-Smtp-Source: ABdhPJw1S/OudX6ksjY6lypppCEWZ0hIJHznPBazJowA/vFH3Ctsk57UwDR5UNDwwwTnZIA6s/67nZwO+5kWeI/4UA0=
-X-Received: by 2002:a05:6402:176c:: with SMTP id
- da12mr281928edb.386.1600713520102; 
- Mon, 21 Sep 2020 11:38:40 -0700 (PDT)
+ bh=ZCDaY+bkm/0dH12hWKBLXs8sFNuKqvKh9NzTaSkJTSw=;
+ b=I1QWq4nOyvsFhl3fYiX4x1HCntlcGh5LldVgnmJdQrSKAqsp6VzAa+sq7IbRsAr6Nt
+ o9hl0pJ7531yWex6O0emTtssqF+MkytprGfps1cmL2QbrgL+YrDX73Fbatkdz+0hUiAH
+ izE8h24bV4NIOIqnrAlgvBnaFJu/sXNTnxBMpNF32aKVTSkYk4kazRlzmdc5NTjephBu
+ GX6m/nFSRfp2s561I++3VkXoBENGjtJSOd2ZSMQbJ3ld6lEQ/sC5HBPHzuCfysL2H0Uf
+ TIyluUsDTv0GU0+Zja3yf1lcfOVYmea61tai00Dj35KuY9fW78ikzZgo3ti22O5eaOqL
+ Hz2Q==
+X-Gm-Message-State: AOAM531lMy3qmNPQVD7FbO7BNuBkYDuHHZtdJ1Zp7IVGdeOiv3QELebE
+ w3H0nBBBxjbulpJtSvZelOzcqsTqOpgGfQ8Hll8XIg==
+X-Google-Smtp-Source: ABdhPJwRXYKVMGaY5ggPVk6CztjQIvkE7mOrDoQPqHVdweEFScrXaPDOm3pNYCPRx6yJ5PkBeUlVbM6Ka8GeQRpYGt0=
+X-Received: by 2002:ab0:1e84:: with SMTP id o4mr1209850uak.74.1600715792227;
+ Mon, 21 Sep 2020 12:16:32 -0700 (PDT)
 MIME-Version: 1.0
 References: <cover.1600661418.git.yifeifz2@illinois.edu>
- <6af89348c08a4820039e614a090d35aa1583acff.1600661419.git.yifeifz2@illinois.edu>
- <CAG48ez0OqZavgm0BkGjCAJUr5UfRgbeCbmLOZFJ=Rj46COcN3Q@mail.gmail.com>
-In-Reply-To: <CAG48ez0OqZavgm0BkGjCAJUr5UfRgbeCbmLOZFJ=Rj46COcN3Q@mail.gmail.com>
-Date: Mon, 21 Sep 2020 20:38:11 +0200
-Message-ID: <CAG48ez0gBRvTEXX_L3881jQM8Aw6SURbMPafW18GihWe4ZmtmQ@mail.gmail.com>
-Subject: Re: [RFC PATCH seccomp 1/2] seccomp/cache: Add "emulator" to check if
- filter is arg-dependent
+In-Reply-To: <cover.1600661418.git.yifeifz2@illinois.edu>
+Date: Mon, 21 Sep 2020 21:16:06 +0200
+Message-ID: <CAG48ez3Ofqp4crXGksLmZY6=fGrF_tWyUCg7PBkAetvbbOPeOA@mail.gmail.com>
+Subject: Re: [RFC PATCH seccomp 0/2] seccomp: Add bitmap cache of
+ arg-independent filter results that allow syscalls
 To: YiFei Zhu <zhuyifei1999@gmail.com>
 Cc: Andrea Arcangeli <aarcange@redhat.com>,
  Giuseppe Scrivano <gscrivan@redhat.com>, Will Drewry <wad@chromium.org>,
@@ -118,41 +115,104 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Mon, Sep 21, 2020 at 7:47 PM Jann Horn <jannh@google.com> wrote:
-> On Mon, Sep 21, 2020 at 7:35 AM YiFei Zhu <zhuyifei1999@gmail.com> wrote:
-> > SECCOMP_CACHE_NR_ONLY will only operate on syscalls that do not
-> > access any syscall arguments or instruction pointer. To facilitate
-> > this we need a static analyser to know whether a filter will
-> > access. This is implemented here with a pseudo-emulator, and
-> > stored in a per-filter bitmap. Each seccomp cBPF instruction,
-> > aside from ALU (which should rarely be used in seccomp), gets a
-> > naive best-effort emulation for each syscall number.
-> >
-> > The emulator works by following all possible (without SAT solving)
-> > paths the filter can take. Every cBPF register / memory position
-> > records whether that is a constant, and of so, the value of the
-> > constant. Loading from struct seccomp_data is considered constant
-> > if it is a syscall number, else it is an unknown. For each
-> > conditional jump, if the both arguments can be resolved to a
-> > constant, the jump is followed after computing the result of the
-> > condition; else both directions are followed, by pushing one of
-> > the next states to a linked list of next states to process. We
-> > keep a finite number of pending states to process.
+On Mon, Sep 21, 2020 at 7:35 AM YiFei Zhu <zhuyifei1999@gmail.com> wrote:
+> This series adds a bitmap to cache seccomp filter results if the
+> result permits a syscall and is indepenent of syscall arguments.
+> This visibly decreases seccomp overhead for most common seccomp
+> filters with very little memory footprint.
+
+It would be really nice if, based on this, we could have a new entry
+in procfs that has one line per entry in each syscall table. Maybe
+something that looks vaguely like:
+
+X86_64 0 (read): ALLOW
+X86_64 1 (write): ALLOW
+X86_64 2 (open): ERRNO -1
+X86_64 3 (close): ALLOW
+X86_64 4 (stat): <argument-dependent>
+[...]
+I386 0 (restart_syscall): ALLOW
+I386 1 (exit): ALLOW
+I386 2 (fork): KILL
+[...]
+
+This would be useful both for inspectability (at the moment it's
+pretty hard to figure out what seccomp rules really apply to a given
+task) and for testing (so that we could easily write unit tests to
+verify that the bitmap calculation works as expected).
+
+But if you don't want to implement that right now, we can do that at a
+later point - while it would be nice for making it easier to write
+tests for this functionality, I don't see it as a blocker.
+
+
+> The overhead of running Seccomp filters has been part of some past
+> discussions [1][2][3]. Oftentimes, the filters have a large number
+> of instructions that check syscall numbers one by one and jump based
+> on that. Some users chain BPF filters which further enlarge the
+> overhead. A recent work [6] comprehensively measures the Seccomp
+> overhead and shows that the overhead is non-negligible and has a
+> non-trivial impact on application performance.
 >
-> Is this actually necessary, or can we just bail out on any branch that
-> we can't statically resolve?
+> We propose SECCOMP_CACHE, a cache-based solution to minimize the
+> Seccomp overhead. The basic idea is to cache the result of each
+> syscall check to save the subsequent overhead of executing the
+> filters. This is feasible, because the check in Seccomp is stateless.
+> The checking results of the same syscall ID and argument remains
+> the same.
+>
+> We observed some common filters, such as docker's [4] or
+> systemd's [5], will make most decisions based only on the syscall
+> numbers, and as past discussions considered, a bitmap where each bit
+> represents a syscall makes most sense for these filters.
+[...]
+> Statically analyzing BPF bytecode to see if each syscall is going to
+> always land in allow or reject is more of a rabbit hole, especially
+> there is no current in-kernel infrastructure to enumerate all the
+> possible architecture numbers for a given machine.
 
-Aaaah, now I get what's going on. You statically compute a bitmask
-that says whether a given syscall number always has a fixed result
-*per architecture number*, and then use that later to decide whether
-results can be cached for the combination of a specific seccomp filter
-and a specific architecture number. Which mostly works, except that it
-means you end up with weird per-thread caches and you get interference
-between ABIs (so if a process e.g. filters the argument numbers for
-syscall 123 in ABI 1, the results for syscall 123 in ABI 2 also can't
-be cached).
+You could add that though. Or if you think that that's too much work,
+you could just do it for x86 and arm64 and then use a Kconfig
+dependency to limit this to those architectures for now.
 
-Anyway, even though this works, I think it's the wrong way to go about it.
+> So rather than
+> doing that, we propose to cache the results after the BPF filters are
+> run.
+
+Please don't add extra complexity just to work around a limitation in
+existing code if you could instead remove that limitation in existing
+code. Otherwise, code will become unnecessarily hard to understand and
+inefficient.
+
+You could let struct seccomp_filter contain three bitmasks - one for
+the "native" architecture and up to two for "compat" architectures
+(gated on some Kconfig flag).
+
+alpha has 1 architecture numbers, arc has 1 (per build config), arm
+has 1, arm64 has 2, c6x has 1 (per build config), csky has 1, h8300
+has 1, hexagon has 1, ia64 has 1, m68k has 1, microblaze has 1, mips
+has 3 (per build config), nds32 has 1 (per build config), nios2 has 1,
+openrisc has 1, parisc has 2, powerpc has 2 (per build config), riscv
+has 1 (per build config), s390 has 2, sh has 1 (per build config),
+sparc has 2, x86 has 2, xtensa has 1.
+
+> And since there are filters like docker's who will check
+> arguments of some syscalls, but not all or none of the syscalls, when
+> a filter is loaded we analyze it to find whether each syscall is
+> cacheable (does not access syscall argument or instruction pointer) by
+> following its control flow graph, and store the result for each filter
+> in a bitmap. Changes to architecture number or the filter are expected
+> to be rare and simply cause the cache to be cleared. This solution
+> shall be fully transparent to userspace.
+
+Caching whether a given syscall number has fixed per-architecture
+results across all architectures is a pretty gross hack, please don't.
+
+
+
+> Ongoing work is to further support arguments with fast hash table
+> lookups. We are investigating the performance of doing so [6], and how
+> to best integrate with the existing seccomp infrastructure.
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
