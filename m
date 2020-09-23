@@ -2,103 +2,106 @@ Return-Path: <SRS0=TA6K=DA=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_ADSP_CUSTOM_MED,
-	DKIM_INVALID,DKIM_SIGNED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A821EC4363D
-	for <containers@archiver.kernel.org>; Wed, 23 Sep 2020 22:55:07 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D2BB8C2D0A8
+	for <containers@archiver.kernel.org>; Wed, 23 Sep 2020 23:29:31 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 2DE9C208E4
-	for <containers@archiver.kernel.org>; Wed, 23 Sep 2020 22:55:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 4AED820BED
+	for <containers@archiver.kernel.org>; Wed, 23 Sep 2020 23:29:31 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="oqxS8qNo"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2DE9C208E4
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="CK/yLRWK"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4AED820BED
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=chromium.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id B80F327422;
-	Wed, 23 Sep 2020 22:55:06 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id E7DF1844E4;
+	Wed, 23 Sep 2020 23:29:30 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id w6jPQgmkRYpC; Wed, 23 Sep 2020 22:55:05 +0000 (UTC)
+	with ESMTP id xSescZb8iIda; Wed, 23 Sep 2020 23:29:30 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 60145204F5;
-	Wed, 23 Sep 2020 22:55:05 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 5CCF0844AA;
+	Wed, 23 Sep 2020 23:29:30 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 44A16C0859;
-	Wed, 23 Sep 2020 22:55:05 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 5178CC0889;
+	Wed, 23 Sep 2020 23:29:30 +0000 (UTC)
 Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id E566AC0051
+ by lists.linuxfoundation.org (Postfix) with ESMTP id D12C3C0051
  for <containers@lists.linux-foundation.org>;
- Wed, 23 Sep 2020 22:55:03 +0000 (UTC)
+ Wed, 23 Sep 2020 23:29:28 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id CE36286357
+ by fraxinus.osuosl.org (Postfix) with ESMTP id C0E9D84489
  for <containers@lists.linux-foundation.org>;
- Wed, 23 Sep 2020 22:55:03 +0000 (UTC)
+ Wed, 23 Sep 2020 23:29:28 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id Fw5YGfg9aqMs
+ with ESMTP id L8DVApNFioqn
  for <containers@lists.linux-foundation.org>;
- Wed, 23 Sep 2020 22:55:03 +0000 (UTC)
+ Wed, 23 Sep 2020 23:29:28 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-pj1-f66.google.com (mail-pj1-f66.google.com
- [209.85.216.66])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id 67D79862AC
+Received: from mail-pj1-f68.google.com (mail-pj1-f68.google.com
+ [209.85.216.68])
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id 29226844AA
  for <containers@lists.linux-foundation.org>;
- Wed, 23 Sep 2020 22:55:03 +0000 (UTC)
-Received: by mail-pj1-f66.google.com with SMTP id v14so494137pjd.4
+ Wed, 23 Sep 2020 23:29:28 +0000 (UTC)
+Received: by mail-pj1-f68.google.com with SMTP id u3so540018pjr.3
  for <containers@lists.linux-foundation.org>;
- Wed, 23 Sep 2020 15:55:03 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
- h=mime-version:references:in-reply-to:from:date:message-id:subject:to
- :cc; bh=j5gedaAOsIrZq5PKp+0Jk61jv8ft5ubFJ6EeG7chCIU=;
- b=oqxS8qNogb1fOb/klYC76hy0bcc41q0PuzY3CDj6tCV0lcb956gAkHxiZj3rU9k0+8
- uZB7vX8Uma+S1r656ayq5CQA23gyP7By5daJaKsoZZgW7Q+/5Wvfl2f2tenLY8t8kreg
- XyxjAExc9P4c0jEkXHMJpwLc+oqXrcybu2y5hSOJiH4I64Uq3f96zEVLFA8Slrhw6yYc
- YBsho4nPU0JSMVcNrEt/+Y1wUZ6xZ/ULuH4Lsrf7xpRf1Na0AxY63IVz+RAq8GAO3KpO
- zWq8HFKk5yMQ7ezF454KzOahj6mNFd/SWrdIqK3isAyqBgayqQHSwVQLP5n3GbY11LkM
- XbBA==
+ Wed, 23 Sep 2020 16:29:28 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=chromium.org; s=google;
+ h=from:to:cc:subject:date:message-id:in-reply-to:references
+ :mime-version:content-transfer-encoding;
+ bh=Sc3ebczz8rmNH2w8JraN/35ap0kTxnvAQhEv63luYfE=;
+ b=CK/yLRWK/GnklstIhHZjn/0pYYnnQjH99MYWDkAXuYI9+NOqvUU0ANa6rBD+NsWFEz
+ c7QexSPQWD74DI1zL2hhf0A48GuOV9gJ6xUM59jCUCjfUWNr9xxPmzGVjGXG9Ux5vdnC
+ z4nOhOyvGdEr88w/pVmbgsicGvkUkxDZlRCWA=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
- h=x-gm-message-state:mime-version:references:in-reply-to:from:date
- :message-id:subject:to:cc;
- bh=j5gedaAOsIrZq5PKp+0Jk61jv8ft5ubFJ6EeG7chCIU=;
- b=GmVtArbp5cXJamABGWl76xStjM9VsUebkkYp+aj0bMM35RVcrvGNTdiZ6TLrS+A1RH
- vQwZC2hvY37NR42Aynit0UXgbbpR6df5gnkM66cUhQ2FIXPtQf3DKfanIxLS7tXX3/h1
- G4Bg5pv2dLut3S6QIlHfLQOH9xMevoPqX6aOP8HCtEJSMyrqNVG4Wj+8obhffIVMT3aD
- XxE2F9c4mTy2U86ofI2JJqOJ+T2yIlmYQXbFqNHIkTeZ0GLmtJQ9Vj9/a8pp7VHv7Aji
- 1NRf/SUUCdkzsGjpEeCoHdEGFb4ZQ4BBWVV9dJL+AUd787dOjCrKH3KJprM/g4u99Qmr
- xzTQ==
-X-Gm-Message-State: AOAM532L773PA/WyvJpdFCOhN4JR8PGLCT9sCjIdIi5buwK1sEd8FNFX
- pv5exKu3xwJ/oKhkv4pFozp7LwlCUAS22zs2FTY=
-X-Google-Smtp-Source: ABdhPJwWSQ9+l2sCXZKxSDP+41/D+lmN46Z+3/yUp8q+V4zRWvBBiZCDqQZudlbnm+7yPGL7OLs4b0hruVR4z8E+SrQ=
-X-Received: by 2002:a17:90b:3252:: with SMTP id
- jy18mr1305967pjb.1.1600901702921; 
- Wed, 23 Sep 2020 15:55:02 -0700 (PDT)
+ h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+ :references:mime-version:content-transfer-encoding;
+ bh=Sc3ebczz8rmNH2w8JraN/35ap0kTxnvAQhEv63luYfE=;
+ b=Yq2i6Rm7M9pCIil0q6W++8DwopVmcPvd0/EwGPXPwkLrBHgQfMbc0dXHKbvZp08+/w
+ 1CcJS9pF6cQIxAw40kXg2GBJsIDCHQdwmOEuifx14Xg+QaoiMPGICHgFjf40QzMoXNBJ
+ wp0cNoZtZVWCpsnWwQbjiBsN8zjFqqHyu86OpcnDw9heB230udlAUPHK/tohewVRdbTF
+ q5AWBh6SxVVJJdCJGgN7TyHqimz3x+cuZ6h+Ra3LuOy5pSfgYeAjRq+Mz/e/qt4fGsNf
+ UM9+ytv6QloebJg7I1zrtSLkYta20SK0dVRLQvbwQRKhdFzKoTjRz+dA84c3/ga6zNWw
+ KmAA==
+X-Gm-Message-State: AOAM533v/55gHdybfU2ZlbETtACkljWzlN0qKlj3cVdKb3KDqMnDf7T4
+ akhwo0G9SJdYXc/EPyZl3a6cLQ==
+X-Google-Smtp-Source: ABdhPJyZ7o0DnR5kI8957XIopuSRrBSpPx9KS7ET42fO0J8UuNz+QkuV9tPkvD3v4Fah2MtxvVfhKg==
+X-Received: by 2002:a17:90a:db05:: with SMTP id
+ g5mr1549879pjv.22.1600903767757; 
+ Wed, 23 Sep 2020 16:29:27 -0700 (PDT)
+Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
+ by smtp.gmail.com with ESMTPSA id w185sm724485pfc.36.2020.09.23.16.29.26
+ (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+ Wed, 23 Sep 2020 16:29:26 -0700 (PDT)
+From: Kees Cook <keescook@chromium.org>
+To: YiFei Zhu <yifeifz2@illinois.edu>
+Subject: [PATCH 4/6] seccomp: Emulate basic filters for constant action results
+Date: Wed, 23 Sep 2020 16:29:21 -0700
+Message-Id: <20200923232923.3142503-5-keescook@chromium.org>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20200923232923.3142503-1-keescook@chromium.org>
+References: <20200923232923.3142503-1-keescook@chromium.org>
 MIME-Version: 1.0
-References: <cover.1600661418.git.yifeifz2@illinois.edu>
- <202009231224.21BCB3BC6@keescook>
-In-Reply-To: <202009231224.21BCB3BC6@keescook>
-From: YiFei Zhu <zhuyifei1999@gmail.com>
-Date: Wed, 23 Sep 2020 17:54:51 -0500
-Message-ID: <CABqSeAR+69BQ7OKJ9o2DD1=uz8ZozY8ygu41oodn-GUYb_gVmQ@mail.gmail.com>
-Subject: Re: [RFC PATCH seccomp 0/2] seccomp: Add bitmap cache of
- arg-independent filter results that allow syscalls
-To: Kees Cook <keescook@chromium.org>
 Cc: Andrea Arcangeli <aarcange@redhat.com>,
- Giuseppe Scrivano <gscrivan@redhat.com>, YiFei Zhu <yifeifz2@illinois.edu>,
- Linux Containers <containers@lists.linux-foundation.org>,
- Tobin Feldman-Fitzthum <tobin@ibm.com>, Hubertus Franke <frankeh@us.ibm.com>,
+ Giuseppe Scrivano <gscrivan@redhat.com>, Will Drewry <wad@chromium.org>,
+ Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>,
+ linux-api@vger.kernel.org, containers@lists.linux-foundation.org,
+ bpf@vger.kernel.org, Tobin Feldman-Fitzthum <tobin@ibm.com>,
+ Hubertus Franke <frankeh@us.ibm.com>, Andy Lutomirski <luto@amacapital.net>,
  Valentin Rothberg <vrothber@redhat.com>,
  Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, Jack Chen <jianyan2@illinois.edu>,
- Josep Torrellas <torrella@illinois.edu>, bpf <bpf@vger.kernel.org>,
- Tianyin Xu <tyxu@illinois.edu>
+ Josep Torrellas <torrella@illinois.edu>, Tianyin Xu <tyxu@illinois.edu>,
+ linux-kernel@vger.kernel.org
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -115,28 +118,159 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Wed, Sep 23, 2020 at 2:26 PM Kees Cook <keescook@chromium.org> wrote:
-> Did you see the RFC series for this?
->
-> https://lore.kernel.org/lkml/20200616074934.1600036-1-keescook@chromium.org/
-> [...]
-> Which also includes updated benchmarking:
->
-> https://lore.kernel.org/lkml/20200616074934.1600036-6-keescook@chromium.org/
+This emulates absolutely the most basic seccomp filters to figure out
+if they will always give the same results for a given arch/nr combo.
 
-Nice. I was not aware of that series. Looking at it, it seems that our
-reasoning for checking arch and nr only, and verify if the filter
-accesses anything else, is the same. However, the approach in that RFC
-used was some page table dark magic, and it has been concluded that an
-emulator is superior. Was there a seperate patch series with emulator?
-If not, would you mind me cherry-picking some of your changes in that
-series?
+Nearly all seccomp filters are built from the following ops:
 
-Also, I see that BPF_AND is said to be used in the discussion of the
-linked series. I think it wouldn't hurt to emulate a few BPF_ALU so
-I'll add that.
+BPF_LD  | BPF_W    | BPF_ABS
+BPF_JMP | BPF_JEQ  | BPF_K
+BPF_JMP | BPF_JGE  | BPF_K
+BPF_JMP | BPF_JGT  | BPF_K
+BPF_JMP | BPF_JSET | BPF_K
+BPF_JMP | BPF_JA
+BPF_RET | BPF_K
 
-YiFei Zhu
+These are now emulated to check for accesses beyond seccomp_data::arch
+or unknown instructions.
+
+Not yet implemented are:
+
+BPF_ALU | BPF_AND (generated by libseccomp and Chrome)
+
+Suggested-by: Jann Horn <jannh@google.com>
+Link: https://lore.kernel.org/lkml/CAG48ez1p=dR_2ikKq=xVxkoGg0fYpTBpkhJSv1w-6BG=76PAvw@mail.gmail.com/
+Signed-off-by: Kees Cook <keescook@chromium.org>
+---
+ kernel/seccomp.c  | 82 ++++++++++++++++++++++++++++++++++++++++++++---
+ net/core/filter.c |  3 +-
+ 2 files changed, 79 insertions(+), 6 deletions(-)
+
+diff --git a/kernel/seccomp.c b/kernel/seccomp.c
+index 111a238bc532..9921f6f39d12 100644
+--- a/kernel/seccomp.c
++++ b/kernel/seccomp.c
+@@ -610,7 +610,12 @@ static struct seccomp_filter *seccomp_prepare_filter(struct sock_fprog *fprog)
+ {
+ 	struct seccomp_filter *sfilter;
+ 	int ret;
+-	const bool save_orig = IS_ENABLED(CONFIG_CHECKPOINT_RESTORE);
++	const bool save_orig =
++#if defined(CONFIG_CHECKPOINT_RESTORE) || defined(SECCOMP_ARCH)
++		true;
++#else
++		false;
++#endif
+ 
+ 	if (fprog->len == 0 || fprog->len > BPF_MAXINSNS)
+ 		return ERR_PTR(-EINVAL);
+@@ -690,11 +695,78 @@ static inline bool sd_touched(pte_t *ptep)
+  * This approach could also be used to test for access to sd->arch too,
+  * if we wanted to warn about compat-unsafe filters.
+  */
+-static inline bool seccomp_filter_action_is_constant(struct bpf_prog *prog,
+-						     struct seccomp_data *sd,
+-						     u32 *action)
++static bool seccomp_filter_action_is_constant(struct bpf_prog *prog,
++					      struct seccomp_data *sd,
++					      u32 *action)
+ {
+-	/* No evaluation implementation yet. */
++	struct sock_fprog_kern *fprog = prog->orig_prog;
++	unsigned int insns;
++	unsigned int reg_value = 0;
++	unsigned int pc;
++	bool op_res;
++
++	if (WARN_ON_ONCE(!fprog))
++		return false;
++
++	insns = bpf_classic_proglen(fprog);
++	for (pc = 0; pc < insns; pc++) {
++		struct sock_filter *insn = &fprog->filter[pc];
++		u16 code = insn->code;
++		u32 k = insn->k;
++
++		switch (code) {
++		case BPF_LD | BPF_W | BPF_ABS:
++			switch (k) {
++			case offsetof(struct seccomp_data, nr):
++				reg_value = sd->nr;
++				break;
++			case offsetof(struct seccomp_data, arch):
++				reg_value = sd->arch;
++				break;
++			default:
++				/* can't optimize (non-constant value load) */
++				return false;
++			}
++			break;
++		case BPF_RET | BPF_K:
++			*action = insn->k;
++			/* success: reached return with constant values only */
++			return true;
++		case BPF_JMP | BPF_JA:
++			pc += insn->k;
++			break;
++		case BPF_JMP | BPF_JEQ | BPF_K:
++		case BPF_JMP | BPF_JGE | BPF_K:
++		case BPF_JMP | BPF_JGT | BPF_K:
++		case BPF_JMP | BPF_JSET | BPF_K:
++			switch (BPF_OP(code)) {
++			case BPF_JEQ:
++				op_res = reg_value == k;
++				break;
++			case BPF_JGE:
++				op_res = reg_value >= k;
++				break;
++			case BPF_JGT:
++				op_res = reg_value > k;
++				break;
++			case BPF_JSET:
++				op_res = !!(reg_value & k);
++				break;
++			default:
++				/* can't optimize (unknown jump) */
++				return false;
++			}
++
++			pc += op_res ? insn->jt : insn->jf;
++			break;
++		default:
++			/* can't optimize (unknown insn) */
++			return false;
++		}
++	}
++
++	/* ran off the end of the filter?! */
++	WARN_ON(1);
+ 	return false;
+ }
+ 
+diff --git a/net/core/filter.c b/net/core/filter.c
+index b2df52086445..cb1bdb0bfe87 100644
+--- a/net/core/filter.c
++++ b/net/core/filter.c
+@@ -1145,7 +1145,7 @@ static int bpf_prog_store_orig_filter(struct bpf_prog *fp,
+ 	return 0;
+ }
+ 
+-static void bpf_release_orig_filter(struct bpf_prog *fp)
++void bpf_release_orig_filter(struct bpf_prog *fp)
+ {
+ 	struct sock_fprog_kern *fprog = fp->orig_prog;
+ 
+@@ -1154,6 +1154,7 @@ static void bpf_release_orig_filter(struct bpf_prog *fp)
+ 		kfree(fprog);
+ 	}
+ }
++EXPORT_SYMBOL_GPL(bpf_release_orig_filter);
+ 
+ static void __bpf_prog_release(struct bpf_prog *prog)
+ {
+-- 
+2.25.1
+
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
