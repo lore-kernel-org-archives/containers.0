@@ -5,88 +5,88 @@ X-Spam-Level:
 X-Spam-Status: No, score=-12.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2CD11C4727E
-	for <containers@archiver.kernel.org>; Wed, 23 Sep 2020 23:29:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 67908C2D0A8
+	for <containers@archiver.kernel.org>; Wed, 23 Sep 2020 23:29:44 +0000 (UTC)
 Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id C51E220C09
-	for <containers@archiver.kernel.org>; Wed, 23 Sep 2020 23:29:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 00C3320BED
+	for <containers@archiver.kernel.org>; Wed, 23 Sep 2020 23:29:43 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="WKR5niWB"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C51E220C09
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="B4b/Q53x"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 00C3320BED
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=chromium.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id AD71786A5E;
-	Wed, 23 Sep 2020 23:29:36 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id D14A886A65;
+	Wed, 23 Sep 2020 23:29:43 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 734m3hRcn82X; Wed, 23 Sep 2020 23:29:35 +0000 (UTC)
+	with ESMTP id Ixir37aTmr4N; Wed, 23 Sep 2020 23:29:42 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id CD2C586A58;
-	Wed, 23 Sep 2020 23:29:35 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id EDDCC86A5C;
+	Wed, 23 Sep 2020 23:29:41 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id BAD0FC0889;
-	Wed, 23 Sep 2020 23:29:35 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id F0ACDC0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id DBD20C0889;
+	Wed, 23 Sep 2020 23:29:41 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id A59E3C0051
  for <containers@lists.linux-foundation.org>;
- Wed, 23 Sep 2020 23:29:33 +0000 (UTC)
+ Wed, 23 Sep 2020 23:29:40 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id E014B86A4D
+ by silver.osuosl.org (Postfix) with ESMTP id 8B494271D7
  for <containers@lists.linux-foundation.org>;
- Wed, 23 Sep 2020 23:29:33 +0000 (UTC)
+ Wed, 23 Sep 2020 23:29:40 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id o3VhbVkEcrMO
+ with ESMTP id Q-o+gR0XFQ-1
  for <containers@lists.linux-foundation.org>;
- Wed, 23 Sep 2020 23:29:32 +0000 (UTC)
+ Wed, 23 Sep 2020 23:29:30 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-pf1-f196.google.com (mail-pf1-f196.google.com
- [209.85.210.196])
- by whitealder.osuosl.org (Postfix) with ESMTPS id 51ADE86A5E
+Received: from mail-pf1-f195.google.com (mail-pf1-f195.google.com
+ [209.85.210.195])
+ by silver.osuosl.org (Postfix) with ESMTPS id C1974274D1
  for <containers@lists.linux-foundation.org>;
- Wed, 23 Sep 2020 23:29:32 +0000 (UTC)
-Received: by mail-pf1-f196.google.com with SMTP id f18so627527pfa.10
+ Wed, 23 Sep 2020 23:29:30 +0000 (UTC)
+Received: by mail-pf1-f195.google.com with SMTP id l126so643511pfd.5
  for <containers@lists.linux-foundation.org>;
- Wed, 23 Sep 2020 16:29:32 -0700 (PDT)
+ Wed, 23 Sep 2020 16:29:30 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=chromium.org; s=google;
  h=from:to:cc:subject:date:message-id:in-reply-to:references
  :mime-version:content-transfer-encoding;
- bh=wt0dnmhR56V/P6llfsBTHQQvjngTx36J9Qjg5uVymmU=;
- b=WKR5niWBp6mhtEbcy38gp75008IzZODjH6cHYSMHf4gWYw26epmLm8XSR1JVueIC0Q
- svelXL64oQrLeTLQBWS5zuV668QPfyo9pyL1vC7A+QudNsZHq5SCXMD8L5yyQTfNWnSH
- VM9fsHnp6wITtQ3a3A5IrLIU/d7xIrFgQvxQE=
+ bh=o0NyB+CF/3HB86tAQOiOguwVSWnWdTv1Hd26QQ00R+I=;
+ b=B4b/Q53xruwMndQgGGFIU0jfBUyHy5EQgi1/f0r6mwyOKO/7ztl4gWYA0/kKGSEk+R
+ ovmQzz5wz+Yq5l50zTkIJpQm1EsVL4pEMH+K2jf71kvGq7RGRH1BnYcYt5mT9BJVDHsQ
+ u3KfdiL62LyabXEmsgkTYdU8dDxCl3Rowx4PI=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
  h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
  :references:mime-version:content-transfer-encoding;
- bh=wt0dnmhR56V/P6llfsBTHQQvjngTx36J9Qjg5uVymmU=;
- b=FkxD0cy8V7bXSJeSXkaS+MNzEmL0av4y5VFQ8ecY9jN4m0vnWAmsi85ZO4qn/NyCIx
- RqUJt8qX+EdSu2NH3TwBQArXQvWMOZ/C+0Ce1drmHhIHaf0x+FcWeELkAkbaS2c8W4hR
- Ter25LxJe+U/I2PeSHyeQtMh5C0n1xig4ZK1hDZSfxP70LmyTr46WgDzfoK3y3uMwV1x
- 43yzcOCMDFq1DMme4Of8uuwI9WHPbBRDm0yiWO7CpS/9dZL9kS9Dw81aNYZxWqx3ZHTH
- htZxRKFQI3f2UUZlpQ5iJrE2rbJhselr7YX7DvawyPPpWuW6d3Y8EKPkYU21x7V+1nNa
- o1Ow==
-X-Gm-Message-State: AOAM5339dH7AFIf4UJY1KXihjiI/6cns/tlB2rJGGjyx0PWnsaxwo+ge
- Uo8/YLBs3raUIFYx/xx5Im2Qcg==
-X-Google-Smtp-Source: ABdhPJyLBM8BLNV9FZOTDRwZ0Ts4GlEfu1yFrX/xNTUALwy7Aixh0C8xBT788lhvkfzC5BUcoLpSiA==
-X-Received: by 2002:a63:e503:: with SMTP id r3mr1764206pgh.120.1600903771735; 
- Wed, 23 Sep 2020 16:29:31 -0700 (PDT)
-Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
- by smtp.gmail.com with ESMTPSA id h15sm664534pfo.194.2020.09.23.16.29.27
- (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+ bh=o0NyB+CF/3HB86tAQOiOguwVSWnWdTv1Hd26QQ00R+I=;
+ b=D0Hd6lN6eWl0cgG0Fhwh8DzzhMov11VCO9J8u5y+/CFaTmk68HLFyhYYjsHvoohfw2
+ tIsYXi4F4U1AUQjUaHZaHL4YisjvMzDDao5wPdmKjUoEudpE3M5pcHqoF0n/2xneGy7I
+ fGMz+JeXchp1sexT5PiFzrSQU42gL7aGhqKn9HtmxqEc+Zhijbp6iNzKF96Y/1ukyoYs
+ XuND5+ebGSQxVFYrsqPtoErZ2EMapNmmI59ur8J8W9oQcviOroo14GLzZYG3K/yzRO4a
+ 180XqcxK3ThBTmBop3B315N+IqegIASmt2Yt5epcVj1h40y8DQWvSmKHyCe1BrR80uO4
+ R2gg==
+X-Gm-Message-State: AOAM530WhpH1rP5Sumo6hhiiUb6T1J3zlxa4d0lLQIlK5MOUxdGF/KJ1
+ Pv+rBnajKfI5pnm5Zoha923Jzw==
+X-Google-Smtp-Source: ABdhPJwbxOLcCqKCUuH2utmGzYWbzsx1hZ7uPJWRuiUp4zT/wfPrMZoAz0WrrD9eZsP/GRam1aHvyA==
+X-Received: by 2002:a65:6106:: with SMTP id z6mr1660589pgu.433.1600903770175; 
  Wed, 23 Sep 2020 16:29:30 -0700 (PDT)
+Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
+ by smtp.gmail.com with ESMTPSA id 31sm778246pgs.59.2020.09.23.16.29.26
+ (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+ Wed, 23 Sep 2020 16:29:26 -0700 (PDT)
 From: Kees Cook <keescook@chromium.org>
 To: YiFei Zhu <yifeifz2@illinois.edu>
-Subject: [PATCH 5/6] selftests/seccomp: Compare bitmap vs filter overhead
-Date: Wed, 23 Sep 2020 16:29:22 -0700
-Message-Id: <20200923232923.3142503-6-keescook@chromium.org>
+Subject: [PATCH 3/6] seccomp: Implement constant action bitmaps
+Date: Wed, 23 Sep 2020 16:29:20 -0700
+Message-Id: <20200923232923.3142503-4-keescook@chromium.org>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20200923232923.3142503-1-keescook@chromium.org>
 References: <20200923232923.3142503-1-keescook@chromium.org>
@@ -112,167 +112,381 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-QXMgcGFydCBvZiB0aGUgc2VjY29tcCBiZW5jaG1hcmtpbmcsIGluY2x1ZGUgdGhlIGV4cGVjdGF0
-aW9ucyB3aXRoCnJlZ2FyZCB0byB0aGUgdGltaW5nIGJlaGF2aW9yIG9mIHRoZSBjb25zdGFudCBh
-Y3Rpb24gYml0bWFwcywgYW5kIHJlcG9ydAppbmNvbnNpc3RlbmNpZXMgYmV0dGVyLgoKRXhhbXBs
-ZSBvdXRwdXQgd2l0aCBjb25zdGFudCBhY3Rpb24gYml0bWFwcyBvbiB4ODY6CgokIHN1ZG8gLi9z
-ZWNjb21wX2JlbmNobWFyayAzMDM0NDkyMApDdXJyZW50IEJQRiBzeXNjdGwgc2V0dGluZ3M6Cm5l
-dC5jb3JlLmJwZl9qaXRfZW5hYmxlID0gMQpuZXQuY29yZS5icGZfaml0X2hhcmRlbiA9IDAKQmVu
-Y2htYXJraW5nIDMwMzQ0OTIwIHN5c2NhbGxzLi4uCjIyLjExMzQzMDQ1MiAtIDAuMDA1NjkxMjA1
-ID0gMjIxMDc3MzkyNDcgKDIyLjFzKQpnZXRwaWQgbmF0aXZlOiA3MjggbnMKNDQuODY3NjY5NTU2
-IC0gMjIuMTEzNzU1OTM1ID0gMjI3NTM5MTM2MjEgKDIyLjhzKQpnZXRwaWQgUkVUX0FMTE9XIDEg
-ZmlsdGVyIChiaXRtYXApOiA3NDkgbnMKNjcuNjQ5MDQwMzU4IC0gNDQuODY4MDAzMDU2ID0gMjI3
-ODEwMzczMDIgKDIyLjhzKQpnZXRwaWQgUkVUX0FMTE9XIDIgZmlsdGVycyAoYml0bWFwKTogNzUw
-IG5zCjkyLjU1NTY2MTQxNCAtIDY3LjY1MDMyODk1OSA9IDI0OTA1MzMyNDU1ICgyNC45cykKZ2V0
-cGlkIFJFVF9BTExPVyAzIGZpbHRlcnMgKGZ1bGwpOiA4MjAgbnMKMTE4LjE3MDgzMTA2NSAtIDky
-LjU1NjA1NzU0MyA9IDI1NjE0NzczNTIyICgyNS42cykKZ2V0cGlkIFJFVF9BTExPVyA0IGZpbHRl
-cnMgKGZ1bGwpOiA4NDQgbnMKRXN0aW1hdGVkIHRvdGFsIHNlY2NvbXAgb3ZlcmhlYWQgZm9yIDEg
-Yml0bWFwcGVkIGZpbHRlcjogMjEgbnMKRXN0aW1hdGVkIHRvdGFsIHNlY2NvbXAgb3ZlcmhlYWQg
-Zm9yIDIgYml0bWFwcGVkIGZpbHRlcnM6IDIyIG5zCkVzdGltYXRlZCB0b3RhbCBzZWNjb21wIG92
-ZXJoZWFkIGZvciAzIGZ1bGwgZmlsdGVyczogOTIgbnMKRXN0aW1hdGVkIHRvdGFsIHNlY2NvbXAg
-b3ZlcmhlYWQgZm9yIDQgZnVsbCBmaWx0ZXJzOiAxMTYgbnMKRXN0aW1hdGVkIHNlY2NvbXAgZW50
-cnkgb3ZlcmhlYWQ6IDIwIG5zCkVzdGltYXRlZCBzZWNjb21wIHBlci1maWx0ZXIgb3ZlcmhlYWQg
-KGxhc3QgMiBkaWZmKTogMjQgbnMKRXN0aW1hdGVkIHNlY2NvbXAgcGVyLWZpbHRlciBvdmVyaGVh
-ZCAoZmlsdGVycyAvIDQpOiAyNCBucwpFeHBlY3RhdGlvbnM6CiAgICAgICAgbmF0aXZlIOKJpCAx
-IGJpdG1hcCAoNzI4IOKJpCA3NDkpOiDinJTvuI8KICAgICAgICBuYXRpdmUg4omkIDEgZmlsdGVy
-ICg3Mjgg4omkIDgyMCk6IOKclO+4jwogICAgICAgIHBlci1maWx0ZXIgKGxhc3QgMiBkaWZmKSDi
-iYggcGVyLWZpbHRlciAoZmlsdGVycyAvIDQpICgyNCDiiYggMjQpOiDinJTvuI8KICAgICAgICAx
-IGJpdG1hcHBlZCDiiYggMiBiaXRtYXBwZWQgKDIxIOKJiCAyMik6IOKclO+4jwogICAgICAgIGVu
-dHJ5IOKJiCAxIGJpdG1hcHBlZCAoMjAg4omIIDIxKTog4pyU77iPCiAgICAgICAgZW50cnkg4omI
-IDIgYml0bWFwcGVkICgyMCDiiYggMjIpOiDinJTvuI8KICAgICAgICBuYXRpdmUgKyBlbnRyeSAr
-IChwZXIgZmlsdGVyICogNCkg4omIIDQgZmlsdGVycyB0b3RhbCAoODQ0IOKJiCA4NDQpOiDinJTv
-uI8KClNpZ25lZC1vZmYtYnk6IEtlZXMgQ29vayA8a2Vlc2Nvb2tAY2hyb21pdW0ub3JnPgotLS0K
-IC4uLi9zZWxmdGVzdHMvc2VjY29tcC9zZWNjb21wX2JlbmNobWFyay5jICAgICB8IDE1MSArKysr
-KysrKysrKysrKystLS0KIHRvb2xzL3Rlc3Rpbmcvc2VsZnRlc3RzL3NlY2NvbXAvc2V0dGluZ3Mg
-ICAgICB8ICAgMiArLQogMiBmaWxlcyBjaGFuZ2VkLCAxMzAgaW5zZXJ0aW9ucygrKSwgMjMgZGVs
-ZXRpb25zKC0pCgpkaWZmIC0tZ2l0IGEvdG9vbHMvdGVzdGluZy9zZWxmdGVzdHMvc2VjY29tcC9z
-ZWNjb21wX2JlbmNobWFyay5jIGIvdG9vbHMvdGVzdGluZy9zZWxmdGVzdHMvc2VjY29tcC9zZWNj
-b21wX2JlbmNobWFyay5jCmluZGV4IDkxZjVhODljYWRhYy4uZmNjODA2NTg1MjY2IDEwMDY0NAot
-LS0gYS90b29scy90ZXN0aW5nL3NlbGZ0ZXN0cy9zZWNjb21wL3NlY2NvbXBfYmVuY2htYXJrLmMK
-KysrIGIvdG9vbHMvdGVzdGluZy9zZWxmdGVzdHMvc2VjY29tcC9zZWNjb21wX2JlbmNobWFyay5j
-CkBAIC00LDEyICs0LDE2IEBACiAgKi8KICNkZWZpbmUgX0dOVV9TT1VSQ0UKICNpbmNsdWRlIDxh
-c3NlcnQuaD4KKyNpbmNsdWRlIDxsaW1pdHMuaD4KKyNpbmNsdWRlIDxzdGRib29sLmg+CisjaW5j
-bHVkZSA8c3RkZGVmLmg+CiAjaW5jbHVkZSA8c3RkaW8uaD4KICNpbmNsdWRlIDxzdGRsaWIuaD4K
-ICNpbmNsdWRlIDx0aW1lLmg+CiAjaW5jbHVkZSA8dW5pc3RkLmg+CiAjaW5jbHVkZSA8bGludXgv
-ZmlsdGVyLmg+CiAjaW5jbHVkZSA8bGludXgvc2VjY29tcC5oPgorI2luY2x1ZGUgPHN5cy9wYXJh
-bS5oPgogI2luY2x1ZGUgPHN5cy9wcmN0bC5oPgogI2luY2x1ZGUgPHN5cy9zeXNjYWxsLmg+CiAj
-aW5jbHVkZSA8c3lzL3R5cGVzLmg+CkBAIC03MCwxOCArNzQsNzQgQEAgdW5zaWduZWQgbG9uZyBs
-b25nIGNhbGlicmF0ZSh2b2lkKQogCXJldHVybiBzYW1wbGVzICogc2Vjb25kczsKIH0KIAorYm9v
-bCBhcHByb3goaW50IGlfb25lLCBpbnQgaV90d28pCit7CisJZG91YmxlIG9uZSA9IGlfb25lLCBv
-bmVfYnVtcCA9IG9uZSAqIDAuMDE7CisJZG91YmxlIHR3byA9IGlfdHdvLCB0d29fYnVtcCA9IHR3
-byAqIDAuMDE7CisKKwlvbmVfYnVtcCA9IG9uZSArIE1BWChvbmVfYnVtcCwgMi4wKTsKKwl0d29f
-YnVtcCA9IHR3byArIE1BWCh0d29fYnVtcCwgMi4wKTsKKworCS8qIEVxdWFsIHRvLCBvciB3aXRo
-aW4gMSUgb3IgMiBkaWdpdHMgKi8KKwlpZiAob25lID09IHR3byB8fAorCSAgICAob25lID4gdHdv
-ICYmIG9uZSA8PSB0d29fYnVtcCkgfHwKKwkgICAgKHR3byA+IG9uZSAmJiB0d28gPD0gb25lX2J1
-bXApKQorCQlyZXR1cm4gdHJ1ZTsKKwlyZXR1cm4gZmFsc2U7Cit9CisKK2Jvb2wgbGUoaW50IGlf
-b25lLCBpbnQgaV90d28pCit7CisJaWYgKGlfb25lIDw9IGlfdHdvKQorCQlyZXR1cm4gdHJ1ZTsK
-KwlyZXR1cm4gZmFsc2U7Cit9CisKK2xvbmcgY29tcGFyZShjb25zdCBjaGFyICpuYW1lX29uZSwg
-Y29uc3QgY2hhciAqbmFtZV9ldmFsLCBjb25zdCBjaGFyICpuYW1lX3R3bywKKwkgICAgIHVuc2ln
-bmVkIGxvbmcgbG9uZyBvbmUsIGJvb2wgKCpldmFsKShpbnQsIGludCksIHVuc2lnbmVkIGxvbmcg
-bG9uZyB0d28pCit7CisJYm9vbCBnb29kOworCisJcHJpbnRmKCJcdCVzICVzICVzICglbGxkICVz
-ICVsbGQpOiAiLCBuYW1lX29uZSwgbmFtZV9ldmFsLCBuYW1lX3R3bywKKwkgICAgICAgKGxvbmcg
-bG9uZylvbmUsIG5hbWVfZXZhbCwgKGxvbmcgbG9uZyl0d28pOworCWlmIChvbmUgPiBJTlRfTUFY
-KSB7CisJCXByaW50ZigiTWlzY2FsY3VsYXRpb24hIE1lYXN1cmVtZW50IHdlbnQgbmVnYXRpdmU6
-ICVsbGRcbiIsIChsb25nIGxvbmcpb25lKTsKKwkJcmV0dXJuIDE7CisJfQorCWlmICh0d28gPiBJ
-TlRfTUFYKSB7CisJCXByaW50ZigiTWlzY2FsY3VsYXRpb24hIE1lYXN1cmVtZW50IHdlbnQgbmVn
-YXRpdmU6ICVsbGRcbiIsIChsb25nIGxvbmcpdHdvKTsKKwkJcmV0dXJuIDE7CisJfQorCisJZ29v
-ZCA9IGV2YWwob25lLCB0d28pOworCXByaW50ZigiJXNcbiIsIGdvb2QgPyAi4pyU77iPIiA6ICLi
-nYwiKTsKKworCXJldHVybiBnb29kID8gMCA6IDE7Cit9CisKIGludCBtYWluKGludCBhcmdjLCBj
-aGFyICphcmd2W10pCiB7CisJc3RydWN0IHNvY2tfZmlsdGVyIGJpdG1hcF9maWx0ZXJbXSA9IHsK
-KwkJQlBGX1NUTVQoQlBGX0xEfEJQRl9XfEJQRl9BQlMsIG9mZnNldG9mKHN0cnVjdCBzZWNjb21w
-X2RhdGEsIG5yKSksCisJCUJQRl9TVE1UKEJQRl9SRVR8QlBGX0ssIFNFQ0NPTVBfUkVUX0FMTE9X
-KSwKKwl9OworCXN0cnVjdCBzb2NrX2Zwcm9nIGJpdG1hcF9wcm9nID0geworCQkubGVuID0gKHVu
-c2lnbmVkIHNob3J0KUFSUkFZX1NJWkUoYml0bWFwX2ZpbHRlciksCisJCS5maWx0ZXIgPSBiaXRt
-YXBfZmlsdGVyLAorCX07CiAJc3RydWN0IHNvY2tfZmlsdGVyIGZpbHRlcltdID0geworCQlCUEZf
-U1RNVChCUEZfTER8QlBGX1d8QlBGX0FCUywgb2Zmc2V0b2Yoc3RydWN0IHNlY2NvbXBfZGF0YSwg
-YXJnc1swXSkpLAogCQlCUEZfU1RNVChCUEZfUkVUfEJQRl9LLCBTRUNDT01QX1JFVF9BTExPVyks
-CiAJfTsKIAlzdHJ1Y3Qgc29ja19mcHJvZyBwcm9nID0gewogCQkubGVuID0gKHVuc2lnbmVkIHNo
-b3J0KUFSUkFZX1NJWkUoZmlsdGVyKSwKIAkJLmZpbHRlciA9IGZpbHRlciwKIAl9OwotCWxvbmcg
-cmV0OwotCXVuc2lnbmVkIGxvbmcgbG9uZyBzYW1wbGVzOwotCXVuc2lnbmVkIGxvbmcgbG9uZyBu
-YXRpdmUsIGZpbHRlcjEsIGZpbHRlcjI7CisKKwlsb25nIHJldCwgYml0czsKKwl1bnNpZ25lZCBs
-b25nIGxvbmcgc2FtcGxlcywgY2FsYzsKKwl1bnNpZ25lZCBsb25nIGxvbmcgbmF0aXZlLCBmaWx0
-ZXIxLCBmaWx0ZXIyLCBiaXRtYXAxLCBiaXRtYXAyOworCXVuc2lnbmVkIGxvbmcgbG9uZyBlbnRy
-eSwgcGVyX2ZpbHRlcjEsIHBlcl9maWx0ZXIyOwogCiAJcHJpbnRmKCJDdXJyZW50IEJQRiBzeXNj
-dGwgc2V0dGluZ3M6XG4iKTsKIAlzeXN0ZW0oInN5c2N0bCBuZXQuY29yZS5icGZfaml0X2VuYWJs
-ZSIpOwpAQCAtMTAxLDM1ICsxNjEsODIgQEAgaW50IG1haW4oaW50IGFyZ2MsIGNoYXIgKmFyZ3Zb
-XSkKIAlyZXQgPSBwcmN0bChQUl9TRVRfTk9fTkVXX1BSSVZTLCAxLCAwLCAwLCAwKTsKIAlhc3Nl
-cnQocmV0ID09IDApOwogCi0JLyogT25lIGZpbHRlciAqLwotCXJldCA9IHByY3RsKFBSX1NFVF9T
-RUNDT01QLCBTRUNDT01QX01PREVfRklMVEVSLCAmcHJvZyk7CisJLyogT25lIGZpbHRlciByZXN1
-bHRpbmcgaW4gYSBiaXRtYXAgKi8KKwlyZXQgPSBwcmN0bChQUl9TRVRfU0VDQ09NUCwgU0VDQ09N
-UF9NT0RFX0ZJTFRFUiwgJmJpdG1hcF9wcm9nKTsKIAlhc3NlcnQocmV0ID09IDApOwogCi0JZmls
-dGVyMSA9IHRpbWluZyhDTE9DS19QUk9DRVNTX0NQVVRJTUVfSUQsIHNhbXBsZXMpIC8gc2FtcGxl
-czsKLQlwcmludGYoImdldHBpZCBSRVRfQUxMT1cgMSBmaWx0ZXI6ICVsbHUgbnNcbiIsIGZpbHRl
-cjEpOworCWJpdG1hcDEgPSB0aW1pbmcoQ0xPQ0tfUFJPQ0VTU19DUFVUSU1FX0lELCBzYW1wbGVz
-KSAvIHNhbXBsZXM7CisJcHJpbnRmKCJnZXRwaWQgUkVUX0FMTE9XIDEgZmlsdGVyIChiaXRtYXAp
-OiAlbGx1IG5zXG4iLCBiaXRtYXAxKTsKKworCS8qIFNlY29uZCBmaWx0ZXIgcmVzdWx0aW5nIGlu
-IGEgYml0bWFwICovCisJcmV0ID0gcHJjdGwoUFJfU0VUX1NFQ0NPTVAsIFNFQ0NPTVBfTU9ERV9G
-SUxURVIsICZiaXRtYXBfcHJvZyk7CisJYXNzZXJ0KHJldCA9PSAwKTsKIAotCWlmIChmaWx0ZXIx
-ID09IG5hdGl2ZSkKLQkJcHJpbnRmKCJObyBvdmVyaGVhZCBtZWFzdXJlZCE/IFRyeSBydW5uaW5n
-IGFnYWluIHdpdGggbW9yZSBzYW1wbGVzLlxuIik7CisJYml0bWFwMiA9IHRpbWluZyhDTE9DS19Q
-Uk9DRVNTX0NQVVRJTUVfSUQsIHNhbXBsZXMpIC8gc2FtcGxlczsKKwlwcmludGYoImdldHBpZCBS
-RVRfQUxMT1cgMiBmaWx0ZXJzIChiaXRtYXApOiAlbGx1IG5zXG4iLCBiaXRtYXAyKTsKIAotCS8q
-IFR3byBmaWx0ZXJzICovCisJLyogVGhpcmQgZmlsdGVyLCBjYW4gbm8gbG9uZ2VyIGJlIGNvbnZl
-cnRlZCB0byBiaXRtYXAgKi8KIAlyZXQgPSBwcmN0bChQUl9TRVRfU0VDQ09NUCwgU0VDQ09NUF9N
-T0RFX0ZJTFRFUiwgJnByb2cpOwogCWFzc2VydChyZXQgPT0gMCk7CiAKLQlmaWx0ZXIyID0gdGlt
-aW5nKENMT0NLX1BST0NFU1NfQ1BVVElNRV9JRCwgc2FtcGxlcykgLyBzYW1wbGVzOwotCXByaW50
-ZigiZ2V0cGlkIFJFVF9BTExPVyAyIGZpbHRlcnM6ICVsbHUgbnNcbiIsIGZpbHRlcjIpOwotCi0J
-LyogQ2FsY3VsYXRpb25zICovCi0JcHJpbnRmKCJFc3RpbWF0ZWQgdG90YWwgc2VjY29tcCBvdmVy
-aGVhZCBmb3IgMSBmaWx0ZXI6ICVsbHUgbnNcbiIsCi0JCWZpbHRlcjEgLSBuYXRpdmUpOworCWZp
-bHRlcjEgPSB0aW1pbmcoQ0xPQ0tfUFJPQ0VTU19DUFVUSU1FX0lELCBzYW1wbGVzKSAvIHNhbXBs
-ZXM7CisJcHJpbnRmKCJnZXRwaWQgUkVUX0FMTE9XIDMgZmlsdGVycyAoZnVsbCk6ICVsbHUgbnNc
-biIsIGZpbHRlcjEpOwogCi0JcHJpbnRmKCJFc3RpbWF0ZWQgdG90YWwgc2VjY29tcCBvdmVyaGVh
-ZCBmb3IgMiBmaWx0ZXJzOiAlbGx1IG5zXG4iLAotCQlmaWx0ZXIyIC0gbmF0aXZlKTsKKwkvKiBG
-b3VydGggZmlsdGVyLCBjYW4gbm90IGJlIGNvbnZlcnRlZCB0byBiaXRtYXAgYmVjYXVzZSBvZiBm
-aWx0ZXIgMyAqLworCXJldCA9IHByY3RsKFBSX1NFVF9TRUNDT01QLCBTRUNDT01QX01PREVfRklM
-VEVSLCAmYml0bWFwX3Byb2cpOworCWFzc2VydChyZXQgPT0gMCk7CiAKLQlwcmludGYoIkVzdGlt
-YXRlZCBzZWNjb21wIHBlci1maWx0ZXIgb3ZlcmhlYWQ6ICVsbHUgbnNcbiIsCi0JCWZpbHRlcjIg
-LSBmaWx0ZXIxKTsKKwlmaWx0ZXIyID0gdGltaW5nKENMT0NLX1BST0NFU1NfQ1BVVElNRV9JRCwg
-c2FtcGxlcykgLyBzYW1wbGVzOworCXByaW50ZigiZ2V0cGlkIFJFVF9BTExPVyA0IGZpbHRlcnMg
-KGZ1bGwpOiAlbGx1IG5zXG4iLCBmaWx0ZXIyKTsKKworCS8qIEVzdGltYXRpb25zICovCisjZGVm
-aW5lIEVTVElNQVRFKGZtdCwgdmFyLCB3aGF0KQlkbyB7CQkJXAorCQl2YXIgPSAod2hhdCk7CQkJ
-CQlcCisJCXByaW50ZigiRXN0aW1hdGVkICIgZm10ICI6ICVsbHUgbnNcbiIsIHZhcik7CVwKKwkJ
-aWYgKHZhciA+IElOVF9NQVgpCQkJCVwKKwkJCWdvdG8gbW9yZV9zYW1wbGVzOwkJCVwKKwl9IHdo
-aWxlICgwKQorCisJRVNUSU1BVEUoInRvdGFsIHNlY2NvbXAgb3ZlcmhlYWQgZm9yIDEgYml0bWFw
-cGVkIGZpbHRlciIsIGNhbGMsCisJCSBiaXRtYXAxIC0gbmF0aXZlKTsKKwlFU1RJTUFURSgidG90
-YWwgc2VjY29tcCBvdmVyaGVhZCBmb3IgMiBiaXRtYXBwZWQgZmlsdGVycyIsIGNhbGMsCisJCSBi
-aXRtYXAyIC0gbmF0aXZlKTsKKwlFU1RJTUFURSgidG90YWwgc2VjY29tcCBvdmVyaGVhZCBmb3Ig
-MyBmdWxsIGZpbHRlcnMiLCBjYWxjLAorCQkgZmlsdGVyMSAtIG5hdGl2ZSk7CisJRVNUSU1BVEUo
-InRvdGFsIHNlY2NvbXAgb3ZlcmhlYWQgZm9yIDQgZnVsbCBmaWx0ZXJzIiwgY2FsYywKKwkJIGZp
-bHRlcjIgLSBuYXRpdmUpOworCUVTVElNQVRFKCJzZWNjb21wIGVudHJ5IG92ZXJoZWFkIiwgZW50
-cnksCisJCSBiaXRtYXAxIC0gbmF0aXZlIC0gKGJpdG1hcDIgLSBiaXRtYXAxKSk7CisJRVNUSU1B
-VEUoInNlY2NvbXAgcGVyLWZpbHRlciBvdmVyaGVhZCAobGFzdCAyIGRpZmYpIiwgcGVyX2ZpbHRl
-cjEsCisJCSBmaWx0ZXIyIC0gZmlsdGVyMSk7CisJRVNUSU1BVEUoInNlY2NvbXAgcGVyLWZpbHRl
-ciBvdmVyaGVhZCAoZmlsdGVycyAvIDQpIiwgcGVyX2ZpbHRlcjIsCisJCSAoZmlsdGVyMiAtIG5h
-dGl2ZSAtIGVudHJ5KSAvIDQpOworCisJcHJpbnRmKCJFeHBlY3RhdGlvbnM6XG4iKTsKKwlyZXQg
-fD0gY29tcGFyZSgibmF0aXZlIiwgIuKJpCIsICIxIGJpdG1hcCIsIG5hdGl2ZSwgbGUsIGJpdG1h
-cDEpOworCWJpdHMgPSBjb21wYXJlKCJuYXRpdmUiLCAi4omkIiwgIjEgZmlsdGVyIiwgbmF0aXZl
-LCBsZSwgZmlsdGVyMSk7CisJaWYgKGJpdHMpCisJCWdvdG8gbW9yZV9zYW1wbGVzOworCisJcmV0
-IHw9IGNvbXBhcmUoInBlci1maWx0ZXIgKGxhc3QgMiBkaWZmKSIsICLiiYgiLCAicGVyLWZpbHRl
-ciAoZmlsdGVycyAvIDQpIiwKKwkJCXBlcl9maWx0ZXIxLCBhcHByb3gsIHBlcl9maWx0ZXIyKTsK
-KworCWJpdHMgPSBjb21wYXJlKCIxIGJpdG1hcHBlZCIsICLiiYgiLCAiMiBiaXRtYXBwZWQiLAor
-CQkJYml0bWFwMSAtIG5hdGl2ZSwgYXBwcm94LCBiaXRtYXAyIC0gbmF0aXZlKTsKKwlpZiAoYml0
-cykgeworCQlwcmludGYoIlNraXBwaW5nIGNvbnN0YW50IGFjdGlvbiBiaXRtYXAgZXhwZWN0YXRp
-b25zOiB0aGV5IGFwcGVhciB1bnN1cHBvcnRlZC5cbiIpOworCQlnb3RvIG91dDsKKwl9CiAKLQlw
-cmludGYoIkVzdGltYXRlZCBzZWNjb21wIGVudHJ5IG92ZXJoZWFkOiAlbGx1IG5zXG4iLAotCQlm
-aWx0ZXIxIC0gbmF0aXZlIC0gKGZpbHRlcjIgLSBmaWx0ZXIxKSk7CisJcmV0IHw9IGNvbXBhcmUo
-ImVudHJ5IiwgIuKJiCIsICIxIGJpdG1hcHBlZCIsIGVudHJ5LCBhcHByb3gsIGJpdG1hcDEgLSBu
-YXRpdmUpOworCXJldCB8PSBjb21wYXJlKCJlbnRyeSIsICLiiYgiLCAiMiBiaXRtYXBwZWQiLCBl
-bnRyeSwgYXBwcm94LCBiaXRtYXAyIC0gbmF0aXZlKTsKKwlyZXQgfD0gY29tcGFyZSgibmF0aXZl
-ICsgZW50cnkgKyAocGVyIGZpbHRlciAqIDQpIiwgIuKJiCIsICI0IGZpbHRlcnMgdG90YWwiLAor
-CQkJZW50cnkgKyAocGVyX2ZpbHRlcjEgKiA0KSArIG5hdGl2ZSwgYXBwcm94LCBmaWx0ZXIyKTsK
-KwlpZiAocmV0ID09IDApCisJCWdvdG8gb3V0OwogCittb3JlX3NhbXBsZXM6CisJcHJpbnRmKCJT
-YXcgdW5leHBlY3RlZCBiZW5jaG1hcmsgcmVzdWx0LiBUcnkgcnVubmluZyBhZ2FpbiB3aXRoIG1v
-cmUgc2FtcGxlcz9cbiIpOworb3V0OgogCXJldHVybiAwOwogfQpkaWZmIC0tZ2l0IGEvdG9vbHMv
-dGVzdGluZy9zZWxmdGVzdHMvc2VjY29tcC9zZXR0aW5ncyBiL3Rvb2xzL3Rlc3Rpbmcvc2VsZnRl
-c3RzL3NlY2NvbXAvc2V0dGluZ3MKaW5kZXggYmE0ZDg1Zjc0Y2Q2Li42MDkxYjQ1ZDIyNmIgMTAw
-NjQ0Ci0tLSBhL3Rvb2xzL3Rlc3Rpbmcvc2VsZnRlc3RzL3NlY2NvbXAvc2V0dGluZ3MKKysrIGIv
-dG9vbHMvdGVzdGluZy9zZWxmdGVzdHMvc2VjY29tcC9zZXR0aW5ncwpAQCAtMSArMSBAQAotdGlt
-ZW91dD05MAordGltZW91dD0xMjAKLS0gCjIuMjUuMQoKX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVy
-c0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlv
-bi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+One of the most common pain points with seccomp filters has been dealing
+with the overhead of processing the filters, especially for "always allow"
+or "always reject" cases. While BPF is extremely fast[1], it will always
+have overhead associated with it. Additionally, due to seccomp's design,
+filters are layered, which means processing time goes up as the number
+of filters attached goes up.
+
+In the past, efforts have been focused on making filter execution complete
+in a shorter amount of time. For example, filters were rewritten from
+using linear if/then/else syscall search to using balanced binary trees,
+or moving tests for syscalls common to the process's workload to the
+front of the filter. However, there are limits to this, especially when
+some processes are dealing with tens of filters[2], or when some
+architectures have a less efficient BPF engine[3].
+
+The most common use of seccomp, constructing syscall block/allow-lists,
+where syscalls that are always allowed or always rejected (without regard
+to any arguments), also tends to produce the most pathological runtime
+problems, in that a large number of syscall checks in the filter need
+to be performed to come to a determination.
+
+In order to optimize these cases from O(n) to O(1), seccomp can
+use bitmaps to immediately determine the desired action. A critical
+observation in the prior paragraph bears repeating: the common case for
+syscall tests do not check arguments. For any given filter, there is a
+constant mapping from the combination of architecture and syscall to the
+seccomp action result. (For kernels/architectures without CONFIG_COMPAT,
+there is a single architecture.). As such, it is possible to construct
+a mapping of arch/syscall to action, which can be updated as new filters
+are attached to a process.
+
+In order to build this mapping at filter attach time, each filter is
+executed for every syscall (under each possible architecture), and
+checked for any accesses of struct seccomp_data that are not the "arch"
+nor "nr" (syscall) members. If only "arch" and "nr" are examined, then
+there is a constant mapping for that syscall, and bitmaps can be updated
+accordingly. If any accesses happen outside of those struct members,
+seccomp must not bypass filter execution for that syscall, since program
+state will be used to determine filter action result. (This logic comes
+in the next patch.)
+
+[1] https://lore.kernel.org/bpf/20200531171915.wsxvdjeetmhpsdv2@ast-mbp.dhcp.thefacebook.com/
+[2] https://lore.kernel.org/bpf/20200601101137.GA121847@gardel-login/
+[3] https://lore.kernel.org/bpf/717a06e7f35740ccb4c70470ec70fb2f@huawei.com/
+
+Signed-off-by: Kees Cook <keescook@chromium.org>
+---
+ include/linux/seccomp.h |  18 ++++
+ kernel/seccomp.c        | 207 +++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 221 insertions(+), 4 deletions(-)
+
+diff --git a/include/linux/seccomp.h b/include/linux/seccomp.h
+index 0be20bc81ea9..96df2f899e3d 100644
+--- a/include/linux/seccomp.h
++++ b/include/linux/seccomp.h
+@@ -25,6 +25,17 @@
+ #define SECCOMP_ARCH_IS_MULTIPLEX	3
+ #define SECCOMP_ARCH_IS_UNKNOWN		0xff
+ 
++/* When no bits are set for a syscall, filters are run. */
++struct seccomp_bitmaps {
++#ifdef SECCOMP_ARCH
++	/* "allow" are initialized to set and only ever get cleared. */
++	DECLARE_BITMAP(allow, NR_syscalls);
++	/* These are initialized to clear and only ever get set. */
++	DECLARE_BITMAP(kill_thread, NR_syscalls);
++	DECLARE_BITMAP(kill_process, NR_syscalls);
++#endif
++};
++
+ struct seccomp_filter;
+ /**
+  * struct seccomp - the state of a seccomp'ed process
+@@ -45,6 +56,13 @@ struct seccomp {
+ #endif
+ 	atomic_t filter_count;
+ 	struct seccomp_filter *filter;
++	struct seccomp_bitmaps native;
++#ifdef CONFIG_COMPAT
++	struct seccomp_bitmaps compat;
++#endif
++#ifdef SECCOMP_MULTIPLEXED_SYSCALL_TABLE_ARCH
++	struct seccomp_bitmaps multiplex;
++#endif
+ };
+ 
+ #ifdef CONFIG_HAVE_ARCH_SECCOMP_FILTER
+diff --git a/kernel/seccomp.c b/kernel/seccomp.c
+index 0a3ff8eb8aea..111a238bc532 100644
+--- a/kernel/seccomp.c
++++ b/kernel/seccomp.c
+@@ -318,7 +318,7 @@ static inline u8 seccomp_get_arch(u32 syscall_arch, u32 syscall_nr)
+ 
+ #ifdef SECCOMP_MULTIPLEXED_SYSCALL_TABLE_ARCH
+ 	if (syscall_arch == SECCOMP_MULTIPLEXED_SYSCALL_TABLE_ARCH) {
+-		seccomp_arch |= (sd->nr & SECCOMP_MULTIPLEXED_SYSCALL_TABLE_MASK) >>
++		seccomp_arch |= (syscall_nr & SECCOMP_MULTIPLEXED_SYSCALL_TABLE_MASK) >>
+ 				SECCOMP_MULTIPLEXED_SYSCALL_TABLE_SHIFT;
+ 	}
+ #endif
+@@ -559,6 +559,21 @@ static inline void seccomp_sync_threads(unsigned long flags)
+ 		atomic_set(&thread->seccomp.filter_count,
+ 			   atomic_read(&thread->seccomp.filter_count));
+ 
++		/* Copy syscall filter bitmaps. */
++		memcpy(&thread->seccomp.native,
++		       &caller->seccomp.native,
++		       sizeof(caller->seccomp.native));
++#ifdef CONFIG_COMPAT
++		memcpy(&thread->seccomp.compat,
++		       &caller->seccomp.compat,
++		       sizeof(caller->seccomp.compat));
++#endif
++#ifdef SECCOMP_MULTIPLEXED_SYSCALL_TABLE_ARCH
++		memcpy(&thread->seccomp.multiplex,
++		       &caller->seccomp.multiplex,
++		       sizeof(caller->seccomp.multiplex));
++#endif
++
+ 		/*
+ 		 * Don't let an unprivileged task work around
+ 		 * the no_new_privs restriction by creating
+@@ -661,6 +676,114 @@ seccomp_prepare_user_filter(const char __user *user_filter)
+ 	return filter;
+ }
+ 
++static inline bool sd_touched(pte_t *ptep)
++{
++	return !!pte_young(*(READ_ONCE(ptep)));
++}
++
++#ifdef SECCOMP_ARCH
++/*
++ * We can build constant-action bitmaps only when an arch/nr combination reads
++ * nothing more that sd->nr and sd->arch, since those have a constant mapping
++ * to the syscall.
++ *
++ * This approach could also be used to test for access to sd->arch too,
++ * if we wanted to warn about compat-unsafe filters.
++ */
++static inline bool seccomp_filter_action_is_constant(struct bpf_prog *prog,
++						     struct seccomp_data *sd,
++						     u32 *action)
++{
++	/* No evaluation implementation yet. */
++	return false;
++}
++
++/*
++ * Walk everyone syscall combination for this arch/mask combo and update
++ * the bitmaps with any results.
++ */
++static void seccomp_update_bitmap(struct seccomp_filter *filter,
++				  void *pagepair, u32 arch, u32 mask,
++				  struct seccomp_bitmaps *bitmaps)
++{
++	struct seccomp_data sd = { };
++	bool constant;
++	u32 nr, ret;
++
++	/* Initialize bitmaps for first filter. */
++	if (!filter->prev)
++		bitmap_fill(bitmaps->allow, NR_syscalls);
++
++	/*
++	 * For every syscall, if we don't already know we need to run
++	 * the full filter, simulate the filter with our static values.
++	 */
++	for (nr = 0; nr < NR_syscalls; nr++) {
++		/* Are we already at the maximal rejection state? */
++		if (test_bit(nr, bitmaps->kill_process))
++			continue;
++
++		sd.nr = nr | mask;
++		sd.arch = arch;
++
++		/* Evaluate filter for this arch/syscall. */
++		constant = seccomp_filter_action_is_constant(filter->prog, &sd, &ret);
++
++		/*
++		 * If this run through the filter didn't access
++		 * beyond "arch", we know the result is a constant
++		 * mapping for arch/nr -> ret.
++		 */
++		if (constant) {
++			/* Constant evaluation. Mark appropriate bitmaps. */
++			switch (ret) {
++			case SECCOMP_RET_KILL_PROCESS:
++				set_bit(nr, bitmaps->kill_process);
++				break;
++			case SECCOMP_RET_KILL_THREAD:
++				set_bit(nr, bitmaps->kill_thread);
++				break;
++			default:
++				break;
++			case SECCOMP_RET_ALLOW:
++				/*
++				 * If we always map to allow, there are
++				 * no changes needed to the bitmaps.
++				 */
++				continue;
++			}
++		}
++
++		/*
++		 * Dynamic evaluation of syscall, or non-allow constant
++		 * mapping to something other than SECCOMP_RET_ALLOW: we
++		 * must not short-circuit-allow it anymore.
++		 */
++		clear_bit(nr, bitmaps->allow);
++	}
++}
++
++static void seccomp_update_bitmaps(struct seccomp_filter *filter,
++				   void *pagepair)
++{
++	seccomp_update_bitmap(filter, pagepair, SECCOMP_ARCH, 0,
++			      &current->seccomp.native);
++#ifdef CONFIG_COMPAT
++	seccomp_update_bitmap(filter, pagepair, SECCOMP_ARCH_COMPAT, 0,
++			      &current->seccomp.compat);
++#endif
++#ifdef SECCOMP_MULTIPLEXED_SYSCALL_TABLE_ARCH
++	seccomp_update_bitmap(filter, pagepair, SECCOMP_MULTIPLEXED_SYSCALL_TABLE_ARCH,
++			      SECCOMP_MULTIPLEXED_SYSCALL_TABLE_MASK,
++			      &current->seccomp.multiplex);
++#endif
++}
++#else
++static void seccomp_update_bitmaps(struct seccomp_filter *filter,
++				   void *pagepair)
++{ }
++#endif
++
+ /**
+  * seccomp_attach_filter: validate and attach filter
+  * @flags:  flags to change filter behavior
+@@ -674,7 +797,8 @@ seccomp_prepare_user_filter(const char __user *user_filter)
+  *   - in NEW_LISTENER mode: the fd of the new listener
+  */
+ static long seccomp_attach_filter(unsigned int flags,
+-				  struct seccomp_filter *filter)
++				  struct seccomp_filter *filter,
++				  void *pagepair)
+ {
+ 	unsigned long total_insns;
+ 	struct seccomp_filter *walker;
+@@ -713,6 +837,9 @@ static long seccomp_attach_filter(unsigned int flags,
+ 	current->seccomp.filter = filter;
+ 	atomic_inc(&current->seccomp.filter_count);
+ 
++	/* Evaluate filter for new known-outcome syscalls */
++	seccomp_update_bitmaps(filter, pagepair);
++
+ 	/* Now that the new filter is in place, synchronize to all threads. */
+ 	if (flags & SECCOMP_FILTER_FLAG_TSYNC)
+ 		seccomp_sync_threads(flags);
+@@ -970,6 +1097,65 @@ static int seccomp_do_user_notification(int this_syscall,
+ 	return -1;
+ }
+ 
++#ifdef SECCOMP_ARCH
++static inline bool __bypass_filter(struct seccomp_bitmaps *bitmaps,
++				   u32 nr, u32 *filter_ret)
++{
++	if (nr < NR_syscalls) {
++		if (test_bit(nr, bitmaps->allow)) {
++			*filter_ret = SECCOMP_RET_ALLOW;
++			return true;
++		}
++		if (test_bit(nr, bitmaps->kill_process)) {
++			*filter_ret = SECCOMP_RET_KILL_PROCESS;
++			return true;
++		}
++		if (test_bit(nr, bitmaps->kill_thread)) {
++			*filter_ret = SECCOMP_RET_KILL_THREAD;
++			return true;
++		}
++	}
++	return false;
++}
++
++static inline u32 check_syscall(const struct seccomp_data *sd,
++				struct seccomp_filter **match)
++{
++	u32 filter_ret = SECCOMP_RET_KILL_PROCESS;
++	u8 arch = seccomp_get_arch(sd->arch, sd->nr);
++
++	switch (arch) {
++	case SECCOMP_ARCH_IS_NATIVE:
++		if (__bypass_filter(&current->seccomp.native, sd->nr, &filter_ret))
++			return filter_ret;
++		break;
++#ifdef CONFIG_COMPAT
++	case SECCOMP_ARCH_IS_COMPAT:
++		if (__bypass_filter(&current->seccomp.compat, sd->nr, &filter_ret))
++			return filter_ret;
++		break;
++#endif
++#ifdef SECCOMP_MULTIPLEXED_SYSCALL_TABLE_ARCH
++	case SECCOMP_ARCH_IS_MULTIPLEX:
++		if (__bypass_filter(&current->seccomp.multiplex, sd->nr, &filter_ret))
++			return filter_ret;
++		break;
++#endif
++	default:
++		WARN_ON_ONCE(1);
++		return filter_ret;
++	}
++
++	return seccomp_run_filters(sd, match);
++}
++#else
++static inline u32 check_syscall(const struct seccomp_data *sd,
++				struct seccomp_filter **match)
++{
++	return seccomp_run_filters(sd, match);
++}
++#endif
++
+ static int __seccomp_filter(int this_syscall, const struct seccomp_data *sd,
+ 			    const bool recheck_after_trace)
+ {
+@@ -989,7 +1175,7 @@ static int __seccomp_filter(int this_syscall, const struct seccomp_data *sd,
+ 		sd = &sd_local;
+ 	}
+ 
+-	filter_ret = seccomp_run_filters(sd, &match);
++	filter_ret = check_syscall(sd, &match);
+ 	data = filter_ret & SECCOMP_RET_DATA;
+ 	action = filter_ret & SECCOMP_RET_ACTION_FULL;
+ 
+@@ -1580,6 +1766,7 @@ static long seccomp_set_mode_filter(unsigned int flags,
+ 	long ret = -EINVAL;
+ 	int listener = -1;
+ 	struct file *listener_f = NULL;
++	void *pagepair;
+ 
+ 	/* Validate flags. */
+ 	if (flags & ~SECCOMP_FILTER_FLAG_MASK)
+@@ -1625,12 +1812,24 @@ static long seccomp_set_mode_filter(unsigned int flags,
+ 	    mutex_lock_killable(&current->signal->cred_guard_mutex))
+ 		goto out_put_fd;
+ 
++	/*
++	 * This memory will be needed for bitmap testing, but we'll
++	 * be holding a spinlock at that point. Do the allocation
++	 * (and free) outside of the lock.
++	 *
++	 * Alternative: we could do the bitmap update before attach
++	 * to avoid spending too much time under lock.
++	 */
++	pagepair = vzalloc(PAGE_SIZE * 2);
++	if (!pagepair)
++		goto out_put_fd;
++
+ 	spin_lock_irq(&current->sighand->siglock);
+ 
+ 	if (!seccomp_may_assign_mode(seccomp_mode))
+ 		goto out;
+ 
+-	ret = seccomp_attach_filter(flags, prepared);
++	ret = seccomp_attach_filter(flags, prepared, pagepair);
+ 	if (ret)
+ 		goto out;
+ 	/* Do not free the successfully attached filter. */
+-- 
+2.25.1
+
+_______________________________________________
+Containers mailing list
+Containers@lists.linux-foundation.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
