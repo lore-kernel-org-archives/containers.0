@@ -2,106 +2,108 @@ Return-Path: <SRS0=lkaS=DB=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7C4F6C4363D
-	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 12:56:51 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 38062C4727D
+	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 13:46:28 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 0CBBF21D24
-	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 12:56:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 6D16C206F7
+	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 13:46:27 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=google.com header.i=@google.com header.b="kJB1nGYx"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0CBBF21D24
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lists.linux-foundation.org
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=rasmusvillemoes.dk header.i=@rasmusvillemoes.dk header.b="KCxqPAVE"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6D16C206F7
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=rasmusvillemoes.dk
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id B621986F95;
-	Thu, 24 Sep 2020 12:56:50 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 3425B86C2F;
+	Thu, 24 Sep 2020 13:46:27 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id Bu5I4AzJRfKJ; Thu, 24 Sep 2020 12:56:50 +0000 (UTC)
+	with ESMTP id Yn4FSTSEqSyL; Thu, 24 Sep 2020 13:46:25 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 35F7986F58;
-	Thu, 24 Sep 2020 12:56:50 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 25F72869D8;
+	Thu, 24 Sep 2020 13:46:25 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 27078C0890;
-	Thu, 24 Sep 2020 12:56:50 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 1C26EC0889;
+	Thu, 24 Sep 2020 13:46:25 +0000 (UTC)
 Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id DC7A9C0859
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 4DF04C0051
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 12:56:48 +0000 (UTC)
+ Thu, 24 Sep 2020 13:46:23 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id C520A86A57
+ by fraxinus.osuosl.org (Postfix) with ESMTP id 3D12A86A95
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 12:56:48 +0000 (UTC)
+ Thu, 24 Sep 2020 13:46:23 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id ZKXFOVA1lGwy
+ with ESMTP id haEJgK2JIpRC
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 12:56:48 +0000 (UTC)
-X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-ed1-f66.google.com (mail-ed1-f66.google.com
- [209.85.208.66])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id CDB8286A54
+ Thu, 24 Sep 2020 13:46:22 +0000 (UTC)
+X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
+Received: from mail-lj1-f195.google.com (mail-lj1-f195.google.com
+ [209.85.208.195])
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id DC89C80C0D
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 12:56:47 +0000 (UTC)
-Received: by mail-ed1-f66.google.com with SMTP id n13so3220995edo.10
+ Thu, 24 Sep 2020 13:46:21 +0000 (UTC)
+Received: by mail-lj1-f195.google.com with SMTP id u21so2803286ljl.6
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 05:56:47 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=20161025;
- h=mime-version:references:in-reply-to:from:date:message-id:subject:to
- :cc; bh=6PIyzkE03cr+kvJe1Aijo1Xyt0QaH2RNf7w1MklGRBQ=;
- b=kJB1nGYxP0Y6X5WheYqJQFpCi5sL6A711gpSeHDvuzgkectzUE/MXMOOEAnyElFD9v
- iqJyfIN/NSmWXrpVuFZ0aho0aDIFIpkMOw1pyuVo0+VxTny2vbcrMcsb9bSkOD2pXiG3
- Dvl8rC/5qu8B0ATDNukQW590sTpDnKOF0N0ECVTvm6I8NaeU/cOkLhrQclT3Uw6+H6sk
- /qht2lFhpsGuqbERJ1ekX/lZmTpUh5+Dak+m/8EL3mc+x8jKSLvoDXJXDjOHzU8GK7vZ
- udXjSph+fxFzM8V094eG/lbsSo3u9cohPOEWwxr8UoH1Ss++gokbpNmfxCbBkzFK3vEe
- Rtuw==
+ Thu, 24 Sep 2020 06:46:21 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=rasmusvillemoes.dk; s=google;
+ h=subject:to:cc:references:from:message-id:date:user-agent
+ :mime-version:in-reply-to:content-language:content-transfer-encoding;
+ bh=cDrHVTOD+iSWXelVapd6LAkJ7VfbRManFz9vUWJEqwc=;
+ b=KCxqPAVEUh0NN2sRqfB2Er3kRv3k3VxWZOlCy1TnuFltpouAeT9UrqF3gbDCWNhLso
+ Q4gthE2otk3e6NybEISvLpG5ofuUJ4TsMDfT/fjZlK00Lj8I+w0dolYj3GdjwFPq6Ih8
+ CvX8q1UtLGea0tijaEcOFvSd32Yq46wp4o0mI=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
- h=x-gm-message-state:mime-version:references:in-reply-to:from:date
- :message-id:subject:to:cc;
- bh=6PIyzkE03cr+kvJe1Aijo1Xyt0QaH2RNf7w1MklGRBQ=;
- b=kkGwqZJiYzDpbm+cwWj+rCt8slZSUawJZ+FHnSn1zqbH927sBpGnR7zgSWQsoeGGEo
- XHydVRVjiXuhIJNOS3wf/s33YD1CLpFwSzT3dSrkVaCulIHCJ6Wy9tJoxs3BQ0OHpMgi
- GP+0xLqhbDS0GeXBLHXQhcDL2gMvGSiuYG3SlQKo5Fy4gaxIIG1TWWwHHJl5e0gzXn44
- E7KnIn1m800lneyVXKrmVQL+X3uZyT92NIkL0JEgAta2dL+MxdqLanXoCuP05U87hsXM
- AOUXeoUJmCOwN0ZS3/Ph/HuXQKiplzFEB0XY2bQwudXLrdZvIbQYSTDoweIeA+HfRiwQ
- QBtw==
-X-Gm-Message-State: AOAM533vFLuBFrq7TV+1TRod1Cy5j0c7IWR3eBD5xDSvx0hhKZFdFZ3N
- Na8fNJXi8LB+20xXzLqIe7iTGi0yrVzDxncDUEITAA==
-X-Google-Smtp-Source: ABdhPJyZT+GnEERoDowCMN+gaCS8CKBwR2yALNltlIzprycdqYNWKl35K4oZS3REzkERw/iLp6ynqEQMU4tQidSctwU=
-X-Received: by 2002:a50:ccd2:: with SMTP id b18mr885315edj.51.1600952205967;
- Thu, 24 Sep 2020 05:56:45 -0700 (PDT)
-MIME-Version: 1.0
+ h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+ :user-agent:mime-version:in-reply-to:content-language
+ :content-transfer-encoding;
+ bh=cDrHVTOD+iSWXelVapd6LAkJ7VfbRManFz9vUWJEqwc=;
+ b=tYR2VySYrSu1+hMl58baHTXCIiqJrvsuCMDo9SegMuGPF1jsQW6yTDjM5kjrKxAn7t
+ dvNfCLD9hdiW4tsnwQLqNQ5AebKIxQSlq3INdcNQ41qVW592FVqVyA1SbYyqDsg0Rorx
+ JI+EdYUZzwvpX0vwnpjlXpOOcvqeei/DieDbxAAUy9W31W1qGXSYjy5xbcvgTIVh68eU
+ fDeRNs4NGfjxEePvrKRy3YskKQbACcIpwRVz/XBLPzqAWR7XZ/tYdykI4QgTKiA1vQwu
+ 1gMBNawoQ5bgoSnycCt/eaW9WtXomi/+jNHi4S8LutAJXOBFUkp8n9j1CL9Iu2o/0lah
+ Se9A==
+X-Gm-Message-State: AOAM530NvX99LieybDbrOBxQohzA9S9pF2erh6idbkZbiCfwNOKk1/wv
+ H89yHF0Ax0snbGqqgDwQyyGCuw5KOk8RlDDg7sY=
+X-Google-Smtp-Source: ABdhPJyhP2oOUzht7mmnYmL06kxXBu44hSqGNAaV4Vj6cp2z2M4mFMwQjvAP9vCt1lBA3/mkfw8qIQ==
+X-Received: by 2002:a19:6b17:: with SMTP id d23mr362374lfa.190.1600954856089; 
+ Thu, 24 Sep 2020 06:40:56 -0700 (PDT)
+Received: from [172.16.11.132] ([81.216.59.226])
+ by smtp.gmail.com with ESMTPSA id s20sm2085680lfs.135.2020.09.24.06.40.54
+ (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+ Thu, 24 Sep 2020 06:40:55 -0700 (PDT)
+Subject: Re: [PATCH v1 0/6] seccomp: Implement constant action bitmaps
+To: Kees Cook <keescook@chromium.org>, YiFei Zhu <yifeifz2@illinois.edu>
 References: <20200923232923.3142503-1-keescook@chromium.org>
- <20200923232923.3142503-4-keescook@chromium.org>
- <CAG48ez0d80fOSTyn5QbH33WPz5UkzJJOo+V8of7YMR8pVQxumw@mail.gmail.com>
- <202009240018.A4D8274F@keescook>
- <CAG48ez1MWhrtkbWTNpc1v-WqWYiLM_JrCKvuE6DdH6vBY3MJzQ@mail.gmail.com>
- <ec31caaea19247f0b9bd9c73ccaa7dbd@AcuMS.aculab.com>
-In-Reply-To: <ec31caaea19247f0b9bd9c73ccaa7dbd@AcuMS.aculab.com>
-Date: Thu, 24 Sep 2020 14:56:19 +0200
-Message-ID: <CAG48ez0n-oqivqDCFjHo1UOuNN3HnP+mi2UGB_Xqf3TwwO+ZuQ@mail.gmail.com>
-Subject: Re: [PATCH 3/6] seccomp: Implement constant action bitmaps
-To: David Laight <David.Laight@aculab.com>
+From: Rasmus Villemoes <linux@rasmusvillemoes.dk>
+Message-ID: <43039bb6-9d9f-b347-fa92-ea34ccc21d3d@rasmusvillemoes.dk>
+Date: Thu, 24 Sep 2020 15:40:54 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.10.0
+MIME-Version: 1.0
+In-Reply-To: <20200923232923.3142503-1-keescook@chromium.org>
+Content-Language: en-US
 Cc: Andrea Arcangeli <aarcange@redhat.com>,
  Giuseppe Scrivano <gscrivan@redhat.com>, Will Drewry <wad@chromium.org>,
- Kees Cook <keescook@chromium.org>, YiFei Zhu <yifeifz2@illinois.edu>,
- Linux API <linux-api@vger.kernel.org>,
- Linux Containers <containers@lists.linux-foundation.org>,
- bpf <bpf@vger.kernel.org>, Tobin Feldman-Fitzthum <tobin@ibm.com>,
+ bpf@vger.kernel.org, Jann Horn <jannh@google.com>, linux-api@vger.kernel.org,
+ containers@lists.linux-foundation.org, Tobin Feldman-Fitzthum <tobin@ibm.com>,
  Hubertus Franke <frankeh@us.ibm.com>, Andy Lutomirski <luto@amacapital.net>,
  Valentin Rothberg <vrothber@redhat.com>,
  Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, Jack Chen <jianyan2@illinois.edu>,
  Josep Torrellas <torrella@illinois.edu>, Tianyin Xu <tyxu@illinois.edu>,
- kernel list <linux-kernel@vger.kernel.org>
+ linux-kernel@vger.kernel.org
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -113,46 +115,59 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-From: Jann Horn via Containers <containers@lists.linux-foundation.org>
-Reply-To: Jann Horn <jannh@google.com>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Thu, Sep 24, 2020 at 2:37 PM David Laight <David.Laight@aculab.com> wrote:
-> From: Jann Horn
-> > Sent: 24 September 2020 13:29
-> ...
-> > I think our goal here should be that if a syscall is always allowed,
-> > seccomp should execute the smallest amount of instructions we can get
-> > away with, and touch the smallest amount of memory possible (and
-> > preferably that memory should be shared between threads). The bitmap
-> > fastpath should probably also avoid populate_seccomp_data().
->
-> If most syscalls are expected to be allowed
+On 24/09/2020 01.29, Kees Cook wrote:
+> rfc: https://lore.kernel.org/lkml/20200616074934.1600036-1-keescook@chromium.org/
+> alternative: https://lore.kernel.org/containers/cover.1600661418.git.yifeifz2@illinois.edu/
+> v1:
+> - rebase to for-next/seccomp
+> - finish X86_X32 support for both pinning and bitmaps
+> - replace TLB magic with Jann's emulator
+> - add JSET insn
+> 
+> TODO:
+> - add ALU|AND insn
+> - significantly more testing
+> 
+> Hi,
+> 
+> This is a refresh of my earlier constant action bitmap series. It looks
+> like the RFC was missed on the container list, so I've CCed it now. :)
+> I'd like to work from this series, as it handles the multi-architecture
+> stuff.
 
-E.g. OpenSSH's privilege-separated network process only permits
-something like 26 specific syscalls.
+So, I agree with Jann's point that the only thing that matters is that
+always-allowed syscalls are indeed allowed fast.
 
-> then an initial:
->         if (global_mask & (1u << (syscall_number & 63))
-> test can be used to skip any further lookups.
+But one thing I'm wondering about and I haven't seen addressed anywhere:
+Why build the bitmap on the kernel side (with all the complexity of
+having to emulate the filter for all syscalls)? Why can't userspace just
+hand the kernel "here's a new filter: the syscalls in this bitmap are
+always allowed noquestionsasked, for the rest, run this bpf". Sure, that
+might require a new syscall or extending seccomp(2) somewhat, but isn't
+that a _lot_ simpler? It would probably also mean that the bpf we do get
+handed is a lot smaller. Userspace might need to pass a couple of
+bitmaps, one for each relevant arch, but you get the overall idea.
 
-I guess that would work in principle, but I'm not convinced that it's
-worth adding another layer of global caching just to avoid one load
-instruction for locating the correct bitmask from the current process.
-Especially when it only really provides a benefit when people use
-seccomp improperly - for application sandboxing, you're supposed to
-only permit a list of specific syscalls, the smaller the better.
+I'm also a bit worried about the performance of doing that emulation;
+that's constant extra overhead for, say, launching a docker container.
 
-> Although ISTR someone suggesting that the global_mask should
-> be per-cpu because even shared read-only cache lines were
-> expensive on some architecture.
+Regardless of how the kernel's bitmap gets created, something like
 
-If an architecture did make that expensive, I think we have bigger
-problems to worry about than a little bitmap in seccomp. (Like the
-system call table.) So I think we don't have to worry about that here.
++	if (nr < NR_syscalls) {
++		if (test_bit(nr, bitmaps->allow)) {
++			*filter_ret = SECCOMP_RET_ALLOW;
++			return true;
++		}
+
+probably wants some nospec protection somewhere to avoid the irony of
+seccomp() being used actively by bad guys.
+
+Rasmus
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
