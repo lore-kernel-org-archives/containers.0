@@ -2,98 +2,98 @@ Return-Path: <SRS0=lkaS=DB=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_ADSP_CUSTOM_MED,
+	DKIM_INVALID,DKIM_SIGNED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 328ADC4346E
-	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 08:15:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 39A7CC2D0E2
+	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 08:22:45 +0000 (UTC)
 Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 93B982068D
-	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 08:15:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id AF0FB221EB
+	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 08:22:44 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="RVei7Bv4"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 93B982068D
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=chromium.org
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="HipLz25I"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AF0FB221EB
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 34D59874C2;
-	Thu, 24 Sep 2020 08:15:30 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 3045D874BF;
+	Thu, 24 Sep 2020 08:22:44 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id QCIpSG8pLyBV; Thu, 24 Sep 2020 08:15:29 +0000 (UTC)
+	with ESMTP id 7NgJ7TqqstvC; Thu, 24 Sep 2020 08:22:43 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id A78B3874BD;
-	Thu, 24 Sep 2020 08:15:29 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id ADCD887497;
+	Thu, 24 Sep 2020 08:22:43 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 8BF74C0889;
-	Thu, 24 Sep 2020 08:15:29 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 1282DC0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 9B1BEC0889;
+	Thu, 24 Sep 2020 08:22:43 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id E9143C0051
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 08:15:28 +0000 (UTC)
+ Thu, 24 Sep 2020 08:22:42 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 03A96874BF
+ by whitealder.osuosl.org (Postfix) with ESMTP id E2A2086B52
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 08:15:28 +0000 (UTC)
+ Thu, 24 Sep 2020 08:22:42 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id KjZEiNqxSCB3
+ with ESMTP id 6HJPKrlha1Rl
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 08:15:27 +0000 (UTC)
+ Thu, 24 Sep 2020 08:22:42 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-pf1-f196.google.com (mail-pf1-f196.google.com
- [209.85.210.196])
- by hemlock.osuosl.org (Postfix) with ESMTPS id 63B6D874BD
+Received: from mail-pf1-f195.google.com (mail-pf1-f195.google.com
+ [209.85.210.195])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 7A32886B15
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 08:15:27 +0000 (UTC)
-Received: by mail-pf1-f196.google.com with SMTP id f18so1415412pfa.10
+ Thu, 24 Sep 2020 08:22:42 +0000 (UTC)
+Received: by mail-pf1-f195.google.com with SMTP id f18so1426170pfa.10
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 01:15:27 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=chromium.org; s=google;
- h=date:from:to:cc:subject:message-id:references:mime-version
- :content-disposition:in-reply-to;
- bh=U2el13qFqXukTglGs7cvKDB4IKPjADIDv75hQ/9i9+E=;
- b=RVei7Bv4JMWbyvkyLgdFQFwYfIpkjYeRy3yleinFgOrptu3zTUE/9EyHI98NN+C/im
- x+96TesErw40CMW2cMSm5o5OF37NXz5frZ+kCND0pFHvWzwiM02cMCdZCtO/oRNKJHyH
- BqTHY9BpOHNgc+U56i6p8SKaUYIHr4tUX87jM=
+ Thu, 24 Sep 2020 01:22:42 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
+ h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+ :cc; bh=VffSKFOKcNEqzHH96dUPgeCMOjgSgi5QH+6TbDKTeEM=;
+ b=HipLz25IFRXLxQfyxq4wFJF7SpeY50MTG/68Rn/bZPdFoaCB5RgVZiDO4bHvmNvvZ4
+ p6sy/hJUOSKo+2YZx+a56N8Jo1WSofPDYjUzrdr0Y9+lMc/FYU6gFdDq++W+y6HTyIKr
+ 6mX4yJsgG5TwesHDZi2GvGeqpZfz7eeXMfifbLMX3X53uJX3I7PNLjiYgbYEiM3GObBZ
+ dHckkMr2aM7gdOwFHBRH+P5Nt7EophqGBog+xZTERCxnN0mRajqsDE4Hzhxfbw75pTON
+ f/koI/Lz+OIUxDB7Lc9S4XTXrzH4IG0HToeF13Cq1r6oyNExplV1dMJJ5LN2muREHtWZ
+ 2Wgw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
- h=x-gm-message-state:date:from:to:cc:subject:message-id:references
- :mime-version:content-disposition:in-reply-to;
- bh=U2el13qFqXukTglGs7cvKDB4IKPjADIDv75hQ/9i9+E=;
- b=Yvcix6QZwvjBfaX9PS7yHeY8Q4l/MOXutTrOvaYrA+BPHYzlC+d/IyGlB86uaKaQbl
- Lx7Bgg0n1AzIkncgVRlg/Jq7DiDsRYEDqWBCYJpkydmmURsrlAvR9LyiZfDzEc4zF6KQ
- hObne65BGaGEjVUTKdeocOTi6Ey7a41SBE/klLI+owOxm5QkDqsd/uzE4iUq1sqIYgvj
- tcT9ABL70cUbylMuYQ/1G2qaWzKWlb8wWFtdTMqG9o9oFj8IrmpGOej1yhUNOdxkX4Id
- eHIgr4h2BTXqPFyOxrNTxHLwFDNzBj8sJ5lJNmbHYLK1uBm1Zl0nNJO3WQGDtYVv3b6P
- REmg==
-X-Gm-Message-State: AOAM531AQ3elofHzVwV30Vhz0C2+q4RjMCLZuzysHB382l0UClLEL7Nf
- ONA9UkGwUB7OJeMf3roBwuQ+tA==
-X-Google-Smtp-Source: ABdhPJxpG1Cp3bwo9P3GzvSQphN8aQzF+v4CUOKCDxb9oKuyX9qUhNPoAp+ludYIjdThKbRJpvKwPg==
-X-Received: by 2002:a63:ea16:: with SMTP id c22mr2984137pgi.326.1600935326829; 
- Thu, 24 Sep 2020 01:15:26 -0700 (PDT)
-Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
- by smtp.gmail.com with ESMTPSA id q193sm1932012pfq.127.2020.09.24.01.15.25
- (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
- Thu, 24 Sep 2020 01:15:25 -0700 (PDT)
-Date: Thu, 24 Sep 2020 01:15:24 -0700
-From: Kees Cook <keescook@chromium.org>
-To: YiFei Zhu <zhuyifei1999@gmail.com>
-Subject: Re: [PATCH 3/6] seccomp: Implement constant action bitmaps
-Message-ID: <202009240112.C48EF38EC2@keescook>
+ h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+ :message-id:subject:to:cc;
+ bh=VffSKFOKcNEqzHH96dUPgeCMOjgSgi5QH+6TbDKTeEM=;
+ b=q3hz/FW7xLQH9HVbU5m31gZB3W6OWAKBq07r4+ITx/dSybJjv6vWfYCQGuBUJFUeJa
+ QTWjqkQmcqU0dD1gwbEqVW5y+KbhNice+JI8GhnY8bK2WKoXUZbwutIdoXPa5iHMUmKJ
+ uUr0DkHu6P3uojtpdII3BII/R9DqbwBr8dd9UwyHfrok0x19U2UUKf549lXBMAfyHAwp
+ AwVR1x2TjYOQC/WpqwlUEcHZXQdp0w2ilzr6zRuwAOuFu6cQmCt+sJzAfeNyDyTwpSl9
+ y8DD/Tj6N1mpQDdZVMfo5miuVEljhqH0LF1CNQpSY6kpYddh/JQp6iUr0x/dUDwitBES
+ fSgg==
+X-Gm-Message-State: AOAM532Edz0ZJekXKKmXbvPGC/LrfpF1J/TBBc6idQSMqF0HbLNy88Yg
+ 6AT6l56JBD0NBOmYtz+lNmfCcFki8iHSwnI81kU=
+X-Google-Smtp-Source: ABdhPJyN6S3PvfBf/m7CmcAzF+8SBUXc1APBXPdomlmhd7pAkzxdoiweeazvaxZ3itj9ZG2VZdsL6HkmkZuhi7/iYzU=
+X-Received: by 2002:aa7:8d4c:0:b029:150:f692:4129 with SMTP id
+ s12-20020aa78d4c0000b0290150f6924129mr3496844pfe.11.1600935761975; Thu, 24
+ Sep 2020 01:22:41 -0700 (PDT)
+MIME-Version: 1.0
 References: <20200923232923.3142503-1-keescook@chromium.org>
  <20200923232923.3142503-4-keescook@chromium.org>
  <CAG48ez0d80fOSTyn5QbH33WPz5UkzJJOo+V8of7YMR8pVQxumw@mail.gmail.com>
  <202009240018.A4D8274F@keescook>
  <CABqSeARV4prXOWf9qOBnm5Mm_aAdjwquqFFLQSuL0EegqeWEkA@mail.gmail.com>
-MIME-Version: 1.0
-Content-Disposition: inline
-In-Reply-To: <CABqSeARV4prXOWf9qOBnm5Mm_aAdjwquqFFLQSuL0EegqeWEkA@mail.gmail.com>
+ <202009240112.C48EF38EC2@keescook>
+In-Reply-To: <202009240112.C48EF38EC2@keescook>
+From: YiFei Zhu <zhuyifei1999@gmail.com>
+Date: Thu, 24 Sep 2020 03:22:31 -0500
+Message-ID: <CABqSeAR+DO3=Gt1KAAYKTJd7k07sH+aQCkofXxm7nX2TXh=w6A@mail.gmail.com>
+Subject: Re: [PATCH 3/6] seccomp: Implement constant action bitmaps
+To: Kees Cook <keescook@chromium.org>
 Cc: Andrea Arcangeli <aarcange@redhat.com>,
  Giuseppe Scrivano <gscrivan@redhat.com>, Will Drewry <wad@chromium.org>,
  Jann Horn <jannh@google.com>, YiFei Zhu <yifeifz2@illinois.edu>,
@@ -121,41 +121,26 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Thu, Sep 24, 2020 at 03:07:23AM -0500, YiFei Zhu wrote:
-> On Thu, Sep 24, 2020 at 2:37 AM Kees Cook <keescook@chromium.org> wrote:
-> > >
-> > > This belongs over into patch 1.
-> >
-> > Thanks! I was rushing to get this posted so YiFei Zhu wouldn't spend
-> > time fighting with arch and Kconfig stuff. :) I'll clean this (and the
-> > other random cruft) up.
-> 
-> Wait, what? I'm sorry. We have already begun fixing the mentioned
-> issues (mostly the split bitmaps for different arches). Although yes
-> it's nice to have another implementation to refer to so we get the
-> best of both worlds (and yes I'm already copying some of the code I
-> think are better here over there), don't you think it's not nice to
-> say "Hey I've worked on this in June, it needed rework but I didn't
-> send the newer version. Now you sent yours so I'll rush mine so your
-> work is redundant."?
+On Thu, Sep 24, 2020 at 3:15 AM Kees Cook <keescook@chromium.org> wrote:
+> I was trying to be helpful: you hadn't seen the RFC, and it was missing
+> the emulator piece, which I wanted to be small, so I put got it out the
+> door today. I didn't want you to think you needed to port the larger
+> emulator over, for example.
 
-I was trying to be helpful: you hadn't seen the RFC, and it was missing
-the emulator piece, which I wanted to be small, so I put got it out the
-door today. I didn't want you to think you needed to port the larger
-emulator over, for example.
+There's no architecture-dependent code in the emulator. It just has to
+iterate through all the arch numbers. So I don't know what you are
+referring to by "port ... over".
+The logic is simple. If the emulator determines the filter must be an
+allow for a given arch / syscall pair, then it is "cached by bitmap".
 
-> That said, I do think this should be configurable. Users would be free
-> to experiment with the bitmap on or off, just like users may turn
-> seccomp off entirely. A choice also allows users to select different
-> implementations, a few whom I work with have ideas on how to
-> accelerate / cache argument dependent syscalls, for example.
+> I'm open to ideas, but I want to have a non-optional performance
+> improvement as the first step. :)
 
-I'm open to ideas, but I want to have a non-optional performance
-improvement as the first step. :) "seccomp is magically faster" was my
-driving goal.
+How about "performance improvement by default"? It's not like most end
+users / distros would turn off something that's enabled by default
+when they upgrade to a new kernel.
 
--- 
-Kees Cook
+YiFei Zhu
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
