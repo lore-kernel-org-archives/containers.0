@@ -2,97 +2,99 @@ Return-Path: <SRS0=lkaS=DB=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_ADSP_CUSTOM_MED,
+	DKIM_INVALID,DKIM_SIGNED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7DFB5C4363D
-	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 00:25:36 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C510C4363D
+	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 00:37:07 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id BDB362068E
-	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 00:25:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 1BAD32145D
+	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 00:37:06 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=google.com header.i=@google.com header.b="cbX2fdSu"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BDB362068E
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lists.linux-foundation.org
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="S+45JSXz"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1BAD32145D
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 691BC8654C;
-	Thu, 24 Sep 2020 00:25:35 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 546052A163;
+	Thu, 24 Sep 2020 00:37:06 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from silver.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id zvIrEzEWhkwu; Thu, 24 Sep 2020 00:37:03 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by silver.osuosl.org (Postfix) with ESMTP id A8E33275C6;
+	Thu, 24 Sep 2020 00:37:03 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 8E69FC0859;
+	Thu, 24 Sep 2020 00:37:03 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 714DAC0051
+ for <containers@lists.linux-foundation.org>;
+ Thu, 24 Sep 2020 00:37:01 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by fraxinus.osuosl.org (Postfix) with ESMTP id 62135864B3
+ for <containers@lists.linux-foundation.org>;
+ Thu, 24 Sep 2020 00:37:01 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id yRfR1b5S4U-I; Thu, 24 Sep 2020 00:25:34 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 5C56086519;
-	Thu, 24 Sep 2020 00:25:34 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 41160C0859;
-	Thu, 24 Sep 2020 00:25:34 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 3AE99C0051
- for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 00:25:33 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 29039869D5
- for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 00:25:33 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id vHrpHpmStGOk
+ with ESMTP id 9DDzO5rene0w
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 00:25:31 +0000 (UTC)
-X-Greylist: delayed 00:37:15 by SQLgrey-1.7.6
-Received: from mail-ej1-f67.google.com (mail-ej1-f67.google.com
- [209.85.218.67])
- by whitealder.osuosl.org (Postfix) with ESMTPS id 6ED3B869C3
+ Thu, 24 Sep 2020 00:36:59 +0000 (UTC)
+X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
+Received: from mail-pl1-f195.google.com (mail-pl1-f195.google.com
+ [209.85.214.195])
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id 6FC0F8648E
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 00:25:31 +0000 (UTC)
-Received: by mail-ej1-f67.google.com with SMTP id nw23so2059505ejb.4
+ Thu, 24 Sep 2020 00:36:59 +0000 (UTC)
+Received: by mail-pl1-f195.google.com with SMTP id m15so666663pls.8
  for <containers@lists.linux-foundation.org>;
- Wed, 23 Sep 2020 17:25:31 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=20161025;
+ Wed, 23 Sep 2020 17:36:59 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
  h=mime-version:references:in-reply-to:from:date:message-id:subject:to
- :cc; bh=z36kKBCsQHaNPCeH2E/H9tB3p5RdrZUDg9hhwZ3Nxx4=;
- b=cbX2fdSuIUKZiYq81JUboXArhe0hzzMQKHDvzeE7J6nPvEp8uAfCWtiVvkPW+XoRqf
- SNmPSYUj8Mpf3ntteDZJ0BanpOlimPgmPK5k08S1L+NTDs61EtOmrdTemzlWhloBfw6h
- hKLpi61bNpByUX8xegnen+FIfES+zFOI5Jgc8ssG7qTKjF/Wpu+CsolNmc1A1GzdxMsW
- NkjdaMnu37uiBq+cQSIdZi0TXBDDkqRhIpx11URvPwfi8G5hVCXLICWEaTH5P15N5kMO
- CFX1LqExw0W6wTTa9LYSuBv3hcYXouQwkUxbrf+gi3nYE4HwGGLnZmq/5/jBYASMI8q5
- 9ahA==
+ :cc; bh=dDFv/RhyMEgSIdYNNun/DQyCy7wkiVHBQ14Pm7oiRaY=;
+ b=S+45JSXzgkr09sRCcCdhdTWZqKjGiqaOTVPh6x4Hr3IKq7yQGY+AZH+183mxSCLvjf
+ 2wRiljZuy+jzjhGx4hWUxnqPHkZSewMIC4SsfqC7sYaruiXEAYfAz0dUFhu/LdBzxnSc
+ T/iryvQXvuvaXswywD1clzhRhQfWhW1MViaAwsLawhN5ieaIH6OPi+WcbeNL4aBPmXiP
+ IVU24kMSqalWd6B+dv+TIWsi49MBYZ37xmHIgUmCrtpfjvOHVPm0V4BOjrEe9R+/Xg35
+ LHOtkejtneIjgUaU/n2/kZeHlVMc7Olyns38MZQUuio2vVwhMNsgaSAGXF2IFjL2Nxes
+ I68g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
  h=x-gm-message-state:mime-version:references:in-reply-to:from:date
  :message-id:subject:to:cc;
- bh=z36kKBCsQHaNPCeH2E/H9tB3p5RdrZUDg9hhwZ3Nxx4=;
- b=Jc6PPJpQ+l3gMjop5CpyV4Ve4Ywimqvh9+zQ3Zxu7ufIfW8hweGlD372P+S6q2W0rp
- /kB0IYabITF4uwYnuRhl3ayUZDjghc9h3AzVjOhFTt2WIuGK2o5SMjbJGLcKj9DJSgMP
- fD2kWNjw7coQm2zipJeAUXjvJ9GwTVc7Vf/fKyBUvcVhkFVkBtrEFF3A/WViB+DxremG
- eZCihn5TuVJvEN1j8HD2vvBFleo+nhS89VB8zf5wSgyh2t24Hz3YvexC9qeTZsG07fV5
- zSyYt3Q9ts8mjQtPg0DEFaai538dqxH91vi3KLmDflGFRJHg3ol91pWcH0ogefNSUxCM
- V4qw==
-X-Gm-Message-State: AOAM533pkoor+lrLTanIotXGWfMXfN0dGQb1AmQeGh9WTo9MKciHL5Gc
- K4HhouQImsAEnW4lpFkJr9icLzAuC/EHv76hjj1mOQ==
-X-Google-Smtp-Source: ABdhPJx4IA2iHrYE9+q5i2RC4hqX4ARo0Up8yxJYRnnkUT5XwQl8IaZ/DeyUn7wb1rDN5L75+fZh2NkwrKTz3Yzkc0Q=
-X-Received: by 2002:a17:906:1f94:: with SMTP id
- t20mr2089748ejr.493.1600907129579; 
- Wed, 23 Sep 2020 17:25:29 -0700 (PDT)
+ bh=dDFv/RhyMEgSIdYNNun/DQyCy7wkiVHBQ14Pm7oiRaY=;
+ b=G3/rmm2HEzC+lvl4q3C1eFuuU5yoKcLDGHdDGVEAX87MAEtYXEqW4FbddrbHjii1ma
+ n1M7mA+RQ2Prm8v/ddfMi1vQuOiBREW/tTIxfsOlv6uaSR5wlI8xF2Hl4kiAxN5/EZPp
+ lqgUryn45spIQhtnUGZ/XWwMVciK7iz9kqxTsUQfYD5wk3mckGBn9yFVhNVTNLKGnpv6
+ HX9GSOgKwO4AIagnDKxq8fZ1vOs2CLv3MqDJ9BqF4xsAPoyId8rWczP5pDzgIpjQA46W
+ JtVI/JYUWrAissEh1NhHSqfKhdieCHUNPtccrupvxp6yFMphL79SNB41Uu2DNvtZSQq2
+ Cw4A==
+X-Gm-Message-State: AOAM531khk790PvfzXyzMPi/vHtfj2VmOgIvWc8pfE+FI9yXRpqqyPnH
+ wVuW/BEEhoV6pGnub55GbU6sBwOcSVwuS2pHK70=
+X-Google-Smtp-Source: ABdhPJzcUri7TwdVOiQl74BHN9CWV7BcbuqvjJ4JyKP1RXR2dA1KPOUbcmXOantN/zjW6Rv9EXYhMdraD4cB2D9KhSs=
+X-Received: by 2002:a17:902:7445:b029:d1:dea3:a3ca with SMTP id
+ e5-20020a1709027445b02900d1dea3a3camr2137109plt.19.1600907819053; Wed, 23 Sep
+ 2020 17:36:59 -0700 (PDT)
 MIME-Version: 1.0
 References: <20200923232923.3142503-1-keescook@chromium.org>
  <20200923232923.3142503-4-keescook@chromium.org>
-In-Reply-To: <20200923232923.3142503-4-keescook@chromium.org>
-Date: Thu, 24 Sep 2020 02:25:03 +0200
-Message-ID: <CAG48ez0d80fOSTyn5QbH33WPz5UkzJJOo+V8of7YMR8pVQxumw@mail.gmail.com>
+ <DM6PR11MB271492D0565E91475D949F5DEF390@DM6PR11MB2714.namprd11.prod.outlook.com>
+In-Reply-To: <DM6PR11MB271492D0565E91475D949F5DEF390@DM6PR11MB2714.namprd11.prod.outlook.com>
+From: YiFei Zhu <zhuyifei1999@gmail.com>
+Date: Wed, 23 Sep 2020 19:36:47 -0500
+Message-ID: <CABqSeAS=b6NQ=mqrD=hV60md3isYSDyAnE9QE_AT4=oYYFkAfQ@mail.gmail.com>
 Subject: Re: [PATCH 3/6] seccomp: Implement constant action bitmaps
 To: Kees Cook <keescook@chromium.org>
 Cc: Andrea Arcangeli <aarcange@redhat.com>,
  Giuseppe Scrivano <gscrivan@redhat.com>, Will Drewry <wad@chromium.org>,
- bpf <bpf@vger.kernel.org>, YiFei Zhu <yifeifz2@illinois.edu>,
- Linux API <linux-api@vger.kernel.org>,
+ bpf <bpf@vger.kernel.org>, Jann Horn <jannh@google.com>,
+ YiFei Zhu <yifeifz2@illinois.edu>, linux-api@vger.kernel.org,
  Linux Containers <containers@lists.linux-foundation.org>,
  Tobin Feldman-Fitzthum <tobin@ibm.com>, Hubertus Franke <frankeh@us.ibm.com>,
  Andy Lutomirski <luto@amacapital.net>, Valentin Rothberg <vrothber@redhat.com>,
@@ -110,286 +112,32 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-From: Jann Horn via Containers <containers@lists.linux-foundation.org>
-Reply-To: Jann Horn <jannh@google.com>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Thu, Sep 24, 2020 at 1:29 AM Kees Cook <keescook@chromium.org> wrote:
-> One of the most common pain points with seccomp filters has been dealing
-> with the overhead of processing the filters, especially for "always allow"
-> or "always reject" cases.
+On Wed, Sep 23, 2020 at 6:29 PM Kees Cook <keescook@chromium.org> wrote:
+> In order to optimize these cases from O(n) to O(1), seccomp can
+> use bitmaps to immediately determine the desired action. A critical
+> observation in the prior paragraph bears repeating: the common case for
+> syscall tests do not check arguments. For any given filter, there is a
+> constant mapping from the combination of architecture and syscall to the
+> seccomp action result. (For kernels/architectures without CONFIG_COMPAT,
+> there is a single architecture.). As such, it is possible to construct
+> a mapping of arch/syscall to action, which can be updated as new filters
+> are attached to a process.
 
-The "always reject" cases don't need to be fast, in particular not the
-kill_thread/kill_process ones. Nobody's going to have "process kills
-itself by executing a forbidden syscall" on a critical hot codepath.
+Would you mind educating me how this patch plan one handling MIPS? For
+one kernel they seem to have up to three arch numbers per build,
+AUDIT_ARCH_MIPS{,64,64N32}. Though ARCH_TRACE_IGNORE_COMPAT_SYSCALLS
+does not seem to be defined for MIPS so I'm assuming the syscall
+numbers are the same, but I think it is possible some client uses that
+arch number to pose different constraints for different processes, so
+it would better not accelerate them rather than break them.
 
-> While BPF is extremely fast[1], it will always
-> have overhead associated with it. Additionally, due to seccomp's design,
-> filters are layered, which means processing time goes up as the number
-> of filters attached goes up.
-[...]
-> In order to build this mapping at filter attach time, each filter is
-> executed for every syscall (under each possible architecture), and
-> checked for any accesses of struct seccomp_data that are not the "arch"
-> nor "nr" (syscall) members. If only "arch" and "nr" are examined, then
-> there is a constant mapping for that syscall, and bitmaps can be updated
-> accordingly. If any accesses happen outside of those struct members,
-> seccomp must not bypass filter execution for that syscall, since program
-> state will be used to determine filter action result. (This logic comes
-> in the next patch.)
->
-> [1] https://lore.kernel.org/bpf/20200531171915.wsxvdjeetmhpsdv2@ast-mbp.dhcp.thefacebook.com/
-> [2] https://lore.kernel.org/bpf/20200601101137.GA121847@gardel-login/
-> [3] https://lore.kernel.org/bpf/717a06e7f35740ccb4c70470ec70fb2f@huawei.com/
->
-> Signed-off-by: Kees Cook <keescook@chromium.org>
-> ---
->  include/linux/seccomp.h |  18 ++++
->  kernel/seccomp.c        | 207 +++++++++++++++++++++++++++++++++++++++-
->  2 files changed, 221 insertions(+), 4 deletions(-)
->
-> diff --git a/include/linux/seccomp.h b/include/linux/seccomp.h
-> index 0be20bc81ea9..96df2f899e3d 100644
-> --- a/include/linux/seccomp.h
-> +++ b/include/linux/seccomp.h
-> @@ -25,6 +25,17 @@
->  #define SECCOMP_ARCH_IS_MULTIPLEX      3
->  #define SECCOMP_ARCH_IS_UNKNOWN                0xff
->
-> +/* When no bits are set for a syscall, filters are run. */
-> +struct seccomp_bitmaps {
-> +#ifdef SECCOMP_ARCH
-> +       /* "allow" are initialized to set and only ever get cleared. */
-> +       DECLARE_BITMAP(allow, NR_syscalls);
 
-This bitmap makes sense.
-
-The "NR_syscalls" part assumes that the compat syscall tables will not
-be bigger than the native syscall table, right? I guess that's usually
-mostly true nowadays, thanks to the syscall table unification...
-(might be worth a comment though)
-
-> +       /* These are initialized to clear and only ever get set. */
-> +       DECLARE_BITMAP(kill_thread, NR_syscalls);
-> +       DECLARE_BITMAP(kill_process, NR_syscalls);
-
-I don't think these bitmaps make sense, this is not part of any fastpath.
-
-(However, a "which syscalls have a fixed result" bitmap might make
-sense if we want to export the list of permitted syscalls as a text
-file in procfs, as I mentioned over at
-<https://lore.kernel.org/lkml/CAG48ez3Ofqp4crXGksLmZY6=fGrF_tWyUCg7PBkAetvbbOPeOA@mail.gmail.com/>.)
-
-> +#endif
-> +};
-> +
->  struct seccomp_filter;
->  /**
->   * struct seccomp - the state of a seccomp'ed process
-> @@ -45,6 +56,13 @@ struct seccomp {
->  #endif
->         atomic_t filter_count;
->         struct seccomp_filter *filter;
-> +       struct seccomp_bitmaps native;
-> +#ifdef CONFIG_COMPAT
-> +       struct seccomp_bitmaps compat;
-> +#endif
-> +#ifdef SECCOMP_MULTIPLEXED_SYSCALL_TABLE_ARCH
-> +       struct seccomp_bitmaps multiplex;
-> +#endif
-
-Why do we have one bitmap per thread (in struct seccomp) instead of
-putting the bitmap for a given filter and all its ancestors into the
-seccomp_filter?
-
->  };
->
->  #ifdef CONFIG_HAVE_ARCH_SECCOMP_FILTER
-> diff --git a/kernel/seccomp.c b/kernel/seccomp.c
-> index 0a3ff8eb8aea..111a238bc532 100644
-> --- a/kernel/seccomp.c
-> +++ b/kernel/seccomp.c
-> @@ -318,7 +318,7 @@ static inline u8 seccomp_get_arch(u32 syscall_arch, u32 syscall_nr)
->
->  #ifdef SECCOMP_MULTIPLEXED_SYSCALL_TABLE_ARCH
->         if (syscall_arch == SECCOMP_MULTIPLEXED_SYSCALL_TABLE_ARCH) {
-> -               seccomp_arch |= (sd->nr & SECCOMP_MULTIPLEXED_SYSCALL_TABLE_MASK) >>
-> +               seccomp_arch |= (syscall_nr & SECCOMP_MULTIPLEXED_SYSCALL_TABLE_MASK) >>
->                                 SECCOMP_MULTIPLEXED_SYSCALL_TABLE_SHIFT;
-
-This belongs over into patch 1.
-
->         }
->  #endif
-> @@ -559,6 +559,21 @@ static inline void seccomp_sync_threads(unsigned long flags)
->                 atomic_set(&thread->seccomp.filter_count,
->                            atomic_read(&thread->seccomp.filter_count));
->
-> +               /* Copy syscall filter bitmaps. */
-> +               memcpy(&thread->seccomp.native,
-> +                      &caller->seccomp.native,
-> +                      sizeof(caller->seccomp.native));
-> +#ifdef CONFIG_COMPAT
-> +               memcpy(&thread->seccomp.compat,
-> +                      &caller->seccomp.compat,
-> +                      sizeof(caller->seccomp.compat));
-> +#endif
-> +#ifdef SECCOMP_MULTIPLEXED_SYSCALL_TABLE_ARCH
-> +               memcpy(&thread->seccomp.multiplex,
-> +                      &caller->seccomp.multiplex,
-> +                      sizeof(caller->seccomp.multiplex));
-> +#endif
-
-This part wouldn't be necessary if the bitmasks were part of the
-seccomp_filter...
-
->                 /*
->                  * Don't let an unprivileged task work around
->                  * the no_new_privs restriction by creating
-> @@ -661,6 +676,114 @@ seccomp_prepare_user_filter(const char __user *user_filter)
->         return filter;
->  }
->
-> +static inline bool sd_touched(pte_t *ptep)
-> +{
-> +       return !!pte_young(*(READ_ONCE(ptep)));
-> +}
-
-I think this is left over from the previous version and should've been removed?
-
-[...]
-> +/*
-> + * Walk everyone syscall combination for this arch/mask combo and update
-
-nit: "Walk every possible", or something like that
-
-> + * the bitmaps with any results.
-> + */
-> +static void seccomp_update_bitmap(struct seccomp_filter *filter,
-> +                                 void *pagepair, u32 arch, u32 mask,
-> +                                 struct seccomp_bitmaps *bitmaps)
-[...]
-> @@ -970,6 +1097,65 @@ static int seccomp_do_user_notification(int this_syscall,
->         return -1;
->  }
->
-> +#ifdef SECCOMP_ARCH
-> +static inline bool __bypass_filter(struct seccomp_bitmaps *bitmaps,
-> +                                  u32 nr, u32 *filter_ret)
-> +{
-> +       if (nr < NR_syscalls) {
-> +               if (test_bit(nr, bitmaps->allow)) {
-> +                       *filter_ret = SECCOMP_RET_ALLOW;
-> +                       return true;
-> +               }
-> +               if (test_bit(nr, bitmaps->kill_process)) {
-> +                       *filter_ret = SECCOMP_RET_KILL_PROCESS;
-> +                       return true;
-> +               }
-> +               if (test_bit(nr, bitmaps->kill_thread)) {
-> +                       *filter_ret = SECCOMP_RET_KILL_THREAD;
-> +                       return true;
-> +               }
-
-The checks against ->kill_process and ->kill_thread won't make
-anything faster, but since they will run in the fastpath, they'll
-probably actually contribute to making things *slower*.
-
-> +       }
-> +       return false;
-> +}
-> +
-> +static inline u32 check_syscall(const struct seccomp_data *sd,
-> +                               struct seccomp_filter **match)
-> +{
-> +       u32 filter_ret = SECCOMP_RET_KILL_PROCESS;
-> +       u8 arch = seccomp_get_arch(sd->arch, sd->nr);
-> +
-> +       switch (arch) {
-> +       case SECCOMP_ARCH_IS_NATIVE:
-> +               if (__bypass_filter(&current->seccomp.native, sd->nr, &filter_ret))
-> +                       return filter_ret;
-> +               break;
-> +#ifdef CONFIG_COMPAT
-> +       case SECCOMP_ARCH_IS_COMPAT:
-> +               if (__bypass_filter(&current->seccomp.compat, sd->nr, &filter_ret))
-> +                       return filter_ret;
-> +               break;
-> +#endif
-> +#ifdef SECCOMP_MULTIPLEXED_SYSCALL_TABLE_ARCH
-> +       case SECCOMP_ARCH_IS_MULTIPLEX:
-> +               if (__bypass_filter(&current->seccomp.multiplex, sd->nr, &filter_ret))
-> +                       return filter_ret;
-> +               break;
-> +#endif
-> +       default:
-> +               WARN_ON_ONCE(1);
-> +               return filter_ret;
-> +       };
-> +
-> +       return seccomp_run_filters(sd, match);
-> +}
-
-You could write this in a less repetitive way, and especially if we
-get rid of the kill_* masks, also more compact:
-
-static inline u32 check_syscall(const struct seccomp_data *sd,
-        struct seccomp_filter **match)
-{
-  struct seccomp_bitmaps *bitmaps;
-  u32 filter_ret;
-
-  switch (arch) {
-  case SECCOMP_ARCH_IS_NATIVE:
-    bitmaps = &current->seccomp.native;
-    break;
-#ifdef CONFIG_COMPAT
-  case SECCOMP_ARCH_IS_COMPAT:
-    bitmaps = &current->seccomp.compat;
-    break;
-#endif
-#ifdef SECCOMP_MULTIPLEXED_SYSCALL_TABLE_ARCH
-  case SECCOMP_ARCH_IS_MULTIPLEX:
-    bitmaps = &current->seccomp.multiplex;
-    break;
-#endif
-  default:
-    WARN_ON_ONCE(1);
-    return SECCOMP_RET_KILL_PROCESS;
-  }
-
-  if ((unsigned)sd->nr < __NR_syscalls && test_bit(sd->nr, bitmaps->allow))
-    return SECCOMP_RET_ALLOW;
-
-  return seccomp_run_filters(sd, match);
-}
-
-[...]
-> @@ -1625,12 +1812,24 @@ static long seccomp_set_mode_filter(unsigned int flags,
->             mutex_lock_killable(&current->signal->cred_guard_mutex))
->                 goto out_put_fd;
->
-> +       /*
-> +        * This memory will be needed for bitmap testing, but we'll
-> +        * be holding a spinlock at that point. Do the allocation
-> +        * (and free) outside of the lock.
-> +        *
-> +        * Alternative: we could do the bitmap update before attach
-> +        * to avoid spending too much time under lock.
-> +        */
-> +       pagepair = vzalloc(PAGE_SIZE * 2);
-> +       if (!pagepair)
-> +               goto out_put_fd;
-> +
-[...]
-> -       ret = seccomp_attach_filter(flags, prepared);
-> +       ret = seccomp_attach_filter(flags, prepared, pagepair);
-
-You probably intended to rip this stuff back out? AFAIU the vzalloc()
-stuff is a remnant from the old version that relied on MMU trickery.
+YiFei Zhu
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
