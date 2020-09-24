@@ -6,90 +6,98 @@ X-Spam-Status: No, score=-3.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
 	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C6755C4363D
-	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 19:19:03 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6CCF5C4363D
+	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 19:52:14 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 4564021D91
-	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 19:19:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id BD0A32220C
+	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 19:52:13 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=google.com header.i=@google.com header.b="nW6H9Ez9"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4564021D91
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lists.linux-foundation.org
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="U97pSE2E"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BD0A32220C
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=chromium.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id D554D86B55;
-	Thu, 24 Sep 2020 19:19:02 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id SQCmNgpUssXd; Thu, 24 Sep 2020 19:19:02 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 6C75F86AC4;
-	Thu, 24 Sep 2020 19:19:02 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 4DB8BC0859;
-	Thu, 24 Sep 2020 19:19:02 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id E1DA1C0051
- for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 19:19:01 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id C9424872FE
- for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 19:19:01 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 5AAEE87466;
+	Thu, 24 Sep 2020 19:52:13 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id jF5auZsJ-8EH; Thu, 24 Sep 2020 19:52:12 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by hemlock.osuosl.org (Postfix) with ESMTP id A61D087445;
+	Thu, 24 Sep 2020 19:52:12 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 7D46FC0859;
+	Thu, 24 Sep 2020 19:52:12 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id E49D2C0051
+ for <containers@lists.linux-foundation.org>;
+ Thu, 24 Sep 2020 19:52:11 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by fraxinus.osuosl.org (Postfix) with ESMTP id C8B3B86AAB
+ for <containers@lists.linux-foundation.org>;
+ Thu, 24 Sep 2020 19:52:11 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from fraxinus.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id 8wYCSNiQ+X0I
+ with ESMTP id Yl2tAByT2-20
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 19:19:01 +0000 (UTC)
+ Thu, 24 Sep 2020 19:52:11 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-ej1-f66.google.com (mail-ej1-f66.google.com
- [209.85.218.66])
- by hemlock.osuosl.org (Postfix) with ESMTPS id 02101872D6
+Received: from mail-pf1-f195.google.com (mail-pf1-f195.google.com
+ [209.85.210.195])
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id 2E29E86A99
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 19:19:00 +0000 (UTC)
-Received: by mail-ej1-f66.google.com with SMTP id e23so343163eja.3
+ Thu, 24 Sep 2020 19:52:11 +0000 (UTC)
+Received: by mail-pf1-f195.google.com with SMTP id w7so460259pfi.4
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 12:19:00 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=20161025;
- h=mime-version:references:in-reply-to:from:date:message-id:subject:to
- :cc; bh=rL+0r4nsYsaTnfsp4nKpvqpdZr9u7FgIPOgyMKNt8zc=;
- b=nW6H9Ez9qPwsgMVuKmXTOIP47WKziOB7h4ORZWYHlPlZmcmBaz4bHW4IU2YbZsB5hb
- PKuFmofW4Zkf/3SgserbbqW7aN+s9iDgZbxr9QF0a+XDOyQauEYVVSL/KnakazhwL9D4
- UwrK4zx1t+sRU7ddaxgI/KYI1iAsm8WFKpkl5/8qG0kYIZDGGh7V/oUZv2AqOwFcMrap
- DSM8JWFJFnMD99cr4rEr96PRqnbogR9L4C448SM/gzvmeyrVEi1RWLhCxTScPIvkxccL
- bhyh0HeLsDXVkXxuvggdeni2CgIY8uiKUYP88tL+eo2IucDIcb5mZtmgFAHFmYwp06Dk
- cHcw==
+ Thu, 24 Sep 2020 12:52:11 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=chromium.org; s=google;
+ h=date:from:to:cc:subject:message-id:references:mime-version
+ :content-disposition:in-reply-to;
+ bh=k70Xue22GFlB0rY9wGgnFf8SK2vwmBPDgshtczHYd+4=;
+ b=U97pSE2E3cWH2OMa2/1j1GXuJM9azr9TZPGI6w4DyW57tj+j9Ltmd/pid9zUZwnBNi
+ v1Nj4NptXZH5IE/5pxa9rv2NDAvYXrXKU7qOVssXD0Xio+R+4dq8ZzTUZn5qwdmrkUA9
+ t4M6wZmpJXLoyG+/Q2rEe/S1dt04TRaQ99LTA=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
- h=x-gm-message-state:mime-version:references:in-reply-to:from:date
- :message-id:subject:to:cc;
- bh=rL+0r4nsYsaTnfsp4nKpvqpdZr9u7FgIPOgyMKNt8zc=;
- b=szoWfPOMrT+OHtWkc3HoNfwKiTOT0bGx+1flLjF59VltS0GUMIpqcpUVsm0+/MyZgz
- f40LEF+YDr4QfSTqJex9p7wC83Bcm0LKmJDOwrMtGGqWfD4nfn0Am9iMVSPDxz3nKw0j
- wSANX/ldU8FjpsO7MgNCfNrxveD1C0hCfZv8IZE2qv4SKzFgh3N08zvfN8b7/voVFOQx
- dmYpABUM2ObGmimkr1UX/xwRP5sXH4ZKdLnGyNeaLtBvtgr0e4Je58iPgOzJQPZkSnJA
- bm2IeDt5eLV1B4I8MMPrTvHxAWEW94Ggu+hRMREkhyajN3PDB3okfZgeKaY55SHX4GtH
- bP5w==
-X-Gm-Message-State: AOAM531Sumq6znc+EouxdgEDtjL1niPDfv0d2tlaMsuoi+gO8Czgqrln
- GFfRHt0HqdMg/saD22Zpk5uDpSLbl2dW156OJZm3Ng==
-X-Google-Smtp-Source: ABdhPJwH4eJsS5OWHswwTu13j7X710JhXzRLOlQI2ycEssSzTXiSAu4QWPI8Qvq2bTeAc49+G5jFwYQxPfgwyoykqVY=
-X-Received: by 2002:a17:907:94cf:: with SMTP id
- dn15mr176599ejc.114.1600975139153; 
- Thu, 24 Sep 2020 12:18:59 -0700 (PDT)
-MIME-Version: 1.0
+ h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+ :mime-version:content-disposition:in-reply-to;
+ bh=k70Xue22GFlB0rY9wGgnFf8SK2vwmBPDgshtczHYd+4=;
+ b=aaVowBgRnFAwxS8Xg2IyfU/ODsfqHXZfRRVPQzwFbdaFQuVUDa8mvQdWxZ1TWIOcAb
+ daEeSLL1Es6XCZNV4rRuhY1F4FDTfl2vYHjIPkyPcoowbw0/RqHmuGTVZZmjD7xb3GVI
+ Ab/V5Ehlj2kSpkzu0zJNAf9Vp/vvGKK62IMPBa98Y3kAhelSVPI1s/URu0rneyEz/Tof
+ gBTJL5fFX2HrTPK3crt5vxGcvvmB84h3lJ370C2NpH6bm2uZb7EDN8ZKLpEmUfFEl9Qi
+ O2KtkHAxTHFCHVHKCs7k//p00ktaMddRT51NszkpU0hRLvD3awfCX9DbsAn5pQtJ6DUM
+ gGYQ==
+X-Gm-Message-State: AOAM530oTUEjF1to58uOMB/MvhLbpqGRekUrX+S+X+HCy71PYEssy5xw
+ sXhDMG5h5hNkMN2EnQRXcu90RA==
+X-Google-Smtp-Source: ABdhPJzpsUJFf8IHAHpxoWh4JONrQ/df6mHI3aKnLsuTt2XZEKCv+YjNg5jbY6Sd/88urNoAFy6ZIg==
+X-Received: by 2002:a63:42:: with SMTP id 63mr553646pga.419.1600977130625;
+ Thu, 24 Sep 2020 12:52:10 -0700 (PDT)
+Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
+ by smtp.gmail.com with ESMTPSA id g9sm295305pfo.144.2020.09.24.12.52.09
+ (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+ Thu, 24 Sep 2020 12:52:09 -0700 (PDT)
+Date: Thu, 24 Sep 2020 12:52:08 -0700
+From: Kees Cook <keescook@chromium.org>
+To: Paul Moore <paul@paul-moore.com>
+Subject: Re: [PATCH 4/6] seccomp: Emulate basic filters for constant action
+ results
+Message-ID: <202009241251.F719CC4@keescook>
 References: <20200923232923.3142503-1-keescook@chromium.org>
- <20200924185702.GA9225@redhat.com>
-In-Reply-To: <20200924185702.GA9225@redhat.com>
-Date: Thu, 24 Sep 2020 21:18:32 +0200
-Message-ID: <CAG48ez3s9u+5_Bd94CP97aqBBKzno1o2obpJPSdMnsHHkOd0qg@mail.gmail.com>
-Subject: Re: [PATCH v1 0/6] seccomp: Implement constant action bitmaps
-To: Andrea Arcangeli <aarcange@redhat.com>
-Cc: Giuseppe Scrivano <gscrivan@redhat.com>, Will Drewry <wad@chromium.org>,
- Kees Cook <keescook@chromium.org>, YiFei Zhu <yifeifz2@illinois.edu>,
+ <20200923232923.3142503-5-keescook@chromium.org>
+ <CAG48ez251v19U60GYH4aWE6+C-3PYw5mr_Ax_kxnebqDOBn_+Q@mail.gmail.com>
+ <202009240038.864365E@keescook>
+ <CAHC9VhQpto1KuL7PhjtdjtAjJ2nC+rZNSM7+nSZ_ksqGXbhY+Q@mail.gmail.com>
+MIME-Version: 1.0
+Content-Disposition: inline
+In-Reply-To: <CAHC9VhQpto1KuL7PhjtdjtAjJ2nC+rZNSM7+nSZ_ksqGXbhY+Q@mail.gmail.com>
+Cc: Andrea Arcangeli <aarcange@redhat.com>,
+ Giuseppe Scrivano <gscrivan@redhat.com>, Will Drewry <wad@chromium.org>,
+ Jann Horn <jannh@google.com>, YiFei Zhu <yifeifz2@illinois.edu>,
  Linux API <linux-api@vger.kernel.org>,
  Linux Containers <containers@lists.linux-foundation.org>,
  bpf <bpf@vger.kernel.org>, Tobin Feldman-Fitzthum <tobin@ibm.com>,
@@ -109,60 +117,70 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-From: Jann Horn via Containers <containers@lists.linux-foundation.org>
-Reply-To: Jann Horn <jannh@google.com>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Thu, Sep 24, 2020 at 8:57 PM Andrea Arcangeli <aarcange@redhat.com> wrote:
->
-> Hello,
->
-> I'm posting this only for the record, feel free to ignore.
->
-> On Wed, Sep 23, 2020 at 04:29:17PM -0700, Kees Cook wrote:
-> > rfc: https://lore.kernel.org/lkml/20200616074934.1600036-1-keescook@chromium.org/
-> > alternative: https://lore.kernel.org/containers/cover.1600661418.git.yifeifz2@illinois.edu/
-> > v1:
-> > - rebase to for-next/seccomp
-> > - finish X86_X32 support for both pinning and bitmaps
->
-> It's pretty clear the O(1) seccomp filter bitmap was first was
-> proposed by your RFC in June (albeit it was located in the wrong place
-> and is still in the wrong place in v1).
->
-> > - replace TLB magic with Jann's emulator
->     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
->
-> That's a pretty fundamental change in v1 compared to your the
-> non-competing TLB magic technique you used in the RFC last June.
->
-> The bitmap isn't the clever part of the patch, the bitmap can be
-> reviewed in seconds, the difficult part to implement and to review is
-> how you fill the bitmap and in that respect there's absolutely nothing
-> in common in between the "rfc:" and the "alternative" link.
->
-> In June your bitmap-filling engine was this:
->
-> https://lore.kernel.org/lkml/20200616074934.1600036-5-keescook@chromium.org/
->
-> Then on Sep 21 YiFei Zhu posted his new innovative BPF emulation
-> innovation that obsoleted your TLB magic of June:
->
-> https://lists.linuxfoundation.org/pipermail/containers/2020-September/042153.html
->
-> And on Sep 23 instead of collaborating and helping YiFei Zhu to
-> improve his BPF emulator, you posted the same technique that looks
-> remarkably similar without giving YiFei Zhu any attribution and you
-> instead attribute the whole idea to Jann Horn:
->
-> https://lkml.kernel.org/r/20200923232923.3142503-5-keescook@chromium.org
+On Thu, Sep 24, 2020 at 11:28:55AM -0400, Paul Moore wrote:
+> On Thu, Sep 24, 2020 at 3:46 AM Kees Cook <keescook@chromium.org> wrote:
+> > On Thu, Sep 24, 2020 at 01:47:47AM +0200, Jann Horn wrote:
+> > > On Thu, Sep 24, 2020 at 1:29 AM Kees Cook <keescook@chromium.org> wrote:
+> > > > This emulates absolutely the most basic seccomp filters to figure out
+> > > > if they will always give the same results for a given arch/nr combo.
+> > > >
+> > > > Nearly all seccomp filters are built from the following ops:
+> > > >
+> > > > BPF_LD  | BPF_W    | BPF_ABS
+> > > > BPF_JMP | BPF_JEQ  | BPF_K
+> > > > BPF_JMP | BPF_JGE  | BPF_K
+> > > > BPF_JMP | BPF_JGT  | BPF_K
+> > > > BPF_JMP | BPF_JSET | BPF_K
+> > > > BPF_JMP | BPF_JA
+> > > > BPF_RET | BPF_K
+> > > >
+> > > > These are now emulated to check for accesses beyond seccomp_data::arch
+> > > > or unknown instructions.
+> > > >
+> > > > Not yet implemented are:
+> > > >
+> > > > BPF_ALU | BPF_AND (generated by libseccomp and Chrome)
+> > >
+> > > BPF_AND is normally only used on syscall arguments, not on the syscall
+> > > number or the architecture, right? And when a syscall argument is
+> > > loaded, we abort execution anyway. So I think there is no need to
+> > > implement those?
+> >
+> > Is that right? I can't actually tell what libseccomp is doing with
+> > ALU|AND. It looks like it's using it for building jump lists?
+> 
+> There is an ALU|AND op in the jump resolution code, but that is really
+> just if libseccomp needs to fixup the accumulator because a code block
+> is expecting a masked value (right now that would only be a syscall
+> argument, not the syscall number itself).
+> 
+> > Paul, Tom, under what cases does libseccomp emit ALU|AND into filters?
+> 
+> Presently the only place where libseccomp uses ALU|AND is when the
+> masked equality comparison is used for comparing syscall arguments
+> (SCMP_CMP_MASKED_EQ).  I can't honestly say I have any good
+> information about how often that is used by libseccomp callers, but if
+> I do a quick search on GitHub for "SCMP_CMP_MASKED_EQ" I see 2k worth
+> of code hits; take that for whatever it is worth.  Tom may have some
+> more/better information.
+> 
+> Of course no promises on future use :)  As one quick example, I keep
+> thinking about adding the instruction pointer to the list of things
+> that can be compared as part of a libseccomp rule, and if we do that I
+> would expect that we would want to also allow a masked comparison (and
+> utilize another ALU|AND bpf op there).  However, I'm not sure how
+> useful that would be in practice.
 
-You're missing that I did suggest the BPF emulation approach (with
-code very similar to Kees' current code) back in June:
-https://lore.kernel.org/lkml/CAG48ez1p=dR_2ikKq=xVxkoGg0fYpTBpkhJSv1w-6BG=76PAvw@mail.gmail.com/
+Okay, cool. Thanks for checking on that. It sounds like the arg-less
+bitmap optimization can continue to ignore ALU|AND for now. :)
+
+-- 
+Kees Cook
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
