@@ -2,110 +2,104 @@ Return-Path: <SRS0=lkaS=DB=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,
-	DKIM_ADSP_CUSTOM_MED,DKIM_INVALID,DKIM_SIGNED,FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C9773C4363D
-	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 12:07:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F2F13C2D0E2
+	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 12:29:09 +0000 (UTC)
 Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 4CC8E20758
-	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 12:07:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 275B8221EB
+	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 12:29:08 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="u6ZGX1p9"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4CC8E20758
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=google.com header.i=@google.com header.b="Ti6cmqL3"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 275B8221EB
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lists.linux-foundation.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id E594C2E109;
-	Thu, 24 Sep 2020 12:07:15 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 86C482E113;
+	Thu, 24 Sep 2020 12:29:08 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id WXZuCOJt6zhk; Thu, 24 Sep 2020 12:07:08 +0000 (UTC)
+	with ESMTP id f3QcPJp+AdLI; Thu, 24 Sep 2020 12:29:06 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 544DA2E114;
-	Thu, 24 Sep 2020 12:07:08 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 023E32E11D;
+	Thu, 24 Sep 2020 12:29:05 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 409CEC0859;
-	Thu, 24 Sep 2020 12:07:08 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 026D1C0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id DB48DC0890;
+	Thu, 24 Sep 2020 12:29:05 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 14BCCC0859
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 12:07:07 +0000 (UTC)
+ Thu, 24 Sep 2020 12:29:04 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id E562B2E114
+ by whitealder.osuosl.org (Postfix) with ESMTP id 0344685727
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 12:07:06 +0000 (UTC)
+ Thu, 24 Sep 2020 12:29:04 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id h74C-vbqynUX
+ with ESMTP id hEgSU46r-3o3
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 12:06:57 +0000 (UTC)
+ Thu, 24 Sep 2020 12:29:01 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-il1-f171.google.com (mail-il1-f171.google.com
- [209.85.166.171])
- by silver.osuosl.org (Postfix) with ESMTPS id 1C57B2E109
+Received: from mail-ej1-f68.google.com (mail-ej1-f68.google.com
+ [209.85.218.68])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id A534786BF2
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 12:06:57 +0000 (UTC)
-Received: by mail-il1-f171.google.com with SMTP id y2so2906522ila.0
+ Thu, 24 Sep 2020 12:29:00 +0000 (UTC)
+Received: by mail-ej1-f68.google.com with SMTP id gx22so4220898ejb.5
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 05:06:57 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
- h=from:to:cc:subject:date:message-id:in-reply-to:references
- :mime-version:content-transfer-encoding;
- bh=3aehQo/yRfhFUHB1dumyvMfUbkZ02zfVtfOyrlCUCaI=;
- b=u6ZGX1p958sa7jmJFWeFPqfV7op7vCFNGPpWjxVG54GUjQ6nTSRi4PvsP0tgdlswLa
- tXw56YZHr7UJPj/mAR1zo5LQNssBUTB1tMhYWIr2MorHrNsEKMrc75xX3JWqlyrjFz/Z
- +ny9iikN8daH61gAtOZ+mOPxJtYSZBnQrjaVjNmzqljQo2qc1iyNwHH6A1jwbzzZJhn8
- lgCwkBSfhxELi2dLQXj5QrsdSoNkGXb+ivYZ21ehuYbj3T20nAx0XnbNdRcaq7oeylZd
- JeHZGPQXAu0qeLKUKpbTvaPCXAk3FNVb33qzQCfSnC2ptusgJfBOTA4cNCzK+zzwAVlI
- B6Fw==
+ Thu, 24 Sep 2020 05:29:00 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=20161025;
+ h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+ :cc; bh=UcT+pZ/PTUp9wa/y0kDn97OtjvB6CdX4Q+3kJBuVUCc=;
+ b=Ti6cmqL3Ww4/dmp4GkFf//pZM1Cyddfmt3F68rkT3FctP4csEwJV1NJkB1tib9WozY
+ oNc6naTBxuclc80J+TWCWbGJd8Fuf4AnFoG86p+ut3WbzBD2lCKKaYvNSLkPp+nC7IjM
+ Qoh75X6YKrgeZuI2F6HmflLcxhevKrt2jbmwkdoUuKN2fFfeUW12Csre4b3NreUUbUOV
+ OxmzFfkvFy1NN4fo100JLfgqLlNL1LDX6jPfiBgqOlQYhv0rAGiWjFOcE1Z4bg1rQR9Z
+ FSprGO32fR+tUWM8L24aC4BCxXNI5RVcCZCQJE1wV7IG+4RhTsKhd09adZuNylejwzhE
+ HLhg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
- h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
- :references:mime-version:content-transfer-encoding;
- bh=3aehQo/yRfhFUHB1dumyvMfUbkZ02zfVtfOyrlCUCaI=;
- b=T7MMPnKtbJIdEvYAQW7NyZoJFgrMfE0CfPGZ0WMkAIrIAbkKhkhTx0LCA2J3RE6iL4
- NPpwHsleg7vf1+2J4RyLFHnT3MYOvWpwUlmVK+J+Y1A2qLg989RLLtEZn9htmOSWdiWM
- 5q+5tHlz/9ri2TIQsFoxd5v1YamavpuVncGfPOiD0F0WlbwZWvMmyOLgzHBRfilx72TV
- MfsaIVmsGEikuFF6AXLjLajusGMpKdKCDoIvrnOliIV/zc/Qs/CIDsaAc3pBxfifYKWQ
- tFg9HIiLNdQNFBQHlU7XUI6C5sfYpO03tRl23hx2owrMCZrOjh30e6rbsPbraCn5XYIy
- liiw==
-X-Gm-Message-State: AOAM532AC2PEAgzHFX7WerwtrvP3+x0jUFZzYebgVFzcHQok8chbUots
- 7HK5IzUsXY1Bh6lHHKMa6BlCMYN6kJUzRA==
-X-Google-Smtp-Source: ABdhPJwJFh6+z6EE9A4CY8iohf0rnUL2vgbowcRpa3Gv/pjaAbpWPvEQw1B3L81zgoo/LI6fIg7XRQ==
-X-Received: by 2002:a92:c083:: with SMTP id h3mr3643408ile.30.1600949215997;
- Thu, 24 Sep 2020 05:06:55 -0700 (PDT)
-Received: from localhost.localdomain
- (host-173-230-99-154.tnkngak.clients.pavlovmedia.com. [173.230.99.154])
- by smtp.gmail.com with ESMTPSA id a23sm1259435ioc.54.2020.09.24.05.06.55
- (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
- Thu, 24 Sep 2020 05:06:55 -0700 (PDT)
-From: YiFei Zhu <zhuyifei1999@gmail.com>
-To: containers@lists.linux-foundation.org
-Subject: [PATCH seccomp 5/6] selftests/seccomp: Compare bitmap vs filter
- overhead
-Date: Thu, 24 Sep 2020 07:06:45 -0500
-Message-Id: <0a0a6c07a3322fe7c591e7d226f5b88198e5bc96.1600946701.git.yifeifz2@illinois.edu>
-X-Mailer: git-send-email 2.28.0
-In-Reply-To: <cover.1600946701.git.yifeifz2@illinois.edu>
-References: <cover.1600946701.git.yifeifz2@illinois.edu>
+ h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+ :message-id:subject:to:cc;
+ bh=UcT+pZ/PTUp9wa/y0kDn97OtjvB6CdX4Q+3kJBuVUCc=;
+ b=MD7a7DJMVNisv/+YQBwwLM7ne8yMXFO0dHwjj7mnCrb4lLKhYNzYGRfh+kNw+ahAIk
+ 5kQbPQnW4vHU8M8SADn8n+li3Rbd6zC/sBycfI09sMk4NK1jRcvbHxe4CPGmMhlesxzM
+ /LoNjpp6ypC7t5lEAAx9BYybXHVLxgo5NwQwBlaRcZ3fSaSOz7O1KyrHs103gT4kWs6V
+ Cu4dKQezkGj3sKlNZmv6C0W7gd2ZJ/dgl5RLB4l/Neil0Qtycstm5aHeI4F43UPJHnBE
+ f6S2TEHtCeWrsIW/ExstUfbYuE7eVRO/vo2XcPsed5mh8g2lnb1L0e7logheF1dy+j/F
+ bRlQ==
+X-Gm-Message-State: AOAM533ebFdu4J1cQk7r8T1610pusOwecY92VgReyd/kCpG8SV7xLN7Q
+ Ng+aGnMjMHNDTdNluFGLb4gWhwbVHgeVtLPGMbKl8g==
+X-Google-Smtp-Source: ABdhPJzVIElaKJCI4zdj8cYNSfBnh9BAhAhJsfLpPV5HoCvPWPZDo23uHBETkF6O0WXqmjXFTB7SOota/0VckQIv1BM=
+X-Received: by 2002:a17:906:c447:: with SMTP id
+ ck7mr767066ejb.358.1600950538813; 
+ Thu, 24 Sep 2020 05:28:58 -0700 (PDT)
 MIME-Version: 1.0
+References: <20200923232923.3142503-1-keescook@chromium.org>
+ <20200923232923.3142503-4-keescook@chromium.org>
+ <CAG48ez0d80fOSTyn5QbH33WPz5UkzJJOo+V8of7YMR8pVQxumw@mail.gmail.com>
+ <202009240018.A4D8274F@keescook>
+In-Reply-To: <202009240018.A4D8274F@keescook>
+Date: Thu, 24 Sep 2020 14:28:32 +0200
+Message-ID: <CAG48ez1MWhrtkbWTNpc1v-WqWYiLM_JrCKvuE6DdH6vBY3MJzQ@mail.gmail.com>
+Subject: Re: [PATCH 3/6] seccomp: Implement constant action bitmaps
+To: Kees Cook <keescook@chromium.org>
 Cc: Andrea Arcangeli <aarcange@redhat.com>,
- Giuseppe Scrivano <gscrivan@redhat.com>,
- Valentin Rothberg <vrothber@redhat.com>, Kees Cook <keescook@chromium.org>,
- Jann Horn <jannh@google.com>, YiFei Zhu <yifeifz2@illinois.edu>,
- Tobin Feldman-Fitzthum <tobin@ibm.com>, linux-kernel@vger.kernel.org,
- Andy Lutomirski <luto@amacapital.net>, Hubertus Franke <frankeh@us.ibm.com>,
- Jack Chen <jianyan2@illinois.edu>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
- Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>,
- bpf@vger.kernel.org, Tianyin Xu <tyxu@illinois.edu>
+ Giuseppe Scrivano <gscrivan@redhat.com>, Will Drewry <wad@chromium.org>,
+ bpf <bpf@vger.kernel.org>, YiFei Zhu <yifeifz2@illinois.edu>,
+ Linux API <linux-api@vger.kernel.org>,
+ Linux Containers <containers@lists.linux-foundation.org>,
+ Tobin Feldman-Fitzthum <tobin@ibm.com>, Hubertus Franke <frankeh@us.ibm.com>,
+ Andy Lutomirski <luto@amacapital.net>, Valentin Rothberg <vrothber@redhat.com>,
+ Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, Jack Chen <jianyan2@illinois.edu>,
+ Josep Torrellas <torrella@illinois.edu>, Tianyin Xu <tyxu@illinois.edu>,
+ kernel list <linux-kernel@vger.kernel.org>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -117,168 +111,100 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+From: Jann Horn via Containers <containers@lists.linux-foundation.org>
+Reply-To: Jann Horn <jannh@google.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-RnJvbTogS2VlcyBDb29rIDxrZWVzY29va0BjaHJvbWl1bS5vcmc+CgpBcyBwYXJ0IG9mIHRoZSBz
-ZWNjb21wIGJlbmNobWFya2luZywgaW5jbHVkZSB0aGUgZXhwZWN0YXRpb25zIHdpdGgKcmVnYXJk
-IHRvIHRoZSB0aW1pbmcgYmVoYXZpb3Igb2YgdGhlIGNvbnN0YW50IGFjdGlvbiBiaXRtYXBzLCBh
-bmQgcmVwb3J0CmluY29uc2lzdGVuY2llcyBiZXR0ZXIuCgpFeGFtcGxlIG91dHB1dCB3aXRoIGNv
-bnN0YW50IGFjdGlvbiBiaXRtYXBzIG9uIHg4NjoKCiQgc3VkbyAuL3NlY2NvbXBfYmVuY2htYXJr
-IDEwMDAwMDAwMApDdXJyZW50IEJQRiBzeXNjdGwgc2V0dGluZ3M6Cm5ldC5jb3JlLmJwZl9qaXRf
-ZW5hYmxlID0gMQpuZXQuY29yZS5icGZfaml0X2hhcmRlbiA9IDAKQmVuY2htYXJraW5nIDEwMDAw
-MDAwMCBzeXNjYWxscy4uLgo2My44OTYyNTUzNTggLSAwLjAwODUwNDUyOSA9IDYzODg3NzUwODI5
-ICg2My45cykKZ2V0cGlkIG5hdGl2ZTogNjM4IG5zCjEzMC4zODMzMTI0MjMgLSA2My44OTczMTUx
-ODkgPSA2NjQ4NTk5NzIzNCAoNjYuNXMpCmdldHBpZCBSRVRfQUxMT1cgMSBmaWx0ZXIgKGJpdG1h
-cCk6IDY2NCBucwoxOTYuNzg5MDgwNDIxIC0gMTMwLjM4NDQxNDk4MyA9IDY2NDA0NjY1NDM4ICg2
-Ni40cykKZ2V0cGlkIFJFVF9BTExPVyAyIGZpbHRlcnMgKGJpdG1hcCk6IDY2NCBucwoyNjguODQ0
-NjQzMzA0IC0gMTk2Ljc5MDIzNDE2OCA9IDcyMDU0NDA5MTM2ICg3Mi4xcykKZ2V0cGlkIFJFVF9B
-TExPVyAzIGZpbHRlcnMgKGZ1bGwpOiA3MjAgbnMKMzQyLjYyNzQ3MjUxNSAtIDI2OC44NDU3OTkx
-MDMgPSA3Mzc4MTY3MzQxMiAoNzMuOHMpCmdldHBpZCBSRVRfQUxMT1cgNCBmaWx0ZXJzIChmdWxs
-KTogNzM3IG5zCkVzdGltYXRlZCB0b3RhbCBzZWNjb21wIG92ZXJoZWFkIGZvciAxIGJpdG1hcHBl
-ZCBmaWx0ZXI6IDI2IG5zCkVzdGltYXRlZCB0b3RhbCBzZWNjb21wIG92ZXJoZWFkIGZvciAyIGJp
-dG1hcHBlZCBmaWx0ZXJzOiAyNiBucwpFc3RpbWF0ZWQgdG90YWwgc2VjY29tcCBvdmVyaGVhZCBm
-b3IgMyBmdWxsIGZpbHRlcnM6IDgyIG5zCkVzdGltYXRlZCB0b3RhbCBzZWNjb21wIG92ZXJoZWFk
-IGZvciA0IGZ1bGwgZmlsdGVyczogOTkgbnMKRXN0aW1hdGVkIHNlY2NvbXAgZW50cnkgb3Zlcmhl
-YWQ6IDI2IG5zCkVzdGltYXRlZCBzZWNjb21wIHBlci1maWx0ZXIgb3ZlcmhlYWQgKGxhc3QgMiBk
-aWZmKTogMTcgbnMKRXN0aW1hdGVkIHNlY2NvbXAgcGVyLWZpbHRlciBvdmVyaGVhZCAoZmlsdGVy
-cyAvIDQpOiAxOCBucwpFeHBlY3RhdGlvbnM6CgluYXRpdmUg4omkIDEgYml0bWFwICg2Mzgg4omk
-IDY2NCk6IOKclO+4jwoJbmF0aXZlIOKJpCAxIGZpbHRlciAoNjM4IOKJpCA3MjApOiDinJTvuI8K
-CXBlci1maWx0ZXIgKGxhc3QgMiBkaWZmKSDiiYggcGVyLWZpbHRlciAoZmlsdGVycyAvIDQpICgx
-NyDiiYggMTgpOiDinJTvuI8KCTEgYml0bWFwcGVkIOKJiCAyIGJpdG1hcHBlZCAoMjYg4omIIDI2
-KTog4pyU77iPCgllbnRyeSDiiYggMSBiaXRtYXBwZWQgKDI2IOKJiCAyNik6IOKclO+4jwoJZW50
-cnkg4omIIDIgYml0bWFwcGVkICgyNiDiiYggMjYpOiDinJTvuI8KCW5hdGl2ZSArIGVudHJ5ICsg
-KHBlciBmaWx0ZXIgKiA0KSDiiYggNCBmaWx0ZXJzIHRvdGFsICg3MzIg4omIIDczNyk6IOKclO+4
-jwoKU2lnbmVkLW9mZi1ieTogS2VlcyBDb29rIDxrZWVzY29va0BjaHJvbWl1bS5vcmc+ClNpZ25l
-ZC1vZmYtYnk6IFlpRmVpIFpodSA8eWlmZWlmejJAaWxsaW5vaXMuZWR1PgotLS0KIC4uLi9zZWxm
-dGVzdHMvc2VjY29tcC9zZWNjb21wX2JlbmNobWFyay5jICAgICB8IDE1MSArKysrKysrKysrKysr
-KystLS0KIHRvb2xzL3Rlc3Rpbmcvc2VsZnRlc3RzL3NlY2NvbXAvc2V0dGluZ3MgICAgICB8ICAg
-MiArLQogMiBmaWxlcyBjaGFuZ2VkLCAxMzAgaW5zZXJ0aW9ucygrKSwgMjMgZGVsZXRpb25zKC0p
-CgpkaWZmIC0tZ2l0IGEvdG9vbHMvdGVzdGluZy9zZWxmdGVzdHMvc2VjY29tcC9zZWNjb21wX2Jl
-bmNobWFyay5jIGIvdG9vbHMvdGVzdGluZy9zZWxmdGVzdHMvc2VjY29tcC9zZWNjb21wX2JlbmNo
-bWFyay5jCmluZGV4IDkxZjVhODljYWRhYy4uZmNjODA2NTg1MjY2IDEwMDY0NAotLS0gYS90b29s
-cy90ZXN0aW5nL3NlbGZ0ZXN0cy9zZWNjb21wL3NlY2NvbXBfYmVuY2htYXJrLmMKKysrIGIvdG9v
-bHMvdGVzdGluZy9zZWxmdGVzdHMvc2VjY29tcC9zZWNjb21wX2JlbmNobWFyay5jCkBAIC00LDEy
-ICs0LDE2IEBACiAgKi8KICNkZWZpbmUgX0dOVV9TT1VSQ0UKICNpbmNsdWRlIDxhc3NlcnQuaD4K
-KyNpbmNsdWRlIDxsaW1pdHMuaD4KKyNpbmNsdWRlIDxzdGRib29sLmg+CisjaW5jbHVkZSA8c3Rk
-ZGVmLmg+CiAjaW5jbHVkZSA8c3RkaW8uaD4KICNpbmNsdWRlIDxzdGRsaWIuaD4KICNpbmNsdWRl
-IDx0aW1lLmg+CiAjaW5jbHVkZSA8dW5pc3RkLmg+CiAjaW5jbHVkZSA8bGludXgvZmlsdGVyLmg+
-CiAjaW5jbHVkZSA8bGludXgvc2VjY29tcC5oPgorI2luY2x1ZGUgPHN5cy9wYXJhbS5oPgogI2lu
-Y2x1ZGUgPHN5cy9wcmN0bC5oPgogI2luY2x1ZGUgPHN5cy9zeXNjYWxsLmg+CiAjaW5jbHVkZSA8
-c3lzL3R5cGVzLmg+CkBAIC03MCwxOCArNzQsNzQgQEAgdW5zaWduZWQgbG9uZyBsb25nIGNhbGli
-cmF0ZSh2b2lkKQogCXJldHVybiBzYW1wbGVzICogc2Vjb25kczsKIH0KIAorYm9vbCBhcHByb3go
-aW50IGlfb25lLCBpbnQgaV90d28pCit7CisJZG91YmxlIG9uZSA9IGlfb25lLCBvbmVfYnVtcCA9
-IG9uZSAqIDAuMDE7CisJZG91YmxlIHR3byA9IGlfdHdvLCB0d29fYnVtcCA9IHR3byAqIDAuMDE7
-CisKKwlvbmVfYnVtcCA9IG9uZSArIE1BWChvbmVfYnVtcCwgMi4wKTsKKwl0d29fYnVtcCA9IHR3
-byArIE1BWCh0d29fYnVtcCwgMi4wKTsKKworCS8qIEVxdWFsIHRvLCBvciB3aXRoaW4gMSUgb3Ig
-MiBkaWdpdHMgKi8KKwlpZiAob25lID09IHR3byB8fAorCSAgICAob25lID4gdHdvICYmIG9uZSA8
-PSB0d29fYnVtcCkgfHwKKwkgICAgKHR3byA+IG9uZSAmJiB0d28gPD0gb25lX2J1bXApKQorCQly
-ZXR1cm4gdHJ1ZTsKKwlyZXR1cm4gZmFsc2U7Cit9CisKK2Jvb2wgbGUoaW50IGlfb25lLCBpbnQg
-aV90d28pCit7CisJaWYgKGlfb25lIDw9IGlfdHdvKQorCQlyZXR1cm4gdHJ1ZTsKKwlyZXR1cm4g
-ZmFsc2U7Cit9CisKK2xvbmcgY29tcGFyZShjb25zdCBjaGFyICpuYW1lX29uZSwgY29uc3QgY2hh
-ciAqbmFtZV9ldmFsLCBjb25zdCBjaGFyICpuYW1lX3R3bywKKwkgICAgIHVuc2lnbmVkIGxvbmcg
-bG9uZyBvbmUsIGJvb2wgKCpldmFsKShpbnQsIGludCksIHVuc2lnbmVkIGxvbmcgbG9uZyB0d28p
-Cit7CisJYm9vbCBnb29kOworCisJcHJpbnRmKCJcdCVzICVzICVzICglbGxkICVzICVsbGQpOiAi
-LCBuYW1lX29uZSwgbmFtZV9ldmFsLCBuYW1lX3R3bywKKwkgICAgICAgKGxvbmcgbG9uZylvbmUs
-IG5hbWVfZXZhbCwgKGxvbmcgbG9uZyl0d28pOworCWlmIChvbmUgPiBJTlRfTUFYKSB7CisJCXBy
-aW50ZigiTWlzY2FsY3VsYXRpb24hIE1lYXN1cmVtZW50IHdlbnQgbmVnYXRpdmU6ICVsbGRcbiIs
-IChsb25nIGxvbmcpb25lKTsKKwkJcmV0dXJuIDE7CisJfQorCWlmICh0d28gPiBJTlRfTUFYKSB7
-CisJCXByaW50ZigiTWlzY2FsY3VsYXRpb24hIE1lYXN1cmVtZW50IHdlbnQgbmVnYXRpdmU6ICVs
-bGRcbiIsIChsb25nIGxvbmcpdHdvKTsKKwkJcmV0dXJuIDE7CisJfQorCisJZ29vZCA9IGV2YWwo
-b25lLCB0d28pOworCXByaW50ZigiJXNcbiIsIGdvb2QgPyAi4pyU77iPIiA6ICLinYwiKTsKKwor
-CXJldHVybiBnb29kID8gMCA6IDE7Cit9CisKIGludCBtYWluKGludCBhcmdjLCBjaGFyICphcmd2
-W10pCiB7CisJc3RydWN0IHNvY2tfZmlsdGVyIGJpdG1hcF9maWx0ZXJbXSA9IHsKKwkJQlBGX1NU
-TVQoQlBGX0xEfEJQRl9XfEJQRl9BQlMsIG9mZnNldG9mKHN0cnVjdCBzZWNjb21wX2RhdGEsIG5y
-KSksCisJCUJQRl9TVE1UKEJQRl9SRVR8QlBGX0ssIFNFQ0NPTVBfUkVUX0FMTE9XKSwKKwl9Owor
-CXN0cnVjdCBzb2NrX2Zwcm9nIGJpdG1hcF9wcm9nID0geworCQkubGVuID0gKHVuc2lnbmVkIHNo
-b3J0KUFSUkFZX1NJWkUoYml0bWFwX2ZpbHRlciksCisJCS5maWx0ZXIgPSBiaXRtYXBfZmlsdGVy
-LAorCX07CiAJc3RydWN0IHNvY2tfZmlsdGVyIGZpbHRlcltdID0geworCQlCUEZfU1RNVChCUEZf
-TER8QlBGX1d8QlBGX0FCUywgb2Zmc2V0b2Yoc3RydWN0IHNlY2NvbXBfZGF0YSwgYXJnc1swXSkp
-LAogCQlCUEZfU1RNVChCUEZfUkVUfEJQRl9LLCBTRUNDT01QX1JFVF9BTExPVyksCiAJfTsKIAlz
-dHJ1Y3Qgc29ja19mcHJvZyBwcm9nID0gewogCQkubGVuID0gKHVuc2lnbmVkIHNob3J0KUFSUkFZ
-X1NJWkUoZmlsdGVyKSwKIAkJLmZpbHRlciA9IGZpbHRlciwKIAl9OwotCWxvbmcgcmV0OwotCXVu
-c2lnbmVkIGxvbmcgbG9uZyBzYW1wbGVzOwotCXVuc2lnbmVkIGxvbmcgbG9uZyBuYXRpdmUsIGZp
-bHRlcjEsIGZpbHRlcjI7CisKKwlsb25nIHJldCwgYml0czsKKwl1bnNpZ25lZCBsb25nIGxvbmcg
-c2FtcGxlcywgY2FsYzsKKwl1bnNpZ25lZCBsb25nIGxvbmcgbmF0aXZlLCBmaWx0ZXIxLCBmaWx0
-ZXIyLCBiaXRtYXAxLCBiaXRtYXAyOworCXVuc2lnbmVkIGxvbmcgbG9uZyBlbnRyeSwgcGVyX2Zp
-bHRlcjEsIHBlcl9maWx0ZXIyOwogCiAJcHJpbnRmKCJDdXJyZW50IEJQRiBzeXNjdGwgc2V0dGlu
-Z3M6XG4iKTsKIAlzeXN0ZW0oInN5c2N0bCBuZXQuY29yZS5icGZfaml0X2VuYWJsZSIpOwpAQCAt
-MTAxLDM1ICsxNjEsODIgQEAgaW50IG1haW4oaW50IGFyZ2MsIGNoYXIgKmFyZ3ZbXSkKIAlyZXQg
-PSBwcmN0bChQUl9TRVRfTk9fTkVXX1BSSVZTLCAxLCAwLCAwLCAwKTsKIAlhc3NlcnQocmV0ID09
-IDApOwogCi0JLyogT25lIGZpbHRlciAqLwotCXJldCA9IHByY3RsKFBSX1NFVF9TRUNDT01QLCBT
-RUNDT01QX01PREVfRklMVEVSLCAmcHJvZyk7CisJLyogT25lIGZpbHRlciByZXN1bHRpbmcgaW4g
-YSBiaXRtYXAgKi8KKwlyZXQgPSBwcmN0bChQUl9TRVRfU0VDQ09NUCwgU0VDQ09NUF9NT0RFX0ZJ
-TFRFUiwgJmJpdG1hcF9wcm9nKTsKIAlhc3NlcnQocmV0ID09IDApOwogCi0JZmlsdGVyMSA9IHRp
-bWluZyhDTE9DS19QUk9DRVNTX0NQVVRJTUVfSUQsIHNhbXBsZXMpIC8gc2FtcGxlczsKLQlwcmlu
-dGYoImdldHBpZCBSRVRfQUxMT1cgMSBmaWx0ZXI6ICVsbHUgbnNcbiIsIGZpbHRlcjEpOworCWJp
-dG1hcDEgPSB0aW1pbmcoQ0xPQ0tfUFJPQ0VTU19DUFVUSU1FX0lELCBzYW1wbGVzKSAvIHNhbXBs
-ZXM7CisJcHJpbnRmKCJnZXRwaWQgUkVUX0FMTE9XIDEgZmlsdGVyIChiaXRtYXApOiAlbGx1IG5z
-XG4iLCBiaXRtYXAxKTsKKworCS8qIFNlY29uZCBmaWx0ZXIgcmVzdWx0aW5nIGluIGEgYml0bWFw
-ICovCisJcmV0ID0gcHJjdGwoUFJfU0VUX1NFQ0NPTVAsIFNFQ0NPTVBfTU9ERV9GSUxURVIsICZi
-aXRtYXBfcHJvZyk7CisJYXNzZXJ0KHJldCA9PSAwKTsKIAotCWlmIChmaWx0ZXIxID09IG5hdGl2
-ZSkKLQkJcHJpbnRmKCJObyBvdmVyaGVhZCBtZWFzdXJlZCE/IFRyeSBydW5uaW5nIGFnYWluIHdp
-dGggbW9yZSBzYW1wbGVzLlxuIik7CisJYml0bWFwMiA9IHRpbWluZyhDTE9DS19QUk9DRVNTX0NQ
-VVRJTUVfSUQsIHNhbXBsZXMpIC8gc2FtcGxlczsKKwlwcmludGYoImdldHBpZCBSRVRfQUxMT1cg
-MiBmaWx0ZXJzIChiaXRtYXApOiAlbGx1IG5zXG4iLCBiaXRtYXAyKTsKIAotCS8qIFR3byBmaWx0
-ZXJzICovCisJLyogVGhpcmQgZmlsdGVyLCBjYW4gbm8gbG9uZ2VyIGJlIGNvbnZlcnRlZCB0byBi
-aXRtYXAgKi8KIAlyZXQgPSBwcmN0bChQUl9TRVRfU0VDQ09NUCwgU0VDQ09NUF9NT0RFX0ZJTFRF
-UiwgJnByb2cpOwogCWFzc2VydChyZXQgPT0gMCk7CiAKLQlmaWx0ZXIyID0gdGltaW5nKENMT0NL
-X1BST0NFU1NfQ1BVVElNRV9JRCwgc2FtcGxlcykgLyBzYW1wbGVzOwotCXByaW50ZigiZ2V0cGlk
-IFJFVF9BTExPVyAyIGZpbHRlcnM6ICVsbHUgbnNcbiIsIGZpbHRlcjIpOwotCi0JLyogQ2FsY3Vs
-YXRpb25zICovCi0JcHJpbnRmKCJFc3RpbWF0ZWQgdG90YWwgc2VjY29tcCBvdmVyaGVhZCBmb3Ig
-MSBmaWx0ZXI6ICVsbHUgbnNcbiIsCi0JCWZpbHRlcjEgLSBuYXRpdmUpOworCWZpbHRlcjEgPSB0
-aW1pbmcoQ0xPQ0tfUFJPQ0VTU19DUFVUSU1FX0lELCBzYW1wbGVzKSAvIHNhbXBsZXM7CisJcHJp
-bnRmKCJnZXRwaWQgUkVUX0FMTE9XIDMgZmlsdGVycyAoZnVsbCk6ICVsbHUgbnNcbiIsIGZpbHRl
-cjEpOwogCi0JcHJpbnRmKCJFc3RpbWF0ZWQgdG90YWwgc2VjY29tcCBvdmVyaGVhZCBmb3IgMiBm
-aWx0ZXJzOiAlbGx1IG5zXG4iLAotCQlmaWx0ZXIyIC0gbmF0aXZlKTsKKwkvKiBGb3VydGggZmls
-dGVyLCBjYW4gbm90IGJlIGNvbnZlcnRlZCB0byBiaXRtYXAgYmVjYXVzZSBvZiBmaWx0ZXIgMyAq
-LworCXJldCA9IHByY3RsKFBSX1NFVF9TRUNDT01QLCBTRUNDT01QX01PREVfRklMVEVSLCAmYml0
-bWFwX3Byb2cpOworCWFzc2VydChyZXQgPT0gMCk7CiAKLQlwcmludGYoIkVzdGltYXRlZCBzZWNj
-b21wIHBlci1maWx0ZXIgb3ZlcmhlYWQ6ICVsbHUgbnNcbiIsCi0JCWZpbHRlcjIgLSBmaWx0ZXIx
-KTsKKwlmaWx0ZXIyID0gdGltaW5nKENMT0NLX1BST0NFU1NfQ1BVVElNRV9JRCwgc2FtcGxlcykg
-LyBzYW1wbGVzOworCXByaW50ZigiZ2V0cGlkIFJFVF9BTExPVyA0IGZpbHRlcnMgKGZ1bGwpOiAl
-bGx1IG5zXG4iLCBmaWx0ZXIyKTsKKworCS8qIEVzdGltYXRpb25zICovCisjZGVmaW5lIEVTVElN
-QVRFKGZtdCwgdmFyLCB3aGF0KQlkbyB7CQkJXAorCQl2YXIgPSAod2hhdCk7CQkJCQlcCisJCXBy
-aW50ZigiRXN0aW1hdGVkICIgZm10ICI6ICVsbHUgbnNcbiIsIHZhcik7CVwKKwkJaWYgKHZhciA+
-IElOVF9NQVgpCQkJCVwKKwkJCWdvdG8gbW9yZV9zYW1wbGVzOwkJCVwKKwl9IHdoaWxlICgwKQor
-CisJRVNUSU1BVEUoInRvdGFsIHNlY2NvbXAgb3ZlcmhlYWQgZm9yIDEgYml0bWFwcGVkIGZpbHRl
-ciIsIGNhbGMsCisJCSBiaXRtYXAxIC0gbmF0aXZlKTsKKwlFU1RJTUFURSgidG90YWwgc2VjY29t
-cCBvdmVyaGVhZCBmb3IgMiBiaXRtYXBwZWQgZmlsdGVycyIsIGNhbGMsCisJCSBiaXRtYXAyIC0g
-bmF0aXZlKTsKKwlFU1RJTUFURSgidG90YWwgc2VjY29tcCBvdmVyaGVhZCBmb3IgMyBmdWxsIGZp
-bHRlcnMiLCBjYWxjLAorCQkgZmlsdGVyMSAtIG5hdGl2ZSk7CisJRVNUSU1BVEUoInRvdGFsIHNl
-Y2NvbXAgb3ZlcmhlYWQgZm9yIDQgZnVsbCBmaWx0ZXJzIiwgY2FsYywKKwkJIGZpbHRlcjIgLSBu
-YXRpdmUpOworCUVTVElNQVRFKCJzZWNjb21wIGVudHJ5IG92ZXJoZWFkIiwgZW50cnksCisJCSBi
-aXRtYXAxIC0gbmF0aXZlIC0gKGJpdG1hcDIgLSBiaXRtYXAxKSk7CisJRVNUSU1BVEUoInNlY2Nv
-bXAgcGVyLWZpbHRlciBvdmVyaGVhZCAobGFzdCAyIGRpZmYpIiwgcGVyX2ZpbHRlcjEsCisJCSBm
-aWx0ZXIyIC0gZmlsdGVyMSk7CisJRVNUSU1BVEUoInNlY2NvbXAgcGVyLWZpbHRlciBvdmVyaGVh
-ZCAoZmlsdGVycyAvIDQpIiwgcGVyX2ZpbHRlcjIsCisJCSAoZmlsdGVyMiAtIG5hdGl2ZSAtIGVu
-dHJ5KSAvIDQpOworCisJcHJpbnRmKCJFeHBlY3RhdGlvbnM6XG4iKTsKKwlyZXQgfD0gY29tcGFy
-ZSgibmF0aXZlIiwgIuKJpCIsICIxIGJpdG1hcCIsIG5hdGl2ZSwgbGUsIGJpdG1hcDEpOworCWJp
-dHMgPSBjb21wYXJlKCJuYXRpdmUiLCAi4omkIiwgIjEgZmlsdGVyIiwgbmF0aXZlLCBsZSwgZmls
-dGVyMSk7CisJaWYgKGJpdHMpCisJCWdvdG8gbW9yZV9zYW1wbGVzOworCisJcmV0IHw9IGNvbXBh
-cmUoInBlci1maWx0ZXIgKGxhc3QgMiBkaWZmKSIsICLiiYgiLCAicGVyLWZpbHRlciAoZmlsdGVy
-cyAvIDQpIiwKKwkJCXBlcl9maWx0ZXIxLCBhcHByb3gsIHBlcl9maWx0ZXIyKTsKKworCWJpdHMg
-PSBjb21wYXJlKCIxIGJpdG1hcHBlZCIsICLiiYgiLCAiMiBiaXRtYXBwZWQiLAorCQkJYml0bWFw
-MSAtIG5hdGl2ZSwgYXBwcm94LCBiaXRtYXAyIC0gbmF0aXZlKTsKKwlpZiAoYml0cykgeworCQlw
-cmludGYoIlNraXBwaW5nIGNvbnN0YW50IGFjdGlvbiBiaXRtYXAgZXhwZWN0YXRpb25zOiB0aGV5
-IGFwcGVhciB1bnN1cHBvcnRlZC5cbiIpOworCQlnb3RvIG91dDsKKwl9CiAKLQlwcmludGYoIkVz
-dGltYXRlZCBzZWNjb21wIGVudHJ5IG92ZXJoZWFkOiAlbGx1IG5zXG4iLAotCQlmaWx0ZXIxIC0g
-bmF0aXZlIC0gKGZpbHRlcjIgLSBmaWx0ZXIxKSk7CisJcmV0IHw9IGNvbXBhcmUoImVudHJ5Iiwg
-IuKJiCIsICIxIGJpdG1hcHBlZCIsIGVudHJ5LCBhcHByb3gsIGJpdG1hcDEgLSBuYXRpdmUpOwor
-CXJldCB8PSBjb21wYXJlKCJlbnRyeSIsICLiiYgiLCAiMiBiaXRtYXBwZWQiLCBlbnRyeSwgYXBw
-cm94LCBiaXRtYXAyIC0gbmF0aXZlKTsKKwlyZXQgfD0gY29tcGFyZSgibmF0aXZlICsgZW50cnkg
-KyAocGVyIGZpbHRlciAqIDQpIiwgIuKJiCIsICI0IGZpbHRlcnMgdG90YWwiLAorCQkJZW50cnkg
-KyAocGVyX2ZpbHRlcjEgKiA0KSArIG5hdGl2ZSwgYXBwcm94LCBmaWx0ZXIyKTsKKwlpZiAocmV0
-ID09IDApCisJCWdvdG8gb3V0OwogCittb3JlX3NhbXBsZXM6CisJcHJpbnRmKCJTYXcgdW5leHBl
-Y3RlZCBiZW5jaG1hcmsgcmVzdWx0LiBUcnkgcnVubmluZyBhZ2FpbiB3aXRoIG1vcmUgc2FtcGxl
-cz9cbiIpOworb3V0OgogCXJldHVybiAwOwogfQpkaWZmIC0tZ2l0IGEvdG9vbHMvdGVzdGluZy9z
-ZWxmdGVzdHMvc2VjY29tcC9zZXR0aW5ncyBiL3Rvb2xzL3Rlc3Rpbmcvc2VsZnRlc3RzL3NlY2Nv
-bXAvc2V0dGluZ3MKaW5kZXggYmE0ZDg1Zjc0Y2Q2Li42MDkxYjQ1ZDIyNmIgMTAwNjQ0Ci0tLSBh
-L3Rvb2xzL3Rlc3Rpbmcvc2VsZnRlc3RzL3NlY2NvbXAvc2V0dGluZ3MKKysrIGIvdG9vbHMvdGVz
-dGluZy9zZWxmdGVzdHMvc2VjY29tcC9zZXR0aW5ncwpAQCAtMSArMSBAQAotdGltZW91dD05MAor
-dGltZW91dD0xMjAKLS0gCjIuMjguMAoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5s
-aW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFp
-bG1hbi9saXN0aW5mby9jb250YWluZXJz
+On Thu, Sep 24, 2020 at 9:37 AM Kees Cook <keescook@chromium.org> wrote:
+> On Thu, Sep 24, 2020 at 02:25:03AM +0200, Jann Horn wrote:
+> > On Thu, Sep 24, 2020 at 1:29 AM Kees Cook <keescook@chromium.org> wrote:
+[...]
+> > (However, a "which syscalls have a fixed result" bitmap might make
+> > sense if we want to export the list of permitted syscalls as a text
+> > file in procfs, as I mentioned over at
+> > <https://lore.kernel.org/lkml/CAG48ez3Ofqp4crXGksLmZY6=fGrF_tWyUCg7PBkAetvbbOPeOA@mail.gmail.com/>.)
+>
+> I haven't found a data structure I'm happy with for this. It seemed like
+> NR_syscalls * sizeof(u32) was rather a lot (i.e. to store the BPF_RET
+> value). However, let me discuss that more in the "why in in thread?"
+> below...
+[...]
+> > > +#endif
+> > > +};
+> > > +
+> > >  struct seccomp_filter;
+> > >  /**
+> > >   * struct seccomp - the state of a seccomp'ed process
+> > > @@ -45,6 +56,13 @@ struct seccomp {
+> > >  #endif
+> > >         atomic_t filter_count;
+> > >         struct seccomp_filter *filter;
+> > > +       struct seccomp_bitmaps native;
+> > > +#ifdef CONFIG_COMPAT
+> > > +       struct seccomp_bitmaps compat;
+> > > +#endif
+> > > +#ifdef SECCOMP_MULTIPLEXED_SYSCALL_TABLE_ARCH
+> > > +       struct seccomp_bitmaps multiplex;
+> > > +#endif
+> >
+> > Why do we have one bitmap per thread (in struct seccomp) instead of
+> > putting the bitmap for a given filter and all its ancestors into the
+> > seccomp_filter?
+>
+> I explicitly didn't want to add code that was run per-filter; I wanted
+> O(1), not O(n) even if the n work was a small constant. There is
+> obviously a memory/perf tradeoff here. I wonder if the middle ground
+> would be to put a bitmap and "constant action" results in the filter....
+> oh duh. The "top" filter is already going to be composed with its
+> ancestors. That's all that needs to be checked.
+
+Yeah - when adding a new filter, you can evaluate each syscall for the
+newly added filter. For both the "accept" bitmap and the "constant
+action" bitmap, you can AND the bitmap of the existing filter into the
+new filter's bitmap.
+
+Although actually, I think my "constant action" bitmap proposal was a
+stupid idea... when someone asks for an analysis of the filter via
+procfs (which shouldn't be a common action, so speed doesn't really
+matter there), we can just dynamically evaluate the entire filter tree
+using our filter-evaluation helper. Let's drop the "constant action"
+bitmap idea.
+
+> Then the tri-state can be:
+>
+> bitmap accept[NR_syscalls]: accept or check "known" bitmap
+> bitmap filter[NR_syscalls]: run filter or return known action
+> u32 known_action[NR_syscalls];
+
+Actually, maybe we should just have an "accept" list, nothing else, to
+keep it straightforward and with minimal memory usage...
+
+> (times syscall numbering "architecture" counts)
+>
+> Though perhaps it would be just as fast as:
+>
+> bitmap run_filter[NR_syscalls]: run filter or return known_action
+> u32 known_action[NR_syscalls];
+>
+> where accept isn't treated special...
+
+Using a bitset for accepted syscalls instead of a big array would
+probably have far less cache impact on the syscall entry path. If we
+just have an "accept" bitmask, we can store information about 512
+syscalls per cache line - that's almost the entire syscall table. In
+contrast, a known_action list can only store information about 16
+syscalls in a cache line, and we'd additionally still have to query
+the "filter" bitmap.
+
+I think our goal here should be that if a syscall is always allowed,
+seccomp should execute the smallest amount of instructions we can get
+away with, and touch the smallest amount of memory possible (and
+preferably that memory should be shared between threads). The bitmap
+fastpath should probably also avoid populate_seccomp_data().
+_______________________________________________
+Containers mailing list
+Containers@lists.linux-foundation.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
