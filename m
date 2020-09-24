@@ -2,91 +2,92 @@ Return-Path: <SRS0=lkaS=DB=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+X-Spam-Status: No, score=-6.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
-	autolearn_force=no version=3.4.0
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 27422C4363D
-	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 00:42:11 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6ED6EC4363D
+	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 00:46:18 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 63D992145D
-	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 00:42:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id DF1B6221EB
+	for <containers@archiver.kernel.org>; Thu, 24 Sep 2020 00:46:17 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=google.com header.i=@google.com header.b="i+nBcw6Q"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 63D992145D
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=google.com header.i=@google.com header.b="Jm4qQfsF"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DF1B6221EB
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lists.linux-foundation.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id E94A229C87;
-	Thu, 24 Sep 2020 00:42:09 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 7A9B386A3F;
+	Thu, 24 Sep 2020 00:46:17 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id vnLCRFuE28RH; Thu, 24 Sep 2020 00:42:07 +0000 (UTC)
+	with ESMTP id 3-o3NtZn0GlE; Thu, 24 Sep 2020 00:46:14 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 3D663275C6;
-	Thu, 24 Sep 2020 00:42:07 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id D461886A25;
+	Thu, 24 Sep 2020 00:46:14 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 318F1C0859;
-	Thu, 24 Sep 2020 00:42:07 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id C2905C0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id BDFD7C0859;
+	Thu, 24 Sep 2020 00:46:14 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id E4CECC0051
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 00:42:06 +0000 (UTC)
+ Thu, 24 Sep 2020 00:46:13 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 92CF427E4C
+ by whitealder.osuosl.org (Postfix) with ESMTP id D03E486A27
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 00:42:06 +0000 (UTC)
+ Thu, 24 Sep 2020 00:46:13 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id pijan9NH3NLk
+ with ESMTP id TW-PjEmPNmHW
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 00:42:05 +0000 (UTC)
+ Thu, 24 Sep 2020 00:46:13 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-ed1-f66.google.com (mail-ed1-f66.google.com
- [209.85.208.66])
- by silver.osuosl.org (Postfix) with ESMTPS id 01F50275C6
+Received: from mail-ej1-f65.google.com (mail-ej1-f65.google.com
+ [209.85.218.65])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id DF83E86A25
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 00:42:04 +0000 (UTC)
-Received: by mail-ed1-f66.google.com with SMTP id w1so1644996edr.3
+ Thu, 24 Sep 2020 00:46:12 +0000 (UTC)
+Received: by mail-ej1-f65.google.com with SMTP id p9so2094958ejf.6
  for <containers@lists.linux-foundation.org>;
- Wed, 23 Sep 2020 17:42:04 -0700 (PDT)
+ Wed, 23 Sep 2020 17:46:12 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=20161025;
  h=mime-version:references:in-reply-to:from:date:message-id:subject:to
- :cc; bh=ALS2hDm4ftsEUNq9TXFt06kpNHf/ZcV3y5aWx3s1Do8=;
- b=i+nBcw6Qc5YdCSP79kchMxNZ9vscFmuRHIjL+4oM9aaVNrPeQ2J1fRTklh0kqsjyI1
- N8NLB4IWr+D48TgWyYvZVuR18wkLSPfX8ovenzBJ4SrpdBaZGCKeG/X9PqlHe/AREy+G
- qo3TDDWtf6fkUtjt6XhYF7btCK2MTxIo9/4DEX+39YzOETzUS7wn6qaEXW02Fy7Nv7Sy
- iAhA3DJm5GB6uJspOdBYPqpCrSqmLiQJtt9QHxklrgcQ+yeDdyLYxkIwNF+ZXqK0GpPm
- VMI2uHMtk9t1HcUse8hr8ZqCv8PfIWNolN5O2CBcz/jLPmHK2IpxgDyi/+YWAMhYYGp8
- Br8w==
+ :cc; bh=IRg8bdIf5EpG+3h++Ew0iu9r6E0witVaxm9lrud8jnM=;
+ b=Jm4qQfsFbsCSvqsbWq7VzfNoNGVob5/4BshRZEiIMaLEiUAXQkk+Y3gcARpDMXU77J
+ RNaw2tpVInTue7BsyBCtZUkwt1eYCijqBRs3vrwEJYWjEAwHJ8jLeLp72F/ENGNnzE/G
+ EKLslOPjHX6mp2Z2Qnz3aMgbngWhizN8kdzLcINc5IUUtx9RxOv0ebO8UbHBC6gSmDIu
+ FMCxqDS4rALBmlhRBAReUsXiYxckjsgN9L9hJAj6XCsRyzlTxLl/Flt+z8WTU64FZVbm
+ sP3KAo4BFVXnMvrmr7UNX6TFr6Ec+XsfqaoZ3kZpDC57gQ1BxVuKxSN63q3jyaZxfJpd
+ B6Hw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
  h=x-gm-message-state:mime-version:references:in-reply-to:from:date
  :message-id:subject:to:cc;
- bh=ALS2hDm4ftsEUNq9TXFt06kpNHf/ZcV3y5aWx3s1Do8=;
- b=snaxt7O0D1fv9pWb5eAFGqIKVO59fEQUf+y/oLXDijILaOgcgPh46xLRSu4OUNKGLT
- BGPccKtZem/KRtBJUqkor5ikKaJfrISOIXFX+KOISILIWOmZ9/phxjtdnwFzzbPqdCeS
- XECI0GAWXiw5Wme6guSPjUt7lBk/+2PpVBYfrNz4fw1DAcgQFnNVngxk8g+RBEuZHLJC
- uW/GdkHrGU1k3yjL4HhPu4nBofSQjVmj2OLMH5h1Hm4jFREPL7jX2I3vEyi8/VI1zHbV
- SsqFAmocdnuWkmvrcxcy4ELROw0vQ5XHJ6rkoGGbaLnraYMXGaZ/WV2WBMDN9zYKR1p/
- fauw==
-X-Gm-Message-State: AOAM530AT7oZ0ySTUAYDFKPtRzQNd+o1kllJ4/Uc97UZS3TksO1VzPNw
- znOT+ITSKbq70aG/W4n0EdK5UXmTEI3wLCY+U1YFIw==
-X-Google-Smtp-Source: ABdhPJyJ+2+MBiUxJyKzlnkil/1tpGNHZFlDrmkJ5755EYgjTjHJLwH+rSfDuJCXfwgvffq+bBDZCtFfWoiMAlyJwQo=
-X-Received: by 2002:a50:e807:: with SMTP id e7mr2071571edn.84.1600908123101;
- Wed, 23 Sep 2020 17:42:03 -0700 (PDT)
+ bh=IRg8bdIf5EpG+3h++Ew0iu9r6E0witVaxm9lrud8jnM=;
+ b=r+QBA72GZFMcKZbpxMPuiJRpZ6ZKO2YubEcbzFIp7Oq54xH7Oiz1LAAU5liem6Aj+0
+ a2TShE7+PwK6SHc99SleaXm/dRlG021G+6CLVsD7xg8SNIm2ST9GPA8pfS9Qd65pB1g6
+ Wxj1O/qFI9ynRhn98DzXkQ6mW610K5Lg2x6mbklATIRfKy0wMLbRKzIbSU+WNu55eKAd
+ eFkdiJts+zXgxwsMOB0vJawVz9A95vnOD3YAxADRCL9xS9e2G4Rf6T8Wgrv281+AmLEY
+ A5OdkVA6pWDsJY26ROw20I3xPYuCvGVNde9Ov9PvmXJlSw+2MGGh2SxwiMfcMqBaUba3
+ 02nw==
+X-Gm-Message-State: AOAM532x53SatpqCoR5IgnIpZjJyYe9lKMPmeMnt53D3t5dvlY5PAWsG
+ hdWOJrOWmSnddS+Cjvcd94AkXz4TZpMxpNIgBB6ddA==
+X-Google-Smtp-Source: ABdhPJzzIXGNXnvZht8wsxEFTZoPCFI82VwWeUCzB6ZEDBf5qTi4KSqQ4F0OnePwzJ5/m1L4tVXPR+clKCQEE2r6v2g=
+X-Received: by 2002:a17:906:f6c9:: with SMTP id
+ jo9mr2116692ejb.233.1600908371207; 
+ Wed, 23 Sep 2020 17:46:11 -0700 (PDT)
 MIME-Version: 1.0
 References: <20200923232923.3142503-1-keescook@chromium.org>
- <20200923232923.3142503-2-keescook@chromium.org>
-In-Reply-To: <20200923232923.3142503-2-keescook@chromium.org>
-Date: Thu, 24 Sep 2020 02:41:36 +0200
-Message-ID: <CAG48ez17XK2Co+1LbUWTc4x_W7nza=TObNh2Kpz6P+ba3OKPsw@mail.gmail.com>
-Subject: Re: [PATCH 1/6] seccomp: Introduce SECCOMP_PIN_ARCHITECTURE
+ <20200923232923.3142503-3-keescook@chromium.org>
+In-Reply-To: <20200923232923.3142503-3-keescook@chromium.org>
+Date: Thu, 24 Sep 2020 02:45:45 +0200
+Message-ID: <CAG48ez1BXWdWA5zPzOD21bQ4RsHQ6bSDWR8soTkkNphJ=zdHWw@mail.gmail.com>
+Subject: Re: [PATCH 2/6] x86: Enable seccomp architecture tracking
 To: Kees Cook <keescook@chromium.org>
 Cc: Andrea Arcangeli <aarcange@redhat.com>,
  Giuseppe Scrivano <gscrivan@redhat.com>, Will Drewry <wad@chromium.org>,
@@ -117,89 +118,26 @@ Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
 On Thu, Sep 24, 2020 at 1:29 AM Kees Cook <keescook@chromium.org> wrote:
-> For systems that provide multiple syscall maps based on audit
-> architectures (e.g. AUDIT_ARCH_X86_64 and AUDIT_ARCH_I386 via
-> CONFIG_COMPAT) or via syscall masks (e.g. x86_x32), allow a fast way
-> to pin the process to a specific syscall table, instead of needing
-> to generate all filters with an architecture check as the first filter
-> action.
->
-> This creates the internal representation that seccomp itself can use
-> (which is separate from the filters, which need to stay runtime
-> agnostic). Additionally paves the way for constant-action bitmaps.
-
-I don't really see the point in providing this UAPI - the syscall
-number checking will probably have much more performance cost than the
-architecture number check, and it's not like this lets us avoid the
-check, we're just moving it over into C code.
-
-> Signed-off-by: Kees Cook <keescook@chromium.org>
-> ---
->  include/linux/seccomp.h                       |  9 +++
->  include/uapi/linux/seccomp.h                  |  1 +
->  kernel/seccomp.c                              | 79 ++++++++++++++++++-
->  tools/testing/selftests/seccomp/seccomp_bpf.c | 33 ++++++++
->  4 files changed, 120 insertions(+), 2 deletions(-)
->
-> diff --git a/include/linux/seccomp.h b/include/linux/seccomp.h
-> index 02aef2844c38..0be20bc81ea9 100644
-> --- a/include/linux/seccomp.h
-> +++ b/include/linux/seccomp.h
-> @@ -20,12 +20,18 @@
->  #include <linux/atomic.h>
->  #include <asm/seccomp.h>
->
-> +#define SECCOMP_ARCH_IS_NATIVE         1
-> +#define SECCOMP_ARCH_IS_COMPAT         2
-
-FYI, mips has three different possible "arch" values (per kernel build
-config; the __AUDIT_ARCH_LE flag can also be set, but that's fixed
-based on the config):
-
- - AUDIT_ARCH_MIPS
- - AUDIT_ARCH_MIPS | __AUDIT_ARCH_64BIT
- - AUDIT_ARCH_MIPS | __AUDIT_ARCH_64BIT | __AUDIT_ARCH_CONVENTION_MIPS64_N32
-
-But I guess we can deal with that once someone wants to actually add
-support for this on mips.
-
-> +#define SECCOMP_ARCH_IS_MULTIPLEX      3
-
-Why should X32 be handled specially? If the seccomp filter allows
-specific syscalls (as it should), we don't have to care about X32.
-Only in weird cases where the seccomp filter wants to deny specific
-syscalls (a horrible idea), X32 is a concern, and in such cases, the
-userspace code can generate a single conditional jump to deal with it.
-
-And when seccomp is used properly to allow specific syscalls, the
-kernel will just waste time uselessly checking this X32 stuff.
-
+> Provide seccomp internals with the details to calculate which syscall
+> table the running kernel is expecting to deal with. This allows for
+> efficient architecture pinning and paves the way for constant-action
+> bitmaps.
 [...]
-> diff --git a/kernel/seccomp.c b/kernel/seccomp.c
+> diff --git a/arch/x86/include/asm/seccomp.h b/arch/x86/include/asm/seccomp.h
 [...]
-> +static long seccomp_pin_architecture(void)
-> +{
-> +#ifdef SECCOMP_ARCH
-> +       struct task_struct *task = current;
-> +
-> +       u8 arch = seccomp_get_arch(syscall_get_arch(task),
-> +                                  syscall_get_nr(task, task_pt_regs(task)));
-> +
-> +       /* How did you even get here? */
-
-Via a racing TSYNC, that's how.
-
-> +       if (task->seccomp.arch && task->seccomp.arch != arch)
-> +               return -EBUSY;
-> +
-> +       task->seccomp.arch = arch;
+> +#ifdef CONFIG_X86_64
+[...]
+> +#else /* !CONFIG_X86_64 */
+> +# define SECCOMP_ARCH                                  AUDIT_ARCH_I386
 > +#endif
-> +       return 0;
-> +}
 
-Why does this return 0 if SECCOMP_ARCH is not defined? That suggests
-to userspace that we have successfully pinned the ABI, even though
-we're actually unable to do so.
+If we are on a 32-bit kernel, performing architecture number checks in
+the kernel is completely pointless, because we know that there is only
+a single architecture identifier under which syscalls can happen.
+
+While this patch is useful for enabling the bitmap logic in the
+following patches, I think it adds unnecessary overhead in the context
+of the previous patch.
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
