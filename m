@@ -2,103 +2,97 @@ Return-Path: <SRS0=50w+=DC=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=BAYES_00,DKIM_ADSP_CUSTOM_MED,
+	DKIM_INVALID,DKIM_SIGNED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B0596C4363D
-	for <containers@archiver.kernel.org>; Fri, 25 Sep 2020 06:25:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AAD53C4727E
+	for <containers@archiver.kernel.org>; Fri, 25 Sep 2020 07:07:15 +0000 (UTC)
 Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id AA8D921D7F
-	for <containers@archiver.kernel.org>; Fri, 25 Sep 2020 06:25:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 0586F22211
+	for <containers@archiver.kernel.org>; Fri, 25 Sep 2020 07:07:14 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=rasmusvillemoes.dk header.i=@rasmusvillemoes.dk header.b="ShdjI09H"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AA8D921D7F
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=rasmusvillemoes.dk
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="gt9l35Cg"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0586F22211
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 2391F86BAD;
-	Fri, 25 Sep 2020 06:25:09 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 9323986BBD;
+	Fri, 25 Sep 2020 07:07:14 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 8I90Dlyct8fv; Fri, 25 Sep 2020 06:25:08 +0000 (UTC)
+	with ESMTP id qfRjjg8Ja7g7; Fri, 25 Sep 2020 07:07:13 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 0D33C8698D;
-	Fri, 25 Sep 2020 06:25:08 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id EC0AE86BB9;
+	Fri, 25 Sep 2020 07:07:13 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id E8845C0889;
-	Fri, 25 Sep 2020 06:25:07 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 825ABC0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id CE25FC0890;
+	Fri, 25 Sep 2020 07:07:13 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 89B7AC0859
  for <containers@lists.linux-foundation.org>;
- Fri, 25 Sep 2020 06:25:06 +0000 (UTC)
+ Fri, 25 Sep 2020 07:07:12 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 763FF20489
+ by hemlock.osuosl.org (Postfix) with ESMTP id 772A38756F
  for <containers@lists.linux-foundation.org>;
- Fri, 25 Sep 2020 06:25:06 +0000 (UTC)
+ Fri, 25 Sep 2020 07:07:12 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id t9sozRqyudMg
+ with ESMTP id vweA9wRQSlsp
  for <containers@lists.linux-foundation.org>;
- Fri, 25 Sep 2020 06:25:04 +0000 (UTC)
-X-Greylist: delayed 16:44:06 by SQLgrey-1.7.6
-Received: from mail-lf1-f68.google.com (mail-lf1-f68.google.com
- [209.85.167.68])
- by silver.osuosl.org (Postfix) with ESMTPS id 3525920445
+ Fri, 25 Sep 2020 07:07:12 +0000 (UTC)
+X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
+Received: from mail-pj1-f66.google.com (mail-pj1-f66.google.com
+ [209.85.216.66])
+ by hemlock.osuosl.org (Postfix) with ESMTPS id F02828756D
  for <containers@lists.linux-foundation.org>;
- Fri, 25 Sep 2020 06:25:03 +0000 (UTC)
-Received: by mail-lf1-f68.google.com with SMTP id z17so1485277lfi.12
+ Fri, 25 Sep 2020 07:07:11 +0000 (UTC)
+Received: by mail-pj1-f66.google.com with SMTP id mn7so1279893pjb.5
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 23:25:03 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=rasmusvillemoes.dk; s=google;
- h=subject:to:cc:references:from:message-id:date:user-agent
- :mime-version:in-reply-to:content-language:content-transfer-encoding;
- bh=PHvJCnf/e3w+kWddJhhNAUVQMYCOoytl80Q0gn/kXVM=;
- b=ShdjI09HEYlSizD4uVM0B2rxoJnN8U2bQb09Wy+Bt5b05y7VaybgV6048Ct9oMNFC0
- 5ZuNRFl1xvZT54kcWZm6nV7++CSa/aNWkwsaYltPyAOfaCPz1p9rS80d1afmgWjIiLfk
- QByKHsiiFOXOgqaUReS6BxYLxrysJg3zJgNro=
+ Fri, 25 Sep 2020 00:07:11 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
+ h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+ :cc; bh=oXHAzrDSGjCjB2rkCK3StmtVizqd8imW6WJ6CCyJZeQ=;
+ b=gt9l35Cg3svYq9N0uBGPNxc+e9Lj33iOExb3HpMPwqd2IPv6C27pIvDXvzxWOzcHBW
+ Yh6glD+IXSLk5VfF1jBzqvUUkan5XiVd6XlMp+D3SVOURcaVZ3nn2+1MK3naJ7SRwHJT
+ VQ+9/V2/FG6I3s/4f6i3P5/lZ05PsRTL9Avex18L+gg4JE3fmaJDBPu0MGlCNYxRDVEt
+ QIEcXSjUOn52P6voDi2cMT4cgBLkxfo/Jh1fns0C9xKWvlYlMBlOg6y/rZGEd5SbFpAI
+ KDzO3BcKFpdoY8pgwzuEdmuNrO5qQPcTyFezyookmPHET2xLWBBgUm/ISJ2ttmeyDB9c
+ FnPQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
- h=x-gm-message-state:subject:to:cc:references:from:message-id:date
- :user-agent:mime-version:in-reply-to:content-language
- :content-transfer-encoding;
- bh=PHvJCnf/e3w+kWddJhhNAUVQMYCOoytl80Q0gn/kXVM=;
- b=cZ7YuMJBKU/dvN+v4HbnVrSuyFs/4dMCs+8VJiCWfLFLHov8O7PaUbnt9QqxLBKQJs
- l2v1AZW+TakXJ+sp/42KIhy8uw3/krjnrf/04uKsXRnFG0Xm4FQ1kVM+vOajnil1lxji
- 7/WaCFpWGyBFa0Gnkp0MKpsR2bytpgi5I2/7na5+rPA9+0BWWispvaC6PotiNgVIkBSY
- +zmHYdyfU46CTvReK1MdeDToNvBK15hAfC1YvZfribeJecXrErXhaco6OWI+EQpB8/DX
- kQHJDFzqTaGfiHvGvykbQ5RbUObbTY1yFXULo5jWz4XfTM8UOWjauuWHa4EsxYKekckt
- zVtA==
-X-Gm-Message-State: AOAM530lilvUToDqYqP5A1pkLyi/wLSQVGIfyGBtdg8c9o3wQw6sBqRP
- VJZjChE34OFuEbr2eGYx3VexU2Ne+bOFWxP1P7A=
-X-Google-Smtp-Source: ABdhPJzIM58jxMOmE2zPrllWl3bqZQksl9iktnNDkyFfkSPoqVYRt7Y7NFlYBnC9G6KhTmZPTNAT/w==
-X-Received: by 2002:a17:906:841a:: with SMTP id
- n26mr1099782ejx.213.1601013408160; 
- Thu, 24 Sep 2020 22:56:48 -0700 (PDT)
-Received: from [192.168.1.149] (5.186.115.188.cgn.fibianet.dk. [5.186.115.188])
- by smtp.gmail.com with ESMTPSA id s30sm1055003edc.8.2020.09.24.22.56.46
- (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
- Thu, 24 Sep 2020 22:56:47 -0700 (PDT)
-Subject: Re: [PATCH v1 0/6] seccomp: Implement constant action bitmaps
-To: YiFei Zhu <zhuyifei1999@gmail.com>,
- Rasmus Villemoes <linux@rasmusvillemoes.dk>
+ h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+ :message-id:subject:to:cc;
+ bh=oXHAzrDSGjCjB2rkCK3StmtVizqd8imW6WJ6CCyJZeQ=;
+ b=sEaGWXK0hjwMlt7DTaDLJWL09U8CcSGXxeZN9HJ/S4no31kgD68wbB8kwDnVhxGbfL
+ kbsYKR57O6t9ZFkpjnJce71iEExGQhPb17BMXnRTfEKH7tpTmFoOD3MLMYolwk7ztDb9
+ FRFsYJlyvqpUtxqQcFWk/E/aaREzrHQwmLqV6fXGJ3R2kkwz0jQI2z7rKZOU7ShI0PN4
+ uQ0k2/CGF+C3W02Zsu3KKzvBNDwcO9rI4Nmtjs39MmxMbiz5FaubKhEqVXqmlSTEw4tS
+ 4VW2zE1tk7C3oxygssOQSAonh6fhDGsEt15/gNs830KDcTXgdxmbmdRq4j4Ovt/6zn30
+ MGMA==
+X-Gm-Message-State: AOAM530zMB9qABmiwOiBabysF4kWbBn421xEH3tX+LtOvMk5wS4iBJHO
+ Xu2B2ZwvFZu2iKKtb6Vzk+TLWHY0VVfpIQq+oYo=
+X-Google-Smtp-Source: ABdhPJzlGUGW2iKkTkrAVqTUKcvO9npurfnjC2yNvq753E1M0AVW5b7tjO01qNJKAYI3kQSCeflzbuJKPBvB5TUeDog=
+X-Received: by 2002:a17:90a:6e45:: with SMTP id
+ s5mr1374059pjm.12.1601017631436; 
+ Fri, 25 Sep 2020 00:07:11 -0700 (PDT)
+MIME-Version: 1.0
 References: <20200923232923.3142503-1-keescook@chromium.org>
  <43039bb6-9d9f-b347-fa92-ea34ccc21d3d@rasmusvillemoes.dk>
  <CABqSeAQKksqM1SdsQMoR52AJ5CY0VE2tk8-TJaMuOrkCprQ0MQ@mail.gmail.com>
-From: Rasmus Villemoes <linux@rasmusvillemoes.dk>
-Message-ID: <27b4ef86-fee5-fc35-993b-3352ce504c73@rasmusvillemoes.dk>
-Date: Fri, 25 Sep 2020 07:56:46 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.10.0
-MIME-Version: 1.0
-In-Reply-To: <CABqSeAQKksqM1SdsQMoR52AJ5CY0VE2tk8-TJaMuOrkCprQ0MQ@mail.gmail.com>
-Content-Language: en-US
+ <27b4ef86-fee5-fc35-993b-3352ce504c73@rasmusvillemoes.dk>
+In-Reply-To: <27b4ef86-fee5-fc35-993b-3352ce504c73@rasmusvillemoes.dk>
+From: YiFei Zhu <zhuyifei1999@gmail.com>
+Date: Fri, 25 Sep 2020 02:07:00 -0500
+Message-ID: <CABqSeATHtvA7qm7j_kxBsbxRCd5B=MHtxGdsYsXEJ-TRRYKTgA@mail.gmail.com>
+Subject: Re: [PATCH v1 0/6] seccomp: Implement constant action bitmaps
+To: Rasmus Villemoes <linux@rasmusvillemoes.dk>
 Cc: Andrea Arcangeli <aarcange@redhat.com>,
  Giuseppe Scrivano <gscrivan@redhat.com>, Will Drewry <wad@chromium.org>,
  Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>,
@@ -126,59 +120,66 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On 24/09/2020 15.58, YiFei Zhu wrote:
-> On Thu, Sep 24, 2020 at 8:46 AM Rasmus Villemoes
-> <linux@rasmusvillemoes.dk> wrote:
->> But one thing I'm wondering about and I haven't seen addressed anywhere:
->> Why build the bitmap on the kernel side (with all the complexity of
->> having to emulate the filter for all syscalls)? Why can't userspace just
->> hand the kernel "here's a new filter: the syscalls in this bitmap are
->> always allowed noquestionsasked, for the rest, run this bpf". Sure, that
->> might require a new syscall or extending seccomp(2) somewhat, but isn't
->> that a _lot_ simpler? It would probably also mean that the bpf we do get
->> handed is a lot smaller. Userspace might need to pass a couple of
->> bitmaps, one for each relevant arch, but you get the overall idea.
-> 
-> Perhaps. The thing is, the current API expects any filter attaches to
-> be "additive". If a new filter gets attached that says "disallow read"
-> then no matter whatever has been attached already, "read" shall not be
-> allowed at the next syscall, bypassing all previous allowlist bitmaps
-> (so you need to emulate the bpf anyways here?). We should also not
-> have a API that could let anyone escape the secomp jail. Say "prctl"
-> is permitted but "read" is not permitted, one must not be allowed to
-> attach a bitmap so that "read" now appears in the allowlist. The only
-> way this could potentially work is to attach a BPF filter and a bitmap
-> at the same time in the same syscall, which might mean API redesign?
+On Fri, Sep 25, 2020 at 12:56 AM Rasmus Villemoes
+<linux@rasmusvillemoes.dk> wrote:
+> Yes, the man page would read something like
+>
+>        SECCOMP_SET_MODE_FILTER_BITMAP
+>               The system calls allowed are defined by a pointer to a
+> Berkeley Packet Filter (BPF) passed  via  args.
+>               This argument is a pointer to a struct sock_fprog_bitmap;
+>
+> with that struct containing whatever information/extra pointers needed
+> for passing the bitmap(s) in addition to the bpf prog.
+>
+> And SECCOMP_SET_MODE_FILTER would internally just be updated to work
+> as-if all-zero allow-bitmaps were passed along. The internal kernel
+> bitmap would just be the and of the bitmaps in the filter stack.
+>
+> Sure, it's UAPI, so would certainly need more careful thought on details
+> of just how the arg struct looks like etc. etc., but I was wondering why
+> it hadn't been discussed at all.
 
-Yes, the man page would read something like
+If SECCOMP_SET_MODE_FILTER is attached before / after
+SECCOMP_SET_MODE_FILTER_BITMAP, does it mean all bitmap gets void?
 
-       SECCOMP_SET_MODE_FILTER_BITMAP
-              The system calls allowed are defined by a pointer to a
-Berkeley Packet Filter (BPF) passed  via  args.
-              This argument is a pointer to a struct sock_fprog_bitmap;
+Would it make sense to have SECCOMP_SET_MODE_FILTER run through the
+emulator to see if we can construct a bitmap anyways for "legacy
+no-bitmap" support?
 
-with that struct containing whatever information/extra pointers needed
-for passing the bitmap(s) in addition to the bpf prog.
+Another thing to consider is that in both patch series we only
+construct one final bitmap that, if the bit is set, seccomp will not
+call into the BPF filter. If the bit is not set, then all filters are
+called in sequence, even if some of them "must allow the syscall".
+With SECCOMP_SET_MODE_FILTER_BITMAP, the filter BPF code will no
+longer have the "if it's this syscall" for any syscalls that are given
+in the bitmaps, and calling into these filters will be a false
+negative. So we would need extra logic to make "does this filter have
+a bitmap? if so check bitmap first". Probably won't be too
+complicated, but idk if it is actually worth the complexity. wdyt?
 
-And SECCOMP_SET_MODE_FILTER would internally just be updated to work
-as-if all-zero allow-bitmaps were passed along. The internal kernel
-bitmap would just be the and of the bitmaps in the filter stack.
+> Regardless, I'd like to see some numbers, certainly for the "how much
+> faster does a getpid() or read() or any of the other syscalls that
+> nobody disallows" get, but also "what's the cost of doing that emulation
+> at seccomp(2) time".
 
-Sure, it's UAPI, so would certainly need more careful thought on details
-of just how the arg struct looks like etc. etc., but I was wondering why
-it hadn't been discussed at all.
+The former has been given in my RFC patch [1]. In an extreme case of
+no side channel mitigations, in the same amount of time, unixbench
+syscall mixed runs 33295685 syscalls without seccomp, 20661056
+syscalls with docker profile, 25719937 syscalls with bitmapped docker
+profile. Though, I think Jack was running on Ubuntu and it did not
+have a libseccomp shipped with the distro that's new enough to do the
+binary decision tree generation [2].
 
->> I'm also a bit worried about the performance of doing that emulation;
->> that's constant extra overhead for, say, launching a docker container.
-> 
-> IMO, launching a docker container is so expensive this should be negligible.
+I'll try to profile the latter later on my qemu-kvm, with a recent
+libsecomp with binary tree and docker's profile, probably both direct
+filter attaches and filter attaches with fork(). I'm guessing if I
+have fork() the cost of fork() will overshadow seccomp() though.
 
-Regardless, I'd like to see some numbers, certainly for the "how much
-faster does a getpid() or read() or any of the other syscalls that
-nobody disallows" get, but also "what's the cost of doing that emulation
-at seccomp(2) time".
+[1] https://lore.kernel.org/containers/cover.1600661418.git.yifeifz2@illinois.edu/
+[2] https://github.com/seccomp/libseccomp/pull/152
 
-Rasmus
+YiFei Zhu
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
