@@ -7,90 +7,89 @@ X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_ADSP_CUSTOM_MED,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 242A1C4346E
-	for <containers@archiver.kernel.org>; Fri, 25 Sep 2020 01:36:11 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 98AE8C4346E
+	for <containers@archiver.kernel.org>; Fri, 25 Sep 2020 01:55:18 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 78ECA2083B
-	for <containers@archiver.kernel.org>; Fri, 25 Sep 2020 01:36:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 0D6292085B
+	for <containers@archiver.kernel.org>; Fri, 25 Sep 2020 01:55:17 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="JRYOS6/E"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 78ECA2083B
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="EaJ7/a4c"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0D6292085B
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 11FE4871C4;
-	Fri, 25 Sep 2020 01:36:10 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 8116C869EB;
+	Fri, 25 Sep 2020 01:55:17 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id MLdIelGtj4Yx; Fri, 25 Sep 2020 01:36:09 +0000 (UTC)
+	with ESMTP id HgwN8f9zWRHy; Fri, 25 Sep 2020 01:55:17 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 967CE8709B;
-	Fri, 25 Sep 2020 01:36:09 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id EDBA3854B4;
+	Fri, 25 Sep 2020 01:55:16 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 81CFEC0890;
-	Fri, 25 Sep 2020 01:36:09 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 4B3D0C0859
+	by lists.linuxfoundation.org (Postfix) with ESMTP id BE2CCC0890;
+	Fri, 25 Sep 2020 01:55:16 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id F1E1FC0859
  for <containers@lists.linux-foundation.org>;
- Fri, 25 Sep 2020 01:36:08 +0000 (UTC)
+ Fri, 25 Sep 2020 01:55:14 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 4010986C61
+ by fraxinus.osuosl.org (Postfix) with ESMTP id E7199869D2
  for <containers@lists.linux-foundation.org>;
- Fri, 25 Sep 2020 01:36:08 +0000 (UTC)
+ Fri, 25 Sep 2020 01:55:14 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id NUnt7C-uwxVn
+ with ESMTP id 3QceXPtYk6_o
  for <containers@lists.linux-foundation.org>;
- Fri, 25 Sep 2020 01:36:07 +0000 (UTC)
+ Fri, 25 Sep 2020 01:55:14 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-pf1-f196.google.com (mail-pf1-f196.google.com
- [209.85.210.196])
- by whitealder.osuosl.org (Postfix) with ESMTPS id 2176B86BDA
+Received: from mail-pg1-f196.google.com (mail-pg1-f196.google.com
+ [209.85.215.196])
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id 6A42D854B4
  for <containers@lists.linux-foundation.org>;
- Fri, 25 Sep 2020 01:36:07 +0000 (UTC)
-Received: by mail-pf1-f196.google.com with SMTP id z19so1584419pfn.8
+ Fri, 25 Sep 2020 01:55:14 +0000 (UTC)
+Received: by mail-pg1-f196.google.com with SMTP id y14so1176339pgf.12
  for <containers@lists.linux-foundation.org>;
- Thu, 24 Sep 2020 18:36:07 -0700 (PDT)
+ Thu, 24 Sep 2020 18:55:14 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
  h=mime-version:references:in-reply-to:from:date:message-id:subject:to
- :cc; bh=fgmv1ZdL7UUXwEEal/l25It5GrSTWQVpHodie+cr1w0=;
- b=JRYOS6/EWijo06SB1EWdfUNPiLTpKE4BWfZ0U4z5NiWUiGwaLLEqBs82QOWSq7GHC/
- Lg0nuso6br2icKGo48MjaGPbXt5XfW+FuOep9LZ2ZL0UgBjAiyXvLvw+nU+81bi+nlID
- UiABi7ZcXRSWMSOkl541UuJvrGPaFFf8TcNRndTcWBo71DcNu87UqP4PY0icMqLb/S4N
- vtzUMuvt3t3P8x6O73AmiMAueQDgU0z+uV7hj+1vegevWLFaqER5uz+8cjRUOqXWyv27
- 14y6BlTCkF2D9NOMS0AdWMvO3p//u2+Qf4Tcni0GdmPnH7KSeAVIUvMMT2acozLbmbiR
- lUAA==
+ :cc; bh=pmx4C1dtZyNzbTWCnrUjbiV406vdOj+1T8GPghm2QwE=;
+ b=EaJ7/a4c9WtkliGh/DYbqOiH80G4RWNyo2KqWBHF0u1jetk6xKJXfcrYWFUGdwGk9N
+ cko/6jOLwFKwJOAD9xtOFOubNsleb4AEbwj/GwcJrca5RA1dBVr64JyqQTnQmI2m2h73
+ o2PCzDXhPuV7i20KVacKica5fsdMyP2fe7GIcNoogYDeAcHyqUZn5UVqpZt5TQhvxvmS
+ UZMuhIR80F2ucDe5XnG7Hasm6aOv93CFFxxzuiKA26UqDj/34S5t9bTmCKtFA7wTLtRI
+ 4cPdoyx46+T1Aa0c5N5TvODHar29fZ+mDfAb23T+yk7ya5HL93xcS0TUqJQCedGFdDxw
+ s5fw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
  h=x-gm-message-state:mime-version:references:in-reply-to:from:date
  :message-id:subject:to:cc;
- bh=fgmv1ZdL7UUXwEEal/l25It5GrSTWQVpHodie+cr1w0=;
- b=J6Dyc3oPXFdbcByZtsCphh//Cf/Hxs1llnMonkUZB5HMyRyzsBmMC5nyOm3zjX/1UC
- 4IJSupPvieg/4gwuTVwGC2BpnAAAzz1MiqNv3OxYEShlVP0VRj9FngtiFJZzpQ4iryGG
- gXwUqaDrGpXogphfuNDg0qlLQZQci0leH1EfLin0UBz/wsH2xARu1R2YB77RNCJB0UUm
- G9+EFktf/FjgZbUOsDJyoncGYtbr32MyRkPGCOvmYWz69Sq2VcrYuUiPQtTrqQNLhzC7
- x5k18vyF5NMnztD7G2f7IG7nTMB1XToVx+ScVT0a9hfiChLSyDC9sso6f+r1vkizFyKe
- +J4g==
-X-Gm-Message-State: AOAM532n8HR9Eg99SRZHDQSWhctD8fYvs1IO41E9F/G0cc8TXw9VuxR2
- LOmlUG9eYrbdTdBoUcUy0mTOWDWsUg+JxomqPkc=
-X-Google-Smtp-Source: ABdhPJxyv0KcwQtrdMtQkTLyrl57OgqJRSWjXZ4r4Z8vu+1JbH/U88tfk1cIxqTiWE1k97krRxR311A3MkeH2l3hX0c=
-X-Received: by 2002:a17:902:7445:b029:d1:dea3:a3ca with SMTP id
- e5-20020a1709027445b02900d1dea3a3camr1876986plt.19.1600997766672; Thu, 24 Sep
- 2020 18:36:06 -0700 (PDT)
+ bh=pmx4C1dtZyNzbTWCnrUjbiV406vdOj+1T8GPghm2QwE=;
+ b=pWFVwSEUpu2FxnBzA1oxrCVEscD7nZpT/Ad0e/mkjMd5CETVNRnvnYYPU5ndgDMmky
+ n97ob/9nxqxLk8mqYJdITMjwiUyszBelXvhOeYu23HGdbAanC+ebhqCo2mz2rv/m/Ogq
+ d/5MdAvb5p3OPKh/X/qhCYlH5rWGFcesD39sDvuv5pwKO+HCmdorKSCd6qn789Kh0lTO
+ KfFGXGQkCHuW1efRMzikI6AGOvmdt6EHbsKzr7spWrIv5E76stjTOm5UOqByf29UZReg
+ v3zd5aK53l62hG+GrJyB6aftv0UaL7hGH3azQL3b7Ues1ImBiJc53hjYnPZ2rDUp+Rtd
+ d8Jg==
+X-Gm-Message-State: AOAM532vJA9wyCQHUyFSkPrU9t0ZTbsfSHDsZSOPO1/0A8hLEAIDfcNA
+ A0TdDqKW0qxjCfV0uYka3I7/y1tDEWCH8QblMkY=
+X-Google-Smtp-Source: ABdhPJx3ucWbmrm7/0i2a6Fm4liKGVkgl0Fvznjg5vw5jSbIBsA3/utS5x5k2GxvLbWKtN2O/YrGlJU0pZ3jmX+pLCk=
+X-Received: by 2002:a63:511d:: with SMTP id f29mr1603013pgb.11.1600998913975; 
+ Thu, 24 Sep 2020 18:55:13 -0700 (PDT)
 MIME-Version: 1.0
 References: <cover.1600951211.git.yifeifz2@illinois.edu>
- <eedf3323eed8615a4be150b39a717de1a68f0c12.1600951211.git.yifeifz2@illinois.edu>
- <202009241646.5739BE3@keescook>
-In-Reply-To: <202009241646.5739BE3@keescook>
+ <64052a5b81d5dacd63efb577c1d99e6f98e69702.1600951211.git.yifeifz2@illinois.edu>
+ <202009241640.7E3C54CF@keescook>
+In-Reply-To: <202009241640.7E3C54CF@keescook>
 From: YiFei Zhu <zhuyifei1999@gmail.com>
-Date: Thu, 24 Sep 2020 20:35:55 -0500
-Message-ID: <CABqSeAR8j=ALk5=Y=D4ivVU8m3DC8XgZp74FyAaeErS_TL4FRQ@mail.gmail.com>
-Subject: Re: [PATCH v2 seccomp 5/6] selftests/seccomp: Compare bitmap vs
- filter overhead
+Date: Thu, 24 Sep 2020 20:55:03 -0500
+Message-ID: <CABqSeAS1wmCL8gRW+atNO0ZBe0JTzUcbQAR6n461AwhCotNVZg@mail.gmail.com>
+Subject: Re: [PATCH v2 seccomp 4/6] seccomp/cache: Lookup syscall allowlist
+ for fast path
 To: Kees Cook <keescook@chromium.org>
 Cc: Andrea Arcangeli <aarcange@redhat.com>,
  Giuseppe Scrivano <gscrivan@redhat.com>,
@@ -119,19 +118,60 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Thu, Sep 24, 2020 at 6:47 PM Kees Cook <keescook@chromium.org> wrote:
-> BTW, did this benchmark tool's results match your expectations from what
-> you saw with your RFC? (I assume it helped since you've included in
-> here.)
+On Thu, Sep 24, 2020 at 6:46 PM Kees Cook <keescook@chromium.org> wrote:
+> This protects us from x32 (i.e. syscall_nr will have 0x40000000 bit
+> set), but given the effort needed to support compat, I think supporting
+> x32 isn't much more. (Though again, I note that NR_syscalls differs in
+> size, so this test needs to be per-arch and obviously after
+> arch-discovery.)
+>
+> That said, if it really does turn out that x32 is literally the only
+> architecture doing these shenanigans (and I suspect not, given the MIPS
+> case), okay, fine, I'll give in. :) You and Jann both seem to think this
+> isn't worth it.
 
-Yes, I updated the commit message with the benchmarks of this patch
-series. Though, given that I'm running in a qemu-kvm on my laptop that
-has a lot of stuffs running on it (and with the cursed ThinkPad T480
-CPU throttling), I had to throw much more syscalls at it to pass the
-"approximately equals" expectation... though no idea about what's
-going on with 732 vs 737.
+MIPS has the sparse syscall shenanigans... idek how that works. Maybe
+someone can clarify?
 
-Or if you mean if I expected these results, yes.
+> I think this linear search for the matching arch can be made O(1) (this
+> is what I was trying to do in v1: we can map all possible combos to a
+> distinct bitmap, so there is just math and lookup rather than a linear
+> compare search. In the one-arch case, it can also be easily collapsed
+> into a no-op (though my v1 didn't do this correctly).
+
+I remember yours was:
+
+static inline u8 seccomp_get_arch(u32 syscall_arch, u32 syscall_nr)
+{
+[...]
+        switch (syscall_arch) {
+        case SECCOMP_ARCH:
+                seccomp_arch = SECCOMP_ARCH_IS_NATIVE;
+                break;
+#ifdef CONFIG_COMPAT
+        case SECCOMP_ARCH_COMPAT:
+                seccomp_arch = SECCOMP_ARCH_IS_COMPAT;
+                break;
+#endif
+        default:
+                seccomp_arch = SECCOMP_ARCH_IS_UNKNOWN;
+        }
+
+What I'm relying on here is that the compiler will unroll the loop.
+How does the compiler perform switch statements? I was imagining it
+would be similar, with "case" corresponding to a compare on the
+immediate, and the assign as a move to a register, and break
+corresponding to a jump. this would also be O(n) to the number of
+arches. Yes, compilers can also do an O(1) table lookup, but that is
+nonsensical here -- the arch numbers occupy the MSBs.
+
+That said, does O(1) or O(n) matter here? Given that n is at most 3
+you might as well consider it a constant.
+
+Also, does "collapse in one arch case" actually worth it? Given that
+there's a likely(), and the other side is a WARN_ON_ONCE(), the
+compiler will layout the likely path in the fast path and branch
+prediction will be in our favor, right?
 
 YiFei Zhu
 _______________________________________________
