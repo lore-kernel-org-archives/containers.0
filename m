@@ -2,97 +2,100 @@ Return-Path: <SRS0=QcxQ=DD=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_ADSP_CUSTOM_MED,
-	DKIM_INVALID,DKIM_SIGNED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 416FFC4727D
-	for <containers@archiver.kernel.org>; Sat, 26 Sep 2020 01:23:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0B904C4727D
+	for <containers@archiver.kernel.org>; Sat, 26 Sep 2020 03:12:48 +0000 (UTC)
 Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 9E3442075A
-	for <containers@archiver.kernel.org>; Sat, 26 Sep 2020 01:23:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 6295420829
+	for <containers@archiver.kernel.org>; Sat, 26 Sep 2020 03:12:47 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Imh+a54p"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9E3442075A
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=amacapital-net.20150623.gappssmtp.com header.i=@amacapital-net.20150623.gappssmtp.com header.b="aBg5JtNu"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6295420829
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=amacapital.net
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 3AC992036D;
-	Sat, 26 Sep 2020 01:23:45 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 6D36A20490;
+	Sat, 26 Sep 2020 03:12:46 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id FlD+wWJ0AJWB; Sat, 26 Sep 2020 01:23:44 +0000 (UTC)
+	with ESMTP id Wuq1kLJgEs7b; Sat, 26 Sep 2020 03:12:45 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id A966020130;
-	Sat, 26 Sep 2020 01:23:44 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id DC7852043A;
+	Sat, 26 Sep 2020 03:12:44 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 8DBC5C0859;
-	Sat, 26 Sep 2020 01:23:44 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 14F3EC0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id C0FF2C0890;
+	Sat, 26 Sep 2020 03:12:44 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 6D82CC0051
  for <containers@lists.linux-foundation.org>;
- Sat, 26 Sep 2020 01:23:44 +0000 (UTC)
+ Sat, 26 Sep 2020 03:12:43 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id EE23F2036D
+ by whitealder.osuosl.org (Postfix) with ESMTP id 5E18786CE6
  for <containers@lists.linux-foundation.org>;
- Sat, 26 Sep 2020 01:23:43 +0000 (UTC)
+ Sat, 26 Sep 2020 03:12:43 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id XBH2drnnDr+t
+ with ESMTP id xthAlPVZUWY8
  for <containers@lists.linux-foundation.org>;
- Sat, 26 Sep 2020 01:23:42 +0000 (UTC)
-X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-pj1-f67.google.com (mail-pj1-f67.google.com
- [209.85.216.67])
- by silver.osuosl.org (Postfix) with ESMTPS id C6CD320130
+ Sat, 26 Sep 2020 03:12:42 +0000 (UTC)
+X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
+Received: from mail-pf1-f196.google.com (mail-pf1-f196.google.com
+ [209.85.210.196])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 8D6E086C98
  for <containers@lists.linux-foundation.org>;
- Sat, 26 Sep 2020 01:23:42 +0000 (UTC)
-Received: by mail-pj1-f67.google.com with SMTP id q4so351778pjh.5
+ Sat, 26 Sep 2020 03:12:42 +0000 (UTC)
+Received: by mail-pf1-f196.google.com with SMTP id x123so4986295pfc.7
  for <containers@lists.linux-foundation.org>;
- Fri, 25 Sep 2020 18:23:42 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
- h=mime-version:references:in-reply-to:from:date:message-id:subject:to
- :cc; bh=gjsiX96TOZRrX+VWB5R73a/e4ejGDQtJ92tP2rTnjOs=;
- b=Imh+a54pvSI9sfrjTL6vFP9BP8aCNTez3j81G7yDGDS59MGe4mxIsT5JeEXn51ynmf
- wGIDMu7h37nNhagccGZt84pZgsS7AIKEs40qYkX+MHQvkVfOZnoakZdz9M8u4vdlGb5P
- 8yQBq6S01sczjE5nT0niD5iVgLXYHTUBp939DUYIPIZ879aB1GcXRZUeBdlAUbyC7Cwv
- Ruy2U3hxVwfr9jds0Vmo66h6zEqsxKqrQaYwuXyW6bIR73SwpKlLTyTsnpk6LVgFZAn+
- Idqwu5WQx3/qfn2BlC4gVXLpxxMbuXM3P/UHb4FqM95OyYoD0Mhuvp9ibx5dstPe7H1G
- +hUg==
+ Fri, 25 Sep 2020 20:12:42 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=amacapital-net.20150623.gappssmtp.com; s=20150623;
+ h=content-transfer-encoding:from:mime-version:subject:date:message-id
+ :references:cc:in-reply-to:to;
+ bh=ucCrs5q3YePq0e3RQFFqaDEnUbOvguoKcGVoYbrWhf0=;
+ b=aBg5JtNuxhs1Na7XMPn1DSPQq603igvsgaynA6UcbPZvBw/4AvTXEQr7ToAyohBtYU
+ 1qywQPXmZvtzK+dspR55IISgIuOS4Qq1fGL6qQmGhIKS8cV9U8IeoWPalK4VmbcpnYhK
+ d5N36N9yFdvmOhQOEp0RTQHYdrcGuea0EShsQW3m+eOvKS4BWPaJGtgvlgCMggJM/8OE
+ xwb74dcvYPDRC2+7MODHZF5Coha8XBxos+gDPo3lhfMhV2lhrSOxZLxpkQ4Ej+9E9jwd
+ qtYLkWKpppquHWm/diJRZ6v0Cvsp8tIw6y2pl7dH7P/xMblDpKRC/Q9+ojnC3VumpPxJ
+ X/iQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
- h=x-gm-message-state:mime-version:references:in-reply-to:from:date
- :message-id:subject:to:cc;
- bh=gjsiX96TOZRrX+VWB5R73a/e4ejGDQtJ92tP2rTnjOs=;
- b=SjGeZwwbs/GXNd4J+qc2OrQbzs0/0DUEooJjMFSjSrN7sXyqAqeBrVlTMm1GWvvHrj
- LWJwITt7ZaCQpht+R66rJOZanRhZlFaMgHyCuSKvuPl1dOuDkSbJmMajodrX/gTb/dXG
- jYyTtueYusybIu1veFtLPpRq4h9FMtLHGR0VjJb5MOc29droib9cosoG8zIv3BphD9Jl
- jk5qEA1dhnlaes0FaziPjBLQz9VXOSe2Lb2FcFLajwDZccQgLNhG9ifqINSAI9cQHz/p
- /9eSMQUHQfqYPPLkGfaPHgmpqp4JBrccAp6So7OT2gHm/RVgFcpjFC728ontbv23p2JL
- dbGw==
-X-Gm-Message-State: AOAM533jJpujUMpNY/xIgkejzjKni+UNy6tl8PyEJGI8+B9f8WJGStfR
- gv5IjtwWrP6gHq0IWdD/FQqVt+w7LcXleqiGWs8=
-X-Google-Smtp-Source: ABdhPJzOKTBS/qfK2ZK7IckkNEZ2COxbBRpCd5qZvLpE47fez0OjnTD6tKlcc+G9j0e6gphevIVvtwX2kJMYareLyfQ=
-X-Received: by 2002:a17:902:778e:b029:d2:8046:efe2 with SMTP id
- o14-20020a170902778eb02900d28046efe2mr172074pll.44.1601083422286; Fri, 25 Sep
- 2020 18:23:42 -0700 (PDT)
-MIME-Version: 1.0
-References: <202009251223.8E46C831E2@keescook>
- <2FA23A2E-16B0-4E08-96D5-6D6FE45BBCF6@amacapital.net>
- <202009251332.24CE0C58@keescook>
- <CALCETrU_UpcLhXSG84SA6QkAYe8xXn4AXPKeud-=Adp57u54Mg@mail.gmail.com>
-In-Reply-To: <CALCETrU_UpcLhXSG84SA6QkAYe8xXn4AXPKeud-=Adp57u54Mg@mail.gmail.com>
-From: YiFei Zhu <zhuyifei1999@gmail.com>
-Date: Fri, 25 Sep 2020 20:23:30 -0500
-Message-ID: <CABqSeASR0bQ7Y302SkZ639NM=roSVRmd3ROGm0YDEFCTxxd63w@mail.gmail.com>
+ h=x-gm-message-state:content-transfer-encoding:from:mime-version
+ :subject:date:message-id:references:cc:in-reply-to:to;
+ bh=ucCrs5q3YePq0e3RQFFqaDEnUbOvguoKcGVoYbrWhf0=;
+ b=dJSIDq1i+XMYB4P7s8rb2xhzxmPUNRfrLpUe7YycQKFv+TXFTzFaDqNaQIaC+plsHX
+ Nzh4FHLaxF7My0LiQUTZnFuENMNXCw/iYmw4AgXjTmRC+POrSlNu6blBe3vTP8a2FUf6
+ ydBVI4YLNE8BxRZyXZovD+Oklv9t7lGLLdHrIVzUPgy3RBVJQkhEvZ1U+33dKDSB2ucs
+ dC4bH1Kfuu6VgnDzLpJOa7uQDiE9BGUx67zpKeXd24jAuvd6ydvma6E91Up0KKrqSXmz
+ YBsIO437Gky3X3olAur4rCIwK5uQE6iIGbj30tspijTfd9b7bEZoNaMHbraCxQ2VUyev
+ /XoA==
+X-Gm-Message-State: AOAM5329pYZbig6zSvKL73CAL/4j/9Dm0KXDbtAvZx7Hit04mnUgA8NY
+ pvZq/v/orgGT5dj4Es9tHAJN2/4yaftrNw==
+X-Google-Smtp-Source: ABdhPJw6Q5+j8w+qr2BwQrS/6gRAyo8VRGMWToikVfUxPfTvOfnUfQPtFglZAZPSPS1aAtHVS919dw==
+X-Received: by 2002:a63:e444:: with SMTP id i4mr1408075pgk.304.1601088470228; 
+ Fri, 25 Sep 2020 19:47:50 -0700 (PDT)
+Received: from localhost.localdomain (c-67-180-165-146.hsd1.ca.comcast.net.
+ [67.180.165.146])
+ by smtp.gmail.com with ESMTPSA id 64sm3884252pfz.204.2020.09.25.19.47.49
+ (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+ Fri, 25 Sep 2020 19:47:49 -0700 (PDT)
+From: Andy Lutomirski <luto@amacapital.net>
+Mime-Version: 1.0 (1.0)
 Subject: Re: [PATCH v2 seccomp 3/6] seccomp/cache: Add "emulator" to check if
  filter is arg-dependent
-To: Andy Lutomirski <luto@amacapital.net>
+Date: Fri, 25 Sep 2020 19:47:47 -0700
+Message-Id: <05109FF5-65C9-491E-9D9D-2FECE4F8B2B0@amacapital.net>
+References: <CABqSeASR0bQ7Y302SkZ639NM=roSVRmd3ROGm0YDEFCTxxd63w@mail.gmail.com>
+In-Reply-To: <CABqSeASR0bQ7Y302SkZ639NM=roSVRmd3ROGm0YDEFCTxxd63w@mail.gmail.com>
+To: YiFei Zhu <zhuyifei1999@gmail.com>
+X-Mailer: iPhone Mail (18A373)
 Cc: Andrea Arcangeli <aarcange@redhat.com>,
  Giuseppe Scrivano <gscrivan@redhat.com>,
  Valentin Rothberg <vrothber@redhat.com>, Kees Cook <keescook@chromium.org>,
@@ -115,36 +118,35 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Fri, Sep 25, 2020 at 4:07 PM Andy Lutomirski <luto@amacapital.net> wrote:
-> We'd need at least three states per syscall: unknown, always-allow,
-> and need-to-run-filter.
->
-> The downsides are less determinism and a bit of an uglier
-> implementation.  The upside is that we don't need to loop over all
-> syscalls at load -- instead the time that each operation takes is
-> independent of the total number of syscalls on the system.  And we can
-> entirely avoid, say, evaluating the x32 case until the task tries an
-> x32 syscall.
-
-I was really afraid of multiple tasks writing to the bitmaps at once,
-hence I used bitmap-per-task. Now I think about it, if this stays
-lockless, the worst thing that can happen is that a write undo a bit
-set by another task. In this case, if the "known" bit is cleared then
-the worst would be the emulation is run many times. But if the "always
-allow" is cleared but not "known" bit then we have an issue: the
-syscall will always be executed in BPF.
-
-Is it worth holding a spinlock here?
-
-Though I'll try to get the benchmark numbers for the emulator later tonight.
-
-YiFei Zhu
-_______________________________________________
-Containers mailing list
-Containers@lists.linux-foundation.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
+Cj4gT24gU2VwIDI1LCAyMDIwLCBhdCA2OjIzIFBNLCBZaUZlaSBaaHUgPHpodXlpZmVpMTk5OUBn
+bWFpbC5jb20+IHdyb3RlOgo+IAo+IO+7v09uIEZyaSwgU2VwIDI1LCAyMDIwIGF0IDQ6MDcgUE0g
+QW5keSBMdXRvbWlyc2tpIDxsdXRvQGFtYWNhcGl0YWwubmV0PiB3cm90ZToKPj4gV2UnZCBuZWVk
+IGF0IGxlYXN0IHRocmVlIHN0YXRlcyBwZXIgc3lzY2FsbDogdW5rbm93biwgYWx3YXlzLWFsbG93
+LAo+PiBhbmQgbmVlZC10by1ydW4tZmlsdGVyLgo+PiAKPj4gVGhlIGRvd25zaWRlcyBhcmUgbGVz
+cyBkZXRlcm1pbmlzbSBhbmQgYSBiaXQgb2YgYW4gdWdsaWVyCj4+IGltcGxlbWVudGF0aW9uLiAg
+VGhlIHVwc2lkZSBpcyB0aGF0IHdlIGRvbid0IG5lZWQgdG8gbG9vcCBvdmVyIGFsbAo+PiBzeXNj
+YWxscyBhdCBsb2FkIC0tIGluc3RlYWQgdGhlIHRpbWUgdGhhdCBlYWNoIG9wZXJhdGlvbiB0YWtl
+cyBpcwo+PiBpbmRlcGVuZGVudCBvZiB0aGUgdG90YWwgbnVtYmVyIG9mIHN5c2NhbGxzIG9uIHRo
+ZSBzeXN0ZW0uICBBbmQgd2UgY2FuCj4+IGVudGlyZWx5IGF2b2lkLCBzYXksIGV2YWx1YXRpbmcg
+dGhlIHgzMiBjYXNlIHVudGlsIHRoZSB0YXNrIHRyaWVzIGFuCj4+IHgzMiBzeXNjYWxsLgo+IAo+
+IEkgd2FzIHJlYWxseSBhZnJhaWQgb2YgbXVsdGlwbGUgdGFza3Mgd3JpdGluZyB0byB0aGUgYml0
+bWFwcyBhdCBvbmNlLAo+IGhlbmNlIEkgdXNlZCBiaXRtYXAtcGVyLXRhc2suIE5vdyBJIHRoaW5r
+IGFib3V0IGl0LCBpZiB0aGlzIHN0YXlzCj4gbG9ja2xlc3MsIHRoZSB3b3JzdCB0aGluZyB0aGF0
+IGNhbiBoYXBwZW4gaXMgdGhhdCBhIHdyaXRlIHVuZG8gYSBiaXQKPiBzZXQgYnkgYW5vdGhlciB0
+YXNrLiBJbiB0aGlzIGNhc2UsIGlmIHRoZSAia25vd24iIGJpdCBpcyBjbGVhcmVkIHRoZW4KPiB0
+aGUgd29yc3Qgd291bGQgYmUgdGhlIGVtdWxhdGlvbiBpcyBydW4gbWFueSB0aW1lcy4gQnV0IGlm
+IHRoZSAiYWx3YXlzCj4gYWxsb3ciIGlzIGNsZWFyZWQgYnV0IG5vdCAia25vd24iIGJpdCB0aGVu
+IHdlIGhhdmUgYW4gaXNzdWU6IHRoZQo+IHN5c2NhbGwgd2lsbCBhbHdheXMgYmUgZXhlY3V0ZWQg
+aW4gQlBGLgo+IAoKSWYgeW91IGludGVybGVhdmUgdGhlIGJpdHMsIHRoZW4geW91IGNhbiByZWFk
+IGFuZCB3cml0ZSB0aGVtIGF0b21pY2FsbHkg4oCUIGJvdGggYml0cyBmb3IgYW55IGdpdmVuIHN5
+c2NhbGwgd2lsbCBiZSBpbiB0aGUgc2FtZSB3b3JkLgoKPiBJcyBpdCB3b3J0aCBob2xkaW5nIGEg
+c3BpbmxvY2sgaGVyZT8KPiAKPiBUaG91Z2ggSSdsbCB0cnkgdG8gZ2V0IHRoZSBiZW5jaG1hcmsg
+bnVtYmVycyBmb3IgdGhlIGVtdWxhdG9yIGxhdGVyIHRvbmlnaHQuCj4gCj4gWWlGZWkgWmh1Cl9f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMg
+bWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6
+Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
