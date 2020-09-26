@@ -2,108 +2,108 @@ Return-Path: <SRS0=QcxQ=DD=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=BAYES_00,DKIM_ADSP_CUSTOM_MED,
+	DKIM_INVALID,DKIM_SIGNED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 74E8FC2D0A8
-	for <containers@archiver.kernel.org>; Sat, 26 Sep 2020 04:35:07 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2AB44C2D0A8
+	for <containers@archiver.kernel.org>; Sat, 26 Sep 2020 18:12:11 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 01BC62076D
-	for <containers@archiver.kernel.org>; Sat, 26 Sep 2020 04:35:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id A3E162073A
+	for <containers@archiver.kernel.org>; Sat, 26 Sep 2020 18:12:10 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="TWHocp6X"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 01BC62076D
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=chromium.org
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="syrFF3GZ"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A3E162073A
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 9039186BEF;
-	Sat, 26 Sep 2020 04:35:06 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id F12FD20407;
+	Sat, 26 Sep 2020 18:12:09 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id XuXeWWTzGIer; Sat, 26 Sep 2020 04:35:05 +0000 (UTC)
+	with ESMTP id dAQQA38Ahdqq; Sat, 26 Sep 2020 18:12:05 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 88CB786B71;
-	Sat, 26 Sep 2020 04:35:05 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 38962203CA;
+	Sat, 26 Sep 2020 18:12:05 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 640E8C0891;
-	Sat, 26 Sep 2020 04:35:05 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 2692FC0859
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 16945C0859;
+	Sat, 26 Sep 2020 18:12:05 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 15038C0051
  for <containers@lists.linux-foundation.org>;
- Sat, 26 Sep 2020 04:35:04 +0000 (UTC)
+ Sat, 26 Sep 2020 18:12:03 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 1AA348756D
+ by whitealder.osuosl.org (Postfix) with ESMTP id 0150086489
  for <containers@lists.linux-foundation.org>;
- Sat, 26 Sep 2020 04:35:04 +0000 (UTC)
+ Sat, 26 Sep 2020 18:12:03 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id e6c0KnjH2RU5
+ with ESMTP id F26Ep5akcL6r
  for <containers@lists.linux-foundation.org>;
- Sat, 26 Sep 2020 04:35:03 +0000 (UTC)
+ Sat, 26 Sep 2020 18:12:02 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-pg1-f193.google.com (mail-pg1-f193.google.com
- [209.85.215.193])
- by hemlock.osuosl.org (Postfix) with ESMTPS id 806D58755B
+Received: from mail-pf1-f196.google.com (mail-pf1-f196.google.com
+ [209.85.210.196])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 7440C8633E
  for <containers@lists.linux-foundation.org>;
- Sat, 26 Sep 2020 04:35:03 +0000 (UTC)
-Received: by mail-pg1-f193.google.com with SMTP id k133so4153327pgc.7
+ Sat, 26 Sep 2020 18:12:02 +0000 (UTC)
+Received: by mail-pf1-f196.google.com with SMTP id o20so5902590pfp.11
  for <containers@lists.linux-foundation.org>;
- Fri, 25 Sep 2020 21:35:03 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=chromium.org; s=google;
- h=date:from:to:cc:subject:message-id:references:mime-version
- :content-disposition:content-transfer-encoding:in-reply-to;
- bh=mRcwOzZAXRqD5t0WunR2xZRGQlJgJ5v6Cl490f6L2w4=;
- b=TWHocp6Xnlj+Fal/pEAcaz9wDHWf5v8XigHCHnEgYkDAlglQrvdlT3J1d4RmRbUM5G
- oWQjXg12yMjV+3i57IYSebyR+e7kdcE8TnPGHZXUJLngz9RYIkHXBP8k0L5y0iuLMbmS
- G8h+pUUY+GNQEWLdLBFvHdE3ncAEFTwNfZnkc=
+ Sat, 26 Sep 2020 11:12:02 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
+ h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+ :cc; bh=KowdFI99SvwAHlmnquISweYZPA2kNBZ4Vy+1Sm1Ru5Y=;
+ b=syrFF3GZ4vwOCTVvGBzGuHJ4tcSsvCEY7VnZU5FZQtDjapU5yYWoTukg/YbFCvyOJg
+ 1R7CkOr3meO9mL0s1bMniClEFzIlmODRBjafTC6oXho0L9KbcuKtKcSgsuuIbEOvHeXl
+ O5h/Xqfj+cLXNLXaF79JK62/N9SjeS8W5mQw2r0Tuu+rfkfifKplqReHttHgGNDSlsic
+ HAOssh01hbBRJI4TX+cbsO+bYKpU9wQblx3JlaoIkkKSgaDYgfIbe5UQJOxNuBcdTYAn
+ dtMhzMWv6i+0HWW2pwD3bGOM/+eqS8iF1KLeTKLkYLQyqsK3w9bCIDV4aeG+10gzxV84
+ s38g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
- h=x-gm-message-state:date:from:to:cc:subject:message-id:references
- :mime-version:content-disposition:content-transfer-encoding
- :in-reply-to;
- bh=mRcwOzZAXRqD5t0WunR2xZRGQlJgJ5v6Cl490f6L2w4=;
- b=eIw86KwlQE26B+FYZiJrm0KqodCOSYRd2D/gmRSx4IT/b833LKN6Q7H2uqEAinvyn/
- kmwYOfkxbTe490JvBGowJKBz/SFzN3cRvZJVaIiTx/M1Ixl8iZxn67zXkV4K/+MlpaWa
- 7eLRSpgZ458ykKrcXpIc8mpnXCcS1dD/C8ktvx/BpQTuDTtTQNI2oxM422gsxjh58rZV
- fFW32hszJspzyvDsc37NW2XYEshK6whVD1Q1fKpLr8kxs2Ul/as7f069C4DIaKQD3E7N
- 0Ws1UnZie67MxJkRAVTGky8rwvd5OLPri/P1t6SSRNLlYdsJZI8D3YpF0XOMWkwdpq0Q
- zmMA==
-X-Gm-Message-State: AOAM530GroTe1j2UJH2fI3qhq/VZ4NzPzBe/W4gQ/lvu3HlQg7A/MXOa
- hmd/WZEP+I2DigCqHlZnt74Bzg==
-X-Google-Smtp-Source: ABdhPJwZ8nK5Yal21qEXtJstQ1g6ry9hFYoph8xJ4equzc56hECGkz66N29kZWed4jPsUpReqJJ0YA==
-X-Received: by 2002:a65:615a:: with SMTP id o26mr1648183pgv.54.1601094903117; 
- Fri, 25 Sep 2020 21:35:03 -0700 (PDT)
-Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
- by smtp.gmail.com with ESMTPSA id y202sm4057138pfc.179.2020.09.25.21.35.02
- (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
- Fri, 25 Sep 2020 21:35:02 -0700 (PDT)
-Date: Fri, 25 Sep 2020 21:35:01 -0700
-From: Kees Cook <keescook@chromium.org>
-To: Andy Lutomirski <luto@amacapital.net>
-Subject: Re: [PATCH v2 seccomp 3/6] seccomp/cache: Add "emulator" to check if
- filter is arg-dependent
-Message-ID: <202009252134.871EFAB61@keescook>
-References: <CABqSeASR0bQ7Y302SkZ639NM=roSVRmd3ROGm0YDEFCTxxd63w@mail.gmail.com>
- <05109FF5-65C9-491E-9D9D-2FECE4F8B2B0@amacapital.net>
+ h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+ :message-id:subject:to:cc;
+ bh=KowdFI99SvwAHlmnquISweYZPA2kNBZ4Vy+1Sm1Ru5Y=;
+ b=pI8pTIXXkLOCYb4qrbeNK9DSlhSsZWJ7bVSOP1wZ4Fk2c1nhdPiw+Nfvbm8yUSvNRX
+ eFdpiutswYqqdPuNnwI7QwX4J6OwGCwSFRRRAE+zr9zFjSwV+vjFts4mgkfHuYBt3O//
+ BAhKA/27YGj+/OpK5VykCMUk8U0k88CqA6SAChABKWJ1mLwAfe/R0/zaZ3r2TKI23B19
+ pPGAgB3wbbw04PaDOTb0iqwbIUJLn5bxbLVGiQ817RNnw3cS0XC1upFu1LcJuXJgbGA3
+ BLir06U6c3MGn7IORTCfHCyoXFvBh21FALUDwEpup8GDIhwkiUjCHY69cfTNQDDE6cRb
+ aGnw==
+X-Gm-Message-State: AOAM531KdrJ9BaY62hdQZTFcJhPgS6HvrrSee0A54uXUUIL/oyVkR7Nj
+ FqC1l6OBILifip9+6iDdsUjuxxMJOv5iGWR5Iwo=
+X-Google-Smtp-Source: ABdhPJwoJr06rCvVUGsbVXGhb2eVCyD32tCStdaxN1THyxWAQGjxGs5gnWApkmotT1o0fcXz0+iU3rf5dfrHjHc2aOU=
+X-Received: by 2002:a63:906:: with SMTP id 6mr3490414pgj.66.1601143922050;
+ Sat, 26 Sep 2020 11:12:02 -0700 (PDT)
 MIME-Version: 1.0
-Content-Disposition: inline
-In-Reply-To: <05109FF5-65C9-491E-9D9D-2FECE4F8B2B0@amacapital.net>
+References: <20200923232923.3142503-1-keescook@chromium.org>
+ <43039bb6-9d9f-b347-fa92-ea34ccc21d3d@rasmusvillemoes.dk>
+ <CABqSeAQKksqM1SdsQMoR52AJ5CY0VE2tk8-TJaMuOrkCprQ0MQ@mail.gmail.com>
+ <27b4ef86-fee5-fc35-993b-3352ce504c73@rasmusvillemoes.dk>
+ <CABqSeATHtvA7qm7j_kxBsbxRCd5B=MHtxGdsYsXEJ-TRRYKTgA@mail.gmail.com>
+In-Reply-To: <CABqSeATHtvA7qm7j_kxBsbxRCd5B=MHtxGdsYsXEJ-TRRYKTgA@mail.gmail.com>
+From: YiFei Zhu <zhuyifei1999@gmail.com>
+Date: Sat, 26 Sep 2020 13:11:50 -0500
+Message-ID: <CABqSeASMObs7HtwfM=ua9Tbx1mfHZaxCMWD6AP6-6hR4-Xcn=Q@mail.gmail.com>
+Subject: Re: [PATCH v1 0/6] seccomp: Implement constant action bitmaps
+To: Rasmus Villemoes <linux@rasmusvillemoes.dk>
 Cc: Andrea Arcangeli <aarcange@redhat.com>,
- Giuseppe Scrivano <gscrivan@redhat.com>,
- Valentin Rothberg <vrothber@redhat.com>, Jann Horn <jannh@google.com>,
- YiFei Zhu <yifeifz2@illinois.edu>,
+ Giuseppe Scrivano <gscrivan@redhat.com>, Will Drewry <wad@chromium.org>,
+ Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>,
+ YiFei Zhu <yifeifz2@illinois.edu>, Linux API <linux-api@vger.kernel.org>,
  Linux Containers <containers@lists.linux-foundation.org>,
  Tobin Feldman-Fitzthum <tobin@ibm.com>,
- kernel list <linux-kernel@vger.kernel.org>,
- Hubertus Franke <frankeh@us.ibm.com>, Jack Chen <jianyan2@illinois.edu>,
  Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
- Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>,
- bpf <bpf@vger.kernel.org>, Tianyin Xu <tyxu@illinois.edu>
+ Andy Lutomirski <luto@amacapital.net>, Valentin Rothberg <vrothber@redhat.com>,
+ Hubertus Franke <frankeh@us.ibm.com>, Jack Chen <jianyan2@illinois.edu>,
+ Josep Torrellas <torrella@illinois.edu>, bpf <bpf@vger.kernel.org>,
+ Tianyin Xu <tyxu@illinois.edu>, kernel list <linux-kernel@vger.kernel.org>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -115,36 +115,55 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-T24gRnJpLCBTZXAgMjUsIDIwMjAgYXQgMDc6NDc6NDdQTSAtMDcwMCwgQW5keSBMdXRvbWlyc2tp
-IHdyb3RlOgo+IAo+ID4gT24gU2VwIDI1LCAyMDIwLCBhdCA2OjIzIFBNLCBZaUZlaSBaaHUgPHpo
-dXlpZmVpMTk5OUBnbWFpbC5jb20+IHdyb3RlOgo+ID4gCj4gPiDvu79PbiBGcmksIFNlcCAyNSwg
-MjAyMCBhdCA0OjA3IFBNIEFuZHkgTHV0b21pcnNraSA8bHV0b0BhbWFjYXBpdGFsLm5ldD4gd3Jv
-dGU6Cj4gPj4gV2UnZCBuZWVkIGF0IGxlYXN0IHRocmVlIHN0YXRlcyBwZXIgc3lzY2FsbDogdW5r
-bm93biwgYWx3YXlzLWFsbG93LAo+ID4+IGFuZCBuZWVkLXRvLXJ1bi1maWx0ZXIuCj4gPj4gCj4g
-Pj4gVGhlIGRvd25zaWRlcyBhcmUgbGVzcyBkZXRlcm1pbmlzbSBhbmQgYSBiaXQgb2YgYW4gdWds
-aWVyCj4gPj4gaW1wbGVtZW50YXRpb24uICBUaGUgdXBzaWRlIGlzIHRoYXQgd2UgZG9uJ3QgbmVl
-ZCB0byBsb29wIG92ZXIgYWxsCj4gPj4gc3lzY2FsbHMgYXQgbG9hZCAtLSBpbnN0ZWFkIHRoZSB0
-aW1lIHRoYXQgZWFjaCBvcGVyYXRpb24gdGFrZXMgaXMKPiA+PiBpbmRlcGVuZGVudCBvZiB0aGUg
-dG90YWwgbnVtYmVyIG9mIHN5c2NhbGxzIG9uIHRoZSBzeXN0ZW0uICBBbmQgd2UgY2FuCj4gPj4g
-ZW50aXJlbHkgYXZvaWQsIHNheSwgZXZhbHVhdGluZyB0aGUgeDMyIGNhc2UgdW50aWwgdGhlIHRh
-c2sgdHJpZXMgYW4KPiA+PiB4MzIgc3lzY2FsbC4KPiA+IAo+ID4gSSB3YXMgcmVhbGx5IGFmcmFp
-ZCBvZiBtdWx0aXBsZSB0YXNrcyB3cml0aW5nIHRvIHRoZSBiaXRtYXBzIGF0IG9uY2UsCj4gPiBo
-ZW5jZSBJIHVzZWQgYml0bWFwLXBlci10YXNrLiBOb3cgSSB0aGluayBhYm91dCBpdCwgaWYgdGhp
-cyBzdGF5cwo+ID4gbG9ja2xlc3MsIHRoZSB3b3JzdCB0aGluZyB0aGF0IGNhbiBoYXBwZW4gaXMg
-dGhhdCBhIHdyaXRlIHVuZG8gYSBiaXQKPiA+IHNldCBieSBhbm90aGVyIHRhc2suIEluIHRoaXMg
-Y2FzZSwgaWYgdGhlICJrbm93biIgYml0IGlzIGNsZWFyZWQgdGhlbgo+ID4gdGhlIHdvcnN0IHdv
-dWxkIGJlIHRoZSBlbXVsYXRpb24gaXMgcnVuIG1hbnkgdGltZXMuIEJ1dCBpZiB0aGUgImFsd2F5
-cwo+ID4gYWxsb3ciIGlzIGNsZWFyZWQgYnV0IG5vdCAia25vd24iIGJpdCB0aGVuIHdlIGhhdmUg
-YW4gaXNzdWU6IHRoZQo+ID4gc3lzY2FsbCB3aWxsIGFsd2F5cyBiZSBleGVjdXRlZCBpbiBCUEYu
-Cj4gPiAKPiAKPiBJZiB5b3UgaW50ZXJsZWF2ZSB0aGUgYml0cywgdGhlbiB5b3UgY2FuIHJlYWQg
-YW5kIHdyaXRlIHRoZW0gYXRvbWljYWxseSDigJQgYm90aCBiaXRzIGZvciBhbnkgZ2l2ZW4gc3lz
-Y2FsbCB3aWxsIGJlIGluIHRoZSBzYW1lIHdvcmQuCgpJIHRoaW5rIHdlIGNhbiBqdXN0IGhvbGQg
-dGhlIHNwaW5sb2NrLiA6KQoKLS0gCktlZXMgQ29vawpfX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJz
-QGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9u
-Lm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On Fri, Sep 25, 2020 at 2:07 AM YiFei Zhu <zhuyifei1999@gmail.com> wrote:
+> I'll try to profile the latter later on my qemu-kvm, with a recent
+> libsecomp with binary tree and docker's profile, probably both direct
+> filter attaches and filter attaches with fork(). I'm guessing if I
+> have fork() the cost of fork() will overshadow seccomp() though.
+
+I'm surprised. That is not the case as far as I can tell.
+
+I wrote a benchmark [1] that would fork() and in the child attach a
+seccomp filter, look at the CLOCK_MONOTONIC difference, then add it to
+a struct timespec shared with the parent. It checks the difference
+with the timespec before prctl and before fork. CLOCK_MONOTONIC
+instead of CLOCK_PROCESS_CPUTIME_ID because of fork.
+
+I ran `./seccomp_emu_bench 100000` in my qemu-kvm and here are the results:
+without emulator:
+Benchmarking 100000 syscalls...
+19799663603 (19.8s)
+seecomp attach without fork: 197996 ns
+33911173847 (33.9s)
+seecomp attach with fork: 339111 ns
+
+with emulator:
+Benchmarking 100000 syscalls...
+54428289147 (54.4s)
+seecomp attach without fork: 544282 ns
+69494235408 (69.5s)
+seecomp attach with fork: 694942 ns
+
+fork seems to take around 150us, seccomp attach takes around 200us,
+and the filter emulation overhead is around 350us. I had no idea that
+fork was this fast. If I wrote my benchmark badly please criticise.
+
+Given that we are doubling the time to fork() + seccomp attach filter,
+I think yeah running the emulator on the first instance of a syscall,
+holding a lock, is a much better idea. If I naively divide 350us by
+the number of syscall + arch pairs emulated the overhead is less than
+1 us and that should be okay since it only happens for the first
+invocation of the particular syscall.
+
+[1] https://gist.github.com/zhuyifei1999/d7bee62bea14187e150fef59db8e30b1
+
+YiFei Zhu
+_______________________________________________
+Containers mailing list
+Containers@lists.linux-foundation.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
