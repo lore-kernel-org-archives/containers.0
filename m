@@ -2,98 +2,99 @@ Return-Path: <SRS0=U9nl=DH=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F11A0C4363D
-	for <containers@archiver.kernel.org>; Wed, 30 Sep 2020 22:49:07 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D89CC4363D
+	for <containers@archiver.kernel.org>; Wed, 30 Sep 2020 22:54:00 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 5A5E720719
-	for <containers@archiver.kernel.org>; Wed, 30 Sep 2020 22:49:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id F0B8F20719
+	for <containers@archiver.kernel.org>; Wed, 30 Sep 2020 22:53:59 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="b9W9/WFA"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5A5E720719
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="dJSvn+nV"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F0B8F20719
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=chromium.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id B8F372277A;
-	Wed, 30 Sep 2020 22:49:06 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 74BD8868A8;
+	Wed, 30 Sep 2020 22:53:59 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id eKtB3ux90F-Q; Wed, 30 Sep 2020 22:49:05 +0000 (UTC)
+	with ESMTP id El3nQDjJSIXq; Wed, 30 Sep 2020 22:53:58 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 0944C203AA;
-	Wed, 30 Sep 2020 22:49:05 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id A89A8855D8;
+	Wed, 30 Sep 2020 22:53:58 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id EF616C016F;
-	Wed, 30 Sep 2020 22:49:04 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 0808EC0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 9B76EC016F;
+	Wed, 30 Sep 2020 22:53:58 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 05CB8C0051
  for <containers@lists.linux-foundation.org>;
- Wed, 30 Sep 2020 22:49:04 +0000 (UTC)
+ Wed, 30 Sep 2020 22:53:58 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id EAC4785D61
+ by hemlock.osuosl.org (Postfix) with ESMTP id 00ABD87232
  for <containers@lists.linux-foundation.org>;
- Wed, 30 Sep 2020 22:49:03 +0000 (UTC)
+ Wed, 30 Sep 2020 22:53:58 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id 0wC5-_JuwSYK
+ with ESMTP id XDCD7dRiL7Dd
  for <containers@lists.linux-foundation.org>;
- Wed, 30 Sep 2020 22:49:03 +0000 (UTC)
+ Wed, 30 Sep 2020 22:53:57 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-pg1-f195.google.com (mail-pg1-f195.google.com
- [209.85.215.195])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id 58D9985A76
+Received: from mail-pj1-f65.google.com (mail-pj1-f65.google.com
+ [209.85.216.65])
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 564A68722F
  for <containers@lists.linux-foundation.org>;
- Wed, 30 Sep 2020 22:49:03 +0000 (UTC)
-Received: by mail-pg1-f195.google.com with SMTP id 34so2194721pgo.13
+ Wed, 30 Sep 2020 22:53:57 +0000 (UTC)
+Received: by mail-pj1-f65.google.com with SMTP id t7so767786pjd.3
  for <containers@lists.linux-foundation.org>;
- Wed, 30 Sep 2020 15:49:03 -0700 (PDT)
+ Wed, 30 Sep 2020 15:53:57 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=chromium.org; s=google;
  h=date:from:to:cc:subject:message-id:references:mime-version
  :content-disposition:in-reply-to;
- bh=VT2vDd9OB7uEL9vUlvmQWoFRKp72QNgXm7S/Mv4km2A=;
- b=b9W9/WFAa7j9YD1PJAI4yFg7dus7W0r/MW7Dboua7FmO8kMbs1gKAajU9Q2CldMKVq
- ScKuRCkr1vwZZCRbn/yF/6r9z2d5ANWOaT0AFusLzF4y5idwBkxeYt+G5BTv7KZAolR8
- 6SxxMXSjfujZ2U/hIWKv0FguBBnmAB5AcFqfE=
+ bh=xT7z4KWpY1tW0DUzf7kauPlyM86hsIyuR+DbyM/kIF4=;
+ b=dJSvn+nVMHOhyyebiONq5L1qo38q1OX51JVgtEQrhaCb9Ko8DFOcatX2GGKv2OpzZr
+ sIvN3Ky6KPhHJRJx//ba2NE4yw/9fp3TyA2uoDw7vHOSexKqne+cqwQpImU41Lyz31Bo
+ HucnSHirKztZuVWWFld/RQCHHttbmiGQcpaww=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
  h=x-gm-message-state:date:from:to:cc:subject:message-id:references
  :mime-version:content-disposition:in-reply-to;
- bh=VT2vDd9OB7uEL9vUlvmQWoFRKp72QNgXm7S/Mv4km2A=;
- b=L9gvSeeobYeXrqrJmSTUGzm+lM3VZj1ES0NZ8BTc88Hv0oqKxfvyA3Y935ACzN5UOG
- u97Jz319NUYqGql3VPPtBRSzRf82aP3Kl+vrxudzSnKnHwctYNkkuqETuImhzHOce4Ou
- PouU9YnArOc5NaplsLHPkz5NORTNPVKL510tGVEJphlqivDEdf8aA7oJBZbdoI1+T3V5
- SVZKBIWsfsPBw5+dlYwu1RgwQGGWWjEbMJhZHtpMWSxGEruny5BmKtBqzPev1sMdki+3
- 8BBB7QC2XIPBbD6J3HKC39hSFjnLaeuiru/RF4XDLFJPgqLYF3nkZ1GdPzL+/KQ2iVfS
- i48Q==
-X-Gm-Message-State: AOAM533Gm6JCbAtC2vGeDLnO37MraiTTAOYZ5nbJ0uF0iycwQMreqmob
- rQ+1wBhkXqVkOkbh3lPYqL5fjw==
-X-Google-Smtp-Source: ABdhPJwfSK5iNpfj80w0dYS73zpvMdKZB8MpSp2GpAdsedr4h3Z0FZm0dB+5To7uEo0x/wrmF8Kkpw==
-X-Received: by 2002:a62:19c4:0:b029:13e:d13d:a0fd with SMTP id
- 187-20020a6219c40000b029013ed13da0fdmr4271918pfz.25.1601506142852; 
- Wed, 30 Sep 2020 15:49:02 -0700 (PDT)
+ bh=xT7z4KWpY1tW0DUzf7kauPlyM86hsIyuR+DbyM/kIF4=;
+ b=orPYVSb2sjw8C3fyLJRGesnFt5/H8hPC+hBpNjfU1vDCQl/6tos5UJ+mkVI3uVogo1
+ bKez1kG64TFFQmXAGOkdECCMkBscpmO9JyHBM+bVSmmhCC0BLbhYQr+xvbHW5QRGllyU
+ 0kJRvWrnNSQSAPqBrIvkJmx+IIdtu5fwBZLO0dCrA6j/9mrjQCOCZgmLMi//wcfQh/15
+ psZWP8+hOji3PNEexSN7r61it/5ap7I1fNmieEeVOmXIGP9ndPcwF6ltDlUAXY0l26r2
+ Ho/R2zCLD200Vk3QvrvvcKIhhLcD0bOPkkC1+i3+7/WDglsdStLCvYV2xzAyIAa8Y6Wh
+ 1Y/g==
+X-Gm-Message-State: AOAM532BLWOXV7pNDILfyzSJCD0x9Me9Hoh5X+pU9Ctm0MN//x8QQFIP
+ lMOcu6anZG11GY7ZUjAcy6XdAg==
+X-Google-Smtp-Source: ABdhPJym9XGRJgUPD0aK76nCGJgVfLs8G5aI0UXZOOiThurScckwIjdLNnP4Mp59y5rMZ/XCz74uUA==
+X-Received: by 2002:a17:90b:ecf:: with SMTP id
+ gz15mr4360289pjb.126.1601506436994; 
+ Wed, 30 Sep 2020 15:53:56 -0700 (PDT)
 Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
- by smtp.gmail.com with ESMTPSA id u10sm3674241pfn.122.2020.09.30.15.49.01
+ by smtp.gmail.com with ESMTPSA id 1sm3974626pfx.126.2020.09.30.15.53.55
  (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
- Wed, 30 Sep 2020 15:49:02 -0700 (PDT)
-Date: Wed, 30 Sep 2020 15:49:01 -0700
+ Wed, 30 Sep 2020 15:53:56 -0700 (PDT)
+Date: Wed, 30 Sep 2020 15:53:55 -0700
 From: Kees Cook <keescook@chromium.org>
 To: Jann Horn <jannh@google.com>
-Subject: Re: [PATCH v3 seccomp 2/5] seccomp/cache: Add "emulator" to check if
- filter is constant allow
-Message-ID: <202009301546.6B7D648F57@keescook>
+Subject: Re: [PATCH v3 seccomp 1/5] x86: Enable seccomp architecture tracking
+Message-ID: <202009301549.17D3DE5@keescook>
 References: <cover.1601478774.git.yifeifz2@illinois.edu>
- <b16456e8dbc378c41b73c00c56854a3c30580833.1601478774.git.yifeifz2@illinois.edu>
- <CAG48ez0Njm0oS+9k-cgUqzyUWXV=cHPope2Xe9vVNPUVZ1PB4w@mail.gmail.com>
+ <484392624b475cc25d90a787525ede70df9f7d51.1601478774.git.yifeifz2@illinois.edu>
+ <202009301418.20BA0CE33@keescook>
+ <CAG48ez3039B+w_D7SJBaGGXw9sd1_SzWO+qUnhMs6tcweGa-+w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <CAG48ez0Njm0oS+9k-cgUqzyUWXV=cHPope2Xe9vVNPUVZ1PB4w@mail.gmail.com>
+In-Reply-To: <CAG48ez3039B+w_D7SJBaGGXw9sd1_SzWO+qUnhMs6tcweGa-+w@mail.gmail.com>
 Cc: Andrea Arcangeli <aarcange@redhat.com>,
  Giuseppe Scrivano <gscrivan@redhat.com>,
  Valentin Rothberg <vrothber@redhat.com>, YiFei Zhu <yifeifz2@illinois.edu>,
@@ -121,55 +122,67 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Thu, Oct 01, 2020 at 12:24:32AM +0200, Jann Horn wrote:
-> On Wed, Sep 30, 2020 at 5:20 PM YiFei Zhu <zhuyifei1999@gmail.com> wrote:
-> > SECCOMP_CACHE_NR_ONLY will only operate on syscalls that do not
-> > access any syscall arguments or instruction pointer. To facilitate
-> > this we need a static analyser to know whether a filter will
-> > return allow regardless of syscall arguments for a given
-> > architecture number / syscall number pair. This is implemented
-> > here with a pseudo-emulator, and stored in a per-filter bitmap.
-> >
-> > Each common BPF instruction are emulated. Any weirdness or loading
-> > from a syscall argument will cause the emulator to bail.
-> >
-> > The emulation is also halted if it reaches a return. In that case,
-> > if it returns an SECCOMP_RET_ALLOW, the syscall is marked as good.
-> >
-> > Emulator structure and comments are from Kees [1] and Jann [2].
-> >
-> > Emulation is done at attach time. If a filter depends on more
-> > filters, and if the dependee does not guarantee to allow the
-> > syscall, then we skip the emulation of this syscall.
-> >
-> > [1] https://lore.kernel.org/lkml/20200923232923.3142503-5-keescook@chromium.org/
-> > [2] https://lore.kernel.org/lkml/CAG48ez1p=dR_2ikKq=xVxkoGg0fYpTBpkhJSv1w-6BG=76PAvw@mail.gmail.com/
+On Wed, Sep 30, 2020 at 11:33:15PM +0200, Jann Horn wrote:
+> On Wed, Sep 30, 2020 at 11:21 PM Kees Cook <keescook@chromium.org> wrote:
+> > On Wed, Sep 30, 2020 at 10:19:12AM -0500, YiFei Zhu wrote:
+> > > From: Kees Cook <keescook@chromium.org>
+> > >
+> > > Provide seccomp internals with the details to calculate which syscall
+> > > table the running kernel is expecting to deal with. This allows for
+> > > efficient architecture pinning and paves the way for constant-action
+> > > bitmaps.
+> > >
+> > > Signed-off-by: Kees Cook <keescook@chromium.org>
+> > > [YiFei: Removed x32, added macro for nr_syscalls]
+> > > Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
 > [...]
-> > +static void seccomp_cache_prepare_bitmap(struct seccomp_filter *sfilter,
-> > +                                        void *bitmap, const void *bitmap_prev,
-> > +                                        size_t bitmap_size, int arch)
-> > +{
-> > +       struct sock_fprog_kern *fprog = sfilter->prog->orig_prog;
-> > +       struct seccomp_data sd;
-> > +       int nr;
-> > +
-> > +       for (nr = 0; nr < bitmap_size; nr++) {
-> > +               if (bitmap_prev && !test_bit(nr, bitmap_prev))
-> > +                       continue;
-> > +
-> > +               sd.nr = nr;
-> > +               sd.arch = arch;
-> > +
-> > +               if (seccomp_emu_is_const_allow(fprog, &sd))
-> > +                       set_bit(nr, bitmap);
+> > But otherwise, yes, looks good to me. For this patch, I think the S-o-b chain is probably more
+> > accurately captured as:
+> >
+> > Signed-off-by: Kees Cook <keescook@chromium.org>
+> > Co-developed-by: YiFei Zhu <yifeifz2@illinois.edu>
+> > Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
 > 
-> set_bit() is atomic, but since we only do this at filter setup, before
-> the filter becomes globally visible, we don't need atomicity here. So
-> this should probably use __set_bit() instead.
+> (Technically, https://www.kernel.org/doc/html/latest/process/submitting-patches.html#when-to-use-acked-by-cc-and-co-developed-by
+> says that "every Co-developed-by: must be immediately followed by a
+> Signed-off-by: of the associated co-author" (and has an example of how
+> that should look).)
 
-Oh yes, excellent point! That will speed this up a bit. When you do
-this, please include a comment here describing why its safe to do it
-non-atomic. :)
+Right, but it is not needed for the commit author (here, the From:),
+the second example given in the docs shows this:
+
+	From: From Author <from@author.example.org>
+
+	<changelog>
+
+	Co-developed-by: Random Co-Author <random@coauthor.example.org>
+	Signed-off-by: Random Co-Author <random@coauthor.example.org>
+	Signed-off-by: From Author <from@author.example.org>
+	Co-developed-by: Submitting Co-Author <sub@coauthor.example.org>
+	Signed-off-by: Submitting Co-Author <sub@coauthor.example.org>
+
+and there is no third co-developer, so it's:
+
+	From: From Author <from@author.example.org>
+
+	<changelog>
+
+	Signed-off-by: From Author <from@author.example.org>
+	Co-developed-by: Submitting Co-Author <sub@coauthor.example.org>
+	Signed-off-by: Submitting Co-Author <sub@coauthor.example.org>
+
+If I'm the From, and YiFei Zhu is the submitting co-developer, then
+it's:
+
+	From: Kees Cook <keescook@chromium.org>
+
+	<changelog>
+
+	Signed-off-by: Kees Cook <keescook@chromium.org>
+	Co-developed-by: YiFei Zhu <yifeifz2@illinois.edu>
+	Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
+
+which is what I suggested.
 
 -- 
 Kees Cook
