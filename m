@@ -6,93 +6,93 @@ X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,
 	DKIM_ADSP_CUSTOM_MED,DKIM_INVALID,DKIM_SIGNED,FREEMAIL_FORGED_FROMDOMAIN,
 	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ABAB6C4727C
-	for <containers@archiver.kernel.org>; Wed, 30 Sep 2020 15:20:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 96698C4727F
+	for <containers@archiver.kernel.org>; Wed, 30 Sep 2020 15:20:45 +0000 (UTC)
 Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 0E97A2071E
-	for <containers@archiver.kernel.org>; Wed, 30 Sep 2020 15:20:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 1D634207C3
+	for <containers@archiver.kernel.org>; Wed, 30 Sep 2020 15:20:44 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="d713WqGD"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0E97A2071E
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="h9ZjX4eG"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1D634207C3
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 9FCC587213;
-	Wed, 30 Sep 2020 15:20:39 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id CA62087222;
+	Wed, 30 Sep 2020 15:20:44 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id PgbCflAmg4Yh; Wed, 30 Sep 2020 15:20:38 +0000 (UTC)
+	with ESMTP id yAe55pSmWFO5; Wed, 30 Sep 2020 15:20:43 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 832F1871DE;
-	Wed, 30 Sep 2020 15:20:38 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id B41F38721B;
+	Wed, 30 Sep 2020 15:20:43 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 73772C0893;
-	Wed, 30 Sep 2020 15:20:38 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 70507C016F
+	by lists.linuxfoundation.org (Postfix) with ESMTP id A5424C0890;
+	Wed, 30 Sep 2020 15:20:43 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 17951C016F
  for <containers@lists.linux-foundation.org>;
- Wed, 30 Sep 2020 15:20:37 +0000 (UTC)
+ Wed, 30 Sep 2020 15:20:42 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 5F4C486016
+ by silver.osuosl.org (Postfix) with ESMTP id 06B0E22654
  for <containers@lists.linux-foundation.org>;
- Wed, 30 Sep 2020 15:20:37 +0000 (UTC)
+ Wed, 30 Sep 2020 15:20:42 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id VNU+cBjD2pMR
+ with ESMTP id xPoeAyQ-GZcu
  for <containers@lists.linux-foundation.org>;
- Wed, 30 Sep 2020 15:20:36 +0000 (UTC)
+ Wed, 30 Sep 2020 15:20:39 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-io1-f67.google.com (mail-io1-f67.google.com
- [209.85.166.67])
- by whitealder.osuosl.org (Postfix) with ESMTPS id 8B9FF85B7C
+Received: from mail-io1-f66.google.com (mail-io1-f66.google.com
+ [209.85.166.66])
+ by silver.osuosl.org (Postfix) with ESMTPS id 94D672155B
  for <containers@lists.linux-foundation.org>;
- Wed, 30 Sep 2020 15:20:36 +0000 (UTC)
-Received: by mail-io1-f67.google.com with SMTP id z25so2178135iol.10
+ Wed, 30 Sep 2020 15:20:39 +0000 (UTC)
+Received: by mail-io1-f66.google.com with SMTP id k6so2210890ior.2
  for <containers@lists.linux-foundation.org>;
- Wed, 30 Sep 2020 08:20:36 -0700 (PDT)
+ Wed, 30 Sep 2020 08:20:39 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
  h=from:to:cc:subject:date:message-id:in-reply-to:references
  :mime-version:content-transfer-encoding;
- bh=CqHR3iMjvi/+BrsGXxXP4f66oyzEMJKnPL1FtLSH8L8=;
- b=d713WqGDCNpGjBvAOshn0SivS92z6rxcw8GKKckeY3VNOinC44xgP3uWRFu/+Xz+sy
- YvKgTk9LhXN6gbsUAnDE/rUFNfwsfMu4cmCa6xEjDI1k/cLU1/VnkcNP6gIDik19Z92y
- snHokw11f7ndkL8ALgMO+eqmOs9+9bk1FW5Nw6UZOdke5K6KNy99IQn1kiztsKvkRQAC
- U+/KHgr7bEt6ibWOe/jxKZY7DHpguxEHGngrFAvo1CGhHHtzCJp7QAVreX4oDspyABaD
- HAPm58H9wdqXC6JaeMNL1vYW6yILYMOF2Cq3d+fR1V0g0YzXoIwjMYMtk/UpYtYAH+Hc
- WjgQ==
+ bh=jREIpX4zm+bXQV4GY7erFrXt82ePUSIl6wMoQiJQey4=;
+ b=h9ZjX4eGPqcJOpfWYc3rRkbc0/uIBIA0z208Muoytgd2Zkc4s/wN8o1um7Vh0YsWAR
+ +2Y/YgZE292Y9q3TXdoGRaaHanr4WAnFP5uFMmQ+45q1ordQI0w/+irOShjPxp/4/V7/
+ +XoFy0al9TGWw+kzoT352r4cmnvjksJMI83BvANTNQR0N8NkSTa41JWyylb5b7CtkpkA
+ pJmWTT1mSTk5V/y7CyHIrkwOEXOqmuAVJphlBeMaBGYW5N09gtmFrw/ZI6MkLy8Dnvai
+ YvrUK8uvDZiPouOAaZaO1FLE2/42ujQDkI4hfPyKpRRDUyD7Kz2MB2pvSHPudFbVWiHE
+ ps6Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
  h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
  :references:mime-version:content-transfer-encoding;
- bh=CqHR3iMjvi/+BrsGXxXP4f66oyzEMJKnPL1FtLSH8L8=;
- b=RQcENXPFw3Si+W4lK27+NczlRMValJpEegpg+CYQm+m92Zx3wtjBMa26x4zXTP1hq5
- 3xSBl/y/aLAl86G7LhXfZR1zllM/sHsQws5DApIbRe2+seyDgHyEAtro6U57iQT/PMM9
- l3zVFzcUqCQEs8aUNT+grjB+zj0QvniIBNl8uFEOb6DzfFAD8q53wO47++JHSlrA/ci8
- 335dzVFEizgYpR03XSmiKrZzeHIsRg/xFjrMFXOlSfKUyTQ9cRF9N2N62uY8RB0zZV8N
- 3Uw21dS5Sv5rAoy1mfLaSKg7DY7h/ln1wQswYa5hzRx8SA7MGWhQ5ZpRuBRIVT3QEsAk
- 12fA==
-X-Gm-Message-State: AOAM5324+GTA3XncbsHbHcxkEsqzZIVhdeAo/kzaGP0RwIjDNW6UpcKX
- h0SlM0ltiPApivk2l9dumnABwKzsK/KGEg==
-X-Google-Smtp-Source: ABdhPJzZB8L46jzftLd5djIuk3m9qq3lXlQEDaXsco/Ve7fJaCZ1l/d+c4jPWYiXOfyIhv74FtKxlg==
-X-Received: by 2002:a02:b149:: with SMTP id s9mr2430538jah.80.1601479235320;
- Wed, 30 Sep 2020 08:20:35 -0700 (PDT)
+ bh=jREIpX4zm+bXQV4GY7erFrXt82ePUSIl6wMoQiJQey4=;
+ b=j1s6JIWTjARciNXMidb9v+gyUF8yrZQl399SI8OQmqXeQLNt8rtHjgklT3Ux9D/OIg
+ U2JGsJYPlRlxlfTSAFuIcGOq6s55dqzNh86D1V1s3NTlkcd6swWavL98CnI0RpFjAJE0
+ sAHq3aZEXIhe2r7CDVG7yfYMRMGU0VMad0yfMzJyVD7vy5ntD+gIZEWuqsRIr5Sj0qfj
+ ijS+AT/pYYMHWrwx38GDMv69XAwaQpF06b90Jq9ZPqapGJIy2KKRSql5aCu+cB2qD2Dn
+ FEV2FKhEDzATPhYghqMeMh3xm+Zhzil8LF0jIRkgoXXoSotdHLwJcOHR6vw87Tx/ramf
+ O55A==
+X-Gm-Message-State: AOAM531znFvJ/WVt1tc1xJyVCT0CVh4aS7N20ZDfo7sh38WiM1KRPog6
+ Ix5wu2NByLZ2t8spLQ2i4WCIPzXYzkIDxA==
+X-Google-Smtp-Source: ABdhPJwUId5jwICkoihvxugKENCdWV2ugU3LmdKq2serskfp9gUu2bmLJhqPV/YGR57wE3HQ4IzBBw==
+X-Received: by 2002:a5d:80d6:: with SMTP id h22mr2066435ior.154.1601479238534; 
+ Wed, 30 Sep 2020 08:20:38 -0700 (PDT)
 Received: from localhost.localdomain (ip-99-203-15-156.pools.cgn.spcsdns.net.
  [99.203.15.156])
- by smtp.gmail.com with ESMTPSA id t10sm770788iog.49.2020.09.30.08.20.32
+ by smtp.gmail.com with ESMTPSA id t10sm770788iog.49.2020.09.30.08.20.35
  (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
- Wed, 30 Sep 2020 08:20:34 -0700 (PDT)
+ Wed, 30 Sep 2020 08:20:37 -0700 (PDT)
 From: YiFei Zhu <zhuyifei1999@gmail.com>
 To: containers@lists.linux-foundation.org
-Subject: [PATCH v3 seccomp 4/5] selftests/seccomp: Compare bitmap vs filter
- overhead
-Date: Wed, 30 Sep 2020 10:19:15 -0500
-Message-Id: <b6e7dc0d668fec654475382beabaf5f5cf56df3b.1601478774.git.yifeifz2@illinois.edu>
+Subject: [PATCH v3 seccomp 5/5] seccomp/cache: Report cache data through
+ /proc/pid/seccomp_cache
+Date: Wed, 30 Sep 2020 10:19:16 -0500
+Message-Id: <d3d1c05ea0be2b192f480ec52ad64bffbb22dc9d.1601478774.git.yifeifz2@illinois.edu>
 X-Mailer: git-send-email 2.28.0
 In-Reply-To: <cover.1601478774.git.yifeifz2@illinois.edu>
 References: <cover.1601478774.git.yifeifz2@illinois.edu>
@@ -118,169 +118,199 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-RnJvbTogS2VlcyBDb29rIDxrZWVzY29va0BjaHJvbWl1bS5vcmc+CgpBcyBwYXJ0IG9mIHRoZSBz
-ZWNjb21wIGJlbmNobWFya2luZywgaW5jbHVkZSB0aGUgZXhwZWN0YXRpb25zIHdpdGgKcmVnYXJk
-IHRvIHRoZSB0aW1pbmcgYmVoYXZpb3Igb2YgdGhlIGNvbnN0YW50IGFjdGlvbiBiaXRtYXBzLCBh
-bmQgcmVwb3J0CmluY29uc2lzdGVuY2llcyBiZXR0ZXIuCgpFeGFtcGxlIG91dHB1dCB3aXRoIGNv
-bnN0YW50IGFjdGlvbiBiaXRtYXBzIG9uIHg4NjoKCiQgc3VkbyAuL3NlY2NvbXBfYmVuY2htYXJr
-IDEwMDAwMDAwMApDdXJyZW50IEJQRiBzeXNjdGwgc2V0dGluZ3M6Cm5ldC5jb3JlLmJwZl9qaXRf
-ZW5hYmxlID0gMQpuZXQuY29yZS5icGZfaml0X2hhcmRlbiA9IDAKQmVuY2htYXJraW5nIDIwMDAw
-MDAwMCBzeXNjYWxscy4uLgoxMjkuMzU5MzgxNDA5IC0gMC4wMDg3MjQ0MjQgPSAxMjkzNTA2NTY5
-ODUgKDEyOS40cykKZ2V0cGlkIG5hdGl2ZTogNjQ2IG5zCjI2NC4zODU4OTAwMDYgLSAxMjkuMzYw
-NDUzMjI5ID0gMTM1MDI1NDM2Nzc3ICgxMzUuMHMpCmdldHBpZCBSRVRfQUxMT1cgMSBmaWx0ZXIg
-KGJpdG1hcCk6IDY3NSBucwozOTkuNDAwNTExODkzIC0gMjY0LjM4NzA0NTkwMSA9IDEzNTAxMzQ2
-NTk5MiAoMTM1LjBzKQpnZXRwaWQgUkVUX0FMTE9XIDIgZmlsdGVycyAoYml0bWFwKTogNjc1IG5z
-CjU0NS44NzI4NjYyNjAgLSAzOTkuNDAxNzE4MzI3ID0gMTQ2NDcxMTQ3OTMzICgxNDYuNXMpCmdl
-dHBpZCBSRVRfQUxMT1cgMyBmaWx0ZXJzIChmdWxsKTogNzMyIG5zCjY5Ni4zMzcxMDEzMTkgLSA1
-NDUuODc0MDk3NjgxID0gMTUwNDYzMDAzNjM4ICgxNTAuNXMpCmdldHBpZCBSRVRfQUxMT1cgNCBm
-aWx0ZXJzIChmdWxsKTogNzUyIG5zCkVzdGltYXRlZCB0b3RhbCBzZWNjb21wIG92ZXJoZWFkIGZv
-ciAxIGJpdG1hcHBlZCBmaWx0ZXI6IDI5IG5zCkVzdGltYXRlZCB0b3RhbCBzZWNjb21wIG92ZXJo
-ZWFkIGZvciAyIGJpdG1hcHBlZCBmaWx0ZXJzOiAyOSBucwpFc3RpbWF0ZWQgdG90YWwgc2VjY29t
-cCBvdmVyaGVhZCBmb3IgMyBmdWxsIGZpbHRlcnM6IDg2IG5zCkVzdGltYXRlZCB0b3RhbCBzZWNj
-b21wIG92ZXJoZWFkIGZvciA0IGZ1bGwgZmlsdGVyczogMTA2IG5zCkVzdGltYXRlZCBzZWNjb21w
-IGVudHJ5IG92ZXJoZWFkOiAyOSBucwpFc3RpbWF0ZWQgc2VjY29tcCBwZXItZmlsdGVyIG92ZXJo
-ZWFkIChsYXN0IDIgZGlmZik6IDIwIG5zCkVzdGltYXRlZCBzZWNjb21wIHBlci1maWx0ZXIgb3Zl
-cmhlYWQgKGZpbHRlcnMgLyA0KTogMTkgbnMKRXhwZWN0YXRpb25zOgoJbmF0aXZlIOKJpCAxIGJp
-dG1hcCAoNjQ2IOKJpCA2NzUpOiDinJTvuI8KCW5hdGl2ZSDiiaQgMSBmaWx0ZXIgKDY0NiDiiaQg
-NzMyKTog4pyU77iPCglwZXItZmlsdGVyIChsYXN0IDIgZGlmZikg4omIIHBlci1maWx0ZXIgKGZp
-bHRlcnMgLyA0KSAoMjAg4omIIDE5KTog4pyU77iPCgkxIGJpdG1hcHBlZCDiiYggMiBiaXRtYXBw
-ZWQgKDI5IOKJiCAyOSk6IOKclO+4jwoJZW50cnkg4omIIDEgYml0bWFwcGVkICgyOSDiiYggMjkp
-OiDinJTvuI8KCWVudHJ5IOKJiCAyIGJpdG1hcHBlZCAoMjkg4omIIDI5KTog4pyU77iPCgluYXRp
-dmUgKyBlbnRyeSArIChwZXIgZmlsdGVyICogNCkg4omIIDQgZmlsdGVycyB0b3RhbCAoNzU1IOKJ
-iCA3NTIpOiDinJTvuI8KClNpZ25lZC1vZmYtYnk6IEtlZXMgQ29vayA8a2Vlc2Nvb2tAY2hyb21p
-dW0ub3JnPgpbWWlGZWk6IENoYW5nZWQgY29tbWl0IG1lc3NhZ2UgdG8gc2hvdyBzdGF0cyBmb3Ig
-dGhpcyBwYXRjaCBzZXJpZXNdClNpZ25lZC1vZmYtYnk6IFlpRmVpIFpodSA8eWlmZWlmejJAaWxs
-aW5vaXMuZWR1PgotLS0KIC4uLi9zZWxmdGVzdHMvc2VjY29tcC9zZWNjb21wX2JlbmNobWFyay5j
-ICAgICB8IDE1MSArKysrKysrKysrKysrKystLS0KIHRvb2xzL3Rlc3Rpbmcvc2VsZnRlc3RzL3Nl
-Y2NvbXAvc2V0dGluZ3MgICAgICB8ICAgMiArLQogMiBmaWxlcyBjaGFuZ2VkLCAxMzAgaW5zZXJ0
-aW9ucygrKSwgMjMgZGVsZXRpb25zKC0pCgpkaWZmIC0tZ2l0IGEvdG9vbHMvdGVzdGluZy9zZWxm
-dGVzdHMvc2VjY29tcC9zZWNjb21wX2JlbmNobWFyay5jIGIvdG9vbHMvdGVzdGluZy9zZWxmdGVz
-dHMvc2VjY29tcC9zZWNjb21wX2JlbmNobWFyay5jCmluZGV4IDkxZjVhODljYWRhYy4uZmNjODA2
-NTg1MjY2IDEwMDY0NAotLS0gYS90b29scy90ZXN0aW5nL3NlbGZ0ZXN0cy9zZWNjb21wL3NlY2Nv
-bXBfYmVuY2htYXJrLmMKKysrIGIvdG9vbHMvdGVzdGluZy9zZWxmdGVzdHMvc2VjY29tcC9zZWNj
-b21wX2JlbmNobWFyay5jCkBAIC00LDEyICs0LDE2IEBACiAgKi8KICNkZWZpbmUgX0dOVV9TT1VS
-Q0UKICNpbmNsdWRlIDxhc3NlcnQuaD4KKyNpbmNsdWRlIDxsaW1pdHMuaD4KKyNpbmNsdWRlIDxz
-dGRib29sLmg+CisjaW5jbHVkZSA8c3RkZGVmLmg+CiAjaW5jbHVkZSA8c3RkaW8uaD4KICNpbmNs
-dWRlIDxzdGRsaWIuaD4KICNpbmNsdWRlIDx0aW1lLmg+CiAjaW5jbHVkZSA8dW5pc3RkLmg+CiAj
-aW5jbHVkZSA8bGludXgvZmlsdGVyLmg+CiAjaW5jbHVkZSA8bGludXgvc2VjY29tcC5oPgorI2lu
-Y2x1ZGUgPHN5cy9wYXJhbS5oPgogI2luY2x1ZGUgPHN5cy9wcmN0bC5oPgogI2luY2x1ZGUgPHN5
-cy9zeXNjYWxsLmg+CiAjaW5jbHVkZSA8c3lzL3R5cGVzLmg+CkBAIC03MCwxOCArNzQsNzQgQEAg
-dW5zaWduZWQgbG9uZyBsb25nIGNhbGlicmF0ZSh2b2lkKQogCXJldHVybiBzYW1wbGVzICogc2Vj
-b25kczsKIH0KIAorYm9vbCBhcHByb3goaW50IGlfb25lLCBpbnQgaV90d28pCit7CisJZG91Ymxl
-IG9uZSA9IGlfb25lLCBvbmVfYnVtcCA9IG9uZSAqIDAuMDE7CisJZG91YmxlIHR3byA9IGlfdHdv
-LCB0d29fYnVtcCA9IHR3byAqIDAuMDE7CisKKwlvbmVfYnVtcCA9IG9uZSArIE1BWChvbmVfYnVt
-cCwgMi4wKTsKKwl0d29fYnVtcCA9IHR3byArIE1BWCh0d29fYnVtcCwgMi4wKTsKKworCS8qIEVx
-dWFsIHRvLCBvciB3aXRoaW4gMSUgb3IgMiBkaWdpdHMgKi8KKwlpZiAob25lID09IHR3byB8fAor
-CSAgICAob25lID4gdHdvICYmIG9uZSA8PSB0d29fYnVtcCkgfHwKKwkgICAgKHR3byA+IG9uZSAm
-JiB0d28gPD0gb25lX2J1bXApKQorCQlyZXR1cm4gdHJ1ZTsKKwlyZXR1cm4gZmFsc2U7Cit9CisK
-K2Jvb2wgbGUoaW50IGlfb25lLCBpbnQgaV90d28pCit7CisJaWYgKGlfb25lIDw9IGlfdHdvKQor
-CQlyZXR1cm4gdHJ1ZTsKKwlyZXR1cm4gZmFsc2U7Cit9CisKK2xvbmcgY29tcGFyZShjb25zdCBj
-aGFyICpuYW1lX29uZSwgY29uc3QgY2hhciAqbmFtZV9ldmFsLCBjb25zdCBjaGFyICpuYW1lX3R3
-bywKKwkgICAgIHVuc2lnbmVkIGxvbmcgbG9uZyBvbmUsIGJvb2wgKCpldmFsKShpbnQsIGludCks
-IHVuc2lnbmVkIGxvbmcgbG9uZyB0d28pCit7CisJYm9vbCBnb29kOworCisJcHJpbnRmKCJcdCVz
-ICVzICVzICglbGxkICVzICVsbGQpOiAiLCBuYW1lX29uZSwgbmFtZV9ldmFsLCBuYW1lX3R3bywK
-KwkgICAgICAgKGxvbmcgbG9uZylvbmUsIG5hbWVfZXZhbCwgKGxvbmcgbG9uZyl0d28pOworCWlm
-IChvbmUgPiBJTlRfTUFYKSB7CisJCXByaW50ZigiTWlzY2FsY3VsYXRpb24hIE1lYXN1cmVtZW50
-IHdlbnQgbmVnYXRpdmU6ICVsbGRcbiIsIChsb25nIGxvbmcpb25lKTsKKwkJcmV0dXJuIDE7CisJ
-fQorCWlmICh0d28gPiBJTlRfTUFYKSB7CisJCXByaW50ZigiTWlzY2FsY3VsYXRpb24hIE1lYXN1
-cmVtZW50IHdlbnQgbmVnYXRpdmU6ICVsbGRcbiIsIChsb25nIGxvbmcpdHdvKTsKKwkJcmV0dXJu
-IDE7CisJfQorCisJZ29vZCA9IGV2YWwob25lLCB0d28pOworCXByaW50ZigiJXNcbiIsIGdvb2Qg
-PyAi4pyU77iPIiA6ICLinYwiKTsKKworCXJldHVybiBnb29kID8gMCA6IDE7Cit9CisKIGludCBt
-YWluKGludCBhcmdjLCBjaGFyICphcmd2W10pCiB7CisJc3RydWN0IHNvY2tfZmlsdGVyIGJpdG1h
-cF9maWx0ZXJbXSA9IHsKKwkJQlBGX1NUTVQoQlBGX0xEfEJQRl9XfEJQRl9BQlMsIG9mZnNldG9m
-KHN0cnVjdCBzZWNjb21wX2RhdGEsIG5yKSksCisJCUJQRl9TVE1UKEJQRl9SRVR8QlBGX0ssIFNF
-Q0NPTVBfUkVUX0FMTE9XKSwKKwl9OworCXN0cnVjdCBzb2NrX2Zwcm9nIGJpdG1hcF9wcm9nID0g
-eworCQkubGVuID0gKHVuc2lnbmVkIHNob3J0KUFSUkFZX1NJWkUoYml0bWFwX2ZpbHRlciksCisJ
-CS5maWx0ZXIgPSBiaXRtYXBfZmlsdGVyLAorCX07CiAJc3RydWN0IHNvY2tfZmlsdGVyIGZpbHRl
-cltdID0geworCQlCUEZfU1RNVChCUEZfTER8QlBGX1d8QlBGX0FCUywgb2Zmc2V0b2Yoc3RydWN0
-IHNlY2NvbXBfZGF0YSwgYXJnc1swXSkpLAogCQlCUEZfU1RNVChCUEZfUkVUfEJQRl9LLCBTRUND
-T01QX1JFVF9BTExPVyksCiAJfTsKIAlzdHJ1Y3Qgc29ja19mcHJvZyBwcm9nID0gewogCQkubGVu
-ID0gKHVuc2lnbmVkIHNob3J0KUFSUkFZX1NJWkUoZmlsdGVyKSwKIAkJLmZpbHRlciA9IGZpbHRl
-ciwKIAl9OwotCWxvbmcgcmV0OwotCXVuc2lnbmVkIGxvbmcgbG9uZyBzYW1wbGVzOwotCXVuc2ln
-bmVkIGxvbmcgbG9uZyBuYXRpdmUsIGZpbHRlcjEsIGZpbHRlcjI7CisKKwlsb25nIHJldCwgYml0
-czsKKwl1bnNpZ25lZCBsb25nIGxvbmcgc2FtcGxlcywgY2FsYzsKKwl1bnNpZ25lZCBsb25nIGxv
-bmcgbmF0aXZlLCBmaWx0ZXIxLCBmaWx0ZXIyLCBiaXRtYXAxLCBiaXRtYXAyOworCXVuc2lnbmVk
-IGxvbmcgbG9uZyBlbnRyeSwgcGVyX2ZpbHRlcjEsIHBlcl9maWx0ZXIyOwogCiAJcHJpbnRmKCJD
-dXJyZW50IEJQRiBzeXNjdGwgc2V0dGluZ3M6XG4iKTsKIAlzeXN0ZW0oInN5c2N0bCBuZXQuY29y
-ZS5icGZfaml0X2VuYWJsZSIpOwpAQCAtMTAxLDM1ICsxNjEsODIgQEAgaW50IG1haW4oaW50IGFy
-Z2MsIGNoYXIgKmFyZ3ZbXSkKIAlyZXQgPSBwcmN0bChQUl9TRVRfTk9fTkVXX1BSSVZTLCAxLCAw
-LCAwLCAwKTsKIAlhc3NlcnQocmV0ID09IDApOwogCi0JLyogT25lIGZpbHRlciAqLwotCXJldCA9
-IHByY3RsKFBSX1NFVF9TRUNDT01QLCBTRUNDT01QX01PREVfRklMVEVSLCAmcHJvZyk7CisJLyog
-T25lIGZpbHRlciByZXN1bHRpbmcgaW4gYSBiaXRtYXAgKi8KKwlyZXQgPSBwcmN0bChQUl9TRVRf
-U0VDQ09NUCwgU0VDQ09NUF9NT0RFX0ZJTFRFUiwgJmJpdG1hcF9wcm9nKTsKIAlhc3NlcnQocmV0
-ID09IDApOwogCi0JZmlsdGVyMSA9IHRpbWluZyhDTE9DS19QUk9DRVNTX0NQVVRJTUVfSUQsIHNh
-bXBsZXMpIC8gc2FtcGxlczsKLQlwcmludGYoImdldHBpZCBSRVRfQUxMT1cgMSBmaWx0ZXI6ICVs
-bHUgbnNcbiIsIGZpbHRlcjEpOworCWJpdG1hcDEgPSB0aW1pbmcoQ0xPQ0tfUFJPQ0VTU19DUFVU
-SU1FX0lELCBzYW1wbGVzKSAvIHNhbXBsZXM7CisJcHJpbnRmKCJnZXRwaWQgUkVUX0FMTE9XIDEg
-ZmlsdGVyIChiaXRtYXApOiAlbGx1IG5zXG4iLCBiaXRtYXAxKTsKKworCS8qIFNlY29uZCBmaWx0
-ZXIgcmVzdWx0aW5nIGluIGEgYml0bWFwICovCisJcmV0ID0gcHJjdGwoUFJfU0VUX1NFQ0NPTVAs
-IFNFQ0NPTVBfTU9ERV9GSUxURVIsICZiaXRtYXBfcHJvZyk7CisJYXNzZXJ0KHJldCA9PSAwKTsK
-IAotCWlmIChmaWx0ZXIxID09IG5hdGl2ZSkKLQkJcHJpbnRmKCJObyBvdmVyaGVhZCBtZWFzdXJl
-ZCE/IFRyeSBydW5uaW5nIGFnYWluIHdpdGggbW9yZSBzYW1wbGVzLlxuIik7CisJYml0bWFwMiA9
-IHRpbWluZyhDTE9DS19QUk9DRVNTX0NQVVRJTUVfSUQsIHNhbXBsZXMpIC8gc2FtcGxlczsKKwlw
-cmludGYoImdldHBpZCBSRVRfQUxMT1cgMiBmaWx0ZXJzIChiaXRtYXApOiAlbGx1IG5zXG4iLCBi
-aXRtYXAyKTsKIAotCS8qIFR3byBmaWx0ZXJzICovCisJLyogVGhpcmQgZmlsdGVyLCBjYW4gbm8g
-bG9uZ2VyIGJlIGNvbnZlcnRlZCB0byBiaXRtYXAgKi8KIAlyZXQgPSBwcmN0bChQUl9TRVRfU0VD
-Q09NUCwgU0VDQ09NUF9NT0RFX0ZJTFRFUiwgJnByb2cpOwogCWFzc2VydChyZXQgPT0gMCk7CiAK
-LQlmaWx0ZXIyID0gdGltaW5nKENMT0NLX1BST0NFU1NfQ1BVVElNRV9JRCwgc2FtcGxlcykgLyBz
-YW1wbGVzOwotCXByaW50ZigiZ2V0cGlkIFJFVF9BTExPVyAyIGZpbHRlcnM6ICVsbHUgbnNcbiIs
-IGZpbHRlcjIpOwotCi0JLyogQ2FsY3VsYXRpb25zICovCi0JcHJpbnRmKCJFc3RpbWF0ZWQgdG90
-YWwgc2VjY29tcCBvdmVyaGVhZCBmb3IgMSBmaWx0ZXI6ICVsbHUgbnNcbiIsCi0JCWZpbHRlcjEg
-LSBuYXRpdmUpOworCWZpbHRlcjEgPSB0aW1pbmcoQ0xPQ0tfUFJPQ0VTU19DUFVUSU1FX0lELCBz
-YW1wbGVzKSAvIHNhbXBsZXM7CisJcHJpbnRmKCJnZXRwaWQgUkVUX0FMTE9XIDMgZmlsdGVycyAo
-ZnVsbCk6ICVsbHUgbnNcbiIsIGZpbHRlcjEpOwogCi0JcHJpbnRmKCJFc3RpbWF0ZWQgdG90YWwg
-c2VjY29tcCBvdmVyaGVhZCBmb3IgMiBmaWx0ZXJzOiAlbGx1IG5zXG4iLAotCQlmaWx0ZXIyIC0g
-bmF0aXZlKTsKKwkvKiBGb3VydGggZmlsdGVyLCBjYW4gbm90IGJlIGNvbnZlcnRlZCB0byBiaXRt
-YXAgYmVjYXVzZSBvZiBmaWx0ZXIgMyAqLworCXJldCA9IHByY3RsKFBSX1NFVF9TRUNDT01QLCBT
-RUNDT01QX01PREVfRklMVEVSLCAmYml0bWFwX3Byb2cpOworCWFzc2VydChyZXQgPT0gMCk7CiAK
-LQlwcmludGYoIkVzdGltYXRlZCBzZWNjb21wIHBlci1maWx0ZXIgb3ZlcmhlYWQ6ICVsbHUgbnNc
-biIsCi0JCWZpbHRlcjIgLSBmaWx0ZXIxKTsKKwlmaWx0ZXIyID0gdGltaW5nKENMT0NLX1BST0NF
-U1NfQ1BVVElNRV9JRCwgc2FtcGxlcykgLyBzYW1wbGVzOworCXByaW50ZigiZ2V0cGlkIFJFVF9B
-TExPVyA0IGZpbHRlcnMgKGZ1bGwpOiAlbGx1IG5zXG4iLCBmaWx0ZXIyKTsKKworCS8qIEVzdGlt
-YXRpb25zICovCisjZGVmaW5lIEVTVElNQVRFKGZtdCwgdmFyLCB3aGF0KQlkbyB7CQkJXAorCQl2
-YXIgPSAod2hhdCk7CQkJCQlcCisJCXByaW50ZigiRXN0aW1hdGVkICIgZm10ICI6ICVsbHUgbnNc
-biIsIHZhcik7CVwKKwkJaWYgKHZhciA+IElOVF9NQVgpCQkJCVwKKwkJCWdvdG8gbW9yZV9zYW1w
-bGVzOwkJCVwKKwl9IHdoaWxlICgwKQorCisJRVNUSU1BVEUoInRvdGFsIHNlY2NvbXAgb3Zlcmhl
-YWQgZm9yIDEgYml0bWFwcGVkIGZpbHRlciIsIGNhbGMsCisJCSBiaXRtYXAxIC0gbmF0aXZlKTsK
-KwlFU1RJTUFURSgidG90YWwgc2VjY29tcCBvdmVyaGVhZCBmb3IgMiBiaXRtYXBwZWQgZmlsdGVy
-cyIsIGNhbGMsCisJCSBiaXRtYXAyIC0gbmF0aXZlKTsKKwlFU1RJTUFURSgidG90YWwgc2VjY29t
-cCBvdmVyaGVhZCBmb3IgMyBmdWxsIGZpbHRlcnMiLCBjYWxjLAorCQkgZmlsdGVyMSAtIG5hdGl2
-ZSk7CisJRVNUSU1BVEUoInRvdGFsIHNlY2NvbXAgb3ZlcmhlYWQgZm9yIDQgZnVsbCBmaWx0ZXJz
-IiwgY2FsYywKKwkJIGZpbHRlcjIgLSBuYXRpdmUpOworCUVTVElNQVRFKCJzZWNjb21wIGVudHJ5
-IG92ZXJoZWFkIiwgZW50cnksCisJCSBiaXRtYXAxIC0gbmF0aXZlIC0gKGJpdG1hcDIgLSBiaXRt
-YXAxKSk7CisJRVNUSU1BVEUoInNlY2NvbXAgcGVyLWZpbHRlciBvdmVyaGVhZCAobGFzdCAyIGRp
-ZmYpIiwgcGVyX2ZpbHRlcjEsCisJCSBmaWx0ZXIyIC0gZmlsdGVyMSk7CisJRVNUSU1BVEUoInNl
-Y2NvbXAgcGVyLWZpbHRlciBvdmVyaGVhZCAoZmlsdGVycyAvIDQpIiwgcGVyX2ZpbHRlcjIsCisJ
-CSAoZmlsdGVyMiAtIG5hdGl2ZSAtIGVudHJ5KSAvIDQpOworCisJcHJpbnRmKCJFeHBlY3RhdGlv
-bnM6XG4iKTsKKwlyZXQgfD0gY29tcGFyZSgibmF0aXZlIiwgIuKJpCIsICIxIGJpdG1hcCIsIG5h
-dGl2ZSwgbGUsIGJpdG1hcDEpOworCWJpdHMgPSBjb21wYXJlKCJuYXRpdmUiLCAi4omkIiwgIjEg
-ZmlsdGVyIiwgbmF0aXZlLCBsZSwgZmlsdGVyMSk7CisJaWYgKGJpdHMpCisJCWdvdG8gbW9yZV9z
-YW1wbGVzOworCisJcmV0IHw9IGNvbXBhcmUoInBlci1maWx0ZXIgKGxhc3QgMiBkaWZmKSIsICLi
-iYgiLCAicGVyLWZpbHRlciAoZmlsdGVycyAvIDQpIiwKKwkJCXBlcl9maWx0ZXIxLCBhcHByb3gs
-IHBlcl9maWx0ZXIyKTsKKworCWJpdHMgPSBjb21wYXJlKCIxIGJpdG1hcHBlZCIsICLiiYgiLCAi
-MiBiaXRtYXBwZWQiLAorCQkJYml0bWFwMSAtIG5hdGl2ZSwgYXBwcm94LCBiaXRtYXAyIC0gbmF0
-aXZlKTsKKwlpZiAoYml0cykgeworCQlwcmludGYoIlNraXBwaW5nIGNvbnN0YW50IGFjdGlvbiBi
-aXRtYXAgZXhwZWN0YXRpb25zOiB0aGV5IGFwcGVhciB1bnN1cHBvcnRlZC5cbiIpOworCQlnb3Rv
-IG91dDsKKwl9CiAKLQlwcmludGYoIkVzdGltYXRlZCBzZWNjb21wIGVudHJ5IG92ZXJoZWFkOiAl
-bGx1IG5zXG4iLAotCQlmaWx0ZXIxIC0gbmF0aXZlIC0gKGZpbHRlcjIgLSBmaWx0ZXIxKSk7CisJ
-cmV0IHw9IGNvbXBhcmUoImVudHJ5IiwgIuKJiCIsICIxIGJpdG1hcHBlZCIsIGVudHJ5LCBhcHBy
-b3gsIGJpdG1hcDEgLSBuYXRpdmUpOworCXJldCB8PSBjb21wYXJlKCJlbnRyeSIsICLiiYgiLCAi
-MiBiaXRtYXBwZWQiLCBlbnRyeSwgYXBwcm94LCBiaXRtYXAyIC0gbmF0aXZlKTsKKwlyZXQgfD0g
-Y29tcGFyZSgibmF0aXZlICsgZW50cnkgKyAocGVyIGZpbHRlciAqIDQpIiwgIuKJiCIsICI0IGZp
-bHRlcnMgdG90YWwiLAorCQkJZW50cnkgKyAocGVyX2ZpbHRlcjEgKiA0KSArIG5hdGl2ZSwgYXBw
-cm94LCBmaWx0ZXIyKTsKKwlpZiAocmV0ID09IDApCisJCWdvdG8gb3V0OwogCittb3JlX3NhbXBs
-ZXM6CisJcHJpbnRmKCJTYXcgdW5leHBlY3RlZCBiZW5jaG1hcmsgcmVzdWx0LiBUcnkgcnVubmlu
-ZyBhZ2FpbiB3aXRoIG1vcmUgc2FtcGxlcz9cbiIpOworb3V0OgogCXJldHVybiAwOwogfQpkaWZm
-IC0tZ2l0IGEvdG9vbHMvdGVzdGluZy9zZWxmdGVzdHMvc2VjY29tcC9zZXR0aW5ncyBiL3Rvb2xz
-L3Rlc3Rpbmcvc2VsZnRlc3RzL3NlY2NvbXAvc2V0dGluZ3MKaW5kZXggYmE0ZDg1Zjc0Y2Q2Li42
-MDkxYjQ1ZDIyNmIgMTAwNjQ0Ci0tLSBhL3Rvb2xzL3Rlc3Rpbmcvc2VsZnRlc3RzL3NlY2NvbXAv
-c2V0dGluZ3MKKysrIGIvdG9vbHMvdGVzdGluZy9zZWxmdGVzdHMvc2VjY29tcC9zZXR0aW5ncwpA
-QCAtMSArMSBAQAotdGltZW91dD05MAordGltZW91dD0xMjAKLS0gCjIuMjguMAoKX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5n
-IGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3Rz
-LmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+From: YiFei Zhu <yifeifz2@illinois.edu>
+
+Currently the kernel does not provide an infrastructure to translate
+architecture numbers to a human-readable name. Translating syscall
+numbers to syscall names is possible through FTRACE_SYSCALL
+infrastructure but it does not provide support for compat syscalls.
+
+This will create a file for each PID as /proc/pid/seccomp_cache.
+The file will be empty when no seccomp filters are loaded, or be
+in the format of:
+<arch name> <decimal syscall number> <ALLOW | FILTER>
+where ALLOW means the cache is guaranteed to allow the syscall,
+and filter means the cache will pass the syscall to the BPF filter.
+
+For the docker default profile on x86_64 it looks like:
+x86_64 0 ALLOW
+x86_64 1 ALLOW
+x86_64 2 ALLOW
+x86_64 3 ALLOW
+[...]
+x86_64 132 ALLOW
+x86_64 133 ALLOW
+x86_64 134 FILTER
+x86_64 135 FILTER
+x86_64 136 FILTER
+x86_64 137 ALLOW
+x86_64 138 ALLOW
+x86_64 139 FILTER
+x86_64 140 ALLOW
+x86_64 141 ALLOW
+[...]
+
+This file is guarded by CONFIG_DEBUG_SECCOMP_CACHE with a default
+of N because I think certain users of seccomp might not want the
+application to know which syscalls are definitely usable. For
+the same reason, it is also guarded by CAP_SYS_ADMIN.
+
+Suggested-by: Jann Horn <jannh@google.com>
+Link: https://lore.kernel.org/lkml/CAG48ez3Ofqp4crXGksLmZY6=fGrF_tWyUCg7PBkAetvbbOPeOA@mail.gmail.com/
+Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
+---
+ arch/Kconfig                   | 15 +++++++++++
+ arch/x86/include/asm/seccomp.h |  3 +++
+ fs/proc/base.c                 |  3 +++
+ include/linux/seccomp.h        |  5 ++++
+ kernel/seccomp.c               | 46 ++++++++++++++++++++++++++++++++++
+ 5 files changed, 72 insertions(+)
+
+diff --git a/arch/Kconfig b/arch/Kconfig
+index ca867b2a5d71..b840cadcc882 100644
+--- a/arch/Kconfig
++++ b/arch/Kconfig
+@@ -478,6 +478,7 @@ config HAVE_ARCH_SECCOMP_CACHE_NR_ONLY
+ 	  - all the requirements for HAVE_ARCH_SECCOMP_FILTER
+ 	  - SECCOMP_ARCH_DEFAULT
+ 	  - SECCOMP_ARCH_DEFAULT_NR
++	  - SECCOMP_ARCH_DEFAULT_NAME
+ 
+ config SECCOMP
+ 	prompt "Enable seccomp to safely execute untrusted bytecode"
+@@ -532,6 +533,20 @@ config SECCOMP_CACHE_NR_ONLY
+ 
+ endchoice
+ 
++config DEBUG_SECCOMP_CACHE
++	bool "Show seccomp filter cache status in /proc/pid/seccomp_cache"
++	depends on SECCOMP_CACHE_NR_ONLY
++	depends on PROC_FS
++	help
++	  This is enables /proc/pid/seccomp_cache interface to monitor
++	  seccomp cache data. The file format is subject to change. Reading
++	  the file requires CAP_SYS_ADMIN.
++
++	  This option is for debugging only. Enabling present the risk that
++	  an adversary may be able to infer the seccomp filter logic.
++
++	  If unsure, say N.
++
+ config HAVE_ARCH_STACKLEAK
+ 	bool
+ 	help
+diff --git a/arch/x86/include/asm/seccomp.h b/arch/x86/include/asm/seccomp.h
+index 7b3a58271656..33ccc074be7a 100644
+--- a/arch/x86/include/asm/seccomp.h
++++ b/arch/x86/include/asm/seccomp.h
+@@ -19,13 +19,16 @@
+ #ifdef CONFIG_X86_64
+ # define SECCOMP_ARCH_DEFAULT			AUDIT_ARCH_X86_64
+ # define SECCOMP_ARCH_DEFAULT_NR		NR_syscalls
++# define SECCOMP_ARCH_DEFAULT_NAME		"x86_64"
+ # ifdef CONFIG_COMPAT
+ #  define SECCOMP_ARCH_COMPAT			AUDIT_ARCH_I386
+ #  define SECCOMP_ARCH_COMPAT_NR		IA32_NR_syscalls
++#  define SECCOMP_ARCH_COMPAT_NAME		"x86_32"
+ # endif
+ #else /* !CONFIG_X86_64 */
+ # define SECCOMP_ARCH_DEFAULT		AUDIT_ARCH_I386
+ # define SECCOMP_ARCH_DEFAULT_NR	NR_syscalls
++# define SECCOMP_ARCH_COMPAT_NAME		"x86_32"
+ #endif
+ 
+ #include <asm-generic/seccomp.h>
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index 617db4e0faa0..c60c5fce70fa 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -3258,6 +3258,9 @@ static const struct pid_entry tgid_base_stuff[] = {
+ #ifdef CONFIG_PROC_PID_ARCH_STATUS
+ 	ONE("arch_status", S_IRUGO, proc_pid_arch_status),
+ #endif
++#ifdef CONFIG_DEBUG_SECCOMP_CACHE
++	ONE("seccomp_cache", S_IRUSR, proc_pid_seccomp_cache),
++#endif
+ };
+ 
+ static int proc_tgid_base_readdir(struct file *file, struct dir_context *ctx)
+diff --git a/include/linux/seccomp.h b/include/linux/seccomp.h
+index 02aef2844c38..c35430f5f553 100644
+--- a/include/linux/seccomp.h
++++ b/include/linux/seccomp.h
+@@ -121,4 +121,9 @@ static inline long seccomp_get_metadata(struct task_struct *task,
+ 	return -EINVAL;
+ }
+ #endif /* CONFIG_SECCOMP_FILTER && CONFIG_CHECKPOINT_RESTORE */
++
++#ifdef CONFIG_DEBUG_SECCOMP_CACHE
++int proc_pid_seccomp_cache(struct seq_file *m, struct pid_namespace *ns,
++			   struct pid *pid, struct task_struct *task);
++#endif
+ #endif /* _LINUX_SECCOMP_H */
+diff --git a/kernel/seccomp.c b/kernel/seccomp.c
+index bed3b2a7f6c8..c5ca5e30281b 100644
+--- a/kernel/seccomp.c
++++ b/kernel/seccomp.c
+@@ -2297,3 +2297,49 @@ static int __init seccomp_sysctl_init(void)
+ device_initcall(seccomp_sysctl_init)
+ 
+ #endif /* CONFIG_SYSCTL */
++
++#ifdef CONFIG_DEBUG_SECCOMP_CACHE
++/* Currently CONFIG_DEBUG_SECCOMP_CACHE implies CONFIG_SECCOMP_CACHE_NR_ONLY */
++static void proc_pid_seccomp_cache_arch(struct seq_file *m, const char *name,
++					const void *bitmap, size_t bitmap_size)
++{
++	int nr;
++
++	for (nr = 0; nr < bitmap_size; nr++) {
++		bool cached = test_bit(nr, bitmap);
++		char *status = cached ? "ALLOW" : "FILTER";
++
++		seq_printf(m, "%s %d %s\n", name, nr, status);
++	}
++}
++
++int proc_pid_seccomp_cache(struct seq_file *m, struct pid_namespace *ns,
++			   struct pid *pid, struct task_struct *task)
++{
++	struct seccomp_filter *f;
++
++	/*
++	 * We don't want some sandboxed process know what their seccomp
++	 * filters consist of.
++	 */
++	if (!file_ns_capable(m->file, &init_user_ns, CAP_SYS_ADMIN))
++		return -EACCES;
++
++	f = READ_ONCE(task->seccomp.filter);
++	if (!f)
++		return 0;
++
++#ifdef SECCOMP_ARCH_DEFAULT
++	proc_pid_seccomp_cache_arch(m, SECCOMP_ARCH_DEFAULT_NAME,
++				    f->cache.syscall_allow_default,
++				    SECCOMP_ARCH_DEFAULT_NR);
++#endif /* SECCOMP_ARCH_DEFAULT */
++
++#ifdef SECCOMP_ARCH_COMPAT
++	proc_pid_seccomp_cache_arch(m, SECCOMP_ARCH_COMPAT_NAME,
++				    f->cache.syscall_allow_compat,
++				    SECCOMP_ARCH_COMPAT_NR);
++#endif /* SECCOMP_ARCH_COMPAT */
++	return 0;
++}
++#endif /* CONFIG_DEBUG_SECCOMP_CACHE */
+-- 
+2.28.0
+
+_______________________________________________
+Containers mailing list
+Containers@lists.linux-foundation.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
