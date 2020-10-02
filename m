@@ -1,119 +1,111 @@
-Return-Path: <SRS0=WbUC=DI=lists.linux-foundation.org=containers-bounces@kernel.org>
+Return-Path: <SRS0=Hw3E=DJ=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_ADSP_CUSTOM_MED,
+	DKIM_INVALID,DKIM_SIGNED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 77794C4727E
-	for <containers@archiver.kernel.org>; Thu,  1 Oct 2020 23:19:34 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A0A23C4363D
+	for <containers@archiver.kernel.org>; Fri,  2 Oct 2020 11:08:27 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id C3065206E3
-	for <containers@archiver.kernel.org>; Thu,  1 Oct 2020 23:19:33 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C3065206E3
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=tycho.pizza
+	by mail.kernel.org (Postfix) with ESMTPS id 1D139206B8
+	for <containers@archiver.kernel.org>; Fri,  2 Oct 2020 11:08:27 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ScLOAE5w"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1D139206B8
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 547A3869CF;
-	Thu,  1 Oct 2020 23:19:33 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id E680386469;
+	Fri,  2 Oct 2020 11:08:26 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id WC1a3SkR0+Qv; Thu,  1 Oct 2020 23:19:32 +0000 (UTC)
+	with ESMTP id ULqqvCxjfwDd; Fri,  2 Oct 2020 11:08:24 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 45B8B86984;
-	Thu,  1 Oct 2020 23:19:32 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 29DBB86403;
+	Fri,  2 Oct 2020 11:08:24 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 201DFC016F;
-	Thu,  1 Oct 2020 23:19:32 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 0BE54C0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 1F502C016F;
+	Fri,  2 Oct 2020 11:08:24 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 78408C0051
  for <containers@lists.linux-foundation.org>;
- Thu,  1 Oct 2020 23:19:31 +0000 (UTC)
+ Fri,  2 Oct 2020 11:08:23 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id EDE41869CF
+ by hemlock.osuosl.org (Postfix) with ESMTP id 655A78723B
  for <containers@lists.linux-foundation.org>;
- Thu,  1 Oct 2020 23:19:30 +0000 (UTC)
+ Fri,  2 Oct 2020 11:08:23 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id x8xMKIVNXGRa
+ with ESMTP id icTqH5xt2PJF
  for <containers@lists.linux-foundation.org>;
- Thu,  1 Oct 2020 23:19:29 +0000 (UTC)
-X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from wnew4-smtp.messagingengine.com (wnew4-smtp.messagingengine.com
- [64.147.123.18])
- by whitealder.osuosl.org (Postfix) with ESMTPS id B77AE86984
+ Fri,  2 Oct 2020 11:08:20 +0000 (UTC)
+X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
+Received: from mail-pj1-f65.google.com (mail-pj1-f65.google.com
+ [209.85.216.65])
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 6FC7F87186
  for <containers@lists.linux-foundation.org>;
- Thu,  1 Oct 2020 23:19:29 +0000 (UTC)
-Received: from compute6.internal (compute6.nyi.internal [10.202.2.46])
- by mailnew.west.internal (Postfix) with ESMTP id EC59BC3C;
- Thu,  1 Oct 2020 19:19:27 -0400 (EDT)
-Received: from mailfrontend1 ([10.202.2.162])
- by compute6.internal (MEProxy); Thu, 01 Oct 2020 19:19:29 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tycho.pizza; h=
- date:from:to:cc:subject:message-id:references:mime-version
- :content-type:in-reply-to; s=fm1; bh=Tlpv2xmpynLkoXih5aMS72+SXJr
- nQuj1c9PDv1ck7SY=; b=kAnlT5uGdLP7ZHMd/rvKFoooU2LN0P/lAm1T9lGIii9
- PlCZZtGPEs9KopNalPJ1js1pctZjbJG4+5VJZLd8xgcuUGD0lB/o+gjOI3PoE73A
- nSqQ8Q2QI14dzUcuv4Hwp/f4mNOKSvcc9D+iZEFSmXXjz2Ju79+QQTCRoVI59MEK
- 7AyZnYv/jn1FG+eg/72B5jYTQXhk6l1OG6/5PFZQ3LB1lWqU/ngZesv0afOq9ZAF
- CsTk9T9YJGSpNOkdPBuDpt28Y325ugCfTNwVuV9dqB78wiXr2JqhYumstJ+GmL6c
- qvl6DNKFjMKNoYCK6El7NsIsEq+/eBUSSNnHpQTCIYA==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
- messagingengine.com; h=cc:content-type:date:from:in-reply-to
- :message-id:mime-version:references:subject:to:x-me-proxy
- :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; bh=Tlpv2x
- mpynLkoXih5aMS72+SXJrnQuj1c9PDv1ck7SY=; b=YrtEbGU8zOV9obkWiyW83q
- 2/eRqrLFuyhY7NReqTCUbwQ7+FodkpbVtxmew6Som6zYQUaIomR8EYreLV8eapAm
- 6eqGej3Y2c/lQ3mp+GOtMZaYOZh1dKAE9GAY91Mcpu/ZE3Gbn/trgk/Eg2ckRKQ3
- u9WKLIwQqFn7UaWcFpr8q1hvzwhv3AdLOOGOJkWexZtKEP/WjJJV658CIVbvgMqr
- YHVIMeNYI7n+WwIQSuwqsSnZutV3t1bKVzE2kH9biteKEDTnOQMzCTYYlON9leAk
- kN4jD+zpv0yD+uFQanaCNkUrUsXTe9pf4CMFQrYR4OzXt//2ig8vm0kiE+XhTutQ
- ==
-X-ME-Sender: <xms:_GN2Xzs6msGZQcTc-fvlIrR2UVr99TDXZStlH0IZnic86NoRJ9NPyA>
- <xme:_GN2X0fpVR9i1T8XP7djV_kaeiQZhH1h01l6t-qwoijMuqjFD1aCLiPiwHtgtc9jX
- kcZaodCQWqkpJQDJRc>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedujedrfeehgddujecutefuodetggdotefrodftvf
- curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
- uegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenuc
- fjughrpeffhffvuffkfhggtggujgesthdtredttddtvdenucfhrhhomhepvfihtghhohcu
- tehnuggvrhhsvghnuceothihtghhohesthihtghhohdrphhiiiiirgeqnecuggftrfgrth
- htvghrnhepffekueefveeufefhhfelieffheeludeitdelkefhieejleeiffejvdelieeg
- udeunecuffhomhgrihhnpehkvghrnhgvlhdrohhrghdpmhgrnhejrdhorhhgnecukfhppe
- duvdekrddutdejrddvgedurdduieejnecuvehluhhsthgvrhfuihiivgeptdenucfrrghr
- rghmpehmrghilhhfrhhomhepthihtghhohesthihtghhohdrphhiiiiirg
-X-ME-Proxy: <xmx:_WN2X2x1_h2CgyVYMYJ__5ZQsJVg8mJwYeL-PB1IWWsQgXXX-SgZJw>
- <xmx:_WN2XyNzSo_4tRUgtRsA5dgdIXms__i3HRiu9OJJXqkRXyJHA5g2zQ>
- <xmx:_WN2Xz88rKAopdVohxCpJmT0eZAeVp1v0A4t1z4FgpG57OH2ZuwSRg>
- <xmx:_mN2X3VXO3K-T_QMDwDJynXQdD85L8b36S_Vdf3u9tGGk1FuRsduqJHSVVlBJ2Rp>
-Received: from cisco (unknown [128.107.241.167])
- by mail.messagingengine.com (Postfix) with ESMTPA id A1E8A3280066;
- Thu,  1 Oct 2020 19:19:22 -0400 (EDT)
-Date: Thu, 1 Oct 2020 17:19:15 -0600
-From: Tycho Andersen <tycho@tycho.pizza>
-To: Sargun Dhillon <sargun@sargun.me>
-Subject: Re: For review: seccomp_user_notif(2) manual page
-Message-ID: <20201001231915.GA16219@cisco>
-References: <45f07f17-18b6-d187-0914-6f341fe90857@gmail.com>
- <CAMp4zn9XA-z_6UKvWkFh_U2wPRjZF3=QvrXX7EikO5AEovCWBA@mail.gmail.com>
+ Fri,  2 Oct 2020 11:08:20 +0000 (UTC)
+Received: by mail-pj1-f65.google.com with SMTP id l18so607223pjz.1
+ for <containers@lists.linux-foundation.org>;
+ Fri, 02 Oct 2020 04:08:20 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
+ h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+ :cc; bh=TN/noH5vH9CkLLRAplsfECRDqMRnriPBEN1mLBkYoFM=;
+ b=ScLOAE5wHKEY7mteqyA6ZIBlmVDJetG7nJWSSSPBAU2hYneqKoMVmzDM7Y6C2FOJFC
+ bVXwCvizsRXxVjJ3o9QeFLOXgQb9xBRbNhIBTOIlHjM11ZTits1nOl71bepZgW2l7/nB
+ onGNyYsHyu1koUAYJaJgdyFzE/w8mBeCBRfqqQxzSZr47RXQ1PZEE2O6OklclfaUOyuv
+ lsowFxvMomqeCCYpQL1LMgZDZsKWbetDQOG6qaGXSkIEFYuGVvy6B/9VU7tzkh9aO0yY
+ BWFwV4yKavUOGH0R24IS5/Lovne7FPCWleQLZ3iQ7IivB3S4p4ZMFRkida2di5K2/HCl
+ PB1g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=1e100.net; s=20161025;
+ h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+ :message-id:subject:to:cc;
+ bh=TN/noH5vH9CkLLRAplsfECRDqMRnriPBEN1mLBkYoFM=;
+ b=HwnfHUd7t85z5TYTO+eN4yS3gc6ApmRXnJH1bxcii+R/kjd7soh7TJuIp7A2ERTIsE
+ lWISF4veaPeTHd4vSYcIFm6m+lWeWbGwgkUxXISjcR3qKQQXpLC7ABlHKEpLdck3Y9nm
+ bvk5ifoJzB0Rz53V34HXHnihdM0j37dvYyqe2R1fYIccC9thVjUjCVNA1aAOiuTMnxwF
+ XUlbs+Zvs8/uKEgMUlrV0GLjXF6p8eihUhEsItUOJ24RMgYQdyDGwpWJGQKAbIkKr3EE
+ 1sdRhsieI5msA+SMbiNyV2nSN4bjrNZs1IGpMxkqirqa7Bcfa1hheSjCSxuSFeJoDag0
+ go1w==
+X-Gm-Message-State: AOAM533UKt8hm215MoLcz3ZR/742oLpjZSN7I7WFkWP7SeGX8+z63vn/
+ c3H2uIz7CuCPKjz67qu/3lfkRzLM6oUmQ7ilyVE=
+X-Google-Smtp-Source: ABdhPJwp9DY3a5VFCCxDN4ubn5YX34qjNqjm6nq5KsA56YZfWWkqfLoWTESqEVHF6+xId3COLUqvBoz7OzmOiK8Orvg=
+X-Received: by 2002:a17:90a:f184:: with SMTP id
+ bv4mr2131882pjb.1.1601636900031; 
+ Fri, 02 Oct 2020 04:08:20 -0700 (PDT)
 MIME-Version: 1.0
-Content-Disposition: inline
-In-Reply-To: <CAMp4zn9XA-z_6UKvWkFh_U2wPRjZF3=QvrXX7EikO5AEovCWBA@mail.gmail.com>
-Cc: linux-man <linux-man@vger.kernel.org>, Song Liu <songliubraving@fb.com>,
- Will Drewry <wad@chromium.org>, Kees Cook <keescook@chromium.org>,
- Daniel Borkmann <daniel@iogearbox.net>, Jann Horn <jannh@google.com>,
- Robert Sesek <rsesek@google.com>,
+References: <cover.1601478774.git.yifeifz2@illinois.edu>
+ <b16456e8dbc378c41b73c00c56854a3c30580833.1601478774.git.yifeifz2@illinois.edu>
+ <202009301432.C862BBC4B@keescook>
+ <CABqSeATqYuEAb=i1nxufbVQUWRw6FDbb9x0DYJz87U0RbQj14A@mail.gmail.com>
+ <202010011314.503D67209@keescook>
+In-Reply-To: <202010011314.503D67209@keescook>
+From: YiFei Zhu <zhuyifei1999@gmail.com>
+Date: Fri, 2 Oct 2020 06:08:08 -0500
+Message-ID: <CABqSeASuuJcY_tAA5hskRaZ-3y8cA-zCpVJvOue8Uv+3jM9NDw@mail.gmail.com>
+Subject: Re: [PATCH v3 seccomp 2/5] seccomp/cache: Add "emulator" to check if
+ filter is constant allow
+To: Kees Cook <keescook@chromium.org>
+Cc: Andrea Arcangeli <aarcange@redhat.com>,
+ Giuseppe Scrivano <gscrivan@redhat.com>,
+ Valentin Rothberg <vrothber@redhat.com>, Jann Horn <jannh@google.com>,
+ YiFei Zhu <yifeifz2@illinois.edu>,
  Linux Containers <containers@lists.linux-foundation.org>,
- lkml <linux-kernel@vger.kernel.org>, Alexei Starovoitov <ast@kernel.org>,
- "Michael Kerrisk \(man-pages\)" <mtk.manpages@gmail.com>,
- Giuseppe Scrivano <gscrivan@redhat.com>, bpf@vger.kernel.org,
- Andy Lutomirski <luto@amacapital.net>,
- Christian Brauner <christian@brauner.io>
+ Tobin Feldman-Fitzthum <tobin@ibm.com>,
+ kernel list <linux-kernel@vger.kernel.org>,
+ Andy Lutomirski <luto@amacapital.net>, Hubertus Franke <frankeh@us.ibm.com>,
+ David Laight <David.Laight@aculab.com>, Jack Chen <jianyan2@illinois.edu>,
+ Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
+ Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>,
+ bpf <bpf@vger.kernel.org>, Tianyin Xu <tyxu@illinois.edu>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -130,68 +122,78 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Thu, Oct 01, 2020 at 02:06:10PM -0700, Sargun Dhillon wrote:
-> On Wed, Sep 30, 2020 at 4:07 AM Michael Kerrisk (man-pages)
-> <mtk.manpages@gmail.com> wrote:
-> >
-> > Hi Tycho, Sargun (and all),
-> >
-> > I knew it would be a big ask, but below is kind of the manual page
-> > I was hoping you might write [1] for the seccomp user-space notification
-> > mechanism. Since you didn't (and because 5.9 adds various new pieces
-> > such as SECCOMP_ADDFD_FLAG_SETFD and SECCOMP_IOCTL_NOTIF_ADDFD
-> > that also will need documenting [2]), I did :-). But of course I may
-> > have made mistakes...
-> >
-> > I've shown the rendered version of the page below, and would love
-> > to receive review comments from you and others, and acks, etc.
-> >
-> > There are a few FIXMEs sprinkled into the page, including one
-> > that relates to what appears to me to be a misdesign (possibly
-> > fixable) in the operation of the SECCOMP_IOCTL_NOTIF_RECV
-> > operation. I would be especially interested in feedback on that
-> > FIXME, and also of course the other FIXMEs.
-> >
-> > The page includes an extensive (albeit slightly contrived)
-> > example program, and I would be happy also to receive comments
-> > on that program.
-> >
-> > The page source currently sits in a branch (along with the text
-> > that you sent me for the seccomp(2) page) at
-> > https://git.kernel.org/pub/scm/docs/man-pages/man-pages.git/log/?h=seccomp_user_notif
-> >
-> > Thanks,
-> >
-> > Michael
-> >
-> > [1] https://lore.kernel.org/linux-man/2cea5fec-e73e-5749-18af-15c35a4bd23c@gmail.com/#t
-> > [2] Sargun, can you prepare something on SECCOMP_ADDFD_FLAG_SETFD
-> >     and SECCOMP_IOCTL_NOTIF_ADDFD to be added to this page?
-> >
-> > ====
-> >
-> > --
-> > Michael Kerrisk
-> > Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
-> > Linux/UNIX System Programming Training: http://man7.org/training/
-> 
-> Should we consider the SECCOMP_GET_NOTIF_SIZES dance to be "deprecated" at
-> this point, given that the extensible ioctl mechanism works? If we add
-> new fields to the
-> seccomp datastructures, we would move them from fixed-size ioctls, to
-> variable sized
-> ioctls that encode the datastructure size / length?
-> 
-> -- This is mostly a question for Kees and Tycho.
+On Thu, Oct 1, 2020 at 4:05 PM Kees Cook <keescook@chromium.org> wrote:
+> Right, but we depend on that test always doing the correct thing (and
+> continuing to do so into the future). I'm looking at this from the
+> perspective of future changes, maintenance, etc. I want the actions to
+> match the design principles as closely as possible so that future
+> evolutions of the code have lower risk to bugs causing security
+> failures. Right now, the code is simple. I want to design this so that
+> when it is complex, it will still fail toward safety in the face of
+> bugs.
+>
+> I'd prefer this way because for the loop, the tests, and the results only
+> make the bitmap more restrictive. The worst thing a bug in here can do is
+> leave the bitmap unchanged (which is certainly bad), but it can't _undo_
+> an earlier restriction.
+>
+> The proposed loop's leading test_bit() becomes only an optimization,
+> rather than being required for policy enforcement.
+>
+> In other words, I prefer:
+>
+>         inherit all prior prior bitmap restrictions
+>         for all syscalls
+>                 if this filter not restricted
+>                         continue
+>                 set bitmap restricted
+>
+>         within this loop (where the bulk of future logic may get added),
+>         the worse-case future bug-induced failure mode for the syscall
+>         bitmap is "skip *this* filter".
+>
+>
+> Instead of:
+>
+>         set bitmap all restricted
+>         for all syscalls
+>                 if previous bitmap not restricted and
+>                    filter not restricted
+>                         set bitmap unrestricted
+>
+>         within this loop the worst-case future bug-induced failure mode
+>         for the syscall bitmap is "skip *all* filters".
+>
+>
+>
+>
+> Or, to reword again, this:
+>
+>         retain restrictions from previous caching decisions
+>         for all syscalls
+>                 [evaluate this filter, maybe continue]
+>                 set restricted
+>
+> instead of:
+>
+>         set new cache to all restricted
+>         for all syscalls
+>                 [evaluate prior cache and this filter, maybe continue]
+>                 set unrestricted
+>
+> I expect the future code changes for caching to be in the "evaluate"
+> step, so I'd like the code designed to make things MORE restrictive not
+> less from the start, and remove any prior cache state tests from the
+> loop.
+>
+> At the end of the day I believe changing the design like this now lays
+> the groundwork to the caching mechanism being more robust against having
+> future bugs introduce security flaws.
+>
 
-It will tell you how big struct seccomp_data in the currently running
-kernel is, so it still seems useful/necessary to me, unless there's
-another way to figure that out.
+I see. Makes sense. Thanks. Will do that in the v4
 
-But I agree, I don't think the intent is to add anything else to
-struct seccomp_notif. (I don't know that it ever was.)
-
-Tycho
+YiFei Zhu
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
