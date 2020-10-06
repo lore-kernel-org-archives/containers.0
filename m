@@ -1,101 +1,102 @@
-Return-Path: <SRS0=Hw3E=DJ=lists.linux-foundation.org=containers-bounces@kernel.org>
+Return-Path: <SRS0=G2OP=DN=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.1 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.0 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ED7AAC35257
-	for <containers@archiver.kernel.org>; Fri,  2 Oct 2020 19:52:57 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A4182C41604
+	for <containers@archiver.kernel.org>; Tue,  6 Oct 2020 20:04:21 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 7C505206DD
-	for <containers@archiver.kernel.org>; Fri,  2 Oct 2020 19:52:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 0855920796
+	for <containers@archiver.kernel.org>; Tue,  6 Oct 2020 20:04:20 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="Zp2jBYw9"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7C505206DD
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="iGvuAtoj"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0855920796
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 1CC158693C;
-	Fri,  2 Oct 2020 19:52:57 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 4FB38207A2;
+	Tue,  6 Oct 2020 20:04:20 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id kx0kgxNLLJN0; Fri,  2 Oct 2020 19:52:56 +0000 (UTC)
+	with ESMTP id x+LFYYGi929U; Tue,  6 Oct 2020 20:04:18 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 1366485F8C;
-	Fri,  2 Oct 2020 19:52:56 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id DC63620012;
+	Tue,  6 Oct 2020 20:04:17 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id EE49DC0889;
-	Fri,  2 Oct 2020 19:52:55 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id C98A8C016F;
+	Tue,  6 Oct 2020 20:04:17 +0000 (UTC)
 Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 19F59C0051
+ by lists.linuxfoundation.org (Postfix) with ESMTP id B99DFC0051
  for <containers@lists.linux-foundation.org>;
- Fri,  2 Oct 2020 19:52:55 +0000 (UTC)
+ Tue,  6 Oct 2020 20:04:16 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id 07E0D86937
+ by fraxinus.osuosl.org (Postfix) with ESMTP id A92498484C
  for <containers@lists.linux-foundation.org>;
- Fri,  2 Oct 2020 19:52:55 +0000 (UTC)
+ Tue,  6 Oct 2020 20:04:16 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id zNpdbYoyitOh
+ with ESMTP id UHWypg_-n4uR
  for <containers@lists.linux-foundation.org>;
- Fri,  2 Oct 2020 19:52:54 +0000 (UTC)
+ Tue,  6 Oct 2020 20:04:15 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from us-smtp-delivery-124.mimecast.com
  (us-smtp-delivery-124.mimecast.com [216.205.24.124])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id 322FF85F8C
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id C435D80661
  for <containers@lists.linux-foundation.org>;
- Fri,  2 Oct 2020 19:52:54 +0000 (UTC)
+ Tue,  6 Oct 2020 20:04:15 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
- s=mimecast20190719; t=1601668373;
+ s=mimecast20190719; t=1602014654;
  h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
  to:to:cc:cc:mime-version:mime-version:content-type:content-type:
  in-reply-to:in-reply-to:references:references;
- bh=hRr/pDEXOFI8IyjbRkjNDNwPb0Hh+iZXihdzjIb1dq0=;
- b=Zp2jBYw9MxFLPbz2PZrpCtLvnbffHOoDVQ0aTYExKicAIjPkqULs5nO98sJ93aNwzdXkFC
- SqA3KxukBSPfINQJe95tFJvgFwBzes5Z8NufR0x75CW38EzFc80z5XGQJIPnQ/Dl9cEgGO
- vbG5xJttuFV8W/n+HAJ6d2Fd93d13JM=
+ bh=nAsLvgW1nDOTPpn1U85aTp/X7z+VtDo99/tckF5jXNI=;
+ b=iGvuAtojmV7k69MejaC4O5HTbnKN7dN9I6xPrjq3AgVn7746bb1zdtFsaAbCmcE5bBZV+W
+ 2s56X+TtcRjMyUWkdXcPFBjXrnxltr6EjpuoGu0hrDSl1nJgWP8oDF4VoscwrYN67bPgkk
+ T7ICsQAJIIR3Lh8AUHAwwRF3WRhbXcs=
 Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
  [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-161-h1pnc9sdNo6udeNBTyvn3Q-1; Fri, 02 Oct 2020 15:52:49 -0400
-X-MC-Unique: h1pnc9sdNo6udeNBTyvn3Q-1
-Received: from smtp.corp.redhat.com (int-mx03.intmail.prod.int.phx2.redhat.com
- [10.5.11.13])
+ us-mta-483-r50GUUy5MiC9VEv4faOv2Q-1; Tue, 06 Oct 2020 16:04:10 -0400
+X-MC-Unique: r50GUUy5MiC9VEv4faOv2Q-1
+Received: from smtp.corp.redhat.com (int-mx04.intmail.prod.int.phx2.redhat.com
+ [10.5.11.14])
  (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
  (No client certificate requested)
- by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 303FC1018722;
- Fri,  2 Oct 2020 19:52:47 +0000 (UTC)
+ by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 9DA58804018;
+ Tue,  6 Oct 2020 20:04:08 +0000 (UTC)
 Received: from madcap2.tricolour.ca (unknown [10.10.110.18])
- by smtp.corp.redhat.com (Postfix) with ESMTPS id 8D74F73677;
- Fri,  2 Oct 2020 19:52:34 +0000 (UTC)
-Date: Fri, 2 Oct 2020 15:52:31 -0400
+ by smtp.corp.redhat.com (Postfix) with ESMTPS id 767315D9CD;
+ Tue,  6 Oct 2020 20:03:50 +0000 (UTC)
+Date: Tue, 6 Oct 2020 16:03:47 -0400
 From: Richard Guy Briggs <rgb@redhat.com>
 To: Paul Moore <paul@paul-moore.com>
-Subject: Re: [PATCH ghak90 V9 05/13] audit: log container info of syscalls
-Message-ID: <20201002195231.GH2882171@madcap2.tricolour.ca>
+Subject: Re: [PATCH ghak90 V9 11/13] audit: contid check descendancy and
+ nesting
+Message-ID: <20201006200347.GI2882171@madcap2.tricolour.ca>
 References: <cover.1593198710.git.rgb@redhat.com>
- <6e2e10432e1400f747918eeb93bf45029de2aa6c.1593198710.git.rgb@redhat.com>
- <CAHC9VhSCm5eeBcyY8bBsnxr-hK4rkso9_NJHJec2OXLu4m5QTA@mail.gmail.com>
- <20200729194058.kcbsqjhzunjpipgm@madcap2.tricolour.ca>
- <CAHC9VhRUwCKBjffA_XNSjUwvUn8e6zfmy8WD203dK7R2KD0__g@mail.gmail.com>
+ <01229b93733d9baf6ac9bb0cc243eeb08ad579cd.1593198710.git.rgb@redhat.com>
+ <CAHC9VhT6cLxxws_pYWcL=mWe786xPoTTFfPZ1=P4hx4V3nytXA@mail.gmail.com>
+ <20200807171025.523i2sxfyfl7dfjy@madcap2.tricolour.ca>
+ <CAHC9VhQ3MVUY8Zs4GNXdaqhiPJBzHW_YcCe=DghAgo7g6yrNBw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <CAHC9VhRUwCKBjffA_XNSjUwvUn8e6zfmy8WD203dK7R2KD0__g@mail.gmail.com>
+In-Reply-To: <CAHC9VhQ3MVUY8Zs4GNXdaqhiPJBzHW_YcCe=DghAgo7g6yrNBw@mail.gmail.com>
 User-Agent: Mutt/1.10.1 (2018-07-13)
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.13
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.14
 Cc: nhorman@tuxdriver.com, linux-api@vger.kernel.org,
- containers@lists.linux-foundation.org, Dan Walsh <dwalsh@redhat.com>,
- LKML <linux-kernel@vger.kernel.org>, Ondrej Mosnacek <omosnace@redhat.com>,
- dhowells@redhat.com, Linux-Audit Mailing List <linux-audit@redhat.com>,
+ containers@lists.linux-foundation.org, aris@redhat.com,
+ LKML <linux-kernel@vger.kernel.org>, dhowells@redhat.com,
+ Linux-Audit Mailing List <linux-audit@redhat.com>,
  netfilter-devel@vger.kernel.org, ebiederm@xmission.com, simo@redhat.com,
  netdev@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- Eric Paris <eparis@parisplace.org>, sgrubb@redhat.com, mpatel@redhat.com
+ Eric Paris <eparis@parisplace.org>, mpatel@redhat.com
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -112,120 +113,83 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On 2020-08-21 15:15, Paul Moore wrote:
-> On Wed, Jul 29, 2020 at 3:41 PM Richard Guy Briggs <rgb@redhat.com> wrote:
-> > On 2020-07-05 11:10, Paul Moore wrote:
-> > > On Sat, Jun 27, 2020 at 9:22 AM Richard Guy Briggs <rgb@redhat.com> wrote:
+On 2020-08-21 16:13, Paul Moore wrote:
+> On Fri, Aug 7, 2020 at 1:10 PM Richard Guy Briggs <rgb@redhat.com> wrote:
+> > On 2020-07-05 11:11, Paul Moore wrote:
+> > > On Sat, Jun 27, 2020 at 9:23 AM Richard Guy Briggs <rgb@redhat.com> wrote:
+> > > > Require the target task to be a descendant of the container
+> > > > orchestrator/engine.
 > 
-> ...
+> If you want to get formal about this, you need to define "target" in
+> the sentence above.  Target of what?
+
+The target is the task having its audit container identifier modified by
+the orchestrator current task.
+
+> FWIW, I read the above to basically mean that a task can only set the
+> audit container ID of processes which are beneath it in the "process
+> tree" where the "process tree" is defined as the relationship between
+> a parent and children processes such that the children processes are
+> branches below the parent process.
+
+Yes.
+
+> I have no problem with that, with the understanding that nesting
+> complicates it somewhat.  For example, this isn't true when one of the
+> children is a nested orchestrator, is it?
+
+It should still be true if that child is a nested orchestrator that has
+not yet spawned any children or threads (or they have all died off).
+
+It does get more complicated when we consider the scenario outlined
+below about perceived layer violations...
+
+> > > > You would only change the audit container ID from one set or inherited
+> > > > value to another if you were nesting containers.
 > 
-> > > > diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-> > > > index f03d3eb0752c..9e79645e5c0e 100644
-> > > > --- a/kernel/auditsc.c
-> > > > +++ b/kernel/auditsc.c
-> > > > @@ -1458,6 +1466,7 @@ static void audit_log_exit(void)
-> > > >         struct audit_buffer *ab;
-> > > >         struct audit_aux_data *aux;
-> > > >         struct audit_names *n;
-> > > > +       struct audit_contobj *cont;
-> > > >
-> > > >         context->personality = current->personality;
-> > > >
-> > > > @@ -1541,7 +1550,7 @@ static void audit_log_exit(void)
-> > > >         for (aux = context->aux_pids; aux; aux = aux->next) {
-> > > >                 struct audit_aux_data_pids *axs = (void *)aux;
-> > > >
-> > > > -               for (i = 0; i < axs->pid_count; i++)
-> > > > +               for (i = 0; i < axs->pid_count; i++) {
-> > > >                         if (audit_log_pid_context(context, axs->target_pid[i],
-> > > >                                                   axs->target_auid[i],
-> > > >                                                   axs->target_uid[i],
-> > > > @@ -1549,14 +1558,20 @@ static void audit_log_exit(void)
-> > > >                                                   axs->target_sid[i],
-> > > >                                                   axs->target_comm[i]))
-> > > >                                 call_panic = 1;
-> > > > +                       audit_log_container_id(context, axs->target_cid[i]);
-> > > > +               }
-> > >
-> > > It might be nice to see an audit event example including the
-> > > ptrace/signal information.  I'm concerned there may be some confusion
-> > > about associating the different audit container IDs with the correct
-> > > information in the event.
-> >
-> > This is the subject of ghat81, which is a test for ptrace and signal
-> > records.
-> >
-> > This was the reason I had advocated for an op= field since there is a
-> > possibility of multiple contid records per event.
+> I thought we decided we were going to allow an orchestrator to move a
+> process between audit container IDs, yes?  no?
+
+We did?  I don't remember anything about that.  Has this been requested?
+This seems to violate the rule that we can't change the audit container
+identifier once it has been set (other than nesting).  Can you suggest a
+use case?
+
+> > > > If changing the contid, the container orchestrator/engine must be a
+> > > > descendant and not same orchestrator as the one that set it so it is not
+> > > > possible to change the contid of another orchestrator's container.
 > 
-> I think an "op=" field is the wrong way to link audit container ID to
-> a particular record.  It may be convenient, but I fear that it would
-> be overloading the field too much.
+> Try rephrasing the above please, it isn't clear to me what you are
+> trying to say.
 
-Ok, after looking at the field dictionary how about item, rel, ref or rec?
-Item perhaps could be added to the OBJ_PID records, but that might be
-overloading a field that is already used in PATH records.  "rel" for
-relates-to, "ref" for reference to, "rec" for record...  Perhaps pid=
-would be enough to tie this record to the OBJ_PID record or the SYSCALL
-record, but in the case of network events, the pid may refer to a kernel
-thread.
+This is harder than I expected to rephrase...  It also makes it clear
+that there are some scenarios that have not been considered that may
+need to be restricted.
 
-> Like I said above, I think it would be good to see an audit event
-> example including the ptrace/signal information.  This way we can talk
-> about it on-list and hash out the various solutions if it proves to be
-> a problem.
+Orchestrator A spawned task B which is itself an orchestrator without
+chidren yet.  Orchestrator A sets the audit container identifier of B.
+Neither A, nor B, nor any other child of A (or any of their
+descendants), nor any orchestrator outside the tree of A (uncles, aunts
+and cousins are outside), can change the audit container identifier of
+B.
 
-See the list posting from 2020-09-29 "auditing signals" pointing to
-ghat81 test case about testing ptrace and signals from 18 months ago.
+Orchestrator B spawns task C.  Here's where it gets tricky.  It seems
+like a layer violation for B to spawn a child C and have A reach over B
+to set the audit container identifier of C, especially if B is also an
+orchestrator.  This all will be especially hard to police if we don't
+limit the ability of an orchestrator task to set an audit container
+identifier to that orchestrator's immediate children, only once.
 
-I think I have a way to generate a signal to multiple targets in one
-syscall...  The added challenge is to also give those targets different
-audit container identifiers.
-
-> > > > @@ -1575,6 +1590,14 @@ static void audit_log_exit(void)
-> > > >
-> > > >         audit_log_proctitle();
-> > > >
-> > > > +       rcu_read_lock();
-> > > > +       cont = _audit_contobj_get(current);
-> > > > +       rcu_read_unlock();
-> > > > +       audit_log_container_id(context, cont);
-> > > > +       rcu_read_lock();
-> > > > +       _audit_contobj_put(cont);
-> > > > +       rcu_read_unlock();
-> > >
-> > > Do we need to grab an additional reference for the audit container
-> > > object here?  We don't create any additional references here that
-> > > persist beyond the lifetime of this function, right?
-> >
-> > Why do we need another reference?  There's one for each pointer pointing
-> > to it and so far we have just one from this task.  Or are you thinking
-> > of the contid hash list, which is only added to when a task points to it
-> > and gets removed from that list when the last task stops pointing to it.
-> > Later that gets more complicated with network namespaces and nested
-> > container objects.  For now we just needed it while generating the
-> > record, then it gets freed.
+> > Are we able to agree on the premises above?  Is anything asserted that
+> > should not be and is there anything missing?
 > 
-> I don't think we need to grab an additional reference here, that is
-> why I asked the question.  The code above grabs a reference for the
-> audit container ID object associated with the current task and then
-> drops it before returning; if the current task, and it's associated
-> audit container ID object, disappears in the middle of the function
-> we've got much bigger worries :)
+> See above.
+> 
+> If you want to go back to the definitions/assumptions stage, it
+> probably isn't worth worrying about the other comments until we get
+> the above sorted.
 
-I misunderstood your question previously thinking you wanted yet another
-reference taken in this case, when in fact it was the opposite and you
-thought the one taken here was superfluous.
-
-I don't *need* to grab the additional references here, but those are the
-accessor functions that exist, so I either create sub-accessor functions
-without the refcount manipulations that called from the primary accessor
-functions or open code a reduncancy...  The locking has been updated to
-protect the _put by a spin-lock.  Now that I look at it, the 4th to 7th
-lines could be bypassed by a cont == NULL check.
-
-It is somewhat hidden now since this sequence of 7 commands has been
-abstracted into another function that is called from a second location.
+I don't want to.  I'm trying to confirm that we are on the same page.
 
 > paul moore
 
