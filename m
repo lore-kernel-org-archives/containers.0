@@ -1,102 +1,80 @@
-Return-Path: <SRS0=G2OP=DN=lists.linux-foundation.org=containers-bounces@kernel.org>
+Return-Path: <SRS0=9kKe=DO=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.0 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+X-Spam-Status: No, score=-9.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A4182C41604
-	for <containers@archiver.kernel.org>; Tue,  6 Oct 2020 20:04:21 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DB7CFC4363C
+	for <containers@archiver.kernel.org>; Wed,  7 Oct 2020 10:36:46 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 0855920796
-	for <containers@archiver.kernel.org>; Tue,  6 Oct 2020 20:04:20 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="iGvuAtoj"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0855920796
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
+	by mail.kernel.org (Postfix) with ESMTPS id 2D14E20872
+	for <containers@archiver.kernel.org>; Wed,  7 Oct 2020 10:36:45 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2D14E20872
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=cyphar.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 4FB38207A2;
-	Tue,  6 Oct 2020 20:04:20 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 805EA86A4D;
+	Wed,  7 Oct 2020 10:36:45 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id x+LFYYGi929U; Tue,  6 Oct 2020 20:04:18 +0000 (UTC)
+	with ESMTP id 6VWAc77PQ48b; Wed,  7 Oct 2020 10:36:44 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id DC63620012;
-	Tue,  6 Oct 2020 20:04:17 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id C75C8869BA;
+	Wed,  7 Oct 2020 10:36:44 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id C98A8C016F;
-	Tue,  6 Oct 2020 20:04:17 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id ADD71C016F;
+	Wed,  7 Oct 2020 10:36:44 +0000 (UTC)
 Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id B99DFC0051
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 53209C0051
  for <containers@lists.linux-foundation.org>;
- Tue,  6 Oct 2020 20:04:16 +0000 (UTC)
+ Wed,  7 Oct 2020 10:36:43 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id A92498484C
+ by fraxinus.osuosl.org (Postfix) with ESMTP id 37DEF860B0
  for <containers@lists.linux-foundation.org>;
- Tue,  6 Oct 2020 20:04:16 +0000 (UTC)
+ Wed,  7 Oct 2020 10:36:43 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id UHWypg_-n4uR
+ with ESMTP id NZ5IiCnP6_nO
  for <containers@lists.linux-foundation.org>;
- Tue,  6 Oct 2020 20:04:15 +0000 (UTC)
-X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from us-smtp-delivery-124.mimecast.com
- (us-smtp-delivery-124.mimecast.com [216.205.24.124])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id C435D80661
+ Wed,  7 Oct 2020 10:36:41 +0000 (UTC)
+X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
+Received: from mout-p-103.mailbox.org (mout-p-103.mailbox.org [80.241.56.161])
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id BF78185FAD
  for <containers@lists.linux-foundation.org>;
- Tue,  6 Oct 2020 20:04:15 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
- s=mimecast20190719; t=1602014654;
- h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
- to:to:cc:cc:mime-version:mime-version:content-type:content-type:
- in-reply-to:in-reply-to:references:references;
- bh=nAsLvgW1nDOTPpn1U85aTp/X7z+VtDo99/tckF5jXNI=;
- b=iGvuAtojmV7k69MejaC4O5HTbnKN7dN9I6xPrjq3AgVn7746bb1zdtFsaAbCmcE5bBZV+W
- 2s56X+TtcRjMyUWkdXcPFBjXrnxltr6EjpuoGu0hrDSl1nJgWP8oDF4VoscwrYN67bPgkk
- T7ICsQAJIIR3Lh8AUHAwwRF3WRhbXcs=
-Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
- [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-483-r50GUUy5MiC9VEv4faOv2Q-1; Tue, 06 Oct 2020 16:04:10 -0400
-X-MC-Unique: r50GUUy5MiC9VEv4faOv2Q-1
-Received: from smtp.corp.redhat.com (int-mx04.intmail.prod.int.phx2.redhat.com
- [10.5.11.14])
- (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
- (No client certificate requested)
- by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 9DA58804018;
- Tue,  6 Oct 2020 20:04:08 +0000 (UTC)
-Received: from madcap2.tricolour.ca (unknown [10.10.110.18])
- by smtp.corp.redhat.com (Postfix) with ESMTPS id 767315D9CD;
- Tue,  6 Oct 2020 20:03:50 +0000 (UTC)
-Date: Tue, 6 Oct 2020 16:03:47 -0400
-From: Richard Guy Briggs <rgb@redhat.com>
-To: Paul Moore <paul@paul-moore.com>
-Subject: Re: [PATCH ghak90 V9 11/13] audit: contid check descendancy and
- nesting
-Message-ID: <20201006200347.GI2882171@madcap2.tricolour.ca>
-References: <cover.1593198710.git.rgb@redhat.com>
- <01229b93733d9baf6ac9bb0cc243eeb08ad579cd.1593198710.git.rgb@redhat.com>
- <CAHC9VhT6cLxxws_pYWcL=mWe786xPoTTFfPZ1=P4hx4V3nytXA@mail.gmail.com>
- <20200807171025.523i2sxfyfl7dfjy@madcap2.tricolour.ca>
- <CAHC9VhQ3MVUY8Zs4GNXdaqhiPJBzHW_YcCe=DghAgo7g6yrNBw@mail.gmail.com>
+ Wed,  7 Oct 2020 10:36:41 +0000 (UTC)
+Received: from smtp1.mailbox.org (smtp1.mailbox.org
+ [IPv6:2001:67c:2050:105:465:1:1:0])
+ (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+ key-exchange ECDHE (P-384) server-signature RSA-PSS (4096 bits) server-digest
+ SHA256) (No client certificate requested)
+ by mout-p-103.mailbox.org (Postfix) with ESMTPS id 4C5rNk6tpzzKmh1;
+ Wed,  7 Oct 2020 12:36:38 +0200 (CEST)
+X-Virus-Scanned: amavisd-new at heinlein-support.de
+Received: from smtp1.mailbox.org ([80.241.60.240])
+ by spamfilter04.heinlein-hosting.de (spamfilter04.heinlein-hosting.de
+ [80.241.56.122]) (amavisd-new, port 10030)
+ with ESMTP id GCodGCpHNCIN; Wed,  7 Oct 2020 12:36:32 +0200 (CEST)
+From: Aleksa Sarai <cyphar@cyphar.com>
+To: Alexander Viro <viro@zeniv.linux.org.uk>,
+	Shuah Khan <shuah@kernel.org>
+Subject: [PATCH] openat2: reject RESOLVE_BENEATH|RESOLVE_IN_ROOT
+Date: Wed,  7 Oct 2020 21:36:08 +1100
+Message-Id: <20201007103608.17349-1-cyphar@cyphar.com>
 MIME-Version: 1.0
-Content-Disposition: inline
-In-Reply-To: <CAHC9VhQ3MVUY8Zs4GNXdaqhiPJBzHW_YcCe=DghAgo7g6yrNBw@mail.gmail.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.14
-Cc: nhorman@tuxdriver.com, linux-api@vger.kernel.org,
- containers@lists.linux-foundation.org, aris@redhat.com,
- LKML <linux-kernel@vger.kernel.org>, dhowells@redhat.com,
- Linux-Audit Mailing List <linux-audit@redhat.com>,
- netfilter-devel@vger.kernel.org, ebiederm@xmission.com, simo@redhat.com,
- netdev@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- Eric Paris <eparis@parisplace.org>, mpatel@redhat.com
+X-MBO-SPAM-Probability: 
+X-Rspamd-Score: -7.86 / 15.00 / 15.00
+X-Rspamd-Queue-Id: 94FA014AF
+X-Rspamd-UID: 962eff
+Cc: containers@lists.linux-foundation.org, linux-kernel@vger.kernel.org,
+ stable@vger.kernel.org, linux-kselftest@vger.kernel.org,
+ linux-fsdevel@vger.kernel.org
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -113,94 +91,67 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On 2020-08-21 16:13, Paul Moore wrote:
-> On Fri, Aug 7, 2020 at 1:10 PM Richard Guy Briggs <rgb@redhat.com> wrote:
-> > On 2020-07-05 11:11, Paul Moore wrote:
-> > > On Sat, Jun 27, 2020 at 9:23 AM Richard Guy Briggs <rgb@redhat.com> wrote:
-> > > > Require the target task to be a descendant of the container
-> > > > orchestrator/engine.
-> 
-> If you want to get formal about this, you need to define "target" in
-> the sentence above.  Target of what?
+This was an oversight in the original implementation, as it makes no
+sense to specify both scoping flags to the same openat2(2) invocation
+(before this patch, the result of such an invocation was equivalent to
+RESOLVE_IN_ROOT being ignored).
 
-The target is the task having its audit container identifier modified by
-the orchestrator current task.
+This is a userspace-visible ABI change, but the only user of openat2(2)
+at the moment is LXC which doesn't specify both flags and so no
+userspace programs will break as a result.
 
-> FWIW, I read the above to basically mean that a task can only set the
-> audit container ID of processes which are beneath it in the "process
-> tree" where the "process tree" is defined as the relationship between
-> a parent and children processes such that the children processes are
-> branches below the parent process.
+Cc: <stable@vger.kernel.org> # v5.6+
+Fixes: fddb5d430ad9 ("open: introduce openat2(2) syscall")
+Acked-by: Christian Brauner <christian.brauner@ubuntu.com>
+Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
+---
+ fs/open.c                                      | 4 ++++
+ tools/testing/selftests/openat2/openat2_test.c | 8 +++++++-
+ 2 files changed, 11 insertions(+), 1 deletion(-)
 
-Yes.
-
-> I have no problem with that, with the understanding that nesting
-> complicates it somewhat.  For example, this isn't true when one of the
-> children is a nested orchestrator, is it?
-
-It should still be true if that child is a nested orchestrator that has
-not yet spawned any children or threads (or they have all died off).
-
-It does get more complicated when we consider the scenario outlined
-below about perceived layer violations...
-
-> > > > You would only change the audit container ID from one set or inherited
-> > > > value to another if you were nesting containers.
-> 
-> I thought we decided we were going to allow an orchestrator to move a
-> process between audit container IDs, yes?  no?
-
-We did?  I don't remember anything about that.  Has this been requested?
-This seems to violate the rule that we can't change the audit container
-identifier once it has been set (other than nesting).  Can you suggest a
-use case?
-
-> > > > If changing the contid, the container orchestrator/engine must be a
-> > > > descendant and not same orchestrator as the one that set it so it is not
-> > > > possible to change the contid of another orchestrator's container.
-> 
-> Try rephrasing the above please, it isn't clear to me what you are
-> trying to say.
-
-This is harder than I expected to rephrase...  It also makes it clear
-that there are some scenarios that have not been considered that may
-need to be restricted.
-
-Orchestrator A spawned task B which is itself an orchestrator without
-chidren yet.  Orchestrator A sets the audit container identifier of B.
-Neither A, nor B, nor any other child of A (or any of their
-descendants), nor any orchestrator outside the tree of A (uncles, aunts
-and cousins are outside), can change the audit container identifier of
-B.
-
-Orchestrator B spawns task C.  Here's where it gets tricky.  It seems
-like a layer violation for B to spawn a child C and have A reach over B
-to set the audit container identifier of C, especially if B is also an
-orchestrator.  This all will be especially hard to police if we don't
-limit the ability of an orchestrator task to set an audit container
-identifier to that orchestrator's immediate children, only once.
-
-> > Are we able to agree on the premises above?  Is anything asserted that
-> > should not be and is there anything missing?
-> 
-> See above.
-> 
-> If you want to go back to the definitions/assumptions stage, it
-> probably isn't worth worrying about the other comments until we get
-> the above sorted.
-
-I don't want to.  I'm trying to confirm that we are on the same page.
-
-> paul moore
-
-- RGB
-
---
-Richard Guy Briggs <rgb@redhat.com>
-Sr. S/W Engineer, Kernel Security, Base Operating Systems
-Remote, Ottawa, Red Hat Canada
-IRC: rgb, SunRaycer
-Voice: +1.647.777.2635, Internal: (81) 32635
+diff --git a/fs/open.c b/fs/open.c
+index 9af548fb841b..4d7537ae59df 100644
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -1010,6 +1010,10 @@ inline int build_open_flags(const struct open_how *how, struct open_flags *op)
+ 	if (how->resolve & ~VALID_RESOLVE_FLAGS)
+ 		return -EINVAL;
+ 
++	/* Scoping flags are mutually exclusive. */
++	if ((how->resolve & RESOLVE_BENEATH) && (how->resolve & RESOLVE_IN_ROOT))
++		return -EINVAL;
++
+ 	/* Deal with the mode. */
+ 	if (WILL_CREATE(flags)) {
+ 		if (how->mode & ~S_IALLUGO)
+diff --git a/tools/testing/selftests/openat2/openat2_test.c b/tools/testing/selftests/openat2/openat2_test.c
+index b386367c606b..381d874cce99 100644
+--- a/tools/testing/selftests/openat2/openat2_test.c
++++ b/tools/testing/selftests/openat2/openat2_test.c
+@@ -155,7 +155,7 @@ struct flag_test {
+ 	int err;
+ };
+ 
+-#define NUM_OPENAT2_FLAG_TESTS 23
++#define NUM_OPENAT2_FLAG_TESTS 24
+ 
+ void test_openat2_flags(void)
+ {
+@@ -210,6 +210,12 @@ void test_openat2_flags(void)
+ 		  .how.flags = O_TMPFILE | O_RDWR,
+ 		  .how.mode = 0x0000A00000000000ULL, .err = -EINVAL },
+ 
++		/* ->resolve flags must not conflict. */
++		{ .name = "incompatible resolve flags (BENEATH | IN_ROOT)",
++		  .how.flags = O_RDONLY,
++		  .how.resolve = RESOLVE_BENEATH | RESOLVE_IN_ROOT,
++		  .err = -EINVAL },
++
+ 		/* ->resolve must only contain RESOLVE_* flags. */
+ 		{ .name = "invalid how.resolve and O_RDONLY",
+ 		  .how.flags = O_RDONLY,
+-- 
+2.28.0
 
 _______________________________________________
 Containers mailing list
