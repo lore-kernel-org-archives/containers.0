@@ -2,111 +2,104 @@ Return-Path: <SRS0=NhOQ=DQ=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.3 required=3.0 tests=BAYES_00,
-	DKIM_ADSP_CUSTOM_MED,DKIM_INVALID,DKIM_SIGNED,FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1FB92C433E7
-	for <containers@archiver.kernel.org>; Fri,  9 Oct 2020 17:15:48 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 18C98C433DF
+	for <containers@archiver.kernel.org>; Fri,  9 Oct 2020 17:48:17 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id A7DE722258
-	for <containers@archiver.kernel.org>; Fri,  9 Oct 2020 17:15:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 9929022284
+	for <containers@archiver.kernel.org>; Fri,  9 Oct 2020 17:48:16 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="PKtExl62"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A7DE722258
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=amacapital-net.20150623.gappssmtp.com header.i=@amacapital-net.20150623.gappssmtp.com header.b="creOSRKT"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9929022284
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=amacapital.net
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 645292E2CE;
-	Fri,  9 Oct 2020 17:15:47 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 4D85887221;
+	Fri,  9 Oct 2020 17:48:16 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from whitealder.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id DkP1QUt2h-+8; Fri,  9 Oct 2020 17:48:15 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by whitealder.osuosl.org (Postfix) with ESMTP id D21318720C;
+	Fri,  9 Oct 2020 17:48:15 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id BF851C07FF;
+	Fri,  9 Oct 2020 17:48:15 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id F1AC4C0051
+ for <containers@lists.linux-foundation.org>;
+ Fri,  9 Oct 2020 17:48:14 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by silver.osuosl.org (Postfix) with ESMTP id E64A9203A3
+ for <containers@lists.linux-foundation.org>;
+ Fri,  9 Oct 2020 17:48:14 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id F3CJrAv9QT5y; Fri,  9 Oct 2020 17:15:42 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 22F752E2D8;
-	Fri,  9 Oct 2020 17:15:42 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 0E646C1AD6;
-	Fri,  9 Oct 2020 17:15:42 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 61C09C0051
- for <containers@lists.linux-foundation.org>;
- Fri,  9 Oct 2020 17:15:40 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 34229877CF
- for <containers@lists.linux-foundation.org>;
- Fri,  9 Oct 2020 17:15:40 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id 92Ma5TKGsi8H
+ with ESMTP id nUW8jdyJw9RT
  for <containers@lists.linux-foundation.org>;
- Fri,  9 Oct 2020 17:15:39 +0000 (UTC)
-X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-il1-f196.google.com (mail-il1-f196.google.com
- [209.85.166.196])
- by hemlock.osuosl.org (Postfix) with ESMTPS id 5DBA4877B5
+ Fri,  9 Oct 2020 17:48:14 +0000 (UTC)
+X-Greylist: delayed 00:17:49 by SQLgrey-1.7.6
+Received: from mail-lf1-f67.google.com (mail-lf1-f67.google.com
+ [209.85.167.67])
+ by silver.osuosl.org (Postfix) with ESMTPS id E2EAD1FE2F
  for <containers@lists.linux-foundation.org>;
- Fri,  9 Oct 2020 17:15:39 +0000 (UTC)
-Received: by mail-il1-f196.google.com with SMTP id p16so1369876ilq.5
+ Fri,  9 Oct 2020 17:48:13 +0000 (UTC)
+Received: by mail-lf1-f67.google.com with SMTP id a9so11549377lfc.7
  for <containers@lists.linux-foundation.org>;
- Fri, 09 Oct 2020 10:15:39 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
- h=from:to:cc:subject:date:message-id:in-reply-to:references
- :mime-version:content-transfer-encoding;
- bh=5EyJ7IZKon/D0w6vOc5Cj9B1U+3aN4px6AxhT0P+zOw=;
- b=PKtExl62LofXNm6pJVdPVZwFgi3+chh9iPWCAVuOymwzn4czSzaiiTiAMrtIjB70Dk
- pDSw9pslrc/WEuw0afcdnUKwEZCScTlG315F82FEfTHRvLADjQqK/jUpOuCMlTY6EiBb
- Z3tlhmalns7HThG57z0vhRZoxB61BxCmiwB5k1WfSoArWhYj5cpDYnBaKbnkbSZNLaN1
- kqHSHgTcLnzjm9h5cMNqDOzZgpxf+kz5anKMVzXAbQRTodM6Y9vHWEqO/9+sCD9DiEbC
- 1E97U7PJY/m5pfu0ZRNHDElviIfVpF8bQzZCSQ3BJ49K/mKh36RH+u9jR0EgZkk7ESbR
- mImg==
+ Fri, 09 Oct 2020 10:48:13 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=amacapital-net.20150623.gappssmtp.com; s=20150623;
+ h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+ :cc; bh=218xaHs2rZNa9jTYJXmDVRRaape+5jpCuo1cSZDE68Y=;
+ b=creOSRKTUeYhh/6OYZA4joo2NuLZpIGt9Kw1OHbgUY8hTfB7xaWX0/NbfNllme2edb
+ dgib8pb5T89oPSoxmq9gfSlt0+qO3IE44aMVJy+zAByETZ3fwQ9450NdqyJ5xFO85rZc
+ gIrHGYk3HhI/emo4vCgsDyZi4yXDNglUqAmKNk5MSc3PO+YSsTfiCWDckdbwGUgpXpaT
+ kRsCyo/cWSpbCUtgrFJDj5IWoTjTpPx7kXn8M4kazm1lbgPWj0UNidKVnWwEATuk1x+7
+ kqKBRLlcnmIaUKKlfA9GtaA3AIRxvIHfJ/U8AbBe5EzlvroiSp3xB1UUS3Pblb5hnqB7
+ j4gg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
- h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
- :references:mime-version:content-transfer-encoding;
- bh=5EyJ7IZKon/D0w6vOc5Cj9B1U+3aN4px6AxhT0P+zOw=;
- b=N0xGjB9Rt9P/Wf6MBxJqocp+pfrnG1YfirU7ZJOs/o7sRGQftsNU2mSs10oYDoeCP3
- bdIwTEnYEAaUIBl3q6vBA88n6HXqWVY/YypetgyNaKjB8dPdrv20AtTHtMNypO0u/l/5
- 0zVL4aD4Or8X4qWbM8dJ/DlC0JB7R42UdUy0XHQLcxMshYPGDRorrPwf04OHPSSb611G
- z1upHoXzNArEaY6h6Zu1yOZqIWbk2gkWnok7co8QxBJGF6E4DvD1YmWOJRyAV8tuRqwJ
- nvGz2jJUp2Cd/Ip2/cfibMvB1mC9WVqJseccrtDWyidymR3Ts01BDmGxsy8YtTh+1zfj
- eDMA==
-X-Gm-Message-State: AOAM530oEY4CLJNydc0ff1ifu34jPmHOFK0ELC3jjVK6WgBlJY8q8B//
- qyL4wbJq21j2UKsDdANeAgf4uRfeOg0U2Q==
-X-Google-Smtp-Source: ABdhPJxC3XDLh+JSZnUh0Z4lr02UEB1fvKeGlRx77I+YH0RaP5DenMdqfSWrkA8007Mx19L/Skww3A==
-X-Received: by 2002:a92:9859:: with SMTP id l86mr11975537ili.167.1602263738394; 
- Fri, 09 Oct 2020 10:15:38 -0700 (PDT)
-Received: from localhost.localdomain
- (host-173-230-99-154.tnkngak.clients.pavlovmedia.com. [173.230.99.154])
- by smtp.gmail.com with ESMTPSA id c2sm3762830iot.52.2020.10.09.10.15.37
- (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
- Fri, 09 Oct 2020 10:15:37 -0700 (PDT)
-From: YiFei Zhu <zhuyifei1999@gmail.com>
-To: containers@lists.linux-foundation.org
-Subject: [PATCH v4 seccomp 5/5] seccomp/cache: Report cache data through
- /proc/pid/seccomp_cache
-Date: Fri,  9 Oct 2020 12:14:33 -0500
-Message-Id: <c2077b8a86c6d82d611007d81ce81d32f718ec59.1602263422.git.yifeifz2@illinois.edu>
-X-Mailer: git-send-email 2.28.0
-In-Reply-To: <cover.1602263422.git.yifeifz2@illinois.edu>
-References: <cover.1602263422.git.yifeifz2@illinois.edu>
+ h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+ :message-id:subject:to:cc;
+ bh=218xaHs2rZNa9jTYJXmDVRRaape+5jpCuo1cSZDE68Y=;
+ b=NEsfEDEGYEurGfYyd6RKOZTy01fHi08jSLCvP6clszKlyK19kpYj3A87euHpWp7IEE
+ X0irMLhAPIVO2lItDlbqmv3EwvYVzHeOVp57TuyG6bsafbjhbuIAhpkYwBRkm6LY8+mC
+ YzLEwRn0T2GOGna7UBMszO7Vhv9Lrj7scrCnrDn4CdCvbBDlbYQkKTKf6XwHE9TS7SDw
+ mjv6xVygj9mOL1ZcgVP31qbXWXfcuP2VTGtBzWE131UZUY7uZhYyMPWwHJWR/DGnxNWn
+ jCnyOqgbxKlXkt6V0jPa476hGuIozHqMEr5j219Hj5lNkUpbGjmgS3REvSNv9+gyE4M2
+ 1xFw==
+X-Gm-Message-State: AOAM533E9m2aDm3lKipDO99/Ykh8m1sTsIBEnmNYGGIiSIasbZP2ya1D
+ IJRYLqkAquXoo9DwsEHViv1aoqGIJJ9/UXYrs9oKAigjyC4=
+X-Google-Smtp-Source: ABdhPJw8wFSMxS4yjlgkAhvA1enAoa/MDoiy6oG3g4JoOICMO5+l65LTJwkqsXFSbFkPwPeX5NdjEccKlSXmutiQx/U=
+X-Received: by 2002:a5d:6744:: with SMTP id l4mr16465051wrw.18.1602264312119; 
+ Fri, 09 Oct 2020 10:25:12 -0700 (PDT)
 MIME-Version: 1.0
+References: <cover.1602263422.git.yifeifz2@illinois.edu>
+ <122e3e70cf775e461ebdfadb5fbb4b6813cca3dd.1602263422.git.yifeifz2@illinois.edu>
+In-Reply-To: <122e3e70cf775e461ebdfadb5fbb4b6813cca3dd.1602263422.git.yifeifz2@illinois.edu>
+From: Andy Lutomirski <luto@amacapital.net>
+Date: Fri, 9 Oct 2020 10:25:00 -0700
+Message-ID: <CALCETrUD7z3-zL_rATzTyDUzgerOzXJHdn-hntNMG=vnX8ZF2w@mail.gmail.com>
+Subject: Re: [PATCH v4 seccomp 3/5] x86: Enable seccomp architecture tracking
+To: YiFei Zhu <zhuyifei1999@gmail.com>
 Cc: Andrea Arcangeli <aarcange@redhat.com>,
  Giuseppe Scrivano <gscrivan@redhat.com>,
  Valentin Rothberg <vrothber@redhat.com>, Kees Cook <keescook@chromium.org>,
  Jann Horn <jannh@google.com>, YiFei Zhu <yifeifz2@illinois.edu>,
- Tobin Feldman-Fitzthum <tobin@ibm.com>, linux-kernel@vger.kernel.org,
- Andy Lutomirski <luto@amacapital.net>, Hubertus Franke <frankeh@us.ibm.com>,
- David Laight <David.Laight@aculab.com>, Jack Chen <jianyan2@illinois.edu>,
- Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
+ Linux Containers <containers@lists.linux-foundation.org>,
+ Tobin Feldman-Fitzthum <tobin@ibm.com>, LKML <linux-kernel@vger.kernel.org>,
+ Hubertus Franke <frankeh@us.ibm.com>, David Laight <David.Laight@aculab.com>,
+ Jack Chen <jianyan2@illinois.edu>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
  Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>,
- bpf@vger.kernel.org, Tianyin Xu <tyxu@illinois.edu>
+ bpf <bpf@vger.kernel.org>, Tianyin Xu <tyxu@illinois.edu>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -123,245 +116,58 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-From: YiFei Zhu <yifeifz2@illinois.edu>
+On Fri, Oct 9, 2020 at 10:15 AM YiFei Zhu <zhuyifei1999@gmail.com> wrote:
+>
+> From: Kees Cook <keescook@chromium.org>
+>
+> Provide seccomp internals with the details to calculate which syscall
+> table the running kernel is expecting to deal with. This allows for
+> efficient architecture pinning and paves the way for constant-action
+> bitmaps.
+>
+> Signed-off-by: Kees Cook <keescook@chromium.org>
+> Co-developed-by: YiFei Zhu <yifeifz2@illinois.edu>
+> Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
+> ---
+>  arch/x86/include/asm/seccomp.h | 12 ++++++++++++
+>  1 file changed, 12 insertions(+)
+>
+> diff --git a/arch/x86/include/asm/seccomp.h b/arch/x86/include/asm/seccomp.h
+> index 2bd1338de236..03365af6165d 100644
+> --- a/arch/x86/include/asm/seccomp.h
+> +++ b/arch/x86/include/asm/seccomp.h
+> @@ -16,6 +16,18 @@
+>  #define __NR_seccomp_sigreturn_32      __NR_ia32_sigreturn
+>  #endif
+>
+> +#ifdef CONFIG_X86_64
+> +# define SECCOMP_ARCH_NATIVE           AUDIT_ARCH_X86_64
+> +# define SECCOMP_ARCH_NATIVE_NR                NR_syscalls
+> +# ifdef CONFIG_COMPAT
+> +#  define SECCOMP_ARCH_COMPAT          AUDIT_ARCH_I386
+> +#  define SECCOMP_ARCH_COMPAT_NR       IA32_NR_syscalls
+> +# endif
+> +#else /* !CONFIG_X86_64 */
+> +# define SECCOMP_ARCH_NATIVE           AUDIT_ARCH_I386
+> +# define SECCOMP_ARCH_NATIVE_NR                NR_syscalls
+> +#endif
 
-Currently the kernel does not provide an infrastructure to translate
-architecture numbers to a human-readable name. Translating syscall
-numbers to syscall names is possible through FTRACE_SYSCALL
-infrastructure but it does not provide support for compat syscalls.
+Is the idea that any syscall that's out of range for this (e.g. all of
+the x32 syscalls) is unoptimized?  I'm okay with this, but I think it
+could use a comment.
 
-This will create a file for each PID as /proc/pid/seccomp_cache.
-The file will be empty when no seccomp filters are loaded, or be
-in the format of:
-<arch name> <decimal syscall number> <ALLOW | FILTER>
-where ALLOW means the cache is guaranteed to allow the syscall,
-and filter means the cache will pass the syscall to the BPF filter.
+> +
+>  #include <asm-generic/seccomp.h>
+>
+>  #endif /* _ASM_X86_SECCOMP_H */
+> --
+> 2.28.0
+>
 
-For the docker default profile on x86_64 it looks like:
-x86_64 0 ALLOW
-x86_64 1 ALLOW
-x86_64 2 ALLOW
-x86_64 3 ALLOW
-[...]
-x86_64 132 ALLOW
-x86_64 133 ALLOW
-x86_64 134 FILTER
-x86_64 135 FILTER
-x86_64 136 FILTER
-x86_64 137 ALLOW
-x86_64 138 ALLOW
-x86_64 139 FILTER
-x86_64 140 ALLOW
-x86_64 141 ALLOW
-[...]
 
-This file is guarded by CONFIG_SECCOMP_CACHE_DEBUG with a default
-of N because I think certain users of seccomp might not want the
-application to know which syscalls are definitely usable. For
-the same reason, it is also guarded by CAP_SYS_ADMIN.
-
-Suggested-by: Jann Horn <jannh@google.com>
-Link: https://lore.kernel.org/lkml/CAG48ez3Ofqp4crXGksLmZY6=fGrF_tWyUCg7PBkAetvbbOPeOA@mail.gmail.com/
-Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
----
- arch/Kconfig                   | 24 ++++++++++++++
- arch/x86/Kconfig               |  1 +
- arch/x86/include/asm/seccomp.h |  3 ++
- fs/proc/base.c                 |  6 ++++
- include/linux/seccomp.h        |  5 +++
- kernel/seccomp.c               | 59 ++++++++++++++++++++++++++++++++++
- 6 files changed, 98 insertions(+)
-
-diff --git a/arch/Kconfig b/arch/Kconfig
-index 21a3675a7a3a..85239a974f04 100644
---- a/arch/Kconfig
-+++ b/arch/Kconfig
-@@ -471,6 +471,15 @@ config HAVE_ARCH_SECCOMP_FILTER
- 	    results in the system call being skipped immediately.
- 	  - seccomp syscall wired up
- 
-+config HAVE_ARCH_SECCOMP_CACHE
-+	bool
-+	help
-+	  An arch should select this symbol if it provides all of these things:
-+	  - all the requirements for HAVE_ARCH_SECCOMP_FILTER
-+	  - SECCOMP_ARCH_NATIVE
-+	  - SECCOMP_ARCH_NATIVE_NR
-+	  - SECCOMP_ARCH_NATIVE_NAME
-+
- config SECCOMP
- 	prompt "Enable seccomp to safely execute untrusted bytecode"
- 	def_bool y
-@@ -498,6 +507,21 @@ config SECCOMP_FILTER
- 
- 	  See Documentation/userspace-api/seccomp_filter.rst for details.
- 
-+config SECCOMP_CACHE_DEBUG
-+	bool "Show seccomp filter cache status in /proc/pid/seccomp_cache"
-+	depends on SECCOMP
-+	depends on SECCOMP_FILTER
-+	depends on PROC_FS
-+	help
-+	  This is enables /proc/pid/seccomp_cache interface to monitor
-+	  seccomp cache data. The file format is subject to change. Reading
-+	  the file requires CAP_SYS_ADMIN.
-+
-+	  This option is for debugging only. Enabling present the risk that
-+	  an adversary may be able to infer the seccomp filter logic.
-+
-+	  If unsure, say N.
-+
- config HAVE_ARCH_STACKLEAK
- 	bool
- 	help
-diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 1ab22869a765..1a807f89ac77 100644
---- a/arch/x86/Kconfig
-+++ b/arch/x86/Kconfig
-@@ -150,6 +150,7 @@ config X86
- 	select HAVE_ARCH_COMPAT_MMAP_BASES	if MMU && COMPAT
- 	select HAVE_ARCH_PREL32_RELOCATIONS
- 	select HAVE_ARCH_SECCOMP_FILTER
-+	select HAVE_ARCH_SECCOMP_CACHE
- 	select HAVE_ARCH_THREAD_STRUCT_WHITELIST
- 	select HAVE_ARCH_STACKLEAK
- 	select HAVE_ARCH_TRACEHOOK
-diff --git a/arch/x86/include/asm/seccomp.h b/arch/x86/include/asm/seccomp.h
-index 03365af6165d..cd57c3eabab5 100644
---- a/arch/x86/include/asm/seccomp.h
-+++ b/arch/x86/include/asm/seccomp.h
-@@ -19,13 +19,16 @@
- #ifdef CONFIG_X86_64
- # define SECCOMP_ARCH_NATIVE		AUDIT_ARCH_X86_64
- # define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
-+# define SECCOMP_ARCH_NATIVE_NAME	"x86_64"
- # ifdef CONFIG_COMPAT
- #  define SECCOMP_ARCH_COMPAT		AUDIT_ARCH_I386
- #  define SECCOMP_ARCH_COMPAT_NR	IA32_NR_syscalls
-+#  define SECCOMP_ARCH_COMPAT_NAME	"ia32"
- # endif
- #else /* !CONFIG_X86_64 */
- # define SECCOMP_ARCH_NATIVE		AUDIT_ARCH_I386
- # define SECCOMP_ARCH_NATIVE_NR	        NR_syscalls
-+# define SECCOMP_ARCH_NATIVE_NAME	"ia32"
- #endif
- 
- #include <asm-generic/seccomp.h>
-diff --git a/fs/proc/base.c b/fs/proc/base.c
-index 617db4e0faa0..a4990410ff05 100644
---- a/fs/proc/base.c
-+++ b/fs/proc/base.c
-@@ -3258,6 +3258,9 @@ static const struct pid_entry tgid_base_stuff[] = {
- #ifdef CONFIG_PROC_PID_ARCH_STATUS
- 	ONE("arch_status", S_IRUGO, proc_pid_arch_status),
- #endif
-+#ifdef CONFIG_SECCOMP_CACHE_DEBUG
-+	ONE("seccomp_cache", S_IRUSR, proc_pid_seccomp_cache),
-+#endif
- };
- 
- static int proc_tgid_base_readdir(struct file *file, struct dir_context *ctx)
-@@ -3587,6 +3590,9 @@ static const struct pid_entry tid_base_stuff[] = {
- #ifdef CONFIG_PROC_PID_ARCH_STATUS
- 	ONE("arch_status", S_IRUGO, proc_pid_arch_status),
- #endif
-+#ifdef CONFIG_SECCOMP_CACHE_DEBUG
-+	ONE("seccomp_cache", S_IRUSR, proc_pid_seccomp_cache),
-+#endif
- };
- 
- static int proc_tid_base_readdir(struct file *file, struct dir_context *ctx)
-diff --git a/include/linux/seccomp.h b/include/linux/seccomp.h
-index 02aef2844c38..1f028d55142a 100644
---- a/include/linux/seccomp.h
-+++ b/include/linux/seccomp.h
-@@ -121,4 +121,9 @@ static inline long seccomp_get_metadata(struct task_struct *task,
- 	return -EINVAL;
- }
- #endif /* CONFIG_SECCOMP_FILTER && CONFIG_CHECKPOINT_RESTORE */
-+
-+#ifdef CONFIG_SECCOMP_CACHE_DEBUG
-+int proc_pid_seccomp_cache(struct seq_file *m, struct pid_namespace *ns,
-+			   struct pid *pid, struct task_struct *task);
-+#endif
- #endif /* _LINUX_SECCOMP_H */
-diff --git a/kernel/seccomp.c b/kernel/seccomp.c
-index 51032b41fe59..a75746d259a5 100644
---- a/kernel/seccomp.c
-+++ b/kernel/seccomp.c
-@@ -548,6 +548,9 @@ void seccomp_filter_release(struct task_struct *tsk)
- {
- 	struct seccomp_filter *orig = tsk->seccomp.filter;
- 
-+	/* We are effectively holding the siglock by not having any sighand. */
-+	WARN_ON(tsk->sighand != NULL);
-+
- 	/* Detach task from its filter tree. */
- 	tsk->seccomp.filter = NULL;
- 	__seccomp_filter_release(orig);
-@@ -2308,3 +2311,59 @@ static int __init seccomp_sysctl_init(void)
- device_initcall(seccomp_sysctl_init)
- 
- #endif /* CONFIG_SYSCTL */
-+
-+#ifdef CONFIG_SECCOMP_CACHE_DEBUG
-+/* Currently CONFIG_SECCOMP_CACHE_DEBUG implies SECCOMP_ARCH_NATIVE */
-+static void proc_pid_seccomp_cache_arch(struct seq_file *m, const char *name,
-+					const void *bitmap, size_t bitmap_size)
-+{
-+	int nr;
-+
-+	for (nr = 0; nr < bitmap_size; nr++) {
-+		bool cached = test_bit(nr, bitmap);
-+		char *status = cached ? "ALLOW" : "FILTER";
-+
-+		seq_printf(m, "%s %d %s\n", name, nr, status);
-+	}
-+}
-+
-+int proc_pid_seccomp_cache(struct seq_file *m, struct pid_namespace *ns,
-+			   struct pid *pid, struct task_struct *task)
-+{
-+	struct seccomp_filter *f;
-+	unsigned long flags;
-+
-+	/*
-+	 * We don't want some sandboxed process know what their seccomp
-+	 * filters consist of.
-+	 */
-+	if (!file_ns_capable(m->file, &init_user_ns, CAP_SYS_ADMIN))
-+		return -EACCES;
-+
-+	if (!lock_task_sighand(task, &flags))
-+		return 0;
-+
-+	f = READ_ONCE(task->seccomp.filter);
-+	if (!f) {
-+		unlock_task_sighand(task, &flags);
-+		return 0;
-+	}
-+
-+	/* prevent filter from being freed while we are printing it */
-+	__get_seccomp_filter(f);
-+	unlock_task_sighand(task, &flags);
-+
-+	proc_pid_seccomp_cache_arch(m, SECCOMP_ARCH_NATIVE_NAME,
-+				    f->cache.allow_native,
-+				    SECCOMP_ARCH_NATIVE_NR);
-+
-+#ifdef SECCOMP_ARCH_COMPAT
-+	proc_pid_seccomp_cache_arch(m, SECCOMP_ARCH_COMPAT_NAME,
-+				    f->cache.allow_compat,
-+				    SECCOMP_ARCH_COMPAT_NR);
-+#endif /* SECCOMP_ARCH_COMPAT */
-+
-+	__put_seccomp_filter(f);
-+	return 0;
-+}
-+#endif /* CONFIG_SECCOMP_CACHE_DEBUG */
 -- 
-2.28.0
-
+Andy Lutomirski
+AMA Capital Management, LLC
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
