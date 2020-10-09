@@ -2,98 +2,98 @@ Return-Path: <SRS0=NhOQ=DQ=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+X-Spam-Status: No, score=-14.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
-	autolearn_force=no version=3.4.0
+	MENTIONS_GIT_HOSTING,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C95DCC433DF
-	for <containers@archiver.kernel.org>; Fri,  9 Oct 2020 23:14:55 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D27DBC433E7
+	for <containers@archiver.kernel.org>; Fri,  9 Oct 2020 23:18:16 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 2507D222EB
-	for <containers@archiver.kernel.org>; Fri,  9 Oct 2020 23:14:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 3E03B206B2
+	for <containers@archiver.kernel.org>; Fri,  9 Oct 2020 23:18:15 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="iKYPQpxj"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2507D222EB
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="Lr1dfoHe"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3E03B206B2
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=chromium.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id A659687886;
-	Fri,  9 Oct 2020 23:14:54 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id A6AAB87205;
+	Fri,  9 Oct 2020 23:18:15 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id Sj3+-B6xGa8d; Fri,  9 Oct 2020 23:14:54 +0000 (UTC)
+	with ESMTP id qg2vbZwxKU1y; Fri,  9 Oct 2020 23:18:14 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 1368387821;
-	Fri,  9 Oct 2020 23:14:54 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 7BB06875D0;
+	Fri,  9 Oct 2020 23:18:14 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id EBFA4C07FF;
-	Fri,  9 Oct 2020 23:14:53 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 6BEFAC07FF;
+	Fri,  9 Oct 2020 23:18:14 +0000 (UTC)
 Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id A95E4C0051
+ by lists.linuxfoundation.org (Postfix) with ESMTP id CD441C0051
  for <containers@lists.linux-foundation.org>;
- Fri,  9 Oct 2020 23:14:52 +0000 (UTC)
+ Fri,  9 Oct 2020 23:18:12 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 87E6C2E334
+ by silver.osuosl.org (Postfix) with ESMTP id A46702E334
  for <containers@lists.linux-foundation.org>;
- Fri,  9 Oct 2020 23:14:52 +0000 (UTC)
+ Fri,  9 Oct 2020 23:18:12 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id fb7rerk-KzXz
+ with ESMTP id Pz4HTkkDo-zD
  for <containers@lists.linux-foundation.org>;
- Fri,  9 Oct 2020 23:14:51 +0000 (UTC)
+ Fri,  9 Oct 2020 23:18:10 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-pl1-f194.google.com (mail-pl1-f194.google.com
- [209.85.214.194])
- by silver.osuosl.org (Postfix) with ESMTPS id 0D8002E32A
+Received: from mail-pf1-f194.google.com (mail-pf1-f194.google.com
+ [209.85.210.194])
+ by silver.osuosl.org (Postfix) with ESMTPS id D8783203A3
  for <containers@lists.linux-foundation.org>;
- Fri,  9 Oct 2020 23:14:51 +0000 (UTC)
-Received: by mail-pl1-f194.google.com with SMTP id c6so5196786plr.9
+ Fri,  9 Oct 2020 23:18:10 +0000 (UTC)
+Received: by mail-pf1-f194.google.com with SMTP id f19so8092580pfj.11
  for <containers@lists.linux-foundation.org>;
- Fri, 09 Oct 2020 16:14:51 -0700 (PDT)
+ Fri, 09 Oct 2020 16:18:10 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=chromium.org; s=google;
  h=date:from:to:cc:subject:message-id:references:mime-version
  :content-disposition:in-reply-to;
- bh=n8tMNPlt+WgOGWxVqUdEpRLjgaATmbfqGWdnlUKGm2w=;
- b=iKYPQpxjWQDkWz+DPQGsFwsINVhn1zUNJnEVfUJUHTj6OrT2UeyVf1jFWu2VGG0Sd/
- Q6eQgdzwWjj1nWOw0JUlCIXxYd/FtVriQRsOUwCsaFdBcNkPKi+2pbMPFtUj75Sr/tRe
- 8j88AH6f6bdBDPc15Bfpy6/ADirbyIrXuuiWY=
+ bh=D744gDcHOWXajYrsEOce8eCK8+o4p+P+OG7A3xbJaOo=;
+ b=Lr1dfoHemJlX/RIX2hvL2D/L44xa5PQeU7QnVLpPhzAzEOQAlmblx8B40RmQGL/07E
+ VCSHsxo6VPYFWmSWRAxyjPtDbXNEFu1QxWriaykwo9hkwNCSPWr3lehsNnYMCBvsFPcq
+ 5ZaxgqdbhnQ+j6kvffD/AwvtU0IQXPPK+WzIw=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
  h=x-gm-message-state:date:from:to:cc:subject:message-id:references
  :mime-version:content-disposition:in-reply-to;
- bh=n8tMNPlt+WgOGWxVqUdEpRLjgaATmbfqGWdnlUKGm2w=;
- b=fthVJH/eEqFf3DoG0NrHG8uIprSwgaVyMQSZ8pxcFrRvTLOAmKLba+m5MQSRSw3oAQ
- i8QmmBcn6IBSnpF2lucVxszDYlRnZi5quSB4TCiLPST7nbUSP+8MZUjC2XywQZzFqE/m
- wFezWYJ3AAweoElELkx1kBb7JmX4uYE7eVZdIriTSkectoeBjjl618EyCMflt94zK37G
- kaerL69onoHUgpE455OXNyntagLYrsJkqmC/LFnUR0NDYx6a+sE/Yob/GwzTnf1vCEWg
- q+RdYldld8T4EqvBjNo54s/8VsqsuCjL6qTF2SflggRs1RPb1PvQzxL6lS0H8zUgN35g
- DhiQ==
-X-Gm-Message-State: AOAM531CgiZNrf4pe/fzVSwAS7iuWnwZga+7fvVPLPuPBMY6CPmcQfyM
- zIDvJrG5NDASDDqbroU7OZ9l1Q==
-X-Google-Smtp-Source: ABdhPJwNBafddDMTu9v6aB/SdriCWv98crtqxIV19v6tjDbA0QjDMDvn6HIEfpx597XYVrlGXc/Prw==
-X-Received: by 2002:a17:902:8bc4:b029:d2:8cec:1fae with SMTP id
- r4-20020a1709028bc4b02900d28cec1faemr14566468plo.23.1602285290468; 
- Fri, 09 Oct 2020 16:14:50 -0700 (PDT)
+ bh=D744gDcHOWXajYrsEOce8eCK8+o4p+P+OG7A3xbJaOo=;
+ b=htD6ljSqb97JNNVnCkhf3tavlW1B6QPYfCK+2cHAmg+qQEREsZYiBWXKuovW/Ko7tY
+ qStRs9JVX0MlZ+6wHR8F1mVtQsIMfbEB/E8eQVY2kPjMfV6BmN0KDt4UL15mtpZm1UYk
+ Fy0RwUFGCLePI8bjjNt7wHMgQEpjD8Qkq7FsFZCiTdD3WeeXYb9ViNScO7LENQ7RvlOt
+ 54gZAPkvBIC7e45JWrYggG9BXDG/lylMTzWxbafGJtDlW9MVfkPd0JiOVinaqV5E7SXh
+ iGwFphqCfhtvuJUhAJm3yY7EIwgvDsRH3MvOxc6ou36hXsMnZxVDNG3o4Vm+JUZiIwkI
+ 22Uw==
+X-Gm-Message-State: AOAM531DzcLJXKf9s6cfaY7tKhlFh0FpYIHZAPdtRsByGbQaG3GkD0a8
+ ttKhr6tPqBJF4JdrBq6rgft54Q==
+X-Google-Smtp-Source: ABdhPJx8ui/HzkhIAhu2rRwKn7Y9jfi9DolNG8cFk6RzmyJOjHiY9uQq6NzZY+18AB3NyWZTy5R5OQ==
+X-Received: by 2002:a17:90a:3fcb:: with SMTP id
+ u11mr6950918pjm.128.1602285490320; 
+ Fri, 09 Oct 2020 16:18:10 -0700 (PDT)
 Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
- by smtp.gmail.com with ESMTPSA id g4sm12323939pgh.65.2020.10.09.16.14.49
+ by smtp.gmail.com with ESMTPSA id 15sm11555731pgt.24.2020.10.09.16.18.08
  (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
- Fri, 09 Oct 2020 16:14:49 -0700 (PDT)
-Date: Fri, 9 Oct 2020 16:14:48 -0700
+ Fri, 09 Oct 2020 16:18:09 -0700 (PDT)
+Date: Fri, 9 Oct 2020 16:18:08 -0700
 From: Kees Cook <keescook@chromium.org>
 To: YiFei Zhu <zhuyifei1999@gmail.com>
-Subject: Re: [PATCH v4 seccomp 5/5] seccomp/cache: Report cache data through
- /proc/pid/seccomp_cache
-Message-ID: <202010091613.B671C86@keescook>
+Subject: Re: [PATCH v4 seccomp 1/5] seccomp/cache: Lookup syscall allowlist
+ bitmap for fast path
+Message-ID: <202010091614.8BB0EB64@keescook>
 References: <cover.1602263422.git.yifeifz2@illinois.edu>
- <c2077b8a86c6d82d611007d81ce81d32f718ec59.1602263422.git.yifeifz2@illinois.edu>
+ <896cd9de97318d20c25edb1297db8c65e1cfdf84.1602263422.git.yifeifz2@illinois.edu>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <c2077b8a86c6d82d611007d81ce81d32f718ec59.1602263422.git.yifeifz2@illinois.edu>
+In-Reply-To: <896cd9de97318d20c25edb1297db8c65e1cfdf84.1602263422.git.yifeifz2@illinois.edu>
 Cc: Andrea Arcangeli <aarcange@redhat.com>,
  Giuseppe Scrivano <gscrivan@redhat.com>,
  Valentin Rothberg <vrothber@redhat.com>, Jann Horn <jannh@google.com>,
@@ -120,89 +120,188 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Fri, Oct 09, 2020 at 12:14:33PM -0500, YiFei Zhu wrote:
+On Fri, Oct 09, 2020 at 12:14:29PM -0500, YiFei Zhu wrote:
 > From: YiFei Zhu <yifeifz2@illinois.edu>
 > 
-> Currently the kernel does not provide an infrastructure to translate
-> architecture numbers to a human-readable name. Translating syscall
-> numbers to syscall names is possible through FTRACE_SYSCALL
-> infrastructure but it does not provide support for compat syscalls.
+> The overhead of running Seccomp filters has been part of some past
+> discussions [1][2][3]. Oftentimes, the filters have a large number
+> of instructions that check syscall numbers one by one and jump based
+> on that. Some users chain BPF filters which further enlarge the
+> overhead. A recent work [6] comprehensively measures the Seccomp
+> overhead and shows that the overhead is non-negligible and has a
+> non-trivial impact on application performance.
 > 
-> This will create a file for each PID as /proc/pid/seccomp_cache.
-> The file will be empty when no seccomp filters are loaded, or be
-> in the format of:
-> <arch name> <decimal syscall number> <ALLOW | FILTER>
-> where ALLOW means the cache is guaranteed to allow the syscall,
-> and filter means the cache will pass the syscall to the BPF filter.
+> We observed some common filters, such as docker's [4] or
+> systemd's [5], will make most decisions based only on the syscall
+> numbers, and as past discussions considered, a bitmap where each bit
+> represents a syscall makes most sense for these filters.
 > 
-> For the docker default profile on x86_64 it looks like:
-> x86_64 0 ALLOW
-> x86_64 1 ALLOW
-> x86_64 2 ALLOW
-> x86_64 3 ALLOW
-> [...]
-> x86_64 132 ALLOW
-> x86_64 133 ALLOW
-> x86_64 134 FILTER
-> x86_64 135 FILTER
-> x86_64 136 FILTER
-> x86_64 137 ALLOW
-> x86_64 138 ALLOW
-> x86_64 139 FILTER
-> x86_64 140 ALLOW
-> x86_64 141 ALLOW
-> [...]
+> The fast (common) path for seccomp should be that the filter permits
+> the syscall to pass through, and failing seccomp is expected to be
+> an exceptional case; it is not expected for userspace to call a
+> denylisted syscall over and over.
 > 
-> This file is guarded by CONFIG_SECCOMP_CACHE_DEBUG with a default
-> of N because I think certain users of seccomp might not want the
-> application to know which syscalls are definitely usable. For
-> the same reason, it is also guarded by CAP_SYS_ADMIN.
+> When it can be concluded that an allow must occur for the given
+> architecture and syscall pair (this determination is introduced in
+> the next commit), seccomp will immediately allow the syscall,
+> bypassing further BPF execution.
 > 
-> Suggested-by: Jann Horn <jannh@google.com>
-> Link: https://lore.kernel.org/lkml/CAG48ez3Ofqp4crXGksLmZY6=fGrF_tWyUCg7PBkAetvbbOPeOA@mail.gmail.com/
+> Each architecture number has its own bitmap. The architecture
+> number in seccomp_data is checked against the defined architecture
+> number constant before proceeding to test the bit against the
+> bitmap with the syscall number as the index of the bit in the
+> bitmap, and if the bit is set, seccomp returns allow. The bitmaps
+> are all clear in this patch and will be initialized in the next
+> commit.
+> 
+> [1] https://lore.kernel.org/linux-security-module/c22a6c3cefc2412cad00ae14c1371711@huawei.com/T/
+> [2] https://lore.kernel.org/lkml/202005181120.971232B7B@keescook/T/
+> [3] https://github.com/seccomp/libseccomp/issues/116
+> [4] https://github.com/moby/moby/blob/ae0ef82b90356ac613f329a8ef5ee42ca923417d/profiles/seccomp/default.json
+> [5] https://github.com/systemd/systemd/blob/6743a1caf4037f03dc51a1277855018e4ab61957/src/shared/seccomp-util.c#L270
+> [6] Draco: Architectural and Operating System Support for System Call Security
+>     https://tianyin.github.io/pub/draco.pdf, MICRO-53, Oct. 2020
+> 
+> Co-developed-by: Dimitrios Skarlatos <dskarlat@cs.cmu.edu>
+> Signed-off-by: Dimitrios Skarlatos <dskarlat@cs.cmu.edu>
 > Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
 > ---
->  arch/Kconfig                   | 24 ++++++++++++++
->  arch/x86/Kconfig               |  1 +
->  arch/x86/include/asm/seccomp.h |  3 ++
->  fs/proc/base.c                 |  6 ++++
->  include/linux/seccomp.h        |  5 +++
->  kernel/seccomp.c               | 59 ++++++++++++++++++++++++++++++++++
->  6 files changed, 98 insertions(+)
+>  kernel/seccomp.c | 72 ++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 72 insertions(+)
 > 
-> diff --git a/arch/Kconfig b/arch/Kconfig
-> index 21a3675a7a3a..85239a974f04 100644
-> --- a/arch/Kconfig
-> +++ b/arch/Kconfig
-> @@ -471,6 +471,15 @@ config HAVE_ARCH_SECCOMP_FILTER
->  	    results in the system call being skipped immediately.
->  	  - seccomp syscall wired up
+> diff --git a/kernel/seccomp.c b/kernel/seccomp.c
+> index ae6b40cc39f4..73f6b6e9a3b0 100644
+> --- a/kernel/seccomp.c
+> +++ b/kernel/seccomp.c
+> @@ -143,6 +143,34 @@ struct notification {
+>  	struct list_head notifications;
+>  };
 >  
-> +config HAVE_ARCH_SECCOMP_CACHE
-> +	bool
-> +	help
-> +	  An arch should select this symbol if it provides all of these things:
-> +	  - all the requirements for HAVE_ARCH_SECCOMP_FILTER
-> +	  - SECCOMP_ARCH_NATIVE
-> +	  - SECCOMP_ARCH_NATIVE_NR
-> +	  - SECCOMP_ARCH_NATIVE_NAME
+> +#ifdef SECCOMP_ARCH_NATIVE
+> +/**
+> + * struct action_cache - per-filter cache of seccomp actions per
+> + * arch/syscall pair
+> + *
+> + * @allow_native: A bitmap where each bit represents whether the
+> + *		  filter will always allow the syscall, for the
+> + *		  native architecture.
+> + * @allow_compat: A bitmap where each bit represents whether the
+> + *		  filter will always allow the syscall, for the
+> + *		  compat architecture.
+> + */
+> +struct action_cache {
+> +	DECLARE_BITMAP(allow_native, SECCOMP_ARCH_NATIVE_NR);
+> +#ifdef SECCOMP_ARCH_COMPAT
+> +	DECLARE_BITMAP(allow_compat, SECCOMP_ARCH_COMPAT_NR);
+> +#endif
+> +};
+> +#else
+> +struct action_cache { };
 > +
-> [...]
-> diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-> index 1ab22869a765..1a807f89ac77 100644
-> --- a/arch/x86/Kconfig
-> +++ b/arch/x86/Kconfig
-> @@ -150,6 +150,7 @@ config X86
->  	select HAVE_ARCH_COMPAT_MMAP_BASES	if MMU && COMPAT
->  	select HAVE_ARCH_PREL32_RELOCATIONS
->  	select HAVE_ARCH_SECCOMP_FILTER
-> +	select HAVE_ARCH_SECCOMP_CACHE
->  	select HAVE_ARCH_THREAD_STRUCT_WHITELIST
->  	select HAVE_ARCH_STACKLEAK
->  	select HAVE_ARCH_TRACEHOOK
+> +static inline bool seccomp_cache_check_allow(const struct seccomp_filter *sfilter,
+> +					     const struct seccomp_data *sd)
+> +{
+> +	return false;
+> +}
+> +#endif /* SECCOMP_ARCH_NATIVE */
+> +
+>  /**
+>   * struct seccomp_filter - container for seccomp BPF programs
+>   *
+> @@ -298,6 +326,47 @@ static int seccomp_check_filter(struct sock_filter *filter, unsigned int flen)
+>  	return 0;
+>  }
+>  
+> +#ifdef SECCOMP_ARCH_NATIVE
+> +static inline bool seccomp_cache_check_allow_bitmap(const void *bitmap,
+> +						    size_t bitmap_size,
+> +						    int syscall_nr)
+> +{
+> +	if (unlikely(syscall_nr < 0 || syscall_nr >= bitmap_size))
+> +		return false;
+> +	syscall_nr = array_index_nospec(syscall_nr, bitmap_size);
+> +
+> +	return test_bit(syscall_nr, bitmap);
+> +}
+> +
+> +/**
+> + * seccomp_cache_check_allow - lookup seccomp cache
+> + * @sfilter: The seccomp filter
+> + * @sd: The seccomp data to lookup the cache with
+> + *
+> + * Returns true if the seccomp_data is cached and allowed.
+> + */
+> +static inline bool seccomp_cache_check_allow(const struct seccomp_filter *sfilter,
+> +					     const struct seccomp_data *sd)
+> +{
+> +	int syscall_nr = sd->nr;
+> +	const struct action_cache *cache = &sfilter->cache;
+> +
+> +	if (likely(sd->arch == SECCOMP_ARCH_NATIVE))
+> +		return seccomp_cache_check_allow_bitmap(cache->allow_native,
+> +							SECCOMP_ARCH_NATIVE_NR,
+> +							syscall_nr);
+> +#ifdef SECCOMP_ARCH_COMPAT
+> +	if (likely(sd->arch == SECCOMP_ARCH_COMPAT))
+> +		return seccomp_cache_check_allow_bitmap(cache->allow_compat,
+> +							SECCOMP_ARCH_COMPAT_NR,
+> +							syscall_nr);
+> +#endif /* SECCOMP_ARCH_COMPAT */
+> +
+> +	WARN_ON_ONCE(true);
+> +	return false;
+> +}
+> +#endif /* SECCOMP_ARCH_NATIVE */
 
-HAVE_ARCH_SECCOMP_CACHE isn't used any more. I think this was left over
-from before.
+An small optimization for the non-compat case might be to do this to
+avoid the sd->arch test (which should have no way to ever change in such
+builds):
+
+static inline bool seccomp_cache_check_allow(const struct seccomp_filter *sfilter,
+                                             const struct seccomp_data *sd)
+{
+        const struct action_cache *cache = &sfilter->cache;
+
+#ifndef SECCOMP_ARCH_COMPAT
+        /* A native-only architecture doesn't need to check sd->arch. */
+        return seccomp_cache_check_allow_bitmap(cache->allow_native,
+                                                SECCOMP_ARCH_NATIVE_NR,
+                                                sd->nr);
+#else /* SECCOMP_ARCH_COMPAT */
+        if (likely(sd->arch == SECCOMP_ARCH_NATIVE))
+                return seccomp_cache_check_allow_bitmap(cache->allow_native,
+                                                        SECCOMP_ARCH_NATIVE_NR,
+                                                        sd->nr);
+        if (likely(sd->arch == SECCOMP_ARCH_COMPAT))
+                return seccomp_cache_check_allow_bitmap(cache->allow_compat,
+                                                        SECCOMP_ARCH_COMPAT_NR,
+                                                        sd->nr);
+#endif
+
+        WARN_ON_ONCE(true);
+        return false;
+}
+
+> +
+>  /**
+>   * seccomp_run_filters - evaluates all seccomp filters against @sd
+>   * @sd: optional seccomp data to be passed to filters
+> @@ -320,6 +389,9 @@ static u32 seccomp_run_filters(const struct seccomp_data *sd,
+>  	if (WARN_ON(f == NULL))
+>  		return SECCOMP_RET_KILL_PROCESS;
+>  
+> +	if (seccomp_cache_check_allow(f, sd))
+> +		return SECCOMP_RET_ALLOW;
+> +
+>  	/*
+>  	 * All filters in the list are evaluated and the lowest BPF return
+>  	 * value always takes priority (ignoring the DATA).
+> -- 
+> 2.28.0
+> 
+
+This is all looking good; thank you! I'm doing some test builds/runs
+now. :)
 
 -- 
 Kees Cook
