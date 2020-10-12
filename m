@@ -2,101 +2,111 @@ Return-Path: <SRS0=82Ss=DT=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B4224C433DF
-	for <containers@archiver.kernel.org>; Mon, 12 Oct 2020 17:05:35 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A6D4C433DF
+	for <containers@archiver.kernel.org>; Mon, 12 Oct 2020 22:57:43 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id B64E02072D
-	for <containers@archiver.kernel.org>; Mon, 12 Oct 2020 17:05:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id D805320725
+	for <containers@archiver.kernel.org>; Mon, 12 Oct 2020 22:57:42 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="GJGhHjLr"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B64E02072D
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
-Authentication-Results: mail.kernel.org; spf=tempfail smtp.mailfrom=containers-bounces@lists.linux-foundation.org
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="JJQ4S6hW"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D805320725
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=chromium.org
+Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 0DC8F863E2;
-	Mon, 12 Oct 2020 17:05:26 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 346498798C;
+	Mon, 12 Oct 2020 22:57:42 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 4hXMhbkIvJNS; Mon, 12 Oct 2020 17:05:24 +0000 (UTC)
+	with ESMTP id xNK1KmfrxvcP; Mon, 12 Oct 2020 22:57:41 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id E76A8863DB;
-	Mon, 12 Oct 2020 17:05:24 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 084948738A;
+	Mon, 12 Oct 2020 22:57:41 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id AA044C07FF;
-	Mon, 12 Oct 2020 17:05:24 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id EE349C0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id DFC3BC0052;
+	Mon, 12 Oct 2020 22:57:40 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 28E25C0051
  for <containers@lists.linux-foundation.org>;
- Mon, 12 Oct 2020 17:05:22 +0000 (UTC)
+ Mon, 12 Oct 2020 22:57:40 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id E18A4863E0
+ by silver.osuosl.org (Postfix) with ESMTP id 0E6AE274ED
  for <containers@lists.linux-foundation.org>;
- Mon, 12 Oct 2020 17:05:22 +0000 (UTC)
+ Mon, 12 Oct 2020 22:57:40 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id rbr5lO0_Bc7K
+ with ESMTP id IZYUAw--PC-v
  for <containers@lists.linux-foundation.org>;
- Mon, 12 Oct 2020 17:05:22 +0000 (UTC)
+ Mon, 12 Oct 2020 22:57:39 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from us-smtp-delivery-124.mimecast.com
- (us-smtp-delivery-124.mimecast.com [216.205.24.124])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id 21087863DB
+Received: from mail-pf1-f195.google.com (mail-pf1-f195.google.com
+ [209.85.210.195])
+ by silver.osuosl.org (Postfix) with ESMTPS id F16D423504
  for <containers@lists.linux-foundation.org>;
- Mon, 12 Oct 2020 17:05:22 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
- s=mimecast20190719; t=1602522321;
- h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
- to:to:cc:cc:mime-version:mime-version:content-type:content-type:
- in-reply-to:in-reply-to:references:references;
- bh=48/p/swHiO9g9EftOv4fYGSl8TGG6SINHcN0wha0CCE=;
- b=GJGhHjLr1bv8wtcQ82Ho+G+WFB2gHcACTXohCMdYjeW3RysZd10UVay7h6XMcl5+HCJt/F
- y4GDPRqnA8o7CMU6EkDxM7OV8SzYOUay1KAx+uWDOV6LCli0FuymM3tNCMfKdps+SLHRj8
- Ytb4aS2sy1fBXjl52OIivMK9SANncRU=
-Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
- [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-429-l02HyH2QMNmHeMm_ZtZX9A-1; Mon, 12 Oct 2020 13:05:16 -0400
-X-MC-Unique: l02HyH2QMNmHeMm_ZtZX9A-1
-Received: from smtp.corp.redhat.com (int-mx05.intmail.prod.int.phx2.redhat.com
- [10.5.11.15])
- (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
- (No client certificate requested)
- by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 4FEC3ADC26;
- Mon, 12 Oct 2020 17:05:13 +0000 (UTC)
-Received: from localhost (ovpn-114-124.ams2.redhat.com [10.36.114.124])
- by smtp.corp.redhat.com (Postfix) with ESMTPS id D2B322C31E;
- Mon, 12 Oct 2020 17:05:11 +0000 (UTC)
-From: Giuseppe Scrivano <gscrivan@redhat.com>
-To: Josh Triplett <josh@joshtriplett.org>
-Subject: Re: LPC 2020 Hackroom Session: summary and next steps for isolated
- user namespaces
-References: <20200830143959.rhosiunyz5yqbr35@wittgenstein>
- <20201010042606.GA30062@mail.hallyn.com>
- <20201011205306.GC17441@localhost>
-Date: Mon, 12 Oct 2020 19:05:10 +0200
-In-Reply-To: <20201011205306.GC17441@localhost> (Josh Triplett's message of
- "Sun, 11 Oct 2020 13:53:06 -0700")
-Message-ID: <87tuuzv0hl.fsf@redhat.com>
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.1 (gnu/linux)
+ Mon, 12 Oct 2020 22:57:38 +0000 (UTC)
+Received: by mail-pf1-f195.google.com with SMTP id k8so15139745pfk.2
+ for <containers@lists.linux-foundation.org>;
+ Mon, 12 Oct 2020 15:57:38 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=chromium.org; s=google;
+ h=date:from:to:cc:subject:message-id:references:mime-version
+ :content-disposition:in-reply-to;
+ bh=ho1l607OAVVmLnoWlMqhfwRhJkqSim+LddBz61r0Qos=;
+ b=JJQ4S6hWNOQEK+Sy3Y+6MHvE6gOOcxmTo+VnXkRAr4YZg1jAzA2NjbHn3GiUPeK8gf
+ 0ipw1LXDfr3tEdWE6dRrL6M12460zyb+sjoMJRNxEoEbW1Tj6e5VYs12zu49n5jFE+ag
+ LA//Dq0oC90jGuPSuhQwam8VrIDDiTx3NpK3M=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=1e100.net; s=20161025;
+ h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+ :mime-version:content-disposition:in-reply-to;
+ bh=ho1l607OAVVmLnoWlMqhfwRhJkqSim+LddBz61r0Qos=;
+ b=pAwL0x43TJOIvAS4FxYImf7kZko56Z+MFgpj73Pmu6clBOB2JvP+l5DxLuufP+pEyB
+ jiwAgSNkB2eLclOmy/sIMETkV3mtD1tUAoPiL9f3jDisdtyDGngL8Kad+M4CBMk3L1y1
+ iya4pBl45AAlDJvj1OC4OoO7KcpCWmhgMDAxvTynTCQWpHJMHeg/s95MFISHSE5PSCSu
+ j1HS2MGjQZ7IyMlWUWVRSB49xm/uRREJpD4/7K8nDuz+oK5qBN64aBmViZ2rMWqUdESO
+ RciIdnw8CsHrRbLNJmecRKPBtBboYd1Vb1OFw2K9mAzFel/0ZGlS25akVd/dQAO3HqxC
+ g9OA==
+X-Gm-Message-State: AOAM533ELXM7/UFcDyyK5Ej1qABJ+LWtGelAq7+3Ce4U9s1CWbTN8sq+
+ Hb2h+sUYk0uwqxRU8syjApRamQ==
+X-Google-Smtp-Source: ABdhPJxRLYOMHo59Ns0oO1+b1TTIgg1tJPZTI/F+6kwXefZKFzuOW2ptOTYCFNOKi97y0iBzVBYADg==
+X-Received: by 2002:a17:90a:a782:: with SMTP id
+ f2mr2869911pjq.50.1602543458516; 
+ Mon, 12 Oct 2020 15:57:38 -0700 (PDT)
+Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
+ by smtp.gmail.com with ESMTPSA id j6sm20479216pfi.129.2020.10.12.15.57.36
+ (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+ Mon, 12 Oct 2020 15:57:37 -0700 (PDT)
+Date: Mon, 12 Oct 2020 15:57:36 -0700
+From: Kees Cook <keescook@chromium.org>
+To: YiFei Zhu <zhuyifei1999@gmail.com>
+Subject: Re: [PATCH v4 seccomp 5/5] seccomp/cache: Report cache data through
+ /proc/pid/seccomp_cache
+Message-ID: <202010121556.1110776B83@keescook>
+References: <cover.1602263422.git.yifeifz2@illinois.edu>
+ <c2077b8a86c6d82d611007d81ce81d32f718ec59.1602263422.git.yifeifz2@illinois.edu>
+ <202010091613.B671C86@keescook>
+ <CABqSeARZWBQrLkzd3ozF16ghkADQqcN4rUoJS2MKkd=73g4nVA@mail.gmail.com>
 MIME-Version: 1.0
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.15
-Cc: Alexander Mihalicyn <alexander@mihalicyn.com>,
- Joseph Christopher Sible <jcsible@cert.org>, Kees Cook <keescook@chromium.org>,
- containers@lists.linux-foundation.org, linux-kernel@vger.kernel.org,
- Vivek Goyal <vgoyal@redhat.com>, Geoffrey Thomas <geofft@ldpreload.com>,
- Andy Lutomirski <luto@amacapital.net>,
- "Eric W. Biederman" <ebiederm@xmission.com>,
- =?utf-8?Q?Micka=C3=ABl_Sala=C3=BCn?= <mic@digikod.net>,
- Wat Lim <watl@google.com>, Mrunal Patel <mpatel@redhat.com>,
- Pavel Tikhomirov <ptikhomirov@virtuozzo.com>
+Content-Disposition: inline
+In-Reply-To: <CABqSeARZWBQrLkzd3ozF16ghkADQqcN4rUoJS2MKkd=73g4nVA@mail.gmail.com>
+Cc: Andrea Arcangeli <aarcange@redhat.com>,
+ Giuseppe Scrivano <gscrivan@redhat.com>,
+ Valentin Rothberg <vrothber@redhat.com>, Jann Horn <jannh@google.com>,
+ YiFei Zhu <yifeifz2@illinois.edu>,
+ Linux Containers <containers@lists.linux-foundation.org>,
+ Tobin Feldman-Fitzthum <tobin@ibm.com>,
+ kernel list <linux-kernel@vger.kernel.org>,
+ Andy Lutomirski <luto@amacapital.net>, Hubertus Franke <frankeh@us.ibm.com>,
+ David Laight <David.Laight@aculab.com>, Jack Chen <jianyan2@illinois.edu>,
+ Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
+ Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>,
+ bpf <bpf@vger.kernel.org>, Tianyin Xu <tyxu@illinois.edu>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -113,45 +123,20 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Josh Triplett <josh@joshtriplett.org> writes:
+On Sat, Oct 10, 2020 at 08:26:16AM -0500, YiFei Zhu wrote:
+> On Fri, Oct 9, 2020 at 6:14 PM Kees Cook <keescook@chromium.org> wrote:
+> > HAVE_ARCH_SECCOMP_CACHE isn't used any more. I think this was left over
+> > from before.
+> 
+> Oh, I was meant to add this to the dependencies of
+> SECCOMP_CACHE_DEBUG. Is this something that would make sense?
 
-> On Fri, Oct 09, 2020 at 11:26:06PM -0500, Serge E. Hallyn wrote:
->> > 3. Find a way to allow setgroups() in a user namespace while keeping
->> >    in mind the case of groups used for negative access control.
->> >    This was suggested by Josh Triplett and Geoffrey Thomas. Their idea was to
->> >    investigate adding a prctl() to allow setgroups() to be called in a user
->> >    namespace at the cost of restricting paths to the most restrictive
->> >    permission. So if something is 0707 it needs to be treated as if it's 0000
->> >    even though the caller is not in its owning group which is used for negative
->> >    access control (how these new semantics will interact with ACLs will also
->> >    need to be looked into).
->> 
->> I should probably think this through more, but for this problem, would it
->> not suffice to add a new prevgroups grouplist to the struct cred, maybe
->> struct group_info *locked_groups, and every time an unprivileged task creates
->> a new user namespace, add all its current groups to this list?
->
-> So, effectively, you would be allowed to drop permissions, but
-> locked_groups would still be checked for restrictions?
->
-> That seems like it'd introduce a new level of complexity (a new facet of
-> permission) to manage. Not opposed, but it does seem more complex than
-> just opting out of using groups for negative permissions.
+I think it's fine to just have this "dangle" with a help text update of
+"if seccomp action caching is supported by the architecture, provide the
+/proc/$pid ..."
 
-I have played with something similar in the past.  At that time I've
-discussed it only privately with Eric and we agreed it wasn't worth the
-extra complexity:
-
-https://github.com/giuseppe/linux/commit/7e0701b389c497472d11fab8570c153a414050af
-
-instead of a prctl, I've added a new mode to /proc/PID/setgroups that
-allows setgroups in a userns locking the current gids.
-
-What do you think about using /proc/PID/setgroups instead of a new
-prctl()?
-
-Giuseppe
-
+-- 
+Kees Cook
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
