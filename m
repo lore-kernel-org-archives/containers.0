@@ -2,77 +2,99 @@ Return-Path: <SRS0=82Ss=DT=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F352C433DF
-	for <containers@archiver.kernel.org>; Mon, 12 Oct 2020 15:00:15 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B4224C433DF
+	for <containers@archiver.kernel.org>; Mon, 12 Oct 2020 17:05:35 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id E93DB20870
-	for <containers@archiver.kernel.org>; Mon, 12 Oct 2020 15:00:14 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E93DB20870
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=hallyn.com
-Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
+	by mail.kernel.org (Postfix) with ESMTPS id B64E02072D
+	for <containers@archiver.kernel.org>; Mon, 12 Oct 2020 17:05:26 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="GJGhHjLr"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B64E02072D
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
+Authentication-Results: mail.kernel.org; spf=tempfail smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 7768086B27;
-	Mon, 12 Oct 2020 15:00:14 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 0DC8F863E2;
+	Mon, 12 Oct 2020 17:05:26 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id dQtAvZNzOFgW; Mon, 12 Oct 2020 15:00:12 +0000 (UTC)
+	with ESMTP id 4hXMhbkIvJNS; Mon, 12 Oct 2020 17:05:24 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 6ECCF86D69;
-	Mon, 12 Oct 2020 15:00:12 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id E76A8863DB;
+	Mon, 12 Oct 2020 17:05:24 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 5373CC07FF;
-	Mon, 12 Oct 2020 15:00:12 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 0F850C0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id AA044C07FF;
+	Mon, 12 Oct 2020 17:05:24 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id EE349C0051
  for <containers@lists.linux-foundation.org>;
- Mon, 12 Oct 2020 15:00:11 +0000 (UTC)
+ Mon, 12 Oct 2020 17:05:22 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id EF9DA8762F
+ by fraxinus.osuosl.org (Postfix) with ESMTP id E18A4863E0
  for <containers@lists.linux-foundation.org>;
- Mon, 12 Oct 2020 15:00:10 +0000 (UTC)
+ Mon, 12 Oct 2020 17:05:22 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id Ueg-ZelwN6q1
+ with ESMTP id rbr5lO0_Bc7K
  for <containers@lists.linux-foundation.org>;
- Mon, 12 Oct 2020 15:00:09 +0000 (UTC)
-X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from mail.hallyn.com (mail.hallyn.com [178.63.66.53])
- by hemlock.osuosl.org (Postfix) with ESMTPS id 095CA87359
+ Mon, 12 Oct 2020 17:05:22 +0000 (UTC)
+X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
+Received: from us-smtp-delivery-124.mimecast.com
+ (us-smtp-delivery-124.mimecast.com [216.205.24.124])
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id 21087863DB
  for <containers@lists.linux-foundation.org>;
- Mon, 12 Oct 2020 15:00:08 +0000 (UTC)
-Received: by mail.hallyn.com (Postfix, from userid 1001)
- id 4A5A5CBF; Mon, 12 Oct 2020 10:00:06 -0500 (CDT)
-Date: Mon, 12 Oct 2020 10:00:06 -0500
-From: "Serge E. Hallyn" <serge@hallyn.com>
-To: "Eric W. Biederman" <ebiederm@xmission.com>
+ Mon, 12 Oct 2020 17:05:22 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+ s=mimecast20190719; t=1602522321;
+ h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+ to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+ in-reply-to:in-reply-to:references:references;
+ bh=48/p/swHiO9g9EftOv4fYGSl8TGG6SINHcN0wha0CCE=;
+ b=GJGhHjLr1bv8wtcQ82Ho+G+WFB2gHcACTXohCMdYjeW3RysZd10UVay7h6XMcl5+HCJt/F
+ y4GDPRqnA8o7CMU6EkDxM7OV8SzYOUay1KAx+uWDOV6LCli0FuymM3tNCMfKdps+SLHRj8
+ Ytb4aS2sy1fBXjl52OIivMK9SANncRU=
+Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
+ [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
+ us-mta-429-l02HyH2QMNmHeMm_ZtZX9A-1; Mon, 12 Oct 2020 13:05:16 -0400
+X-MC-Unique: l02HyH2QMNmHeMm_ZtZX9A-1
+Received: from smtp.corp.redhat.com (int-mx05.intmail.prod.int.phx2.redhat.com
+ [10.5.11.15])
+ (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+ (No client certificate requested)
+ by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 4FEC3ADC26;
+ Mon, 12 Oct 2020 17:05:13 +0000 (UTC)
+Received: from localhost (ovpn-114-124.ams2.redhat.com [10.36.114.124])
+ by smtp.corp.redhat.com (Postfix) with ESMTPS id D2B322C31E;
+ Mon, 12 Oct 2020 17:05:11 +0000 (UTC)
+From: Giuseppe Scrivano <gscrivan@redhat.com>
+To: Josh Triplett <josh@joshtriplett.org>
 Subject: Re: LPC 2020 Hackroom Session: summary and next steps for isolated
  user namespaces
-Message-ID: <20201012150006.GA3503@mail.hallyn.com>
 References: <20200830143959.rhosiunyz5yqbr35@wittgenstein>
  <20201010042606.GA30062@mail.hallyn.com>
  <20201011205306.GC17441@localhost>
- <CALCETrUZcHNwspz315KFvSPxtK8MmLUPfiN=hCBgx+wqeJe4+g@mail.gmail.com>
- <87h7r0qbqi.fsf@x220.int.ebiederm.org>
+Date: Mon, 12 Oct 2020 19:05:10 +0200
+In-Reply-To: <20201011205306.GC17441@localhost> (Josh Triplett's message of
+ "Sun, 11 Oct 2020 13:53:06 -0700")
+Message-ID: <87tuuzv0hl.fsf@redhat.com>
+User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.1 (gnu/linux)
 MIME-Version: 1.0
-Content-Disposition: inline
-In-Reply-To: <87h7r0qbqi.fsf@x220.int.ebiederm.org>
-User-Agent: Mutt/1.9.4 (2018-02-28)
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.15
 Cc: Alexander Mihalicyn <alexander@mihalicyn.com>,
- Giuseppe Scrivano <gscrivan@redhat.com>,
  Joseph Christopher Sible <jcsible@cert.org>, Kees Cook <keescook@chromium.org>,
- LKML <linux-kernel@vger.kernel.org>,
- Linux Containers <containers@lists.linux-foundation.org>,
- Josh Triplett <josh@joshtriplett.org>, Geoffrey Thomas <geofft@ldpreload.com>,
- Vivek Goyal <vgoyal@redhat.com>, Andy Lutomirski <luto@kernel.org>,
- =?iso-8859-1?Q?Micka=EBl_Sala=FCn?= <mic@digikod.net>,
+ containers@lists.linux-foundation.org, linux-kernel@vger.kernel.org,
+ Vivek Goyal <vgoyal@redhat.com>, Geoffrey Thomas <geofft@ldpreload.com>,
+ Andy Lutomirski <luto@amacapital.net>,
+ "Eric W. Biederman" <ebiederm@xmission.com>,
+ =?utf-8?Q?Micka=C3=ABl_Sala=C3=BCn?= <mic@digikod.net>,
  Wat Lim <watl@google.com>, Mrunal Patel <mpatel@redhat.com>,
  Pavel Tikhomirov <ptikhomirov@virtuozzo.com>
 X-BeenThere: containers@lists.linux-foundation.org
@@ -91,77 +113,45 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Mon, Oct 12, 2020 at 12:01:09AM -0500, Eric W. Biederman wrote:
-> Andy Lutomirski <luto@kernel.org> writes:
-> 
-> > On Sun, Oct 11, 2020 at 1:53 PM Josh Triplett <josh@joshtriplett.org> wrote:
-> >>
-> >> On Fri, Oct 09, 2020 at 11:26:06PM -0500, Serge E. Hallyn wrote:
-> >> > > 3. Find a way to allow setgroups() in a user namespace while keeping
-> >> > >    in mind the case of groups used for negative access control.
-> >> > >    This was suggested by Josh Triplett and Geoffrey Thomas. Their idea was to
-> >> > >    investigate adding a prctl() to allow setgroups() to be called in a user
-> >> > >    namespace at the cost of restricting paths to the most restrictive
-> >> > >    permission. So if something is 0707 it needs to be treated as if it's 0000
-> >> > >    even though the caller is not in its owning group which is used for negative
-> >> > >    access control (how these new semantics will interact with ACLs will also
-> >> > >    need to be looked into).
-> >> >
-> >> > I should probably think this through more, but for this problem, would it
-> >> > not suffice to add a new prevgroups grouplist to the struct cred, maybe
-> >> > struct group_info *locked_groups, and every time an unprivileged task creates
-> >> > a new user namespace, add all its current groups to this list?
-> >>
-> >> So, effectively, you would be allowed to drop permissions, but
-> >> locked_groups would still be checked for restrictions?
-> >>
-> >> That seems like it'd introduce a new level of complexity (a new facet of
-> >> permission) to manage. Not opposed, but it does seem more complex than
-> >> just opting out of using groups for negative permissions.
+Josh Triplett <josh@joshtriplett.org> writes:
 
-Yeah, it would, but I basically hoped that we could catch most of this at
-e.g. generic_permission(), and/or we could introduce a helper which
-automatically adds a check for permission denied from locked_groups, so
-it shouldn't be too wide-spread.  If it does end up showing up all over
-the place, then that's a good reason not to do this.
+> On Fri, Oct 09, 2020 at 11:26:06PM -0500, Serge E. Hallyn wrote:
+>> > 3. Find a way to allow setgroups() in a user namespace while keeping
+>> >    in mind the case of groups used for negative access control.
+>> >    This was suggested by Josh Triplett and Geoffrey Thomas. Their idea was to
+>> >    investigate adding a prctl() to allow setgroups() to be called in a user
+>> >    namespace at the cost of restricting paths to the most restrictive
+>> >    permission. So if something is 0707 it needs to be treated as if it's 0000
+>> >    even though the caller is not in its owning group which is used for negative
+>> >    access control (how these new semantics will interact with ACLs will also
+>> >    need to be looked into).
+>> 
+>> I should probably think this through more, but for this problem, would it
+>> not suffice to add a new prevgroups grouplist to the struct cred, maybe
+>> struct group_info *locked_groups, and every time an unprivileged task creates
+>> a new user namespace, add all its current groups to this list?
+>
+> So, effectively, you would be allowed to drop permissions, but
+> locked_groups would still be checked for restrictions?
+>
+> That seems like it'd introduce a new level of complexity (a new facet of
+> permission) to manage. Not opposed, but it does seem more complex than
+> just opting out of using groups for negative permissions.
 
-> > Is there any context other than regular UNIX DAC in which groups can
-> > act as negative permissions or is this literally just an issue for
-> > files with a more restrictive group mode than other mode?
-> 
-> Just that.
-> 
-> The ideas kicked around in the conversation were some variant of having
-> a sysctl that says "This system never uses groups for negative
-> permissions".
-> 
-> It was also suggested that if the sysctl was set the the permission
-> checks would be altered such that even if someone tried to set a
-> negative permission, the more liberal permissions of other would be used
-> instead.
+I have played with something similar in the past.  At that time I've
+discussed it only privately with Eric and we agreed it wasn't worth the
+extra complexity:
 
-So then this would touch all the same code points which the
-locked_groups approach would have to touch?
+https://github.com/giuseppe/linux/commit/7e0701b389c497472d11fab8570c153a414050af
 
-> Given that creating /etc/subgid is effectively opting out of negative
-> permissions already have a sysctl that says that upfront feels like a
-> very clean solution.
-> 
-> Eric
+instead of a prctl, I've added a new mode to /proc/PID/setgroups that
+allows setgroups in a userns locking the current gids.
 
-That feels like a cop-out to me.  If some young admin at Roxxon Corp decides
-she needs to run a container, so installs subuid package and sets that sysctl,
-how does she know whether or not some previous admin, who has since retired and
-did not keep good docs, set things up so that a negative acl is keeping nginx
-from reading some supersecret doc?
+What do you think about using /proc/PID/setgroups instead of a new
+prctl()?
 
-Now personally I'm not a great believer in the negative acls so I think the
-above is a very unlikely scenario, but if we're going to worry about it, then
-we should worry about it :)
+Giuseppe
 
-"Click this button if noone has ever used feature X on this server"
-
--serge
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
