@@ -2,110 +2,77 @@ Return-Path: <SRS0=kI60=DU=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.3 required=3.0 tests=BAYES_00,DKIM_ADSP_CUSTOM_MED,
-	DKIM_INVALID,DKIM_SIGNED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ABC15C433E7
-	for <containers@archiver.kernel.org>; Tue, 13 Oct 2020 00:31:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5FB18C433DF
+	for <containers@archiver.kernel.org>; Tue, 13 Oct 2020 12:47:01 +0000 (UTC)
 Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 3445F21655
-	for <containers@archiver.kernel.org>; Tue, 13 Oct 2020 00:31:31 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="EgkGa/BE"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3445F21655
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	by mail.kernel.org (Postfix) with ESMTPS id 9D006224DF
+	for <containers@archiver.kernel.org>; Tue, 13 Oct 2020 12:47:00 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9D006224DF
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=hallyn.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id A0EF12E0D6;
-	Tue, 13 Oct 2020 00:31:31 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id E07002E102;
+	Tue, 13 Oct 2020 12:46:59 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id U-5lC-DaVVVp; Tue, 13 Oct 2020 00:31:29 +0000 (UTC)
+	with ESMTP id ApOp4Br8fxZf; Tue, 13 Oct 2020 12:46:58 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id A7A36274EE;
-	Tue, 13 Oct 2020 00:31:29 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 0027C20512;
+	Tue, 13 Oct 2020 12:46:57 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 832D6C0052;
-	Tue, 13 Oct 2020 00:31:29 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 0AC4CC0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id E317FC0891;
+	Tue, 13 Oct 2020 12:46:57 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 05644C0052
  for <containers@lists.linux-foundation.org>;
- Tue, 13 Oct 2020 00:31:28 +0000 (UTC)
+ Tue, 13 Oct 2020 12:46:56 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id E3E2686BE1
+ by silver.osuosl.org (Postfix) with ESMTP id CBBE9272E3
  for <containers@lists.linux-foundation.org>;
- Tue, 13 Oct 2020 00:31:27 +0000 (UTC)
+ Tue, 13 Oct 2020 12:46:55 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id BYZzZHbFcDak
+ with ESMTP id t2eBCrsOERGi
  for <containers@lists.linux-foundation.org>;
- Tue, 13 Oct 2020 00:31:27 +0000 (UTC)
-X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-pg1-f195.google.com (mail-pg1-f195.google.com
- [209.85.215.195])
- by whitealder.osuosl.org (Postfix) with ESMTPS id 6AA3686BDD
+ Tue, 13 Oct 2020 12:46:54 +0000 (UTC)
+X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
+Received: from mail.hallyn.com (mail.hallyn.com [178.63.66.53])
+ by silver.osuosl.org (Postfix) with ESMTPS id A76B620512
  for <containers@lists.linux-foundation.org>;
- Tue, 13 Oct 2020 00:31:27 +0000 (UTC)
-Received: by mail-pg1-f195.google.com with SMTP id i2so16127852pgh.7
- for <containers@lists.linux-foundation.org>;
- Mon, 12 Oct 2020 17:31:27 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
- h=mime-version:references:in-reply-to:from:date:message-id:subject:to
- :cc; bh=RXZNvLUHIPZhcUjRnKBWUfl+DzXXg5MXS7WMTuKeZqY=;
- b=EgkGa/BElavLOO5do8aI/LDI65T4SLmDW8j8GtvnCsMqRBTuzcnVjgwuSdSDywqjvi
- 68gLb90unNImwgG+pg5B/c302jrN06h2wiOsbrS6lxh8EQjYlmK7IUQnSGU/kv2q8QG+
- EWOBIoZOyIobyfZvWYXKxuZwSKTVUMEXBgX4ZSAm7NcGssu/qudmnUEzxRGMANa3Lou5
- MjTF8Aw/QRattq1J+RTgiH8N7u0DTN9vVgQp0Ylvdjn8NkAptoEbXZ5eu6oXV79TtK/9
- bHTxA8tUDVroDUdUEZK0RaWfRT1RH5IBbwfF+F6lF8u/pZVT/m/Yzov79xfTFFBkwVbg
- PhPQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=1e100.net; s=20161025;
- h=x-gm-message-state:mime-version:references:in-reply-to:from:date
- :message-id:subject:to:cc;
- bh=RXZNvLUHIPZhcUjRnKBWUfl+DzXXg5MXS7WMTuKeZqY=;
- b=V18WqEtNFsj8o/ytxGCvjDe+4evNk9nsHH0rTw+rwrBfMwvHTgsNOdUfw55MUv3OVq
- P3ePceiSj1/SSnSbvAmUEW+6iGpKf7MNexaBk9uleZotNng3LTMLcMHG/wPKQmClYUR6
- P2IgLL4pavgTagsNDMT9MelhSzka4ylvUDVyU9SSmNTMdz7gFZw26pzbGnw+YeSZCPRa
- 0TsC/xUkmf+td1fxAMtQqLDeFxbDLcty+xGYGx1hOPCsuGfnlzahDH959jtmNC6EJLm3
- qs+WccRgoM/je9akXY7jtjeT99aDp1H7wMgLmsQ8z9CsOAre6UdfRrHtBaou4NwTW65z
- k9BA==
-X-Gm-Message-State: AOAM532Ov4fVx73RiQcxs9feYkq0Nxpqnr90Y6UNkPuYaDjdvQmPqSPh
- qOlLevxAfb2D+siRdsHEmXwIienULSDAx24oLx8=
-X-Google-Smtp-Source: ABdhPJwg5QbybFtaIctqSCgVoJcBwsMrZ8yltrreNaMkzpkUU1M8W2QrCl9Pfc1cKWvkAdOBW1KhWVjQhmcp1iD+GHE=
-X-Received: by 2002:aa7:8d4c:0:b029:150:f692:4129 with SMTP id
- s12-20020aa78d4c0000b0290150f6924129mr25657902pfe.11.1602549086984; Mon, 12
- Oct 2020 17:31:26 -0700 (PDT)
+ Tue, 13 Oct 2020 12:46:52 +0000 (UTC)
+Received: by mail.hallyn.com (Postfix, from userid 1001)
+ id C03D02D5; Tue, 13 Oct 2020 07:46:50 -0500 (CDT)
+Date: Tue, 13 Oct 2020 07:46:50 -0500
+From: "Serge E. Hallyn" <serge@hallyn.com>
+To: Giuseppe Scrivano <gscrivan@redhat.com>
+Subject: Re: LPC 2020 Hackroom Session: summary and next steps for isolated
+ user namespaces
+Message-ID: <20201013124650.GA19668@mail.hallyn.com>
+References: <20200830143959.rhosiunyz5yqbr35@wittgenstein>
+ <20201010042606.GA30062@mail.hallyn.com>
+ <20201011205306.GC17441@localhost> <87tuuzv0hl.fsf@redhat.com>
 MIME-Version: 1.0
-References: <cover.1602263422.git.yifeifz2@illinois.edu>
- <c2077b8a86c6d82d611007d81ce81d32f718ec59.1602263422.git.yifeifz2@illinois.edu>
- <202010091613.B671C86@keescook>
- <CABqSeARZWBQrLkzd3ozF16ghkADQqcN4rUoJS2MKkd=73g4nVA@mail.gmail.com>
- <202010121556.1110776B83@keescook>
-In-Reply-To: <202010121556.1110776B83@keescook>
-From: YiFei Zhu <zhuyifei1999@gmail.com>
-Date: Mon, 12 Oct 2020 19:31:16 -0500
-Message-ID: <CABqSeAT2-vNVUrXSWiGp=cXCvz8LbOrTBo1GbSZP2Z+CKdegJA@mail.gmail.com>
-Subject: Re: [PATCH v4 seccomp 5/5] seccomp/cache: Report cache data through
- /proc/pid/seccomp_cache
-To: Kees Cook <keescook@chromium.org>
-Cc: Andrea Arcangeli <aarcange@redhat.com>,
- Giuseppe Scrivano <gscrivan@redhat.com>,
- Valentin Rothberg <vrothber@redhat.com>, Jann Horn <jannh@google.com>,
- YiFei Zhu <yifeifz2@illinois.edu>,
- Linux Containers <containers@lists.linux-foundation.org>,
- Tobin Feldman-Fitzthum <tobin@ibm.com>,
- kernel list <linux-kernel@vger.kernel.org>,
- Andy Lutomirski <luto@amacapital.net>, Hubertus Franke <frankeh@us.ibm.com>,
- David Laight <David.Laight@aculab.com>, Jack Chen <jianyan2@illinois.edu>,
- Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
- Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>,
- bpf <bpf@vger.kernel.org>, Tianyin Xu <tyxu@illinois.edu>
+Content-Disposition: inline
+In-Reply-To: <87tuuzv0hl.fsf@redhat.com>
+User-Agent: Mutt/1.9.4 (2018-02-28)
+Cc: Alexander Mihalicyn <alexander@mihalicyn.com>,
+ Joseph Christopher Sible <jcsible@cert.org>, Kees Cook <keescook@chromium.org>,
+ linux-kernel@vger.kernel.org, containers@lists.linux-foundation.org,
+ Josh Triplett <josh@joshtriplett.org>, Vivek Goyal <vgoyal@redhat.com>,
+ Geoffrey Thomas <geofft@ldpreload.com>, Andy Lutomirski <luto@amacapital.net>,
+ "Eric W. Biederman" <ebiederm@xmission.com>,
+ =?iso-8859-1?Q?Micka=EBl_Sala=FCn?= <mic@digikod.net>,
+ Wat Lim <watl@google.com>, Mrunal Patel <mpatel@redhat.com>,
+ Pavel Tikhomirov <ptikhomirov@virtuozzo.com>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -122,19 +89,57 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Mon, Oct 12, 2020 at 5:57 PM Kees Cook <keescook@chromium.org> wrote:
-> I think it's fine to just have this "dangle" with a help text update of
-> "if seccomp action caching is supported by the architecture, provide the
-> /proc/$pid ..."
+On Mon, Oct 12, 2020 at 07:05:10PM +0200, Giuseppe Scrivano wrote:
+> Josh Triplett <josh@joshtriplett.org> writes:
+> 
+> > On Fri, Oct 09, 2020 at 11:26:06PM -0500, Serge E. Hallyn wrote:
+> >> > 3. Find a way to allow setgroups() in a user namespace while keeping
+> >> >    in mind the case of groups used for negative access control.
+> >> >    This was suggested by Josh Triplett and Geoffrey Thomas. Their idea was to
+> >> >    investigate adding a prctl() to allow setgroups() to be called in a user
+> >> >    namespace at the cost of restricting paths to the most restrictive
+> >> >    permission. So if something is 0707 it needs to be treated as if it's 0000
+> >> >    even though the caller is not in its owning group which is used for negative
+> >> >    access control (how these new semantics will interact with ACLs will also
+> >> >    need to be looked into).
+> >> 
+> >> I should probably think this through more, but for this problem, would it
+> >> not suffice to add a new prevgroups grouplist to the struct cred, maybe
+> >> struct group_info *locked_groups, and every time an unprivileged task creates
+> >> a new user namespace, add all its current groups to this list?
+> >
+> > So, effectively, you would be allowed to drop permissions, but
+> > locked_groups would still be checked for restrictions?
+> >
+> > That seems like it'd introduce a new level of complexity (a new facet of
+> > permission) to manage. Not opposed, but it does seem more complex than
+> > just opting out of using groups for negative permissions.
+> 
+> I have played with something similar in the past.  At that time I've
+> discussed it only privately with Eric and we agreed it wasn't worth the
+> extra complexity:
+> 
+> https://github.com/giuseppe/linux/commit/7e0701b389c497472d11fab8570c153a414050af
 
-I think it would be weird if someone sees this help text and wonder...
-"hmm does my architecture support seccomp action caching" and without
-a clear pointer to how seccomp action cache works, goes and compiles
-the kernel with this config option on for the purpose of knowing if
-their arch supports it... Or, is it a common practice in the kernel to
-leave dangling configs?
+Hi, you linked the setgroups patch, but do you also have a link to the
+attempt which you deemed was not worth it?
 
-YiFei Zhu
+> instead of a prctl, I've added a new mode to /proc/PID/setgroups that
+> allows setgroups in a userns locking the current gids.
+> 
+> What do you think about using /proc/PID/setgroups instead of a new
+> prctl()?
+
+It's better than not having it, but two concerns -
+
+1. some userspace, especially testsuites, could become confused by the fact
+that they can't drop groups no matter how hard they try, since these will all
+still show up as regular groups.
+2. whereas in my lockgroups proposal, lock_groups would only be taken into account
+for permission denial, this proposal would count for permission grants too.  This
+means that if I have a group which is permitted to read /foo/topsecret, and I
+start a program in a new user namespace expecting it to drop that permission,
+I can't have that, right?  The new program, will always have that permission?
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
