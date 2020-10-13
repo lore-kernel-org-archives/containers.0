@@ -4,82 +4,82 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A431DC433E7
-	for <containers@archiver.kernel.org>; Tue, 13 Oct 2020 14:06:30 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EFD26C43457
+	for <containers@archiver.kernel.org>; Tue, 13 Oct 2020 14:06:35 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 0F010247B4
-	for <containers@archiver.kernel.org>; Tue, 13 Oct 2020 14:06:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 57FCC247C6
+	for <containers@archiver.kernel.org>; Tue, 13 Oct 2020 14:06:34 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="C4g3fhac"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0F010247B4
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="P4FirxbJ"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 57FCC247C6
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id DD91787AF4;
-	Tue, 13 Oct 2020 14:06:29 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id B3C20873FB;
+	Tue, 13 Oct 2020 14:06:34 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id e4SwKQMT0bQl; Tue, 13 Oct 2020 14:06:29 +0000 (UTC)
+	with ESMTP id faKma1tUD68Q; Tue, 13 Oct 2020 14:06:34 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 34DB787AD1;
-	Tue, 13 Oct 2020 14:06:29 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 540F2871CE;
+	Tue, 13 Oct 2020 14:06:34 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 22382C07FF;
-	Tue, 13 Oct 2020 14:06:29 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id D535CC0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 412F8C07FF;
+	Tue, 13 Oct 2020 14:06:34 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 35B10C0051
  for <containers@lists.linux-foundation.org>;
- Tue, 13 Oct 2020 14:06:27 +0000 (UTC)
+ Tue, 13 Oct 2020 14:06:33 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id BD37A87AF4
+ by hemlock.osuosl.org (Postfix) with ESMTP id 821D381514
  for <containers@lists.linux-foundation.org>;
- Tue, 13 Oct 2020 14:06:27 +0000 (UTC)
+ Tue, 13 Oct 2020 14:06:32 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id LAn4l-62tI5f
+ with ESMTP id cBiFdKD4yI9L
  for <containers@lists.linux-foundation.org>;
- Tue, 13 Oct 2020 14:06:26 +0000 (UTC)
+ Tue, 13 Oct 2020 14:06:31 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from us-smtp-delivery-124.mimecast.com
  (us-smtp-delivery-124.mimecast.com [63.128.21.124])
- by whitealder.osuosl.org (Postfix) with ESMTPS id 6CD6A87AD1
+ by hemlock.osuosl.org (Postfix) with ESMTPS id A6E3687478
  for <containers@lists.linux-foundation.org>;
- Tue, 13 Oct 2020 14:06:26 +0000 (UTC)
+ Tue, 13 Oct 2020 14:06:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
- s=mimecast20190719; t=1602597985;
+ s=mimecast20190719; t=1602597987;
  h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
  to:to:cc:cc:mime-version:mime-version:
  content-transfer-encoding:content-transfer-encoding:
  in-reply-to:in-reply-to:references:references;
- bh=5qT8jquoQOvD8a7SF5l/rxB3mSNwZ5S4wf/Z1Ex1Krk=;
- b=C4g3fhac4/EUbQRJFosbmEcUMu6QtoiCvjATzMu4MtjFkweEvgX8otLmwrsgQt1pVsBbXm
- yekwKhym70O/kfc2BfKHiNXuJeHHlndbEO83GvngH+77eHQaaI446RV6zYJbBId54IQqJJ
- ocakZvhV6JCniMcK8NcGRsXbtfJSnbI=
+ bh=s2c0z0nnK5G/Cjc6T69QlHdgqzKaRCEYH2YcGXaZfvs=;
+ b=P4FirxbJIc9tN/z5XTum55FtDyvH/H098hpw1W3TAhbZ4IhJJWnqLpqaFiv+Ts8Ecv5NI2
+ jPX4F0VzHPYqjs9dWGLgY2/E/BMtHGW+1WlvihbhpmK94k/9MzgOpzbMeTPIr/mjO1h3IB
+ uOQsomr4oEOWrCZzvIpiWQWGo3a7tYM=
 Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
  [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-166-XJGwe52cPvKPEYN1yPVNBg-1; Tue, 13 Oct 2020 10:06:23 -0400
-X-MC-Unique: XJGwe52cPvKPEYN1yPVNBg-1
+ us-mta-358-BqIk-o_9Ps67-_bglI0HLw-1; Tue, 13 Oct 2020 10:06:25 -0400
+X-MC-Unique: BqIk-o_9Ps67-_bglI0HLw-1
 Received: from smtp.corp.redhat.com (int-mx06.intmail.prod.int.phx2.redhat.com
  [10.5.11.16])
  (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
  (No client certificate requested)
- by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 0DDD5805722;
- Tue, 13 Oct 2020 14:06:22 +0000 (UTC)
+ by mimecast-mx01.redhat.com (Postfix) with ESMTPS id CC27E1020905;
+ Tue, 13 Oct 2020 14:06:23 +0000 (UTC)
 Received: from lithium.redhat.com (ovpn-112-43.ams2.redhat.com [10.36.112.43])
- by smtp.corp.redhat.com (Postfix) with ESMTP id 77A015C1C2;
- Tue, 13 Oct 2020 14:06:20 +0000 (UTC)
+ by smtp.corp.redhat.com (Postfix) with ESMTP id 6B9655C1C2;
+ Tue, 13 Oct 2020 14:06:22 +0000 (UTC)
 From: Giuseppe Scrivano <gscrivan@redhat.com>
 To: linux-kernel@vger.kernel.org
-Subject: [PATCH 1/2] fs, close_range: add flag CLOSE_RANGE_CLOEXEC
-Date: Tue, 13 Oct 2020 16:06:08 +0200
-Message-Id: <20201013140609.2269319-2-gscrivan@redhat.com>
+Subject: [PATCH 2/2] selftests: add tests for CLOSE_RANGE_CLOEXEC
+Date: Tue, 13 Oct 2020 16:06:09 +0200
+Message-Id: <20201013140609.2269319-3-gscrivan@redhat.com>
 In-Reply-To: <20201013140609.2269319-1-gscrivan@redhat.com>
 References: <20201013140609.2269319-1-gscrivan@redhat.com>
 MIME-Version: 1.0
@@ -102,123 +102,71 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-When the flag CLOSE_RANGE_CLOEXEC is set, close_range doesn't
-immediately close the files but it sets the close-on-exec bit.
-
 Signed-off-by: Giuseppe Scrivano <gscrivan@redhat.com>
 ---
- fs/file.c                        | 56 ++++++++++++++++++++++----------
- include/uapi/linux/close_range.h |  3 ++
- 2 files changed, 42 insertions(+), 17 deletions(-)
+ .../testing/selftests/core/close_range_test.c | 44 +++++++++++++++++++
+ 1 file changed, 44 insertions(+)
 
-diff --git a/fs/file.c b/fs/file.c
-index 21c0893f2f1d..ad4ebee41e09 100644
---- a/fs/file.c
-+++ b/fs/file.c
-@@ -672,6 +672,17 @@ int __close_fd(struct files_struct *files, unsigned fd)
- }
- EXPORT_SYMBOL(__close_fd); /* for ksys_close() */
+diff --git a/tools/testing/selftests/core/close_range_test.c b/tools/testing/selftests/core/close_range_test.c
+index c99b98b0d461..b8789262cd7d 100644
+--- a/tools/testing/selftests/core/close_range_test.c
++++ b/tools/testing/selftests/core/close_range_test.c
+@@ -23,6 +23,10 @@
+ #define CLOSE_RANGE_UNSHARE	(1U << 1)
+ #endif
  
-+static unsigned int __get_max_fds(struct files_struct *cur_fds)
-+{
-+	unsigned int max_fds;
++#ifndef CLOSE_RANGE_CLOEXEC
++#define CLOSE_RANGE_CLOEXEC	(1U << 2)
++#endif
 +
-+	rcu_read_lock();
-+	/* cap to last valid index into fdtable */
-+	max_fds = files_fdtable(cur_fds)->max_fds;
-+	rcu_read_unlock();
-+	return max_fds;
+ static inline int sys_close_range(unsigned int fd, unsigned int max_fd,
+ 				  unsigned int flags)
+ {
+@@ -224,4 +228,44 @@ TEST(close_range_unshare_capped)
+ 	EXPECT_EQ(0, WEXITSTATUS(status));
+ }
+ 
++TEST(close_range_cloexec)
++{
++	int i, ret;
++	int open_fds[101];
++
++	for (i = 0; i < ARRAY_SIZE(open_fds); i++) {
++		int fd;
++
++		fd = open("/dev/null", O_RDONLY);
++		ASSERT_GE(fd, 0) {
++			if (errno == ENOENT)
++				XFAIL(return, "Skipping test since /dev/null does not exist");
++		}
++
++		open_fds[i] = fd;
++	}
++
++	EXPECT_EQ(-1, sys_close_range(open_fds[0], open_fds[100], -1)) {
++		if (errno == ENOSYS)
++			XFAIL(return, "close_range() syscall not supported");
++	}
++
++	EXPECT_EQ(0, sys_close_range(open_fds[0], open_fds[50], CLOSE_RANGE_CLOEXEC));
++
++	for (i = 0; i <= 50; i++) {
++		int flags = fcntl(open_fds[i], F_GETFD);
++
++		EXPECT_GT(flags, -1);
++		EXPECT_EQ(flags & FD_CLOEXEC, FD_CLOEXEC);
++	}
++
++	for (i = 51; i <= 100; i++) {
++		int flags = fcntl(open_fds[i], F_GETFD);
++
++		EXPECT_GT(flags, -1);
++		EXPECT_EQ(flags & FD_CLOEXEC, 0);
++	}
 +}
 +
- /**
-  * __close_range() - Close all file descriptors in a given range.
-  *
-@@ -683,27 +694,23 @@ EXPORT_SYMBOL(__close_fd); /* for ksys_close() */
-  */
- int __close_range(unsigned fd, unsigned max_fd, unsigned int flags)
- {
--	unsigned int cur_max;
-+	unsigned int cur_max = UINT_MAX;
- 	struct task_struct *me = current;
- 	struct files_struct *cur_fds = me->files, *fds = NULL;
- 
--	if (flags & ~CLOSE_RANGE_UNSHARE)
-+	if (flags & ~(CLOSE_RANGE_UNSHARE | CLOSE_RANGE_CLOEXEC))
- 		return -EINVAL;
- 
- 	if (fd > max_fd)
- 		return -EINVAL;
- 
--	rcu_read_lock();
--	cur_max = files_fdtable(cur_fds)->max_fds;
--	rcu_read_unlock();
--
--	/* cap to last valid index into fdtable */
--	cur_max--;
--
- 	if (flags & CLOSE_RANGE_UNSHARE) {
- 		int ret;
- 		unsigned int max_unshare_fds = NR_OPEN_MAX;
- 
-+		/* cap to last valid index into fdtable */
-+		cur_max = __get_max_fds(cur_fds) - 1;
 +
- 		/*
- 		 * If the requested range is greater than the current maximum,
- 		 * we're closing everything so only copy all file descriptors
-@@ -724,16 +731,31 @@ int __close_range(unsigned fd, unsigned max_fd, unsigned int flags)
- 			swap(cur_fds, fds);
- 	}
- 
--	max_fd = min(max_fd, cur_max);
--	while (fd <= max_fd) {
--		struct file *file;
-+	if (flags & CLOSE_RANGE_CLOEXEC) {
-+		struct fdtable *fdt;
- 
--		file = pick_file(cur_fds, fd++);
--		if (!file)
--			continue;
-+		spin_lock(&cur_fds->file_lock);
-+		fdt = files_fdtable(cur_fds);
-+		cur_max = fdt->max_fds - 1;
-+		max_fd = min(max_fd, cur_max);
-+		while (fd <= max_fd)
-+			__set_close_on_exec(fd++, fdt);
-+		spin_unlock(&cur_fds->file_lock);
-+	} else {
-+		/* Initialize cur_max if needed.  */
-+		if (cur_max == UINT_MAX)
-+			cur_max = __get_max_fds(cur_fds) - 1;
-+		max_fd = min(max_fd, cur_max);
-+		while (fd <= max_fd) {
-+			struct file *file;
- 
--		filp_close(file, cur_fds);
--		cond_resched();
-+			file = pick_file(cur_fds, fd++);
-+			if (!file)
-+				continue;
-+
-+			filp_close(file, cur_fds);
-+			cond_resched();
-+		}
- 	}
- 
- 	if (fds) {
-diff --git a/include/uapi/linux/close_range.h b/include/uapi/linux/close_range.h
-index 6928a9fdee3c..2d804281554c 100644
---- a/include/uapi/linux/close_range.h
-+++ b/include/uapi/linux/close_range.h
-@@ -5,5 +5,8 @@
- /* Unshare the file descriptor table before closing file descriptors. */
- #define CLOSE_RANGE_UNSHARE	(1U << 1)
- 
-+/* Set the FD_CLOEXEC bit instead of closing the file descriptor. */
-+#define CLOSE_RANGE_CLOEXEC	(1U << 2)
-+
- #endif /* _UAPI_LINUX_CLOSE_RANGE_H */
- 
+ TEST_HARNESS_MAIN
 -- 
 2.26.2
 
