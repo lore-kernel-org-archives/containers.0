@@ -2,78 +2,76 @@ Return-Path: <SRS0=BJMF=DW=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E3D34C433DF
-	for <containers@archiver.kernel.org>; Thu, 15 Oct 2020 14:27:28 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4EDB4C433DF
+	for <containers@archiver.kernel.org>; Thu, 15 Oct 2020 14:32:16 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 57C1A22255
-	for <containers@archiver.kernel.org>; Thu, 15 Oct 2020 14:27:28 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 57C1A22255
+	by mail.kernel.org (Postfix) with ESMTPS id 7F9A522256
+	for <containers@archiver.kernel.org>; Thu, 15 Oct 2020 14:32:15 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7F9A522256
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=hallyn.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 0A9518783D;
-	Thu, 15 Oct 2020 14:27:28 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id E494A87E34;
+	Thu, 15 Oct 2020 14:32:14 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id F8xrkzSxxfJz; Thu, 15 Oct 2020 14:27:24 +0000 (UTC)
+	with ESMTP id 1ommVkazGlzH; Thu, 15 Oct 2020 14:32:12 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 1324A87ECA;
-	Thu, 15 Oct 2020 14:27:24 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id B713A87E2D;
+	Thu, 15 Oct 2020 14:32:12 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 01F97C07FF;
-	Thu, 15 Oct 2020 14:27:24 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 5FFE7C0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id A8E1BC07FF;
+	Thu, 15 Oct 2020 14:32:12 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 0CFA3C0051
  for <containers@lists.linux-foundation.org>;
- Thu, 15 Oct 2020 14:27:22 +0000 (UTC)
+ Thu, 15 Oct 2020 14:32:11 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 434032E616
+ by whitealder.osuosl.org (Postfix) with ESMTP id F3A148867D
  for <containers@lists.linux-foundation.org>;
- Thu, 15 Oct 2020 14:27:22 +0000 (UTC)
+ Thu, 15 Oct 2020 14:32:10 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id vVllV3gjfudr
+ with ESMTP id 3Ti1FynJq2oM
  for <containers@lists.linux-foundation.org>;
- Thu, 15 Oct 2020 14:27:18 +0000 (UTC)
+ Thu, 15 Oct 2020 14:32:09 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
 Received: from mail.hallyn.com (mail.hallyn.com [178.63.66.53])
- by silver.osuosl.org (Postfix) with ESMTPS id B2ECA2E671
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 6B70A8861D
  for <containers@lists.linux-foundation.org>;
- Thu, 15 Oct 2020 14:27:11 +0000 (UTC)
+ Thu, 15 Oct 2020 14:32:09 +0000 (UTC)
 Received: by mail.hallyn.com (Postfix, from userid 1001)
- id A84181105; Thu, 15 Oct 2020 09:27:09 -0500 (CDT)
-Date: Thu, 15 Oct 2020 09:27:09 -0500
+ id 9C59A1105; Thu, 15 Oct 2020 09:32:07 -0500 (CDT)
+Date: Thu, 15 Oct 2020 09:32:07 -0500
 From: "Serge E. Hallyn" <serge@hallyn.com>
-To: "Eric W. Biederman" <ebiederm@xmission.com>
+To: Giuseppe Scrivano <gscrivan@redhat.com>
 Subject: Re: LPC 2020 Hackroom Session: summary and next steps for isolated
  user namespaces
-Message-ID: <20201015142709.GA25286@mail.hallyn.com>
+Message-ID: <20201015143207.GB25286@mail.hallyn.com>
 References: <20200830143959.rhosiunyz5yqbr35@wittgenstein>
  <20201010042606.GA30062@mail.hallyn.com>
- <20201011205306.GC17441@localhost>
- <CALCETrUZcHNwspz315KFvSPxtK8MmLUPfiN=hCBgx+wqeJe4+g@mail.gmail.com>
- <87h7r0qbqi.fsf@x220.int.ebiederm.org>
- <20201012150006.GA3503@mail.hallyn.com>
- <87wnzsmvyx.fsf@x220.int.ebiederm.org>
+ <20201011205306.GC17441@localhost> <87tuuzv0hl.fsf@redhat.com>
+ <20201013124650.GA19668@mail.hallyn.com>
+ <87o8l6qhnz.fsf@redhat.com>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <87wnzsmvyx.fsf@x220.int.ebiederm.org>
+In-Reply-To: <87o8l6qhnz.fsf@redhat.com>
 User-Agent: Mutt/1.9.4 (2018-02-28)
 Cc: Alexander Mihalicyn <alexander@mihalicyn.com>,
- Giuseppe Scrivano <gscrivan@redhat.com>,
  Joseph Christopher Sible <jcsible@cert.org>, Kees Cook <keescook@chromium.org>,
- LKML <linux-kernel@vger.kernel.org>,
- Linux Containers <containers@lists.linux-foundation.org>,
- Josh Triplett <josh@joshtriplett.org>, Geoffrey Thomas <geofft@ldpreload.com>,
- Vivek Goyal <vgoyal@redhat.com>, Andy Lutomirski <luto@kernel.org>,
+ linux-kernel@vger.kernel.org, containers@lists.linux-foundation.org,
+ Josh Triplett <josh@joshtriplett.org>, Vivek Goyal <vgoyal@redhat.com>,
+ Geoffrey Thomas <geofft@ldpreload.com>, Andy Lutomirski <luto@amacapital.net>,
+ "Eric W. Biederman" <ebiederm@xmission.com>,
  =?iso-8859-1?Q?Micka=EBl_Sala=FCn?= <mic@digikod.net>,
  Wat Lim <watl@google.com>, Mrunal Patel <mpatel@redhat.com>,
  Pavel Tikhomirov <ptikhomirov@virtuozzo.com>
@@ -93,175 +91,81 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Wed, Oct 14, 2020 at 02:46:46PM -0500, Eric W. Biederman wrote:
+On Tue, Oct 13, 2020 at 05:17:36PM +0200, Giuseppe Scrivano wrote:
 > "Serge E. Hallyn" <serge@hallyn.com> writes:
 > 
-> > On Mon, Oct 12, 2020 at 12:01:09AM -0500, Eric W. Biederman wrote:
-> >> Andy Lutomirski <luto@kernel.org> writes:
+> > On Mon, Oct 12, 2020 at 07:05:10PM +0200, Giuseppe Scrivano wrote:
+> >> Josh Triplett <josh@joshtriplett.org> writes:
 > >> 
-> >> > On Sun, Oct 11, 2020 at 1:53 PM Josh Triplett <josh@joshtriplett.org> wrote:
-> >> >>
-> >> >> On Fri, Oct 09, 2020 at 11:26:06PM -0500, Serge E. Hallyn wrote:
-> >> >> > > 3. Find a way to allow setgroups() in a user namespace while keeping
-> >> >> > >    in mind the case of groups used for negative access control.
-> >> >> > >    This was suggested by Josh Triplett and Geoffrey Thomas. Their idea was to
-> >> >> > >    investigate adding a prctl() to allow setgroups() to be called in a user
-> >> >> > >    namespace at the cost of restricting paths to the most restrictive
-> >> >> > >    permission. So if something is 0707 it needs to be treated as if it's 0000
-> >> >> > >    even though the caller is not in its owning group which is used for negative
-> >> >> > >    access control (how these new semantics will interact with ACLs will also
-> >> >> > >    need to be looked into).
-> >> >> >
-> >> >> > I should probably think this through more, but for this problem, would it
-> >> >> > not suffice to add a new prevgroups grouplist to the struct cred, maybe
-> >> >> > struct group_info *locked_groups, and every time an unprivileged task creates
-> >> >> > a new user namespace, add all its current groups to this list?
-> >> >>
-> >> >> So, effectively, you would be allowed to drop permissions, but
-> >> >> locked_groups would still be checked for restrictions?
-> >> >>
-> >> >> That seems like it'd introduce a new level of complexity (a new facet of
-> >> >> permission) to manage. Not opposed, but it does seem more complex than
-> >> >> just opting out of using groups for negative permissions.
-> >
-> > Yeah, it would, but I basically hoped that we could catch most of this at
-> > e.g. generic_permission(), and/or we could introduce a helper which
-> > automatically adds a check for permission denied from locked_groups, so
-> > it shouldn't be too wide-spread.  If it does end up showing up all over
-> > the place, then that's a good reason not to do this.
-> >
-> >> > Is there any context other than regular UNIX DAC in which groups can
-> >> > act as negative permissions or is this literally just an issue for
-> >> > files with a more restrictive group mode than other mode?
+> >> > On Fri, Oct 09, 2020 at 11:26:06PM -0500, Serge E. Hallyn wrote:
+> >> >> > 3. Find a way to allow setgroups() in a user namespace while keeping
+> >> >> >    in mind the case of groups used for negative access control.
+> >> >> >    This was suggested by Josh Triplett and Geoffrey Thomas. Their idea was to
+> >> >> >    investigate adding a prctl() to allow setgroups() to be called in a user
+> >> >> >    namespace at the cost of restricting paths to the most restrictive
+> >> >> >    permission. So if something is 0707 it needs to be treated as if it's 0000
+> >> >> >    even though the caller is not in its owning group which is used for negative
+> >> >> >    access control (how these new semantics will interact with ACLs will also
+> >> >> >    need to be looked into).
+> >> >> 
+> >> >> I should probably think this through more, but for this problem, would it
+> >> >> not suffice to add a new prevgroups grouplist to the struct cred, maybe
+> >> >> struct group_info *locked_groups, and every time an unprivileged task creates
+> >> >> a new user namespace, add all its current groups to this list?
+> >> >
+> >> > So, effectively, you would be allowed to drop permissions, but
+> >> > locked_groups would still be checked for restrictions?
+> >> >
+> >> > That seems like it'd introduce a new level of complexity (a new facet of
+> >> > permission) to manage. Not opposed, but it does seem more complex than
+> >> > just opting out of using groups for negative permissions.
 > >> 
-> >> Just that.
+> >> I have played with something similar in the past.  At that time I've
+> >> discussed it only privately with Eric and we agreed it wasn't worth the
+> >> extra complexity:
 > >> 
-> >> The ideas kicked around in the conversation were some variant of having
-> >> a sysctl that says "This system never uses groups for negative
-> >> permissions".
+> >> https://github.com/giuseppe/linux/commit/7e0701b389c497472d11fab8570c153a414050af
+> >
+> > Hi, you linked the setgroups patch, but do you also have a link to the
+> > attempt which you deemed was not worth it?
+> 
+> it was just part of a private discussion; but was 4 years ago so we can
+> probably revisit and accept the additional complexity since setgroups()
+> is still an issue with user namespaces.
+> 
+> 
+> >> instead of a prctl, I've added a new mode to /proc/PID/setgroups that
+> >> allows setgroups in a userns locking the current gids.
 > >> 
-> >> It was also suggested that if the sysctl was set the the permission
-> >> checks would be altered such that even if someone tried to set a
-> >> negative permission, the more liberal permissions of other would be used
-> >> instead.
+> >> What do you think about using /proc/PID/setgroups instead of a new
+> >> prctl()?
 > >
-> > So then this would touch all the same code points which the
-> > locked_groups approach would have to touch?
-> 
-> No locked_groups would touch in_group_p and set_groups.  Especially what
-> set_groups means in that context.  It would have to handle what happens
-> when you start accumulating locked groups (because of multiple
-> namespaces).  How you dedup locked groups etc.
-
-Well since group_info is sorted, you should be able to do a pretty
-simple and quick merge of current->locked_groups and
-current->group_info.  I suppose we'd have to consider a nasty user who
-is allocated 100k groups, sticks them all in groupinfo, then unshare
-twice, locking the kernel up for awhile, but that user can already hurt
-us.
-
-> I was not able to convince myself that not being able to clear out
-> groups that a user has when they create a user namespace won't cause
-> other problems.  Especially as user namespaces had been in use for a
-> while at that point.
-
-The locked_groups would *only* be considered for negative acls, right?
-You would not *grant* any perms based on them.  It seems like exactly
-what you want.  If any user is denied perms on account of it, then that
-was the intent, and that's the whole reason we're having this problem.
-We are discussing whether it's ok to let a new user_ns be a way to
-bypass that restriction - not *looking* for a way to support bypassing
-it.
-
-I could state this as a more formal proof if you like.
-
-> Not supporting negative groups would touch acl_permission and modify it
-> like:
-> 
->  static int acl_permission_check(struct inode *inode, int mask)
->  {
-> [irrelveant code snipped]
->  	/* Only RWX matters for group/other mode bits */
->  	mask &= 7;
->  
->  	/*
->  	 * Are the group permissions different from
->  	 * the other permissions in the bits we care
->  	 * about? Need to check group ownership if so.
->  	 */
->  	if (mask & (mode ^ (mode >> 3))) {
-> -		if (in_group_p(inode->i_gid))
-> +		if (in_group_p(inode->i_gid) &&
-> +		    (!sysctl_force_positive_groups ||
-> +		    (mask & ~(mode >> 3)))
->  			mode >>= 3;
->  	}
->  
->  	/* Bits in 'mode' clear that we require? */
->  	return (mask & ~mode) ? -EACCES : 0;
->  }
-> 
-> 
-> I don't know that we need to do that.  But it would might be a good way
-> of flushing out the issues.
-> 
-> 
-> >> Given that creating /etc/subgid is effectively opting out of negative
-> >> permissions already have a sysctl that says that upfront feels like a
-> >> very clean solution.
-> >> 
-> >> Eric
+> > It's better than not having it, but two concerns -
 > >
-> > That feels like a cop-out to me.  If some young admin at Roxxon Corp decides
-> > she needs to run a container, so installs subuid package and sets that sysctl,
-> > how does she know whether or not some previous admin, who has since retired and
-> > did not keep good docs, set things up so that a negative acl is keeping nginx
-> > from reading some supersecret doc?
-> >
-> > Now personally I'm not a great believer in the negative acls so I think the
-> > above is a very unlikely scenario, but if we're going to worry about it, then
-> > we should worry about it :)
+> > 1. some userspace, especially testsuites, could become confused by the fact
+> > that they can't drop groups no matter how hard they try, since these will all
+> > still show up as regular groups.
 > 
-> There is a different between guaranting we don't break existing setups
-> when a new feature is enabled, and supporting old very rare setups when
-> a new feature is enabled.
-
-If the new feature is enabled by default, then no.  (I know the kernel
-kconfig =n, but these users likely are using a distribution, which
-probably enables it)
-
-And I also argue that if the new feature appears unrelated and is highly
-desirable, then again no.  Everyone these days wants to "enable
-container support" and it seems unrelated to using file permissions the
-way they appear meant to be used (I know I'm contradicting myself here
-:)  It's not like we are stopping support for an old architecture.  It's
-a behavior resulting from a combination of ordinary configuration pieces
-spread throught a system which is hard for a new admin to know is
-actually being used.  I guess let me put it this way:  I don't think
-that when a new admin is hired, she is told "Now remember, we use acls
-to deny file permissions to certain users based on their groupid, watch
-out for that."
-
-> > "Click this button if noone has ever used feature X on this server"
+> I forgot to send a link to a second patch :-) that completes the feature:
+> https://github.com/giuseppe/linux/commit/1c5fe726346b216293a527719e64f34e6297f0c2
 > 
-> My current thinking is that if we already don't honor negative groups
-> when /etc/subgid exists it would not hurt to make that more explicit.
+> When the new mode is used, the gids that are not known in the userns do
+> not show up in userspace.
 
-Ok, if that's how everyone feels, then I'll step back.
+Ah, right - and of course those gids better not be mapped into the namespace :)
 
-It was just an idea :)
+But so, this is the patch you said you agreed was not worth the extra
+complexity?
 
-I prefer, in this case, a simple host-wide sysctl to allow setgroups.
-
-> >From what we could tell at the time people that know negative groups are
-> honored much less systems that actually use negative groups are
-> exceedingly rare.
-
-You're probably right, but again I think if you did a survey, many
-people who are using it probably answered no because they either
-forgot or don't think of it in those terms.
-
--serge
+> > 2. whereas in my lockgroups proposal, lock_groups would only be taken into account
+> > for permission denial, this proposal would count for permission grants too.  This
+> > means that if I have a group which is permitted to read /foo/topsecret, and I
+> > start a program in a new user namespace expecting it to drop that permission,
+> > I can't have that, right?  The new program, will always have that permission?
+> 
+> right.  The new mode I was working on cannot be used to drop granted permissions.
+> 
+> Giuseppe
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
