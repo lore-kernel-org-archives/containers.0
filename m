@@ -2,79 +2,89 @@ Return-Path: <SRS0=BJMF=DW=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4EDB4C433DF
-	for <containers@archiver.kernel.org>; Thu, 15 Oct 2020 14:32:16 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 611DFC433E7
+	for <containers@archiver.kernel.org>; Thu, 15 Oct 2020 15:46:20 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 7F9A522256
-	for <containers@archiver.kernel.org>; Thu, 15 Oct 2020 14:32:15 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7F9A522256
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=hallyn.com
+	by mail.kernel.org (Postfix) with ESMTPS id A6A7121D41
+	for <containers@archiver.kernel.org>; Thu, 15 Oct 2020 15:46:17 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A6A7121D41
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=metux.net
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id E494A87E34;
-	Thu, 15 Oct 2020 14:32:14 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 291C788697;
+	Thu, 15 Oct 2020 15:46:17 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 1ommVkazGlzH; Thu, 15 Oct 2020 14:32:12 +0000 (UTC)
+	with ESMTP id QI1LbJw6h9g3; Thu, 15 Oct 2020 15:46:14 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id B713A87E2D;
-	Thu, 15 Oct 2020 14:32:12 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id C104688693;
+	Thu, 15 Oct 2020 15:46:14 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id A8E1BC07FF;
-	Thu, 15 Oct 2020 14:32:12 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id A5E64C0052;
+	Thu, 15 Oct 2020 15:46:14 +0000 (UTC)
 Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 0CFA3C0051
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 1B541C0051
  for <containers@lists.linux-foundation.org>;
- Thu, 15 Oct 2020 14:32:11 +0000 (UTC)
+ Thu, 15 Oct 2020 15:46:14 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id F3A148867D
+ by whitealder.osuosl.org (Postfix) with ESMTP id 11FD788693
  for <containers@lists.linux-foundation.org>;
- Thu, 15 Oct 2020 14:32:10 +0000 (UTC)
+ Thu, 15 Oct 2020 15:46:14 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id 3Ti1FynJq2oM
+ with ESMTP id lx0pxsZuSR-p
  for <containers@lists.linux-foundation.org>;
- Thu, 15 Oct 2020 14:32:09 +0000 (UTC)
-X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from mail.hallyn.com (mail.hallyn.com [178.63.66.53])
- by whitealder.osuosl.org (Postfix) with ESMTPS id 6B70A8861D
+ Thu, 15 Oct 2020 15:46:12 +0000 (UTC)
+X-Greylist: delayed 00:13:43 by SQLgrey-1.7.6
+Received: from mout.kundenserver.de (mout.kundenserver.de [212.227.17.10])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 339FF885AF
  for <containers@lists.linux-foundation.org>;
- Thu, 15 Oct 2020 14:32:09 +0000 (UTC)
-Received: by mail.hallyn.com (Postfix, from userid 1001)
- id 9C59A1105; Thu, 15 Oct 2020 09:32:07 -0500 (CDT)
-Date: Thu, 15 Oct 2020 09:32:07 -0500
-From: "Serge E. Hallyn" <serge@hallyn.com>
-To: Giuseppe Scrivano <gscrivan@redhat.com>
+ Thu, 15 Oct 2020 15:46:11 +0000 (UTC)
+Received: from [192.168.1.155] ([95.114.97.143]) by mrelayeu.kundenserver.de
+ (mreue106 [212.227.15.183]) with ESMTPSA (Nemesis) id
+ 1N94uf-1kQf451Ty3-016Bd8; Thu, 15 Oct 2020 17:31:50 +0200
 Subject: Re: LPC 2020 Hackroom Session: summary and next steps for isolated
  user namespaces
-Message-ID: <20201015143207.GB25286@mail.hallyn.com>
+To: Christian Brauner <christian.brauner@ubuntu.com>,
+ containers@lists.linux-foundation.org
 References: <20200830143959.rhosiunyz5yqbr35@wittgenstein>
- <20201010042606.GA30062@mail.hallyn.com>
- <20201011205306.GC17441@localhost> <87tuuzv0hl.fsf@redhat.com>
- <20201013124650.GA19668@mail.hallyn.com>
- <87o8l6qhnz.fsf@redhat.com>
+From: "Enrico Weigelt, metux IT consult" <lkml@metux.net>
+Message-ID: <cb6c6f1a-89ee-1762-3eec-4f69bd7739b1@metux.net>
+Date: Thu, 15 Oct 2020 17:31:45 +0200
+User-Agent: Mozilla/5.0 (X11; Linux i686 on x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.12.0
 MIME-Version: 1.0
-Content-Disposition: inline
-In-Reply-To: <87o8l6qhnz.fsf@redhat.com>
-User-Agent: Mutt/1.9.4 (2018-02-28)
+In-Reply-To: <20200830143959.rhosiunyz5yqbr35@wittgenstein>
+Content-Language: tl
+X-Provags-ID: V03:K1:JA6LrJJtSGRZR2juLdm4r6JKn3coM8bLiyEwPxKL43OJpyW5TAK
+ J+8ZvMhTAO1aRNlnib/d8GKkj/SyIGWSO01+uLmBY23inDY3ZZnH0q70b2/NO9Zj1hwde1p
+ ExDmDdSBv2CzQ+KOWI4EhpneTYrbPugUhlYYpnxH8VTKaQhxy5Ie4nQ5Zy1z3uHBYXm2OjL
+ dxshWEPytWFnQVucg2WNg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:Q7IMcqObJfs=:TFBu2JA4v5QpscgKp0f0Iv
+ hc3weU8mhg+OKcpVZAfa/S68vxik09Cyoqt00EUqUhh0lnr4+IENMsn1Aqrp3M4DPOR/uItBK
+ NtZHvQCBzP6ZuXgixSPXuI/tsTDP6/16e1LhfoIypNYhRATbTRJUlAi9/GftuWeZfY966INnI
+ Ur9O+fPFIcIVTkbRvf4RtExgFzwkRfERqBRPj13F8YIHAemk3uze109u0vxYldWvIN+C9mC4Y
+ mJk7l+RdmzXGozk7ey3w5TprvAFhL+BhsRt5VQ0HR8YNpDUSpat7vbRr0s3aSkh0yuRwgksUV
+ jsKBpbBRxf/OXTxslQkpktRN4DSQ5dqmjqASIfIltZOaOLCPGQw0n/DJgKQC3osFcikcoEusT
+ xYOeccWSr1gxCRTA6sljnL7HKvWljYLmYK8Ke4sRiHTg/CAu6//kpMxGrCEKv
 Cc: Alexander Mihalicyn <alexander@mihalicyn.com>,
- Joseph Christopher Sible <jcsible@cert.org>, Kees Cook <keescook@chromium.org>,
- linux-kernel@vger.kernel.org, containers@lists.linux-foundation.org,
- Josh Triplett <josh@joshtriplett.org>, Vivek Goyal <vgoyal@redhat.com>,
- Geoffrey Thomas <geofft@ldpreload.com>, Andy Lutomirski <luto@amacapital.net>,
- "Eric W. Biederman" <ebiederm@xmission.com>,
- =?iso-8859-1?Q?Micka=EBl_Sala=FCn?= <mic@digikod.net>,
- Wat Lim <watl@google.com>, Mrunal Patel <mpatel@redhat.com>,
- Pavel Tikhomirov <ptikhomirov@virtuozzo.com>
+ Giuseppe Scrivano <gscrivan@redhat.com>,
+ Joseph Christopher Sible <jcsible@cert.org>, Wat Lim <watl@google.com>,
+ Kees Cook <keescook@chromium.org>, Josh Triplett <josh@joshtriplett.org>,
+ linux-kernel@vger.kernel.org, "Eric W. Biederman" <ebiederm@xmission.com>,
+ =?UTF-8?Q?Micka=c3=abl_Sala=c3=bcn?= <mic@digikod.net>,
+ Andy Lutomirski <luto@amacapital.net>, Mrunal Patel <mpatel@redhat.com>,
+ Pavel Tikhomirov <ptikhomirov@virtuozzo.com>,
+ Geoffrey Thomas <geofft@ldpreload.com>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -86,87 +96,117 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Tue, Oct 13, 2020 at 05:17:36PM +0200, Giuseppe Scrivano wrote:
-> "Serge E. Hallyn" <serge@hallyn.com> writes:
-> 
-> > On Mon, Oct 12, 2020 at 07:05:10PM +0200, Giuseppe Scrivano wrote:
-> >> Josh Triplett <josh@joshtriplett.org> writes:
-> >> 
-> >> > On Fri, Oct 09, 2020 at 11:26:06PM -0500, Serge E. Hallyn wrote:
-> >> >> > 3. Find a way to allow setgroups() in a user namespace while keeping
-> >> >> >    in mind the case of groups used for negative access control.
-> >> >> >    This was suggested by Josh Triplett and Geoffrey Thomas. Their idea was to
-> >> >> >    investigate adding a prctl() to allow setgroups() to be called in a user
-> >> >> >    namespace at the cost of restricting paths to the most restrictive
-> >> >> >    permission. So if something is 0707 it needs to be treated as if it's 0000
-> >> >> >    even though the caller is not in its owning group which is used for negative
-> >> >> >    access control (how these new semantics will interact with ACLs will also
-> >> >> >    need to be looked into).
-> >> >> 
-> >> >> I should probably think this through more, but for this problem, would it
-> >> >> not suffice to add a new prevgroups grouplist to the struct cred, maybe
-> >> >> struct group_info *locked_groups, and every time an unprivileged task creates
-> >> >> a new user namespace, add all its current groups to this list?
-> >> >
-> >> > So, effectively, you would be allowed to drop permissions, but
-> >> > locked_groups would still be checked for restrictions?
-> >> >
-> >> > That seems like it'd introduce a new level of complexity (a new facet of
-> >> > permission) to manage. Not opposed, but it does seem more complex than
-> >> > just opting out of using groups for negative permissions.
-> >> 
-> >> I have played with something similar in the past.  At that time I've
-> >> discussed it only privately with Eric and we agreed it wasn't worth the
-> >> extra complexity:
-> >> 
-> >> https://github.com/giuseppe/linux/commit/7e0701b389c497472d11fab8570c153a414050af
-> >
-> > Hi, you linked the setgroups patch, but do you also have a link to the
-> > attempt which you deemed was not worth it?
-> 
-> it was just part of a private discussion; but was 4 years ago so we can
-> probably revisit and accept the additional complexity since setgroups()
-> is still an issue with user namespaces.
-> 
-> 
-> >> instead of a prctl, I've added a new mode to /proc/PID/setgroups that
-> >> allows setgroups in a userns locking the current gids.
-> >> 
-> >> What do you think about using /proc/PID/setgroups instead of a new
-> >> prctl()?
-> >
-> > It's better than not having it, but two concerns -
-> >
-> > 1. some userspace, especially testsuites, could become confused by the fact
-> > that they can't drop groups no matter how hard they try, since these will all
-> > still show up as regular groups.
-> 
-> I forgot to send a link to a second patch :-) that completes the feature:
-> https://github.com/giuseppe/linux/commit/1c5fe726346b216293a527719e64f34e6297f0c2
-> 
-> When the new mode is used, the gids that are not known in the userns do
-> not show up in userspace.
-
-Ah, right - and of course those gids better not be mapped into the namespace :)
-
-But so, this is the patch you said you agreed was not worth the extra
-complexity?
-
-> > 2. whereas in my lockgroups proposal, lock_groups would only be taken into account
-> > for permission denial, this proposal would count for permission grants too.  This
-> > means that if I have a group which is permitted to read /foo/topsecret, and I
-> > start a program in a new user namespace expecting it to drop that permission,
-> > I can't have that, right?  The new program, will always have that permission?
-> 
-> right.  The new mode I was working on cannot be used to drop granted permissions.
-> 
-> Giuseppe
-_______________________________________________
-Containers mailing list
-Containers@lists.linux-foundation.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
+T24gMzAuMDguMjAgMTY6MzksIENocmlzdGlhbiBCcmF1bmVyIHdyb3RlOgoKSGkgQ2hyaXN0aWFu
+LAoKPiBQMS4gSXNvbGF0ZWQgaWQgbWFwcGluZ3MgY2FuIG9ubHkgYmUgZ3VhcmFudGVlZCB0byBi
+ZSBsb2NhbGx5IGlzb2xhdGVkLgo+ICAgICBBIGNvbnRhaW5lciBydW50aW1lL2RhZW1vbiBjYW4g
+b25seSBndWFyYW50ZWUgbm9uLW92ZXJsYXBwaW5nIGlkIG1hcHBpbmdzCj4gICAgIHdoZW4gbm8g
+b3RoZXIgdXNlcnMgb24gdGhlIHN5c3RlbSBjcmVhdGUgY29udGFpbmVycy4KCkluZGVlZC4gQnV0
+IGNvdWxkbid0IHdlIGp1c3QgcmVjb3JkIHRoZSBtYXBwaW5ncyBpbiBzb21lIHN0YW5kYXJkaXpl
+ZApwbGFjZSAoZWcuIHNvbWUgZmlsZSkgd2hpY2ggYWxsIGVuZ2luZXMgbWFpbnRhaW4gPwoKSSdk
+IGd1ZXNzIG90aGVyIHNvbHV0aW9ucyB3b3VsZCBuZWVkIGNoYW5nZXMgaW4gdGhlIHJ1bnRpbWVz
+LCB0b28uCgpQbGVhc2Uga2VlcCBpbiBtaW5kIHRoYXQgc29tZSBzY2VuYXJpb3MgYWN0dWFsbHkg
+bmVlZCBzb21lIG92ZXJsYXBzLCBlZy4KYXBwbGljYXRpb24gY29udGFpbmVycyB0aGF0IHNoYWxs
+IGhhdmUgZGlyZWN0IGFjY2VzcyB0byBob21lIGRpcnMuCgo+IFAyLiBFbmZvcmNpbmcgaXNvbGF0
+ZWQgaWQgbWFwcGluZ3MgaW4gdXNlcnNwYWNlIGlzIGRpZmZpY3VsdC4KPiAgICAgSXQgaXMgYWx3
+YXlzIHBvc3NpYmxlIHRvIGNyZWF0ZSBvdGhlciBwcm9jZXNzZXMgd2l0aCBvdmVybGFwcGluZyBp
+ZAo+ICAgICBtYXBwaW5ncy4gQ29vcmRpbmF0aW5nIGlkIG1hcHBpbmdzIGluIHVzZXJzcGFjZSB3
+aWxsIGFsd2F5cyByZW1haW4KPiAgICAgb3B0aW9uYWwuIFF1aXRlIGEgZmV3IHRvb2xzIG5vd2Fk
+YXlzIChpbmNsdWRpbmcgc3lzdGVtZCkgZG9uJ3QgY2FyZSBhYm91dAo+ICAgICAvZXRjL3N1Yntn
+LHV9aWQgYW5kIGFjdGl2ZWx5IGFkdmlzZSBhZ2FpbnN0IHVzaW5nIGl0LiBUaGlzIGlzIG1hZGUg
+ZXZlbgo+ICAgICBtb3JlIHByb2JsZW1hdGljIHNpbmNlIHN1YntnLHV9aWlkIGRlbGVnYXRpb24g
+aXMgZG9uZSBwZXItdXNlciByYXRoZXIgdGhhbgo+ICAgICBwZXItY29udGFpbmVyLXJ1bnRpbWUu
+CgpJIGJlbGlldmUgc3VidXNlcnMgYXJlbid0IG1lYW50IGZvciB0eWljYWwgY29udGFpbmVycyAo
+bGlrZSBkb2NrZXIgb3IKbHhjKSwgYnV0IHVucHJpdmlsZWdlZCB1c2VyIHByb2dyYW1zIHRoYXQg
+d2FubmEgaGF2ZSBmdXJ0aGVyIGlzb2xhdGlvbgpmb3Igc3VicHJvY2Vzc2VzIChlZy4gYSBicm93
+c2VyJ3MgcmVuZGVyZXIgb3IganMgZW5naW5lKS4KCkNvcnJlY3QgbWUgaWYgSSdtIHdyb25nLgoK
+PiBQMy4gVGhlIHJhbmdlIG9mIHRoZSBpZCBtYXBwaW5nIG9mIGEgY29udGFpbmVyIGNhbid0IGJl
+IHByZWRldGVybWluZWQuCj4gICAgIFdoaWxlIFBPU0lYIG1hbmRhdGVzIHRoYXQgYSBzdGFuZGFy
+ZCBzeXN0ZW0gc2hvdWxkIHVzZSBhIHJhbmdlIG9mIDY1NTM2IGlkcwo+ICAgICByZWFsaXR5IGlz
+IHZlcnkgZGlmZmVyZW50LiBTb21lIHByb2dyYW1zIGFsbG9jYXRlIGhpZ2ggaWRzIGZvciByYW5k
+b20KPiAgICAgcHJvY2Vzc2VzIG9yIGZvciBuZXR3b3JrIGF1dGhlbnRpY2F0aW9uLiBUaGlzIG1l
+YW5zLCBpbiBwcmFjdGljZSBpdCBpcwo+ICAgICBvZnRlbiBuZWNlc3NhcnkgdG8gYXNzaWduIGEg
+cmFuZ2Ugb2YgdXAgdG8gMTAgbWlsbGlvbiBpZHMgdG8gYSBjb250YWluZXIuCj4gICAgIFRoaXMg
+bGltaXRzIGEgc3lzdGVtIHRvIGxlc3MgdGhhbiA1MDAgY29udGFpbmVycyB0b3RhbC4KCkluIDI1
+KyB5ZWFycywgaGF2ZW4ndCBzZWVuIHN1Y2ggYW4gYXBwbGljYXRpb24gaW4gdGhlIGZpZWxkLiBJ
+J2QKY29uc2lkZXIgdGhpcyBhIGhvcnJpYmxlIGFuZCBkYW5nZXJvdXMgYnVnLiBTYW5lIGFwcGxp
+Y2F0aW9ucyBjcmVhdGUKc3BlY2lmaWMgdXNlciBlbnRyaWVzICgvZXRjL3Bhc3N3ZCkgZm9yIHRo
+YXQuCgpJJ2Qgc2F5IHdlJ3JlIHNhZmUgdy8gbWF4IDJeMTYgdXNlcnMgcGVyIGNvbnRhaW5lciwg
+d2hpY2ggc2hvdWxkIGdpdmUgdXMKc3BhY2UgZm9yIGFib3V0IDJeMTYgY29udGFpbmVycy4KCj4g
+UDQuIElzb2xhdGVkIGlkIG1hcHBpbmdzIHNldmVyZWx5IHJlc3RyaWN0IHRoZSBudW1iZXIgb2Yg
+Y29udGFpbmVycyB0aGF0IGNhbiBiZQo+ICAgICBydW4gb24gYSBzeXN0ZW0uCj4gICAgIFRoaXMg
+dGllcyBiYWNrIHRvIHRoZSBwb2ludCBhYm91dCBwcmUtZGV0ZXJtaW5pbmcgdGhlIGlkIHJhbmdl
+IG9mIGEKPiAgICAgY29udGFpbmVyIGFuZCBob3cgbGFyZ2UgcmFuZ2UgYWxsb2NhdGlvbnMgdGVu
+ZCB0byBiZSBvbiByZWFsIHN5c3RlbXMuIFRoYXQKPiAgICAgYmVjb21lcyBldmVuIG1vcmUgcmVs
+ZXZhbnQgd2hlbiBuZXN0aW5nIGNvbnRhaW5lcnMuCgpJTUhPLCBhbGwgd2UgbmVlZCBpcyB0byBt
+YWludGFpbiBhIGxpc3Qgb2YgYWN0aXZlIHJhbmdlcyAobW9yZSBwcmVjaXNlbHkKdGhlIDE2Yml0
+IHByZWZpeGVzLCBqdXN0IGxpa2UgY2xhc3MgQiBuZXR3b3JrcyA7LSkpLiBBcyBzYWlkLCBJJ2QK
+ZGVjbGFyZSB0aGUgc2NlbmFyaW8gI1AzIGFzIGludmFsaWQgYW5kIHJhdGhlciBmaXggdGhvc2Ug
+ZmV3IGJyb2tlbgphcHBsaWNhdGlvbnMuCgo+IFA1LiBDb250YWluZXIgcnVudGltZXMgY2Fubm90
+IHJldXNlIG92ZXJsYXlmcyBsb3dlciBkaXJlY3RvcmllcyBpZiBlYWNoCj4gICAgIGNvbnRhaW5l
+ciB1c2VzIGlzb2xhdGVkIElEIG1hcHBpbmdzLCBsZWFkaW5nIHRvIGVpdGhlciBuZWVkbGVzcyBz
+dG9yYWdlCj4gICAgIG92ZXJoZWFkIChMWEQgLS0gdGhvdWdoIHRoZSBMWEQgZm9sa3MgZG9u4oCZ
+dCByZWFsbHkgbWluZCksIGNvbXBsZXRlbHkKPiAgICAgaWdub3JpbmcgdGhlIGJlbmVmaXRzIG9m
+IGlzb2xhdGluZyBjb250YWluZXJzIGZyb20gZWFjaCBvdGhlciAoRG9ja2VyKSwgb3IKPiAgICAg
+bm90IHVzaW5nIHRoZW0gYXQgYWxsIChLdWJlcm5ldGVzKS4gKFRoaXMgaXMgYSBtb3JlIGdlbmVy
+YWwgaXNzdWUgYnV0IGJlYXJzCj4gICAgIHJlcGVhdGluZyBzaW5jZSBpdCBpcyBjbG9zZWx5IHRp
+ZWQgdG8gbW9zdCB1c2VybnMgcHJvcG9zYWxzLikKCkluZGVlZC4gVGhhdCdzIElNSE8gdGhlIG1h
+aW4gcHJvYmxlbS4gV2Ugc29tZWhvdyBuZWVkIHRvIG1hcCB0aGUgVUlEcy4KTWF5YmUgYSBzeW50
+aGV0aWMgZmlsZXN5c3RlbSB0aGF0IGp1c3QgZG9lcyBleGFjdGx5IHRoZSBzYW1lIHVpZDwtPmt1
+aWQKdHJhbnNsYXRpb25zIHdlJ3JlIGFscmVhZHkgZG9pbmcgaW4gb3RoZXIgcGxhY2VzID8KCj4g
+UDYuIFJsaW1pdHMgcG9zZSBhIHByb2JsZW0gZm9yIGNvbnRhaW5lcnMgdGhhdCBzaGFyZSB0aGUg
+c2FtZSBpZCBtYXBwaW5nLgo+ICAgICBUaGlzIG1lYW5zIGNvbnRhaW5lcnMgd2l0aCBvdmVybGFw
+cGluZyBpZCBtYXBwaW5ncyBjYW4gRE9TIGVhY2ggb3RoZXIgYnkKPiAgICAgZXhoYXVzdGluZyB0
+aGVpciBybGltaXRzLiBUaGUgcmVhc29uIGZvciB0aGlzIGxpZXMgd2l0aCB0aGUgY3VycmVudAo+
+ICAgICBpbXBsZW1lbnRhdGlvbiBvZiBybGltaXRzIC0tIHJsaW1pdHMgYXJlIGN1cnJlbnRseSB0
+aWVkIHRvIHVzZXJzIGFuZCBhcmUKPiAgICAgbm90IGhpZXJhcmNoaWNhbGx5IGxpbWl0ZWQgbGlr
+ZSBpbm90aWZ5IGxpbWl0cyBhcmUuIFRoaXMgaXMgYSBzZXZlcmUKPiAgICAgcHJvYmxlbSBpbiB1
+bnByaXZpbGVnZWQgd29ya2xvYWRzLiBFcmljIGFuZCBvdGhlcnMgaWRlbnRpZmllZCB0aGF0IHRo
+aXMKPiAgICAgaXNzdWUgY2FuIGJlIGZpeGVkIGluZGVwZW5kZW50bHkgb2YgdGhlIGlzb2xhdGVk
+IHVzZXIgbmFtZXNwYWNlIHByb3Bvc2FsLgoKSXMgdGhpcyByZWFsbHkgYW4gcHJhY3RpY2FsIGlz
+c3N1ZSwgd2hlbiB3ZSdyZSB1c2luZyB1aWQgbmFtZXNwYWNlcyA/Cgo+IFMyLiBLZXJuZWwtZW5m
+b3JjZWQgdXNlciBuYW1lc3BhY2UgaXNvbGF0aW9uLgo+ICAgICBUaGlzIG1lYW5zLCB0aGVyZSBp
+cyBubyBuZWVkIGZvciBkaWZmZXJlbnQgY29udGFpbmVyIHJ1bnRpbWVzIHRvCj4gICAgIGNvbGxh
+Ym9yYXRlIG9uIGlkIHJhbmdlcyB3aXRoIGltbWVkaWF0ZSBiZW5lZml0cyBmb3IgZXZlcnlvbmUu
+Cj4gICAgIFRoaXMgc29sdmVzIFAxIGFuZCBQMi4KCk9rYXksIGJ1dCBob3cgdG8gc3VwcG9ydCBz
+Y2VuYXJpb3Mgd2hlcmUgc29tZSBvZiB0aGUgVUlEcyBzaG91bGQKb3ZlcmxhcCBvbiBwdXJwb3Nl
+ID8gKGVnLiBtb3VudGluZyBzb21lIG9mIHRoZSBob3N0J3MgdXNlciBob21lZGlycwppbnRvIG5h
+bWVzcGFjZXMgPykKCj4gUzUuIFRoZSBvd25pbmcgaWQgY29uY2VwdCBvZiBhIHVzZXIgbmFtZXNw
+YWNlIG1ha2VzIG1vbml0b3JpbmcgYW5kIGludGVyYWN0aW5nCj4gICAgIHdpdGggc3VjaCBjb250
+YWluZXJzIHdheSBlYXNpZXIuCgpXaGF0IGV4YWN0bHkgaXMgdGhlIG93bmluZyBpZCA/IEhvdyBp
+cyBpdCBjcmVhdGVkIGFuZCBtYW5hZ2VkID8KU29tZSBtYWdpYyBpZCBvciBhbiBjcnlwdG9ncmFw
+aGljIHRva2VuID0KCj4gMS4gSG93IGFyZSBpbnRlcmFjdGlvbnMgYWNyb3NzIGlzb2xhdGVkIHVz
+ZXIgbmFtZXNwYWNlcyBoYW5kbGVkPwoKV2hhdCBraW5kIG9mIGludGVyYWN0aW9uIGRvIHlvdSBo
+YXZlIGluIG1pbmQgPwpEYXRhIHRyYW5zZmVycyA/IFByb2Nlc3MgbWFuaXB1bGF0b24gPyBOYW1l
+c3BhY2UgZGVzdHJ1Y3Rpb24gPwoKQ2FuIHlvdSBwbGVhc2UgaWxsdXN0cmF0ZSBzb21lIGFjdHVh
+bCB1c2UgY2FzZXMgPwoKPiAgICBQcm9wb3NhbCAxLjEgc2VtbWVkIHByZWZlcmVkIHNpbmNlIGl0
+IHdvdWxkIGFsbG93IGFuIHVucHJpdmlsZWdlZAo+ICAgIHVzZXIgY3JlYXRpbmcgYW4gaXNvbGF0
+ZWQgdXNlciBuYW1lc3BhY2UgdG8ga2lsbC9wdHJhY2UgYWxsIHByb2Nlc3Nlcwo+ICAgIGluIHRo
+ZSBpc29sYXRlZCBuYW1lc3BhY2UgdGhleSBzcGF3bmVkLiAKCkRvbid0IHdlIGFscmVhZHkgaGF2
+ZSB0aGlzIGlmIHRoaXMgdXNlciBpcyBtYXBwZWQgYXMgcm9vdCBpbnNpZGUgdGhlCmNvbnRhaW5l
+ciA/Cgo+ICAgIFRoZSBmaXJzdCBjb25zZW5zdXMgcmVhY2hlZCBzZWVtZWQgdG8gYmUgdG8gZGVj
+b3VwbGUgaXNvbGF0ZWQgdXNlcgo+ICAgIG5hbWVzcGFjZXMgZnJvbSBzaGlmdGZzLiBUaGUgaWRl
+YSBpcyB0byBzb2xlbHkgcmVseSBvbiB0bXBmcyBhbmQgZnVzZQo+ICAgIGF0IHRoZSBiZWdpbm5p
+bmcgYXMgZmlsZXN5c3RlbXMgd2hpY2ggY2FuIGJlIG1vdW50ZWQgaW5zaWRlIGlzb2xhdGVkCj4g
+ICAgdXNlciBuYW1lc3BhY2VzIGFuZCBzbyB3b3VsZCBoYXZlIHByb3BlciBvd25lcnNoaXAuIAoK
+U28sIEknZCBlc3NlbnRpYWxseSBoYXZlIHRvIHJ1biB0aGUgd2hvbGUgcm9vdGZzIHRocm91Z2gg
+ZnVzZSBhbmQgYQp1c2VybGFuZCBmaWxlc2VydmVyLCB3aGljaCBwcm9iYWJseSBoYXMgdG8gdHJh
+Y2sgdGhpbmdzIGxpa2Ugb3duZXJzaGlwcwppbiBpdHMgb3duIGRiICh3aGVuIHJ1bm5pbmcgdW5k
+ZXIgdW5wcml2aWxlZ2VkIHVzZXIpID8KCj4gRm9yIG1vdW50IHBvaW50cwo+ICAgIHRoYXQgb3Jp
+Z2luYXRlIGZyb20gb3V0c2lkZSB0aGUgbmFtZXNwYWNlLCBldmVyeXRoaW5nIHdpbGwgc2hvdyBh
+cwo+ICAgIHRoZSBvdmVyZmxvdyBpZHMgYW5kIGFjY2VzcyB3b3VsZCBiZSByZXN0cmljdGVkIHRv
+IHRoZSBtb3N0Cj4gICAgcmVzdHJpY3RlZCBwZXJtaXNzaW9uIGJpdCBmb3IgYW55IHBhdGggdGhh
+dCBjYW4gYmUgYWNjZXNzZWQuCgpTbywgSSBjYW4ndCBqdXN0IHRha2UgYSBidHJmcyBzbmFwc2hv
+dCBhcyByb290ZnMgYW55bW9yZSA/CgoKLS1tdHgKCi0tIAotLS0KSGlud2VpczogdW52ZXJzY2hs
+w7xzc2VsdGUgRS1NYWlscyBrw7ZubmVuIGxlaWNodCBhYmdlaMO2cnQgdW5kIG1hbmlwdWxpZXJ0
+CndlcmRlbiAhIEbDvHIgZWluZSB2ZXJ0cmF1bGljaGUgS29tbXVuaWthdGlvbiBzZW5kZW4gU2ll
+IGJpdHRlIGlocmVuCkdQRy9QR1AtU2NobMO8c3NlbCB6dS4KLS0tCkVucmljbyBXZWlnZWx0LCBt
+ZXR1eCBJVCBjb25zdWx0CkZyZWUgc29mdHdhcmUgYW5kIExpbnV4IGVtYmVkZGVkIGVuZ2luZWVy
+aW5nCmluZm9AbWV0dXgubmV0IC0tICs0OS0xNTEtMjc1NjUyODcKX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29u
+dGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91
+bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
