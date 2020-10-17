@@ -6,78 +6,72 @@ X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4A4BAC433E7
-	for <containers@archiver.kernel.org>; Sat, 17 Oct 2020 15:04:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 30B2DC433E7
+	for <containers@archiver.kernel.org>; Sat, 17 Oct 2020 16:51:31 +0000 (UTC)
 Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id C65C920708
-	for <containers@archiver.kernel.org>; Sat, 17 Oct 2020 15:04:49 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C65C920708
+	by mail.kernel.org (Postfix) with ESMTPS id A91BC2074A
+	for <containers@archiver.kernel.org>; Sat, 17 Oct 2020 16:51:30 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A91BC2074A
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=xmission.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 28608203CC;
-	Sat, 17 Oct 2020 15:04:49 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 8167120005;
+	Sat, 17 Oct 2020 16:51:30 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id pm7vnflvtsq5; Sat, 17 Oct 2020 15:04:43 +0000 (UTC)
+	with ESMTP id fv2gaXkhUPYI; Sat, 17 Oct 2020 16:51:28 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id B6667203D7;
-	Sat, 17 Oct 2020 15:04:43 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id E5C6C1FD42;
+	Sat, 17 Oct 2020 16:51:28 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 7B500C0052;
-	Sat, 17 Oct 2020 15:04:43 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 7AF10C0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id CE2E3C0052;
+	Sat, 17 Oct 2020 16:51:28 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id D0522C0051
  for <containers@lists.linux-foundation.org>;
- Sat, 17 Oct 2020 15:04:41 +0000 (UTC)
+ Sat, 17 Oct 2020 16:51:27 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id 66520884E7
+ by hemlock.osuosl.org (Postfix) with ESMTP id BECCC878D0
  for <containers@lists.linux-foundation.org>;
- Sat, 17 Oct 2020 15:04:41 +0000 (UTC)
+ Sat, 17 Oct 2020 16:51:27 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id dsu4cWvHEBaw
+ with ESMTP id gYlU9YN7czRl
  for <containers@lists.linux-foundation.org>;
- Sat, 17 Oct 2020 15:04:40 +0000 (UTC)
+ Sat, 17 Oct 2020 16:51:26 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
 Received: from out03.mta.xmission.com (out03.mta.xmission.com [166.70.13.233])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id 24CF3884E2
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 630F0878C8
  for <containers@lists.linux-foundation.org>;
- Sat, 17 Oct 2020 15:04:40 +0000 (UTC)
+ Sat, 17 Oct 2020 16:51:26 +0000 (UTC)
 Received: from in02.mta.xmission.com ([166.70.13.52])
  by out03.mta.xmission.com with esmtps (TLS1.2) tls
  TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 (Exim 4.93)
  (envelope-from <ebiederm@xmission.com>)
- id 1kTnkt-003kX6-Q2; Sat, 17 Oct 2020 09:04:23 -0600
+ id 1kTpQB-003rsF-Oa; Sat, 17 Oct 2020 10:51:07 -0600
 Received: from ip68-227-160-95.om.om.cox.net ([68.227.160.95]
  helo=x220.xmission.com) by in02.mta.xmission.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_256_GCM_SHA384:256) (Exim 4.87)
  (envelope-from <ebiederm@xmission.com>)
- id 1kTnks-0008QQ-GQ; Sat, 17 Oct 2020 09:04:23 -0600
+ id 1kTpQA-0004b7-CI; Sat, 17 Oct 2020 10:51:07 -0600
 From: ebiederm@xmission.com (Eric W. Biederman)
-To: "Serge E. Hallyn" <serge@hallyn.com>
+To: "Enrico Weigelt\, metux IT consult" <lkml@metux.net>
 References: <20200830143959.rhosiunyz5yqbr35@wittgenstein>
- <20201010042606.GA30062@mail.hallyn.com>
- <20201011205306.GC17441@localhost>
- <CALCETrUZcHNwspz315KFvSPxtK8MmLUPfiN=hCBgx+wqeJe4+g@mail.gmail.com>
- <87h7r0qbqi.fsf@x220.int.ebiederm.org>
- <20201012150006.GA3503@mail.hallyn.com>
- <87wnzsmvyx.fsf@x220.int.ebiederm.org>
- <20201015142709.GA25286@mail.hallyn.com>
-Date: Sat, 17 Oct 2020 10:04:38 -0500
-In-Reply-To: <20201015142709.GA25286@mail.hallyn.com> (Serge E. Hallyn's
- message of "Thu, 15 Oct 2020 09:27:09 -0500")
-Message-ID: <87d01gj3ll.fsf@x220.int.ebiederm.org>
+ <cb6c6f1a-89ee-1762-3eec-4f69bd7739b1@metux.net>
+Date: Sat, 17 Oct 2020 11:51:22 -0500
+In-Reply-To: <cb6c6f1a-89ee-1762-3eec-4f69bd7739b1@metux.net> (Enrico
+ Weigelt's message of "Thu, 15 Oct 2020 17:31:45 +0200")
+Message-ID: <874kmsdcdx.fsf@x220.int.ebiederm.org>
 User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/26.1 (gnu/linux)
 MIME-Version: 1.0
-X-XM-SPF: eid=1kTnks-0008QQ-GQ; ; ; mid=<87d01gj3ll.fsf@x220.int.ebiederm.org>;
+X-XM-SPF: eid=1kTpQA-0004b7-CI; ; ; mid=<874kmsdcdx.fsf@x220.int.ebiederm.org>;
  ; ; hst=in02.mta.xmission.com; ; ; ip=68.227.160.95; ; ;
  frm=ebiederm@xmission.com; ; ; spf=neutral
-X-XM-AID: U2FsdGVkX192GxqEYID7yhHi/7T1nk6a+CvYfsRvuQ8=
+X-XM-AID: U2FsdGVkX1+Tp7fo3PG+a6LIxX1FiHtlWjF8gEmudwk=
 X-SA-Exim-Connect-IP: 68.227.160.95
 X-SA-Exim-Mail-From: ebiederm@xmission.com
 Subject: Re: LPC 2020 Hackroom Session: summary and next steps for isolated
@@ -86,13 +80,11 @@ X-SA-Exim-Version: 4.2.1 (built Thu, 05 May 2016 13:38:54 -0600)
 X-SA-Exim-Scanned: Yes (on in02.mta.xmission.com)
 Cc: Alexander Mihalicyn <alexander@mihalicyn.com>,
  Giuseppe Scrivano <gscrivan@redhat.com>,
- Joseph Christopher Sible <jcsible@cert.org>, Kees Cook <keescook@chromium.org>,
- LKML <linux-kernel@vger.kernel.org>,
- Linux Containers <containers@lists.linux-foundation.org>,
- Josh Triplett <josh@joshtriplett.org>, Vivek Goyal <vgoyal@redhat.com>,
- Andy Lutomirski <luto@kernel.org>,
- =?utf-8?Q?Micka=C3=ABl_Sal?= =?utf-8?Q?a=C3=BCn?= <mic@digikod.net>,
- Wat Lim <watl@google.com>, Mrunal Patel <mpatel@redhat.com>,
+ Joseph Christopher Sible <jcsible@cert.org>, Wat Lim <watl@google.com>,
+ Kees Cook <keescook@chromium.org>, containers@lists.linux-foundation.org,
+ linux-kernel@vger.kernel.org, Josh Triplett <josh@joshtriplett.org>,
+ =?utf-8?Q?Micka=C3=ABl_Sala=C3=BCn?= <mic@digikod.net>,
+ Andy Lutomirski <luto@amacapital.net>, Mrunal Patel <mpatel@redhat.com>,
  Pavel Tikhomirov <ptikhomirov@virtuozzo.com>,
  Geoffrey Thomas <geofft@ldpreload.com>
 X-BeenThere: containers@lists.linux-foundation.org
@@ -106,245 +98,205 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-"Serge E. Hallyn" <serge@hallyn.com> writes:
-
-> On Wed, Oct 14, 2020 at 02:46:46PM -0500, Eric W. Biederman wrote:
->> "Serge E. Hallyn" <serge@hallyn.com> writes:
->> 
->> > On Mon, Oct 12, 2020 at 12:01:09AM -0500, Eric W. Biederman wrote:
->> >> Andy Lutomirski <luto@kernel.org> writes:
->> >> 
->> >> > On Sun, Oct 11, 2020 at 1:53 PM Josh Triplett <josh@joshtriplett.org> wrote:
->> >> >>
->> >> >> On Fri, Oct 09, 2020 at 11:26:06PM -0500, Serge E. Hallyn wrote:
->> >> >> > > 3. Find a way to allow setgroups() in a user namespace while keeping
->> >> >> > >    in mind the case of groups used for negative access control.
->> >> >> > >    This was suggested by Josh Triplett and Geoffrey Thomas. Their idea was to
->> >> >> > >    investigate adding a prctl() to allow setgroups() to be called in a user
->> >> >> > >    namespace at the cost of restricting paths to the most restrictive
->> >> >> > >    permission. So if something is 0707 it needs to be treated as if it's 0000
->> >> >> > >    even though the caller is not in its owning group which is used for negative
->> >> >> > >    access control (how these new semantics will interact with ACLs will also
->> >> >> > >    need to be looked into).
->> >> >> >
->> >> >> > I should probably think this through more, but for this problem, would it
->> >> >> > not suffice to add a new prevgroups grouplist to the struct cred, maybe
->> >> >> > struct group_info *locked_groups, and every time an unprivileged task creates
->> >> >> > a new user namespace, add all its current groups to this list?
->> >> >>
->> >> >> So, effectively, you would be allowed to drop permissions, but
->> >> >> locked_groups would still be checked for restrictions?
->> >> >>
->> >> >> That seems like it'd introduce a new level of complexity (a new facet of
->> >> >> permission) to manage. Not opposed, but it does seem more complex than
->> >> >> just opting out of using groups for negative permissions.
->> >
->> > Yeah, it would, but I basically hoped that we could catch most of this at
->> > e.g. generic_permission(), and/or we could introduce a helper which
->> > automatically adds a check for permission denied from locked_groups, so
->> > it shouldn't be too wide-spread.  If it does end up showing up all over
->> > the place, then that's a good reason not to do this.
->> >
->> >> > Is there any context other than regular UNIX DAC in which groups can
->> >> > act as negative permissions or is this literally just an issue for
->> >> > files with a more restrictive group mode than other mode?
->> >> 
->> >> Just that.
->> >> 
->> >> The ideas kicked around in the conversation were some variant of having
->> >> a sysctl that says "This system never uses groups for negative
->> >> permissions".
->> >> 
->> >> It was also suggested that if the sysctl was set the the permission
->> >> checks would be altered such that even if someone tried to set a
->> >> negative permission, the more liberal permissions of other would be used
->> >> instead.
->> >
->> > So then this would touch all the same code points which the
->> > locked_groups approach would have to touch?
->> 
->> No locked_groups would touch in_group_p and set_groups.  Especially what
->> set_groups means in that context.  It would have to handle what happens
->> when you start accumulating locked groups (because of multiple
->> namespaces).  How you dedup locked groups etc.
->
-> Well since group_info is sorted, you should be able to do a pretty
-> simple and quick merge of current->locked_groups and
-> current->group_info.  I suppose we'd have to consider a nasty user who
-> is allocated 100k groups, sticks them all in groupinfo, then unshare
-> twice, locking the kernel up for awhile, but that user can already hurt
-> us.
->
->> I was not able to convince myself that not being able to clear out
->> groups that a user has when they create a user namespace won't cause
->> other problems.  Especially as user namespaces had been in use for a
->> while at that point.
->
-> The locked_groups would *only* be considered for negative acls, right?
-
-I had not seen that idea proposed.  I had assumed they would be
-consulted in all cases for group membership in permission checks,
-and that the only change would be to in_group_p and the code to
-maintain the group lists.
-
-> You would not *grant* any perms based on them.  It seems like exactly
-> what you want.  If any user is denied perms on account of it, then that
-> was the intent, and that's the whole reason we're having this problem.
-> We are discussing whether it's ok to let a new user_ns be a way to
-> bypass that restriction - not *looking* for a way to support bypassing
-> it.
->
-> I could state this as a more formal proof if you like.
-
-
-If you modify the permission checks as you suggest it does seem easier
-to reason about with respect to causing problems.  I would want to call
-them denied_groups or something like that in the data structure for
-clarity.
-
-Howver there is a big question of how we deal with NFS.  NFS home
-directories are currently a bit of a challenge for user namespaces
-because the server performs the permission checks, and won't let
-the userns root chown files from one user to another.
-
-Negative groups would not be propogated to the NFS server (because they
-are something new) and because they fail to propogate would fail to
-preserve the property we are trying to preserve.
-
-I think I need to reexamine the NFS issue.
-
-Similarly user space processes outside the user namespace that check
-if a process is a group for purposes of denying permissions might run
-into the same issue if we had deny only groups.
-
->> Not supporting negative groups would touch acl_permission and modify it
->> like:
->> 
->>  static int acl_permission_check(struct inode *inode, int mask)
->>  {
->> [irrelveant code snipped]
->>  	/* Only RWX matters for group/other mode bits */
->>  	mask &= 7;
->>  
->>  	/*
->>  	 * Are the group permissions different from
->>  	 * the other permissions in the bits we care
->>  	 * about? Need to check group ownership if so.
->>  	 */
->>  	if (mask & (mode ^ (mode >> 3))) {
->> -		if (in_group_p(inode->i_gid))
->> +		if (in_group_p(inode->i_gid) &&
->> +		    (!sysctl_force_positive_groups ||
->> +		    (mask & ~(mode >> 3)))
->>  			mode >>= 3;
->>  	}
->>  
->>  	/* Bits in 'mode' clear that we require? */
->>  	return (mask & ~mode) ? -EACCES : 0;
->>  }
->> 
->> 
->> I don't know that we need to do that.  But it would might be a good way
->> of flushing out the issues.
->> 
->> 
->> >> Given that creating /etc/subgid is effectively opting out of negative
->> >> permissions already have a sysctl that says that upfront feels like a
->> >> very clean solution.
->> >> 
->> >> Eric
->> >
->> > That feels like a cop-out to me.  If some young admin at Roxxon Corp decides
->> > she needs to run a container, so installs subuid package and sets that sysctl,
->> > how does she know whether or not some previous admin, who has since retired and
->> > did not keep good docs, set things up so that a negative acl is keeping nginx
->> > from reading some supersecret doc?
->> >
->> > Now personally I'm not a great believer in the negative acls so I think the
->> > above is a very unlikely scenario, but if we're going to worry about it, then
->> > we should worry about it :)
->> 
->> There is a different between guaranting we don't break existing setups
->> when a new feature is enabled, and supporting old very rare setups when
->> a new feature is enabled.
->
-> If the new feature is enabled by default, then no.  (I know the kernel
-> kconfig =n, but these users likely are using a distribution, which
-> probably enables it)
->
-> And I also argue that if the new feature appears unrelated and is highly
-> desirable, then again no.  Everyone these days wants to "enable
-> container support" and it seems unrelated to using file permissions the
-> way they appear meant to be used (I know I'm contradicting myself here
-> :)  It's not like we are stopping support for an old architecture.  It's
-> a behavior resulting from a combination of ordinary configuration pieces
-> spread throught a system which is hard for a new admin to know is
-> actually being used.  I guess let me put it this way:  I don't think
-> that when a new admin is hired, she is told "Now remember, we use acls
-> to deny file permissions to certain users based on their groupid, watch
-> out for that."
-
-I think it is a valid concern.
-
-The question is do enough of those systems exist to matter.  Maybe.
-
-I think our moral imperative is to honor the no regression rule.  You
-are right that it is difficult to detect regressions in this area.
-
-So far I have received exactly one report of a system using negative
-groups.  That was Casey who was using this for some intel designed
-distrubution that used smack.  I think the Nokia phones were playing
-with it at the end before Nokia sold their phone division.
-
-Casey still mentions on occasion that he is grumpy at the way setgroups
-and user namespaces worked out.
-
-
->> > "Click this button if noone has ever used feature X on this server"
->> 
->> My current thinking is that if we already don't honor negative groups
->> when /etc/subgid exists it would not hurt to make that more explicit.
->
-> Ok, if that's how everyone feels, then I'll step back.
->
-> It was just an idea :)
->
-> I prefer, in this case, a simple host-wide sysctl to allow setgroups.
-
-Do you mean that you prefer the sysctl to just allow setgroups in a user
-namespace not have the sysctl also disable negative groups?
-
->> >From what we could tell at the time people that know negative groups are
->> honored much less systems that actually use negative groups are
->> exceedingly rare.
->
-> You're probably right, but again I think if you did a survey, many
-> people who are using it probably answered no because they either
-> forgot or don't think of it in those terms.
-
-Quite possibly.
-
-Still I haven't see any of the come forward and report problems.  Which
-seems to indicate that the solution we came up with, with setgroups is
-working and has not caused any regressions.
-
-Eric
-
-p.s.  One alternative that sticks slightly closer to what we have today
-is to enable setgroups during the login process, like rlimits are set
-today.  That has the same consequences for system security as
-/etc/subuid and /etc/subgid and like a sysctl should just be a set and
-forget option.
-
-
-
-
-_______________________________________________
-Containers mailing list
-Containers@lists.linux-foundation.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
+IkVucmljbyBXZWlnZWx0LCBtZXR1eCBJVCBjb25zdWx0IiA8bGttbEBtZXR1eC5uZXQ+IHdyaXRl
+czoKCj4gT24gMzAuMDguMjAgMTY6MzksIENocmlzdGlhbiBCcmF1bmVyIHdyb3RlOgo+Cj4gSGkg
+Q2hyaXN0aWFuLAo+Cj4+IFAxLiBJc29sYXRlZCBpZCBtYXBwaW5ncyBjYW4gb25seSBiZSBndWFy
+YW50ZWVkIHRvIGJlIGxvY2FsbHkgaXNvbGF0ZWQuCj4+ICAgICBBIGNvbnRhaW5lciBydW50aW1l
+L2RhZW1vbiBjYW4gb25seSBndWFyYW50ZWUgbm9uLW92ZXJsYXBwaW5nIGlkIG1hcHBpbmdzCj4+
+ICAgICB3aGVuIG5vIG90aGVyIHVzZXJzIG9uIHRoZSBzeXN0ZW0gY3JlYXRlIGNvbnRhaW5lcnMu
+Cj4KPiBJbmRlZWQuIEJ1dCBjb3VsZG4ndCB3ZSBqdXN0IHJlY29yZCB0aGUgbWFwcGluZ3MgaW4g
+c29tZSBzdGFuZGFyZGl6ZWQKPiBwbGFjZSAoZWcuIHNvbWUgZmlsZSkgd2hpY2ggYWxsIGVuZ2lu
+ZXMgbWFpbnRhaW4gPwo+Cj4gSSdkIGd1ZXNzIG90aGVyIHNvbHV0aW9ucyB3b3VsZCBuZWVkIGNo
+YW5nZXMgaW4gdGhlIHJ1bnRpbWVzLCB0b28uCj4KPiBQbGVhc2Uga2VlcCBpbiBtaW5kIHRoYXQg
+c29tZSBzY2VuYXJpb3MgYWN0dWFsbHkgbmVlZCBzb21lIG92ZXJsYXBzLCBlZy4KPiBhcHBsaWNh
+dGlvbiBjb250YWluZXJzIHRoYXQgc2hhbGwgaGF2ZSBkaXJlY3QgYWNjZXNzIHRvIGhvbWUgZGly
+cy4KPgo+PiBQMi4gRW5mb3JjaW5nIGlzb2xhdGVkIGlkIG1hcHBpbmdzIGluIHVzZXJzcGFjZSBp
+cyBkaWZmaWN1bHQuCj4+ICAgICBJdCBpcyBhbHdheXMgcG9zc2libGUgdG8gY3JlYXRlIG90aGVy
+IHByb2Nlc3NlcyB3aXRoIG92ZXJsYXBwaW5nIGlkCj4+ICAgICBtYXBwaW5ncy4gQ29vcmRpbmF0
+aW5nIGlkIG1hcHBpbmdzIGluIHVzZXJzcGFjZSB3aWxsIGFsd2F5cyByZW1haW4KPj4gICAgIG9w
+dGlvbmFsLiBRdWl0ZSBhIGZldyB0b29scyBub3dhZGF5cyAoaW5jbHVkaW5nIHN5c3RlbWQpIGRv
+bid0IGNhcmUgYWJvdXQKPj4gICAgIC9ldGMvc3Vie2csdX1pZCBhbmQgYWN0aXZlbHkgYWR2aXNl
+IGFnYWluc3QgdXNpbmcgaXQuIFRoaXMgaXMgbWFkZSBldmVuCj4+ICAgICBtb3JlIHByb2JsZW1h
+dGljIHNpbmNlIHN1YntnLHV9aWlkIGRlbGVnYXRpb24gaXMgZG9uZSBwZXItdXNlciByYXRoZXIg
+dGhhbgo+PiAgICAgcGVyLWNvbnRhaW5lci1ydW50aW1lLgo+Cj4gSSBiZWxpZXZlIHN1YnVzZXJz
+IGFyZW4ndCBtZWFudCBmb3IgdHlpY2FsIGNvbnRhaW5lcnMgKGxpa2UgZG9ja2VyIG9yCj4gbHhj
+KSwgYnV0IHVucHJpdmlsZWdlZCB1c2VyIHByb2dyYW1zIHRoYXQgd2FubmEgaGF2ZSBmdXJ0aGVy
+IGlzb2xhdGlvbgo+IGZvciBzdWJwcm9jZXNzZXMgKGVnLiBhIGJyb3dzZXIncyByZW5kZXJlciBv
+ciBqcyBlbmdpbmUpLgo+Cj4gQ29ycmVjdCBtZSBpZiBJJ20gd3JvbmcuCgpUaGVyZSBpcyBhbiBv
+bi1nb2luZyB0cmVuZCB0byBtYWtlIHVucHJpdmlsZWdlZCBjb250YWluZXJzIHR5cGljYWwKY29u
+dGFpbmVycy4KCj4+IFAzLiBUaGUgcmFuZ2Ugb2YgdGhlIGlkIG1hcHBpbmcgb2YgYSBjb250YWlu
+ZXIgY2FuJ3QgYmUgcHJlZGV0ZXJtaW5lZC4KPj4gICAgIFdoaWxlIFBPU0lYIG1hbmRhdGVzIHRo
+YXQgYSBzdGFuZGFyZCBzeXN0ZW0gc2hvdWxkIHVzZSBhIHJhbmdlIG9mIDY1NTM2IGlkcwo+PiAg
+ICAgcmVhbGl0eSBpcyB2ZXJ5IGRpZmZlcmVudC4gU29tZSBwcm9ncmFtcyBhbGxvY2F0ZSBoaWdo
+IGlkcyBmb3IgcmFuZG9tCj4+ICAgICBwcm9jZXNzZXMgb3IgZm9yIG5ldHdvcmsgYXV0aGVudGlj
+YXRpb24uIFRoaXMgbWVhbnMsIGluIHByYWN0aWNlIGl0IGlzCj4+ICAgICBvZnRlbiBuZWNlc3Nh
+cnkgdG8gYXNzaWduIGEgcmFuZ2Ugb2YgdXAgdG8gMTAgbWlsbGlvbiBpZHMgdG8gYSBjb250YWlu
+ZXIuCj4+ICAgICBUaGlzIGxpbWl0cyBhIHN5c3RlbSB0byBsZXNzIHRoYW4gNTAwIGNvbnRhaW5l
+cnMgdG90YWwuCj4KPiBJbiAyNSsgeWVhcnMsIGhhdmVuJ3Qgc2VlbiBzdWNoIGFuIGFwcGxpY2F0
+aW9uIGluIHRoZSBmaWVsZC4gSSdkCj4gY29uc2lkZXIgdGhpcyBhIGhvcnJpYmxlIGFuZCBkYW5n
+ZXJvdXMgYnVnLiBTYW5lIGFwcGxpY2F0aW9ucyBjcmVhdGUKPiBzcGVjaWZpYyB1c2VyIGVudHJp
+ZXMgKC9ldGMvcGFzc3dkKSBmb3IgdGhhdC4KPgo+IEknZCBzYXkgd2UncmUgc2FmZSB3LyBtYXgg
+Ml4xNiB1c2VycyBwZXIgY29udGFpbmVyLCB3aGljaCBzaG91bGQgZ2l2ZSB1cwo+IHNwYWNlIGZv
+ciBhYm91dCAyXjE2IGNvbnRhaW5lcnMuCgpJIGZvcmdldCB0aGUgZGV0YWlscyBidXQgc3lzdGVt
+ZCBoYXMgYSBmZWF0dXJlIHdoZXJlIGl0IHdpbGwgcmFuZG9tbHkKYWxsb2NhdGUgYSB1aWQgZm9y
+IGEgc2VydmljZS4gIENhbGxpbmcgdGhlbSBzb21ldGhpbmcgbGlrZSB0ZW1wb3Jhcml5IHVpZHMu
+Cgo+PiBQNC4gSXNvbGF0ZWQgaWQgbWFwcGluZ3Mgc2V2ZXJlbHkgcmVzdHJpY3QgdGhlIG51bWJl
+ciBvZiBjb250YWluZXJzIHRoYXQgY2FuIGJlCj4+ICAgICBydW4gb24gYSBzeXN0ZW0uCj4+ICAg
+ICBUaGlzIHRpZXMgYmFjayB0byB0aGUgcG9pbnQgYWJvdXQgcHJlLWRldGVybWluaW5nIHRoZSBp
+ZCByYW5nZSBvZiBhCj4+ICAgICBjb250YWluZXIgYW5kIGhvdyBsYXJnZSByYW5nZSBhbGxvY2F0
+aW9ucyB0ZW5kIHRvIGJlIG9uIHJlYWwgc3lzdGVtcy4gVGhhdAo+PiAgICAgYmVjb21lcyBldmVu
+IG1vcmUgcmVsZXZhbnQgd2hlbiBuZXN0aW5nIGNvbnRhaW5lcnMuCj4KPiBJTUhPLCBhbGwgd2Ug
+bmVlZCBpcyB0byBtYWludGFpbiBhIGxpc3Qgb2YgYWN0aXZlIHJhbmdlcyAobW9yZSBwcmVjaXNl
+bHkKPiB0aGUgMTZiaXQgcHJlZml4ZXMsIGp1c3QgbGlrZSBjbGFzcyBCIG5ldHdvcmtzIDstKSku
+IEFzIHNhaWQsIEknZAo+IGRlY2xhcmUgdGhlIHNjZW5hcmlvICNQMyBhcyBpbnZhbGlkIGFuZCBy
+YXRoZXIgZml4IHRob3NlIGZldyBicm9rZW4KPiBhcHBsaWNhdGlvbnMuCgpXaGljaCBpcyAvZXRj
+L3N1YnVpZCBhbmQgL2V0Yy9zdWJnaWQsIGFuZCBpdCB3YXMgdmVyeSBtdWNoIGluc3BpcmVkIGZy
+b20KdGhlIHNhbWUgc291cmNlLgoKPj4gUDUuIENvbnRhaW5lciBydW50aW1lcyBjYW5ub3QgcmV1
+c2Ugb3ZlcmxheWZzIGxvd2VyIGRpcmVjdG9yaWVzIGlmIGVhY2gKPj4gICAgIGNvbnRhaW5lciB1
+c2VzIGlzb2xhdGVkIElEIG1hcHBpbmdzLCBsZWFkaW5nIHRvIGVpdGhlciBuZWVkbGVzcyBzdG9y
+YWdlCj4+ICAgICBvdmVyaGVhZCAoTFhEIC0tIHRob3VnaCB0aGUgTFhEIGZvbGtzIGRvbuKAmXQg
+cmVhbGx5IG1pbmQpLCBjb21wbGV0ZWx5Cj4+ICAgICBpZ25vcmluZyB0aGUgYmVuZWZpdHMgb2Yg
+aXNvbGF0aW5nIGNvbnRhaW5lcnMgZnJvbSBlYWNoIG90aGVyIChEb2NrZXIpLCBvcgo+PiAgICAg
+bm90IHVzaW5nIHRoZW0gYXQgYWxsIChLdWJlcm5ldGVzKS4gKFRoaXMgaXMgYSBtb3JlIGdlbmVy
+YWwgaXNzdWUgYnV0IGJlYXJzCj4+ICAgICByZXBlYXRpbmcgc2luY2UgaXQgaXMgY2xvc2VseSB0
+aWVkIHRvIG1vc3QgdXNlcm5zIHByb3Bvc2Fscy4pCj4KPiBJbmRlZWQuIFRoYXQncyBJTUhPIHRo
+ZSBtYWluIHByb2JsZW0uIFdlIHNvbWVob3cgbmVlZCB0byBtYXAgdGhlIFVJRHMuCj4gTWF5YmUg
+YSBzeW50aGV0aWMgZmlsZXN5c3RlbSB0aGF0IGp1c3QgZG9lcyBleGFjdGx5IHRoZSBzYW1lIHVp
+ZDwtPmt1aWQKPiB0cmFuc2xhdGlvbnMgd2UncmUgYWxyZWFkeSBkb2luZyBpbiBvdGhlciBwbGFj
+ZXMgPwo+Cj4+IFA2LiBSbGltaXRzIHBvc2UgYSBwcm9ibGVtIGZvciBjb250YWluZXJzIHRoYXQg
+c2hhcmUgdGhlIHNhbWUgaWQgbWFwcGluZy4KPj4gICAgIFRoaXMgbWVhbnMgY29udGFpbmVycyB3
+aXRoIG92ZXJsYXBwaW5nIGlkIG1hcHBpbmdzIGNhbiBET1MgZWFjaCBvdGhlciBieQo+PiAgICAg
+ZXhoYXVzdGluZyB0aGVpciBybGltaXRzLiBUaGUgcmVhc29uIGZvciB0aGlzIGxpZXMgd2l0aCB0
+aGUgY3VycmVudAo+PiAgICAgaW1wbGVtZW50YXRpb24gb2YgcmxpbWl0cyAtLSBybGltaXRzIGFy
+ZSBjdXJyZW50bHkgdGllZCB0byB1c2VycyBhbmQgYXJlCj4+ICAgICBub3QgaGllcmFyY2hpY2Fs
+bHkgbGltaXRlZCBsaWtlIGlub3RpZnkgbGltaXRzIGFyZS4gVGhpcyBpcyBhIHNldmVyZQo+PiAg
+ICAgcHJvYmxlbSBpbiB1bnByaXZpbGVnZWQgd29ya2xvYWRzLiBFcmljIGFuZCBvdGhlcnMgaWRl
+bnRpZmllZCB0aGF0IHRoaXMKPj4gICAgIGlzc3VlIGNhbiBiZSBmaXhlZCBpbmRlcGVuZGVudGx5
+IG9mIHRoZSBpc29sYXRlZCB1c2VyIG5hbWVzcGFjZSBwcm9wb3NhbC4KPgo+IElzIHRoaXMgcmVh
+bGx5IGFuIHByYWN0aWNhbCBpc3NzdWUsIHdoZW4gd2UncmUgdXNpbmcgdWlkIG5hbWVzcGFjZXMg
+PwoKVmVyeSBtdWNoIHNvLiAgVGhlcmUgYXJlIGNvbnRhaW5lcnMgd2hvIG90aGVyd2lzZSB3b3Vs
+ZCB1c2UgdGhlIHNhbWUgdWlkCnJhbmdlLiAoQUtBIHRoZXkgaGF2ZSB0aGUgc2FtZSBzZXQgb2Yg
+dXNlcnMpLiAgQnV0IGNhbid0IGJlY2F1c2UgdGhlcmUKYXJlIGNhc2VzIGxpa2UgZGFlbW9ucyB0
+aGF0IHNldCB0aGVpciBSTElNSVRfTlBST0MgdG8gMS4gIEJlY2F1c2UgdGhlCmRhZW1vbiBrbm93
+cyB0aGF0IHVzZXIgZm9yIHRoYXQgZGFlbW9uIHdpbGwgbmV2ZXIgcnVuIGFueSBvdGhlcgpwcm9j
+ZXNzZXMuCgpSdW4gdHdvIGNvbnRhaW5lcnMgd2l0aCB0aGUgc2FtZSBtYXBwaW5ncyBhbmQgdGhh
+dCBkYWVtb24gRE9TJ3MgaXRzZWxmLgoKPj4gUzIuIEtlcm5lbC1lbmZvcmNlZCB1c2VyIG5hbWVz
+cGFjZSBpc29sYXRpb24uCj4+ICAgICBUaGlzIG1lYW5zLCB0aGVyZSBpcyBubyBuZWVkIGZvciBk
+aWZmZXJlbnQgY29udGFpbmVyIHJ1bnRpbWVzIHRvCj4+ICAgICBjb2xsYWJvcmF0ZSBvbiBpZCBy
+YW5nZXMgd2l0aCBpbW1lZGlhdGUgYmVuZWZpdHMgZm9yIGV2ZXJ5b25lLgo+PiAgICAgVGhpcyBz
+b2x2ZXMgUDEgYW5kIFAyLgo+Cj4gT2theSwgYnV0IGhvdyB0byBzdXBwb3J0IHNjZW5hcmlvcyB3
+aGVyZSBzb21lIG9mIHRoZSBVSURzIHNob3VsZAo+IG92ZXJsYXAgb24gcHVycG9zZSA/IChlZy4g
+bW91bnRpbmcgc29tZSBvZiB0aGUgaG9zdCdzIHVzZXIgaG9tZWRpcnMKPiBpbnRvIG5hbWVzcGFj
+ZXMgPykKCkp1c3QgaGF2ZSBhIGxpbWl0ZWQgbnVtYmVyIG9mIG1hcHBpbmdzIGZvciB0aGUgY2Fz
+ZXMgdGhhdCBhY3R1YWxseSBuZWVkCm9uLWRpc2sgc3RvcmFnZS4gIFRoZSBrZXkgaWRlYSBpcyBh
+ZGRpbmcgdWlkcyB0aGF0IGRvbid0IG5lZWQgdG8gYmUKbWFwcGVkLiAgRXZlcnl0aGluZyBlbHNl
+IHN0YXlzIHRoZSBzYW1lLgoKPj4gUzUuIFRoZSBvd25pbmcgaWQgY29uY2VwdCBvZiBhIHVzZXIg
+bmFtZXNwYWNlIG1ha2VzIG1vbml0b3JpbmcgYW5kIGludGVyYWN0aW5nCj4+ICAgICB3aXRoIHN1
+Y2ggY29udGFpbmVycyB3YXkgZWFzaWVyLgo+Cj4gV2hhdCBleGFjdGx5IGlzIHRoZSBvd25pbmcg
+aWQgPyBIb3cgaXMgaXQgY3JlYXRlZCBhbmQgbWFuYWdlZCA/Cj4gU29tZSBtYWdpYyBpZCBvciBh
+biBjcnlwdG9ncmFwaGljIHRva2VuID0KCk5vdCBhIG5ldyB0aGluZy4gIEp1c3QgdGhlIHVzZXIg
+dGhhdCBjcmVhdGVkIHRoZSB1c2VyIG5hbWVzcGFjZS4KSXQgaXMgc3VnZ2VzdGVkIHRvIHJlZmlu
+ZSB0aGUgaWRlYSBzbyB0aGF0IHVzZXJzIHRoYXQgZG9uJ3QgbWFwCmFueXdoZXJlIHNob3cgdXAg
+YXMgdGhlIGNyZWF0b3Igb2YgdGhlIHVzZXIgbmFtZXNwYWNlLgoKPj4gMS4gSG93IGFyZSBpbnRl
+cmFjdGlvbnMgYWNyb3NzIGlzb2xhdGVkIHVzZXIgbmFtZXNwYWNlcyBoYW5kbGVkPwo+Cj4gV2hh
+dCBraW5kIG9mIGludGVyYWN0aW9uIGRvIHlvdSBoYXZlIGluIG1pbmQgPwo+IERhdGEgdHJhbnNm
+ZXJzID8gUHJvY2VzcyBtYW5pcHVsYXRvbiA/IE5hbWVzcGFjZSBkZXN0cnVjdGlvbiA/Cj4KPiBD
+YW4geW91IHBsZWFzZSBpbGx1c3RyYXRlIHNvbWUgYWN0dWFsIHVzZSBjYXNlcyA/Cj4KPj4gICAg
+UHJvcG9zYWwgMS4xIHNlbW1lZCBwcmVmZXJlZCBzaW5jZSBpdCB3b3VsZCBhbGxvdyBhbiB1bnBy
+aXZpbGVnZWQKPj4gICAgdXNlciBjcmVhdGluZyBhbiBpc29sYXRlZCB1c2VyIG5hbWVzcGFjZSB0
+byBraWxsL3B0cmFjZSBhbGwgcHJvY2Vzc2VzCj4+ICAgIGluIHRoZSBpc29sYXRlZCBuYW1lc3Bh
+Y2UgdGhleSBzcGF3bmVkLiAKPgo+IERvbid0IHdlIGFscmVhZHkgaGF2ZSB0aGlzIGlmIHRoaXMg
+dXNlciBpcyBtYXBwZWQgYXMgcm9vdCBpbnNpZGUgdGhlCj4gY29udGFpbmVyID8KCkkgdGhpbmsg
+dGhlcmUgd2VyZSBtb3JlIGNvbmNlcm5zIHJhaXNlZCB0aGF0IEkgdGhpbmsgYWN0dWFsbHkgZXhp
+c3QuClRoZSBvd25lci9jcmVhdG9yIG9mIGEgdXNlciBuYW1lc3BhY2UgY2FuIGFscmVhZHkgbWFu
+YWdlIGFuIGNvbnRhaW5lcgphbmQgc2VuZCBpdCBzaWduYWxzLiAgVGhhdCBpcyBidWlsdCBpbnRv
+IHRoZSBjYXBhYmlsaXR5IHN5c3RlbSBjYWxsLgpOb3RoaW5nIG5lZWRzIHRvIGNoYW5nZSB0aGVy
+ZS4KClRoZSBvbmx5IHJlYWwgcXVlc3Rpb24gSSBzZWUgaXMgd2hpY2ggdWlkcyBhbmQgZ2lkcyBk
+byB3ZSBzaG93IHRvCnByb2Nlc3NlcyB0aGF0IGFyZSBvdXRzaWRlIG9mIHRoZSB1c2VyIG5hbWVz
+cGFjZSwgd2hlbiB0aGUgdWlkcyBhbmQgZ2lkcwpkb24ndCBtYXAuCgo+PiAgICBUaGUgZmlyc3Qg
+Y29uc2Vuc3VzIHJlYWNoZWQgc2VlbWVkIHRvIGJlIHRvIGRlY291cGxlIGlzb2xhdGVkIHVzZXIK
+Pj4gICAgbmFtZXNwYWNlcyBmcm9tIHNoaWZ0ZnMuIFRoZSBpZGVhIGlzIHRvIHNvbGVseSByZWx5
+IG9uIHRtcGZzIGFuZCBmdXNlCj4+ICAgIGF0IHRoZSBiZWdpbm5pbmcgYXMgZmlsZXN5c3RlbXMg
+d2hpY2ggY2FuIGJlIG1vdW50ZWQgaW5zaWRlIGlzb2xhdGVkCj4+ICAgIHVzZXIgbmFtZXNwYWNl
+cyBhbmQgc28gd291bGQgaGF2ZSBwcm9wZXIgb3duZXJzaGlwLiAKPgo+IFNvLCBJJ2QgZXNzZW50
+aWFsbHkgaGF2ZSB0byBydW4gdGhlIHdob2xlIHJvb3RmcyB0aHJvdWdoIGZ1c2UgYW5kIGEKPiB1
+c2VybGFuZCBmaWxlc2VydmVyLCB3aGljaCBwcm9iYWJseSBoYXMgdG8gdHJhY2sgdGhpbmdzIGxp
+a2Ugb3duZXJzaGlwcwo+IGluIGl0cyBvd24gZGIgKHdoZW4gcnVubmluZyB1bmRlciB1bnByaXZp
+bGVnZWQgdXNlcikgPwoKVGhlIGNvbnNlbnN1cyB3YXMgdG8gc3RhcnQgd2l0aCB3aGF0IGlzIHdv
+cmtpbmcgbm93LgoKVXNlcnMgdGhhdCBkb24ndCBtYXAgb3V0c2lkZSBvZiB0aGUgdXNlciBuYW1l
+c3BhY2Ugd2lsbCBzaG93IHVwIGFuZCB3b3JrCnByb3Blcmx5IGluIG9uIHRtcGZzLiAgT3IgYSBm
+dXNlIGltcGxlbWVudGF0aW9uIG9mIGV4dDQgb24gdG9wIG9mIGEKZmlsZS4KCj4+IEZvciBtb3Vu
+dCBwb2ludHMKPj4gICAgdGhhdCBvcmlnaW5hdGUgZnJvbSBvdXRzaWRlIHRoZSBuYW1lc3BhY2Us
+IGV2ZXJ5dGhpbmcgd2lsbCBzaG93IGFzCj4+ICAgIHRoZSBvdmVyZmxvdyBpZHMgYW5kIGFjY2Vz
+cyB3b3VsZCBiZSByZXN0cmljdGVkIHRvIHRoZSBtb3N0Cj4+ICAgIHJlc3RyaWN0ZWQgcGVybWlz
+c2lvbiBiaXQgZm9yIGFueSBwYXRoIHRoYXQgY2FuIGJlIGFjY2Vzc2VkLgo+Cj4gU28sIEkgY2Fu
+J3QganVzdCB0YWtlIGEgYnRyZnMgc25hcHNob3QgYXMgcm9vdGZzIGFueW1vcmUgPwoKSW50ZXJl
+c3RpbmcgdW50aWwgcmVhZGluZyB0aHJvdWdoIHlvdXIgY29tbWVudGFyeSBJIGhhZCBtaXNzZWQg
+dGhlCnByb3Bvc2FsIHRvIGVmZmVjdGl2ZWx5IGVmZmVjdGl2ZWx5IGNoYW5nZSB0aGUgcGVybWlz
+c2lvbnMgdG86CigobW9kZSA+PiAzKSAmIChtb2RlID4+IDYpICYgbW9kZSAmIDcpLgoKVGhlIGNo
+YWxsZW5nZSBpcyB0aGF0IGluIGEgcGVybWlzc2lvbiB0cmlwbGUgaXQgaXMgcG9zc2libGUgdG8g
+c2V0Cmxvd2VyIHBlcm1pc3Npb25zIGZvciB0aGUgb3duZXIgb2YgdGhlIGZpbGUsIG9yIGZvciBh
+IHNwZWNpZmljIGdyb3VwLAp0aGFuIGZvciBldmVyeW9uZSBlbHNlLgoKVG9kYXkgd2UgcmVxdWly
+ZSByb290IHBlcm1pc3Npb25zIHRvIGJlIGFibGUgdG8gbWFwIHVzZXJzIGFuZCBncm91cHMgaW4K
+L3Byb2MvPHBpZD4vdWlkX21hcCBhbmQgL3Byb2MvPHBpZD4vZ2lkX21hcCwgYW5kIHdlIHJlcXVp
+cmUgcm9vdApwZXJtaXNzaW9ucyB0byBiZSBhYmxlIHRvIGRyb3AgZ3JvdXBzIHdpdGggc2V0Z3Jv
+dXBzLgoKTm93IHdlIGFyZSBkaXNjdXNzaW9uZyBtb3ZpbmcgdG8gYSB3b3JsZCB3aGVyZSB3ZSBj
+YW4gdXNlIHVzZXJzIGFuZApncm91cHMgdGhhdCBkb24ndCBtYXAgdG8gYW55IG90aGVyIHVzZXIg
+bmFtZXNwYWNlIGluIHVpZF9tYXAgYW5kCmdpZF9tYXAuICBJdCBzaG91bGQgYmUgY29tcGxldGVs
+eSBzYWZlIHRvIHVzZSB0aG9zZSB1c2VycyBhbmQgZ3JvdXBzCmV4Y2VwdCBmb3IgbmVnYXRpdmUg
+cGVybWlzc2lvbnMgaW4gZmlsZXN5c3RlbXMuICBTbyBhIGJpZyBxdWVzdGlvbiBpcwpob3cgZG8g
+d2UgYXJyYW5nZSB0aGUgc3lzdGVtIHNvIGFueW9uZSBjYW4gdXNlIHRob3NlIGZpbGVzIHdpdGhv
+dXQKbmVnYXRpdmUgcGVybWlzc2lvbiBjYXVzaW5nIHByb2JsZW1zLgoKCkkgYmVsaWV2ZSBpdCBp
+cyBzYWZlIHRvIG5vdCBsaW1pdCB0aGUgb3duZXIgb2YgYSBmaWxlLCBhcyB0aGUKb3duZXIgb2Yg
+YSBmaWxlIGNhbiBhbHdheXMgY2htb2RlIHRoZSBmaWxlIGFuZCByZW1vdmUgYW55IHJlc3RyaWN0
+aW9ucy4KV2hpY2ggaXMgbm8gd29yc2UgdGhhbiBjYWxsaW5nIHNldHVpZCB0byBhIGRpZmZlcmVu
+dCB1aWQuCgpXaGljaCBsZWF2ZXMgd2hlcmUgd2UgaGF2ZSBiZWVuIGRlYWxpbmcgd2l0aCB0aGUg
+YWJpbGl0eSB0byBkcm9wIGdyb3Vwcwp3aXRoIHNldGdyb3Vwcy4KCkkgZ3Vlc3MgdGhlIHByYWN0
+aWNhbCBwcm9wb3NhbCBpcyB3aGVuIHRoZSAhaW5fZ3JvdXBfcCBhbmQgd2UgYXJlCmxvb2tpbmcg
+YXQgdGhlIG90aGVyIHBlcm1pc3Npb24uICBUcmVhdCB0aGUgcGVybWlzc2lvbnMgYXM6CigobW9k
+ZSA+PiAzKSAmIG1vZGUgJiA3KS4gIEluc3RlYWQgb2YganVzdCAobW9kZSAmIDcpLgoKV2hpY2gg
+Zm9yIHN5c3RlbXMgd2hvIGRvbid0IHVzZSBuZWdhdGl2ZSBncm91cCBwZXJtaXNzaW9ucyBpcyBh
+IG5vLW9wLgpTbyB0aGlzIHNob3VsZCBub3QgZWZmZWN0IHlvdXIgYnRyZnMgc25hcHNob3RzIGF0
+IGFsbCAodW5sZXNzIHlvdSB1c2UKbmVnYXRpdmUgZ3JvdXAgcGVybWlzc2lvbnMpLgoKSXQgZGVu
+aWVzIHRoaW5ncyBiZWZvcmUgd2UgZ2V0IHRvIGFuIE5GUyBzZXJ2ZXIgb3Igb3RoZXIgaW50ZXJl
+c3RpbmcKY2FzZSBzbyBpdCBzaG91bGQgd29yayBmb3IgcHJldHR5IG11Y2ggZXZlcnl0aGluZyB0
+aGUga2VybmVsIGRlYWxzIHdpdGguCgpVc2Vyc3BhY2UgcmVwZWF0aW5nIHBlcm1pc3Npb24gY2hl
+Y2tzIGNvdWxkIGJyZWFrLiAgQnV0IHRoYXQgaXMganVzdCBhCnByb2JsZW0gb2YgaW5jb25zaXN0
+ZW5jeSwgYW5kIHdpbGwgYWx3YXlzIGJlIGEgcHJvYmxlbS4KCldlIGNvdWxkIG1ha2UgaXQgbW9y
+ZSBwcmVjaXNlIGFzIFNlcmdlIHdhcyBzdWdnZXN0aW5nIHdpdGggYSBzZXQgb2YgdGhhdAp3ZXJl
+IGRyb3BwZWQgZnJvbSBzZXRncm91cHMsIGJ1dCB1bmRlciB0aGUgYXNzdW1wdGlvbiB0aGF0IG5l
+Z2F0aXZlCmdyb3VwcyBhcmUgc3VmZmljaWVudCByYXJlIHdlIGNhbiBhdm9pZCB0aGF0IG92ZXJo
+ZWFkLgoKIHN0YXRpYyBpbnQgYWNsX3Blcm1pc3Npb25fY2hlY2soc3RydWN0IGlub2RlICppbm9k
+ZSwgaW50IG1hc2spCiB7CiAJdW5zaWduZWQgaW50IG1vZGUgPSBpbm9kZS0+aV9tb2RlOwogCi0g
+W2lycmVsZXZhbnQgYml0cyBvZiB0aGlzIGZ1bmN0aW9uXSAgICAgICAgCiAKIAkvKiBPbmx5IFJX
+WCBtYXR0ZXJzIGZvciBncm91cC9vdGhlciBtb2RlIGJpdHMgKi8KIAltYXNrICY9IDc7CiAKIAkv
+KgogCSAqIEFyZSB0aGUgZ3JvdXAgcGVybWlzc2lvbnMgZGlmZmVyZW50IGZyb20KIAkgKiB0aGUg
+b3RoZXIgcGVybWlzc2lvbnMgaW4gdGhlIGJpdHMgd2UgY2FyZQogCSAqIGFib3V0PyBOZWVkIHRv
+IGNoZWNrIGdyb3VwIG93bmVyc2hpcCBpZiBzby4KIAkgKi8KIAlpZiAobWFzayAmIChtb2RlIF4g
+KG1vZGUgPj4gMykpKSB7CiAJCWlmIChpbl9ncm91cF9wKGlub2RlLT5pX2dpZCkpCiAJCQltb2Rl
+ID4+PSAzOworCQkvKiBVc2UgdGhlIG1vc3QgcmVzdHJpY3RpdmUgcGVybWlzc2lvbnM/ICovCisJ
+CWVsc2UgKGN1cnJlbnQtPnVzZXJfbnMtPmZsYWdzICYgVVNFUk5TX0FMV0FZU19ERU5ZX0dST1VQ
+UykKKwkJCW1vZGUgJj0gKG1vZGUgPj4gMyk7CiAJfQogCiAJLyogQml0cyBpbiAnbW9kZScgY2xl
+YXIgdGhhdCB3ZSByZXF1aXJlPyAqLwogCXJldHVybiAobWFzayAmIH5tb2RlKSA/IC1FQUNDRVMg
+OiAwOwogfQoKQXMgSSByZWFkIHBvc2l4X2FjbF9wZXJtaXNzaW9uIGFsbCBvZiB0aGUgcG9zaXgg
+YWNscyBmb3IgZ3JvdXBzIGFyZQpwb3NpdGl2ZSBwZXJtaXNzaW9ucy4gIFNvIEkgdGhpbmsgdGhl
+IG9ubHkgb3RoZXIgY29kZSB0aGF0IHdvdWxkIG5lZWQgdG8KYmUgdXBkYXRlZCB3b3VsZCBiZSB0
+aGUgZmlsZXN5c3RlbXMgdGhhdCByZXBsYWNlIGdlbmVyaWNfcGVybWlzc2lvbiB3aXRoCnNvbWV0
+aGluZyB0aGF0IGRvZXNuJ3QgY2FsbCBhY2xfcGVybWlzc2lvbiBjaGVjay4KClVzZXJzcGFjZSBj
+b3VsZCB0aGVuIGFjdGl2YXRlIHRoaXMgbW9kZSB3aXRoOgoJZWNobyAic2FmZWx5X2FsbG93IiA+
+IC9wcm9jLzxwaWQ+L3NldGdyb3VwcwoKVGhhdCBsb29rcyB2ZXJ5IGVsZWdhbnQgYW5kIHNpbXBs
+ZSwgYW5kIEkgZG9uJ3QgdGhpbmsgd2lsbCBjYXVzZQpwcm9ibGVtcyBmb3IgYW55b25lLiAgSXQg
+bWlnaHQgZXZlbiBtYWtlIHNlbnNlIHRvIG1ha2UgdGhhdCB0aGUgZGVmYXVsdAptb2RlIHdoZW4g
+Y3JlYXRpbmcgYSBuZXcgdXNlciBuYW1lc3BhY2UuCgpJIGd1ZXNzIHdlIG93ZSB0aGlzIGlkZWEg
+dG8gSm9zaCBUcmlwbGV0dCBhbmQgR2VvZmZyZXkgVGhvbWFzLgoKRG9lcyBhbnlvbmUgc2VlIGFu
+eSBwcm9ibGVtcyB3aXRoIHR3ZWFraW5nIHRoZSBwZXJtaXNzaW9ucyB0aGlzIHdheSBzbwp0aGF0
+IHdlIGNhbiBhbHdheXMgYWxsb3cgc2V0Z3JvdXBzIGluIGEgdXNlciBuYW1lc3BhY2U/CgpFcmlj
+CgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWlu
+ZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0
+dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5l
+cnM=
