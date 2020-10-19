@@ -2,104 +2,86 @@ Return-Path: <SRS0=bTwc=D2=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7E399C433DF
-	for <containers@archiver.kernel.org>; Mon, 19 Oct 2020 09:30:37 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B489BC43457
+	for <containers@archiver.kernel.org>; Mon, 19 Oct 2020 10:27:14 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id F1CBA22200
-	for <containers@archiver.kernel.org>; Mon, 19 Oct 2020 09:30:36 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F1CBA22200
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=huawei.com
+	by mail.kernel.org (Postfix) with ESMTPS id 183372225A
+	for <containers@archiver.kernel.org>; Mon, 19 Oct 2020 10:27:13 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="Q0J/aEE8"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 183372225A
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 671CE870B1;
-	Mon, 19 Oct 2020 09:30:36 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 75689871B4;
+	Mon, 19 Oct 2020 10:27:13 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from hemlock.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id qXWy8HDbbwdL; Mon, 19 Oct 2020 10:27:13 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by hemlock.osuosl.org (Postfix) with ESMTP id 132B7871AC;
+	Mon, 19 Oct 2020 10:27:13 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id EA61AC088B;
+	Mon, 19 Oct 2020 10:27:12 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 65DAAC0051
+ for <containers@lists.linux-foundation.org>;
+ Mon, 19 Oct 2020 10:27:12 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by whitealder.osuosl.org (Postfix) with ESMTP id 59EBF872A9
+ for <containers@lists.linux-foundation.org>;
+ Mon, 19 Oct 2020 10:27:12 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 9JXtPfIPYrYD; Mon, 19 Oct 2020 09:30:35 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 7056286D36;
-	Mon, 19 Oct 2020 09:30:35 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 63010C0052;
-	Mon, 19 Oct 2020 09:30:35 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id C6991C0051
- for <containers@lists.linux-foundation.org>;
- Mon, 19 Oct 2020 09:30:33 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id AA04186C76
- for <containers@lists.linux-foundation.org>;
- Mon, 19 Oct 2020 09:30:33 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id UICQVED68AO6
+ with ESMTP id K9XfTaT0htYG
  for <containers@lists.linux-foundation.org>;
- Mon, 19 Oct 2020 09:30:32 +0000 (UTC)
+ Mon, 19 Oct 2020 10:27:12 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from huawei.com (lhrrgout.huawei.com [185.176.76.210])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id 7BE0F854E7
+Received: from us-smtp-delivery-124.mimecast.com
+ (us-smtp-delivery-124.mimecast.com [63.128.21.124])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id CEDE786D53
  for <containers@lists.linux-foundation.org>;
- Mon, 19 Oct 2020 09:30:32 +0000 (UTC)
-Received: from lhreml717-chm.china.huawei.com (unknown [172.18.7.108])
- by Forcepoint Email with ESMTP id 4877FC634ACB4260299F;
- Mon, 19 Oct 2020 10:30:29 +0100 (IST)
-Received: from fraeml703-chm.china.huawei.com (10.206.15.52) by
- lhreml717-chm.china.huawei.com (10.201.108.68) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256) id
- 15.1.1913.5; Mon, 19 Oct 2020 10:30:29 +0100
-Received: from lhreml722-chm.china.huawei.com (10.201.108.73) by
- fraeml703-chm.china.huawei.com (10.206.15.52) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256) id
- 15.1.1913.5; Mon, 19 Oct 2020 11:30:28 +0200
-Received: from lhreml722-chm.china.huawei.com ([10.201.108.73]) by
- lhreml722-chm.china.huawei.com ([10.201.108.73]) with mapi id 15.01.1913.007; 
- Mon, 19 Oct 2020 10:30:27 +0100
-From: Krzysztof Struczynski <krzysztof.struczynski@huawei.com>
-To: Mimi Zohar <zohar@linux.ibm.com>
-Subject: RE: [RFC PATCH 00/30] ima: Introduce IMA namespace
-Thread-Topic: [RFC PATCH 00/30] ima: Introduce IMA namespace
-Thread-Index: AQHWdXPBkpeRDLdh20+fyp1BiEOjYak+A3mAgBfGuwCABhxpgIABN8iAgAG3kgCACVyMsIA21JGg
-Date: Mon, 19 Oct 2020 09:30:27 +0000
-Message-ID: <a75a6541991d4f8dbaa30e0af517b829@huawei.com>
-References: <20200818152037.11869-1-krzysztof.struczynski@huawei.com>
- <20200818164943.va3um7toztazcfud@wittgenstein>
- <d77a6cd783319702fddd06783cb84fdeb86210a6.camel@linux.ibm.com>
- <20200906171413.GA8305@wind.enjellic.com>
- <CAKrSGQR3Pw=Rad2RgUuCHqr0r2Nc6x2nLoo2cVAkD+_8Vbmd7A@mail.gmail.com>
- <d405bab0d262b32fd16e85444791b6c49d820aa2.camel@linux.ibm.com> 
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-x-originating-ip: [10.48.222.63]
+ Mon, 19 Oct 2020 10:27:11 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+ s=mimecast20190719; t=1603103230;
+ h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+ to:to:cc:cc:mime-version:mime-version:
+ content-transfer-encoding:content-transfer-encoding;
+ bh=jFk5VbhicfU6IQL8Kp5azjg7j7zrM24dueZ68njQ5EQ=;
+ b=Q0J/aEE89nsCSaAEvxNLfTCpsV03+mzROsbwCbfs6kLxq5OPWYBqFg3BP6LpYFJgPE0k1V
+ CFIoWI+F4AL3+hJOtF75DPY+CGZk/sluDfKgGjy+lyP19hMqGDaniQkepL2keLxzEgkDWm
+ yPZj52NFCwWTo0fQYp4gOamzyVLNNB8=
+Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
+ [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
+ us-mta-456-yRWT7b4OMF2ehwEatrA4Gw-1; Mon, 19 Oct 2020 06:27:08 -0400
+X-MC-Unique: yRWT7b4OMF2ehwEatrA4Gw-1
+Received: from smtp.corp.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com
+ [10.5.11.11])
+ (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+ (No client certificate requested)
+ by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 5614F1006704;
+ Mon, 19 Oct 2020 10:27:07 +0000 (UTC)
+Received: from lithium.redhat.com (ovpn-115-42.ams2.redhat.com [10.36.115.42])
+ by smtp.corp.redhat.com (Postfix) with ESMTP id 1910350B44;
+ Mon, 19 Oct 2020 10:27:04 +0000 (UTC)
+From: Giuseppe Scrivano <gscrivan@redhat.com>
+To: linux-kernel@vger.kernel.org
+Subject: [PATCH v2 0/2] fs, close_range: add flag CLOSE_RANGE_CLOEXEC
+Date: Mon, 19 Oct 2020 12:26:52 +0200
+Message-Id: <20201019102654.16642-1-gscrivan@redhat.com>
 MIME-Version: 1.0
-X-CFilter-Loop: Reflected
-Cc: "mkayaalp@cs.binghamton.edu" <mkayaalp@cs.binghamton.edu>,
- "sunyuqiong1988@gmail.com" <sunyuqiong1988@gmail.com>,
- Silviu Vlasceanu <Silviu.Vlasceanu@huawei.com>,
- "nick.dusek@gmail.com" <nick.dusek@gmail.com>, "Dr. Greg" <greg@enjellic.com>,
- "jannh@google.com" <jannh@google.com>, Luke Hinds <lhinds@redhat.com>,
- "viro@zeniv.linux.org.uk" <viro@zeniv.linux.org.uk>,
- "christian@brauner.io" <christian@brauner.io>,
- "dmitry.kasatkin@gmail.com" <dmitry.kasatkin@gmail.com>,
- "containers@lists.linux-foundation.org"
- <containers@lists.linux-foundation.org>,
- Roberto Sassu <roberto.sassu@huawei.com>, Linux
- Kernel Mailing List <linux-kernel@vger.kernel.org>,
- "luto@amacapital.net" <luto@amacapital.net>,
- "linux-security-module@vger.kernel.org"
- <linux-security-module@vger.kernel.org>,
- "ebiederm@xmission.com" <ebiederm@xmission.com>,
- "linux-integrity@vger.kernel.org" <linux-integrity@vger.kernel.org>,
- "torvalds@linux-foundation.org" <torvalds@linux-foundation.org>
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.11
+Cc: linux-fsdevel@vger.kernel.org, containers@lists.linux-foundation.org,
+ linux@rasmusvillemoes.dk, viro@zeniv.linux.org.uk
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -116,48 +98,31 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-> From: Krzysztof Struczynski
-> Sent: Monday, September 14, 2020 2:08 PM
-> > When Roberto Sassu and Krzysztof Struczynski contacted me about the
-> > status of Stefan Berger's patch set, based on Yuqiong Sun's work, I was
-> > under the impression that they would be rebasing it on the latest
-> > kernel and going forward from there.   Obviously things changed.  I
-> > pointed out to them resolving the "IMA namespacing" issue would be the
-> > first thing that needs to be addressed.  So here we are.
-> >
-> 
-> The concept of the IMA namespace as a separate namespace, not attached to
-> the user or mount namespace, remains the same as in the last set of
-> Stefan's patches. The creation and configuration mechanism changed,
-> partially because of the changes in the upstream kernel like extension of
-> the CLONE_ flags, that facilitated other solutions. The main inspiration
-> in this regard was the new time namespace.
-> 
-> The implemented mechanism is intended to make the configuration of the
-> IMA
-> namespace as similar as possible to the upstream IMA implementation and
-> allows to configure the new IMA namespace before any process enters that
-> namespace, so the very first actions can be measured/appraised/audited.
-> 
-> In this implementation many design points formulated by Stefan still stand.
-> The significant difference in the presented design is the threat model.
-> The actions of the host's root and any other user within the container are
-> measured/appraised/audited according to the container's policy. However,
-> every action that affects objects in the root namespace, is detected when
-> processes from the root namespace access them.
+When the new flag is used, close_range will set the close-on-exec bit
+for the file descriptors instead of close()-ing them.
 
-Do you think that the above proposal addresses the aforementioned "IMA
-namespacing" issue? If it doesn't, would you please clarify what are the
-main, outstanding problems?
- 
-> > Definitely, let's have this discussion.
+It is useful for e.g. container runtimes that want to minimize the
+number of syscalls used after a seccomp profile is installed but want
+to keep some fds open until the container process is executed.
 
-Shall we continue the discussion here, or in addition use a format similar
-to the Stefan's "drawing board":
-https://kernsec.org/wiki/index.php/IMA_Namespacing_design_considerations
+v1->v2:
+* move close_range(..., CLOSE_RANGE_CLOEXEC) implementation to a separate function.
+* use bitmap_set() to set the close-on-exec bits in the bitmap.
+* add test with rlimit(RLIMIT_NOFILE) in place.
+* use "cur_max" that is already used by close_range(..., 0).
 
-Best regards,
-Krzysztof Struczynski
+Giuseppe Scrivano (2):
+  fs, close_range: add flag CLOSE_RANGE_CLOEXEC
+  selftests: add tests for CLOSE_RANGE_CLOEXEC
+
+ fs/file.c                                     | 44 ++++++++---
+ include/uapi/linux/close_range.h              |  3 +
+ .../testing/selftests/core/close_range_test.c | 74 +++++++++++++++++++
+ 3 files changed, 111 insertions(+), 10 deletions(-)
+
+--
+2.26.2
+
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
