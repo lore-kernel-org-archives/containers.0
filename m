@@ -2,102 +2,95 @@ Return-Path: <SRS0=bTwc=D2=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.7 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A56CC43457
-	for <containers@archiver.kernel.org>; Mon, 19 Oct 2020 12:12:58 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 70544C43467
+	for <containers@archiver.kernel.org>; Mon, 19 Oct 2020 20:07:15 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id EE75A22268
-	for <containers@archiver.kernel.org>; Mon, 19 Oct 2020 12:12:57 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="VRMpkG6W"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EE75A22268
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
+	by mail.kernel.org (Postfix) with ESMTPS id E5B65222B8
+	for <containers@archiver.kernel.org>; Mon, 19 Oct 2020 20:07:14 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E5B65222B8
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=xmission.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 3DDBD20428;
-	Mon, 19 Oct 2020 12:12:57 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 90FC386F42;
+	Mon, 19 Oct 2020 20:07:14 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id WWAaZNjVx1ls; Mon, 19 Oct 2020 12:12:55 +0000 (UTC)
+	with ESMTP id NH4EhttzCfoa; Mon, 19 Oct 2020 20:07:13 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 678F920018;
-	Mon, 19 Oct 2020 12:12:55 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 9EE0686F5A;
+	Mon, 19 Oct 2020 20:07:13 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 50785C088B;
-	Mon, 19 Oct 2020 12:12:55 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id C8081C0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 9A3DBC0052;
+	Mon, 19 Oct 2020 20:07:13 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id AEA2DC0051
  for <containers@lists.linux-foundation.org>;
- Mon, 19 Oct 2020 12:12:53 +0000 (UTC)
+ Mon, 19 Oct 2020 20:07:12 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id B5B1620113
+ by hemlock.osuosl.org (Postfix) with ESMTP id 9D4ED875C4
  for <containers@lists.linux-foundation.org>;
- Mon, 19 Oct 2020 12:12:53 +0000 (UTC)
+ Mon, 19 Oct 2020 20:07:12 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id hsr-CV2VVFLk
+ with ESMTP id j2JrRhTk+rPM
  for <containers@lists.linux-foundation.org>;
- Mon, 19 Oct 2020 12:12:52 +0000 (UTC)
-X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from us-smtp-delivery-124.mimecast.com
- (us-smtp-delivery-124.mimecast.com [216.205.24.124])
- by silver.osuosl.org (Postfix) with ESMTPS id 808B320018
+ Mon, 19 Oct 2020 20:07:11 +0000 (UTC)
+X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
+Received: from out02.mta.xmission.com (out02.mta.xmission.com [166.70.13.232])
+ by hemlock.osuosl.org (Postfix) with ESMTPS id C92A6875C1
  for <containers@lists.linux-foundation.org>;
- Mon, 19 Oct 2020 12:12:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
- s=mimecast20190719; t=1603109571;
- h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
- to:to:cc:cc:mime-version:mime-version:content-type:content-type:
- in-reply-to:in-reply-to:references:references;
- bh=vLFn62FSJJ9Vs5FkGimI2TzAFRqYEEiOjqjYC0gWRHk=;
- b=VRMpkG6WTJ+cPgQTcScO0dhTH/4gzbZe9IU3/LsfaWU5qiTd++zeN1z/XBnIWpbb3sEt+7
- 9CIYYCayeuoH7/PN11JCDYL58l2aj9hIpfTYr4ossUFzacvF5mniq3kwEahWf/2IYD3jSy
- KGq0YkKELneoUIRDf00qPmpHPc4qImY=
-Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
- [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-97-eZzeNCW1Nie9g96COdjc6g-1; Mon, 19 Oct 2020 08:12:47 -0400
-X-MC-Unique: eZzeNCW1Nie9g96COdjc6g-1
-Received: from smtp.corp.redhat.com (int-mx02.intmail.prod.int.phx2.redhat.com
- [10.5.11.12])
- (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
- (No client certificate requested)
- by mimecast-mx01.redhat.com (Postfix) with ESMTPS id DEAA364147;
- Mon, 19 Oct 2020 12:12:43 +0000 (UTC)
-Received: from localhost (ovpn-115-87.ams2.redhat.com [10.36.115.87])
- by smtp.corp.redhat.com (Postfix) with ESMTPS id EC25B60FC2;
- Mon, 19 Oct 2020 12:12:41 +0000 (UTC)
-From: Giuseppe Scrivano <gscrivan@redhat.com>
-To: "Serge E. Hallyn" <serge@hallyn.com>
-Subject: Re: LPC 2020 Hackroom Session: summary and next steps for isolated
- user namespaces
+ Mon, 19 Oct 2020 20:07:11 +0000 (UTC)
+Received: from in01.mta.xmission.com ([166.70.13.51])
+ by out02.mta.xmission.com with esmtps (TLS1.2) tls
+ TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 (Exim 4.93)
+ (envelope-from <ebiederm@xmission.com>)
+ id 1kUbQf-004jiG-DV; Mon, 19 Oct 2020 14:06:49 -0600
+Received: from ip68-227-160-95.om.om.cox.net ([68.227.160.95]
+ helo=x220.xmission.com) by in01.mta.xmission.com with esmtpsa
+ (TLS1.2:ECDHE_RSA_AES_256_GCM_SHA384:256) (Exim 4.87)
+ (envelope-from <ebiederm@xmission.com>)
+ id 1kUbQe-0001VE-Ec; Mon, 19 Oct 2020 14:06:49 -0600
+From: ebiederm@xmission.com (Eric W. Biederman)
+To: Christian Brauner <christian.brauner@ubuntu.com>
 References: <20200830143959.rhosiunyz5yqbr35@wittgenstein>
- <20201010042606.GA30062@mail.hallyn.com>
- <20201011205306.GC17441@localhost> <87tuuzv0hl.fsf@redhat.com>
- <20201013124650.GA19668@mail.hallyn.com> <87o8l6qhnz.fsf@redhat.com>
- <20201015143207.GB25286@mail.hallyn.com>
-Date: Mon, 19 Oct 2020 14:12:39 +0200
-In-Reply-To: <20201015143207.GB25286@mail.hallyn.com> (Serge E. Hallyn's
- message of "Thu, 15 Oct 2020 09:32:07 -0500")
-Message-ID: <87ft6act3c.fsf@redhat.com>
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.1 (gnu/linux)
+ <cb6c6f1a-89ee-1762-3eec-4f69bd7739b1@metux.net>
+ <874kmsdcdx.fsf@x220.int.ebiederm.org>
+ <20201018102026.34jtxfheygowgejp@wittgenstein>
+ <87h7qradml.fsf_-_@x220.int.ebiederm.org>
+ <87o8kz840w.fsf@x220.int.ebiederm.org>
+Date: Mon, 19 Oct 2020 15:07:02 -0500
+In-Reply-To: <87o8kz840w.fsf@x220.int.ebiederm.org> (Eric W. Biederman's
+ message of "Sun, 18 Oct 2020 19:15:27 -0500")
+Message-ID: <878sc27zfd.fsf_-_@x220.int.ebiederm.org>
+User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/26.1 (gnu/linux)
 MIME-Version: 1.0
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.12
+X-XM-SPF: eid=1kUbQe-0001VE-Ec; ; ;
+ mid=<878sc27zfd.fsf_-_@x220.int.ebiederm.org>; ; ; hst=in01.mta.xmission.com; ;
+ ; ip=68.227.160.95; ; ; frm=ebiederm@xmission.com; ; ; spf=neutral
+X-XM-AID: U2FsdGVkX1+/iJvwJfeGhmPSjNCGhZOTGA5b3+idEOE=
+X-SA-Exim-Connect-IP: 68.227.160.95
+X-SA-Exim-Mail-From: ebiederm@xmission.com
+Subject: [RFC][PATCH] userns: Limit process in a user namespace to what the
+ creator is allowed
+X-SA-Exim-Version: 4.2.1 (built Thu, 05 May 2016 13:38:54 -0600)
+X-SA-Exim-Scanned: Yes (on in01.mta.xmission.com)
 Cc: Alexander Mihalicyn <alexander@mihalicyn.com>,
- Joseph Christopher Sible <jcsible@cert.org>, Kees Cook <keescook@chromium.org>,
- linux-kernel@vger.kernel.org, containers@lists.linux-foundation.org,
- Josh Triplett <josh@joshtriplett.org>, Vivek Goyal <vgoyal@redhat.com>,
- Andy Lutomirski <luto@amacapital.net>,
- "Eric W. Biederman" <ebiederm@xmission.com>,
+ Giuseppe Scrivano <gscrivan@redhat.com>,
+ Joseph Christopher Sible <jcsible@cert.org>, Wat Lim <watl@google.com>,
+ Kees Cook <keescook@chromium.org>, linux-api@vger.kernel.org,
+ containers@lists.linux-foundation.org, linux-kernel@vger.kernel.org,
+ Josh Triplett <josh@joshtriplett.org>,
  =?utf-8?Q?Micka=C3=ABl_Sala=C3=BCn?= <mic@digikod.net>,
- Wat Lim <watl@google.com>, Mrunal Patel <mpatel@redhat.com>,
+ Andy Lutomirski <luto@amacapital.net>, Mrunal Patel <mpatel@redhat.com>,
  Pavel Tikhomirov <ptikhomirov@virtuozzo.com>,
  Geoffrey Thomas <geofft@ldpreload.com>
 X-BeenThere: containers@lists.linux-foundation.org
@@ -116,80 +109,242 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-"Serge E. Hallyn" <serge@hallyn.com> writes:
 
-> On Tue, Oct 13, 2020 at 05:17:36PM +0200, Giuseppe Scrivano wrote:
->> "Serge E. Hallyn" <serge@hallyn.com> writes:
->> 
->> > On Mon, Oct 12, 2020 at 07:05:10PM +0200, Giuseppe Scrivano wrote:
->> >> Josh Triplett <josh@joshtriplett.org> writes:
->> >> 
->> >> > On Fri, Oct 09, 2020 at 11:26:06PM -0500, Serge E. Hallyn wrote:
->> >> >> > 3. Find a way to allow setgroups() in a user namespace while keeping
->> >> >> >    in mind the case of groups used for negative access control.
->> >> >> >    This was suggested by Josh Triplett and Geoffrey Thomas. Their idea was to
->> >> >> >    investigate adding a prctl() to allow setgroups() to be called in a user
->> >> >> >    namespace at the cost of restricting paths to the most restrictive
->> >> >> >    permission. So if something is 0707 it needs to be treated as if it's 0000
->> >> >> >    even though the caller is not in its owning group which is used for negative
->> >> >> >    access control (how these new semantics will interact with ACLs will also
->> >> >> >    need to be looked into).
->> >> >> 
->> >> >> I should probably think this through more, but for this problem, would it
->> >> >> not suffice to add a new prevgroups grouplist to the struct cred, maybe
->> >> >> struct group_info *locked_groups, and every time an unprivileged task creates
->> >> >> a new user namespace, add all its current groups to this list?
->> >> >
->> >> > So, effectively, you would be allowed to drop permissions, but
->> >> > locked_groups would still be checked for restrictions?
->> >> >
->> >> > That seems like it'd introduce a new level of complexity (a new facet of
->> >> > permission) to manage. Not opposed, but it does seem more complex than
->> >> > just opting out of using groups for negative permissions.
->> >> 
->> >> I have played with something similar in the past.  At that time I've
->> >> discussed it only privately with Eric and we agreed it wasn't worth the
->> >> extra complexity:
->> >> 
->> >> https://github.com/giuseppe/linux/commit/7e0701b389c497472d11fab8570c153a414050af
->> >
->> > Hi, you linked the setgroups patch, but do you also have a link to the
->> > attempt which you deemed was not worth it?
->> 
->> it was just part of a private discussion; but was 4 years ago so we can
->> probably revisit and accept the additional complexity since setgroups()
->> is still an issue with user namespaces.
->> 
->> 
->> >> instead of a prctl, I've added a new mode to /proc/PID/setgroups that
->> >> allows setgroups in a userns locking the current gids.
->> >> 
->> >> What do you think about using /proc/PID/setgroups instead of a new
->> >> prctl()?
->> >
->> > It's better than not having it, but two concerns -
->> >
->> > 1. some userspace, especially testsuites, could become confused by the fact
->> > that they can't drop groups no matter how hard they try, since these will all
->> > still show up as regular groups.
->> 
->> I forgot to send a link to a second patch :-) that completes the feature:
->> https://github.com/giuseppe/linux/commit/1c5fe726346b216293a527719e64f34e6297f0c2
->> 
->> When the new mode is used, the gids that are not known in the userns do
->> not show up in userspace.
->
-> Ah, right - and of course those gids better not be mapped into the namespace :)
->
-> But so, this is the patch you said you agreed was not worth the extra
-> complexity?
+Ordinary unix permissions and posix acls have the ability to
+expression that processes show uid or gid match have fewer permissions
+than processes without matches that use the other permissions.
 
-yes, these two patches are what looked too complex at that time.  The
-problem still exists though, we could perhaps reconsider if the
-extra-complexity is acceptable to address it.
+The fact a root user in a user namespace can call setgroups and setuid
+allows these restrictive permissions to be avoided.  To limit the problems
+this can cause populationg the the set of uids that can be switched to,
+and the set of gids that can be switched to is an operation that requires
+priviliege outside of the user namespace.
 
-Regards,
-Giuseppe
+This restriction is currently being reexamined as it appears that
+there is a way to implement uids and gids that do not map outside of
+the user namespace.  Such uids and gids would not require privilege
+from outside of the usernamespace to use.  So it becomes important to
+find a way to allow calling setuid and setgroups in a user namespace
+without allowing processes in a user namespace to do more than the
+creator of the user namespace.
+
+To that end capture the groups set with setgroups of the creator of a
+user_namespace.  Update the affected permission checks to notice when
+something is being allowed with other permissions and only allow the
+operation if the creator of the user namespace does not have a user or
+group match that would disallow the operation.
+
+The goal is to ensure that creating a user namespace and allowing
+the user namespace root to setuid and setgroups does not result
+in being permitted to do more than before the user namespace was
+created, while still supporting explicitly specified users and
+groups to have fewer permissions.
+
+Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+---
+
+So far only generic_permission is covered, but I think this demonstrates
+that the goal is achievable.  Preserving negative acls while allowing
+setuid and setgroups.
+
+ fs/namei.c                     |  7 +++++
+ fs/posix_acl.c                 | 51 ++++++++++++++++++++++++++++++++++
+ include/linux/user_namespace.h | 16 +++++++++++
+ kernel/user_namespace.c        | 29 +++++++++++++++++++
+ 4 files changed, 103 insertions(+)
+
+diff --git a/fs/namei.c b/fs/namei.c
+index e99e2a9da0f7..ca06bd81d4e4 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -322,6 +322,13 @@ static int acl_permission_check(struct inode *inode, int mask)
+ 	if (mask & (mode ^ (mode >> 3))) {
+ 		if (in_group_p(inode->i_gid))
+ 			mode >>= 3;
++		/*
++		 * Only allow the intersection of what the creator of
++		 * the user namespace is allowed and what everyone is
++		 * allowed.
++		 */
++		else if (userns_in_group_p(inode->i_sb->s_user_ns, inode->i_gid))
++			mode &= (mode >> 3);
+ 	}
+ 
+ 	/* Bits in 'mode' clear that we require? */
+diff --git a/fs/posix_acl.c b/fs/posix_acl.c
+index 95882b3f5f62..525803f8f70c 100644
+--- a/fs/posix_acl.c
++++ b/fs/posix_acl.c
+@@ -340,6 +340,53 @@ posix_acl_from_mode(umode_t mode, gfp_t flags)
+ }
+ EXPORT_SYMBOL(posix_acl_from_mode);
+ 
++static bool userns_creator_allowed(struct inode *inode,
++				   const struct posix_acl *acl, int want)
++{
++	/* Don't allow access the creator of the user namespace does not have */
++	struct user_namespace *ns = inode->i_sb->s_user_ns;
++	const struct posix_acl_entry *pa, *pe;
++	unsigned short min_perm;
++	bool found = false;
++
++	min_perm = MAY_READ | MAY_WRITE | MAY_EXEC;
++	FOREACH_ACL_ENTRY(pa, acl, pe) {
++                switch(pa->e_tag) {
++                        case ACL_USER_OBJ:
++				/* No need to limit the owner of a file */
++                                break;
++                        case ACL_USER:
++				if (is_userns_creator(ns, pa->e_uid)) {
++					found = true;
++					min_perm &= pa->e_perm;
++				}
++				break;
++                        case ACL_GROUP_OBJ:
++				if (userns_in_group_p(ns, inode->i_gid)) {
++					found = true;
++					min_perm &= pa->e_perm;
++				}
++				break;
++                        case ACL_GROUP:
++				if (userns_in_group_p(ns, pa->e_gid)) {
++					found = true;
++					min_perm &= pa->e_perm;
++				}
++                                break;
++                        case ACL_MASK:
++				if (found)
++					min_perm &= pa->e_perm;
++                                break;
++                        case ACL_OTHER:
++				if (found &&
++				    ((pa->e_perm & want & min_perm) != want))
++					return false;
++				return true;
++                }
++        }
++	return false;
++}
++
+ /*
+  * Return 0 if current is granted want access to the inode
+  * by the acl. Returns -E... otherwise.
+@@ -382,6 +429,10 @@ posix_acl_permission(struct inode *inode, const struct posix_acl *acl, int want)
+                         case ACL_OTHER:
+ 				if (found)
+ 					return -EACCES;
++				else if ((current_user_ns() != inode->i_sb->s_user_ns) &&
++					 ((pa->e_perm & want) == want) &&
++					 userns_creator_allowed(inode, acl, want))
++					return 0;
+ 				else
+ 					goto check_perm;
+ 			default:
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index 6ef1c7109fc4..b4bcb49bed7a 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -62,6 +62,7 @@ struct user_namespace {
+ 	int			level;
+ 	kuid_t			owner;
+ 	kgid_t			group;
++	struct group_info 	*groups;
+ 	struct ns_common	ns;
+ 	unsigned long		flags;
+ 
+@@ -137,6 +138,10 @@ extern bool in_userns(const struct user_namespace *ancestor,
+ 		       const struct user_namespace *child);
+ extern bool current_in_userns(const struct user_namespace *target_ns);
+ struct ns_common *ns_get_owner(struct ns_common *ns);
++
++bool is_userns_creator(struct user_namespace *ns, kuid_t uid);
++bool userns_in_group_p(struct user_namespace *ns, kgid_t group);
++
+ #else
+ 
+ static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
+@@ -181,6 +186,17 @@ static inline struct ns_common *ns_get_owner(struct ns_common *ns)
+ {
+ 	return ERR_PTR(-EPERM);
+ }
++
++static inline bool is_userns_creator(struct user_namespace *ns, kuid_t uid)
++{
++	return false;
++}
++
++static inline bool userns_in_group_p(struct user_namespace *ns, kgid_t group)
++{
++	return false;
++}
++
+ #endif
+ 
+ #endif /* _LINUX_USER_H */
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 87804e0371fe..8a4949a32e36 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -117,6 +117,7 @@ int create_user_ns(struct cred *new)
+ 	ns->level = parent_ns->level + 1;
+ 	ns->owner = owner;
+ 	ns->group = group;
++	ns->groups = get_group_info(new->group_info);
+ 	INIT_WORK(&ns->work, free_user_ns);
+ 	for (i = 0; i < UCOUNT_COUNTS; i++) {
+ 		ns->ucount_max[i] = INT_MAX;
+@@ -143,6 +144,7 @@ int create_user_ns(struct cred *new)
+ 	key_put(ns->persistent_keyring_register);
+ #endif
+ 	ns_free_inum(&ns->ns);
++	put_group_info(ns->groups);
+ fail_free:
+ 	kmem_cache_free(user_ns_cachep, ns);
+ fail_dec:
+@@ -194,6 +196,7 @@ static void free_user_ns(struct work_struct *work)
+ 		retire_userns_sysctls(ns);
+ 		key_free_user_ns(ns);
+ 		ns_free_inum(&ns->ns);
++		put_group_info(ns->groups);
+ 		kmem_cache_free(user_ns_cachep, ns);
+ 		dec_user_namespaces(ucounts);
+ 		ns = parent;
+@@ -1317,6 +1320,32 @@ const struct proc_ns_operations userns_operations = {
+ 	.get_parent	= ns_get_owner,
+ };
+ 
++bool is_userns_creator(struct user_namespace *target_ns, kuid_t uid)
++{
++	struct user_namespace *user_ns = current_user_ns();
++
++	for (user_ns = current_user_ns();
++	     (user_ns != target_ns) && user_ns;
++	     user_ns = user_ns->parent) {
++		if (uid_eq(uid, user_ns->owner))
++			return true;
++	}
++	return false;
++}
++
++bool userns_in_group_p(struct user_namespace *target_ns, kgid_t group)
++{
++	struct user_namespace *user_ns;
++
++	for (user_ns = current_user_ns();
++	     (user_ns != target_ns) && user_ns;
++	     user_ns = user_ns->parent) {
++		if (groups_search(user_ns->groups, group))
++			return true;
++	}
++	return false;
++}
++
+ static __init int user_namespaces_init(void)
+ {
+ 	user_ns_cachep = KMEM_CACHE(user_namespace, SLAB_PANIC);
+-- 
+2.20.1
+
 
 _______________________________________________
 Containers mailing list
