@@ -2,90 +2,104 @@ Return-Path: <SRS0=bTwc=D2=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C8684C433DF
-	for <containers@archiver.kernel.org>; Mon, 19 Oct 2020 10:27:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A56CC43457
+	for <containers@archiver.kernel.org>; Mon, 19 Oct 2020 12:12:58 +0000 (UTC)
 Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 30966207DE
-	for <containers@archiver.kernel.org>; Mon, 19 Oct 2020 10:27:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id EE75A22268
+	for <containers@archiver.kernel.org>; Mon, 19 Oct 2020 12:12:57 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="WD8Iz/ha"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 30966207DE
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="VRMpkG6W"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EE75A22268
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 205C727266;
-	Mon, 19 Oct 2020 10:27:22 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 3DDBD20428;
+	Mon, 19 Oct 2020 12:12:57 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id KtqJ-QbNiVnn; Mon, 19 Oct 2020 10:27:19 +0000 (UTC)
+	with ESMTP id WWAaZNjVx1ls; Mon, 19 Oct 2020 12:12:55 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 339F127236;
-	Mon, 19 Oct 2020 10:27:19 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 678F920018;
+	Mon, 19 Oct 2020 12:12:55 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 1D743C088B;
-	Mon, 19 Oct 2020 10:27:19 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 94FF0C0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 50785C088B;
+	Mon, 19 Oct 2020 12:12:55 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id C8081C0051
  for <containers@lists.linux-foundation.org>;
- Mon, 19 Oct 2020 10:27:17 +0000 (UTC)
+ Mon, 19 Oct 2020 12:12:53 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 8184386D53
+ by silver.osuosl.org (Postfix) with ESMTP id B5B1620113
  for <containers@lists.linux-foundation.org>;
- Mon, 19 Oct 2020 10:27:17 +0000 (UTC)
+ Mon, 19 Oct 2020 12:12:53 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id C8cEGoMBvu1R
+ with ESMTP id hsr-CV2VVFLk
  for <containers@lists.linux-foundation.org>;
- Mon, 19 Oct 2020 10:27:16 +0000 (UTC)
+ Mon, 19 Oct 2020 12:12:52 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from us-smtp-delivery-124.mimecast.com
  (us-smtp-delivery-124.mimecast.com [216.205.24.124])
- by whitealder.osuosl.org (Postfix) with ESMTPS id A749E872D2
+ by silver.osuosl.org (Postfix) with ESMTPS id 808B320018
  for <containers@lists.linux-foundation.org>;
- Mon, 19 Oct 2020 10:27:16 +0000 (UTC)
+ Mon, 19 Oct 2020 12:12:52 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
- s=mimecast20190719; t=1603103235;
+ s=mimecast20190719; t=1603109571;
  h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
- to:to:cc:cc:mime-version:mime-version:
- content-transfer-encoding:content-transfer-encoding:
+ to:to:cc:cc:mime-version:mime-version:content-type:content-type:
  in-reply-to:in-reply-to:references:references;
- bh=WBzpiSVOvbHp+nYghgN2sMC6AfToSVt2rCZNa5vt8wY=;
- b=WD8Iz/hah9U4uKAPiZOpn6f3IWpla7JgrUrZfUuS4/UEo7fVJkCQSwOwB5Dq9NoKV0RBFH
- 2em/OBZ3LOGBLukMWX+qjWJJl9BwIVL7xCDRo0MG7OH+TwiTyynVM1zGVvx7R7KQsNxvyE
- bfy+VVGpJxsNF3A5MZNrRCbAIWKRutI=
+ bh=vLFn62FSJJ9Vs5FkGimI2TzAFRqYEEiOjqjYC0gWRHk=;
+ b=VRMpkG6WTJ+cPgQTcScO0dhTH/4gzbZe9IU3/LsfaWU5qiTd++zeN1z/XBnIWpbb3sEt+7
+ 9CIYYCayeuoH7/PN11JCDYL58l2aj9hIpfTYr4ossUFzacvF5mniq3kwEahWf/2IYD3jSy
+ KGq0YkKELneoUIRDf00qPmpHPc4qImY=
 Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
  [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-205-OAOQZn7hOpiSDwqxQJp9PA-1; Mon, 19 Oct 2020 06:27:11 -0400
-X-MC-Unique: OAOQZn7hOpiSDwqxQJp9PA-1
-Received: from smtp.corp.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com
- [10.5.11.11])
+ us-mta-97-eZzeNCW1Nie9g96COdjc6g-1; Mon, 19 Oct 2020 08:12:47 -0400
+X-MC-Unique: eZzeNCW1Nie9g96COdjc6g-1
+Received: from smtp.corp.redhat.com (int-mx02.intmail.prod.int.phx2.redhat.com
+ [10.5.11.12])
  (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
  (No client certificate requested)
- by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 74326425D5;
- Mon, 19 Oct 2020 10:27:09 +0000 (UTC)
-Received: from lithium.redhat.com (ovpn-115-42.ams2.redhat.com [10.36.115.42])
- by smtp.corp.redhat.com (Postfix) with ESMTP id B31A950B44;
- Mon, 19 Oct 2020 10:27:07 +0000 (UTC)
+ by mimecast-mx01.redhat.com (Postfix) with ESMTPS id DEAA364147;
+ Mon, 19 Oct 2020 12:12:43 +0000 (UTC)
+Received: from localhost (ovpn-115-87.ams2.redhat.com [10.36.115.87])
+ by smtp.corp.redhat.com (Postfix) with ESMTPS id EC25B60FC2;
+ Mon, 19 Oct 2020 12:12:41 +0000 (UTC)
 From: Giuseppe Scrivano <gscrivan@redhat.com>
-To: linux-kernel@vger.kernel.org
-Subject: [PATCH v2 1/2] fs, close_range: add flag CLOSE_RANGE_CLOEXEC
-Date: Mon, 19 Oct 2020 12:26:53 +0200
-Message-Id: <20201019102654.16642-2-gscrivan@redhat.com>
-In-Reply-To: <20201019102654.16642-1-gscrivan@redhat.com>
-References: <20201019102654.16642-1-gscrivan@redhat.com>
+To: "Serge E. Hallyn" <serge@hallyn.com>
+Subject: Re: LPC 2020 Hackroom Session: summary and next steps for isolated
+ user namespaces
+References: <20200830143959.rhosiunyz5yqbr35@wittgenstein>
+ <20201010042606.GA30062@mail.hallyn.com>
+ <20201011205306.GC17441@localhost> <87tuuzv0hl.fsf@redhat.com>
+ <20201013124650.GA19668@mail.hallyn.com> <87o8l6qhnz.fsf@redhat.com>
+ <20201015143207.GB25286@mail.hallyn.com>
+Date: Mon, 19 Oct 2020 14:12:39 +0200
+In-Reply-To: <20201015143207.GB25286@mail.hallyn.com> (Serge E. Hallyn's
+ message of "Thu, 15 Oct 2020 09:32:07 -0500")
+Message-ID: <87ft6act3c.fsf@redhat.com>
+User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.1 (gnu/linux)
 MIME-Version: 1.0
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.11
-Cc: linux-fsdevel@vger.kernel.org, containers@lists.linux-foundation.org,
- linux@rasmusvillemoes.dk, viro@zeniv.linux.org.uk
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.12
+Cc: Alexander Mihalicyn <alexander@mihalicyn.com>,
+ Joseph Christopher Sible <jcsible@cert.org>, Kees Cook <keescook@chromium.org>,
+ linux-kernel@vger.kernel.org, containers@lists.linux-foundation.org,
+ Josh Triplett <josh@joshtriplett.org>, Vivek Goyal <vgoyal@redhat.com>,
+ Andy Lutomirski <luto@amacapital.net>,
+ "Eric W. Biederman" <ebiederm@xmission.com>,
+ =?utf-8?Q?Micka=C3=ABl_Sala=C3=BCn?= <mic@digikod.net>,
+ Wat Lim <watl@google.com>, Mrunal Patel <mpatel@redhat.com>,
+ Pavel Tikhomirov <ptikhomirov@virtuozzo.com>,
+ Geoffrey Thomas <geofft@ldpreload.com>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -102,122 +116,80 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-When the flag CLOSE_RANGE_CLOEXEC is set, close_range doesn't
-immediately close the files but it sets the close-on-exec bit.
+"Serge E. Hallyn" <serge@hallyn.com> writes:
 
-It is useful for e.g. container runtimes that usually install a
-seccomp profile "as late as possible" before execv'ing the container
-process itself.  The container runtime could either do:
-  1                                  2
-- install_seccomp_profile();       - close_range(MIN_FD, MAX_INT, 0);
-- close_range(MIN_FD, MAX_INT, 0); - install_seccomp_profile();
-- execve(...);                     - execve(...);
+> On Tue, Oct 13, 2020 at 05:17:36PM +0200, Giuseppe Scrivano wrote:
+>> "Serge E. Hallyn" <serge@hallyn.com> writes:
+>> 
+>> > On Mon, Oct 12, 2020 at 07:05:10PM +0200, Giuseppe Scrivano wrote:
+>> >> Josh Triplett <josh@joshtriplett.org> writes:
+>> >> 
+>> >> > On Fri, Oct 09, 2020 at 11:26:06PM -0500, Serge E. Hallyn wrote:
+>> >> >> > 3. Find a way to allow setgroups() in a user namespace while keeping
+>> >> >> >    in mind the case of groups used for negative access control.
+>> >> >> >    This was suggested by Josh Triplett and Geoffrey Thomas. Their idea was to
+>> >> >> >    investigate adding a prctl() to allow setgroups() to be called in a user
+>> >> >> >    namespace at the cost of restricting paths to the most restrictive
+>> >> >> >    permission. So if something is 0707 it needs to be treated as if it's 0000
+>> >> >> >    even though the caller is not in its owning group which is used for negative
+>> >> >> >    access control (how these new semantics will interact with ACLs will also
+>> >> >> >    need to be looked into).
+>> >> >> 
+>> >> >> I should probably think this through more, but for this problem, would it
+>> >> >> not suffice to add a new prevgroups grouplist to the struct cred, maybe
+>> >> >> struct group_info *locked_groups, and every time an unprivileged task creates
+>> >> >> a new user namespace, add all its current groups to this list?
+>> >> >
+>> >> > So, effectively, you would be allowed to drop permissions, but
+>> >> > locked_groups would still be checked for restrictions?
+>> >> >
+>> >> > That seems like it'd introduce a new level of complexity (a new facet of
+>> >> > permission) to manage. Not opposed, but it does seem more complex than
+>> >> > just opting out of using groups for negative permissions.
+>> >> 
+>> >> I have played with something similar in the past.  At that time I've
+>> >> discussed it only privately with Eric and we agreed it wasn't worth the
+>> >> extra complexity:
+>> >> 
+>> >> https://github.com/giuseppe/linux/commit/7e0701b389c497472d11fab8570c153a414050af
+>> >
+>> > Hi, you linked the setgroups patch, but do you also have a link to the
+>> > attempt which you deemed was not worth it?
+>> 
+>> it was just part of a private discussion; but was 4 years ago so we can
+>> probably revisit and accept the additional complexity since setgroups()
+>> is still an issue with user namespaces.
+>> 
+>> 
+>> >> instead of a prctl, I've added a new mode to /proc/PID/setgroups that
+>> >> allows setgroups in a userns locking the current gids.
+>> >> 
+>> >> What do you think about using /proc/PID/setgroups instead of a new
+>> >> prctl()?
+>> >
+>> > It's better than not having it, but two concerns -
+>> >
+>> > 1. some userspace, especially testsuites, could become confused by the fact
+>> > that they can't drop groups no matter how hard they try, since these will all
+>> > still show up as regular groups.
+>> 
+>> I forgot to send a link to a second patch :-) that completes the feature:
+>> https://github.com/giuseppe/linux/commit/1c5fe726346b216293a527719e64f34e6297f0c2
+>> 
+>> When the new mode is used, the gids that are not known in the userns do
+>> not show up in userspace.
+>
+> Ah, right - and of course those gids better not be mapped into the namespace :)
+>
+> But so, this is the patch you said you agreed was not worth the extra
+> complexity?
 
-Both alternative have some disadvantages.
+yes, these two patches are what looked too complex at that time.  The
+problem still exists though, we could perhaps reconsider if the
+extra-complexity is acceptable to address it.
 
-In the first variant the seccomp_profile cannot block the close_range
-syscall, as well as opendir/read/close/... for the fallback on older
-kernels).
-In the second variant, close_range() can be used only on the fds
-that are not going to be needed by the runtime anymore, and it must be
-potentially called multiple times to account for the different ranges
-that must be closed.
-
-Using close_range(..., ..., CLOSE_RANGE_CLOEXEC) solves these issues.
-The runtime is able to use the open fds and the seccomp profile could
-block close_range() and the syscalls used for its fallback.
-
-Signed-off-by: Giuseppe Scrivano <gscrivan@redhat.com>
----
- fs/file.c                        | 44 ++++++++++++++++++++++++--------
- include/uapi/linux/close_range.h |  3 +++
- 2 files changed, 37 insertions(+), 10 deletions(-)
-
-diff --git a/fs/file.c b/fs/file.c
-index 21c0893f2f1d..0295d4f7c5ef 100644
---- a/fs/file.c
-+++ b/fs/file.c
-@@ -672,6 +672,35 @@ int __close_fd(struct files_struct *files, unsigned fd)
- }
- EXPORT_SYMBOL(__close_fd); /* for ksys_close() */
- 
-+static inline void __range_cloexec(struct files_struct *cur_fds,
-+				   unsigned int fd, unsigned int max_fd)
-+{
-+	struct fdtable *fdt;
-+
-+        if (fd > max_fd)
-+		return;
-+
-+	spin_lock(&cur_fds->file_lock);
-+	fdt = files_fdtable(cur_fds);
-+	bitmap_set(fdt->close_on_exec, fd, max_fd - fd + 1);
-+	spin_unlock(&cur_fds->file_lock);
-+}
-+
-+static inline void __range_close(struct files_struct *cur_fds, unsigned int fd,
-+				 unsigned int max_fd)
-+{
-+	while (fd <= max_fd) {
-+		struct file *file;
-+
-+		file = pick_file(cur_fds, fd++);
-+		if (!file)
-+			continue;
-+
-+		filp_close(file, cur_fds);
-+		cond_resched();
-+	}
-+}
-+
- /**
-  * __close_range() - Close all file descriptors in a given range.
-  *
-@@ -687,7 +716,7 @@ int __close_range(unsigned fd, unsigned max_fd, unsigned int flags)
- 	struct task_struct *me = current;
- 	struct files_struct *cur_fds = me->files, *fds = NULL;
- 
--	if (flags & ~CLOSE_RANGE_UNSHARE)
-+	if (flags & ~(CLOSE_RANGE_UNSHARE | CLOSE_RANGE_CLOEXEC))
- 		return -EINVAL;
- 
- 	if (fd > max_fd)
-@@ -725,16 +754,11 @@ int __close_range(unsigned fd, unsigned max_fd, unsigned int flags)
- 	}
- 
- 	max_fd = min(max_fd, cur_max);
--	while (fd <= max_fd) {
--		struct file *file;
- 
--		file = pick_file(cur_fds, fd++);
--		if (!file)
--			continue;
--
--		filp_close(file, cur_fds);
--		cond_resched();
--	}
-+	if (flags & CLOSE_RANGE_CLOEXEC)
-+		__range_cloexec(cur_fds, fd, max_fd);
-+	else
-+		__range_close(cur_fds, fd, max_fd);
- 
- 	if (fds) {
- 		/*
-diff --git a/include/uapi/linux/close_range.h b/include/uapi/linux/close_range.h
-index 6928a9fdee3c..2d804281554c 100644
---- a/include/uapi/linux/close_range.h
-+++ b/include/uapi/linux/close_range.h
-@@ -5,5 +5,8 @@
- /* Unshare the file descriptor table before closing file descriptors. */
- #define CLOSE_RANGE_UNSHARE	(1U << 1)
- 
-+/* Set the FD_CLOEXEC bit instead of closing the file descriptor. */
-+#define CLOSE_RANGE_CLOEXEC	(1U << 2)
-+
- #endif /* _UAPI_LINUX_CLOSE_RANGE_H */
- 
--- 
-2.26.2
+Regards,
+Giuseppe
 
 _______________________________________________
 Containers mailing list
