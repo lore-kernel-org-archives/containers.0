@@ -1,4 +1,4 @@
-Return-Path: <SRS0=bTwc=D2=lists.linux-foundation.org=containers-bounces@kernel.org>
+Return-Path: <SRS0=SoaA=D3=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
@@ -7,82 +7,70 @@ X-Spam-Status: No, score=-9.7 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 70544C43467
-	for <containers@archiver.kernel.org>; Mon, 19 Oct 2020 20:07:15 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B1FF9C4363A
+	for <containers@archiver.kernel.org>; Tue, 20 Oct 2020 14:11:47 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id E5B65222B8
-	for <containers@archiver.kernel.org>; Mon, 19 Oct 2020 20:07:14 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E5B65222B8
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=xmission.com
+	by mail.kernel.org (Postfix) with ESMTPS id E0EFD2224F
+	for <containers@archiver.kernel.org>; Tue, 20 Oct 2020 14:11:46 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E0EFD2224F
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 90FC386F42;
-	Mon, 19 Oct 2020 20:07:14 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 63A882010C;
+	Tue, 20 Oct 2020 14:11:46 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from silver.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id gDCmEQtYKzhL; Tue, 20 Oct 2020 14:11:41 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by silver.osuosl.org (Postfix) with ESMTP id D18BD20407;
+	Tue, 20 Oct 2020 14:11:41 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id C4546C088B;
+	Tue, 20 Oct 2020 14:11:41 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id D3F89C0051
+ for <containers@lists.linux-foundation.org>;
+ Tue, 20 Oct 2020 14:11:39 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by fraxinus.osuosl.org (Postfix) with ESMTP id C2EB586C7E
+ for <containers@lists.linux-foundation.org>;
+ Tue, 20 Oct 2020 14:11:39 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id NH4EhttzCfoa; Mon, 19 Oct 2020 20:07:13 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 9EE0686F5A;
-	Mon, 19 Oct 2020 20:07:13 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 9A3DBC0052;
-	Mon, 19 Oct 2020 20:07:13 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id AEA2DC0051
- for <containers@lists.linux-foundation.org>;
- Mon, 19 Oct 2020 20:07:12 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 9D4ED875C4
- for <containers@lists.linux-foundation.org>;
- Mon, 19 Oct 2020 20:07:12 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id j2JrRhTk+rPM
+ with ESMTP id zN2l2meBFmDK
  for <containers@lists.linux-foundation.org>;
- Mon, 19 Oct 2020 20:07:11 +0000 (UTC)
-X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from out02.mta.xmission.com (out02.mta.xmission.com [166.70.13.232])
- by hemlock.osuosl.org (Postfix) with ESMTPS id C92A6875C1
+ Tue, 20 Oct 2020 14:11:38 +0000 (UTC)
+X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
+Received: from youngberry.canonical.com (youngberry.canonical.com
+ [91.189.89.112])
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id 878C886BBC
  for <containers@lists.linux-foundation.org>;
- Mon, 19 Oct 2020 20:07:11 +0000 (UTC)
-Received: from in01.mta.xmission.com ([166.70.13.51])
- by out02.mta.xmission.com with esmtps (TLS1.2) tls
- TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 (Exim 4.93)
- (envelope-from <ebiederm@xmission.com>)
- id 1kUbQf-004jiG-DV; Mon, 19 Oct 2020 14:06:49 -0600
-Received: from ip68-227-160-95.om.om.cox.net ([68.227.160.95]
- helo=x220.xmission.com) by in01.mta.xmission.com with esmtpsa
- (TLS1.2:ECDHE_RSA_AES_256_GCM_SHA384:256) (Exim 4.87)
- (envelope-from <ebiederm@xmission.com>)
- id 1kUbQe-0001VE-Ec; Mon, 19 Oct 2020 14:06:49 -0600
-From: ebiederm@xmission.com (Eric W. Biederman)
-To: Christian Brauner <christian.brauner@ubuntu.com>
+ Tue, 20 Oct 2020 14:11:38 +0000 (UTC)
+Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
+ helo=wittgenstein) by youngberry.canonical.com with esmtpsa
+ (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
+ (envelope-from <christian.brauner@ubuntu.com>)
+ id 1kUsMP-0007A4-Cn; Tue, 20 Oct 2020 14:11:33 +0000
+Date: Tue, 20 Oct 2020 16:11:32 +0200
+From: Christian Brauner <christian.brauner@ubuntu.com>
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Subject: Re: [RFC][PATCH] userns: Limit process in a user namespace to what
+ the creator is allowed
+Message-ID: <20201020141132.7xcfallevp4kiv45@wittgenstein>
 References: <20200830143959.rhosiunyz5yqbr35@wittgenstein>
  <cb6c6f1a-89ee-1762-3eec-4f69bd7739b1@metux.net>
  <874kmsdcdx.fsf@x220.int.ebiederm.org>
  <20201018102026.34jtxfheygowgejp@wittgenstein>
  <87h7qradml.fsf_-_@x220.int.ebiederm.org>
  <87o8kz840w.fsf@x220.int.ebiederm.org>
-Date: Mon, 19 Oct 2020 15:07:02 -0500
-In-Reply-To: <87o8kz840w.fsf@x220.int.ebiederm.org> (Eric W. Biederman's
- message of "Sun, 18 Oct 2020 19:15:27 -0500")
-Message-ID: <878sc27zfd.fsf_-_@x220.int.ebiederm.org>
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/26.1 (gnu/linux)
+ <878sc27zfd.fsf_-_@x220.int.ebiederm.org>
 MIME-Version: 1.0
-X-XM-SPF: eid=1kUbQe-0001VE-Ec; ; ;
- mid=<878sc27zfd.fsf_-_@x220.int.ebiederm.org>; ; ; hst=in01.mta.xmission.com; ;
- ; ip=68.227.160.95; ; ; frm=ebiederm@xmission.com; ; ; spf=neutral
-X-XM-AID: U2FsdGVkX1+/iJvwJfeGhmPSjNCGhZOTGA5b3+idEOE=
-X-SA-Exim-Connect-IP: 68.227.160.95
-X-SA-Exim-Mail-From: ebiederm@xmission.com
-Subject: [RFC][PATCH] userns: Limit process in a user namespace to what the
- creator is allowed
-X-SA-Exim-Version: 4.2.1 (built Thu, 05 May 2016 13:38:54 -0600)
-X-SA-Exim-Scanned: Yes (on in01.mta.xmission.com)
+Content-Disposition: inline
+In-Reply-To: <878sc27zfd.fsf_-_@x220.int.ebiederm.org>
 Cc: Alexander Mihalicyn <alexander@mihalicyn.com>,
  Giuseppe Scrivano <gscrivan@redhat.com>,
  Joseph Christopher Sible <jcsible@cert.org>, Wat Lim <watl@google.com>,
@@ -109,243 +97,256 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
+On Mon, Oct 19, 2020 at 03:07:02PM -0500, Eric W. Biederman wrote:
+> Ordinary unix permissions and posix acls have the ability to
+> expression that processes show uid or gid match have fewer permissions
+> than processes without matches that use the other permissions.
 
-Ordinary unix permissions and posix acls have the ability to
-expression that processes show uid or gid match have fewer permissions
-than processes without matches that use the other permissions.
+I'm stumbling a bit reading that sentence but that may just me parsing
+it wrong:
 
-The fact a root user in a user namespace can call setgroups and setuid
-allows these restrictive permissions to be avoided.  To limit the problems
-this can cause populationg the the set of uids that can be switched to,
-and the set of gids that can be switched to is an operation that requires
-priviliege outside of the user namespace.
+"[...] have the ability to express that processes whose uid or gid match
+nonetheless have fewer permissions than processes without matching uid
+or gid that use other permissions."
 
-This restriction is currently being reexamined as it appears that
-there is a way to implement uids and gids that do not map outside of
-the user namespace.  Such uids and gids would not require privilege
-from outside of the usernamespace to use.  So it becomes important to
-find a way to allow calling setuid and setgroups in a user namespace
-without allowing processes in a user namespace to do more than the
-creator of the user namespace.
+is how I'm understanding this.
 
-To that end capture the groups set with setgroups of the creator of a
-user_namespace.  Update the affected permission checks to notice when
-something is being allowed with other permissions and only allow the
-operation if the creator of the user namespace does not have a user or
-group match that would disallow the operation.
+> 
+> The fact a root user in a user namespace can call setgroups and setuid
+> allows these restrictive permissions to be avoided.  To limit the problems
+> this can cause populationg the the set of uids that can be switched to,
+> and the set of gids that can be switched to is an operation that requires
+> priviliege outside of the user namespace.
+> 
+> This restriction is currently being reexamined as it appears that
+> there is a way to implement uids and gids that do not map outside of
+> the user namespace.  Such uids and gids would not require privilege
+> from outside of the usernamespace to use.  So it becomes important to
+> find a way to allow calling setuid and setgroups in a user namespace
+> without allowing processes in a user namespace to do more than the
+> creator of the user namespace.
+> 
+> To that end capture the groups set with setgroups of the creator of a
+> user_namespace.  Update the affected permission checks to notice when
+> something is being allowed with other permissions and only allow the
+> operation if the creator of the user namespace does not have a user or
+> group match that would disallow the operation.
+> 
+> The goal is to ensure that creating a user namespace and allowing
+> the user namespace root to setuid and setgroups does not result
+> in being permitted to do more than before the user namespace was
+> created, while still supporting explicitly specified users and
+> groups to have fewer permissions.
+> 
+> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+> ---
+> 
+> So far only generic_permission is covered, but I think this demonstrates
+> that the goal is achievable.  Preserving negative acls while allowing
+> setuid and setgroups.
 
-The goal is to ensure that creating a user namespace and allowing
-the user namespace root to setuid and setgroups does not result
-in being permitted to do more than before the user namespace was
-created, while still supporting explicitly specified users and
-groups to have fewer permissions.
+I think that looks good. I have run our test-suite with this patch
+applied and it survived no problem so I don't see any regressions for
+current use-cases so far.
 
-Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
----
-
-So far only generic_permission is covered, but I think this demonstrates
-that the goal is achievable.  Preserving negative acls while allowing
-setuid and setgroups.
-
- fs/namei.c                     |  7 +++++
- fs/posix_acl.c                 | 51 ++++++++++++++++++++++++++++++++++
- include/linux/user_namespace.h | 16 +++++++++++
- kernel/user_namespace.c        | 29 +++++++++++++++++++
- 4 files changed, 103 insertions(+)
-
-diff --git a/fs/namei.c b/fs/namei.c
-index e99e2a9da0f7..ca06bd81d4e4 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -322,6 +322,13 @@ static int acl_permission_check(struct inode *inode, int mask)
- 	if (mask & (mode ^ (mode >> 3))) {
- 		if (in_group_p(inode->i_gid))
- 			mode >>= 3;
-+		/*
-+		 * Only allow the intersection of what the creator of
-+		 * the user namespace is allowed and what everyone is
-+		 * allowed.
-+		 */
-+		else if (userns_in_group_p(inode->i_sb->s_user_ns, inode->i_gid))
-+			mode &= (mode >> 3);
- 	}
- 
- 	/* Bits in 'mode' clear that we require? */
-diff --git a/fs/posix_acl.c b/fs/posix_acl.c
-index 95882b3f5f62..525803f8f70c 100644
---- a/fs/posix_acl.c
-+++ b/fs/posix_acl.c
-@@ -340,6 +340,53 @@ posix_acl_from_mode(umode_t mode, gfp_t flags)
- }
- EXPORT_SYMBOL(posix_acl_from_mode);
- 
-+static bool userns_creator_allowed(struct inode *inode,
-+				   const struct posix_acl *acl, int want)
-+{
-+	/* Don't allow access the creator of the user namespace does not have */
-+	struct user_namespace *ns = inode->i_sb->s_user_ns;
-+	const struct posix_acl_entry *pa, *pe;
-+	unsigned short min_perm;
-+	bool found = false;
-+
-+	min_perm = MAY_READ | MAY_WRITE | MAY_EXEC;
-+	FOREACH_ACL_ENTRY(pa, acl, pe) {
-+                switch(pa->e_tag) {
-+                        case ACL_USER_OBJ:
-+				/* No need to limit the owner of a file */
-+                                break;
-+                        case ACL_USER:
-+				if (is_userns_creator(ns, pa->e_uid)) {
-+					found = true;
-+					min_perm &= pa->e_perm;
-+				}
-+				break;
-+                        case ACL_GROUP_OBJ:
-+				if (userns_in_group_p(ns, inode->i_gid)) {
-+					found = true;
-+					min_perm &= pa->e_perm;
-+				}
-+				break;
-+                        case ACL_GROUP:
-+				if (userns_in_group_p(ns, pa->e_gid)) {
-+					found = true;
-+					min_perm &= pa->e_perm;
-+				}
-+                                break;
-+                        case ACL_MASK:
-+				if (found)
-+					min_perm &= pa->e_perm;
-+                                break;
-+                        case ACL_OTHER:
-+				if (found &&
-+				    ((pa->e_perm & want & min_perm) != want))
-+					return false;
-+				return true;
-+                }
-+        }
-+	return false;
-+}
-+
- /*
-  * Return 0 if current is granted want access to the inode
-  * by the acl. Returns -E... otherwise.
-@@ -382,6 +429,10 @@ posix_acl_permission(struct inode *inode, const struct posix_acl *acl, int want)
-                         case ACL_OTHER:
- 				if (found)
- 					return -EACCES;
-+				else if ((current_user_ns() != inode->i_sb->s_user_ns) &&
-+					 ((pa->e_perm & want) == want) &&
-+					 userns_creator_allowed(inode, acl, want))
-+					return 0;
- 				else
- 					goto check_perm;
- 			default:
-diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index 6ef1c7109fc4..b4bcb49bed7a 100644
---- a/include/linux/user_namespace.h
-+++ b/include/linux/user_namespace.h
-@@ -62,6 +62,7 @@ struct user_namespace {
- 	int			level;
- 	kuid_t			owner;
- 	kgid_t			group;
-+	struct group_info 	*groups;
- 	struct ns_common	ns;
- 	unsigned long		flags;
- 
-@@ -137,6 +138,10 @@ extern bool in_userns(const struct user_namespace *ancestor,
- 		       const struct user_namespace *child);
- extern bool current_in_userns(const struct user_namespace *target_ns);
- struct ns_common *ns_get_owner(struct ns_common *ns);
-+
-+bool is_userns_creator(struct user_namespace *ns, kuid_t uid);
-+bool userns_in_group_p(struct user_namespace *ns, kgid_t group);
-+
- #else
- 
- static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
-@@ -181,6 +186,17 @@ static inline struct ns_common *ns_get_owner(struct ns_common *ns)
- {
- 	return ERR_PTR(-EPERM);
- }
-+
-+static inline bool is_userns_creator(struct user_namespace *ns, kuid_t uid)
-+{
-+	return false;
-+}
-+
-+static inline bool userns_in_group_p(struct user_namespace *ns, kgid_t group)
-+{
-+	return false;
-+}
-+
- #endif
- 
- #endif /* _LINUX_USER_H */
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 87804e0371fe..8a4949a32e36 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -117,6 +117,7 @@ int create_user_ns(struct cred *new)
- 	ns->level = parent_ns->level + 1;
- 	ns->owner = owner;
- 	ns->group = group;
-+	ns->groups = get_group_info(new->group_info);
- 	INIT_WORK(&ns->work, free_user_ns);
- 	for (i = 0; i < UCOUNT_COUNTS; i++) {
- 		ns->ucount_max[i] = INT_MAX;
-@@ -143,6 +144,7 @@ int create_user_ns(struct cred *new)
- 	key_put(ns->persistent_keyring_register);
- #endif
- 	ns_free_inum(&ns->ns);
-+	put_group_info(ns->groups);
- fail_free:
- 	kmem_cache_free(user_ns_cachep, ns);
- fail_dec:
-@@ -194,6 +196,7 @@ static void free_user_ns(struct work_struct *work)
- 		retire_userns_sysctls(ns);
- 		key_free_user_ns(ns);
- 		ns_free_inum(&ns->ns);
-+		put_group_info(ns->groups);
- 		kmem_cache_free(user_ns_cachep, ns);
- 		dec_user_namespaces(ucounts);
- 		ns = parent;
-@@ -1317,6 +1320,32 @@ const struct proc_ns_operations userns_operations = {
- 	.get_parent	= ns_get_owner,
- };
- 
-+bool is_userns_creator(struct user_namespace *target_ns, kuid_t uid)
-+{
-+	struct user_namespace *user_ns = current_user_ns();
-+
-+	for (user_ns = current_user_ns();
-+	     (user_ns != target_ns) && user_ns;
-+	     user_ns = user_ns->parent) {
-+		if (uid_eq(uid, user_ns->owner))
-+			return true;
-+	}
-+	return false;
-+}
-+
-+bool userns_in_group_p(struct user_namespace *target_ns, kgid_t group)
-+{
-+	struct user_namespace *user_ns;
-+
-+	for (user_ns = current_user_ns();
-+	     (user_ns != target_ns) && user_ns;
-+	     user_ns = user_ns->parent) {
-+		if (groups_search(user_ns->groups, group))
-+			return true;
-+	}
-+	return false;
-+}
-+
- static __init int user_namespaces_init(void)
- {
- 	user_ns_cachep = KMEM_CACHE(user_namespace, SLAB_PANIC);
--- 
-2.20.1
-
-
+> 
+>  fs/namei.c                     |  7 +++++
+>  fs/posix_acl.c                 | 51 ++++++++++++++++++++++++++++++++++
+>  include/linux/user_namespace.h | 16 +++++++++++
+>  kernel/user_namespace.c        | 29 +++++++++++++++++++
+>  4 files changed, 103 insertions(+)
+> 
+> diff --git a/fs/namei.c b/fs/namei.c
+> index e99e2a9da0f7..ca06bd81d4e4 100644
+> --- a/fs/namei.c
+> +++ b/fs/namei.c
+> @@ -322,6 +322,13 @@ static int acl_permission_check(struct inode *inode, int mask)
+>  	if (mask & (mode ^ (mode >> 3))) {
+>  		if (in_group_p(inode->i_gid))
+>  			mode >>= 3;
+> +		/*
+> +		 * Only allow the intersection of what the creator of
+> +		 * the user namespace is allowed and what everyone is
+> +		 * allowed.
+> +		 */
+> +		else if (userns_in_group_p(inode->i_sb->s_user_ns, inode->i_gid))
+> +			mode &= (mode >> 3);
+>  	}
+>  
+>  	/* Bits in 'mode' clear that we require? */
+> diff --git a/fs/posix_acl.c b/fs/posix_acl.c
+> index 95882b3f5f62..525803f8f70c 100644
+> --- a/fs/posix_acl.c
+> +++ b/fs/posix_acl.c
+> @@ -340,6 +340,53 @@ posix_acl_from_mode(umode_t mode, gfp_t flags)
+>  }
+>  EXPORT_SYMBOL(posix_acl_from_mode);
+>  
+> +static bool userns_creator_allowed(struct inode *inode,
+> +				   const struct posix_acl *acl, int want)
+> +{
+> +	/* Don't allow access the creator of the user namespace does not have */
+> +	struct user_namespace *ns = inode->i_sb->s_user_ns;
+> +	const struct posix_acl_entry *pa, *pe;
+> +	unsigned short min_perm;
+> +	bool found = false;
+> +
+> +	min_perm = MAY_READ | MAY_WRITE | MAY_EXEC;
+> +	FOREACH_ACL_ENTRY(pa, acl, pe) {
+> +                switch(pa->e_tag) {
+> +                        case ACL_USER_OBJ:
+> +				/* No need to limit the owner of a file */
+> +                                break;
+> +                        case ACL_USER:
+> +				if (is_userns_creator(ns, pa->e_uid)) {
+> +					found = true;
+> +					min_perm &= pa->e_perm;
+> +				}
+> +				break;
+> +                        case ACL_GROUP_OBJ:
+> +				if (userns_in_group_p(ns, inode->i_gid)) {
+> +					found = true;
+> +					min_perm &= pa->e_perm;
+> +				}
+> +				break;
+> +                        case ACL_GROUP:
+> +				if (userns_in_group_p(ns, pa->e_gid)) {
+> +					found = true;
+> +					min_perm &= pa->e_perm;
+> +				}
+> +                                break;
+> +                        case ACL_MASK:
+> +				if (found)
+> +					min_perm &= pa->e_perm;
+> +                                break;
+> +                        case ACL_OTHER:
+> +				if (found &&
+> +				    ((pa->e_perm & want & min_perm) != want))
+> +					return false;
+> +				return true;
+> +                }
+> +        }
+> +	return false;
+> +}
+> +
+>  /*
+>   * Return 0 if current is granted want access to the inode
+>   * by the acl. Returns -E... otherwise.
+> @@ -382,6 +429,10 @@ posix_acl_permission(struct inode *inode, const struct posix_acl *acl, int want)
+>                          case ACL_OTHER:
+>  				if (found)
+>  					return -EACCES;
+> +				else if ((current_user_ns() != inode->i_sb->s_user_ns) &&
+> +					 ((pa->e_perm & want) == want) &&
+> +					 userns_creator_allowed(inode, acl, want))
+> +					return 0;
+>  				else
+>  					goto check_perm;
+>  			default:
+> diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+> index 6ef1c7109fc4..b4bcb49bed7a 100644
+> --- a/include/linux/user_namespace.h
+> +++ b/include/linux/user_namespace.h
+> @@ -62,6 +62,7 @@ struct user_namespace {
+>  	int			level;
+>  	kuid_t			owner;
+>  	kgid_t			group;
+> +	struct group_info 	*groups;
+>  	struct ns_common	ns;
+>  	unsigned long		flags;
+>  
+> @@ -137,6 +138,10 @@ extern bool in_userns(const struct user_namespace *ancestor,
+>  		       const struct user_namespace *child);
+>  extern bool current_in_userns(const struct user_namespace *target_ns);
+>  struct ns_common *ns_get_owner(struct ns_common *ns);
+> +
+> +bool is_userns_creator(struct user_namespace *ns, kuid_t uid);
+> +bool userns_in_group_p(struct user_namespace *ns, kgid_t group);
+> +
+>  #else
+>  
+>  static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
+> @@ -181,6 +186,17 @@ static inline struct ns_common *ns_get_owner(struct ns_common *ns)
+>  {
+>  	return ERR_PTR(-EPERM);
+>  }
+> +
+> +static inline bool is_userns_creator(struct user_namespace *ns, kuid_t uid)
+> +{
+> +	return false;
+> +}
+> +
+> +static inline bool userns_in_group_p(struct user_namespace *ns, kgid_t group)
+> +{
+> +	return false;
+> +}
+> +
+>  #endif
+>  
+>  #endif /* _LINUX_USER_H */
+> diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+> index 87804e0371fe..8a4949a32e36 100644
+> --- a/kernel/user_namespace.c
+> +++ b/kernel/user_namespace.c
+> @@ -117,6 +117,7 @@ int create_user_ns(struct cred *new)
+>  	ns->level = parent_ns->level + 1;
+>  	ns->owner = owner;
+>  	ns->group = group;
+> +	ns->groups = get_group_info(new->group_info);
+>  	INIT_WORK(&ns->work, free_user_ns);
+>  	for (i = 0; i < UCOUNT_COUNTS; i++) {
+>  		ns->ucount_max[i] = INT_MAX;
+> @@ -143,6 +144,7 @@ int create_user_ns(struct cred *new)
+>  	key_put(ns->persistent_keyring_register);
+>  #endif
+>  	ns_free_inum(&ns->ns);
+> +	put_group_info(ns->groups);
+>  fail_free:
+>  	kmem_cache_free(user_ns_cachep, ns);
+>  fail_dec:
+> @@ -194,6 +196,7 @@ static void free_user_ns(struct work_struct *work)
+>  		retire_userns_sysctls(ns);
+>  		key_free_user_ns(ns);
+>  		ns_free_inum(&ns->ns);
+> +		put_group_info(ns->groups);
+>  		kmem_cache_free(user_ns_cachep, ns);
+>  		dec_user_namespaces(ucounts);
+>  		ns = parent;
+> @@ -1317,6 +1320,32 @@ const struct proc_ns_operations userns_operations = {
+>  	.get_parent	= ns_get_owner,
+>  };
+>  
+> +bool is_userns_creator(struct user_namespace *target_ns, kuid_t uid)
+> +{
+> +	struct user_namespace *user_ns = current_user_ns();
+> +
+> +	for (user_ns = current_user_ns();
+> +	     (user_ns != target_ns) && user_ns;
+> +	     user_ns = user_ns->parent) {
+> +		if (uid_eq(uid, user_ns->owner))
+> +			return true;
+> +	}
+> +	return false;
+> +}
+> +
+> +bool userns_in_group_p(struct user_namespace *target_ns, kgid_t group)
+> +{
+> +	struct user_namespace *user_ns;
+> +
+> +	for (user_ns = current_user_ns();
+> +	     (user_ns != target_ns) && user_ns;
+> +	     user_ns = user_ns->parent) {
+> +		if (groups_search(user_ns->groups, group))
+> +			return true;
+> +	}
+> +	return false;
+> +}
+> +
+>  static __init int user_namespaces_init(void)
+>  {
+>  	user_ns_cachep = KMEM_CACHE(user_namespace, SLAB_PANIC);
+> -- 
+> 2.20.1
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
