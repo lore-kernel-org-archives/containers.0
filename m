@@ -1,99 +1,112 @@
-Return-Path: <SRS0=v/Bo=D4=lists.linux-foundation.org=containers-bounces@kernel.org>
+Return-Path: <SRS0=zK8s=D5=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.0 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-3.3 required=3.0 tests=BAYES_00,DKIM_ADSP_CUSTOM_MED,
+	DKIM_INVALID,DKIM_SIGNED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A5648C4363A
-	for <containers@archiver.kernel.org>; Wed, 21 Oct 2020 22:19:49 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9CAB8C388F9
+	for <containers@archiver.kernel.org>; Thu, 22 Oct 2020 20:52:36 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id E2C53241A4
-	for <containers@archiver.kernel.org>; Wed, 21 Oct 2020 22:19:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id E73EB2080C
+	for <containers@archiver.kernel.org>; Thu, 22 Oct 2020 20:52:35 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="OWDTTe0S"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E2C53241A4
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="d6+CBZng"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E73EB2080C
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 41F321FD21;
-	Wed, 21 Oct 2020 22:19:48 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 67B608787C;
+	Thu, 22 Oct 2020 20:52:35 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id sK9T1nV6zdmq; Wed, 21 Oct 2020 22:19:46 +0000 (UTC)
+	with ESMTP id TZaGe5h42I3F; Thu, 22 Oct 2020 20:52:34 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 837211FE32;
-	Wed, 21 Oct 2020 21:58:21 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id B560B8787A;
+	Thu, 22 Oct 2020 20:52:34 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 73525C088B;
-	Wed, 21 Oct 2020 21:58:21 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id A137EC0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 9F355C08A1;
+	Thu, 22 Oct 2020 20:52:34 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 8476EC0052
  for <containers@lists.linux-foundation.org>;
- Wed, 21 Oct 2020 21:58:19 +0000 (UTC)
+ Thu, 22 Oct 2020 20:52:33 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 5DD501FE32
+ by hemlock.osuosl.org (Postfix) with ESMTP id 680698787A
  for <containers@lists.linux-foundation.org>;
- Wed, 21 Oct 2020 21:58:19 +0000 (UTC)
+ Thu, 22 Oct 2020 20:52:33 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id cCrs03JNxvRF
+ with ESMTP id eFbp+NJg7BT0
  for <containers@lists.linux-foundation.org>;
- Wed, 21 Oct 2020 21:58:12 +0000 (UTC)
+ Thu, 22 Oct 2020 20:52:32 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from us-smtp-delivery-124.mimecast.com
- (us-smtp-delivery-124.mimecast.com [63.128.21.124])
- by silver.osuosl.org (Postfix) with ESMTPS id C0DF12F335
+Received: from mail-pg1-f194.google.com (mail-pg1-f194.google.com
+ [209.85.215.194])
+ by hemlock.osuosl.org (Postfix) with ESMTPS id D15CE8784D
  for <containers@lists.linux-foundation.org>;
- Wed, 21 Oct 2020 17:53:31 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
- s=mimecast20190719; t=1603302810;
- h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
- to:to:cc:cc:mime-version:mime-version:content-type:content-type:
- in-reply-to:in-reply-to:references:references;
- bh=0aM6MG+N6GRh+zh31VWFPduo2rgWm3emASszSAw8inM=;
- b=OWDTTe0SiGQKjc0mlEJCoVfy8KB0qeKRwNh34kmfl75kbHUp2t1k4Pqpi9YDFtoYuu/++3
- fa+5IzxIDvNRpnolkxrwuA4Gs7N+uZ2IoeO9rD33K3nvcBofBo/4A51eQeG5wGWloi3uCM
- oMV/LW+Vvw7kojkSlkSwJUO8gTQd7J4=
-Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
- [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-582-0BAAGVqzMda2Ab5lMPFbVA-1; Wed, 21 Oct 2020 13:53:23 -0400
-X-MC-Unique: 0BAAGVqzMda2Ab5lMPFbVA-1
-Received: from smtp.corp.redhat.com (int-mx04.intmail.prod.int.phx2.redhat.com
- [10.5.11.14])
- (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
- (No client certificate requested)
- by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 57DDD804B66;
- Wed, 21 Oct 2020 17:53:20 +0000 (UTC)
-Received: from madcap2.tricolour.ca (unknown [10.10.110.2])
- by smtp.corp.redhat.com (Postfix) with ESMTPS id E934B5D9EF;
- Wed, 21 Oct 2020 17:53:06 +0000 (UTC)
-Date: Wed, 21 Oct 2020 13:53:03 -0400
-From: Richard Guy Briggs <rgb@redhat.com>
-To: Steve Grubb <sgrubb@redhat.com>
-Subject: Re: [PATCH ghak90 V9 05/13] audit: log container info of syscalls
-Message-ID: <20201021175303.GH2882171@madcap2.tricolour.ca>
-References: <cover.1593198710.git.rgb@redhat.com>
- <20201002195231.GH2882171@madcap2.tricolour.ca>
- <20201021163926.GA3929765@madcap2.tricolour.ca>
- <2174083.ElGaqSPkdT@x2>
+ Thu, 22 Oct 2020 20:52:32 +0000 (UTC)
+Received: by mail-pg1-f194.google.com with SMTP id o3so1715992pgr.11
+ for <containers@lists.linux-foundation.org>;
+ Thu, 22 Oct 2020 13:52:32 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
+ h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+ :cc; bh=Ag5R8ANFXiIKHrZi3CpUKkJaLv+KTVPp7lGufqkGA/Q=;
+ b=d6+CBZngB4ab2gx0rcr80/mUgsqGHrDfBj1/ysacUwotFwRiXDdiFVeXasFIZHuxHV
+ 1x42nCvwwG6yQagKIIf1tCqN7+6tPyMBG1vriokW70nyWmsc8sMnME4tilAanNACPt9O
+ UzNtsCl8lGUuz9Im9a2MYKC37+MOa7tXY3edPXllbkN0hCEGFSQJnOVjVtVIAq/+HJLn
+ puZeL7mEq755h14QQNrKiJO3EdeJ0uF64975sPV2JD6dBoaXPh5ct0LHO4hygeT08KGT
+ jSXmP5u+fSJpVAIRfAuEVSd0XPlAxR+NDLBHr9Bh1K2r/SHLCD+LPnn7xcu4RCGkQK5K
+ 2CnQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=1e100.net; s=20161025;
+ h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+ :message-id:subject:to:cc;
+ bh=Ag5R8ANFXiIKHrZi3CpUKkJaLv+KTVPp7lGufqkGA/Q=;
+ b=EfVM3k1iqIPK/KoEWO4BvHUJ4Mri0BbEFY2j1lpYYionCYpfC8yz/u+XxLqxjfGt3S
+ Z+VqEBQrrYtTptfeMQMa6yfgiEqaWNQycdfS5lnnhAf8KtzL4zmzivRbn2Ghh07SgmSD
+ cRoYuEsxGP6FR0YLKChU7S3rMq8hYGjfk1Wg0wS6/THbNMAw9esE7p499w0devfa6ipo
+ 50b9hg1WOsWTdG2hZyFDPBjRXzSIuYakxUbx8h4miKXOyeqnt6C/JXnjrpZr2fTmz8CB
+ 4ymPlfS4qvG3o72jXpm9h8bBVtwnYAYWXtWVuqC35stKWOL8NhrTtYGKBcvswBAM5UJ8
+ jsSg==
+X-Gm-Message-State: AOAM532Z1vkvhATpeHiFKIJkE83gQmxk4Y2mvF/mAfCJZvU2AghsoSqs
+ mKBEqGmmfxQomHrirAETsDgNthFTvQ0QrLzFdyU=
+X-Google-Smtp-Source: ABdhPJx+dBEdcJ+BztG+kLdnt+vX7FpE4LlJQH01ipc7IDV0pS9xsoGFMHkw/BUBCjO1GOwzT0IU3w3pZk202vhKcQg=
+X-Received: by 2002:a17:90a:f184:: with SMTP id
+ bv4mr3823913pjb.1.1603399952372; 
+ Thu, 22 Oct 2020 13:52:32 -0700 (PDT)
 MIME-Version: 1.0
-Content-Disposition: inline
-In-Reply-To: <2174083.ElGaqSPkdT@x2>
-User-Agent: Mutt/1.10.1 (2018-07-13)
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.14
-Cc: Paul Moore <paul@paul-moore.com>, nhorman@tuxdriver.com,
- linux-api@vger.kernel.org, containers@lists.linux-foundation.org,
- LKML <linux-kernel@vger.kernel.org>, dhowells@redhat.com,
- linux-audit@redhat.com, netfilter-devel@vger.kernel.org, ebiederm@xmission.com,
- simo@redhat.com, netdev@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- Eric Paris <eparis@parisplace.org>, mpatel@redhat.com
+References: <cover.1602263422.git.yifeifz2@illinois.edu>
+ <c2077b8a86c6d82d611007d81ce81d32f718ec59.1602263422.git.yifeifz2@illinois.edu>
+ <202010091613.B671C86@keescook>
+ <CABqSeARZWBQrLkzd3ozF16ghkADQqcN4rUoJS2MKkd=73g4nVA@mail.gmail.com>
+ <202010121556.1110776B83@keescook>
+ <CABqSeAT2-vNVUrXSWiGp=cXCvz8LbOrTBo1GbSZP2Z+CKdegJA@mail.gmail.com>
+In-Reply-To: <CABqSeAT2-vNVUrXSWiGp=cXCvz8LbOrTBo1GbSZP2Z+CKdegJA@mail.gmail.com>
+From: YiFei Zhu <zhuyifei1999@gmail.com>
+Date: Thu, 22 Oct 2020 15:52:20 -0500
+Message-ID: <CABqSeASc-3n_LXpYhb+PYkeAOsfSjih4qLMZ5t=q5yckv3w0nQ@mail.gmail.com>
+Subject: Re: [PATCH v4 seccomp 5/5] seccomp/cache: Report cache data through
+ /proc/pid/seccomp_cache
+To: Kees Cook <keescook@chromium.org>
+Cc: Andrea Arcangeli <aarcange@redhat.com>,
+ Giuseppe Scrivano <gscrivan@redhat.com>,
+ Valentin Rothberg <vrothber@redhat.com>, Jann Horn <jannh@google.com>,
+ YiFei Zhu <yifeifz2@illinois.edu>,
+ Linux Containers <containers@lists.linux-foundation.org>,
+ Tobin Feldman-Fitzthum <tobin@ibm.com>,
+ kernel list <linux-kernel@vger.kernel.org>,
+ Andy Lutomirski <luto@amacapital.net>, Hubertus Franke <frankeh@us.ibm.com>,
+ David Laight <David.Laight@aculab.com>, Jack Chen <jianyan2@illinois.edu>,
+ Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
+ Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>,
+ bpf <bpf@vger.kernel.org>, Tianyin Xu <tyxu@illinois.edu>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -110,67 +123,24 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On 2020-10-21 12:49, Steve Grubb wrote:
-> On Wednesday, October 21, 2020 12:39:26 PM EDT Richard Guy Briggs wrote:
-> > > I think I have a way to generate a signal to multiple targets in one
-> > > syscall...  The added challenge is to also give those targets different
-> > > audit container identifiers.
-> > 
-> > Here is an exmple I was able to generate after updating the testsuite
-> > script to include a signalling example of a nested audit container
-> > identifier:
-> > 
-> > ----
-> > type=PROCTITLE msg=audit(2020-10-21 10:31:16.655:6731) :
-> > proctitle=/usr/bin/perl -w containerid/test type=CONTAINER_ID
-> > msg=audit(2020-10-21 10:31:16.655:6731) :
-> > contid=7129731255799087104^3333941723245477888 type=OBJ_PID
-> > msg=audit(2020-10-21 10:31:16.655:6731) : opid=115583 oauid=root ouid=root
-> > oses=1 obj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
-> > ocomm=perl type=CONTAINER_ID msg=audit(2020-10-21 10:31:16.655:6731) :
-> > contid=3333941723245477888 type=OBJ_PID msg=audit(2020-10-21
-> > 10:31:16.655:6731) : opid=115580 oauid=root ouid=root oses=1
-> > obj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 ocomm=perl
-> > type=CONTAINER_ID msg=audit(2020-10-21 10:31:16.655:6731) :
-> > contid=8098399240850112512^3333941723245477888 type=OBJ_PID
-> > msg=audit(2020-10-21 10:31:16.655:6731) : opid=115582 oauid=root ouid=root
-> > oses=1 obj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
-> > ocomm=perl type=SYSCALL msg=audit(2020-10-21 10:31:16.655:6731) :
-> > arch=x86_64 syscall=kill success=yes exit=0 a0=0xfffe3c84 a1=SIGTERM
-> > a2=0x4d524554 a3=0x0 items=0 ppid=115564 pid=115567 auid=root uid=root
-> > gid=root euid=root suid=root fsuid=root egid=root sgid=root fsgid=root
-> > tty=ttyS0 ses=1 comm=perl exe=/usr/bin/perl
-> > subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
-> > key=testsuite-1603290671-AcLtUulY ----
-> > 
-> > There are three CONTAINER_ID records which need some way of associating
-> > with OBJ_PID records.  An additional CONTAINER_ID record would be present
-> > if the killing process itself had an audit container identifier.  I think
-> > the most obvious way to connect them is with a pid= field in the
-> > CONTAINER_ID record.
-> 
-> pid is the process sending the signal, opid is the process receiving the 
-> signal. I think you mean opid?
+On Mon, Oct 12, 2020 at 7:31 PM YiFei Zhu <zhuyifei1999@gmail.com> wrote:
+>
+> On Mon, Oct 12, 2020 at 5:57 PM Kees Cook <keescook@chromium.org> wrote:
+> > I think it's fine to just have this "dangle" with a help text update of
+> > "if seccomp action caching is supported by the architecture, provide the
+> > /proc/$pid ..."
+>
+> I think it would be weird if someone sees this help text and wonder...
+> "hmm does my architecture support seccomp action caching" and without
+> a clear pointer to how seccomp action cache works, goes and compiles
+> the kernel with this config option on for the purpose of knowing if
+> their arch supports it... Or, is it a common practice in the kernel to
+> leave dangling configs?
 
-If the process sending the signal (it has a pid= field) has an audit
-container identifier, it will generate a CONTAINER_ID record.  Each
-process being signalled (each has an opid= field) that has an audit
-container identifier will also generate a CONTAINER_ID record.  The
-former will be much more common.  Which do we use in the CONTAINER_ID
-record?  Having swinging fields, pid vs opid does not seem like a
-reasonable solution.  Do we go back to "ref=pid=..." vs "ref=opid=..."?
+Bump, in case this question was missed. I don't really want to miss
+the 5.10 merge window...
 
-> -Steve
-
-- RGB
-
---
-Richard Guy Briggs <rgb@redhat.com>
-Sr. S/W Engineer, Kernel Security, Base Operating Systems
-Remote, Ottawa, Red Hat Canada
-IRC: rgb, SunRaycer
-Voice: +1.647.777.2635, Internal: (81) 32635
-
+YiFei Zhu
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
