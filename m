@@ -1,114 +1,107 @@
-Return-Path: <SRS0=zK8s=D5=lists.linux-foundation.org=containers-bounces@kernel.org>
+Return-Path: <SRS0=l1uc=D6=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.3 required=3.0 tests=BAYES_00,DKIM_ADSP_CUSTOM_MED,
-	DKIM_INVALID,DKIM_SIGNED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 24322C388F9
-	for <containers@archiver.kernel.org>; Thu, 22 Oct 2020 23:40:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A52D4C56201
+	for <containers@archiver.kernel.org>; Fri, 23 Oct 2020 01:21:50 +0000 (UTC)
 Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 760C724641
-	for <containers@archiver.kernel.org>; Thu, 22 Oct 2020 23:40:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id C661420878
+	for <containers@archiver.kernel.org>; Fri, 23 Oct 2020 01:21:49 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ud7rmALA"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 760C724641
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=paul-moore-com.20150623.gappssmtp.com header.i=@paul-moore-com.20150623.gappssmtp.com header.b="bWPmglrU"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C661420878
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=paul-moore.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id DFC26204D5;
-	Thu, 22 Oct 2020 23:40:23 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 1D738203B5;
+	Fri, 23 Oct 2020 01:21:49 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id OihwGdWB7k8g; Thu, 22 Oct 2020 23:40:22 +0000 (UTC)
+	with ESMTP id OWgmWqVG333h; Fri, 23 Oct 2020 01:21:47 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 0643120472;
-	Thu, 22 Oct 2020 23:40:21 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 5B3C920459;
+	Fri, 23 Oct 2020 01:21:47 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id D6624C0052;
-	Thu, 22 Oct 2020 23:40:21 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 3A291C0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 442B6C0052;
+	Fri, 23 Oct 2020 01:21:47 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id D206CC0051
  for <containers@lists.linux-foundation.org>;
- Thu, 22 Oct 2020 23:40:20 +0000 (UTC)
+ Fri, 23 Oct 2020 01:21:45 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id 21B1087234
+ by silver.osuosl.org (Postfix) with ESMTP id B356320459
  for <containers@lists.linux-foundation.org>;
- Thu, 22 Oct 2020 23:40:20 +0000 (UTC)
+ Fri, 23 Oct 2020 01:21:45 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id hYK3TacoC-Vh
+ with ESMTP id y8T++O8GsyvX
  for <containers@lists.linux-foundation.org>;
- Thu, 22 Oct 2020 23:40:19 +0000 (UTC)
-X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-pg1-f193.google.com (mail-pg1-f193.google.com
- [209.85.215.193])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id 98F2985FEF
+ Fri, 23 Oct 2020 01:21:44 +0000 (UTC)
+X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
+Received: from mail-ej1-f65.google.com (mail-ej1-f65.google.com
+ [209.85.218.65])
+ by silver.osuosl.org (Postfix) with ESMTPS id F1F9E203B5
  for <containers@lists.linux-foundation.org>;
- Thu, 22 Oct 2020 23:40:19 +0000 (UTC)
-Received: by mail-pg1-f193.google.com with SMTP id s22so2004334pga.9
+ Fri, 23 Oct 2020 01:21:43 +0000 (UTC)
+Received: by mail-ej1-f65.google.com with SMTP id a3so49064ejy.11
  for <containers@lists.linux-foundation.org>;
- Thu, 22 Oct 2020 16:40:19 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
+ Thu, 22 Oct 2020 18:21:43 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=paul-moore-com.20150623.gappssmtp.com; s=20150623;
  h=mime-version:references:in-reply-to:from:date:message-id:subject:to
- :cc; bh=rfUKMVhWjeKZKSXLZk5xBVJ8e0dc1yuWDXn4EN8WMMU=;
- b=ud7rmALAARbu3oqKs/0tzFST86D3Pnf0VohdjqbSUsNO3zlhE5AP/MrJ47b4kSvX2Y
- xyngFQZLQtUAslg59RtfMY2ljTToPi+/zvwpwNgbZqE4O2YsEghEf/pkMxMevIvn3FLl
- L4Uh8kmJyAXgM8cgqPGV6hDCgIpv9vqoDWV+7+xXJRSXWABMP2QdX32A+iNGZQtNMBIO
- Zq/vZhwrllluWPBwA4TvP4dCjf9AShkcwFIEzO91Nm00LTrASqifV1h0VY+ltJOBhpId
- prFvLAf7kc3bcq/cUG3ObocpG7NyplLaNZi+DrDYv4+lagdRedtMgntT3E6x5C1qGqCV
- dHtQ==
+ :cc:content-transfer-encoding;
+ bh=aoxn8RZh5GwLX2OTvbY4F3fYrAFarAXAp+zyIW9UVc0=;
+ b=bWPmglrUmUWeh/iJB7I1EBJU+TdBzoO9kJeAZdj0Mj7vyjbv9DyccX5Lt+lUFusiZw
+ HWpqEJDPjpY3Pe66lK3CAkBsqcDG1SzJroJ/TrLWOH68lnkP3CHZa96739LkvB31F0p2
+ UKaI6v6FS6fL3igL3m2SvuN8QdEUHemh+0A+WspZbjpxU8NlNH1xji6y4zYUku/PAtIG
+ VlsE4Z2Vr2DxmyRQoiSH2mQuJn6k9T8lU/ZuPxibEI768Vlsje7dAVkK4A+TJ9+adHG8
+ +FBZ1+GlJF4yKcmomBogElmJ3P88v835veafFeBLgDo8obHbAFEfQjagR4wLw4RxeZia
+ Dx4Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
  h=x-gm-message-state:mime-version:references:in-reply-to:from:date
- :message-id:subject:to:cc;
- bh=rfUKMVhWjeKZKSXLZk5xBVJ8e0dc1yuWDXn4EN8WMMU=;
- b=m9YhKRpYduG0wqkNgkEOcWkgirg3u65MDmLWwCPmVS7JMedaG4B6W9F7J7hmoLF9lF
- ZR73hnHRUZzjvk3UAdjRVAdbWh3EgOL2ggpQ+USqs+rOaUPNWDLrCDhSgpLR8vgrg4Wg
- 69NnLhStzhH0ELTziPw+HyDD7YXiqj7+aIIq7+d6lUCpt4C6GD+d33k6kf+u2h5rLAb8
- a36lhYU8CO0NByTtLCcw8Xz059q0TIZ5xG/h6lMT/krif383tQ+6OKqrvyca5Ze0+aU6
- 5N1r5aouVJ1mL1rqmYbeswQ/oK/GvZyg0kK/zxe3TDigL2l1hl7kjM7UT+9d6riA7OSk
- Q59w==
-X-Gm-Message-State: AOAM531i3geHZ/4Uof54eRi59LPkayWcmzemKxnQXWKwXCmJZd0Jlw+y
- kJCPgJMguq3fpbFPPnCQa66isQPz/xzsBK2pqcQ=
-X-Google-Smtp-Source: ABdhPJykfsSN5dzMGjSyvmeb7kY08iyuowCm7UjuXfZLsjz2nFbvRBAd/WNQYohVqj2bEWN0ASrE45/fY7d/UdH6dPY=
-X-Received: by 2002:a17:90a:4313:: with SMTP id
- q19mr4588300pjg.184.1603410019174; 
- Thu, 22 Oct 2020 16:40:19 -0700 (PDT)
+ :message-id:subject:to:cc:content-transfer-encoding;
+ bh=aoxn8RZh5GwLX2OTvbY4F3fYrAFarAXAp+zyIW9UVc0=;
+ b=dr4rRmsCrUf8/KRJ4CH+3RuuBAsEeTQSACZ0ff5u4HvubsMnZt/HXF/DU+DxeVIlt3
+ OAW1hPQCjUJuoXZqaGqXVLXXwXWYn0htI2XxWDYNOgbFX+kZSMFvOMFjROK0KxPYtwWB
+ SDIOQo3jzeZA8a+41xw2L5fQz26Bj+9ZJnaUC17WEUwGZtb1MHTS3FVf40Y5Df9oUKBv
+ 59J/e13jWqveMsKbxi0ofB6lTkIBtidd4amNzdAZkRG54KtLMtqv+KMBqKHuajFkBlY/
+ L/ZOqwmnrdgBqcM8n/+RJv875N3fP6PLWPxD+E50N8KeBXA7LnZelhW6U0+uz0nhkEQn
+ 7P4g==
+X-Gm-Message-State: AOAM532+xjPsVYSQNXXebrq+YZ9qPE9VJImMuarYgm+Z7IZO9YY1HpRe
+ wbifDLvbUd04PGpjOFoDRBuxkGANT0UGCQllIZ7c
+X-Google-Smtp-Source: ABdhPJzDtfnYw+rfKgxc4a8mUFIh6ll/aQ2+0itoJxliGHEeO3L/XBWkrOQEYSixIJb79O9lCBjh5YKgmDlUs8u/x/U=
+X-Received: by 2002:a17:906:25cc:: with SMTP id
+ n12mr4813564ejb.488.1603416102090; 
+ Thu, 22 Oct 2020 18:21:42 -0700 (PDT)
 MIME-Version: 1.0
-References: <cover.1602263422.git.yifeifz2@illinois.edu>
- <c2077b8a86c6d82d611007d81ce81d32f718ec59.1602263422.git.yifeifz2@illinois.edu>
- <202010091613.B671C86@keescook>
- <CABqSeARZWBQrLkzd3ozF16ghkADQqcN4rUoJS2MKkd=73g4nVA@mail.gmail.com>
- <202010121556.1110776B83@keescook>
- <CABqSeAT2-vNVUrXSWiGp=cXCvz8LbOrTBo1GbSZP2Z+CKdegJA@mail.gmail.com>
- <CABqSeASc-3n_LXpYhb+PYkeAOsfSjih4qLMZ5t=q5yckv3w0nQ@mail.gmail.com>
- <202010221520.44C5A7833E@keescook>
-In-Reply-To: <202010221520.44C5A7833E@keescook>
-From: YiFei Zhu <zhuyifei1999@gmail.com>
-Date: Thu, 22 Oct 2020 18:40:08 -0500
-Message-ID: <CABqSeAT4L65_uS=45uxPZALKaDSDocMviMginLOV2N0h-e1AzA@mail.gmail.com>
-Subject: Re: [PATCH v4 seccomp 5/5] seccomp/cache: Report cache data through
- /proc/pid/seccomp_cache
-To: Kees Cook <keescook@chromium.org>
-Cc: Andrea Arcangeli <aarcange@redhat.com>,
- Giuseppe Scrivano <gscrivan@redhat.com>,
- Valentin Rothberg <vrothber@redhat.com>, Jann Horn <jannh@google.com>,
- YiFei Zhu <yifeifz2@illinois.edu>,
- Linux Containers <containers@lists.linux-foundation.org>,
- Tobin Feldman-Fitzthum <tobin@ibm.com>,
- kernel list <linux-kernel@vger.kernel.org>,
- Andy Lutomirski <luto@amacapital.net>, Hubertus Franke <frankeh@us.ibm.com>,
- David Laight <David.Laight@aculab.com>, Jack Chen <jianyan2@illinois.edu>,
- Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
- Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>,
- bpf <bpf@vger.kernel.org>, Tianyin Xu <tyxu@illinois.edu>
+References: <cover.1593198710.git.rgb@redhat.com>
+ <6e2e10432e1400f747918eeb93bf45029de2aa6c.1593198710.git.rgb@redhat.com>
+ <CAHC9VhSCm5eeBcyY8bBsnxr-hK4rkso9_NJHJec2OXLu4m5QTA@mail.gmail.com>
+ <20200729194058.kcbsqjhzunjpipgm@madcap2.tricolour.ca>
+ <CAHC9VhRUwCKBjffA_XNSjUwvUn8e6zfmy8WD203dK7R2KD0__g@mail.gmail.com>
+ <20201002195231.GH2882171@madcap2.tricolour.ca>
+ <20201021163926.GA3929765@madcap2.tricolour.ca>
+In-Reply-To: <20201021163926.GA3929765@madcap2.tricolour.ca>
+From: Paul Moore <paul@paul-moore.com>
+Date: Thu, 22 Oct 2020 21:21:31 -0400
+Message-ID: <CAHC9VhRb7XMyTrcrmzM3yQO+eLdO_r2+DOLKr9apDDeH4ua2Ew@mail.gmail.com>
+Subject: Re: [PATCH ghak90 V9 05/13] audit: log container info of syscalls
+To: Richard Guy Briggs <rgb@redhat.com>
+Cc: nhorman@tuxdriver.com, linux-api@vger.kernel.org,
+ containers@lists.linux-foundation.org, LKML <linux-kernel@vger.kernel.org>,
+ dhowells@redhat.com, Linux-Audit Mailing List <linux-audit@redhat.com>,
+ netfilter-devel@vger.kernel.org, ebiederm@xmission.com, simo@redhat.com,
+ netdev@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+ Eric Paris <eparis@parisplace.org>, mpatel@redhat.com
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -125,31 +118,43 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Thu, Oct 22, 2020 at 5:32 PM Kees Cook <keescook@chromium.org> wrote:
-> I've been going back and forth on this, and I think what I've settled
-> on is I'd like to avoid new CONFIG dependencies just for this feature.
-> Instead, how about we just fill in SECCOMP_NATIVE and SECCOMP_COMPAT
-> for all the HAVE_ARCH_SECCOMP_FILTER architectures, and then the
-> cache reporting can be cleanly tied to CONFIG_SECCOMP_FILTER? It
-> should be relatively simple to extract those details and make
-> SECCOMP_ARCH_{NATIVE,COMPAT}_NAME part of the per-arch enabling patches?
+On Wed, Oct 21, 2020 at 12:39 PM Richard Guy Briggs <rgb@redhat.com> wrote:
+> Here is an exmple I was able to generate after updating the testsuite
+> script to include a signalling example of a nested audit container
+> identifier:
+>
+> ----
+> type=PROCTITLE msg=audit(2020-10-21 10:31:16.655:6731) : proctitle=/usr/bin/perl -w containerid/test
+> type=CONTAINER_ID msg=audit(2020-10-21 10:31:16.655:6731) : contid=7129731255799087104^3333941723245477888
+> type=OBJ_PID msg=audit(2020-10-21 10:31:16.655:6731) : opid=115583 oauid=root ouid=root oses=1 obj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 ocomm=perl
+> type=CONTAINER_ID msg=audit(2020-10-21 10:31:16.655:6731) : contid=3333941723245477888
+> type=OBJ_PID msg=audit(2020-10-21 10:31:16.655:6731) : opid=115580 oauid=root ouid=root oses=1 obj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 ocomm=perl
+> type=CONTAINER_ID msg=audit(2020-10-21 10:31:16.655:6731) : contid=8098399240850112512^3333941723245477888
+> type=OBJ_PID msg=audit(2020-10-21 10:31:16.655:6731) : opid=115582 oauid=root ouid=root oses=1 obj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 ocomm=perl
+> type=SYSCALL msg=audit(2020-10-21 10:31:16.655:6731) : arch=x86_64 syscall=kill success=yes exit=0 a0=0xfffe3c84 a1=SIGTERM a2=0x4d524554 a3=0x0 items=0 ppid=115564 pid=115567 auid=root uid=root gid=root euid=root suid=root fsuid=root egid=root sgid=root fsgid=root tty=ttyS0 ses=1 comm=perl exe=/usr/bin/perl subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key=testsuite-1603290671-AcLtUulY
+> ----
+>
+> There are three CONTAINER_ID records which need some way of associating with OBJ_PID records.  An additional CONTAINER_ID record would be present if the killing process itself had an audit container identifier.  I think the most obvious way to connect them is with a pid= field in the CONTAINER_ID record.
 
-Hmm. So I could enable the cache logic to every architecture (one
-patch per arch) that does not have the sparse syscall numbers, and
-then have the proc reporting after the arch patches? I could do that.
-I don't have test machines to run anything other than x86_64 or ia32,
-so they will need a closer look by people more familiar with those
-arches.
+Using a "pid=" field as a way to link CONTAINER_ID records to other
+records raises a few questions.  What happens if/when we need to
+represent those PIDs in the context of a namespace?  Are we ever going
+to need to link to records which don't have a "pid=" field?  I haven't
+done the homework to know if either of these are a concern right now,
+but I worry that this might become a problem in the future.
 
-> I'd still like to get more specific workload performance numbers too.
-> The microbenchmark is nice, but getting things like build times under
-> docker's default seccomp filter, etc would be lovely. I've almost gotten
-> there, but my benchmarks are still really noisy and CPU isolation
-> continues to frustrate me. :)
+The idea of using something like "item=" is interesting.  As you
+mention, the "item=" field does present some overlap problems with the
+PATH record, but perhaps we can do something similar.  What if we
+added a "record=" (or similar, I'm not worried about names at this
+point) to each record, reset to 0/1 at the start of each event, and
+when we needed to link records somehow we could add a "related=1,..,N"
+field.  This would potentially be useful beyond just the audit
+container ID work.
 
-Ok, let me know if I can help.
-
-YiFei Zhu
+-- 
+paul moore
+www.paul-moore.com
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
