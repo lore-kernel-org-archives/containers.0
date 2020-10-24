@@ -1,102 +1,116 @@
-Return-Path: <SRS0=l1uc=D6=lists.linux-foundation.org=containers-bounces@kernel.org>
+Return-Path: <SRS0=XUta=D7=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.0 required=3.0 tests=BAYES_00,DKIM_INVALID,
+X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C4D4C5517A
-	for <containers@archiver.kernel.org>; Fri, 23 Oct 2020 20:41:03 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6B87EC55179
+	for <containers@archiver.kernel.org>; Sat, 24 Oct 2020 02:51:47 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 7B11D2087D
-	for <containers@archiver.kernel.org>; Fri, 23 Oct 2020 20:41:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id BA68A2225E
+	for <containers@archiver.kernel.org>; Sat, 24 Oct 2020 02:51:45 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="JZd5fuC+"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7B11D2087D
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="KV9CaDvJ"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BA68A2225E
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=chromium.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id E8DA687031;
-	Fri, 23 Oct 2020 20:41:01 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 3AEE58715A;
+	Sat, 24 Oct 2020 02:51:45 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id bZDW2B-G2kJ8; Fri, 23 Oct 2020 20:41:00 +0000 (UTC)
+	with ESMTP id Tkp39l6bSZXv; Sat, 24 Oct 2020 02:51:44 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id CA60386FD9;
-	Fri, 23 Oct 2020 20:41:00 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id AC33C87149;
+	Sat, 24 Oct 2020 02:51:44 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id ABAABC0052;
-	Fri, 23 Oct 2020 20:41:00 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 05A8DC0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 9F743C0052;
+	Sat, 24 Oct 2020 02:51:44 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 5554AC0051
  for <containers@lists.linux-foundation.org>;
- Fri, 23 Oct 2020 20:40:59 +0000 (UTC)
+ Sat, 24 Oct 2020 02:51:43 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id D3374203B0
+ by hemlock.osuosl.org (Postfix) with ESMTP id 4948087147
  for <containers@lists.linux-foundation.org>;
- Fri, 23 Oct 2020 20:40:58 +0000 (UTC)
+ Sat, 24 Oct 2020 02:51:43 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id qKdHeifLU2LQ
+ with ESMTP id 3YqlU9qYDaUe
  for <containers@lists.linux-foundation.org>;
- Fri, 23 Oct 2020 20:40:57 +0000 (UTC)
+ Sat, 24 Oct 2020 02:51:42 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from us-smtp-delivery-124.mimecast.com
- (us-smtp-delivery-124.mimecast.com [216.205.24.124])
- by silver.osuosl.org (Postfix) with ESMTPS id 25A63203AC
+Received: from mail-pg1-f193.google.com (mail-pg1-f193.google.com
+ [209.85.215.193])
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 9AF4D87149
  for <containers@lists.linux-foundation.org>;
- Fri, 23 Oct 2020 20:40:56 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
- s=mimecast20190719; t=1603485655;
- h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
- to:to:cc:cc:mime-version:mime-version:content-type:content-type:
- in-reply-to:in-reply-to:references:references;
- bh=a3pMnOcWFThjKdDsxfmbI+DYS5weG2T0/ht11gpp4qQ=;
- b=JZd5fuC+MF0GcTWZbKm+vlgseAOW0BcvH3QhlbE0xZEe8sGGcG3IiPzhtanCYHDxxi8Oli
- y+NMfzGFCA8QRK45vQU/fNSRkqtfiwbH9CrvXuA+dsu94n/Mj2R7HOPur+FyCGTxHyyN9N
- 35NSXkPXj8r25mdkmubHNweWi08utyU=
-Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
- [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-139-Dsav4riYMDeJtcCT1H38iQ-1; Fri, 23 Oct 2020 16:40:53 -0400
-X-MC-Unique: Dsav4riYMDeJtcCT1H38iQ-1
-Received: from smtp.corp.redhat.com (int-mx03.intmail.prod.int.phx2.redhat.com
- [10.5.11.13])
- (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
- (No client certificate requested)
- by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 44FE41882FB6;
- Fri, 23 Oct 2020 20:40:51 +0000 (UTC)
-Received: from madcap2.tricolour.ca (unknown [10.10.110.2])
- by smtp.corp.redhat.com (Postfix) with ESMTPS id A971D614F5;
- Fri, 23 Oct 2020 20:40:36 +0000 (UTC)
-Date: Fri, 23 Oct 2020 16:40:33 -0400
-From: Richard Guy Briggs <rgb@redhat.com>
-To: Paul Moore <paul@paul-moore.com>
-Subject: Re: [PATCH ghak90 V9 05/13] audit: log container info of syscalls
-Message-ID: <20201023204033.GI2882171@madcap2.tricolour.ca>
-References: <cover.1593198710.git.rgb@redhat.com>
- <6e2e10432e1400f747918eeb93bf45029de2aa6c.1593198710.git.rgb@redhat.com>
- <CAHC9VhSCm5eeBcyY8bBsnxr-hK4rkso9_NJHJec2OXLu4m5QTA@mail.gmail.com>
- <20200729194058.kcbsqjhzunjpipgm@madcap2.tricolour.ca>
- <CAHC9VhRUwCKBjffA_XNSjUwvUn8e6zfmy8WD203dK7R2KD0__g@mail.gmail.com>
- <20201002195231.GH2882171@madcap2.tricolour.ca>
- <20201021163926.GA3929765@madcap2.tricolour.ca>
- <CAHC9VhRb7XMyTrcrmzM3yQO+eLdO_r2+DOLKr9apDDeH4ua2Ew@mail.gmail.com>
+ Sat, 24 Oct 2020 02:51:42 +0000 (UTC)
+Received: by mail-pg1-f193.google.com with SMTP id b23so2736609pgb.3
+ for <containers@lists.linux-foundation.org>;
+ Fri, 23 Oct 2020 19:51:42 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=chromium.org; s=google;
+ h=date:from:to:cc:subject:message-id:references:mime-version
+ :content-disposition:in-reply-to;
+ bh=exQNVvRWJFpZVay5bCbuF8Chc+K90S79cyDW4pCR96s=;
+ b=KV9CaDvJWjMnPRerYDVMgQAXXWpZHin64zb+D/uzzh1jn14cp0unh77C/PFSi1YRzK
+ RZfD1gMNw3MWr1O3MZFrAq4q3G7PSiATA+70iI9uAQA2HKgtdZPU5ZKeEhN0FxWII7A1
+ PAl5jVvc7Gf5OQwDzQpiXkqTFQP3OLcIftsxw=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=1e100.net; s=20161025;
+ h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+ :mime-version:content-disposition:in-reply-to;
+ bh=exQNVvRWJFpZVay5bCbuF8Chc+K90S79cyDW4pCR96s=;
+ b=fi+ezBYZPC4hcuhOzQ+OAddnkvW4Zx1AP5cqUTwllT1WOuVr2bBeB/vdeg2AxBE2Nt
+ GvGrS0fiPzz4r/s9tKxLyYSEHRJ7B1AyU7xjYxbQMhuoKRuFFwOEluxUWK/Xh32qc1r9
+ 6OLUxcRmdewAGsYURcGpYO7hn61QYGImBYGynSssHRg+VsCu6gqOJf1guvc0dLHy1RQL
+ 5IAXZZ/FuNjgU8yV0Yt4C3MWU+Lzv96MiDBVwJcl73+wteLwtgFCHhwU6qgqeHst49QD
+ FubhgkPuRgjE9hTCzkshAegtFr3fz6yg+LG4CusLxWYIP1ccamsU8kfhjKOo8+WNxM11
+ PRMw==
+X-Gm-Message-State: AOAM533RbYcUkbojvxnIBegsEeJYZ80kJ4Qlmz5II3CvcQG6tg3nPIHQ
+ HwpMj1sYHkmI+Y84NwBqMgBc5g==
+X-Google-Smtp-Source: ABdhPJzyHxgz6MKrJyx7Q6S+HFMiDqjWeZc2uxi66QjlrB6Ze3vMN0w5ckv5WraSwYbQvKBy86p7Rg==
+X-Received: by 2002:a63:f84c:: with SMTP id v12mr4442172pgj.125.1603507902217; 
+ Fri, 23 Oct 2020 19:51:42 -0700 (PDT)
+Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
+ by smtp.gmail.com with ESMTPSA id s20sm3363159pfu.112.2020.10.23.19.51.40
+ (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+ Fri, 23 Oct 2020 19:51:41 -0700 (PDT)
+Date: Fri, 23 Oct 2020 19:51:40 -0700
+From: Kees Cook <keescook@chromium.org>
+To: YiFei Zhu <zhuyifei1999@gmail.com>
+Subject: Re: [PATCH v4 seccomp 5/5] seccomp/cache: Report cache data through
+ /proc/pid/seccomp_cache
+Message-ID: <202010231945.90FA4A4AA@keescook>
+References: <cover.1602263422.git.yifeifz2@illinois.edu>
+ <c2077b8a86c6d82d611007d81ce81d32f718ec59.1602263422.git.yifeifz2@illinois.edu>
+ <202010091613.B671C86@keescook>
+ <CABqSeARZWBQrLkzd3ozF16ghkADQqcN4rUoJS2MKkd=73g4nVA@mail.gmail.com>
+ <202010121556.1110776B83@keescook>
+ <CABqSeAT2-vNVUrXSWiGp=cXCvz8LbOrTBo1GbSZP2Z+CKdegJA@mail.gmail.com>
+ <CABqSeASc-3n_LXpYhb+PYkeAOsfSjih4qLMZ5t=q5yckv3w0nQ@mail.gmail.com>
+ <202010221520.44C5A7833E@keescook>
+ <CABqSeAT4L65_uS=45uxPZALKaDSDocMviMginLOV2N0h-e1AzA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <CAHC9VhRb7XMyTrcrmzM3yQO+eLdO_r2+DOLKr9apDDeH4ua2Ew@mail.gmail.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.13
-Cc: nhorman@tuxdriver.com, linux-api@vger.kernel.org,
- containers@lists.linux-foundation.org, LKML <linux-kernel@vger.kernel.org>,
- dhowells@redhat.com, Linux-Audit Mailing List <linux-audit@redhat.com>,
- netfilter-devel@vger.kernel.org, ebiederm@xmission.com, simo@redhat.com,
- netdev@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- Eric Paris <eparis@parisplace.org>, mpatel@redhat.com
+In-Reply-To: <CABqSeAT4L65_uS=45uxPZALKaDSDocMviMginLOV2N0h-e1AzA@mail.gmail.com>
+Cc: Andrea Arcangeli <aarcange@redhat.com>,
+ Giuseppe Scrivano <gscrivan@redhat.com>,
+ Valentin Rothberg <vrothber@redhat.com>, Jann Horn <jannh@google.com>,
+ YiFei Zhu <yifeifz2@illinois.edu>,
+ Linux Containers <containers@lists.linux-foundation.org>,
+ Tobin Feldman-Fitzthum <tobin@ibm.com>,
+ kernel list <linux-kernel@vger.kernel.org>,
+ Andy Lutomirski <luto@amacapital.net>, Hubertus Franke <frankeh@us.ibm.com>,
+ David Laight <David.Laight@aculab.com>, Jack Chen <jianyan2@illinois.edu>,
+ Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
+ Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>,
+ bpf <bpf@vger.kernel.org>, Tianyin Xu <tyxu@illinois.edu>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -113,71 +127,49 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On 2020-10-22 21:21, Paul Moore wrote:
-> On Wed, Oct 21, 2020 at 12:39 PM Richard Guy Briggs <rgb@redhat.com> wrote:
-> > Here is an exmple I was able to generate after updating the testsuite
-> > script to include a signalling example of a nested audit container
-> > identifier:
-> >
-> > ----
-> > type=PROCTITLE msg=audit(2020-10-21 10:31:16.655:6731) : proctitle=/usr/bin/perl -w containerid/test
-> > type=CONTAINER_ID msg=audit(2020-10-21 10:31:16.655:6731) : contid=7129731255799087104^3333941723245477888
-> > type=OBJ_PID msg=audit(2020-10-21 10:31:16.655:6731) : opid=115583 oauid=root ouid=root oses=1 obj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 ocomm=perl
-> > type=CONTAINER_ID msg=audit(2020-10-21 10:31:16.655:6731) : contid=3333941723245477888
-> > type=OBJ_PID msg=audit(2020-10-21 10:31:16.655:6731) : opid=115580 oauid=root ouid=root oses=1 obj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 ocomm=perl
-> > type=CONTAINER_ID msg=audit(2020-10-21 10:31:16.655:6731) : contid=8098399240850112512^3333941723245477888
-> > type=OBJ_PID msg=audit(2020-10-21 10:31:16.655:6731) : opid=115582 oauid=root ouid=root oses=1 obj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 ocomm=perl
-> > type=SYSCALL msg=audit(2020-10-21 10:31:16.655:6731) : arch=x86_64 syscall=kill success=yes exit=0 a0=0xfffe3c84 a1=SIGTERM a2=0x4d524554 a3=0x0 items=0 ppid=115564 pid=115567 auid=root uid=root gid=root euid=root suid=root fsuid=root egid=root sgid=root fsgid=root tty=ttyS0 ses=1 comm=perl exe=/usr/bin/perl subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key=testsuite-1603290671-AcLtUulY
-> > ----
-> >
-> > There are three CONTAINER_ID records which need some way of associating with OBJ_PID records.  An additional CONTAINER_ID record would be present if the killing process itself had an audit container identifier.  I think the most obvious way to connect them is with a pid= field in the CONTAINER_ID record.
+On Thu, Oct 22, 2020 at 06:40:08PM -0500, YiFei Zhu wrote:
+> On Thu, Oct 22, 2020 at 5:32 PM Kees Cook <keescook@chromium.org> wrote:
+> > I've been going back and forth on this, and I think what I've settled
+> > on is I'd like to avoid new CONFIG dependencies just for this feature.
+> > Instead, how about we just fill in SECCOMP_NATIVE and SECCOMP_COMPAT
+> > for all the HAVE_ARCH_SECCOMP_FILTER architectures, and then the
+> > cache reporting can be cleanly tied to CONFIG_SECCOMP_FILTER? It
+> > should be relatively simple to extract those details and make
+> > SECCOMP_ARCH_{NATIVE,COMPAT}_NAME part of the per-arch enabling patches?
 > 
-> Using a "pid=" field as a way to link CONTAINER_ID records to other
-> records raises a few questions.  What happens if/when we need to
-> represent those PIDs in the context of a namespace?  Are we ever going
-> to need to link to records which don't have a "pid=" field?  I haven't
-> done the homework to know if either of these are a concern right now,
-> but I worry that this might become a problem in the future.
+> Hmm. So I could enable the cache logic to every architecture (one
+> patch per arch) that does not have the sparse syscall numbers, and
+> then have the proc reporting after the arch patches? I could do that.
+> I don't have test machines to run anything other than x86_64 or ia32,
+> so they will need a closer look by people more familiar with those
+> arches.
 
-Good point about PID namespaces in the future but those accompanying
-records will already have to be conditioned for the PID namespace
-context that is requesting it, so I don't see this as a showstopper.
+Cool, yes please. It looks like MIPS will need to be skipped for now. I
+would have the debug cache reporting patch then depend on
+!CONFIG_HAVE_SPARSE_SYSCALL_NR.
 
-I've forgotten about an important one we already hit, which is a network
-event that only has a NETFILTER_PKT record, but in that case, there is
-no ambiguity since there are no other records associated with that
-event.  So the second is already an issue now.  Using
-task_tgid_nr(current), in the contid testsuite script network event it
-attributed it to ping which caused the event, but we cannot use this
-since it wasn't triggered by a syscall and doesn't accurately reflect
-the kernel thread that received it.  It could just be set to zero for
-network events.
+> > I'd still like to get more specific workload performance numbers too.
+> > The microbenchmark is nice, but getting things like build times under
+> > docker's default seccomp filter, etc would be lovely. I've almost gotten
+> > there, but my benchmarks are still really noisy and CPU isolation
+> > continues to frustrate me. :)
+> 
+> Ok, let me know if I can help.
 
-> The idea of using something like "item=" is interesting.  As you
-> mention, the "item=" field does present some overlap problems with the
-> PATH record, but perhaps we can do something similar.  What if we
-> added a "record=" (or similar, I'm not worried about names at this
-> point) to each record, reset to 0/1 at the start of each event, and
-> when we needed to link records somehow we could add a "related=1,..,N"
-> field.  This would potentially be useful beyond just the audit
-> container ID work.
+Do you have a test environment where you can compare the before/after
+of repeated kernel build times (or some other sufficiently
+complex/interesting) workload under these conditions:
 
-Does it make any sense to use the same keyword in each type of record
-such as record/records as in PATH/SYSCALL: item/items ?
+bare metal
+docker w/ seccomp policy disabled
+docker w/ default seccomp policy
 
-(I prefer 0-indexed like item=...)
+This is what I've been trying to construct, but it's really noisy, so
+I've been trying to pin CPUs and NUMA memory nodes, but it's not really
+helping yet. :P
 
-> paul moore
-
-- RGB
-
---
-Richard Guy Briggs <rgb@redhat.com>
-Sr. S/W Engineer, Kernel Security, Base Operating Systems
-Remote, Ottawa, Red Hat Canada
-IRC: rgb, SunRaycer
-Voice: +1.647.777.2635, Internal: (81) 32635
-
+-- 
+Kees Cook
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
