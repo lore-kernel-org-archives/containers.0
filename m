@@ -2,92 +2,119 @@ Return-Path: <SRS0=AIkC=EA=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.8 required=3.0 tests=BAYES_00,DKIM_ADSP_CUSTOM_MED,
+	DKIM_INVALID,DKIM_SIGNED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B2ABAC55179
-	for <containers@archiver.kernel.org>; Sun, 25 Oct 2020 15:01:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 56220C388F7
+	for <containers@archiver.kernel.org>; Sun, 25 Oct 2020 16:32:07 +0000 (UTC)
 Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 378AF2087C
-	for <containers@archiver.kernel.org>; Sun, 25 Oct 2020 15:01:44 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 378AF2087C
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=enjellic.com
+	by mail.kernel.org (Postfix) with ESMTPS id C7EA520874
+	for <containers@archiver.kernel.org>; Sun, 25 Oct 2020 16:32:06 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="nawbTnLP"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C7EA520874
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 0603A869F7;
-	Sun, 25 Oct 2020 15:01:44 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 76D988695E;
+	Sun, 25 Oct 2020 16:32:06 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id zBBz2pwo48W3; Sun, 25 Oct 2020 15:01:43 +0000 (UTC)
+	with ESMTP id RDNHc6DVhjCR; Sun, 25 Oct 2020 16:32:05 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id ED58285B18;
-	Sun, 25 Oct 2020 15:01:42 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 1AA5286957;
+	Sun, 25 Oct 2020 16:32:05 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id CE4C0C0893;
-	Sun, 25 Oct 2020 15:01:42 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 45BC6C0859
+	by lists.linuxfoundation.org (Postfix) with ESMTP id E9779C0859;
+	Sun, 25 Oct 2020 16:32:04 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 04099C0051
  for <containers@lists.linux-foundation.org>;
- Sun, 25 Oct 2020 15:01:41 +0000 (UTC)
+ Sun, 25 Oct 2020 16:32:03 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 2B74B86833
+ by fraxinus.osuosl.org (Postfix) with ESMTP id DEDF58695E
  for <containers@lists.linux-foundation.org>;
- Sun, 25 Oct 2020 15:01:41 +0000 (UTC)
+ Sun, 25 Oct 2020 16:32:03 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id LtTt3smS+yuo
+ with ESMTP id XhMTaYbzTUQL
  for <containers@lists.linux-foundation.org>;
- Sun, 25 Oct 2020 15:01:39 +0000 (UTC)
-X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from wind.enjellic.com (wind.enjellic.com [76.10.64.91])
- by whitealder.osuosl.org (Postfix) with ESMTP id 01EEF868E9
+ Sun, 25 Oct 2020 16:32:02 +0000 (UTC)
+X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
+Received: from mail-wm1-f66.google.com (mail-wm1-f66.google.com
+ [209.85.128.66])
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id 8269E86957
  for <containers@lists.linux-foundation.org>;
- Sun, 25 Oct 2020 15:01:33 +0000 (UTC)
-Received: from wind.enjellic.com (localhost [127.0.0.1])
- by wind.enjellic.com (8.15.2/8.15.2) with ESMTP id 09PF0ZYl023036;
- Sun, 25 Oct 2020 10:00:35 -0500
-Received: (from greg@localhost)
- by wind.enjellic.com (8.15.2/8.15.2/Submit) id 09PF0Wg7023035;
- Sun, 25 Oct 2020 10:00:32 -0500
-Date: Sun, 25 Oct 2020 10:00:32 -0500
-From: "Dr. Greg" <greg@enjellic.com>
-To: Krzysztof Struczynski <krzysztof.struczynski@huawei.com>
-Subject: Re: [RFC PATCH 00/30] ima: Introduce IMA namespace
-Message-ID: <20201025150031.GA23011@wind.enjellic.com>
-References: <20200818152037.11869-1-krzysztof.struczynski@huawei.com>
- <20200818164943.va3um7toztazcfud@wittgenstein>
- <d77a6cd783319702fddd06783cb84fdeb86210a6.camel@linux.ibm.com>
- <20200906171413.GA8305@wind.enjellic.com>
- <CAKrSGQR3Pw=Rad2RgUuCHqr0r2Nc6x2nLoo2cVAkD+_8Vbmd7A@mail.gmail.com>
- <d405bab0d262b32fd16e85444791b6c49d820aa2.camel@linux.ibm.com>
- <a75a6541991d4f8dbaa30e0af517b829@huawei.com>
-Mime-Version: 1.0
-Content-Disposition: inline
-In-Reply-To: <a75a6541991d4f8dbaa30e0af517b829@huawei.com>
-User-Agent: Mutt/1.4i
-X-Greylist: Sender passed SPF test, not delayed by milter-greylist-4.2.3
- (wind.enjellic.com [127.0.0.1]); Sun, 25 Oct 2020 10:00:35 -0500 (CDT)
-Cc: "viro@zeniv.linux.org.uk" <viro@zeniv.linux.org.uk>,
- "mkayaalp@cs.binghamton.edu" <mkayaalp@cs.binghamton.edu>,
- "sunyuqiong1988@gmail.com" <sunyuqiong1988@gmail.com>,
- "containers@lists.linux-foundation.org"
- <containers@lists.linux-foundation.org>, "jannh@google.com" <jannh@google.com>,
- Roberto Sassu <roberto.sassu@huawei.com>,
- Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
- Mimi Zohar <zohar@linux.ibm.com>, "linux-security-module@vger.kernel.org"
- <linux-security-module@vger.kernel.org>,
- Silviu Vlasceanu <Silviu.Vlasceanu@huawei.com>,
- "ebiederm@xmission.com" <ebiederm@xmission.com>,
- "dmitry.kasatkin@gmail.com" <dmitry.kasatkin@gmail.com>,
- Luke Hinds <lhinds@redhat.com>, "luto@amacapital.net" <luto@amacapital.net>,
- "torvalds@linux-foundation.org" <torvalds@linux-foundation.org>,
- "linux-integrity@vger.kernel.org" <linux-integrity@vger.kernel.org>,
- "christian@brauner.io" <christian@brauner.io>
+ Sun, 25 Oct 2020 16:32:02 +0000 (UTC)
+Received: by mail-wm1-f66.google.com with SMTP id q5so10242746wmq.0
+ for <containers@lists.linux-foundation.org>;
+ Sun, 25 Oct 2020 09:32:02 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
+ h=cc:subject:to:references:from:message-id:date:user-agent
+ :mime-version:in-reply-to:content-language:content-transfer-encoding;
+ bh=/1PhpiaGrcRVzr2dnc2fyLo2nw7qkVLeNf9/Q+x9ahw=;
+ b=nawbTnLPKD4DqjmM6ewryum9JjjHTDkAV9TxsBc9YR0pLaH4o6SX+Qhxp6loGifbwQ
+ x3a0RTan1yxkaHDewsSeLWngtY7jHGLS16ADsm8J1aYwHiUA+ju6/AzkjTQ8YXpztzNv
+ 9orEtUzPt9WdEReSU9f7DmgsWUPanLA71+swdDSJlcdrspWFWXyHhH7ENH03TB1K0MGD
+ 1YGzSH56L5NbAl5xmy8Atf384e/tvm7mU4O8R/gmXl3WtW3moHjkkXT68GkVSHS3XR7x
+ ueA6ZlG0dOqw1kcqF0azu684aRe8y61AhaEl0sJ8wkQ+YhREQuyKCx+5oPjLPHIxUAUt
+ sOww==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=1e100.net; s=20161025;
+ h=x-gm-message-state:cc:subject:to:references:from:message-id:date
+ :user-agent:mime-version:in-reply-to:content-language
+ :content-transfer-encoding;
+ bh=/1PhpiaGrcRVzr2dnc2fyLo2nw7qkVLeNf9/Q+x9ahw=;
+ b=euqagbg1FhSv3qaxSrjdsEzuyE8QXyCQCdTPjozTsvW1M+YlJ6qdpxkYjDE1u9E2Rk
+ XD1EBBWJ2wfNrXBPPctkn4Ehji16KdX4XMrOZHOmoCAdr+K9CbZSjeh5+JlfmXAuWVHu
+ Kkiq+hi0rD0sV/+Id8U/lbUC6F302s0hZIufd/iI7pUHqnGno4wutPUlJhu3JfrNfKS0
+ KoDLIUvL1v141TBJ5H4sZrmhkd0upP/04xl8YE2ayXEmEaCI36hLr74jLwmOy3R9VWsx
+ tVQHPiRkwseC8ZdAM6npFanrGU9wFLWshQCxdnKD9GCCesqblrM1087Rd7RiHOR/Jr+j
+ vI7g==
+X-Gm-Message-State: AOAM5325+wiow2F68U0Ja7UoAu87jKyImerblwyDG6UyJz0ReyfIJA+i
+ rNqSyML//I2jzaiIKGGB4Dw=
+X-Google-Smtp-Source: ABdhPJx7vk/G55nR+opoaTDKe9KNtkkb51flCTuqdIOrlydlq4WIf1jjqKd6YFnpwhE9+W9ZRj732A==
+X-Received: by 2002:a7b:c00a:: with SMTP id c10mr3285431wmb.119.1603643520712; 
+ Sun, 25 Oct 2020 09:32:00 -0700 (PDT)
+Received: from ?IPv6:2001:a61:245a:d801:2e74:88ad:ef9:5218?
+ ([2001:a61:245a:d801:2e74:88ad:ef9:5218])
+ by smtp.gmail.com with ESMTPSA id c18sm17512627wrq.5.2020.10.25.09.31.58
+ (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+ Sun, 25 Oct 2020 09:31:59 -0700 (PDT)
+Subject: Re: For review: seccomp_user_notif(2) manual page
+To: Jann Horn <jannh@google.com>, Tycho Andersen <tycho@tycho.pizza>
+References: <45f07f17-18b6-d187-0914-6f341fe90857@gmail.com>
+ <20200930150330.GC284424@cisco>
+ <8bcd956f-58d2-d2f0-ca7c-0a30f3fcd5b8@gmail.com>
+ <20200930230327.GA1260245@cisco>
+ <CAG48ez1VOUEHVQyo-2+uO7J+-jN5rh7=KmrMJiPaFjwCbKR1Sg@mail.gmail.com>
+ <20200930232456.GB1260245@cisco>
+ <CAG48ez2xn+_KznEztJ-eVTsTzkbf9CVgPqaAk7TpRNAqbdaRoA@mail.gmail.com>
+ <CAG48ez3kpEDO1x_HfvOM2R9M78Ach9O_4+Pjs-vLLfqvZL+13A@mail.gmail.com>
+From: "Michael Kerrisk (man-pages)" <mtk.manpages@gmail.com>
+Message-ID: <656a37b5-75e3-0ded-6ba8-3bb57b537b24@gmail.com>
+Date: Sun, 25 Oct 2020 17:31:57 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.11.0
+MIME-Version: 1.0
+In-Reply-To: <CAG48ez3kpEDO1x_HfvOM2R9M78Ach9O_4+Pjs-vLLfqvZL+13A@mail.gmail.com>
+Content-Language: en-US
+Cc: linux-man <linux-man@vger.kernel.org>, Song Liu <songliubraving@fb.com>,
+ Will Drewry <wad@chromium.org>, Kees Cook <keescook@chromium.org>,
+ Daniel Borkmann <daniel@iogearbox.net>,
+ Giuseppe Scrivano <gscrivan@redhat.com>, Robert Sesek <rsesek@google.com>,
+ Linux Containers <containers@lists.linux-foundation.org>,
+ lkml <linux-kernel@vger.kernel.org>, Alexei Starovoitov <ast@kernel.org>,
+ mtk.manpages@gmail.com, bpf <bpf@vger.kernel.org>,
+ Andy Lutomirski <luto@amacapital.net>,
+ Christian Brauner <christian@brauner.io>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -99,134 +126,180 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-Reply-To: "Dr. Greg" <greg@enjellic.com>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Mon, Oct 19, 2020 at 09:30:27AM +0000, Krzysztof Struczynski wrote:
-
-Good morning, I hope this note finds the weekend going well for
-everyone.
-
-> > The concept of the IMA namespace as a separate namespace, not
-> > attached to the user or mount namespace, remains the same as in
-> > the last set of Stefan's patches. The creation and configuration
-> > mechanism changed, partially because of the changes in the
-> > upstream kernel like extension of the CLONE_ flags, that
-> > facilitated other solutions. The main inspiration in this regard
-> > was the new time namespace.
-> >
-> > The implemented mechanism is intended to make the configuration of
-> > the IMA namespace as similar as possible to the upstream IMA
-> > implementation and allows to configure the new IMA namespace
-> > before any process enters that namespace, so the very first
-> > actions can be measured/appraised/audited.
-> >
-> > In this implementation many design points formulated by Stefan
-> > still stand.  The significant difference in the presented design
-> > is the threat model.  The actions of the host's root and any other
-> > user within the container are measured/appraised/audited according
-> > to the container's policy. However, every action that affects
-> > objects in the root namespace, is detected when processes from the
-> > root namespace access them.
-
-> Do you think that the above proposal addresses the aforementioned
-> "IMA namespacing" issue? If it doesn't, would you please clarify
-> what are the main, outstanding problems?
-
-From our perspective, a significant objective of the namespacing
-discussion needs to be considerations regarding how additional growth
-and sophistication of IMA as a sub-system will occur.
-
-IMA, if taken to its limit, resolves into the notion of modeling the
-behavior of a hardware platform, its operating system and the
-supported application stack.  We believe the most important issue with
-respect to namespacing is to provide an opportunity to allow more
-sophisticated and capable models to be developed and implemented,
-without having the process unduely constrained by the realities of
-kernel development.
-
-Coupled with this issue is the fact that it doesn't seem reasonable to
-believe that TPM's are going to be the venue or root of trust for this
-modeling, for a variety of reasons, perhaps most principally the fact
-that they are a 'blackbox' that have not enjoyed universal trust.
-This is perhaps particularly relevant now that they are being
-implemented in firmware rather then actual hardware.
-
-The sophistication and security capabilities of micro-controllers that
-are being developed for the IOT security space make a case for
-developing open-source/architecture security co-processors that
-implement the modeling and root of trust for independent modeling/IMA
-namespaces.
-
-TPM's also implicitly constrain the modeling to be a function based on
-linear extension summing.  It seems pretty clear that stochastic as
-well as deterministic models will be needed, particularly for more
-dynamic systems.
-
-So the optimum approach would seem to be for the namespace to have the
-option of implementing its own policy or to provide a mechanism for
-forwarding all of the Turing event characteristics to an entity that
-can implement the desired integrity or model policy.
-
-All of this would also seem to be consistent with the direction of the
-mobile market, which appears to be moving toward a model of an
-operating system that binds together multiple co-processors or
-functional units.  IMA, in this model, is a separate functional entity
-resonsible for interpreting and disciplining kernel behavior.
-
-> > > Definitely, let's have this discussion.
-
-> Shall we continue the discussion here, or in addition use a format similar
-> to the Stefan's "drawing board":
-> https://kernsec.org/wiki/index.php/IMA_Namespacing_design_considerations
-
-It has always been said that code speaks louder then words.  So we are
-working through the process of cleaning up our implementation of the
-approach described above so that people can at least take a look at
-the architecture we are proposing.
-
-We don't have any belief that it would be suitable to survive the
-gauntlet of the kernel development process but we will offer it as a
-proof of concept of where we think all of this will, can and needs to
-end up going.
-
-We were able to bolt all of this on top of standard IMA in a
-reasonably straight forward fashion.  Our initial implementation of an
-external modeling engine was based on SGX, which was remarkably useful
-for this purpose, albeit not well understood.
-
-Given the trajectory that technology has been placed on, we now have
-an implementation based on an ARM micro-controller as the external
-modeling/policy engine.  While not quite as flexible as the SGX based
-approach it has a number of its own advantages, most principally
-ubiquity of implementation.  Both approaches required no modification
-of the namespaced IMA implementation which we believe speaks to the
-flexibility of the approach.
-
-> Best regards,
-> Krzysztof Struczynski
-
-Hopefully the above reflections are helpful in steering progress of
-discussions, if not the price was certainly right.
-
-Best wishes for a productive week to everyone.
-
-Dr. Greg
-
-As always,
-Dr. Greg Wettstein, Ph.D, Worker      Autonomously self-defensive
-Enjellic Systems Development, LLC     IOT platforms and edge devices.
-4206 N. 19th Ave.
-Fargo, ND  58102
-PH: 701-281-1686                      EMAIL: greg@enjellic.com
-------------------------------------------------------------------------------
-"Attendants at a service station in Eunice, Louisiana, handed more than
- $100 to a naked man who claimed to have a gun in his pocket."
-                                -- Unknown
-_______________________________________________
-Containers mailing list
-Containers@lists.linux-foundation.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
+SGkgSmFubiwKCk9uIDEwLzEvMjAgNDoxNCBBTSwgSmFubiBIb3JuIHdyb3RlOgo+IE9uIFRodSwg
+T2N0IDEsIDIwMjAgYXQgMzo1MiBBTSBKYW5uIEhvcm4gPGphbm5oQGdvb2dsZS5jb20+IHdyb3Rl
+Ogo+PiBPbiBUaHUsIE9jdCAxLCAyMDIwIGF0IDE6MjUgQU0gVHljaG8gQW5kZXJzZW4gPHR5Y2hv
+QHR5Y2hvLnBpenphPiB3cm90ZToKPj4+IE9uIFRodSwgT2N0IDAxLCAyMDIwIGF0IDAxOjExOjMz
+QU0gKzAyMDAsIEphbm4gSG9ybiB3cm90ZToKPj4+PiBPbiBUaHUsIE9jdCAxLCAyMDIwIGF0IDE6
+MDMgQU0gVHljaG8gQW5kZXJzZW4gPHR5Y2hvQHR5Y2hvLnBpenphPiB3cm90ZToKPj4+Pj4gT24g
+V2VkLCBTZXAgMzAsIDIwMjAgYXQgMTA6MzQ6NTFQTSArMDIwMCwgTWljaGFlbCBLZXJyaXNrICht
+YW4tcGFnZXMpIHdyb3RlOgo+Pj4+Pj4gT24gOS8zMC8yMCA1OjAzIFBNLCBUeWNobyBBbmRlcnNl
+biB3cm90ZToKPj4+Pj4+PiBPbiBXZWQsIFNlcCAzMCwgMjAyMCBhdCAwMTowNzozOFBNICswMjAw
+LCBNaWNoYWVsIEtlcnJpc2sgKG1hbi1wYWdlcykgd3JvdGU6Cj4+Pj4+Pj4+ICAgICAgICDilIzi
+lIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDi
+lIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDi
+lIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilJAKPj4+Pj4+Pj4g
+ICAgICAgIOKUgkZJWE1FICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAg4pSCCj4+Pj4+Pj4+ICAgICAgICDilJzilIDilIDilIDilIDilIDilIDilIDilIDilIDi
+lIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDi
+lIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDi
+lIDilIDilIDilIDilIDilIDilKQKPj4+Pj4+Pj4gICAgICAgIOKUgkZyb20gbXkgZXhwZXJpbWVu
+dHMsICBpdCAgYXBwZWFycyAgdGhhdCAgaWYgIGEgIFNFQ+KAkCDilIIKPj4+Pj4+Pj4gICAgICAg
+IOKUgkNPTVBfSU9DVExfTk9USUZfUkVDViAgIGlzICBkb25lICBhZnRlciAgdGhlICB0YXJnZXQg
+4pSCCj4+Pj4+Pj4+ICAgICAgICDilIJwcm9jZXNzIHRlcm1pbmF0ZXMsIHRoZW4gdGhlIGlvY3Rs
+KCkgIHNpbXBseSAgYmxvY2tzIOKUggo+Pj4+Pj4+PiAgICAgICAg4pSCKHJhdGhlciB0aGFuIHJl
+dHVybmluZyBhbiBlcnJvciB0byBpbmRpY2F0ZSB0aGF0IHRoZSDilIIKPj4+Pj4+Pj4gICAgICAg
+IOKUgnRhcmdldCBwcm9jZXNzIG5vIGxvbmdlciBleGlzdHMpLiAgICAgICAgICAgICAgICAgICAg
+4pSCCj4+Pj4+Pj4KPj4+Pj4+PiBZZWFoLCBJIHRoaW5rIENocmlzdGlhbiB3YW50ZWQgdG8gZml4
+IHRoaXMgYXQgc29tZSBwb2ludCwKPj4+Pj4+Cj4+Pj4+PiBEbyB5b3UgaGF2ZSBhIHBvaW50ZXIg
+dGhhdCBkaXNjdXNzaW9uPyBJIGNvdWxkIG5vdCBmaW5kIGl0IHdpdGggYQo+Pj4+Pj4gcXVpY2sg
+c2VhcmNoLgo+Pj4+Pj4KPj4+Pj4+PiBidXQgaXQncyBhCj4+Pj4+Pj4gYml0IHN0aWNreSB0byBk
+by4KPj4+Pj4+Cj4+Pj4+PiBDYW4geW91IHNheSBhIGZldyB3b3JkcyBhYm91dCB0aGUgbmF0dXJl
+IG9mIHRoZSBwcm9ibGVtPwo+Pj4+Pgo+Pj4+PiBJIHJlbWVtYmVyZWQgd3JvbmcsIGl0J3MgYWN0
+dWFsbHkgaW4gdGhlIHRyZWU6IDk5Y2RiOGI5YTU3MyAoInNlY2NvbXA6Cj4+Pj4+IG5vdGlmeSBh
+Ym91dCB1bnVzZWQgZmlsdGVyIikuIFNvIG1heWJlIHRoZXJlJ3MgYSBidWcgaGVyZT8KPj4+Pgo+
+Pj4+IFRoYXQgdGhpbmcgb25seSBub3RpZmllcyBvbiAtPnBvbGwsIGl0IGRvZXNuJ3QgdW5ibG9j
+ayBpb2N0bHM7IGFuZAo+Pj4+IE1pY2hhZWwncyBzYW1wbGUgY29kZSB1c2VzIFNFQ0NPTVBfSU9D
+VExfTk9USUZfUkVDViB0byB3YWl0LiBTbyB0aGF0Cj4+Pj4gY29tbWl0IGRvZXNuJ3QgaGF2ZSBh
+bnkgZWZmZWN0IG9uIHRoaXMga2luZCBvZiB1c2FnZS4KPj4+Cj4+PiBZZXMsIHRoYW5rcy4gQW5k
+IHRoZSBvbmVzIHN0dWNrIGluIFJFQ1YgYXJlIHdhaXRpbmcgb24gYSBzZW1hcGhvcmUgc28KPj4+
+IHdlIGRvbid0IGhhdmUgYSBjb3VudCBvZiBhbGwgb2YgdGhlbSwgdW5mb3J0dW5hdGVseS4KPj4+
+Cj4+PiBXZSBjb3VsZCBtYXliZSBsb29rIGluc2lkZSB0aGUgd2FpdF9saXN0LCBidXQgdGhhdCB3
+aWxsIHByb2JhYmx5IG1ha2UKPj4+IHBlb3BsZSBhbmdyeSA6KQo+Pgo+PiBUaGUgZWFzaWVzdCB3
+YXkgd291bGQgcHJvYmFibHkgYmUgdG8gb3Blbi1jb2RlIHRoZSBzZW1hcGhvcmUtaXNoIHBhcnQs
+Cj4+IGFuZCBsZXQgdGhlIHNlbWFwaG9yZSBhbmQgcG9sbCBzaGFyZSB0aGUgd2FpdHF1ZXVlLiBU
+aGUgY3VycmVudCBjb2RlCj4+IGtpbmQgb2YgbWlycm9ycyB0aGUgc2VtYXBob3JlJ3Mgd2FpdHF1
+ZXVlIGluIHRoZSB3cWggLSBvcGVuLWNvZGluZyB0aGUKPj4gZW50aXJlIHNlbWFwaG9yZSB3b3Vs
+ZCBJTU8gYmUgY2xlYW5lciB0aGFuIHRoYXQuIEFuZCBpdCdzIG5vdCBsaWtlCj4+IHNlbWFwaG9y
+ZSBzZW1hbnRpY3MgYXJlIGV2ZW4gYSBnb29kIGZpdCBmb3IgdGhpcyBjb2RlIGFueXdheS4KPj4K
+Pj4gTGV0J3Mgc2VlLi4uIGlmIHdlIGRpZG4ndCBoYXZlIHRoZSBleGlzdGluZyBVQVBJIHRvIHdv
+cnJ5IGFib3V0LCBJJ2QKPj4gZG8gaXQgYXMgZm9sbG93cyAoKmNvbXBsZXRlbHkqIHVudGVzdGVk
+KS4gVGhhdCB3YXksIHRoZSBpb2N0bCB3b3VsZAo+PiBibG9jayBleGFjdGx5IHVudGlsIGVpdGhl
+ciB0aGVyZSBhY3R1YWxseSBpcyBhIHJlcXVlc3QgdG8gZGVsaXZlciBvcgo+PiB0aGVyZSBhcmUg
+bm8gbW9yZSB1c2VycyBvZiB0aGUgZmlsdGVyLiBUaGUgcHJvYmxlbSBpcyB0aGF0IGlmIHdlIGp1
+c3QKPj4gYXBwbHkgdGhpcyBwYXRjaCwgZXhpc3RpbmcgdXNlcnMgb2YgU0VDQ09NUF9JT0NUTF9O
+T1RJRl9SRUNWIHRoYXQgdXNlCj4+IGFuIGV2ZW50IGxvb3AgYW5kIGRvbid0IHNldCBPX05PTkJM
+T0NLIHdpbGwgYmUgc2NyZXdlZC4gU28gd2UnZAo+PiBwcm9iYWJseSBhbHNvIGhhdmUgdG8gYWRk
+IHNvbWUgc3R1cGlkIGNvdW50ZXIgaW4gcGxhY2Ugb2YgdGhlCj4+IHNlbWFwaG9yZSdzIGNvdW50
+ZXIgdGhhdCB3ZSBjYW4gdXNlIHRvIHByZXNlcnZlIHRoZSBvbGQgYmVoYXZpb3Igb2YKPj4gcmV0
+dXJuaW5nIC1FTk9FTlQgb25jZSBmb3IgZWFjaCBjYW5jZWxsZWQgcmVxdWVzdC4gOigKPj4KPj4g
+SSBndWVzcyB0aGlzIGlzIGEgbmljZSBwb2ludCBpbiBmYXZvciBvZiBNaWNoYWVsJ3MgdXN1YWwg
+Y29tcGxhaW50Cj4+IHRoYXQgaWYgdGhlcmUgYXJlIG5vIG1hbiBwYWdlcyBmb3IgYSBmZWF0dXJl
+IGJ5IHRoZSB0aW1lIHRoZSBmZWF0dXJlCj4+IGxhbmRzIHVwc3RyZWFtLCB0aGVyZSdzIGEgaGln
+aGVyIGNoYW5jZSB0aGF0IHRoZSBVQVBJIHdpbGwgc3Vjawo+PiBmb3JldmVyLi4uCj4gCj4gQW5k
+IEkgZ3Vlc3MgdGhpcyB3b3VsZCBiZSB0aGUgVUFQSS1jb21wYXRpYmxlIHZlcnNpb24gLSBub3Qg
+YWN0dWFsbHkKPiBhcyB0ZXJyaWJsZSBhcyBJIHRob3VnaHQgaXQgbWlnaHQgYmUuIERvIHknYWxs
+IHdhbnQgdGhpcz8gSWYgc28sIGZlZWwKPiBmcmVlIHRvIGVpdGhlciB0dXJuIHRoaXMgaW50byBh
+IHByb3BlciBwYXRjaCB3aXRoIENvLWRldmVsb3BlZC1ieSwgb3IKPiB0ZWxsIG1lIHRoYXQgSSBz
+aG91bGQgZG8gaXQgYW5kIEknbGwgdHJ5IHRvIGdldCBhcm91bmQgdG8gdHVybmluZyBpdAo+IGlu
+dG8gc29tZXRoaW5nIHByb3Blci4KClRoYW5rcyBmb3IgdGFraW5nIGEgc2hvdCBhdCB0aGlzLgoK
+SSB0cmllZCBhcHBseWluZyB0aGUgcGF0Y2ggYmVsb3cgdG8gdmFuaWxsYSA1LjkuMC4KKFRoZXJl
+J3Mgb25lIHR5cG86IHMvRU5PVENPTi9FTk9UQ09OTikuCgpJdCBzZWVtcyBub3QgdG8gd29yayB0
+aG91Z2g7IHdoZW4gSSBzZW5kIGEgc2lnbmFsIHRvIG15IHRlc3QKdGFyZ2V0IHByb2Nlc3MgdGhh
+dCBpcyBzbGVlcGluZyB3YWl0aW5nIGZvciB0aGUgbm90aWZpY2F0aW9uCnJlc3BvbnNlLCB0aGUg
+cHJvY2VzcyBlbnRlcnMgdGhlIHVuaW50ZXJydXB0aWJsZSBEIHN0YXRlLgpBbnkgdGhvdWdodHM/
+CgpUaGFua3MsCgpNaWNoYWVsCgo+IGRpZmYgLS1naXQgYS9rZXJuZWwvc2VjY29tcC5jIGIva2Vy
+bmVsL3NlY2NvbXAuYwo+IGluZGV4IDY3NmQ0YWY2MjEwMy4uZDA4YzQ1M2ZjYzJjIDEwMDY0NAo+
+IC0tLSBhL2tlcm5lbC9zZWNjb21wLmMKPiArKysgYi9rZXJuZWwvc2VjY29tcC5jCj4gQEAgLTEz
+OCw3ICsxMzgsNyBAQCBzdHJ1Y3Qgc2VjY29tcF9rYWRkZmQgewo+ICAgKiBAbm90aWZpY2F0aW9u
+czogQSBsaXN0IG9mIHN0cnVjdCBzZWNjb21wX2tub3RpZiBlbGVtZW50cy4KPiAgICovCj4gIHN0
+cnVjdCBub3RpZmljYXRpb24gewo+IC0gICAgICAgc3RydWN0IHNlbWFwaG9yZSByZXF1ZXN0Owo+
+ICsgICAgICAgYm9vbCBjYW5jZWxlZF9yZXFzOwo+ICAgICAgICAgdTY0IG5leHRfaWQ7Cj4gICAg
+ICAgICBzdHJ1Y3QgbGlzdF9oZWFkIG5vdGlmaWNhdGlvbnM7Cj4gIH07Cj4gQEAgLTg1OSw3ICs4
+NTksNiBAQCBzdGF0aWMgaW50IHNlY2NvbXBfZG9fdXNlcl9ub3RpZmljYXRpb24oaW50IHRoaXNf
+c3lzY2FsbCwKPiAgICAgICAgIGxpc3RfYWRkKCZuLmxpc3QsICZtYXRjaC0+bm90aWYtPm5vdGlm
+aWNhdGlvbnMpOwo+ICAgICAgICAgSU5JVF9MSVNUX0hFQUQoJm4uYWRkZmQpOwo+IAo+IC0gICAg
+ICAgdXAoJm1hdGNoLT5ub3RpZi0+cmVxdWVzdCk7Cj4gICAgICAgICB3YWtlX3VwX3BvbGwoJm1h
+dGNoLT53cWgsIEVQT0xMSU4gfCBFUE9MTFJETk9STSk7Cj4gICAgICAgICBtdXRleF91bmxvY2so
+Jm1hdGNoLT5ub3RpZnlfbG9jayk7Cj4gCj4gQEAgLTkwMSw4ICs5MDAsMjAgQEAgc3RhdGljIGlu
+dCBzZWNjb21wX2RvX3VzZXJfbm90aWZpY2F0aW9uKGludCB0aGlzX3N5c2NhbGwsCj4gICAgICAg
+ICAgKiAqcmVhdHRhY2gqIHRvIGEgbm90aWZpZXIgcmlnaHQgbm93LiBJZiBvbmUgaXMgYWRkZWQs
+IHdlJ2xsIG5lZWQgdG8KPiAgICAgICAgICAqIGtlZXAgdHJhY2sgb2YgdGhlIG5vdGlmIGl0c2Vs
+ZiBhbmQgbWFrZSBzdXJlIHRoZXkgbWF0Y2ggaGVyZS4KPiAgICAgICAgICAqLwo+IC0gICAgICAg
+aWYgKG1hdGNoLT5ub3RpZikKPiArICAgICAgIGlmIChtYXRjaC0+bm90aWYpIHsKPiAgICAgICAg
+ICAgICAgICAgbGlzdF9kZWwoJm4ubGlzdCk7Cj4gKwo+ICsgICAgICAgICAgICAgICAvKgo+ICsg
+ICAgICAgICAgICAgICAgKiBXZSBhcmUgc3R1Y2sgd2l0aCBhIFVBUEkgdGhhdCByZXF1aXJlcyB0
+aGF0IGFmdGVyIGEgc3B1cmlvdXMKPiArICAgICAgICAgICAgICAgICogd2FrZXVwLCBTRUNDT01Q
+X0lPQ1RMX05PVElGX1JFQ1YgbXVzdCByZXR1cm4gaW1tZWRpYXRlbHkuCj4gKyAgICAgICAgICAg
+ICAgICAqIFRoaXMgaXMgdGhlIHRyYWNraW5nIGZvciB0aGF0LCBrZWVwaW5nIHRyYWNrIG9mIHdo
+ZXRoZXIgd2UKPiArICAgICAgICAgICAgICAgICogY2FuY2VsZWQgYSByZXF1ZXN0IGFmdGVyIHdh
+a2luZyB3YWl0ZXJzLCBidXQgYmVmb3JlIHVzZXJzcGFjZQo+ICsgICAgICAgICAgICAgICAgKiBw
+aWNrZWQgdXAgdGhlIG5vdGlmaWNhdGlvbi4KPiArICAgICAgICAgICAgICAgICovCj4gKyAgICAg
+ICAgICAgICAgIGlmIChuLnN0YXRlID09IFNFQ0NPTVBfTk9USUZZX0lOSVQpCj4gKyAgICAgICAg
+ICAgICAgICAgICAgICAgbWF0Y2gtPm5vdGlmLT5jYW5jZWxlZF9yZXFzID0gdHJ1ZTsKPiArICAg
+ICAgIH0KPiArCj4gIG91dDoKPiAgICAgICAgIG11dGV4X3VubG9jaygmbWF0Y2gtPm5vdGlmeV9s
+b2NrKTsKPiAKPiBAQCAtMTE3OCw2ICsxMTg5LDcgQEAgc3RhdGljIGxvbmcgc2VjY29tcF9ub3Rp
+ZnlfcmVjdihzdHJ1Y3QKPiBzZWNjb21wX2ZpbHRlciAqZmlsdGVyLAo+ICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgdm9pZCBfX3VzZXIgKmJ1ZikKPiAgewo+ICAgICAgICAgc3RydWN0
+IHNlY2NvbXBfa25vdGlmICprbm90aWYgPSBOVUxMLCAqY3VyOwo+ICsgICAgICAgREVDTEFSRV9X
+QUlUUVVFVUUod2FpdCwgY3VycmVudCk7Cj4gICAgICAgICBzdHJ1Y3Qgc2VjY29tcF9ub3RpZiB1
+bm90aWY7Cj4gICAgICAgICBzc2l6ZV90IHJldDsKPiAKPiBAQCAtMTE5MCwxMSArMTIwMiw5IEBA
+IHN0YXRpYyBsb25nIHNlY2NvbXBfbm90aWZ5X3JlY3Yoc3RydWN0Cj4gc2VjY29tcF9maWx0ZXIg
+KmZpbHRlciwKPiAKPiAgICAgICAgIG1lbXNldCgmdW5vdGlmLCAwLCBzaXplb2YodW5vdGlmKSk7
+Cj4gCj4gLSAgICAgICByZXQgPSBkb3duX2ludGVycnVwdGlibGUoJmZpbHRlci0+bm90aWYtPnJl
+cXVlc3QpOwo+IC0gICAgICAgaWYgKHJldCA8IDApCj4gLSAgICAgICAgICAgICAgIHJldHVybiBy
+ZXQ7Cj4gLQo+ICAgICAgICAgbXV0ZXhfbG9jaygmZmlsdGVyLT5ub3RpZnlfbG9jayk7Cj4gKwo+
+ICtyZXRyeToKPiAgICAgICAgIGxpc3RfZm9yX2VhY2hfZW50cnkoY3VyLCAmZmlsdGVyLT5ub3Rp
+Zi0+bm90aWZpY2F0aW9ucywgbGlzdCkgewo+ICAgICAgICAgICAgICAgICBpZiAoY3VyLT5zdGF0
+ZSA9PSBTRUNDT01QX05PVElGWV9JTklUKSB7Cj4gICAgICAgICAgICAgICAgICAgICAgICAga25v
+dGlmID0gY3VyOwo+IEBAIC0xMjAyLDE0ICsxMjEyLDMyIEBAIHN0YXRpYyBsb25nIHNlY2NvbXBf
+bm90aWZ5X3JlY3Yoc3RydWN0Cj4gc2VjY29tcF9maWx0ZXIgKmZpbHRlciwKPiAgICAgICAgICAg
+ICAgICAgfQo+ICAgICAgICAgfQo+IAo+IC0gICAgICAgLyoKPiAtICAgICAgICAqIElmIHdlIGRp
+ZG4ndCBmaW5kIGEgbm90aWZpY2F0aW9uLCBpdCBjb3VsZCBiZSB0aGF0IHRoZSB0YXNrIHdhcwo+
+IC0gICAgICAgICogaW50ZXJydXB0ZWQgYnkgYSBmYXRhbCBzaWduYWwgYmV0d2VlbiB0aGUgdGlt
+ZSB3ZSB3ZXJlIHdva2VuIGFuZAo+IC0gICAgICAgICogd2hlbiB3ZSB3ZXJlIGFibGUgdG8gYWNx
+dWlyZSB0aGUgcncgbG9jay4KPiAtICAgICAgICAqLwo+ICAgICAgICAgaWYgKCFrbm90aWYpIHsK
+PiAtICAgICAgICAgICAgICAgcmV0ID0gLUVOT0VOVDsKPiAtICAgICAgICAgICAgICAgZ290byBv
+dXQ7Cj4gKyAgICAgICAgICAgICAgIC8qIFRoaXMgaGFzIHRvIGhhcHBlbiBiZWZvcmUgY2hlY2tp
+bmcgJmZpbHRlci0+dXNlcnMuICovCj4gKyAgICAgICAgICAgICAgIHByZXBhcmVfdG9fd2FpdCgm
+ZmlsdGVyLT53cWgsICZ3YWl0LCBUQVNLX0lOVEVSUlVQVElCTEUpOwo+ICsKPiArICAgICAgICAg
+ICAgICAgLyoKPiArICAgICAgICAgICAgICAgICogSWYgYWxsIHVzZXJzIG9mIHRoZSBmaWx0ZXIg
+YXJlIGdvbmUsIHRocm93IGFuIGVycm9yIGluc3RlYWQKPiArICAgICAgICAgICAgICAgICogb2Yg
+cG9pbnRsZXNzbHkgY29udGludWluZyB0byBibG9jay4KPiArICAgICAgICAgICAgICAgICovCj4g
+KyAgICAgICAgICAgICAgIGlmIChyZWZjb3VudF9yZWFkKCZmaWx0ZXItPnVzZXJzKSA9PSAwKSB7
+Cj4gKyAgICAgICAgICAgICAgICAgICAgICAgcmV0ID0gLUVOT1RDT047Cj4gKyAgICAgICAgICAg
+ICAgICAgICAgICAgZ290byBvdXQ7Cj4gKyAgICAgICAgICAgICAgIH0KPiArICAgICAgICAgICAg
+ICAgaWYgKGZpbHRlci0+bm90aWYtPmNhbmNlbGVkX3JlcXMpIHsKPiArICAgICAgICAgICAgICAg
+ICAgICAgICByZXQgPSAtRU5PRU5UOwo+ICsgICAgICAgICAgICAgICAgICAgICAgIGdvdG8gb3V0
+Owo+ICsgICAgICAgICAgICAgICB9IGVsc2Ugewo+ICsgICAgICAgICAgICAgICAgICAgICAgIC8q
+IE5vIG5vdGlmaWNhdGlvbnMgcGVuZGluZyAtIHdhaXQgZm9yIG9uZSwKPiB0aGVuIHJldHJ5LiAq
+Lwo+ICsgICAgICAgICAgICAgICAgICAgICAgIG11dGV4X3VubG9jaygmZmlsdGVyLT5ub3RpZnlf
+bG9jayk7Cj4gKyAgICAgICAgICAgICAgICAgICAgICAgc2NoZWR1bGUoKTsKPiArICAgICAgICAg
+ICAgICAgICAgICAgICBtdXRleF9sb2NrKCZmaWx0ZXItPm5vdGlmeV9sb2NrKTsKPiArICAgICAg
+ICAgICAgICAgICAgICAgICBpZiAoc2lnbmFsX3BlbmRpbmcoY3VycmVudCkpIHsKPiArICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgIHJldCA9IC1FSU5UUjsKPiArICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgIGdvdG8gb3V0Owo+ICsgICAgICAgICAgICAgICAgICAgICAgIH0KPiAr
+ICAgICAgICAgICAgICAgICAgICAgICBnb3RvIHJldHJ5Owo+ICsgICAgICAgICAgICAgICB9Cj4g
+ICAgICAgICB9Cj4gCj4gICAgICAgICB1bm90aWYuaWQgPSBrbm90aWYtPmlkOwo+IEBAIC0xMjIw
+LDYgKzEyNDgsOCBAQCBzdGF0aWMgbG9uZyBzZWNjb21wX25vdGlmeV9yZWN2KHN0cnVjdAo+IHNl
+Y2NvbXBfZmlsdGVyICpmaWx0ZXIsCj4gICAgICAgICB3YWtlX3VwX3BvbGwoJmZpbHRlci0+d3Fo
+LCBFUE9MTE9VVCB8IEVQT0xMV1JOT1JNKTsKPiAgICAgICAgIHJldCA9IDA7Cj4gIG91dDoKPiAr
+ICAgICAgIGZpbHRlci0+bm90aWYtPmNhbmNlbGVkX3JlcXMgPSBmYWxzZTsKPiArICAgICAgIGZp
+bmlzaF93YWl0KCZmaWx0ZXItPndxaCwgJndhaXQpOwo+ICAgICAgICAgbXV0ZXhfdW5sb2NrKCZm
+aWx0ZXItPm5vdGlmeV9sb2NrKTsKPiAKPiAgICAgICAgIGlmIChyZXQgPT0gMCAmJiBjb3B5X3Rv
+X3VzZXIoYnVmLCAmdW5vdGlmLCBzaXplb2YodW5vdGlmKSkpIHsKPiBAQCAtMTIzMywxMCArMTI2
+Myw4IEBAIHN0YXRpYyBsb25nIHNlY2NvbXBfbm90aWZ5X3JlY3Yoc3RydWN0Cj4gc2VjY29tcF9m
+aWx0ZXIgKmZpbHRlciwKPiAgICAgICAgICAgICAgICAgICovCj4gICAgICAgICAgICAgICAgIG11
+dGV4X2xvY2soJmZpbHRlci0+bm90aWZ5X2xvY2spOwo+ICAgICAgICAgICAgICAgICBrbm90aWYg
+PSBmaW5kX25vdGlmaWNhdGlvbihmaWx0ZXIsIHVub3RpZi5pZCk7Cj4gLSAgICAgICAgICAgICAg
+IGlmIChrbm90aWYpIHsKPiArICAgICAgICAgICAgICAgaWYgKGtub3RpZikKPiAgICAgICAgICAg
+ICAgICAgICAgICAgICBrbm90aWYtPnN0YXRlID0gU0VDQ09NUF9OT1RJRllfSU5JVDsKPiAtICAg
+ICAgICAgICAgICAgICAgICAgICB1cCgmZmlsdGVyLT5ub3RpZi0+cmVxdWVzdCk7Cj4gLSAgICAg
+ICAgICAgICAgIH0KPiAgICAgICAgICAgICAgICAgbXV0ZXhfdW5sb2NrKCZmaWx0ZXItPm5vdGlm
+eV9sb2NrKTsKPiAgICAgICAgIH0KPiAKPiBAQCAtMTQ4NSw3ICsxNTEzLDYgQEAgc3RhdGljIHN0
+cnVjdCBmaWxlICppbml0X2xpc3RlbmVyKHN0cnVjdAo+IHNlY2NvbXBfZmlsdGVyICpmaWx0ZXIp
+Cj4gICAgICAgICBpZiAoIWZpbHRlci0+bm90aWYpCj4gICAgICAgICAgICAgICAgIGdvdG8gb3V0
+Owo+IAo+IC0gICAgICAgc2VtYV9pbml0KCZmaWx0ZXItPm5vdGlmLT5yZXF1ZXN0LCAwKTsKPiAg
+ICAgICAgIGZpbHRlci0+bm90aWYtPm5leHRfaWQgPSBnZXRfcmFuZG9tX3U2NCgpOwo+ICAgICAg
+ICAgSU5JVF9MSVNUX0hFQUQoJmZpbHRlci0+bm90aWYtPm5vdGlmaWNhdGlvbnMpOwo+IAoKCi0t
+IApNaWNoYWVsIEtlcnJpc2sKTGludXggbWFuLXBhZ2VzIG1haW50YWluZXI7IGh0dHA6Ly93d3cu
+a2VybmVsLm9yZy9kb2MvbWFuLXBhZ2VzLwpMaW51eC9VTklYIFN5c3RlbSBQcm9ncmFtbWluZyBU
+cmFpbmluZzogaHR0cDovL21hbjcub3JnL3RyYWluaW5nLwpfX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWlu
+ZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0
+aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
