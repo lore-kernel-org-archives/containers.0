@@ -2,107 +2,108 @@ Return-Path: <SRS0=DMKn=EC=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.3 required=3.0 tests=BAYES_00,DKIM_ADSP_CUSTOM_MED,
-	DKIM_INVALID,DKIM_SIGNED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C366C4363A
-	for <containers@archiver.kernel.org>; Tue, 27 Oct 2020 19:09:13 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1598BC4363A
+	for <containers@archiver.kernel.org>; Tue, 27 Oct 2020 19:14:59 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id BB62420756
-	for <containers@archiver.kernel.org>; Tue, 27 Oct 2020 19:09:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 5E31220756
+	for <containers@archiver.kernel.org>; Tue, 27 Oct 2020 19:14:58 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="TDpYEM9j"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BB62420756
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="bUUyctzc"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5E31220756
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=chromium.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 46C222E0DB;
-	Tue, 27 Oct 2020 19:09:12 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id E9F48863FF;
+	Tue, 27 Oct 2020 19:14:57 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id Okrjgvd8crRR; Tue, 27 Oct 2020 19:09:11 +0000 (UTC)
+	with ESMTP id sukaiYrJVewd; Tue, 27 Oct 2020 19:14:57 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 8DCF820535;
-	Tue, 27 Oct 2020 19:09:11 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 730B98641E;
+	Tue, 27 Oct 2020 19:14:57 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 6AF4EC08A1;
-	Tue, 27 Oct 2020 19:09:11 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 58A92C088B;
+	Tue, 27 Oct 2020 19:14:57 +0000 (UTC)
 Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id BCCDCC0051
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 57CDCC0051
  for <containers@lists.linux-foundation.org>;
- Tue, 27 Oct 2020 19:09:09 +0000 (UTC)
+ Tue, 27 Oct 2020 19:14:56 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id B5FC7869BA
+ by whitealder.osuosl.org (Postfix) with ESMTP id 3E5C38651C
  for <containers@lists.linux-foundation.org>;
- Tue, 27 Oct 2020 19:09:09 +0000 (UTC)
+ Tue, 27 Oct 2020 19:14:56 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id 3ZEZmDAPDnly
+ with ESMTP id dU5XIn6VkUYZ
  for <containers@lists.linux-foundation.org>;
- Tue, 27 Oct 2020 19:09:09 +0000 (UTC)
+ Tue, 27 Oct 2020 19:14:55 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-pj1-f65.google.com (mail-pj1-f65.google.com
- [209.85.216.65])
- by whitealder.osuosl.org (Postfix) with ESMTPS id 2C45E85CE1
+Received: from mail-pl1-f195.google.com (mail-pl1-f195.google.com
+ [209.85.214.195])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id A09A1869B9
  for <containers@lists.linux-foundation.org>;
- Tue, 27 Oct 2020 19:09:09 +0000 (UTC)
-Received: by mail-pj1-f65.google.com with SMTP id c17so1269518pjo.5
+ Tue, 27 Oct 2020 19:14:55 +0000 (UTC)
+Received: by mail-pl1-f195.google.com with SMTP id 1so1280596ple.2
  for <containers@lists.linux-foundation.org>;
- Tue, 27 Oct 2020 12:09:09 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
- h=mime-version:references:in-reply-to:from:date:message-id:subject:to
- :cc; bh=vhFHGlRt/TibQfkAL2EZLq+3HRZ+VxPAD9HYXcgWC/k=;
- b=TDpYEM9j0VTG9y1sK6+P54LMevQ/wxvF5jiUXCKKLZ1FxRRYMYefcVyVQfAc+Om1PS
- ZEe1VRZkmhk0ir6O43G95oBAO2XD+Bq4fVBpHzkVRZw+UriLY30a/R4X0pDFtk1z5MUB
- yLaicL/Mrjl46F0+UFymiiwaSisHRYKw813Q0Kd47cc1WgZhvOJbmIZ6w6cxJxiecpuq
- hwk7hhJezQPq9VDBZdwaoEdHe5L3Ab5JZ4CMwJDp3CVt6wOQRLayWvn4DBgp1j2xyiIA
- Nfr8NKXzTh5ilnJ2tvCD46vw2NdTRtKMK/iutofss4RYEab+Vx7Vu0QT/YxkCzMOQAZw
- APGA==
+ Tue, 27 Oct 2020 12:14:55 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=chromium.org; s=google;
+ h=from:to:cc:subject:date:message-id:in-reply-to:references
+ :mime-version:content-transfer-encoding;
+ bh=gV/VVwoohxFwknw5Qn01WhfBtKTfE0pEszhFmiVXe+4=;
+ b=bUUyctzcMSA6GV80xlX1omAD5lD1Q6cPzFS+DHgg4vnT5jm2fUe+9kyTyf1UtGDex9
+ e7+aXR4zgdP6JfIYXGGlXWxmD/enEyR76EowHH08WydLVpuwbGdyeqYD7pW7wyRu24Ni
+ cTpdJdaLJrOKGJEyA3oq5BVxfJ0ac1hK5p9Ck=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
- h=x-gm-message-state:mime-version:references:in-reply-to:from:date
- :message-id:subject:to:cc;
- bh=vhFHGlRt/TibQfkAL2EZLq+3HRZ+VxPAD9HYXcgWC/k=;
- b=suQrFf924z0BdrIsmSnZGQoYEcCkpq8xIbN/TdIRF+qp/MF+Gnk9iN3SjSIVjTR1G6
- pSNv+MmbURrz8m8UQ6J3rJNbCTKmRtDckjQBQPIFmmb+NPU62GbnYgM0LCqoF7tcsW7B
- rWNELXTU0Rybg4c0qTpL7wZbf3O7/z64hmAAhggwmI7tJWM0LRDPjkXBrC7s1SsLlsOG
- faX7aawtIWU9EWNAXr94YTKl2NzkNqWOH7DfAefOWqpaKq/bxQnDcWDZmRRtxJCaD0Cw
- kQIrRleJkky3xwy0S9XBebiRjbVPrdEIf6UdWNGm/GhnDj2yzR6Y2GnIt4b9sr+eMiSg
- 6/5Q==
-X-Gm-Message-State: AOAM532K0FYIiNWJ1t0wlh15xFeW+aSlIDykwVxWeISnP7rsymyqvycD
- zliX2Um3+tYXkIqVYJ9HxbenbwkxxTNxmLanvyw=
-X-Google-Smtp-Source: ABdhPJxT3MVZFdXRiktZytixxJYH/g52Rzd4ej1B/B/6AaacDeKHj7pSvVmudEo7lSKi4TSWV3mmIU7KhXAqNfkE9GM=
-X-Received: by 2002:a17:902:6803:b029:d2:42a6:312 with SMTP id
- h3-20020a1709026803b02900d242a60312mr3734880plk.24.1603825748736; Tue, 27 Oct
- 2020 12:09:08 -0700 (PDT)
+ h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+ :references:mime-version:content-transfer-encoding;
+ bh=gV/VVwoohxFwknw5Qn01WhfBtKTfE0pEszhFmiVXe+4=;
+ b=QLayW2FmjfGDbDlkIdCwuwGfUWEakfcPJo+tYlk1kVQtxi2y30rtOFELk9tL/OQBnL
+ 9kChBJvABMKEIkHRPvv4kBdAwDBmxo/lCR8FJdolwCJtJV/T7D3fi+gQSIZEjBdt5Wgs
+ HImwgr05G3LAkU2BSKr/tyyIKKCZSvKaE0kK8Jn9N/XyfMx6uLvy+iunL0MPxtasf+2A
+ hBBmA4diyw4ckQKCLfAjU+rEhfo254dYRcSJYIIqIAw6zqoC2RPbai26ldAMTY9lOsGv
+ U1dkGrYS3ss6A+hybFZDya3H3FrncKIO9ebjJVeldE82Uvl1uZ1Mm1ozsJdzlyiVdLE/
+ /gnA==
+X-Gm-Message-State: AOAM5333dEE2W6nCasa5g5i7K7v1Z6fd5P5wztYWjPAPc/eOnQiEYZjX
+ sblRMr7llhec6ZjZHL22+u3D9Q==
+X-Google-Smtp-Source: ABdhPJyjtnpaZtReoire0YN/na6kS75vBmwzx3v3ddCq2YUxAsi++zqYgZgj/AIU9QAB6+bqwbbOtQ==
+X-Received: by 2002:a17:902:6a8c:b029:d5:da81:dc42 with SMTP id
+ n12-20020a1709026a8cb02900d5da81dc42mr3990687plk.40.1603826094485; 
+ Tue, 27 Oct 2020 12:14:54 -0700 (PDT)
+Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
+ by smtp.gmail.com with ESMTPSA id m3sm3052970pfd.217.2020.10.27.12.14.53
+ (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+ Tue, 27 Oct 2020 12:14:53 -0700 (PDT)
+From: Kees Cook <keescook@chromium.org>
+To: YiFei Zhu <zhuyifei1999@gmail.com>, containers@lists.linux-foundation.org
+Subject: Re: [PATCH v5 seccomp 0/5]seccomp: Add bitmap cache of constant allow
+ filter results
+Date: Tue, 27 Oct 2020 12:14:50 -0700
+Message-Id: <160382601078.2318738.11754677445961373147.b4-ty@chromium.org>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1602431034.git.yifeifz2@illinois.edu>
+References: <cover.1602263422.git.yifeifz2@illinois.edu>
+ <cover.1602431034.git.yifeifz2@illinois.edu>
 MIME-Version: 1.0
-References: <cover.1600951211.git.yifeifz2@illinois.edu>
- <9ede6ef35c847e58d61e476c6a39540520066613.1600951211.git.yifeifz2@illinois.edu>
- <CAMuHMdXTLKr6pvoE+JAdn_P5kVxL6gx8PJ8mqfXcS+SF+pRbkQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdXTLKr6pvoE+JAdn_P5kVxL6gx8PJ8mqfXcS+SF+pRbkQ@mail.gmail.com>
-From: YiFei Zhu <zhuyifei1999@gmail.com>
-Date: Tue, 27 Oct 2020 14:08:56 -0500
-Message-ID: <CABqSeAQvZNF4ynayT1XjEm4eP2H-ee46zBwmVRRD1-ZpohqG4w@mail.gmail.com>
-Subject: Re: [PATCH v2 seccomp 1/6] seccomp: Move config option SECCOMP to
- arch/Kconfig
-To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: Andrea Arcangeli <aarcange@redhat.com>,
- Giuseppe Scrivano <gscrivan@redhat.com>,
- Valentin Rothberg <vrothber@redhat.com>, Kees Cook <keescook@chromium.org>,
- Jann Horn <jannh@google.com>, YiFei Zhu <yifeifz2@illinois.edu>,
- Linux Containers <containers@lists.linux-foundation.org>,
- Tobin Feldman-Fitzthum <tobin@ibm.com>,
- Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
- Andy Lutomirski <luto@amacapital.net>, Hubertus Franke <frankeh@us.ibm.com>,
- Jack Chen <jianyan2@illinois.edu>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
- Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>,
- bpf <bpf@vger.kernel.org>, Tianyin Xu <tyxu@illinois.edu>
+ Giuseppe Scrivano <gscrivan@redhat.com>, Will Drewry <wad@chromium.org>,
+ Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>,
+ YiFei Zhu <yifeifz2@illinois.edu>, linux-kernel@vger.kernel.org,
+ Tobin Feldman-Fitzthum <tobin@ibm.com>, Hubertus Franke <frankeh@us.ibm.com>,
+ Andy Lutomirski <luto@amacapital.net>, Valentin Rothberg <vrothber@redhat.com>,
+ Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
+ David Laight <David.Laight@aculab.com>, Jack Chen <jianyan2@illinois.edu>,
+ Josep Torrellas <torrella@illinois.edu>, bpf@vger.kernel.org,
+ Tianyin Xu <tyxu@illinois.edu>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -119,23 +120,33 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Tue, Oct 27, 2020 at 4:52 AM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> Please tell me why SECCOMP is special, and deserves to default to be
-> enabled.  Is it really that critical, given only 13.5 (half of sparc
-> ;-) out of 24
-> architectures implement support for it?
+On Sun, 11 Oct 2020 10:47:41 -0500, YiFei Zhu wrote:
+> Alternative: https://lore.kernel.org/lkml/20200923232923.3142503-1-keescook@chromium.org/T/
+> 
+> Major differences from the linked alternative by Kees:
+> * No x32 special-case handling -- not worth the complexity
+> * No caching of denylist -- not worth the complexity
+> * No seccomp arch pinning -- I think this is an independent feature
+> * The bitmaps are part of the filters rather than the task.
+> 
+> [...]
 
-Good point. My thought process is that quite a few system software are
-reliant on seccomp for enforcing policies -- systemd, docker, and
-other sandboxing tools like browsers and firejail, so when I moved
-this to the non-perarch section, it at least has to be default for
-x86. Granted, I'm not super familiar with other architectures, so you
-are probably right that those that did not have it on by default
-should be kept off by default; many of them could be for embedded
-devices. What's the best way to do this? Set it as default N in
-Kconfig and add CONFIG_SECCOMP=y in each arch's defconfig?
+Applied to for-next/seccomp, thanks! I left off patch 5 for now until
+we sort out the rest of the SECCOMP_FILTER architectures, and tweaked
+patch 3 to include the architecture names.
 
-YiFei Zhu
+[1/4] seccomp/cache: Lookup syscall allowlist bitmap for fast path
+      https://git.kernel.org/kees/c/f94defb8bf46
+[2/4] seccomp/cache: Add "emulator" to check if filter is constant allow
+      https://git.kernel.org/kees/c/e7dc9f1e5f6b
+[3/4] x86: Enable seccomp architecture tracking
+      https://git.kernel.org/kees/c/1f68a4d393fe
+[4/4] selftests/seccomp: Compare bitmap vs filter overhead
+      https://git.kernel.org/kees/c/57a339117e52
+
+-- 
+Kees Cook
+
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
