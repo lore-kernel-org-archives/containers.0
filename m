@@ -2,108 +2,108 @@ Return-Path: <SRS0=ql3H=ED=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0407DC388F9
-	for <containers@archiver.kernel.org>; Wed, 28 Oct 2020 00:06:57 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 14D99C388F9
+	for <containers@archiver.kernel.org>; Wed, 28 Oct 2020 01:35:36 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 6D05222281
-	for <containers@archiver.kernel.org>; Wed, 28 Oct 2020 00:06:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 908F722249
+	for <containers@archiver.kernel.org>; Wed, 28 Oct 2020 01:35:35 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="jq2lkcWd"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6D05222281
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=chromium.org
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=paul-moore-com.20150623.gappssmtp.com header.i=@paul-moore-com.20150623.gappssmtp.com header.b="Lj2eTMWd"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 908F722249
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=paul-moore.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 179522E15D;
-	Wed, 28 Oct 2020 00:06:56 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 1AC508743E;
+	Wed, 28 Oct 2020 01:35:35 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 7FB-jFbyorWv; Wed, 28 Oct 2020 00:06:54 +0000 (UTC)
+	with ESMTP id ENzFz3YaKYoe; Wed, 28 Oct 2020 01:35:34 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id D61172E154;
-	Wed, 28 Oct 2020 00:06:54 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 0E2078743A;
+	Wed, 28 Oct 2020 01:35:34 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id CB663C088B;
-	Wed, 28 Oct 2020 00:06:54 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id E632EC088B;
+	Wed, 28 Oct 2020 01:35:33 +0000 (UTC)
 Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 7E9EDC0051
+ by lists.linuxfoundation.org (Postfix) with ESMTP id DB3BBC0051
  for <containers@lists.linux-foundation.org>;
- Wed, 28 Oct 2020 00:06:53 +0000 (UTC)
+ Wed, 28 Oct 2020 01:35:32 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 621712E15C
+ by silver.osuosl.org (Postfix) with ESMTP id 9642A203DC
  for <containers@lists.linux-foundation.org>;
- Wed, 28 Oct 2020 00:06:53 +0000 (UTC)
+ Wed, 28 Oct 2020 01:35:32 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id Eg0qz43VfvX6
+ with ESMTP id 0VNLbwSL+ani
  for <containers@lists.linux-foundation.org>;
- Wed, 28 Oct 2020 00:06:52 +0000 (UTC)
-X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-pf1-f196.google.com (mail-pf1-f196.google.com
- [209.85.210.196])
- by silver.osuosl.org (Postfix) with ESMTPS id 03B9B2E154
+ Wed, 28 Oct 2020 01:35:30 +0000 (UTC)
+X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
+Received: from mail-ej1-f66.google.com (mail-ej1-f66.google.com
+ [209.85.218.66])
+ by silver.osuosl.org (Postfix) with ESMTPS id 60BBA203CE
  for <containers@lists.linux-foundation.org>;
- Wed, 28 Oct 2020 00:06:52 +0000 (UTC)
-Received: by mail-pf1-f196.google.com with SMTP id b3so1882007pfo.2
+ Wed, 28 Oct 2020 01:35:30 +0000 (UTC)
+Received: by mail-ej1-f66.google.com with SMTP id dt13so4892708ejb.12
  for <containers@lists.linux-foundation.org>;
- Tue, 27 Oct 2020 17:06:51 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=chromium.org; s=google;
- h=date:from:to:cc:subject:message-id:references:mime-version
- :content-disposition:in-reply-to;
- bh=SkTc2vk73nmebVshjgjHKREV7i/15yy96aB46LsoBJM=;
- b=jq2lkcWdmOTv8Lyx6yvybZKderM4WXlS2x5SBBIvdhQC/Hadg0P/Asbj5KmjCOTFJW
- b/5r/M8+iPrJTWUBXb1TpZz1FSZE9Wh3YyzP9ty15mnJxMgQl+mm7WMRmhYiQZc1bFhD
- kE4RwvzkUp3hEXlMoBodJdAcAXdxgbK7pYOyo=
+ Tue, 27 Oct 2020 18:35:30 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=paul-moore-com.20150623.gappssmtp.com; s=20150623;
+ h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+ :cc:content-transfer-encoding;
+ bh=EhaQv7Xqn9C10/6kPilmFG/LY90YB69CHHSm/P4LmUk=;
+ b=Lj2eTMWdQNRX51rp+69kJ+7MIJveC7lv8t0w/6GAwNCZDU97tO7fXzTZewOx55Ac1l
+ qfo9NYf3w/1oZOOMsUpmk5QFBOLD6rEq4Y+xGwdcqgYSlAvt/V1eCOoLhOGtMpxn22lY
+ BpPv8So2RSzkwV4VqW9Z81xo/sm6G/2qErp4megpsjRLRnCsLMimzT//EYKnBmWXYPYY
+ Sljt2SxpJGW+CX70ABsj4p+oWaehsd7e48Xa9uvPlScUQdjQsFInIzQICwjOLHYNYT2Z
+ rVKc0MWZtpSmx99XULBfKIiPaFC7zAwivfy+JYaPy+FhDaqHk6y3p83LlgRiUo5yGc2I
+ JWSg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
- h=x-gm-message-state:date:from:to:cc:subject:message-id:references
- :mime-version:content-disposition:in-reply-to;
- bh=SkTc2vk73nmebVshjgjHKREV7i/15yy96aB46LsoBJM=;
- b=h0A4NgUhayItZ+tdEk62+3aWrTKnjfA5UmvAUdXhya6b0RIKEWtyhGGo93kUMWzRfc
- zFzxHxu2siZDhOsccX1rKQEISUQO2H/ljTP7UC+Yco70CVJmvXAt5TZvbdp9CYsjjxl5
- 7ZUBxwmPkBbqK9Y70mOb8ttCWFPxkMUnGOHuDvQlCIKyq+msD73i8BoUnbrYJJqml0aH
- /6600NWAYvDILJiL58bB5id4+ynNuTtpqPxMhK+Hq9yJ+F20YZEzwIBEpo2ag65xTXIV
- Ho7PbPv7SKSRU7RsoTTMC13qJW9lhFCvzM794gNefS8+DwLSRBYhewz1tAu/TLQiOqMy
- KVbQ==
-X-Gm-Message-State: AOAM530zHzkx4SyTNdSmV0dbyrQ+Kho3nK9DTVP4Nn4xGwrgnzym4QZS
- 7oo0UF0bCeloFgSZvB533+mtAA==
-X-Google-Smtp-Source: ABdhPJwkntKG+LnH43OBYo1mCeJ2Eb7oSC1DQiZMoYaqhPnztVbnQQPjzDgbtBZac+mXdy1h1HBdYQ==
-X-Received: by 2002:aa7:9ad7:0:b029:160:948:44a6 with SMTP id
- x23-20020aa79ad70000b0290160094844a6mr4533190pfp.25.1603843611476; 
- Tue, 27 Oct 2020 17:06:51 -0700 (PDT)
-Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
- by smtp.gmail.com with ESMTPSA id 21sm3688285pfw.36.2020.10.27.17.06.49
- (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
- Tue, 27 Oct 2020 17:06:50 -0700 (PDT)
-Date: Tue, 27 Oct 2020 17:06:49 -0700
-From: Kees Cook <keescook@chromium.org>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Subject: Re: [PATCH v2 seccomp 1/6] seccomp: Move config option SECCOMP to
- arch/Kconfig
-Message-ID: <202010271653.B6D7D6B@keescook>
-References: <cover.1600951211.git.yifeifz2@illinois.edu>
- <9ede6ef35c847e58d61e476c6a39540520066613.1600951211.git.yifeifz2@illinois.edu>
- <CAMuHMdXTLKr6pvoE+JAdn_P5kVxL6gx8PJ8mqfXcS+SF+pRbkQ@mail.gmail.com>
+ h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+ :message-id:subject:to:cc:content-transfer-encoding;
+ bh=EhaQv7Xqn9C10/6kPilmFG/LY90YB69CHHSm/P4LmUk=;
+ b=srQBHlphClLVvFzJbJbkgJ1ThQPlpBxpz/+3PLRCi0eCTMN0Ox/r1SGk+YLEbailvq
+ WdusYy8ZJIMF2+0UJZpE2ug6YWPkCoyBCYz+vWBGVs9muZeK06ms9ApnQQB+h46KbmI0
+ W6oVvjDireuWYfHJwUaHl6m3wfuCnXJ6InsuYLXYKBZJ+RfDzN93vI1xwVLCsXS8WFnT
+ PpCmmkUp7VI2Jhe19m0lA+bhPp+rCdmNuIK3qosQrSWIHMAlNmhGoAD/8WqJxxEee9nY
+ O+MHVwFnW2MhowjOiayDgN/wNLPffnOvao4ZfkJAOCz0yE43z5tbqW4w/Rlkq9SyI/M/
+ nZTg==
+X-Gm-Message-State: AOAM530L0KVDoDqjvppUenS0W77nFtR3LxeelWep8PN9vpTXittvTUVa
+ zf+KecJiBPeezM5vRK6lv/LDFsBK/6MHhhzllZbk
+X-Google-Smtp-Source: ABdhPJydImqf6rjIcFvdKoVKRijlUJM6c3tT5+zpyIh0DgksT/WwCUJmb9M0MAWnaqlVZBE1LbPiRD1v+2NmrHAlBa8=
+X-Received: by 2002:a17:906:4811:: with SMTP id
+ w17mr4982322ejq.431.1603848928683; 
+ Tue, 27 Oct 2020 18:35:28 -0700 (PDT)
 MIME-Version: 1.0
-Content-Disposition: inline
-In-Reply-To: <CAMuHMdXTLKr6pvoE+JAdn_P5kVxL6gx8PJ8mqfXcS+SF+pRbkQ@mail.gmail.com>
-Cc: Andrea Arcangeli <aarcange@redhat.com>,
- Giuseppe Scrivano <gscrivan@redhat.com>,
- Valentin Rothberg <vrothber@redhat.com>, Jann Horn <jannh@google.com>,
- YiFei Zhu <yifeifz2@illinois.edu>, containers@lists.linux-foundation.org,
- Tobin Feldman-Fitzthum <tobin@ibm.com>,
- Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
- Andy Lutomirski <luto@amacapital.net>, Hubertus Franke <frankeh@us.ibm.com>,
- Jack Chen <jianyan2@illinois.edu>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
- Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>,
- bpf <bpf@vger.kernel.org>, Tianyin Xu <tyxu@illinois.edu>
+References: <cover.1593198710.git.rgb@redhat.com>
+ <6e2e10432e1400f747918eeb93bf45029de2aa6c.1593198710.git.rgb@redhat.com>
+ <CAHC9VhSCm5eeBcyY8bBsnxr-hK4rkso9_NJHJec2OXLu4m5QTA@mail.gmail.com>
+ <20200729194058.kcbsqjhzunjpipgm@madcap2.tricolour.ca>
+ <CAHC9VhRUwCKBjffA_XNSjUwvUn8e6zfmy8WD203dK7R2KD0__g@mail.gmail.com>
+ <20201002195231.GH2882171@madcap2.tricolour.ca>
+ <20201021163926.GA3929765@madcap2.tricolour.ca>
+ <CAHC9VhRb7XMyTrcrmzM3yQO+eLdO_r2+DOLKr9apDDeH4ua2Ew@mail.gmail.com>
+ <20201023204033.GI2882171@madcap2.tricolour.ca>
+In-Reply-To: <20201023204033.GI2882171@madcap2.tricolour.ca>
+From: Paul Moore <paul@paul-moore.com>
+Date: Tue, 27 Oct 2020 21:35:17 -0400
+Message-ID: <CAHC9VhS7Gzd=pQ13eSOHDT8nO-z_yxsVW0E5r6mkpPYi3Txe2g@mail.gmail.com>
+Subject: Re: [PATCH ghak90 V9 05/13] audit: log container info of syscalls
+To: Richard Guy Briggs <rgb@redhat.com>
+Cc: nhorman@tuxdriver.com, linux-api@vger.kernel.org,
+ containers@lists.linux-foundation.org, LKML <linux-kernel@vger.kernel.org>,
+ dhowells@redhat.com, Linux-Audit Mailing List <linux-audit@redhat.com>,
+ netfilter-devel@vger.kernel.org, ebiederm@xmission.com, simo@redhat.com,
+ netdev@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+ Eric Paris <eparis@parisplace.org>, mpatel@redhat.com
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -120,119 +120,82 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Tue, Oct 27, 2020 at 10:52:39AM +0100, Geert Uytterhoeven wrote:
-> Hi Yifei,
-> 
-> On Thu, Sep 24, 2020 at 2:48 PM YiFei Zhu <zhuyifei1999@gmail.com> wrote:
-> > From: YiFei Zhu <yifeifz2@illinois.edu>
+On Fri, Oct 23, 2020 at 4:40 PM Richard Guy Briggs <rgb@redhat.com> wrote:
+> On 2020-10-22 21:21, Paul Moore wrote:
+> > On Wed, Oct 21, 2020 at 12:39 PM Richard Guy Briggs <rgb@redhat.com> wrote:
+> > > Here is an exmple I was able to generate after updating the testsuite
+> > > script to include a signalling example of a nested audit container
+> > > identifier:
+> > >
+> > > ----
+> > > type=PROCTITLE msg=audit(2020-10-21 10:31:16.655:6731) : proctitle=/usr/bin/perl -w containerid/test
+> > > type=CONTAINER_ID msg=audit(2020-10-21 10:31:16.655:6731) : contid=7129731255799087104^3333941723245477888
+> > > type=OBJ_PID msg=audit(2020-10-21 10:31:16.655:6731) : opid=115583 oauid=root ouid=root oses=1 obj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 ocomm=perl
+> > > type=CONTAINER_ID msg=audit(2020-10-21 10:31:16.655:6731) : contid=3333941723245477888
+> > > type=OBJ_PID msg=audit(2020-10-21 10:31:16.655:6731) : opid=115580 oauid=root ouid=root oses=1 obj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 ocomm=perl
+> > > type=CONTAINER_ID msg=audit(2020-10-21 10:31:16.655:6731) : contid=8098399240850112512^3333941723245477888
+> > > type=OBJ_PID msg=audit(2020-10-21 10:31:16.655:6731) : opid=115582 oauid=root ouid=root oses=1 obj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 ocomm=perl
+> > > type=SYSCALL msg=audit(2020-10-21 10:31:16.655:6731) : arch=x86_64 syscall=kill success=yes exit=0 a0=0xfffe3c84 a1=SIGTERM a2=0x4d524554 a3=0x0 items=0 ppid=115564 pid=115567 auid=root uid=root gid=root euid=root suid=root fsuid=root egid=root sgid=root fsgid=root tty=ttyS0 ses=1 comm=perl exe=/usr/bin/perl subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key=testsuite-1603290671-AcLtUulY
+> > > ----
+> > >
+> > > There are three CONTAINER_ID records which need some way of associating with OBJ_PID records.  An additional CONTAINER_ID record would be present if the killing process itself had an audit container identifier.  I think the most obvious way to connect them is with a pid= field in the CONTAINER_ID record.
 > >
-> > In order to make adding configurable features into seccomp
-> > easier, it's better to have the options at one single location,
-> > considering easpecially that the bulk of seccomp code is
-> > arch-independent. An quick look also show that many SECCOMP
-> > descriptions are outdated; they talk about /proc rather than
-> > prctl.
-> >
-> > As a result of moving the config option and keeping it default
-> > on, architectures arm, arm64, csky, riscv, sh, and xtensa
-> > did not have SECCOMP on by default prior to this and SECCOMP will
-> > be default in this change.
-> >
-> > Architectures microblaze, mips, powerpc, s390, sh, and sparc
-> > have an outdated depend on PROC_FS and this dependency is removed
-> > in this change.
-> >
-> > Suggested-by: Jann Horn <jannh@google.com>
-> > Link: https://lore.kernel.org/lkml/CAG48ez1YWz9cnp08UZgeieYRhHdqh-ch7aNwc4JRBnGyrmgfMg@mail.gmail.com/
-> > Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
-> 
-> Thanks for your patch. which is now commit 282a181b1a0d66de ("seccomp:
-> Move config option SECCOMP to arch/Kconfig") in v5.10-rc1.
-> 
-> > --- a/arch/Kconfig
-> > +++ b/arch/Kconfig
-> > @@ -458,6 +462,23 @@ config HAVE_ARCH_SECCOMP_FILTER
-> >             results in the system call being skipped immediately.
-> >           - seccomp syscall wired up
-> >
-> > +config SECCOMP
-> > +       def_bool y
-> > +       depends on HAVE_ARCH_SECCOMP
-> > +       prompt "Enable seccomp to safely compute untrusted bytecode"
-> > +       help
-> > +         This kernel feature is useful for number crunching applications
-> > +         that may need to compute untrusted bytecode during their
-> > +         execution. By using pipes or other transports made available to
-> > +         the process as file descriptors supporting the read/write
-> > +         syscalls, it's possible to isolate those applications in
-> > +         their own address space using seccomp. Once seccomp is
-> > +         enabled via prctl(PR_SET_SECCOMP), it cannot be disabled
-> > +         and the task is only allowed to execute a few safe syscalls
-> > +         defined by each seccomp mode.
-> > +
-> > +         If unsure, say Y. Only embedded should say N here.
-> > +
-> 
-> Please tell me why SECCOMP is special, and deserves to default to be
-> enabled.  Is it really that critical, given only 13.5 (half of sparc
-> ;-) out of 24
-> architectures implement support for it?
+> > Using a "pid=" field as a way to link CONTAINER_ID records to other
+> > records raises a few questions.  What happens if/when we need to
+> > represent those PIDs in the context of a namespace?  Are we ever going
+> > to need to link to records which don't have a "pid=" field?  I haven't
+> > done the homework to know if either of these are a concern right now,
+> > but I worry that this might become a problem in the future.
+>
+> Good point about PID namespaces in the future but those accompanying
+> records will already have to be conditioned for the PID namespace
+> context that is requesting it, so I don't see this as a showstopper.
 
-That's an excellent point; I missed this in my review as I saw several
-Kconfig already marked "def_bool y" but failed to note it wasn't _all_
-of them. Okay, checking before this patch, these had them effectively
-enabled:
+Possibly, it just gets very messy.  Doubly so when you start looking
+at potentially adjusting for multiple audit daemons.  Thankfully it
+doesn't look like using the PID is a good idea for other reasons.
 
-via Kconfig:
+> I've forgotten about an important one we already hit, which is a network
+> event that only has a NETFILTER_PKT record, but in that case, there is
+> no ambiguity since there are no other records associated with that
+> event.  So the second is already an issue now.  Using
+> task_tgid_nr(current), in the contid testsuite script network event it
+> attributed it to ping which caused the event, but we cannot use this
+> since it wasn't triggered by a syscall and doesn't accurately reflect
+> the kernel thread that received it.  It could just be set to zero for
+> network events.
 
-parisc
-s390
-um
-x86
+Possibly.  It just seems like too much hackery to start; that's the
+stuff you do once it has been in a kernel release for years and need
+to find a workaround that doesn't break everything.  I think we should
+aim a bit higher right now.
 
-via defconfig, roughly speaking:
+> > The idea of using something like "item=" is interesting.  As you
+> > mention, the "item=" field does present some overlap problems with the
+> > PATH record, but perhaps we can do something similar.  What if we
+> > added a "record=" (or similar, I'm not worried about names at this
+> > point) to each record, reset to 0/1 at the start of each event, and
+> > when we needed to link records somehow we could add a "related=1,..,N"
+> > field.  This would potentially be useful beyond just the audit
+> > container ID work.
+>
+> Does it make any sense to use the same keyword in each type of record
+> such as record/records as in PATH/SYSCALL: item/items ?
 
-arm
-arm64
-sh
+That was mentioned above, if you can assure yourself and the rest of
+us that it can be safely reused I think that might be okay, but I'm
+not convinced that is safe at the moment.  Although I will admit those
+are fears are not based on an exhaustive search through the code (or a
+determined "think").
 
-How about making the default depend on HAVE_ARCH_SECCOMP_FILTER?
+> (I prefer 0-indexed like item=...)
 
-These have SECCOMP_FILTER support:
-
-arch/arm/Kconfig:       select HAVE_ARCH_SECCOMP_FILTER if AEABI && !OABI_COMPAT
-arch/arm64/Kconfig:     select HAVE_ARCH_SECCOMP_FILTER
-arch/csky/Kconfig:      select HAVE_ARCH_SECCOMP_FILTER
-arch/mips/Kconfig:      select HAVE_ARCH_SECCOMP_FILTER
-arch/parisc/Kconfig:    select HAVE_ARCH_SECCOMP_FILTER
-arch/powerpc/Kconfig:   select HAVE_ARCH_SECCOMP_FILTER
-arch/riscv/Kconfig:     select HAVE_ARCH_SECCOMP_FILTER
-arch/s390/Kconfig:      select HAVE_ARCH_SECCOMP_FILTER
-arch/sh/Kconfig:        select HAVE_ARCH_SECCOMP_FILTER
-arch/um/Kconfig:        select HAVE_ARCH_SECCOMP_FILTER
-arch/x86/Kconfig:       select HAVE_ARCH_SECCOMP_FILTER
-arch/xtensa/Kconfig:    select HAVE_ARCH_SECCOMP_FILTER
-
-So the "new" promotions would be:
-
-csky
-mips
-powerpc
-riscv
-xtensa
-
-Which would leave only these two:
-
-arch/microblaze/Kconfig:        select HAVE_ARCH_SECCOMP
-arch/sparc/Kconfig:     select HAVE_ARCH_SECCOMP if SPARC64
-
-At this point, given the ubiquity of seccomp usage (e.g. systemd), I
-guess it's not unreasonable to make it def_bool y?
-
-I'm open to suggestions!
+I have no preference on where we start the index, but it makes sense
+to keep the same index starting point as the PATH records.
 
 -- 
-Kees Cook
+paul moore
+www.paul-moore.com
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
