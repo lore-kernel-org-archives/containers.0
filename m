@@ -6,104 +6,104 @@ X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
 	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 14D99C388F9
-	for <containers@archiver.kernel.org>; Wed, 28 Oct 2020 01:35:36 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4EC15C4363A
+	for <containers@archiver.kernel.org>; Wed, 28 Oct 2020 06:32:23 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 908F722249
-	for <containers@archiver.kernel.org>; Wed, 28 Oct 2020 01:35:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 5F713238E6
+	for <containers@archiver.kernel.org>; Wed, 28 Oct 2020 06:32:22 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=paul-moore-com.20150623.gappssmtp.com header.i=@paul-moore-com.20150623.gappssmtp.com header.b="Lj2eTMWd"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 908F722249
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=paul-moore.com
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=sargun.me header.i=@sargun.me header.b="OH+AqmBT"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5F713238E6
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=sargun.me
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 1AC508743E;
-	Wed, 28 Oct 2020 01:35:35 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id ENzFz3YaKYoe; Wed, 28 Oct 2020 01:35:34 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 0E2078743A;
-	Wed, 28 Oct 2020 01:35:34 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id E632EC088B;
-	Wed, 28 Oct 2020 01:35:33 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id DB3BBC0051
- for <containers@lists.linux-foundation.org>;
- Wed, 28 Oct 2020 01:35:32 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 9642A203DC
- for <containers@lists.linux-foundation.org>;
- Wed, 28 Oct 2020 01:35:32 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id A827D20459;
+	Wed, 28 Oct 2020 06:32:21 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id ssyB-15Ly6iR; Wed, 28 Oct 2020 06:32:19 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by silver.osuosl.org (Postfix) with ESMTP id B9970203CA;
+	Wed, 28 Oct 2020 06:32:19 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id A72AFC088B;
+	Wed, 28 Oct 2020 06:32:19 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 4DD47C0051
+ for <containers@lists.linux-foundation.org>;
+ Wed, 28 Oct 2020 06:32:18 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by whitealder.osuosl.org (Postfix) with ESMTP id 347A286B71
+ for <containers@lists.linux-foundation.org>;
+ Wed, 28 Oct 2020 06:32:18 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id 0VNLbwSL+ani
+ with ESMTP id YVhCbltG7BFD
  for <containers@lists.linux-foundation.org>;
- Wed, 28 Oct 2020 01:35:30 +0000 (UTC)
+ Wed, 28 Oct 2020 06:32:17 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-ej1-f66.google.com (mail-ej1-f66.google.com
- [209.85.218.66])
- by silver.osuosl.org (Postfix) with ESMTPS id 60BBA203CE
+Received: from mail-ed1-f65.google.com (mail-ed1-f65.google.com
+ [209.85.208.65])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 3C95F8589A
  for <containers@lists.linux-foundation.org>;
- Wed, 28 Oct 2020 01:35:30 +0000 (UTC)
-Received: by mail-ej1-f66.google.com with SMTP id dt13so4892708ejb.12
+ Wed, 28 Oct 2020 06:32:17 +0000 (UTC)
+Received: by mail-ed1-f65.google.com with SMTP id dn5so3917765edb.10
  for <containers@lists.linux-foundation.org>;
- Tue, 27 Oct 2020 18:35:30 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=paul-moore-com.20150623.gappssmtp.com; s=20150623;
+ Tue, 27 Oct 2020 23:32:17 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sargun.me; s=google;
  h=mime-version:references:in-reply-to:from:date:message-id:subject:to
- :cc:content-transfer-encoding;
- bh=EhaQv7Xqn9C10/6kPilmFG/LY90YB69CHHSm/P4LmUk=;
- b=Lj2eTMWdQNRX51rp+69kJ+7MIJveC7lv8t0w/6GAwNCZDU97tO7fXzTZewOx55Ac1l
- qfo9NYf3w/1oZOOMsUpmk5QFBOLD6rEq4Y+xGwdcqgYSlAvt/V1eCOoLhOGtMpxn22lY
- BpPv8So2RSzkwV4VqW9Z81xo/sm6G/2qErp4megpsjRLRnCsLMimzT//EYKnBmWXYPYY
- Sljt2SxpJGW+CX70ABsj4p+oWaehsd7e48Xa9uvPlScUQdjQsFInIzQICwjOLHYNYT2Z
- rVKc0MWZtpSmx99XULBfKIiPaFC7zAwivfy+JYaPy+FhDaqHk6y3p83LlgRiUo5yGc2I
- JWSg==
+ :cc; bh=qt8DJxbLetO1WoXKcxRo5toKKtnSgKB5eVlWB58cOkk=;
+ b=OH+AqmBT9Kdmi64IsMGc8MSNykUCembPpixPv4zzBrzrPu4ucwFsORVaHkMGcfPA4r
+ 8uCQVHV+8Wyli+9AttwM7qpv4f4tNC2hdEunrUWLLkSkWs0PWOUCa+n8YKIabHg6GLd7
+ hiwxshPZf7ZvPf+4dweotp+Ny/sGKfx7EeycI=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
  h=x-gm-message-state:mime-version:references:in-reply-to:from:date
- :message-id:subject:to:cc:content-transfer-encoding;
- bh=EhaQv7Xqn9C10/6kPilmFG/LY90YB69CHHSm/P4LmUk=;
- b=srQBHlphClLVvFzJbJbkgJ1ThQPlpBxpz/+3PLRCi0eCTMN0Ox/r1SGk+YLEbailvq
- WdusYy8ZJIMF2+0UJZpE2ug6YWPkCoyBCYz+vWBGVs9muZeK06ms9ApnQQB+h46KbmI0
- W6oVvjDireuWYfHJwUaHl6m3wfuCnXJ6InsuYLXYKBZJ+RfDzN93vI1xwVLCsXS8WFnT
- PpCmmkUp7VI2Jhe19m0lA+bhPp+rCdmNuIK3qosQrSWIHMAlNmhGoAD/8WqJxxEee9nY
- O+MHVwFnW2MhowjOiayDgN/wNLPffnOvao4ZfkJAOCz0yE43z5tbqW4w/Rlkq9SyI/M/
- nZTg==
-X-Gm-Message-State: AOAM530L0KVDoDqjvppUenS0W77nFtR3LxeelWep8PN9vpTXittvTUVa
- zf+KecJiBPeezM5vRK6lv/LDFsBK/6MHhhzllZbk
-X-Google-Smtp-Source: ABdhPJydImqf6rjIcFvdKoVKRijlUJM6c3tT5+zpyIh0DgksT/WwCUJmb9M0MAWnaqlVZBE1LbPiRD1v+2NmrHAlBa8=
-X-Received: by 2002:a17:906:4811:: with SMTP id
- w17mr4982322ejq.431.1603848928683; 
- Tue, 27 Oct 2020 18:35:28 -0700 (PDT)
+ :message-id:subject:to:cc;
+ bh=qt8DJxbLetO1WoXKcxRo5toKKtnSgKB5eVlWB58cOkk=;
+ b=h30VGxg/+aEDMaNOKWLqQqgdWu+yuEEVWLiYhU/i2rUraJU6aeWERl3J7UjFuszt8m
+ /bbNGv8x4K5k+3uoub8vlyYuwtHb68IRvbUcKpZariTEcqAv5OhMsmiBgjT95dcGQulo
+ bpgRLSBQkPMRaj21rRuQQTdPiMtblA6rwpp4RIQYdCGZkR2VF5te7q23iqJrouM8PALM
+ p13Zy6wnS2T/NBwjB2RF4Ji13ywVC6SIuZWwg9KjIcyvBoQBjvvXVKgSy42g1uFvlKFy
+ JS2rTCrn1Hmu1UN4RV4v9UMuzit0BZZ5/4nYNM/uyu7b4Z+QDqGBWxdVdRq6sf0j7RkZ
+ RTJA==
+X-Gm-Message-State: AOAM532c3Sxdtw5eziIY4rdaDbueS3Q4dXgFpIb59pYWim1WSOdCuMX4
+ Os/gRjsEmW6/2TtV1GyXgS7Nx+LNoY0dOz8KxlSvlg==
+X-Google-Smtp-Source: ABdhPJwxL/cNreEkGxZEeBkLMJW+nXtxbWJBnh3oGKara0Jkz/gJF9pPGAqnIO/XhWtV5NKiBIa/b6QweHKnigrOa6I=
+X-Received: by 2002:a50:fb06:: with SMTP id d6mr6238984edq.312.1603866735356; 
+ Tue, 27 Oct 2020 23:32:15 -0700 (PDT)
 MIME-Version: 1.0
-References: <cover.1593198710.git.rgb@redhat.com>
- <6e2e10432e1400f747918eeb93bf45029de2aa6c.1593198710.git.rgb@redhat.com>
- <CAHC9VhSCm5eeBcyY8bBsnxr-hK4rkso9_NJHJec2OXLu4m5QTA@mail.gmail.com>
- <20200729194058.kcbsqjhzunjpipgm@madcap2.tricolour.ca>
- <CAHC9VhRUwCKBjffA_XNSjUwvUn8e6zfmy8WD203dK7R2KD0__g@mail.gmail.com>
- <20201002195231.GH2882171@madcap2.tricolour.ca>
- <20201021163926.GA3929765@madcap2.tricolour.ca>
- <CAHC9VhRb7XMyTrcrmzM3yQO+eLdO_r2+DOLKr9apDDeH4ua2Ew@mail.gmail.com>
- <20201023204033.GI2882171@madcap2.tricolour.ca>
-In-Reply-To: <20201023204033.GI2882171@madcap2.tricolour.ca>
-From: Paul Moore <paul@paul-moore.com>
-Date: Tue, 27 Oct 2020 21:35:17 -0400
-Message-ID: <CAHC9VhS7Gzd=pQ13eSOHDT8nO-z_yxsVW0E5r6mkpPYi3Txe2g@mail.gmail.com>
-Subject: Re: [PATCH ghak90 V9 05/13] audit: log container info of syscalls
-To: Richard Guy Briggs <rgb@redhat.com>
-Cc: nhorman@tuxdriver.com, linux-api@vger.kernel.org,
- containers@lists.linux-foundation.org, LKML <linux-kernel@vger.kernel.org>,
- dhowells@redhat.com, Linux-Audit Mailing List <linux-audit@redhat.com>,
- netfilter-devel@vger.kernel.org, ebiederm@xmission.com, simo@redhat.com,
- netdev@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- Eric Paris <eparis@parisplace.org>, mpatel@redhat.com
+References: <45f07f17-18b6-d187-0914-6f341fe90857@gmail.com>
+ <20200930150330.GC284424@cisco>
+ <8bcd956f-58d2-d2f0-ca7c-0a30f3fcd5b8@gmail.com>
+ <20200930230327.GA1260245@cisco>
+ <CAG48ez1VOUEHVQyo-2+uO7J+-jN5rh7=KmrMJiPaFjwCbKR1Sg@mail.gmail.com>
+ <20200930232456.GB1260245@cisco>
+ <CAG48ez2xn+_KznEztJ-eVTsTzkbf9CVgPqaAk7TpRNAqbdaRoA@mail.gmail.com>
+ <CAG48ez3kpEDO1x_HfvOM2R9M78Ach9O_4+Pjs-vLLfqvZL+13A@mail.gmail.com>
+ <656a37b5-75e3-0ded-6ba8-3bb57b537b24@gmail.com>
+ <CAG48ez2Uy8=Tz9k1hcr0suLPHjbJi1qUviSGzDQ-XWEGsdNU+A@mail.gmail.com>
+ <e2643168-b5d5-4d8c-947a-7895bcabc268@gmail.com>
+ <CAG48ez2Nb95ae+XwZPYRju1KO-Ps_4R6QxN6ioUhOy2Uok=uAg@mail.gmail.com>
+In-Reply-To: <CAG48ez2Nb95ae+XwZPYRju1KO-Ps_4R6QxN6ioUhOy2Uok=uAg@mail.gmail.com>
+From: Sargun Dhillon <sargun@sargun.me>
+Date: Tue, 27 Oct 2020 23:31:39 -0700
+Message-ID: <CAMp4zn_Qt2MYuoLojn5ikRkr-J5yGimirjevoAvorK5wfzrBHg@mail.gmail.com>
+Subject: Re: For review: seccomp_user_notif(2) manual page
+To: Jann Horn <jannh@google.com>
+Cc: linux-man <linux-man@vger.kernel.org>, Song Liu <songliubraving@fb.com>,
+ Will Drewry <wad@chromium.org>, Kees Cook <keescook@chromium.org>,
+ Daniel Borkmann <daniel@iogearbox.net>,
+ Giuseppe Scrivano <gscrivan@redhat.com>, Robert Sesek <rsesek@google.com>,
+ Linux Containers <containers@lists.linux-foundation.org>,
+ lkml <linux-kernel@vger.kernel.org>, Alexei Starovoitov <ast@kernel.org>,
+ "Michael Kerrisk \(man-pages\)" <mtk.manpages@gmail.com>,
+ bpf <bpf@vger.kernel.org>, Andy Lutomirski <luto@amacapital.net>,
+ Christian Brauner <christian@brauner.io>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -120,82 +120,53 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Fri, Oct 23, 2020 at 4:40 PM Richard Guy Briggs <rgb@redhat.com> wrote:
-> On 2020-10-22 21:21, Paul Moore wrote:
-> > On Wed, Oct 21, 2020 at 12:39 PM Richard Guy Briggs <rgb@redhat.com> wrote:
-> > > Here is an exmple I was able to generate after updating the testsuite
-> > > script to include a signalling example of a nested audit container
-> > > identifier:
-> > >
-> > > ----
-> > > type=PROCTITLE msg=audit(2020-10-21 10:31:16.655:6731) : proctitle=/usr/bin/perl -w containerid/test
-> > > type=CONTAINER_ID msg=audit(2020-10-21 10:31:16.655:6731) : contid=7129731255799087104^3333941723245477888
-> > > type=OBJ_PID msg=audit(2020-10-21 10:31:16.655:6731) : opid=115583 oauid=root ouid=root oses=1 obj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 ocomm=perl
-> > > type=CONTAINER_ID msg=audit(2020-10-21 10:31:16.655:6731) : contid=3333941723245477888
-> > > type=OBJ_PID msg=audit(2020-10-21 10:31:16.655:6731) : opid=115580 oauid=root ouid=root oses=1 obj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 ocomm=perl
-> > > type=CONTAINER_ID msg=audit(2020-10-21 10:31:16.655:6731) : contid=8098399240850112512^3333941723245477888
-> > > type=OBJ_PID msg=audit(2020-10-21 10:31:16.655:6731) : opid=115582 oauid=root ouid=root oses=1 obj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 ocomm=perl
-> > > type=SYSCALL msg=audit(2020-10-21 10:31:16.655:6731) : arch=x86_64 syscall=kill success=yes exit=0 a0=0xfffe3c84 a1=SIGTERM a2=0x4d524554 a3=0x0 items=0 ppid=115564 pid=115567 auid=root uid=root gid=root euid=root suid=root fsuid=root egid=root sgid=root fsgid=root tty=ttyS0 ses=1 comm=perl exe=/usr/bin/perl subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key=testsuite-1603290671-AcLtUulY
-> > > ----
-> > >
-> > > There are three CONTAINER_ID records which need some way of associating with OBJ_PID records.  An additional CONTAINER_ID record would be present if the killing process itself had an audit container identifier.  I think the most obvious way to connect them is with a pid= field in the CONTAINER_ID record.
+On Tue, Oct 27, 2020 at 3:28 AM Jann Horn <jannh@google.com> wrote:
+>
+> On Tue, Oct 27, 2020 at 7:14 AM Michael Kerrisk (man-pages)
+> <mtk.manpages@gmail.com> wrote:
+> > On 10/26/20 4:54 PM, Jann Horn wrote:
+> > > I'm a bit on the fence now on whether non-blocking mode should use
+> > > ENOTCONN or not... I guess if we returned ENOENT even when there are
+> > > no more listeners, you'd have to disambiguate through the poll()
+> > > revents, which would be kinda ugly?
 > >
-> > Using a "pid=" field as a way to link CONTAINER_ID records to other
-> > records raises a few questions.  What happens if/when we need to
-> > represent those PIDs in the context of a namespace?  Are we ever going
-> > to need to link to records which don't have a "pid=" field?  I haven't
-> > done the homework to know if either of these are a concern right now,
-> > but I worry that this might become a problem in the future.
+> > I must confess, I'm not quite clear on which two cases you
+> > are trying to distinguish. Can you elaborate?
 >
-> Good point about PID namespaces in the future but those accompanying
-> records will already have to be conditioned for the PID namespace
-> context that is requesting it, so I don't see this as a showstopper.
-
-Possibly, it just gets very messy.  Doubly so when you start looking
-at potentially adjusting for multiple audit daemons.  Thankfully it
-doesn't look like using the PID is a good idea for other reasons.
-
-> I've forgotten about an important one we already hit, which is a network
-> event that only has a NETFILTER_PKT record, but in that case, there is
-> no ambiguity since there are no other records associated with that
-> event.  So the second is already an issue now.  Using
-> task_tgid_nr(current), in the contid testsuite script network event it
-> attributed it to ping which caused the event, but we cannot use this
-> since it wasn't triggered by a syscall and doesn't accurately reflect
-> the kernel thread that received it.  It could just be set to zero for
-> network events.
-
-Possibly.  It just seems like too much hackery to start; that's the
-stuff you do once it has been in a kernel release for years and need
-to find a workaround that doesn't break everything.  I think we should
-aim a bit higher right now.
-
-> > The idea of using something like "item=" is interesting.  As you
-> > mention, the "item=" field does present some overlap problems with the
-> > PATH record, but perhaps we can do something similar.  What if we
-> > added a "record=" (or similar, I'm not worried about names at this
-> > point) to each record, reset to 0/1 at the start of each event, and
-> > when we needed to link records somehow we could add a "related=1,..,N"
-> > field.  This would potentially be useful beyond just the audit
-> > container ID work.
+> Let's say someone writes a program whose responsibilities are just to
+> handle seccomp events and to listen on some other fd for commands. And
+> this is implemented with an event loop. Then once all the target
+> processes are gone (including zombie reaping), we'll start getting
+> EPOLLERR.
 >
-> Does it make any sense to use the same keyword in each type of record
-> such as record/records as in PATH/SYSCALL: item/items ?
+> If NOTIF_RECV starts returning -ENOTCONN at this point, the event loop
+> can just call into the seccomp logic without any arguments; it can
+> just call NOTIF_RECV one more time, see the -ENOTCONN, and terminate.
+> The downside is that there's one more error code userspace has to
+> special-case.
+> This would be more consistent with what we'd be doing in the blocking case.
+>
+> If NOTIF_RECV keeps returning -ENOENT, the event loop has to also tell
+> the seccomp logic what the revents are.
+>
+> I guess it probably doesn't really matter much.
 
-That was mentioned above, if you can assure yourself and the rest of
-us that it can be safely reused I think that might be okay, but I'm
-not convinced that is safe at the moment.  Although I will admit those
-are fears are not based on an exhaustive search through the code (or a
-determined "think").
+So, in practice, if you're emulating a blocking syscall (such as open,
+perf_event_open, or any of a number of other syscalls), you probably
+have to do it on a separate thread in the supervisor because you want
+to continue to be able to receive new notifications if any other process
+generates a seccomp notification event that you need to handle.
 
-> (I prefer 0-indexed like item=...)
+In addition to that, some of these syscalls are preemptible, so you need
+to poll SECCOMP_IOCTL_NOTIF_ID_VALID to make sure that the program
+under supervision hasn't left the syscall.
 
-I have no preference on where we start the index, but it makes sense
-to keep the same index starting point as the PATH records.
-
--- 
-paul moore
-www.paul-moore.com
+If we're to implement a mechanism that makes the seccomp ioctl receive
+non-blocking, it would be valuable to address this problem as well (getting
+a notification when the supervisor is processing a syscall and needs to
+preempt it). In the best case, this can be a minor inconvenience, and
+in the worst case this can result in weird errors where you're keeping
+resources open that the container expects to be closed.
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
