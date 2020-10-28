@@ -2,108 +2,94 @@ Return-Path: <SRS0=ql3H=ED=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+X-Spam-Status: No, score=-6.7 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
 	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4EC15C4363A
-	for <containers@archiver.kernel.org>; Wed, 28 Oct 2020 06:32:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F725C4363A
+	for <containers@archiver.kernel.org>; Wed, 28 Oct 2020 08:19:10 +0000 (UTC)
 Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 5F713238E6
-	for <containers@archiver.kernel.org>; Wed, 28 Oct 2020 06:32:22 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=sargun.me header.i=@sargun.me header.b="OH+AqmBT"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5F713238E6
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=sargun.me
+	by mail.kernel.org (Postfix) with ESMTPS id 876C62220B
+	for <containers@archiver.kernel.org>; Wed, 28 Oct 2020 08:19:09 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 876C62220B
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id A827D20459;
-	Wed, 28 Oct 2020 06:32:21 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id C6B5B203F9;
+	Wed, 28 Oct 2020 08:19:08 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id ssyB-15Ly6iR; Wed, 28 Oct 2020 06:32:19 +0000 (UTC)
+	with ESMTP id rn8H5bqrHUzP; Wed, 28 Oct 2020 08:19:07 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id B9970203CA;
-	Wed, 28 Oct 2020 06:32:19 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 184342010E;
+	Wed, 28 Oct 2020 08:19:07 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id A72AFC088B;
-	Wed, 28 Oct 2020 06:32:19 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 4DD47C0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id F2167C088B;
+	Wed, 28 Oct 2020 08:19:06 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 36D4FC0051
  for <containers@lists.linux-foundation.org>;
- Wed, 28 Oct 2020 06:32:18 +0000 (UTC)
+ Wed, 28 Oct 2020 08:19:05 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 347A286B71
+ by fraxinus.osuosl.org (Postfix) with ESMTP id 2375286813
  for <containers@lists.linux-foundation.org>;
- Wed, 28 Oct 2020 06:32:18 +0000 (UTC)
+ Wed, 28 Oct 2020 08:19:05 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id YVhCbltG7BFD
+ with ESMTP id da98IAMDaKVq
  for <containers@lists.linux-foundation.org>;
- Wed, 28 Oct 2020 06:32:17 +0000 (UTC)
-X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-ed1-f65.google.com (mail-ed1-f65.google.com
- [209.85.208.65])
- by whitealder.osuosl.org (Postfix) with ESMTPS id 3C95F8589A
+ Wed, 28 Oct 2020 08:19:04 +0000 (UTC)
+X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
+Received: from mail-oi1-f193.google.com (mail-oi1-f193.google.com
+ [209.85.167.193])
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id F29CB86783
  for <containers@lists.linux-foundation.org>;
- Wed, 28 Oct 2020 06:32:17 +0000 (UTC)
-Received: by mail-ed1-f65.google.com with SMTP id dn5so3917765edb.10
+ Wed, 28 Oct 2020 08:19:03 +0000 (UTC)
+Received: by mail-oi1-f193.google.com with SMTP id f7so4148529oib.4
  for <containers@lists.linux-foundation.org>;
- Tue, 27 Oct 2020 23:32:17 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sargun.me; s=google;
- h=mime-version:references:in-reply-to:from:date:message-id:subject:to
- :cc; bh=qt8DJxbLetO1WoXKcxRo5toKKtnSgKB5eVlWB58cOkk=;
- b=OH+AqmBT9Kdmi64IsMGc8MSNykUCembPpixPv4zzBrzrPu4ucwFsORVaHkMGcfPA4r
- 8uCQVHV+8Wyli+9AttwM7qpv4f4tNC2hdEunrUWLLkSkWs0PWOUCa+n8YKIabHg6GLd7
- hiwxshPZf7ZvPf+4dweotp+Ny/sGKfx7EeycI=
+ Wed, 28 Oct 2020 01:19:03 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
  h=x-gm-message-state:mime-version:references:in-reply-to:from:date
  :message-id:subject:to:cc;
- bh=qt8DJxbLetO1WoXKcxRo5toKKtnSgKB5eVlWB58cOkk=;
- b=h30VGxg/+aEDMaNOKWLqQqgdWu+yuEEVWLiYhU/i2rUraJU6aeWERl3J7UjFuszt8m
- /bbNGv8x4K5k+3uoub8vlyYuwtHb68IRvbUcKpZariTEcqAv5OhMsmiBgjT95dcGQulo
- bpgRLSBQkPMRaj21rRuQQTdPiMtblA6rwpp4RIQYdCGZkR2VF5te7q23iqJrouM8PALM
- p13Zy6wnS2T/NBwjB2RF4Ji13ywVC6SIuZWwg9KjIcyvBoQBjvvXVKgSy42g1uFvlKFy
- JS2rTCrn1Hmu1UN4RV4v9UMuzit0BZZ5/4nYNM/uyu7b4Z+QDqGBWxdVdRq6sf0j7RkZ
- RTJA==
-X-Gm-Message-State: AOAM532c3Sxdtw5eziIY4rdaDbueS3Q4dXgFpIb59pYWim1WSOdCuMX4
- Os/gRjsEmW6/2TtV1GyXgS7Nx+LNoY0dOz8KxlSvlg==
-X-Google-Smtp-Source: ABdhPJwxL/cNreEkGxZEeBkLMJW+nXtxbWJBnh3oGKara0Jkz/gJF9pPGAqnIO/XhWtV5NKiBIa/b6QweHKnigrOa6I=
-X-Received: by 2002:a50:fb06:: with SMTP id d6mr6238984edq.312.1603866735356; 
- Tue, 27 Oct 2020 23:32:15 -0700 (PDT)
+ bh=XH5fEY967sQGo5TmBvXohkmKAaL8RC4qbRi4BtBMuM0=;
+ b=GWyel+r7xYz6slGTShK7v3dCcJ6H6EFp14wzBIlLdayNsDzmiFH6xKzpcaiBSupcxB
+ j7c1OJ7R/a3GwWF7++Z0bIp2sxoCeMsARGmtsIXEG31TTpTH2A9U8HI0hAy83kS8cEQ3
+ rHUe2rouCeHsnC7oZFlR3OZvNF64INbqwdT9gf5kyHNUxX4DpKrw9ijj1d0cBwmNKuz/
+ qQgM9Sy7YoWEKxMBdkpfCuacPLDURAhBBctb44fmM9FzyI63LR6vizQqs8TbWvJGpt0e
+ zAsHxl/9+40qnRgOoJsWO4NUITICkZjxVqND7ywHwO1Q2SkJ7/FZfZryo7JCnO6Y25lB
+ /oBw==
+X-Gm-Message-State: AOAM533BGLafEApQIE69N0I0/DE67vtiHpZIBV8uAZew6XX675c7NrKE
+ 5DGP9YT2DJGQZPOoSBkqNzI+jgakHJyeKK6d4LY=
+X-Google-Smtp-Source: ABdhPJw6WDLyOvB0+BhHMeuPy0t7zaAp6XH9HiAYir4ZWG1UgoaiE5jfBGmT2ghntDdAX5N6W7oM8IuIZYfj5F/E2yQ=
+X-Received: by 2002:aca:f40c:: with SMTP id s12mr4164246oih.153.1603873143175; 
+ Wed, 28 Oct 2020 01:19:03 -0700 (PDT)
 MIME-Version: 1.0
-References: <45f07f17-18b6-d187-0914-6f341fe90857@gmail.com>
- <20200930150330.GC284424@cisco>
- <8bcd956f-58d2-d2f0-ca7c-0a30f3fcd5b8@gmail.com>
- <20200930230327.GA1260245@cisco>
- <CAG48ez1VOUEHVQyo-2+uO7J+-jN5rh7=KmrMJiPaFjwCbKR1Sg@mail.gmail.com>
- <20200930232456.GB1260245@cisco>
- <CAG48ez2xn+_KznEztJ-eVTsTzkbf9CVgPqaAk7TpRNAqbdaRoA@mail.gmail.com>
- <CAG48ez3kpEDO1x_HfvOM2R9M78Ach9O_4+Pjs-vLLfqvZL+13A@mail.gmail.com>
- <656a37b5-75e3-0ded-6ba8-3bb57b537b24@gmail.com>
- <CAG48ez2Uy8=Tz9k1hcr0suLPHjbJi1qUviSGzDQ-XWEGsdNU+A@mail.gmail.com>
- <e2643168-b5d5-4d8c-947a-7895bcabc268@gmail.com>
- <CAG48ez2Nb95ae+XwZPYRju1KO-Ps_4R6QxN6ioUhOy2Uok=uAg@mail.gmail.com>
-In-Reply-To: <CAG48ez2Nb95ae+XwZPYRju1KO-Ps_4R6QxN6ioUhOy2Uok=uAg@mail.gmail.com>
-From: Sargun Dhillon <sargun@sargun.me>
-Date: Tue, 27 Oct 2020 23:31:39 -0700
-Message-ID: <CAMp4zn_Qt2MYuoLojn5ikRkr-J5yGimirjevoAvorK5wfzrBHg@mail.gmail.com>
-Subject: Re: For review: seccomp_user_notif(2) manual page
-To: Jann Horn <jannh@google.com>
-Cc: linux-man <linux-man@vger.kernel.org>, Song Liu <songliubraving@fb.com>,
- Will Drewry <wad@chromium.org>, Kees Cook <keescook@chromium.org>,
- Daniel Borkmann <daniel@iogearbox.net>,
- Giuseppe Scrivano <gscrivan@redhat.com>, Robert Sesek <rsesek@google.com>,
- Linux Containers <containers@lists.linux-foundation.org>,
- lkml <linux-kernel@vger.kernel.org>, Alexei Starovoitov <ast@kernel.org>,
- "Michael Kerrisk \(man-pages\)" <mtk.manpages@gmail.com>,
- bpf <bpf@vger.kernel.org>, Andy Lutomirski <luto@amacapital.net>,
- Christian Brauner <christian@brauner.io>
+References: <cover.1600951211.git.yifeifz2@illinois.edu>
+ <9ede6ef35c847e58d61e476c6a39540520066613.1600951211.git.yifeifz2@illinois.edu>
+ <CAMuHMdXTLKr6pvoE+JAdn_P5kVxL6gx8PJ8mqfXcS+SF+pRbkQ@mail.gmail.com>
+ <202010271653.B6D7D6B@keescook>
+In-Reply-To: <202010271653.B6D7D6B@keescook>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 28 Oct 2020 09:18:51 +0100
+Message-ID: <CAMuHMdX-y+ButCt=CH+Ao=RtO_eGz0DaTJupwuHNa7=Xi_AGoQ@mail.gmail.com>
+Subject: Re: [PATCH v2 seccomp 1/6] seccomp: Move config option SECCOMP to
+ arch/Kconfig
+To: Kees Cook <keescook@chromium.org>
+Cc: Andrea Arcangeli <aarcange@redhat.com>,
+ Giuseppe Scrivano <gscrivan@redhat.com>,
+ Valentin Rothberg <vrothber@redhat.com>, Jann Horn <jannh@google.com>,
+ YiFei Zhu <yifeifz2@illinois.edu>, containers@lists.linux-foundation.org,
+ Tobin Feldman-Fitzthum <tobin@ibm.com>,
+ Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+ Andy Lutomirski <luto@amacapital.net>, Hubertus Franke <frankeh@us.ibm.com>,
+ Jack Chen <jianyan2@illinois.edu>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
+ Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>,
+ bpf <bpf@vger.kernel.org>, Tianyin Xu <tyxu@illinois.edu>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -120,53 +106,141 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Tue, Oct 27, 2020 at 3:28 AM Jann Horn <jannh@google.com> wrote:
->
-> On Tue, Oct 27, 2020 at 7:14 AM Michael Kerrisk (man-pages)
-> <mtk.manpages@gmail.com> wrote:
-> > On 10/26/20 4:54 PM, Jann Horn wrote:
-> > > I'm a bit on the fence now on whether non-blocking mode should use
-> > > ENOTCONN or not... I guess if we returned ENOENT even when there are
-> > > no more listeners, you'd have to disambiguate through the poll()
-> > > revents, which would be kinda ugly?
+Hi Kees,
+
+On Wed, Oct 28, 2020 at 1:06 AM Kees Cook <keescook@chromium.org> wrote:
+> On Tue, Oct 27, 2020 at 10:52:39AM +0100, Geert Uytterhoeven wrote:
+> > On Thu, Sep 24, 2020 at 2:48 PM YiFei Zhu <zhuyifei1999@gmail.com> wrote:
+> > > From: YiFei Zhu <yifeifz2@illinois.edu>
+> > >
+> > > In order to make adding configurable features into seccomp
+> > > easier, it's better to have the options at one single location,
+> > > considering easpecially that the bulk of seccomp code is
+> > > arch-independent. An quick look also show that many SECCOMP
+> > > descriptions are outdated; they talk about /proc rather than
+> > > prctl.
+> > >
+> > > As a result of moving the config option and keeping it default
+> > > on, architectures arm, arm64, csky, riscv, sh, and xtensa
+> > > did not have SECCOMP on by default prior to this and SECCOMP will
+> > > be default in this change.
+> > >
+> > > Architectures microblaze, mips, powerpc, s390, sh, and sparc
+> > > have an outdated depend on PROC_FS and this dependency is removed
+> > > in this change.
+> > >
+> > > Suggested-by: Jann Horn <jannh@google.com>
+> > > Link: https://lore.kernel.org/lkml/CAG48ez1YWz9cnp08UZgeieYRhHdqh-ch7aNwc4JRBnGyrmgfMg@mail.gmail.com/
+> > > Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
 > >
-> > I must confess, I'm not quite clear on which two cases you
-> > are trying to distinguish. Can you elaborate?
+> > Thanks for your patch. which is now commit 282a181b1a0d66de ("seccomp:
+> > Move config option SECCOMP to arch/Kconfig") in v5.10-rc1.
+> >
+> > > --- a/arch/Kconfig
+> > > +++ b/arch/Kconfig
+> > > @@ -458,6 +462,23 @@ config HAVE_ARCH_SECCOMP_FILTER
+> > >             results in the system call being skipped immediately.
+> > >           - seccomp syscall wired up
+> > >
+> > > +config SECCOMP
+> > > +       def_bool y
+> > > +       depends on HAVE_ARCH_SECCOMP
+> > > +       prompt "Enable seccomp to safely compute untrusted bytecode"
+> > > +       help
+> > > +         This kernel feature is useful for number crunching applications
+> > > +         that may need to compute untrusted bytecode during their
+> > > +         execution. By using pipes or other transports made available to
+> > > +         the process as file descriptors supporting the read/write
+> > > +         syscalls, it's possible to isolate those applications in
+> > > +         their own address space using seccomp. Once seccomp is
+> > > +         enabled via prctl(PR_SET_SECCOMP), it cannot be disabled
+> > > +         and the task is only allowed to execute a few safe syscalls
+> > > +         defined by each seccomp mode.
+> > > +
+> > > +         If unsure, say Y. Only embedded should say N here.
+> > > +
+> >
+> > Please tell me why SECCOMP is special, and deserves to default to be
+> > enabled.  Is it really that critical, given only 13.5 (half of sparc
+> > ;-) out of 24
+> > architectures implement support for it?
 >
-> Let's say someone writes a program whose responsibilities are just to
-> handle seccomp events and to listen on some other fd for commands. And
-> this is implemented with an event loop. Then once all the target
-> processes are gone (including zombie reaping), we'll start getting
-> EPOLLERR.
+> That's an excellent point; I missed this in my review as I saw several
+> Kconfig already marked "def_bool y" but failed to note it wasn't _all_
+> of them. Okay, checking before this patch, these had them effectively
+> enabled:
 >
-> If NOTIF_RECV starts returning -ENOTCONN at this point, the event loop
-> can just call into the seccomp logic without any arguments; it can
-> just call NOTIF_RECV one more time, see the -ENOTCONN, and terminate.
-> The downside is that there's one more error code userspace has to
-> special-case.
-> This would be more consistent with what we'd be doing in the blocking case.
+> via Kconfig:
 >
-> If NOTIF_RECV keeps returning -ENOENT, the event loop has to also tell
-> the seccomp logic what the revents are.
->
-> I guess it probably doesn't really matter much.
+> parisc
+> s390
+> um
+> x86
 
-So, in practice, if you're emulating a blocking syscall (such as open,
-perf_event_open, or any of a number of other syscalls), you probably
-have to do it on a separate thread in the supervisor because you want
-to continue to be able to receive new notifications if any other process
-generates a seccomp notification event that you need to handle.
+Mostly "server" and "desktop" platforms.
 
-In addition to that, some of these syscalls are preemptible, so you need
-to poll SECCOMP_IOCTL_NOTIF_ID_VALID to make sure that the program
-under supervision hasn't left the syscall.
+> via defconfig, roughly speaking:
+>
+> arm
+> arm64
+> sh
 
-If we're to implement a mechanism that makes the seccomp ioctl receive
-non-blocking, it would be valuable to address this problem as well (getting
-a notification when the supervisor is processing a syscall and needs to
-preempt it). In the best case, this can be a minor inconvenience, and
-in the worst case this can result in weird errors where you're keeping
-resources open that the container expects to be closed.
+Note that these defconfigs are example configs, not meant for production.
+E.g. arm/multi_v7_defconfig and arm64/defconfig enable about everything
+for compile coverage.
+
+> How about making the default depend on HAVE_ARCH_SECCOMP_FILTER?
+>
+> These have SECCOMP_FILTER support:
+>
+> arch/arm/Kconfig:       select HAVE_ARCH_SECCOMP_FILTER if AEABI && !OABI_COMPAT
+> arch/arm64/Kconfig:     select HAVE_ARCH_SECCOMP_FILTER
+> arch/csky/Kconfig:      select HAVE_ARCH_SECCOMP_FILTER
+> arch/mips/Kconfig:      select HAVE_ARCH_SECCOMP_FILTER
+> arch/parisc/Kconfig:    select HAVE_ARCH_SECCOMP_FILTER
+> arch/powerpc/Kconfig:   select HAVE_ARCH_SECCOMP_FILTER
+> arch/riscv/Kconfig:     select HAVE_ARCH_SECCOMP_FILTER
+> arch/s390/Kconfig:      select HAVE_ARCH_SECCOMP_FILTER
+> arch/sh/Kconfig:        select HAVE_ARCH_SECCOMP_FILTER
+> arch/um/Kconfig:        select HAVE_ARCH_SECCOMP_FILTER
+> arch/x86/Kconfig:       select HAVE_ARCH_SECCOMP_FILTER
+> arch/xtensa/Kconfig:    select HAVE_ARCH_SECCOMP_FILTER
+>
+> So the "new" promotions would be:
+>
+> csky
+> mips
+> powerpc
+> riscv
+> xtensa
+>
+> Which would leave only these two:
+>
+> arch/microblaze/Kconfig:        select HAVE_ARCH_SECCOMP
+> arch/sparc/Kconfig:     select HAVE_ARCH_SECCOMP if SPARC64
+>
+> At this point, given the ubiquity of seccomp usage (e.g. systemd), I
+> guess it's not unreasonable to make it def_bool y?
+
+Having support does not necessarily imply you want it enabled.
+If systemd needs it (does it? I have Debian nfsroots with systemd,
+without SECCOMP), you can enable it in the defconfig.
+"Default y" is for things you cannot do without, unless you know
+better.
+
+Bloat-o-meter says enabling SECCOMP consumes only ca. 8 KiB
+(on arm32), so perhaps "default y if !EXPERT"?
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
