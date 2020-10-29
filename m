@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A0051C4363A
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:38:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 29AA7C5DF9D
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:38:49 +0000 (UTC)
 Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 277D02076B
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:38:09 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 277D02076B
+	by mail.kernel.org (Postfix) with ESMTPS id A6A57208B8
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:38:48 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A6A57208B8
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 86D7420414;
-	Thu, 29 Oct 2020 00:38:09 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 475E5203BA;
+	Thu, 29 Oct 2020 00:38:48 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id OHMxUIunZ3sP; Thu, 29 Oct 2020 00:38:08 +0000 (UTC)
+	with ESMTP id PQij9nlGEJ6n; Thu, 29 Oct 2020 00:38:46 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id F31BB203EF;
-	Thu, 29 Oct 2020 00:38:07 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 12F77203EF;
+	Thu, 29 Oct 2020 00:38:46 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id D9D3EC088B;
-	Thu, 29 Oct 2020 00:38:07 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 82C58C0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 0E5DAC088B;
+	Thu, 29 Oct 2020 00:38:46 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 7593EC0051
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:38:06 +0000 (UTC)
+ Thu, 29 Oct 2020 00:38:44 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 700218736E
+ by silver.osuosl.org (Postfix) with ESMTP id 5FD61203EF
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:38:06 +0000 (UTC)
+ Thu, 29 Oct 2020 00:38:44 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id 0VRIcdqd+spK
+ with ESMTP id Q0-mD1bV59V1
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:38:05 +0000 (UTC)
+ Thu, 29 Oct 2020 00:38:43 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by hemlock.osuosl.org (Postfix) with ESMTPS id 8013687365
+ by silver.osuosl.org (Postfix) with ESMTPS id D1F68203BA
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:38:05 +0000 (UTC)
+ Thu, 29 Oct 2020 00:38:42 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kXvus-0008Ep-Pk; Thu, 29 Oct 2020 00:35:46 +0000
+ id 1kXvv4-0008Ep-SE; Thu, 29 Oct 2020 00:35:58 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH 20/34] open: handle idmapped mounts in do_truncate()
-Date: Thu, 29 Oct 2020 01:32:38 +0100
-Message-Id: <20201029003252.2128653-21-christian.brauner@ubuntu.com>
+Subject: [PATCH 27/34] apparmor: handle idmapped mounts
+Date: Thu, 29 Oct 2020 01:32:45 +0100
+Message-Id: <20201029003252.2128653-28-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.0
 In-Reply-To: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
 References: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
@@ -102,201 +102,137 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-When truncating files the vfs will verify that the caller is privileged over
-the inode. Since the do_truncate() helper is only used in a few places in the
-vfs code extend it to handle idmapped mounts instead of adding a new helper.
-If the inode is accessed through an idmapped mount it is mapped according to
-the mount's user namespace. Afterwards the permissions checks are identical to
-non-idmapped mounts. If the initial user namespace is passed all mapping
-operations are a nop so non-idmapped mounts will not see a change in behavior
-and will also not see any performance impact.
+The i_uid and i_gid are only ever used when logging for AppArmor. This is
+already broken in a bunch of places where the global root id is reported
+instead of the i_uid or i_gid of the file. Nonetheless, be kind and log the
+mapped inode if we're coming from an idmapped mount.
 
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
- fs/coredump.c      | 12 +++++++++---
- fs/inode.c         | 13 +++++++++----
- fs/namei.c         |  6 +++---
- fs/open.c          | 21 +++++++++++++--------
- include/linux/fs.h |  4 ++--
- 5 files changed, 36 insertions(+), 20 deletions(-)
+ security/apparmor/domain.c |  9 ++++++---
+ security/apparmor/file.c   |  5 ++++-
+ security/apparmor/lsm.c    | 12 ++++++++----
+ 3 files changed, 18 insertions(+), 8 deletions(-)
 
-diff --git a/fs/coredump.c b/fs/coredump.c
-index 0cd9056d79cc..25beac7230ff 100644
---- a/fs/coredump.c
-+++ b/fs/coredump.c
-@@ -703,6 +703,7 @@ void do_coredump(const kernel_siginfo_t *siginfo)
- 			goto close_fail;
- 		}
- 	} else {
-+		struct user_namespace *user_ns;
- 		struct inode *inode;
- 		int open_flags = O_CREAT | O_RDWR | O_NOFOLLOW |
- 				 O_LARGEFILE | O_EXCL;
-@@ -786,7 +787,8 @@ void do_coredump(const kernel_siginfo_t *siginfo)
- 			goto close_fail;
- 		if (!(cprm.file->f_mode & FMODE_CAN_WRITE))
- 			goto close_fail;
--		if (do_truncate(cprm.file->f_path.dentry, 0, 0, cprm.file))
-+		user_ns = mnt_user_ns(cprm.file->f_path.mnt);
-+		if (do_truncate(user_ns, cprm.file->f_path.dentry, 0, 0, cprm.file))
- 			goto close_fail;
- 	}
+diff --git a/security/apparmor/domain.c b/security/apparmor/domain.c
+index f919ebd042fd..91b132961b67 100644
+--- a/security/apparmor/domain.c
++++ b/security/apparmor/domain.c
+@@ -10,12 +10,14 @@
  
-@@ -931,8 +933,12 @@ void dump_truncate(struct coredump_params *cprm)
+ #include <linux/errno.h>
+ #include <linux/fdtable.h>
++#include <linux/fs.h>
+ #include <linux/file.h>
+ #include <linux/mount.h>
+ #include <linux/syscalls.h>
+ #include <linux/tracehook.h>
+ #include <linux/personality.h>
+ #include <linux/xattr.h>
++#include <linux/user_namespace.h>
  
- 	if (file->f_op->llseek && file->f_op->llseek != no_llseek) {
- 		offset = file->f_op->llseek(file, 0, SEEK_CUR);
--		if (i_size_read(file->f_mapping->host) < offset)
--			do_truncate(file->f_path.dentry, offset, 0, file);
-+		if (i_size_read(file->f_mapping->host) < offset) {
-+			struct user_namespace *user_ns;
-+
-+			user_ns = mnt_user_ns(file->f_path.mnt);
-+			do_truncate(user_ns, file->f_path.dentry, offset, 0, file);
-+		}
- 	}
+ #include "include/audit.h"
+ #include "include/apparmorfs.h"
+@@ -858,8 +860,10 @@ int apparmor_bprm_creds_for_exec(struct linux_binprm *bprm)
+ 	const char *info = NULL;
+ 	int error = 0;
+ 	bool unsafe = false;
++	struct user_namespace *user_ns = mnt_user_ns(bprm->file->f_path.mnt);
++	kuid_t i_uid = i_uid_into_mnt(user_ns, file_inode(bprm->file));
+ 	struct path_cond cond = {
+-		file_inode(bprm->file)->i_uid,
++		i_uid,
+ 		file_inode(bprm->file)->i_mode
+ 	};
+ 
+@@ -967,8 +971,7 @@ int apparmor_bprm_creds_for_exec(struct linux_binprm *bprm)
+ 	error = fn_for_each(label, profile,
+ 			aa_audit_file(profile, &nullperms, OP_EXEC, MAY_EXEC,
+ 				      bprm->filename, NULL, new,
+-				      file_inode(bprm->file)->i_uid, info,
+-				      error));
++				      i_uid, info, error));
+ 	aa_put_label(new);
+ 	goto done;
  }
- EXPORT_SYMBOL(dump_truncate);
-diff --git a/fs/inode.c b/fs/inode.c
-index 22de3cb3b1f4..a9e2c8232e61 100644
---- a/fs/inode.c
-+++ b/fs/inode.c
-@@ -1904,7 +1904,8 @@ int dentry_needs_remove_privs(struct dentry *dentry)
- 	return mask;
- }
+diff --git a/security/apparmor/file.c b/security/apparmor/file.c
+index 92acf9a49405..d6d9e71f1900 100644
+--- a/security/apparmor/file.c
++++ b/security/apparmor/file.c
+@@ -11,6 +11,8 @@
+ #include <linux/tty.h>
+ #include <linux/fdtable.h>
+ #include <linux/file.h>
++#include <linux/fs.h>
++#include <linux/mount.h>
  
--static int __remove_privs(struct dentry *dentry, int kill)
-+static int __remove_privs(struct user_namespace *user_ns, struct dentry *dentry,
-+			  int kill)
+ #include "include/apparmor.h"
+ #include "include/audit.h"
+@@ -508,8 +510,9 @@ static int __file_path_perm(const char *op, struct aa_label *label,
  {
- 	struct iattr newattrs;
- 
-@@ -1913,7 +1914,7 @@ static int __remove_privs(struct dentry *dentry, int kill)
- 	 * Note we call this on write, so notify_change will not
- 	 * encounter any conflicting delegations:
- 	 */
--	return notify_change(dentry, &newattrs, NULL);
-+	return notify_mapped_change(user_ns, dentry, &newattrs, NULL);
- }
- 
- /*
-@@ -1939,8 +1940,12 @@ int file_remove_privs(struct file *file)
- 	kill = dentry_needs_remove_privs(dentry);
- 	if (kill < 0)
- 		return kill;
--	if (kill)
--		error = __remove_privs(dentry, kill);
-+	if (kill) {
-+		struct user_namespace *user_ns;
-+
-+		user_ns = mnt_user_ns(file->f_path.mnt);
-+		error = __remove_privs(user_ns, dentry, kill);
-+	}
- 	if (!error)
- 		inode_has_no_xattr(inode);
- 
-diff --git a/fs/namei.c b/fs/namei.c
-index 7901ea09e80e..76c9637eccb9 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -2985,9 +2985,9 @@ static int handle_truncate(struct file *filp)
- 	if (!error)
- 		error = security_path_truncate(path);
- 	if (!error) {
--		error = do_truncate(path->dentry, 0,
--				    ATTR_MTIME|ATTR_CTIME|ATTR_OPEN,
--				    filp);
-+		error = do_truncate(mnt_user_ns(filp->f_path.mnt),
-+				    path->dentry, 0,
-+				    ATTR_MTIME | ATTR_CTIME | ATTR_OPEN, filp);
- 	}
- 	put_write_access(inode);
- 	return error;
-diff --git a/fs/open.c b/fs/open.c
-index 9af548fb841b..efa462b6b9c7 100644
---- a/fs/open.c
-+++ b/fs/open.c
-@@ -35,8 +35,8 @@
- 
- #include "internal.h"
- 
--int do_truncate(struct dentry *dentry, loff_t length, unsigned int time_attrs,
--	struct file *filp)
-+int do_truncate(struct user_namespace *user_ns, struct dentry *dentry,
-+		loff_t length, unsigned int time_attrs, struct file *filp)
+ 	struct aa_profile *profile;
+ 	struct aa_perms perms = {};
++	struct user_namespace *user_ns = mnt_user_ns(file->f_path.mnt);
+ 	struct path_cond cond = {
+-		.uid = file_inode(file)->i_uid,
++		.uid = i_uid_into_mnt(user_ns, file_inode(file)),
+ 		.mode = file_inode(file)->i_mode
+ 	};
+ 	char *buffer;
+diff --git a/security/apparmor/lsm.c b/security/apparmor/lsm.c
+index ffeaee5ed968..ece9afc3994f 100644
+--- a/security/apparmor/lsm.c
++++ b/security/apparmor/lsm.c
+@@ -224,7 +224,8 @@ static int common_perm(const char *op, const struct path *path, u32 mask,
+  */
+ static int common_perm_cond(const char *op, const struct path *path, u32 mask)
  {
- 	int ret;
- 	struct iattr newattrs;
-@@ -61,13 +61,14 @@ int do_truncate(struct dentry *dentry, loff_t length, unsigned int time_attrs,
+-	struct path_cond cond = { d_backing_inode(path->dentry)->i_uid,
++	struct user_namespace *user_ns = mnt_user_ns(path->mnt);
++	struct path_cond cond = { i_uid_into_mnt(user_ns, d_backing_inode(path->dentry)),
+ 				  d_backing_inode(path->dentry)->i_mode
+ 	};
  
- 	inode_lock(dentry->d_inode);
- 	/* Note any delegations or leases have already been broken: */
--	ret = notify_change(dentry, &newattrs, NULL);
-+	ret = notify_mapped_change(user_ns, dentry, &newattrs, NULL);
- 	inode_unlock(dentry->d_inode);
- 	return ret;
- }
- 
- long vfs_truncate(const struct path *path, loff_t length)
+@@ -266,12 +267,13 @@ static int common_perm_rm(const char *op, const struct path *dir,
+ 			  struct dentry *dentry, u32 mask)
  {
-+	struct user_namespace *user_ns;
- 	struct inode *inode;
- 	long error;
+ 	struct inode *inode = d_backing_inode(dentry);
++	struct user_namespace *user_ns = mnt_user_ns(dir->mnt);
+ 	struct path_cond cond = { };
  
-@@ -83,7 +84,8 @@ long vfs_truncate(const struct path *path, loff_t length)
- 	if (error)
- 		goto out;
+ 	if (!inode || !path_mediated_fs(dentry))
+ 		return 0;
  
--	error = inode_permission(inode, MAY_WRITE);
-+	user_ns = mnt_user_ns(path->mnt);
-+	error = mapped_inode_permission(user_ns, inode, MAY_WRITE);
- 	if (error)
- 		goto mnt_drop_write_and_out;
+-	cond.uid = inode->i_uid;
++	cond.uid = i_uid_into_mnt(user_ns, inode);
+ 	cond.mode = inode->i_mode;
  
-@@ -107,7 +109,7 @@ long vfs_truncate(const struct path *path, loff_t length)
- 	if (!error)
- 		error = security_path_truncate(path);
- 	if (!error)
--		error = do_truncate(path->dentry, length, 0, NULL);
-+		error = do_truncate(user_ns, path->dentry, length, 0, NULL);
+ 	return common_perm_dir_dentry(op, dir, dentry, mask, &cond);
+@@ -361,11 +363,12 @@ static int apparmor_path_rename(const struct path *old_dir, struct dentry *old_d
  
- put_write_and_out:
- 	put_write_access(inode);
-@@ -186,13 +188,16 @@ long do_sys_ftruncate(unsigned int fd, loff_t length, int small)
- 	/* Check IS_APPEND on real upper inode */
- 	if (IS_APPEND(file_inode(f.file)))
- 		goto out_putf;
--
- 	sb_start_write(inode->i_sb);
- 	error = locks_verify_truncate(inode, f.file, length);
- 	if (!error)
- 		error = security_path_truncate(&f.file->f_path);
--	if (!error)
--		error = do_truncate(dentry, length, ATTR_MTIME|ATTR_CTIME, f.file);
-+	if (!error) {
-+		struct user_namespace *user_ns;
-+
-+		user_ns = mnt_user_ns(f.file->f_path.mnt);
-+		error = do_truncate(user_ns, dentry, length, ATTR_MTIME | ATTR_CTIME, f.file);
-+	}
- 	sb_end_write(inode->i_sb);
- out_putf:
- 	fdput(f);
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index f523b1db48c4..bfcfa3d7374f 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -2610,8 +2610,8 @@ struct filename {
- static_assert(offsetof(struct filename, iname) % sizeof(long) == 0);
+ 	label = begin_current_label_crit_section();
+ 	if (!unconfined(label)) {
++		struct user_namespace *user_ns = mnt_user_ns(old_dir->mnt);
+ 		struct path old_path = { .mnt = old_dir->mnt,
+ 					 .dentry = old_dentry };
+ 		struct path new_path = { .mnt = new_dir->mnt,
+ 					 .dentry = new_dentry };
+-		struct path_cond cond = { d_backing_inode(old_dentry)->i_uid,
++		struct path_cond cond = { i_uid_into_mnt(user_ns, d_backing_inode(old_dentry)),
+ 					  d_backing_inode(old_dentry)->i_mode
+ 		};
  
- extern long vfs_truncate(const struct path *, loff_t);
--extern int do_truncate(struct dentry *, loff_t start, unsigned int time_attrs,
--		       struct file *filp);
-+extern int do_truncate(struct user_namespace *, struct dentry *, loff_t start,
-+		       unsigned int time_attrs, struct file *filp);
- extern int vfs_fallocate(struct file *file, int mode, loff_t offset,
- 			loff_t len);
- extern long do_sys_open(int dfd, const char __user *filename, int flags,
+@@ -420,8 +423,9 @@ static int apparmor_file_open(struct file *file)
+ 
+ 	label = aa_get_newest_cred_label(file->f_cred);
+ 	if (!unconfined(label)) {
++		struct user_namespace *user_ns = mnt_user_ns(file->f_path.mnt);
+ 		struct inode *inode = file_inode(file);
+-		struct path_cond cond = { inode->i_uid, inode->i_mode };
++		struct path_cond cond = { i_uid_into_mnt(user_ns, inode), inode->i_mode };
+ 
+ 		error = aa_path_perm(OP_OPEN, label, &file->f_path, 0,
+ 				     aa_map_file_to_perms(file), &cond);
 -- 
 2.29.0
 
