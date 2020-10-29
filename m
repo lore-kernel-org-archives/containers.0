@@ -6,77 +6,72 @@ X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 028E1C5DF9E
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 15:48:28 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C1D3C4363A
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 15:52:31 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 6E3122076E
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 15:48:27 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6E3122076E
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=xmission.com
+	by mail.kernel.org (Postfix) with ESMTPS id 2B8BB2064B
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 15:52:29 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2B8BB2064B
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=cyphar.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 0A77886BFF;
-	Thu, 29 Oct 2020 15:48:27 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 8ADD4203D8;
+	Thu, 29 Oct 2020 15:52:29 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from silver.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id Rg2LE-rUJIpX; Thu, 29 Oct 2020 15:52:26 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by silver.osuosl.org (Postfix) with ESMTP id DEEE52014B;
+	Thu, 29 Oct 2020 15:52:26 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id BB257C088B;
+	Thu, 29 Oct 2020 15:52:26 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 20F93C0051
+ for <containers@lists.linux-foundation.org>;
+ Thu, 29 Oct 2020 15:52:25 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by fraxinus.osuosl.org (Postfix) with ESMTP id 1BE1086C19
+ for <containers@lists.linux-foundation.org>;
+ Thu, 29 Oct 2020 15:52:25 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id j9cnyNEK07lu; Thu, 29 Oct 2020 15:48:26 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 51C5986B00;
-	Thu, 29 Oct 2020 15:48:26 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 39BDCC088B;
-	Thu, 29 Oct 2020 15:48:26 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 319CBC0051
- for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 15:48:24 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 2C6F486CAB
- for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 15:48:24 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id iBEFs6T7T-Iv
+ with ESMTP id iRmko-NgOizq
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 15:48:23 +0000 (UTC)
+ Thu, 29 Oct 2020 15:52:24 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from out02.mta.xmission.com (out02.mta.xmission.com [166.70.13.232])
- by whitealder.osuosl.org (Postfix) with ESMTPS id 8049D86CA1
+Received: from mout-p-103.mailbox.org (mout-p-103.mailbox.org [80.241.56.161])
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id E37B386208
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 15:48:23 +0000 (UTC)
-Received: from in02.mta.xmission.com ([166.70.13.52])
- by out02.mta.xmission.com with esmtps (TLS1.3) tls
- TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 (Exim 4.93)
- (envelope-from <ebiederm@xmission.com>)
- id 1kYA9W-008Etr-HE; Thu, 29 Oct 2020 09:47:50 -0600
-Received: from ip68-227-160-95.om.om.cox.net ([68.227.160.95]
- helo=x220.xmission.com)
- by in02.mta.xmission.com with esmtpsa (TLS1.3) tls
- TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 (Exim 4.93)
- (envelope-from <ebiederm@xmission.com>)
- id 1kYA9V-00AHk1-Ei; Thu, 29 Oct 2020 09:47:50 -0600
-From: ebiederm@xmission.com (Eric W. Biederman)
-To: Christian Brauner <christian.brauner@ubuntu.com>
-References: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
-Date: Thu, 29 Oct 2020 10:47:49 -0500
-In-Reply-To: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
- (Christian Brauner's message of "Thu, 29 Oct 2020 01:32:18 +0100")
-Message-ID: <87pn51ghju.fsf@x220.int.ebiederm.org>
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/26.1 (gnu/linux)
-MIME-Version: 1.0
-X-XM-SPF: eid=1kYA9V-00AHk1-Ei; ; ; mid=<87pn51ghju.fsf@x220.int.ebiederm.org>;
- ; ; hst=in02.mta.xmission.com; ; ; ip=68.227.160.95; ; ;
- frm=ebiederm@xmission.com; ; ; spf=neutral
-X-XM-AID: U2FsdGVkX1/KO2990XPv4odhdV8LRkhzi7akeV9MiV4=
-X-SA-Exim-Connect-IP: 68.227.160.95
-X-SA-Exim-Mail-From: ebiederm@xmission.com
+ Thu, 29 Oct 2020 15:52:23 +0000 (UTC)
+Received: from smtp2.mailbox.org (smtp2.mailbox.org [80.241.60.241])
+ (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+ key-exchange ECDHE (P-384) server-signature RSA-PSS (4096 bits) server-digest
+ SHA256) (No client certificate requested)
+ by mout-p-103.mailbox.org (Postfix) with ESMTPS id 4CMVLs2MljzQl31;
+ Thu, 29 Oct 2020 16:52:21 +0100 (CET)
+X-Virus-Scanned: amavisd-new at heinlein-support.de
+Received: from smtp2.mailbox.org ([80.241.60.241])
+ by spamfilter03.heinlein-hosting.de (spamfilter03.heinlein-hosting.de
+ [80.241.56.117]) (amavisd-new, port 10030)
+ with ESMTP id pzROom4hCQJX; Thu, 29 Oct 2020 16:52:14 +0100 (CET)
+Date: Fri, 30 Oct 2020 02:51:48 +1100
+From: Aleksa Sarai <cyphar@cyphar.com>
+To: "Eric W. Biederman" <ebiederm@xmission.com>
 Subject: Re: [PATCH 00/34] fs: idmapped mounts
-X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
-X-SA-Exim-Scanned: Yes (on in02.mta.xmission.com)
+Message-ID: <20201029155148.5odu4j2kt62ahcxq@yavin.dot.cyphar.com>
+References: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
+ <87pn51ghju.fsf@x220.int.ebiederm.org>
+MIME-Version: 1.0
+In-Reply-To: <87pn51ghju.fsf@x220.int.ebiederm.org>
+X-MBO-SPAM-Probability: 
+X-Rspamd-Score: -3.91 / 15.00 / 15.00
+X-Rspamd-Queue-Id: 6627F1700
+X-Rspamd-UID: 698b92
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>, David Howells <dhowells@redhat.com>,
  Andreas Dilger <adilger.kernel@dilger.ca>,
@@ -111,62 +106,82 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============4309416557643120560=="
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Christian Brauner <christian.brauner@ubuntu.com> writes:
 
-> Hey everyone,
->
-> I vanished for a little while to focus on this work here so sorry for
-> not being available by mail for a while.
->
-> Since quite a long time we have issues with sharing mounts between
-> multiple unprivileged containers with different id mappings, sharing a
-> rootfs between multiple containers with different id mappings, and also
-> sharing regular directories and filesystems between users with different
-> uids and gids. The latter use-cases have become even more important with
-> the availability and adoption of systemd-homed (cf. [1]) to implement
-> portable home directories.
-
-Can you walk us through the motivating use case?
-
-As of this year's LPC I had the distinct impression that the primary use
-case for such a feature was due to the RLIMIT_NPROC problem where two
-containers with the same users still wanted different uid mappings to
-the disk because the users were conflicting with each other because of
-the per user rlimits.
-
-Fixing rlimits is straight forward to implement, and easier to manage
-for implementations and administrators.
+--===============4309416557643120560==
+Content-Type: multipart/signed; micalg=pgp-sha256;
+	protocol="application/pgp-signature"; boundary="kgfxsa7rlwd3wkqj"
+Content-Disposition: inline
 
 
+--kgfxsa7rlwd3wkqj
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Reading up on systemd-homed it appears to be a way to have encrypted
-home directories.  Those home directories can either be encrypted at the
-fs or at the block level.  Those home directories appear to have the
-goal of being luggable between systems.  If the systems in question
-don't have common administration of uids and gids after lugging your
-encrypted home directory to another system chowning the files is
-required.
+On 2020-10-29, Eric W. Biederman <ebiederm@xmission.com> wrote:
+> Christian Brauner <christian.brauner@ubuntu.com> writes:
+>=20
+> > Hey everyone,
+> >
+> > I vanished for a little while to focus on this work here so sorry for
+> > not being available by mail for a while.
+> >
+> > Since quite a long time we have issues with sharing mounts between
+> > multiple unprivileged containers with different id mappings, sharing a
+> > rootfs between multiple containers with different id mappings, and also
+> > sharing regular directories and filesystems between users with different
+> > uids and gids. The latter use-cases have become even more important with
+> > the availability and adoption of systemd-homed (cf. [1]) to implement
+> > portable home directories.
+>=20
+> Can you walk us through the motivating use case?
+>=20
+> As of this year's LPC I had the distinct impression that the primary use
+> case for such a feature was due to the RLIMIT_NPROC problem where two
+> containers with the same users still wanted different uid mappings to
+> the disk because the users were conflicting with each other because of
+> the per user rlimits.
+>=20
+> Fixing rlimits is straight forward to implement, and easier to manage
+> for implementations and administrators.
 
-Is that the use case you are looking at removing the need for
-systemd-homed to avoid chowning after lugging encrypted home directories
-from one system to another?  Why would it be desirable to avoid the
-chown?
+This is separate to the question of "isolated user namespaces" and
+managing different mappings between containers. This patchset is solving
+the same problem that shiftfs solved -- sharing a single directory tree
+between containers that have different ID mappings. rlimits (nor any of
+the other proposals we discussed at LPC) will help with this problem.
 
+--=20
+Aleksa Sarai
+Senior Software Engineer (Containers)
+SUSE Linux GmbH
+<https://www.cyphar.com/>
 
-If the goal is to solve fragmented administration of uid assignment I
-suggest that it might be better to solve the administration problem so
-that all of the uids of interest get assigned the same way on all of the
-systems of interest.  To the extent it is possible to solve the uid
-assignment problem that would seem to have fewer long term
-administrative problems.
+--kgfxsa7rlwd3wkqj
+Content-Type: application/pgp-signature; name="signature.asc"
 
-Eric
+-----BEGIN PGP SIGNATURE-----
+
+iHUEABYIAB0WIQSxZm6dtfE8gxLLfYqdlLljIbnQEgUCX5rlEgAKCRCdlLljIbnQ
+EjiPAP9KREQ/2yXGdsYwcSMUpeqUj/wV1rG+UIzAlmjRSy5b2gEA+A5+ZdrAKLCh
+v+4J3Z/kM0lgTkLGg8Ib1D4QT/HGDQY=
+=Bh7P
+-----END PGP SIGNATURE-----
+
+--kgfxsa7rlwd3wkqj--
+
+--===============4309416557643120560==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============4309416557643120560==--
