@@ -7,61 +7,60 @@ X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1369EC56201
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:36:07 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 18E2FC388F7
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:36:11 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 7CC37207DE
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:36:06 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7CC37207DE
+	by mail.kernel.org (Postfix) with ESMTPS id 8059B20790
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:36:10 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8059B20790
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 15B9C87391;
-	Thu, 29 Oct 2020 00:36:06 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 4072A869D7;
+	Thu, 29 Oct 2020 00:36:10 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from fraxinus.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id YcEusOPMn_ue; Thu, 29 Oct 2020 00:36:09 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 88C0D86493;
+	Thu, 29 Oct 2020 00:36:09 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 844F3C088B;
+	Thu, 29 Oct 2020 00:36:09 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 39801C0051
+ for <containers@lists.linux-foundation.org>;
+ Thu, 29 Oct 2020 00:36:08 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by hemlock.osuosl.org (Postfix) with ESMTP id 3470C87394
+ for <containers@lists.linux-foundation.org>;
+ Thu, 29 Oct 2020 00:36:08 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id RZHJ5-I-t2f0; Thu, 29 Oct 2020 00:36:05 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 3C3F0873B9;
-	Thu, 29 Oct 2020 00:36:05 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 377DEC088B;
-	Thu, 29 Oct 2020 00:36:05 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 09E4CC0051
- for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:36:04 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id DC8CA204C4
- for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:36:03 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id T4oLe9jnzFCS
+ with ESMTP id N7HKvGnkr08b
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:35:59 +0000 (UTC)
+ Thu, 29 Oct 2020 00:36:07 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by silver.osuosl.org (Postfix) with ESMTPS id 9E50020781
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 74B6D8744F
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:35:57 +0000 (UTC)
+ Thu, 29 Oct 2020 00:36:07 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kXvuZ-0008Ep-AG; Thu, 29 Oct 2020 00:35:27 +0000
+ id 1kXvuj-0008Ep-Ic; Thu, 29 Oct 2020 00:35:37 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH 09/34] inode: add idmapped mount aware init and permission
- helpers
-Date: Thu, 29 Oct 2020 01:32:27 +0100
-Message-Id: <20201029003252.2128653-10-christian.brauner@ubuntu.com>
+Subject: [PATCH 15/34] stat: add mapped_generic_fillattr()
+Date: Thu, 29 Oct 2020 01:32:33 +0100
+Message-Id: <20201029003252.2128653-16-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.0
 In-Reply-To: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
 References: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
@@ -103,152 +102,88 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-The inode_owner_or_capable() helper determines whether the caller is the
-owner of the inode or is capable with respect to that inode. Add a new
-mapped_inode_owner_or_capable() helper to handle idmapped mounts. If the
-If the inode is accessed through an idmapped mount we first need to map
-it according to the mount's user namespace. Afterwards the checks are
-identical to non-idmapped mounts. If the initial user namespace is
-passed all operations are a nop so non-idmapped mounts will not see a
-change in behavior and will also not see any performance impact. It also
-means that the inode_owner_or_capable() helper can be implemented on top
-of mapped_inode_owner_or_capable() by passing in the initial user
-namespace.
-
-Similarly, we add a new mapped_inode_init_owner() helper which
-initializes a new inode on idmapped mounts by mapping the fsuid and
-fsgid of the caller from the mount's user namespace. If the initial user
-namespace is passed all operations are a nop so non-idmapped mounts will
-not see a change in behavior and will also not see any performance
-impact. It also means that the inode_init_owner() helper can be
-implemented on top of mapped_inode_init_owner() by passing in the
-initial user namespace.
+The generic_fillattr() helper fills in the basic attributes associated with an
+inode. Add a mapped_generic_fillattr() helper to handle idmapped mounts. If the
+inode is accessed through an idmapped mount we need to map it according to the
+mount's user namespace. If the initial user namespace is passed all operations
+are a nop so non-idmapped mounts will not see a change in behavior and will
+also not see any performance impact. This also means that the
+non-idmapped-mount aware generic_fillattr() helper can be implemented on top of
+the idmapped-mount aware mapped_generic_fillattr() helper.
 
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
- fs/inode.c         | 53 ++++++++++++++++++++++++++++++++++++----------
- include/linux/fs.h |  4 ++++
- 2 files changed, 46 insertions(+), 11 deletions(-)
+ fs/stat.c          | 18 +++++++++++++-----
+ include/linux/fs.h |  1 +
+ 2 files changed, 14 insertions(+), 5 deletions(-)
 
-diff --git a/fs/inode.c b/fs/inode.c
-index 9d78c37b00b8..22de3cb3b1f4 100644
---- a/fs/inode.c
-+++ b/fs/inode.c
-@@ -2130,15 +2130,17 @@ void init_special_inode(struct inode *inode, umode_t mode, dev_t rdev)
- EXPORT_SYMBOL(init_special_inode);
+diff --git a/fs/stat.c b/fs/stat.c
+index dacecdda2e79..ee6d92aec7ac 100644
+--- a/fs/stat.c
++++ b/fs/stat.c
+@@ -25,7 +25,8 @@
+ #include "mount.h"
  
  /**
-- * inode_init_owner - Init uid,gid,mode for new inode according to posix standards
-+ * mapped_inode_init_owner - Init uid,gid,mode for new inode according to posix
-+ *                           standards on idmapped mounts
-  * @inode: New inode
-+ * @user_ns: User namespace the inode is accessed from
-  * @dir: Directory inode
-  * @mode: mode of the new inode
-  */
--void inode_init_owner(struct inode *inode, const struct inode *dir,
--			umode_t mode)
-+void mapped_inode_init_owner(struct inode *inode, struct user_namespace *user_ns,
-+			 const struct inode *dir, umode_t mode)
- {
--	inode->i_uid = current_fsuid();
-+	inode->i_uid = fsuid_into_mnt(user_ns);
- 	if (dir && dir->i_mode & S_ISGID) {
- 		inode->i_gid = dir->i_gid;
- 
-@@ -2146,34 +2148,63 @@ void inode_init_owner(struct inode *inode, const struct inode *dir,
- 		if (S_ISDIR(mode))
- 			mode |= S_ISGID;
- 		else if ((mode & (S_ISGID | S_IXGRP)) == (S_ISGID | S_IXGRP) &&
--			 !in_group_p(inode->i_gid) &&
--			 !capable_wrt_inode_uidgid(dir, CAP_FSETID))
-+			 !in_group_p(i_gid_into_mnt(user_ns, inode)) &&
-+			 !capable_wrt_mapped_inode_uidgid(user_ns, dir, CAP_FSETID))
- 			mode &= ~S_ISGID;
- 	} else
--		inode->i_gid = current_fsgid();
-+		inode->i_gid = fsgid_into_mnt(user_ns);
- 	inode->i_mode = mode;
- }
-+EXPORT_SYMBOL(mapped_inode_init_owner);
-+
-+/**
-+ * inode_init_owner - Init uid,gid,mode for new inode according to posix standards
-+ * @inode: New inode
-+ * @dir: Directory inode
-+ * @mode: mode of the new inode
-+ */
-+void inode_init_owner(struct inode *inode, const struct inode *dir,
-+			umode_t mode)
-+{
-+	return mapped_inode_init_owner(inode, &init_user_ns, dir, mode);
-+}
- EXPORT_SYMBOL(inode_init_owner);
- 
- /**
-- * inode_owner_or_capable - check current task permissions to inode
-+ * mapped_inode_owner_or_capable - check current task permissions to inode on idmapped mounts
-+ * @user_ns: User namespace the inode is accessed from
-  * @inode: inode being checked
+- * generic_fillattr - Fill in the basic attributes from the inode struct
++ * mapped_generic_fillattr - Fill in the basic attributes from the inode struct on idmapped mounts
++ * @user_ns: the user namespace from which we access this inode
+  * @inode: Inode to use as the source
+  * @stat: Where to fill in the attributes
   *
-  * Return true if current either has CAP_FOWNER in a namespace with the
-  * inode owner uid mapped, or owns the file.
+@@ -33,14 +34,15 @@
+  * found on the VFS inode structure.  This is the default if no getattr inode
+  * operation is supplied.
   */
--bool inode_owner_or_capable(const struct inode *inode)
-+bool mapped_inode_owner_or_capable(struct user_namespace *user_ns, const struct inode *inode)
+-void generic_fillattr(struct inode *inode, struct kstat *stat)
++void mapped_generic_fillattr(struct user_namespace *mnt_user_ns,
++			 struct inode *inode, struct kstat *stat)
  {
-+	kuid_t i_uid;
- 	struct user_namespace *ns;
- 
--	if (uid_eq(current_fsuid(), inode->i_uid))
-+	i_uid = i_uid_into_mnt(user_ns, inode);
-+	if (uid_eq(current_fsuid(), i_uid))
- 		return true;
- 
- 	ns = current_user_ns();
--	if (kuid_has_mapping(ns, inode->i_uid) && ns_capable(ns, CAP_FOWNER))
-+	if (kuid_has_mapping(ns, i_uid) && ns_capable(ns, CAP_FOWNER))
- 		return true;
- 	return false;
+ 	stat->dev = inode->i_sb->s_dev;
+ 	stat->ino = inode->i_ino;
+ 	stat->mode = inode->i_mode;
+ 	stat->nlink = inode->i_nlink;
+-	stat->uid = inode->i_uid;
+-	stat->gid = inode->i_gid;
++	stat->uid = i_uid_into_mnt(mnt_user_ns, inode);
++	stat->gid = i_gid_into_mnt(mnt_user_ns, inode);
+ 	stat->rdev = inode->i_rdev;
+ 	stat->size = i_size_read(inode);
+ 	stat->atime = inode->i_atime;
+@@ -49,6 +51,12 @@ void generic_fillattr(struct inode *inode, struct kstat *stat)
+ 	stat->blksize = i_blocksize(inode);
+ 	stat->blocks = inode->i_blocks;
  }
-+EXPORT_SYMBOL(mapped_inode_owner_or_capable);
++EXPORT_SYMBOL(mapped_generic_fillattr);
 +
-+/**
-+ * inode_owner_or_capable - check current task permissions to inode
-+ * @inode: inode being checked
-+ *
-+ * Return true if current either has CAP_FOWNER in a namespace with the
-+ * inode owner uid mapped, or owns the file.
-+ */
-+bool inode_owner_or_capable(const struct inode *inode)
++void generic_fillattr(struct inode *inode, struct kstat *stat)
 +{
-+	return mapped_inode_owner_or_capable(&init_user_ns, inode);
++	mapped_generic_fillattr(&init_user_ns, inode, stat);
 +}
- EXPORT_SYMBOL(inode_owner_or_capable);
+ EXPORT_SYMBOL(generic_fillattr);
  
- /*
+ /**
+@@ -87,7 +95,7 @@ int vfs_getattr_nosec(const struct path *path, struct kstat *stat,
+ 		return inode->i_op->getattr(path, stat, request_mask,
+ 					    query_flags);
+ 
+-	generic_fillattr(inode, stat);
++	mapped_generic_fillattr(mnt_user_ns(path->mnt), inode, stat);
+ 	return 0;
+ }
+ EXPORT_SYMBOL(vfs_getattr_nosec);
 diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 750ca4b3d89f..f9e2d292b7b6 100644
+index f41d93b0e6d7..e66852dee65d 100644
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -1777,6 +1777,8 @@ static inline int sb_start_intwrite_trylock(struct super_block *sb)
- 
- 
- extern bool inode_owner_or_capable(const struct inode *inode);
-+extern bool mapped_inode_owner_or_capable(struct user_namespace *ns,
-+				      const struct inode *inode);
- 
- /*
-  * VFS helper functions..
-@@ -1820,6 +1822,8 @@ extern long compat_ptr_ioctl(struct file *file, unsigned int cmd,
-  */
- extern void inode_init_owner(struct inode *inode, const struct inode *dir,
- 			umode_t mode);
-+extern void mapped_inode_init_owner(struct inode *inode, struct user_namespace *user_ns,
-+			 const struct inode *dir, umode_t mode);
- extern bool may_open_dev(const struct path *path);
- 
- /*
+@@ -3162,6 +3162,7 @@ extern int page_symlink(struct inode *inode, const char *symname, int len);
+ extern const struct inode_operations page_symlink_inode_operations;
+ extern void kfree_link(void *);
+ extern void generic_fillattr(struct inode *, struct kstat *);
++extern void mapped_generic_fillattr(struct user_namespace *, struct inode *, struct kstat *);
+ extern int vfs_getattr_nosec(const struct path *, struct kstat *, u32, unsigned int);
+ extern int vfs_getattr(const struct path *, struct kstat *, u32, unsigned int);
+ void __inode_add_bytes(struct inode *inode, loff_t bytes);
 -- 
 2.29.0
 
