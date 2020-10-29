@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 38B6AC4363A
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:41:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 30692C63697
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:42:16 +0000 (UTC)
 Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id BBC572076B
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:41:54 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BBC572076B
+	by mail.kernel.org (Postfix) with ESMTPS id C140B2076B
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:42:15 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C140B2076B
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 72A2D203EF;
-	Thu, 29 Oct 2020 00:41:54 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 750B6203EF;
+	Thu, 29 Oct 2020 00:42:15 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id RFeHLimS2Haj; Thu, 29 Oct 2020 00:41:52 +0000 (UTC)
+	with ESMTP id 3pNuiIGprOVS; Thu, 29 Oct 2020 00:42:14 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id CCF662034B;
-	Thu, 29 Oct 2020 00:41:52 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 114612034B;
+	Thu, 29 Oct 2020 00:42:14 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id BDD02C088B;
-	Thu, 29 Oct 2020 00:41:52 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 76268C0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id F29CBC088B;
+	Thu, 29 Oct 2020 00:42:13 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 5926DC0051
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:41:51 +0000 (UTC)
+ Thu, 29 Oct 2020 00:42:12 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id 6416086448
+ by hemlock.osuosl.org (Postfix) with ESMTP id 5405C8736E
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:41:51 +0000 (UTC)
+ Thu, 29 Oct 2020 00:42:12 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id zDFNUzuurIfl
+ with ESMTP id wRTif6MbQ6gc
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:41:50 +0000 (UTC)
+ Thu, 29 Oct 2020 00:42:11 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id 0D83185A96
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 91C1E86D11
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:41:50 +0000 (UTC)
+ Thu, 29 Oct 2020 00:42:11 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kXvv3-0008Ep-3C; Thu, 29 Oct 2020 00:35:57 +0000
+ id 1kXvuu-0008Ep-GW; Thu, 29 Oct 2020 00:35:48 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH 26/34] fs: add helpers for idmap mounts
-Date: Thu, 29 Oct 2020 01:32:44 +0100
-Message-Id: <20201029003252.2128653-27-christian.brauner@ubuntu.com>
+Subject: [PATCH 21/34] open: handle idmapped mounts
+Date: Thu, 29 Oct 2020 01:32:39 +0100
+Message-Id: <20201029003252.2128653-22-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.0
 In-Reply-To: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
 References: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
@@ -102,295 +102,154 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-When the kernel is configured with CONFIG_IDMAP_MOUNTS additional inode methods
-are provided. A filesystem that is aware of idmapped mounts will receive the
-user namespace the mount has been marked with as an additional argument. This
-can be used for additional permission checking and also to enable filesystems
-to translate between uids and gids if they need to. We have implemented all
-relevant helpers in earlier patches.
-
-In this iteration I've decided to add a set of new inode methods instead of
-adapting the existing ones. This is mainly done to keep the noise-level as low
-as possible. But we're very happy to adapt the existing methods and all
-filesystems using it instead of adding dedicated new helpers. In any case we
-expect to be done to a single set of inode methods ones we've transitioned
-filesystems whether or not we add new methods or not.
+For core file operations such as changing directories or chrooting, determining
+file access, changing mode or ownership the vfs will verify that the caller is
+privileged over the inode. Extend the various helpers to handle idmapped
+mounts. If the inode is accessed through an idmapped mount it is mapped
+according to the mount's user namespace. Afterwards the permissions checks are
+identical to non-idmapped mounts. When changing file ownership we need to map
+the mount from the mount's user namespace. If the initial user namespace is
+passed all mapping operations are a nop so non-idmapped mounts will not see a
+change in behavior and will also not see any performance impact.
 
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
- fs/attr.c          |   2 +-
- fs/namei.c         |  24 +++++----
- fs/posix_acl.c     |   4 +-
- include/linux/fs.h | 129 +++++++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 146 insertions(+), 13 deletions(-)
+ fs/open.c | 31 ++++++++++++++++++++++++-------
+ 1 file changed, 24 insertions(+), 7 deletions(-)
 
-diff --git a/fs/attr.c b/fs/attr.c
-index 4daf6ac6de6d..d13ef3f8eac0 100644
---- a/fs/attr.c
-+++ b/fs/attr.c
-@@ -378,7 +378,7 @@ int notify_mapped_change(struct user_namespace *user_ns, struct dentry *dentry,
- 		return error;
+diff --git a/fs/open.c b/fs/open.c
+index efa462b6b9c7..ca113399010a 100644
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -401,6 +401,7 @@ static const struct cred *access_override_creds(void)
  
- 	if (inode->i_op->setattr)
--		error = inode->i_op->setattr(dentry, attr);
-+		error = iop_setattr(inode, user_ns, dentry, attr);
- 	else
- 		error = simple_setattr(dentry, attr);
- 
-diff --git a/fs/namei.c b/fs/namei.c
-index 76c9637eccb9..d6dbfab126d7 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -407,7 +407,7 @@ static inline int do_inode_permission(struct user_namespace *user_ns, struct ino
+ static long do_faccessat(int dfd, const char __user *filename, int mode, int flags)
  {
- 	if (unlikely(!(inode->i_opflags & IOP_FASTPERM))) {
- 		if (likely(inode->i_op->permission))
--			return inode->i_op->permission(inode, mask);
-+			return iop_permission(inode, user_ns, inode, mask);
- 
- 		/* This gets set once for the inode lifetime */
- 		spin_lock(&inode->i_lock);
-@@ -2872,7 +2872,7 @@ int vfs_mapped_create(struct user_namespace *user_ns, struct inode *dir,
- 	error = security_inode_create(dir, dentry, mode);
- 	if (error)
- 		return error;
--	error = dir->i_op->create(dir, dentry, mode, want_excl);
-+	error = iop_create(dir, user_ns, dir, dentry, mode, want_excl);
- 	if (!error)
- 		fsnotify_create(dir, dentry);
- 	return error;
-@@ -3175,14 +3175,18 @@ static struct dentry *lookup_open(struct nameidata *nd, struct file *file,
- 
- 	/* Negative dentry, just create the file */
- 	if (!dentry->d_inode && (open_flag & O_CREAT)) {
-+		struct user_namespace *user_ns;
-+
- 		file->f_mode |= FMODE_CREATED;
- 		audit_inode_child(dir_inode, dentry, AUDIT_TYPE_CHILD_CREATE);
- 		if (!dir_inode->i_op->create) {
- 			error = -EACCES;
- 			goto out_dput;
- 		}
--		error = dir_inode->i_op->create(dir_inode, dentry, mode,
--						open_flag & O_EXCL);
-+
-+		user_ns = mnt_user_ns(nd->path.mnt);
-+		error = iop_create(dir_inode, user_ns, dir_inode, dentry, mode,
-+				   open_flag & O_EXCL);
- 		if (error)
- 			goto out_dput;
++	struct user_namespace *user_ns;
+ 	struct path path;
+ 	struct inode *inode;
+ 	int res;
+@@ -441,7 +442,8 @@ static long do_faccessat(int dfd, const char __user *filename, int mode, int fla
+ 			goto out_path_release;
  	}
-@@ -3363,7 +3367,7 @@ struct dentry *vfs_mapped_tmpfile(struct user_namespace *user_ns,
- 	child = d_alloc(dentry, &slash_name);
- 	if (unlikely(!child))
- 		goto out_err;
--	error = dir->i_op->tmpfile(dir, child, mode);
-+	error = iop_tmpfile(dir, user_ns, dir, child, mode);
- 	if (error)
- 		goto out_err;
- 	error = -ENOENT;
-@@ -3640,7 +3644,7 @@ int vfs_mapped_mknod(struct user_namespace *user_ns, struct inode *dir,
- 	if (error)
- 		return error;
  
--	error = dir->i_op->mknod(dir, dentry, mode, dev);
-+	error = iop_mknod(dir, user_ns, dir, dentry, mode, dev);
- 	if (!error)
- 		fsnotify_create(dir, dentry);
- 	return error;
-@@ -3750,7 +3754,7 @@ int vfs_mapped_mkdir(struct user_namespace *user_ns, struct inode *dir,
- 	if (max_links && dir->i_nlink >= max_links)
- 		return -EMLINK;
+-	res = inode_permission(inode, mode | MAY_ACCESS);
++	user_ns = mnt_user_ns(path.mnt);
++	res = mapped_inode_permission(user_ns, inode, mode | MAY_ACCESS);
+ 	/* SuS v2 requires we report a read only fs too */
+ 	if (res || !(mode & S_IWOTH) || special_file(inode->i_mode))
+ 		goto out_path_release;
+@@ -489,6 +491,7 @@ SYSCALL_DEFINE2(access, const char __user *, filename, int, mode)
  
--	error = dir->i_op->mkdir(dir, dentry, mode);
-+	error = iop_mkdir(dir, user_ns, dir, dentry, mode);
- 	if (!error)
- 		fsnotify_mkdir(dir, dentry);
- 	return error;
-@@ -4089,7 +4093,7 @@ int vfs_mapped_symlink(struct user_namespace *user_ns, struct inode *dir,
- 	if (error)
- 		return error;
- 
--	error = dir->i_op->symlink(dir, dentry, oldname);
-+	error = iop_symlink(dir, user_ns, dir, dentry, oldname);
- 	if (!error)
- 		fsnotify_create(dir, dentry);
- 	return error;
-@@ -4435,8 +4439,8 @@ int vfs_mapped_rename(struct renamedata *rd)
- 		if (error)
- 			goto out;
- 	}
--	error = old_dir->i_op->rename(old_dir, old_dentry,
--				       new_dir, new_dentry, flags);
-+	error = iop_rename(old_dir, rd->new_user_ns, old_dir, old_dentry,
-+			   new_dir, new_dentry, flags);
+ SYSCALL_DEFINE1(chdir, const char __user *, filename)
+ {
++	struct user_namespace *user_ns;
+ 	struct path path;
+ 	int error;
+ 	unsigned int lookup_flags = LOOKUP_FOLLOW | LOOKUP_DIRECTORY;
+@@ -497,7 +500,8 @@ SYSCALL_DEFINE1(chdir, const char __user *, filename)
  	if (error)
  		goto out;
  
-diff --git a/fs/posix_acl.c b/fs/posix_acl.c
-index 665eb7921e1c..b8e204ac2caa 100644
---- a/fs/posix_acl.c
-+++ b/fs/posix_acl.c
-@@ -578,7 +578,7 @@ posix_mapped_acl_chmod(struct user_namespace *user_ns, struct inode *inode, umod
- 	ret = __posix_acl_chmod(&acl, GFP_KERNEL, mode);
- 	if (ret)
- 		return ret;
--	ret = inode->i_op->set_acl(inode, acl, ACL_TYPE_ACCESS);
-+	ret = iop_set_acl(inode, user_ns, inode, acl, ACL_TYPE_ACCESS);
- 	posix_acl_release(acl);
- 	return ret;
- }
-@@ -925,7 +925,7 @@ set_posix_mapped_acl(struct user_namespace *user_ns, struct inode *inode,
- 		if (ret)
- 			return ret;
- 	}
--	return inode->i_op->set_acl(inode, acl, type);
-+	return iop_set_acl(inode, user_ns, inode, acl, type);
- }
+-	error = inode_permission(path.dentry->d_inode, MAY_EXEC | MAY_CHDIR);
++	user_ns = mnt_user_ns(path.mnt);
++	error = mapped_inode_permission(user_ns, path.dentry->d_inode, MAY_EXEC | MAY_CHDIR);
+ 	if (error)
+ 		goto dput_and_out;
  
- int
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index bfcfa3d7374f..cb01141d726a 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1978,8 +1978,137 @@ struct inode_operations {
- 			   umode_t create_mode);
- 	int (*tmpfile) (struct inode *, struct dentry *, umode_t);
- 	int (*set_acl)(struct inode *, struct posix_acl *, int);
-+#ifdef CONFIG_IDMAP_MOUNTS
-+	int (*permission_mapped) (struct user_namespace *, struct inode *, int);
-+	int (*create_mapped) (struct user_namespace *, struct inode *,
-+			      struct dentry *, umode_t, bool);
-+	int (*mknod_mapped) (struct user_namespace *, struct inode *,
-+			     struct dentry *, umode_t, dev_t);
-+	int (*mkdir_mapped) (struct user_namespace *, struct inode *,
-+			     struct dentry *, umode_t);
-+	int (*tmpfile_mapped) (struct user_namespace *, struct inode *,
-+			       struct dentry *, umode_t);
-+	int (*symlink_mapped) (struct user_namespace *, struct inode *,
-+			       struct dentry *, const char *);
-+	int (*rename_mapped) (struct user_namespace *, struct inode *,
-+			      struct dentry *, struct inode *, struct dentry *,
-+			      unsigned int);
-+	int (*setattr_mapped) (struct user_namespace *, struct dentry *,
-+			       struct iattr *);
-+	int (*set_acl_mapped)(struct user_namespace *, struct inode *,
-+			      struct posix_acl *, int);
-+#endif
- } ____cacheline_aligned;
+@@ -515,6 +519,7 @@ SYSCALL_DEFINE1(chdir, const char __user *, filename)
  
-+static inline int iop_permission(struct inode *caller,
-+				 struct user_namespace *user_ns,
-+				 struct inode *inode, int mask)
-+{
-+#ifdef CONFIG_IDMAP_MOUNTS
-+	if (caller->i_op->permission_mapped)
-+		return caller->i_op->permission_mapped(user_ns, inode, mask);
-+#endif
-+	return caller->i_op->permission(inode, mask);
-+}
-+
-+static inline int iop_create(struct inode *caller,
-+			     struct user_namespace *user_ns,
-+			     struct inode *inode, struct dentry *dentry,
-+			     umode_t mode, bool excl)
-+{
-+#ifdef CONFIG_IDMAP_MOUNTS
-+	if (caller->i_op->create_mapped)
-+		return caller->i_op->create_mapped(user_ns, inode, dentry,
-+						    mode, excl);
-+#endif
-+	return caller->i_op->create(inode, dentry, mode, excl);
-+}
-+
-+static inline int iop_mknod(struct inode *caller,
-+			    struct user_namespace *user_ns, struct inode *inode,
-+			    struct dentry *dentry, umode_t mode, dev_t dev)
-+{
-+#ifdef CONFIG_IDMAP_MOUNTS
-+	if (caller->i_op->mknod_mapped)
-+		return caller->i_op->mknod_mapped(user_ns, inode, dentry, mode, dev);
-+#endif
-+	return caller->i_op->mknod(inode, dentry, mode, dev);
-+}
-+
-+static inline int iop_mkdir(struct inode *caller,
-+			    struct user_namespace *user_ns, struct inode *inode,
-+			    struct dentry *dentry, umode_t mode)
-+{
-+#ifdef CONFIG_IDMAP_MOUNTS
-+	if (caller->i_op->mkdir_mapped)
-+		return caller->i_op->mkdir_mapped(user_ns, inode, dentry, mode);
-+#endif
-+	return caller->i_op->mkdir(inode, dentry, mode);
-+}
-+
-+static inline int iop_tmpfile(struct inode *caller,
-+			      struct user_namespace *user_ns,
-+			      struct inode *inode, struct dentry *dentry,
-+			      umode_t mode)
-+{
-+#ifdef CONFIG_IDMAP_MOUNTS
-+	if (caller->i_op->tmpfile_mapped)
-+		return caller->i_op->tmpfile_mapped(user_ns, inode, dentry, mode);
-+#endif
-+	return caller->i_op->tmpfile(inode, dentry, mode);
-+}
-+
-+static inline int iop_symlink(struct inode *caller,
-+			      struct user_namespace *user_ns,
-+			      struct inode *inode, struct dentry *dentry,
-+			      const char *name)
-+{
-+#ifdef CONFIG_IDMAP_MOUNTS
-+	if (caller->i_op->symlink_mapped)
-+		return caller->i_op->symlink_mapped(user_ns, inode, dentry, name);
-+#endif
-+	return caller->i_op->symlink(inode, dentry, name);
-+}
-+
-+static inline int iop_rename(struct inode *caller,
-+			     struct user_namespace *user_ns,
-+			     struct inode *old_inode, struct dentry *old_dentry,
-+			     struct inode *new_inode, struct dentry *new_dentry,
-+			     unsigned int flags)
-+{
-+#ifdef CONFIG_IDMAP_MOUNTS
-+	if (caller->i_op->rename_mapped)
-+		return caller->i_op->rename_mapped(user_ns, old_inode,
-+						   old_dentry, new_inode,
-+						   new_dentry, flags);
-+#endif
-+	return caller->i_op->rename(old_inode, old_dentry, new_inode,
-+				    new_dentry, flags);
-+}
-+
-+static inline int iop_setattr(struct inode *caller,
-+			      struct user_namespace *user_ns,
-+			      struct dentry *dentry, struct iattr *attr)
-+{
-+#ifdef CONFIG_IDMAP_MOUNTS
-+	if (caller->i_op->setattr_mapped)
-+		return caller->i_op->setattr_mapped(user_ns, dentry, attr);
-+#endif
-+	return caller->i_op->setattr(dentry, attr);
-+}
-+
-+static inline int iop_set_acl(struct inode *caller,
-+			      struct user_namespace *user_ns,
-+			      struct inode *inode, struct posix_acl *acl,
-+			      int type)
-+{
-+#ifdef CONFIG_IDMAP_MOUNTS
-+	if (caller->i_op->set_acl_mapped)
-+		return caller->i_op->set_acl_mapped(user_ns, inode, acl, type);
-+#endif
-+	return caller->i_op->set_acl(inode, acl, type);
-+}
-+
- static inline ssize_t call_read_iter(struct file *file, struct kiocb *kio,
- 				     struct iov_iter *iter)
+ SYSCALL_DEFINE1(fchdir, unsigned int, fd)
  {
++	struct user_namespace *user_ns;
+ 	struct fd f = fdget_raw(fd);
+ 	int error;
+ 
+@@ -526,7 +531,8 @@ SYSCALL_DEFINE1(fchdir, unsigned int, fd)
+ 	if (!d_can_lookup(f.file->f_path.dentry))
+ 		goto out_putf;
+ 
+-	error = inode_permission(file_inode(f.file), MAY_EXEC | MAY_CHDIR);
++	user_ns = mnt_user_ns(f.file->f_path.mnt);
++	error = mapped_inode_permission(user_ns, file_inode(f.file), MAY_EXEC | MAY_CHDIR);
+ 	if (!error)
+ 		set_fs_pwd(current->fs, &f.file->f_path);
+ out_putf:
+@@ -537,6 +543,7 @@ SYSCALL_DEFINE1(fchdir, unsigned int, fd)
+ 
+ SYSCALL_DEFINE1(chroot, const char __user *, filename)
+ {
++	struct user_namespace *user_ns;
+ 	struct path path;
+ 	int error;
+ 	unsigned int lookup_flags = LOOKUP_FOLLOW | LOOKUP_DIRECTORY;
+@@ -545,7 +552,8 @@ SYSCALL_DEFINE1(chroot, const char __user *, filename)
+ 	if (error)
+ 		goto out;
+ 
+-	error = inode_permission(path.dentry->d_inode, MAY_EXEC | MAY_CHDIR);
++	user_ns = mnt_user_ns(path.mnt);
++	error = mapped_inode_permission(user_ns, path.dentry->d_inode, MAY_EXEC | MAY_CHDIR);
+ 	if (error)
+ 		goto dput_and_out;
+ 
+@@ -570,6 +578,7 @@ SYSCALL_DEFINE1(chroot, const char __user *, filename)
+ 
+ int chmod_common(const struct path *path, umode_t mode)
+ {
++	struct user_namespace *user_ns;
+ 	struct inode *inode = path->dentry->d_inode;
+ 	struct inode *delegated_inode = NULL;
+ 	struct iattr newattrs;
+@@ -585,7 +594,8 @@ int chmod_common(const struct path *path, umode_t mode)
+ 		goto out_unlock;
+ 	newattrs.ia_mode = (mode & S_IALLUGO) | (inode->i_mode & ~S_IALLUGO);
+ 	newattrs.ia_valid = ATTR_MODE | ATTR_CTIME;
+-	error = notify_change(path->dentry, &newattrs, &delegated_inode);
++	user_ns = mnt_user_ns(path->mnt);
++	error = notify_mapped_change(user_ns, path->dentry, &newattrs, &delegated_inode);
+ out_unlock:
+ 	inode_unlock(inode);
+ 	if (delegated_inode) {
+@@ -646,6 +656,7 @@ SYSCALL_DEFINE2(chmod, const char __user *, filename, umode_t, mode)
+ 
+ int chown_common(const struct path *path, uid_t user, gid_t group)
+ {
++	struct user_namespace *user_ns;
+ 	struct inode *inode = path->dentry->d_inode;
+ 	struct inode *delegated_inode = NULL;
+ 	int error;
+@@ -656,6 +667,12 @@ int chown_common(const struct path *path, uid_t user, gid_t group)
+ 	uid = make_kuid(current_user_ns(), user);
+ 	gid = make_kgid(current_user_ns(), group);
+ 
++	user_ns = mnt_user_ns(path->mnt);
++	if (mnt_idmapped(path->mnt)) {
++		uid = kuid_from_mnt(user_ns, uid);
++		gid = kgid_from_mnt(user_ns, gid);
++	}
++
+ retry_deleg:
+ 	newattrs.ia_valid =  ATTR_CTIME;
+ 	if (user != (uid_t) -1) {
+@@ -676,7 +693,7 @@ int chown_common(const struct path *path, uid_t user, gid_t group)
+ 	inode_lock(inode);
+ 	error = security_path_chown(path, uid, gid);
+ 	if (!error)
+-		error = notify_change(path->dentry, &newattrs, &delegated_inode);
++		error = notify_mapped_change(user_ns, path->dentry, &newattrs, &delegated_inode);
+ 	inode_unlock(inode);
+ 	if (delegated_inode) {
+ 		error = break_deleg_wait(&delegated_inode);
+@@ -1133,7 +1150,7 @@ struct file *filp_open(const char *filename, int flags, umode_t mode)
+ {
+ 	struct filename *name = getname_kernel(filename);
+ 	struct file *file = ERR_CAST(name);
+-	
++
+ 	if (!IS_ERR(name)) {
+ 		file = file_open_name(name, flags, mode);
+ 		putname(name);
 -- 
 2.29.0
 
