@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 30692C63697
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:42:16 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F1544C55179
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:42:28 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id C140B2076B
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:42:15 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C140B2076B
+	by mail.kernel.org (Postfix) with ESMTPS id 6DF94206D9
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:42:28 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6DF94206D9
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 750B6203EF;
-	Thu, 29 Oct 2020 00:42:15 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 3pNuiIGprOVS; Thu, 29 Oct 2020 00:42:14 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 114612034B;
-	Thu, 29 Oct 2020 00:42:14 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id F29CBC088B;
-	Thu, 29 Oct 2020 00:42:13 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 5926DC0051
- for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:42:12 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 5405C8736E
- for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:42:12 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id ECA268736E;
+	Thu, 29 Oct 2020 00:42:27 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
- by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id wRTif6MbQ6gc
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id LpoYxAWVmlef; Thu, 29 Oct 2020 00:42:27 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by hemlock.osuosl.org (Postfix) with ESMTP id 2747086D11;
+	Thu, 29 Oct 2020 00:42:27 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 15BC7C088B;
+	Thu, 29 Oct 2020 00:42:27 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id A0230C0051
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:42:11 +0000 (UTC)
+ Thu, 29 Oct 2020 00:42:25 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by whitealder.osuosl.org (Postfix) with ESMTP id 99156868C9
+ for <containers@lists.linux-foundation.org>;
+ Thu, 29 Oct 2020 00:42:25 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from whitealder.osuosl.org ([127.0.0.1])
+ by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id pjfDmJRjcf0K
+ for <containers@lists.linux-foundation.org>;
+ Thu, 29 Oct 2020 00:42:24 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by hemlock.osuosl.org (Postfix) with ESMTPS id 91C1E86D11
+ by whitealder.osuosl.org (Postfix) with ESMTPS id C444C8687D
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:42:11 +0000 (UTC)
+ Thu, 29 Oct 2020 00:42:24 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kXvuu-0008Ep-GW; Thu, 29 Oct 2020 00:35:48 +0000
+ id 1kXvvH-0008Ep-6C; Thu, 29 Oct 2020 00:36:11 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH 21/34] open: handle idmapped mounts
-Date: Thu, 29 Oct 2020 01:32:39 +0100
-Message-Id: <20201029003252.2128653-22-christian.brauner@ubuntu.com>
+Subject: [PATCH 34/34] fat: handle idmapped mounts
+Date: Thu, 29 Oct 2020 01:32:52 +0100
+Message-Id: <20201029003252.2128653-35-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.0
 In-Reply-To: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
 References: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
@@ -102,154 +102,192 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-For core file operations such as changing directories or chrooting, determining
-file access, changing mode or ownership the vfs will verify that the caller is
-privileged over the inode. Extend the various helpers to handle idmapped
-mounts. If the inode is accessed through an idmapped mount it is mapped
-according to the mount's user namespace. Afterwards the permissions checks are
-identical to non-idmapped mounts. When changing file ownership we need to map
-the mount from the mount's user namespace. If the initial user namespace is
-passed all mapping operations are a nop so non-idmapped mounts will not see a
-change in behavior and will also not see any performance impact.
+Let fat handle idmapped mounts. This allows to have the same fat mount appear
+in multiple locations with different id mappings. This allows to expose a vfat
+formatted USB stick to multiple user with different ids on the host or in user
+namespaces:
+
+mount -o uid=1000,gid=1000 /dev/sdb /mnt
+
+u1001@f2-vm:/lower1$ ls -ln /mnt/
+total 4
+-rwxr-xr-x 1 1000 1000 4 Oct 28 03:44 aaa
+-rwxr-xr-x 1 1000 1000 0 Oct 28 01:09 bbb
+-rwxr-xr-x 1 1000 1000 0 Oct 28 01:10 ccc
+-rwxr-xr-x 1 1000 1000 0 Oct 28 03:46 ddd
+-rwxr-xr-x 1 1000 1000 0 Oct 28 04:01 eee
+
+mount2 --idmap both:1000:1001:1
+
+u1001@f2-vm:/lower1$ ls -ln /lower1/
+total 4
+-rwxr-xr-x 1 1001 1001 4 Oct 28 03:44 aaa
+-rwxr-xr-x 1 1001 1001 0 Oct 28 01:09 bbb
+-rwxr-xr-x 1 1001 1001 0 Oct 28 01:10 ccc
+-rwxr-xr-x 1 1001 1001 0 Oct 28 03:46 ddd
+-rwxr-xr-x 1 1001 1001 0 Oct 28 04:01 eee
+
+u1001@f2-vm:/lower1$ touch /lower1/fff
+
+u1001@f2-vm:/lower1$ ls -ln /lower1/fff
+-rwxr-xr-x 1 1001 1001 0 Oct 28 04:03 /lower1/fff
+
+u1001@f2-vm:/lower1$ ls -ln /mnt/fff
+-rwxr-xr-x 1 1000 1000 0 Oct 28 04:03 /mnt/fff
 
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
- fs/open.c | 31 ++++++++++++++++++++++++-------
- 1 file changed, 24 insertions(+), 7 deletions(-)
+ fs/fat/fat.h         |  2 ++
+ fs/fat/file.c        | 27 +++++++++++++++++++--------
+ fs/fat/namei_msdos.c |  7 +++++++
+ fs/fat/namei_vfat.c  |  7 +++++++
+ 4 files changed, 35 insertions(+), 8 deletions(-)
 
-diff --git a/fs/open.c b/fs/open.c
-index efa462b6b9c7..ca113399010a 100644
---- a/fs/open.c
-+++ b/fs/open.c
-@@ -401,6 +401,7 @@ static const struct cred *access_override_creds(void)
- 
- static long do_faccessat(int dfd, const char __user *filename, int mode, int flags)
+diff --git a/fs/fat/fat.h b/fs/fat/fat.h
+index 922a0c6ba46c..56d661e93d2a 100644
+--- a/fs/fat/fat.h
++++ b/fs/fat/fat.h
+@@ -398,6 +398,8 @@ extern long fat_generic_ioctl(struct file *filp, unsigned int cmd,
+ extern const struct file_operations fat_file_operations;
+ extern const struct inode_operations fat_file_inode_operations;
+ extern int fat_setattr(struct dentry *dentry, struct iattr *attr);
++extern int fat_setattr_mapped(struct user_namespace *user_ns,
++			      struct dentry *dentry, struct iattr *attr);
+ extern void fat_truncate_blocks(struct inode *inode, loff_t offset);
+ extern int fat_getattr(const struct path *path, struct kstat *stat,
+ 		       u32 request_mask, unsigned int flags);
+diff --git a/fs/fat/file.c b/fs/fat/file.c
+index f9ee27cf4d7c..f97d46711b37 100644
+--- a/fs/fat/file.c
++++ b/fs/fat/file.c
+@@ -398,7 +398,7 @@ int fat_getattr(const struct path *path, struct kstat *stat,
+ 		u32 request_mask, unsigned int flags)
  {
-+	struct user_namespace *user_ns;
- 	struct path path;
- 	struct inode *inode;
- 	int res;
-@@ -441,7 +442,8 @@ static long do_faccessat(int dfd, const char __user *filename, int mode, int fla
- 			goto out_path_release;
+ 	struct inode *inode = d_inode(path->dentry);
+-	generic_fillattr(inode, stat);
++	mapped_generic_fillattr(mnt_user_ns(path->mnt), inode, stat);
+ 	stat->blksize = MSDOS_SB(inode->i_sb)->cluster_size;
+ 
+ 	if (MSDOS_SB(inode->i_sb)->options.nfs == FAT_NFS_NOSTALE_RO) {
+@@ -447,12 +447,13 @@ static int fat_sanitize_mode(const struct msdos_sb_info *sbi,
+ 	return 0;
+ }
+ 
+-static int fat_allow_set_time(struct msdos_sb_info *sbi, struct inode *inode)
++static int fat_allow_set_time(struct user_namespace *user_ns,
++			      struct msdos_sb_info *sbi, struct inode *inode)
+ {
+ 	umode_t allow_utime = sbi->options.allow_utime;
+ 
+-	if (!uid_eq(current_fsuid(), inode->i_uid)) {
+-		if (in_group_p(inode->i_gid))
++	if (!uid_eq(current_fsuid(), i_uid_into_mnt(user_ns, inode))) {
++		if (in_group_p(i_gid_into_mnt(user_ns, inode)))
+ 			allow_utime >>= 3;
+ 		if (allow_utime & MAY_WRITE)
+ 			return 1;
+@@ -466,7 +467,8 @@ static int fat_allow_set_time(struct msdos_sb_info *sbi, struct inode *inode)
+ /* valid file mode bits */
+ #define FAT_VALID_MODE	(S_IFREG | S_IFDIR | S_IRWXUGO)
+ 
+-int fat_setattr(struct dentry *dentry, struct iattr *attr)
++int fat_setattr_mapped(struct user_namespace *user_ns, struct dentry *dentry,
++		       struct iattr *attr)
+ {
+ 	struct msdos_sb_info *sbi = MSDOS_SB(dentry->d_sb);
+ 	struct inode *inode = d_inode(dentry);
+@@ -476,11 +478,11 @@ int fat_setattr(struct dentry *dentry, struct iattr *attr)
+ 	/* Check for setting the inode time. */
+ 	ia_valid = attr->ia_valid;
+ 	if (ia_valid & TIMES_SET_FLAGS) {
+-		if (fat_allow_set_time(sbi, inode))
++		if (fat_allow_set_time(user_ns, sbi, inode))
+ 			attr->ia_valid &= ~TIMES_SET_FLAGS;
  	}
  
--	res = inode_permission(inode, mode | MAY_ACCESS);
-+	user_ns = mnt_user_ns(path.mnt);
-+	res = mapped_inode_permission(user_ns, inode, mode | MAY_ACCESS);
- 	/* SuS v2 requires we report a read only fs too */
- 	if (res || !(mode & S_IWOTH) || special_file(inode->i_mode))
- 		goto out_path_release;
-@@ -489,6 +491,7 @@ SYSCALL_DEFINE2(access, const char __user *, filename, int, mode)
+-	error = setattr_prepare(dentry, attr);
++	error = setattr_mapped_prepare(user_ns, dentry, attr);
+ 	attr->ia_valid = ia_valid;
+ 	if (error) {
+ 		if (sbi->options.quiet)
+@@ -550,15 +552,24 @@ int fat_setattr(struct dentry *dentry, struct iattr *attr)
+ 		fat_truncate_time(inode, &attr->ia_mtime, S_MTIME);
+ 	attr->ia_valid &= ~(ATTR_ATIME|ATTR_CTIME|ATTR_MTIME);
  
- SYSCALL_DEFINE1(chdir, const char __user *, filename)
- {
-+	struct user_namespace *user_ns;
- 	struct path path;
- 	int error;
- 	unsigned int lookup_flags = LOOKUP_FOLLOW | LOOKUP_DIRECTORY;
-@@ -497,7 +500,8 @@ SYSCALL_DEFINE1(chdir, const char __user *, filename)
- 	if (error)
- 		goto out;
- 
--	error = inode_permission(path.dentry->d_inode, MAY_EXEC | MAY_CHDIR);
-+	user_ns = mnt_user_ns(path.mnt);
-+	error = mapped_inode_permission(user_ns, path.dentry->d_inode, MAY_EXEC | MAY_CHDIR);
- 	if (error)
- 		goto dput_and_out;
- 
-@@ -515,6 +519,7 @@ SYSCALL_DEFINE1(chdir, const char __user *, filename)
- 
- SYSCALL_DEFINE1(fchdir, unsigned int, fd)
- {
-+	struct user_namespace *user_ns;
- 	struct fd f = fdget_raw(fd);
- 	int error;
- 
-@@ -526,7 +531,8 @@ SYSCALL_DEFINE1(fchdir, unsigned int, fd)
- 	if (!d_can_lookup(f.file->f_path.dentry))
- 		goto out_putf;
- 
--	error = inode_permission(file_inode(f.file), MAY_EXEC | MAY_CHDIR);
-+	user_ns = mnt_user_ns(f.file->f_path.mnt);
-+	error = mapped_inode_permission(user_ns, file_inode(f.file), MAY_EXEC | MAY_CHDIR);
- 	if (!error)
- 		set_fs_pwd(current->fs, &f.file->f_path);
- out_putf:
-@@ -537,6 +543,7 @@ SYSCALL_DEFINE1(fchdir, unsigned int, fd)
- 
- SYSCALL_DEFINE1(chroot, const char __user *, filename)
- {
-+	struct user_namespace *user_ns;
- 	struct path path;
- 	int error;
- 	unsigned int lookup_flags = LOOKUP_FOLLOW | LOOKUP_DIRECTORY;
-@@ -545,7 +552,8 @@ SYSCALL_DEFINE1(chroot, const char __user *, filename)
- 	if (error)
- 		goto out;
- 
--	error = inode_permission(path.dentry->d_inode, MAY_EXEC | MAY_CHDIR);
-+	user_ns = mnt_user_ns(path.mnt);
-+	error = mapped_inode_permission(user_ns, path.dentry->d_inode, MAY_EXEC | MAY_CHDIR);
- 	if (error)
- 		goto dput_and_out;
- 
-@@ -570,6 +578,7 @@ SYSCALL_DEFINE1(chroot, const char __user *, filename)
- 
- int chmod_common(const struct path *path, umode_t mode)
- {
-+	struct user_namespace *user_ns;
- 	struct inode *inode = path->dentry->d_inode;
- 	struct inode *delegated_inode = NULL;
- 	struct iattr newattrs;
-@@ -585,7 +594,8 @@ int chmod_common(const struct path *path, umode_t mode)
- 		goto out_unlock;
- 	newattrs.ia_mode = (mode & S_IALLUGO) | (inode->i_mode & ~S_IALLUGO);
- 	newattrs.ia_valid = ATTR_MODE | ATTR_CTIME;
--	error = notify_change(path->dentry, &newattrs, &delegated_inode);
-+	user_ns = mnt_user_ns(path->mnt);
-+	error = notify_mapped_change(user_ns, path->dentry, &newattrs, &delegated_inode);
- out_unlock:
- 	inode_unlock(inode);
- 	if (delegated_inode) {
-@@ -646,6 +656,7 @@ SYSCALL_DEFINE2(chmod, const char __user *, filename, umode_t, mode)
- 
- int chown_common(const struct path *path, uid_t user, gid_t group)
- {
-+	struct user_namespace *user_ns;
- 	struct inode *inode = path->dentry->d_inode;
- 	struct inode *delegated_inode = NULL;
- 	int error;
-@@ -656,6 +667,12 @@ int chown_common(const struct path *path, uid_t user, gid_t group)
- 	uid = make_kuid(current_user_ns(), user);
- 	gid = make_kgid(current_user_ns(), group);
- 
-+	user_ns = mnt_user_ns(path->mnt);
-+	if (mnt_idmapped(path->mnt)) {
-+		uid = kuid_from_mnt(user_ns, uid);
-+		gid = kgid_from_mnt(user_ns, gid);
-+	}
+-	setattr_copy(inode, attr);
++	setattr_mapped_copy(user_ns, inode, attr);
+ 	mark_inode_dirty(inode);
+ out:
+ 	return error;
+ }
++EXPORT_SYMBOL_GPL(fat_setattr_mapped);
 +
- retry_deleg:
- 	newattrs.ia_valid =  ATTR_CTIME;
- 	if (user != (uid_t) -1) {
-@@ -676,7 +693,7 @@ int chown_common(const struct path *path, uid_t user, gid_t group)
- 	inode_lock(inode);
- 	error = security_path_chown(path, uid, gid);
- 	if (!error)
--		error = notify_change(path->dentry, &newattrs, &delegated_inode);
-+		error = notify_mapped_change(user_ns, path->dentry, &newattrs, &delegated_inode);
- 	inode_unlock(inode);
- 	if (delegated_inode) {
- 		error = break_deleg_wait(&delegated_inode);
-@@ -1133,7 +1150,7 @@ struct file *filp_open(const char *filename, int flags, umode_t mode)
- {
- 	struct filename *name = getname_kernel(filename);
- 	struct file *file = ERR_CAST(name);
--	
-+
- 	if (!IS_ERR(name)) {
- 		file = file_open_name(name, flags, mode);
- 		putname(name);
++int fat_setattr(struct dentry *dentry, struct iattr *attr)
++{
++	return fat_setattr_mapped(&init_user_ns, dentry, attr);
++}
+ EXPORT_SYMBOL_GPL(fat_setattr);
+ 
+ const struct inode_operations fat_file_inode_operations = {
+ 	.setattr	= fat_setattr,
+ 	.getattr	= fat_getattr,
+ 	.update_time	= fat_update_time,
++#ifdef CONFIG_IDMAP_MOUNTS
++	.setattr_mapped	= fat_setattr_mapped,
++#endif
+ };
+diff --git a/fs/fat/namei_msdos.c b/fs/fat/namei_msdos.c
+index 9d062886fbc1..4b89d27d128d 100644
+--- a/fs/fat/namei_msdos.c
++++ b/fs/fat/namei_msdos.c
+@@ -639,6 +639,9 @@ static const struct inode_operations msdos_dir_inode_operations = {
+ 	.setattr	= fat_setattr,
+ 	.getattr	= fat_getattr,
+ 	.update_time	= fat_update_time,
++#ifdef CONFIG_IDMAP_MOUNTS
++	.setattr_mapped	= fat_setattr_mapped,
++#endif
+ };
+ 
+ static void setup(struct super_block *sb)
+@@ -665,7 +668,11 @@ static struct file_system_type msdos_fs_type = {
+ 	.name		= "msdos",
+ 	.mount		= msdos_mount,
+ 	.kill_sb	= kill_block_super,
++#ifdef CONFIG_IDMAP_MOUNTS
++	.fs_flags	= FS_REQUIRES_DEV | FS_ALLOW_IDMAP,
++#else
+ 	.fs_flags	= FS_REQUIRES_DEV,
++#endif
+ };
+ MODULE_ALIAS_FS("msdos");
+ 
+diff --git a/fs/fat/namei_vfat.c b/fs/fat/namei_vfat.c
+index 0cdd0fb9f742..11fea59e1b77 100644
+--- a/fs/fat/namei_vfat.c
++++ b/fs/fat/namei_vfat.c
+@@ -1034,6 +1034,9 @@ static const struct inode_operations vfat_dir_inode_operations = {
+ 	.setattr	= fat_setattr,
+ 	.getattr	= fat_getattr,
+ 	.update_time	= fat_update_time,
++#ifdef CONFIG_IDMAP_MOUNTS
++	.setattr_mapped	= fat_setattr_mapped,
++#endif
+ };
+ 
+ static void setup(struct super_block *sb)
+@@ -1062,7 +1065,11 @@ static struct file_system_type vfat_fs_type = {
+ 	.name		= "vfat",
+ 	.mount		= vfat_mount,
+ 	.kill_sb	= kill_block_super,
++#ifdef CONFIG_IDMAP_MOUNTS
++	.fs_flags	= FS_REQUIRES_DEV | FS_ALLOW_IDMAP,
++#else
+ 	.fs_flags	= FS_REQUIRES_DEV,
++#endif
+ };
+ MODULE_ALIAS_FS("vfat");
+ 
 -- 
 2.29.0
 
