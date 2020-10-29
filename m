@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C36A6C388F7
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:36:21 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 87B1DC4363A
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:36:22 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 3440620791
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:36:20 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3440620791
+	by mail.kernel.org (Postfix) with ESMTPS id 0BD0120790
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:36:21 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0BD0120790
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id B9E61869BD;
-	Thu, 29 Oct 2020 00:36:20 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id gISyzDcLlp0X; Thu, 29 Oct 2020 00:36:15 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 63803868D4;
-	Thu, 29 Oct 2020 00:36:15 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 5861AC1AD7;
-	Thu, 29 Oct 2020 00:36:15 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 82F1CC0051
- for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:36:14 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 60FEE21538
- for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:36:14 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 9FF2C21507;
+	Thu, 29 Oct 2020 00:36:21 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
- by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id YhCKU5gWWOJ9
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id ucxZFz4ecpIZ; Thu, 29 Oct 2020 00:36:10 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by silver.osuosl.org (Postfix) with ESMTP id 6F26920770;
+	Thu, 29 Oct 2020 00:36:07 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 63E8CC1AD9;
+	Thu, 29 Oct 2020 00:36:07 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id CFB5CC0051
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:36:00 +0000 (UTC)
+ Thu, 29 Oct 2020 00:36:05 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by hemlock.osuosl.org (Postfix) with ESMTP id B9DAF8739A
+ for <containers@lists.linux-foundation.org>;
+ Thu, 29 Oct 2020 00:36:05 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from hemlock.osuosl.org ([127.0.0.1])
+ by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id S740vjFLbHQp
+ for <containers@lists.linux-foundation.org>;
+ Thu, 29 Oct 2020 00:36:04 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by silver.osuosl.org (Postfix) with ESMTPS id 4628D2094E
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 3D6F18739C
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:35:58 +0000 (UTC)
+ Thu, 29 Oct 2020 00:36:04 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kXvuQ-0008Ep-O0; Thu, 29 Oct 2020 00:35:18 +0000
+ id 1kXvug-0008Ep-5s; Thu, 29 Oct 2020 00:35:34 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH 04/34] tests: add mount_setattr() selftests
-Date: Thu, 29 Oct 2020 01:32:22 +0100
-Message-Id: <20201029003252.2128653-5-christian.brauner@ubuntu.com>
+Subject: [PATCH 13/34] selftests: add idmapped mounts xattr selftest
+Date: Thu, 29 Oct 2020 01:32:31 +0100
+Message-Id: <20201029003252.2128653-14-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.0
 In-Reply-To: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
 References: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
@@ -102,216 +102,154 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Add a range of selftests for the new mount_setattr() syscall to verify
-that it works as expected. This tests that:
-- no invalid flags can be specified
-- changing properties of a single mount works and leaves other mounts in
-  the mount tree unchanged
-- changing a mount tre to read-only when one of the mounts has writers
-  fails and leaves the whole mount tree unchanged
-- changing mount properties from multiple threads works
-- changing atime settings works
-- changing mount propagation works
-- changing the mount options of a mount tree where the individual mounts
-  in the tree have different mount options only changes the flags that
-  were requested to change
-- changing mount options from another mount namespace fails
-- changing mount options from another user namespace fails
+From: Tycho Andersen <tycho@tycho.pizza>
 
-[==========] Running 9 tests from 2 test cases.
-[ RUN      ] mount_setattr.invalid_attributes
-[       OK ] mount_setattr.invalid_attributes
-[ RUN      ] mount_setattr.basic
-[       OK ] mount_setattr.basic
-[ RUN      ] mount_setattr.basic_recursive
-[       OK ] mount_setattr.basic_recursive
-[ RUN      ] mount_setattr.mount_has_writers
-[       OK ] mount_setattr.mount_has_writers
-[ RUN      ] mount_setattr.mixed_mount_options
-[       OK ] mount_setattr.mixed_mount_options
-[ RUN      ] mount_setattr.time_changes
-[       OK ] mount_setattr.time_changes
-[ RUN      ] mount_setattr.multi_threaded
-[       OK ] mount_setattr.multi_threaded
-[ RUN      ] mount_setattr.wrong_user_namespace
-[       OK ] mount_setattr.wrong_user_namespace
-[ RUN      ] mount_setattr.wrong_mount_namespace
-[       OK ] mount_setattr.wrong_mount_namespace
-[==========] 9 / 9 tests passed.
-[  PASSED  ]
+Add some tests for setting extended attributes on idmapped mounts.
 
-Cc: Al Viro <viro@zeniv.linux.org.uk>
-Cc: David Howells <dhowells@redhat.com>
-Cc: linux-fsdevel@vger.kernel.org
+Signed-off-by: Tycho Andersen <tycho@tycho.pizza>
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
- tools/testing/selftests/Makefile              |   1 +
- .../selftests/mount_setattr/.gitignore        |   1 +
- .../testing/selftests/mount_setattr/Makefile  |   7 +
- tools/testing/selftests/mount_setattr/config  |   1 +
- .../mount_setattr/mount_setattr_test.c        | 888 ++++++++++++++++++
- 5 files changed, 898 insertions(+)
- create mode 100644 tools/testing/selftests/mount_setattr/.gitignore
- create mode 100644 tools/testing/selftests/mount_setattr/Makefile
- create mode 100644 tools/testing/selftests/mount_setattr/config
- create mode 100644 tools/testing/selftests/mount_setattr/mount_setattr_test.c
+ .../testing/selftests/idmap_mounts/.gitignore |   1 +
+ tools/testing/selftests/idmap_mounts/Makefile |   8 +
+ tools/testing/selftests/idmap_mounts/config   |   1 +
+ tools/testing/selftests/idmap_mounts/xattr.c  | 389 ++++++++++++++++++
+ 4 files changed, 399 insertions(+)
+ create mode 100644 tools/testing/selftests/idmap_mounts/.gitignore
+ create mode 100644 tools/testing/selftests/idmap_mounts/Makefile
+ create mode 100644 tools/testing/selftests/idmap_mounts/config
+ create mode 100644 tools/testing/selftests/idmap_mounts/xattr.c
 
-diff --git a/tools/testing/selftests/Makefile b/tools/testing/selftests/Makefile
-index d9c283503159..87b7107dd9a6 100644
---- a/tools/testing/selftests/Makefile
-+++ b/tools/testing/selftests/Makefile
-@@ -34,6 +34,7 @@ TARGETS += memfd
- TARGETS += memory-hotplug
- TARGETS += mincore
- TARGETS += mount
-+TARGETS += mount_setattr
- TARGETS += mqueue
- TARGETS += net
- TARGETS += net/forwarding
-diff --git a/tools/testing/selftests/mount_setattr/.gitignore b/tools/testing/selftests/mount_setattr/.gitignore
+diff --git a/tools/testing/selftests/idmap_mounts/.gitignore b/tools/testing/selftests/idmap_mounts/.gitignore
 new file mode 100644
-index 000000000000..5f74d8488472
+index 000000000000..18c5e90522ad
 --- /dev/null
-+++ b/tools/testing/selftests/mount_setattr/.gitignore
++++ b/tools/testing/selftests/idmap_mounts/.gitignore
 @@ -0,0 +1 @@
-+mount_setattr_test
-diff --git a/tools/testing/selftests/mount_setattr/Makefile b/tools/testing/selftests/mount_setattr/Makefile
++xattr
+diff --git a/tools/testing/selftests/idmap_mounts/Makefile b/tools/testing/selftests/idmap_mounts/Makefile
 new file mode 100644
-index 000000000000..2250f7dcb81e
+index 000000000000..ce0549b09b2a
 --- /dev/null
-+++ b/tools/testing/selftests/mount_setattr/Makefile
-@@ -0,0 +1,7 @@
++++ b/tools/testing/selftests/idmap_mounts/Makefile
+@@ -0,0 +1,8 @@
 +# SPDX-License-Identifier: GPL-2.0
 +# Makefile for mount selftests.
 +CFLAGS = -g -I../../../../usr/include/ -Wall -O2 -pthread
 +
-+TEST_GEN_FILES += mount_setattr_test
++TEST_GEN_FILES += xattr
 +
 +include ../lib.mk
-diff --git a/tools/testing/selftests/mount_setattr/config b/tools/testing/selftests/mount_setattr/config
++
+diff --git a/tools/testing/selftests/idmap_mounts/config b/tools/testing/selftests/idmap_mounts/config
 new file mode 100644
-index 000000000000..416bd53ce982
+index 000000000000..80730abc534b
 --- /dev/null
-+++ b/tools/testing/selftests/mount_setattr/config
++++ b/tools/testing/selftests/idmap_mounts/config
 @@ -0,0 +1 @@
-+CONFIG_USER_NS=y
-diff --git a/tools/testing/selftests/mount_setattr/mount_setattr_test.c b/tools/testing/selftests/mount_setattr/mount_setattr_test.c
++CONFIG_IDMAP_MOUNTS=y
+diff --git a/tools/testing/selftests/idmap_mounts/xattr.c b/tools/testing/selftests/idmap_mounts/xattr.c
 new file mode 100644
-index 000000000000..7d320cfa7d3b
+index 000000000000..a3d70294ce43
 --- /dev/null
-+++ b/tools/testing/selftests/mount_setattr/mount_setattr_test.c
-@@ -0,0 +1,888 @@
++++ b/tools/testing/selftests/idmap_mounts/xattr.c
+@@ -0,0 +1,389 @@
 +// SPDX-License-Identifier: GPL-2.0
 +#define _GNU_SOURCE
++#include <fcntl.h>
 +#include <sched.h>
-+#include <stdio.h>
-+#include <errno.h>
-+#include <pthread.h>
-+#include <string.h>
++#include <sys/mount.h>
 +#include <sys/stat.h>
 +#include <sys/types.h>
-+#include <sys/mount.h>
-+#include <sys/wait.h>
-+#include <sys/vfs.h>
-+#include <sys/statvfs.h>
-+#include <sys/sysinfo.h>
-+#include <stdlib.h>
-+#include <unistd.h>
-+#include <fcntl.h>
-+#include <grp.h>
-+#include <stdbool.h>
-+#include <stdarg.h>
++#include <linux/limits.h>
 +
 +#include "../kselftest_harness.h"
 +
-+#ifndef CLONE_NEWNS
-+#define CLONE_NEWNS 0x00020000
-+#endif
-+
-+#ifndef CLONE_NEWUSER
-+#define CLONE_NEWUSER 0x10000000
-+#endif
-+
-+#ifndef MS_REC
-+#define MS_REC 16384
-+#endif
-+
-+#ifndef MS_RELATIME
-+#define MS_RELATIME (1 << 21)
-+#endif
-+
-+#ifndef MS_STRICTATIME
-+#define MS_STRICTATIME (1 << 24)
-+#endif
-+
-+#ifndef MOUNT_ATTR_RDONLY
-+#define MOUNT_ATTR_RDONLY 0x00000001
-+#endif
-+
-+#ifndef MOUNT_ATTR_NOSUID
-+#define MOUNT_ATTR_NOSUID 0x00000002
-+#endif
-+
-+#ifndef MOUNT_ATTR_NOEXEC
-+#define MOUNT_ATTR_NOEXEC 0x00000008
-+#endif
-+
-+#ifndef MOUNT_ATTR_NODIRATIME
-+#define MOUNT_ATTR_NODIRATIME 0x00000080
-+#endif
-+
-+#ifndef MOUNT_ATTR__ATIME
-+#define MOUNT_ATTR__ATIME 0x00000070
-+#endif
-+
-+#ifndef MOUNT_ATTR_RELATIME
-+#define MOUNT_ATTR_RELATIME 0x00000000
-+#endif
-+
-+#ifndef MOUNT_ATTR_NOATIME
-+#define MOUNT_ATTR_NOATIME 0x00000010
-+#endif
-+
-+#ifndef MOUNT_ATTR_STRICTATIME
-+#define MOUNT_ATTR_STRICTATIME 0x00000020
-+#endif
-+
-+#ifndef AT_RECURSIVE
-+#define AT_RECURSIVE 0x8000
-+#endif
-+
-+#ifndef MAKE_PROPAGATION_SHARED
-+#define MAKE_PROPAGATION_SHARED 4
-+#endif
-+
-+#define DEFAULT_THREADS 4
-+#define ptr_to_int(p) ((int)((intptr_t)(p)))
-+#define int_to_ptr(u) ((void *)((intptr_t)(u)))
-+
 +#ifndef __NR_mount_setattr
 +	#if defined __alpha__
-+		#define __NR_mount_setattr 550
++		#define __NR_mount_setattr 551
 +	#elif defined _MIPS_SIM
 +		#if _MIPS_SIM == _MIPS_SIM_ABI32	/* o32 */
-+			#define __NR_mount_setattr 4440
++			#define __NR_mount_setattr 4441
 +		#endif
 +		#if _MIPS_SIM == _MIPS_SIM_NABI32	/* n32 */
-+			#define __NR_mount_setattr 6440
++			#define __NR_mount_setattr 6441
 +		#endif
 +		#if _MIPS_SIM == _MIPS_SIM_ABI64	/* n64 */
-+			#define __NR_mount_setattr 5440
++			#define __NR_mount_setattr 5441
 +		#endif
 +	#elif defined __ia64__
-+		#define __NR_mount_setattr (440 + 1024)
++		#define __NR_mount_setattr (441 + 1024)
 +	#else
-+		#define __NR_mount_setattr 440
++		#define __NR_mount_setattr 441
++	#endif
++
++#ifndef __NR_open_tree
++	#if defined __alpha__
++		#define __NR_open_tree 538
++	#elif defined _MIPS_SIM
++		#if _MIPS_SIM == _MIPS_SIM_ABI32	/* o32 */
++			#define __NR_open_tree 4428
++		#endif
++		#if _MIPS_SIM == _MIPS_SIM_NABI32	/* n32 */
++			#define __NR_open_tree 6428
++		#endif
++		#if _MIPS_SIM == _MIPS_SIM_ABI64	/* n64 */
++			#define __NR_open_tree 5428
++		#endif
++	#elif defined __ia64__
++		#define __NR_open_tree (428 + 1024)
++	#else
++		#define __NR_open_tree 428
++	#endif
 +#endif
++
++#ifndef __NR_move_mount
++	#if defined __alpha__
++		#define __NR_move_mount 539
++	#elif defined _MIPS_SIM
++		#if _MIPS_SIM == _MIPS_SIM_ABI32	/* o32 */
++			#define __NR_move_mount 4429
++		#endif
++		#if _MIPS_SIM == _MIPS_SIM_NABI32	/* n32 */
++			#define __NR_move_mount 6429
++		#endif
++		#if _MIPS_SIM == _MIPS_SIM_ABI64	/* n64 */
++			#define __NR_move_mount 5429
++		#endif
++	#elif defined __ia64__
++		#define __NR_move_mount (428 + 1024)
++	#else
++		#define __NR_move_mount 429
++	#endif
++#endif
++
 +
 +struct mount_attr {
 +	__u64 attr_set;
 +	__u64 attr_clr;
 +	__u64 propagation;
++	__u32 userns;
 +};
++#endif
++
++#ifndef MOVE_MOUNT_F_EMPTY_PATH
++#define MOVE_MOUNT_F_EMPTY_PATH 0x00000004 /* Empty from path permitted */
++#endif
++
++#ifndef MOUNT_ATTR_SHIFT
++#define MOUNT_ATTR_SHIFT 0x00100000
++#endif
++
++#ifndef OPEN_TREE_CLONE
++#define OPEN_TREE_CLONE 1
++#endif
++
++#ifndef OPEN_TREE_CLOEXEC
++#define OPEN_TREE_CLOEXEC O_CLOEXEC
++#endif
++
++#ifndef AT_RECURSIVE
++#define AT_RECURSIVE 0x8000 /* Apply to the entire subtree */
 +#endif
 +
 +static inline int sys_mount_setattr(int dfd, const char *path, unsigned int flags,
@@ -319,6 +257,18 @@ index 000000000000..7d320cfa7d3b
 +{
 +	return syscall(__NR_mount_setattr, dfd, path, flags, attr, size);
 +}
++
++static inline int sys_open_tree(int dfd, const char *filename, unsigned int flags)
++{
++	return syscall(__NR_open_tree, dfd, filename, flags);
++}
++
++static inline int sys_move_mount(int from_dfd, const char *from_pathname, int to_dfd,
++				 const char *to_pathname, unsigned int flags)
++{
++	return syscall(__NR_move_mount, from_dfd, from_pathname, to_dfd, to_pathname, flags);
++}
++
 +
 +static ssize_t write_nointr(int fd, const void *buf, size_t count)
 +{
@@ -348,744 +298,247 @@ index 000000000000..7d320cfa7d3b
 +	return 0;
 +}
 +
-+static int create_and_enter_userns(void)
++static int map_ids(pid_t pid, unsigned long nsid, unsigned long hostid,
++		   unsigned long range)
 +{
-+	uid_t uid;
-+	gid_t gid;
-+	char map[100];
++	char map[100], procfile[256];
 +
-+	uid = getuid();
-+	gid = getgid();
-+
-+	if (unshare(CLONE_NEWUSER))
-+		return -1;
-+
-+	if (write_file("/proc/self/setgroups", "deny", sizeof("deny") - 1) &&
++	snprintf(procfile, sizeof(procfile), "/proc/%d/setgroups", pid);
++	if (write_file(procfile, "deny", sizeof("deny") - 1) &&
 +	    errno != ENOENT)
 +		return -1;
 +
-+	snprintf(map, sizeof(map), "0 %d 1", uid);
-+	if (write_file("/proc/self/uid_map", map, strlen(map)))
++	snprintf(procfile, sizeof(procfile), "/proc/%d/uid_map", pid);
++	snprintf(map, sizeof(map), "%lu %lu %lu", nsid, hostid, range);
++	if (write_file(procfile, map, strlen(map)))
 +		return -1;
 +
 +
-+	snprintf(map, sizeof(map), "0 %d 1", gid);
-+	if (write_file("/proc/self/gid_map", map, strlen(map)))
-+		return -1;
-+
-+	if (setgid(0))
-+		return -1;
-+
-+	if (setuid(0))
++	snprintf(procfile, sizeof(procfile), "/proc/%d/gid_map", pid);
++	snprintf(map, sizeof(map), "%lu %lu %lu", nsid, hostid, range);
++	if (write_file(procfile, map, strlen(map)))
 +		return -1;
 +
 +	return 0;
 +}
 +
-+static int prepare_unpriv_mountns(void)
++#define __STACK_SIZE (8 * 1024 * 1024)
++static pid_t do_clone(int (*fn)(void *), void *arg, int flags)
 +{
-+	if (create_and_enter_userns())
-+		return -1;
++	void *stack;
 +
-+	if (unshare(CLONE_NEWNS))
-+		return -1;
++	stack = malloc(__STACK_SIZE);
++	if (!stack)
++		return -ENOMEM;
 +
-+	if (mount(NULL, "/", NULL, MS_REC | MS_PRIVATE, 0))
-+		return -1;
-+
-+	return 0;
++#ifdef __ia64__
++	return __clone2(fn, stack, __STACK_SIZE, flags | SIGCHLD, arg, NULL);
++#else
++	return clone(fn, stack + __STACK_SIZE, flags | SIGCHLD, arg, NULL);
++#endif
 +}
 +
-+static int read_mnt_flags(const char *path)
++static int get_userns_fd_cb(void *data)
++{
++	return kill(getpid(), SIGSTOP);
++}
++
++static int get_userns_fd(unsigned long nsid, unsigned long hostid,
++			 unsigned long range)
 +{
 +	int ret;
-+	struct statvfs stat;
-+	unsigned int mnt_flags;
++	pid_t pid;
++	char path[256];
 +
-+	ret = statvfs(path, &stat);
-+	if (ret != 0)
-+		return -EINVAL;
++	pid = do_clone(get_userns_fd_cb, NULL, CLONE_NEWUSER | CLONE_NEWNS);
++	if (pid < 0)
++		return -errno;
 +
-+	if (stat.f_flag &
-+	    ~(ST_RDONLY | ST_NOSUID | ST_NODEV | ST_NOEXEC | ST_NOATIME |
-+	      ST_NODIRATIME | ST_RELATIME | ST_SYNCHRONOUS | ST_MANDLOCK))
-+		return -EINVAL;
++	ret = map_ids(pid, nsid, hostid, range);
++	if (ret < 0)
++		return ret;
 +
-+	mnt_flags = 0;
-+	if (stat.f_flag & ST_RDONLY)
-+		mnt_flags |= MS_RDONLY;
-+	if (stat.f_flag & ST_NOSUID)
-+		mnt_flags |= MS_NOSUID;
-+	if (stat.f_flag & ST_NODEV)
-+		mnt_flags |= MS_NODEV;
-+	if (stat.f_flag & ST_NOEXEC)
-+		mnt_flags |= MS_NOEXEC;
-+	if (stat.f_flag & ST_NOATIME)
-+		mnt_flags |= MS_NOATIME;
-+	if (stat.f_flag & ST_NODIRATIME)
-+		mnt_flags |= MS_NODIRATIME;
-+	if (stat.f_flag & ST_RELATIME)
-+		mnt_flags |= MS_RELATIME;
-+	if (stat.f_flag & ST_SYNCHRONOUS)
-+		mnt_flags |= MS_SYNCHRONOUS;
-+	if (stat.f_flag & ST_MANDLOCK)
-+		mnt_flags |= ST_MANDLOCK;
-+
-+	return mnt_flags;
++	snprintf(path, sizeof(path), "/proc/%d/ns/user", pid);
++	ret = open(path, O_RDONLY | O_CLOEXEC);
++	kill(pid, SIGKILL);
++	return ret;
 +}
 +
-+static char *get_field(char *src, int nfields)
-+{
-+	int i;
-+	char *p = src;
-+
-+	for (i = 0; i < nfields; i++) {
-+		while (*p && *p != ' ' && *p != '\t')
-+			p++;
-+
-+		if (!*p)
-+			break;
-+
-+		p++;
-+	}
-+
-+	return p;
-+}
-+
-+static void null_endofword(char *word)
-+{
-+	while (*word && *word != ' ' && *word != '\t')
-+		word++;
-+	*word = '\0';
-+}
-+
-+static bool is_shared_mount(const char *path)
-+{
-+	size_t len = 0;
-+	char *line = NULL;
-+	FILE *f = NULL;
-+
-+	f = fopen("/proc/self/mountinfo", "re");
-+	if (!f)
-+		return false;
-+
-+	while (getline(&line, &len, f) != -1) {
-+		char *opts, *target;
-+
-+		target = get_field(line, 4);
-+		if (!target)
-+			continue;
-+
-+		opts = get_field(target, 2);
-+		if (!opts)
-+			continue;
-+
-+		null_endofword(target);
-+
-+		if (strcmp(target, path) != 0)
-+			continue;
-+
-+		null_endofword(opts);
-+		if (strstr(opts, "shared:"))
-+			return true;
-+	}
-+
-+	free(line);
-+	fclose(f);
-+
-+	return false;
-+}
-+
-+static void *mount_setattr_thread(void *data)
-+{
-+	struct mount_attr attr = {
-+		.attr_set	= MOUNT_ATTR_RDONLY | MOUNT_ATTR_NOSUID,
-+		.attr_clr	= 0,
-+		.propagation	= MAKE_PROPAGATION_SHARED,
-+	};
-+
-+	if (sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &attr, sizeof(attr)))
-+		pthread_exit(int_to_ptr(-1));
-+
-+	pthread_exit(int_to_ptr(0));
-+}
-+
-+FIXTURE(mount_setattr) {
++struct run_as_data {
++	int userns;
++	int (*f)(void *data);
++	void *data;
 +};
 +
-+FIXTURE_SETUP(mount_setattr)
++static int run_in_cb(void *data)
 +{
-+	ASSERT_EQ(prepare_unpriv_mountns(), 0);
++	struct run_as_data *rad = data;
 +
-+	(void)umount2("/mnt", MNT_DETACH);
-+	(void)umount2("/tmp", MNT_DETACH);
++	if (setns(rad->userns, CLONE_NEWUSER) < 0) {
++		perror("setns");
++		return 1;
++	}
 +
-+	ASSERT_EQ(mount("testing", "/tmp", "tmpfs", MS_NOATIME | MS_NODEV,
-+			"size=100000,mode=700"), 0);
++	if (setuid(100010)) {
++		perror("setuid");
++		return 1;
++	}
 +
-+	ASSERT_EQ(mkdir("/tmp/B", 0777), 0);
++	if (setgid(100010)) {
++		perror("setgid");
++		return 1;
++	}
 +
-+	ASSERT_EQ(mount("testing", "/tmp/B", "tmpfs", MS_NOATIME | MS_NODEV,
-+			"size=100000,mode=700"), 0);
-+
-+	ASSERT_EQ(mkdir("/tmp/B/BB", 0777), 0);
-+
-+	ASSERT_EQ(mount("testing", "/tmp/B/BB", "tmpfs", MS_NOATIME | MS_NODEV,
-+			"size=100000,mode=700"), 0);
-+
-+	ASSERT_EQ(mount("testing", "/mnt", "tmpfs", MS_NOATIME | MS_NODEV,
-+			"size=100000,mode=700"), 0);
-+
-+	ASSERT_EQ(mkdir("/mnt/A", 0777), 0);
-+
-+	ASSERT_EQ(mount("testing", "/mnt/A", "tmpfs", MS_NOATIME | MS_NODEV,
-+			"size=100000,mode=700"), 0);
-+
-+	ASSERT_EQ(mkdir("/mnt/A/AA", 0777), 0);
-+
-+	ASSERT_EQ(mount("/tmp", "/mnt/A/AA", NULL, MS_BIND | MS_REC, NULL), 0);
-+
-+	ASSERT_EQ(mkdir("/mnt/B", 0777), 0);
-+
-+	ASSERT_EQ(mount("testing", "/mnt/B", "ramfs",
-+			MS_NOATIME | MS_NODEV | MS_NOSUID, 0), 0);
-+
-+	ASSERT_EQ(mkdir("/mnt/B/BB", 0777), 0);
-+
-+	ASSERT_EQ(mount("testing", "/tmp/B/BB", "devpts",
-+			MS_RELATIME | MS_NOEXEC | MS_RDONLY, 0), 0);
++	return rad->f(rad->data);
 +}
 +
-+FIXTURE_TEARDOWN(mount_setattr)
++static int wait_for_pid(pid_t pid)
 +{
-+	(void)umount2("/mnt/A", MNT_DETACH);
-+	(void)umount2("/tmp", MNT_DETACH);
++	int status, ret;
++
++again:
++	ret = waitpid(pid, &status, 0);
++	if (ret == -1) {
++		if (errno == EINTR)
++			goto again;
++
++		return -1;
++	}
++
++	if (!WIFEXITED(status))
++		return -1;
++
++	return WEXITSTATUS(status);
 +}
 +
-+TEST_F(mount_setattr, invalid_attributes)
++static int run_in(int userns, int (*f)(void *), void *f_data)
 +{
-+	struct mount_attr invalid_attr = {
-+		.attr_set = (1U << 31),
-+	};
++	pid_t pid;
++	struct run_as_data data;
 +
-+	ASSERT_NE(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &invalid_attr,
-+				    sizeof(invalid_attr)), 0);
++	data.userns = userns;
++	data.f = f;
++	data.data = f_data;
++	pid = do_clone(run_in_cb, &data, 0);
++	if (pid < 0)
++		return -errno;
 +
-+	invalid_attr.attr_set	= 0;
-+	invalid_attr.attr_clr	= (1U << 31);
-+	ASSERT_NE(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &invalid_attr,
-+				    sizeof(invalid_attr)), 0);
-+
-+	invalid_attr.attr_clr		= 0;
-+	invalid_attr.propagation	= (1U << 31);
-+	ASSERT_NE(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &invalid_attr,
-+				    sizeof(invalid_attr)), 0);
-+
-+	invalid_attr.attr_set		= (1U << 31);
-+	invalid_attr.attr_clr		= (1U << 31);
-+	invalid_attr.propagation	= (1U << 31);
-+	ASSERT_NE(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &invalid_attr,
-+				    sizeof(invalid_attr)), 0);
-+
-+	ASSERT_NE(sys_mount_setattr(-1, "mnt/A", AT_RECURSIVE, &invalid_attr,
-+				    sizeof(invalid_attr)), 0);
++	return wait_for_pid(pid);
 +}
 +
-+TEST_F(mount_setattr, extensibility)
-+{
-+	unsigned int old_flags = 0, new_flags = 0, expected_flags = 0;
-+	char *s = "dummy";
-+	struct mount_attr invalid_attr = {};
-+	struct mount_attr_large {
-+		struct mount_attr attr1;
-+		struct mount_attr attr2;
-+	} large_attr = {};
++FIXTURE(ext4_xattr) {};
 +
-+	old_flags = read_mnt_flags("/mnt/A");
-+	ASSERT_GT(old_flags, 0);
-+
-+	ASSERT_NE(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, NULL,
-+				    sizeof(invalid_attr)), 0);
-+	ASSERT_EQ(errno, EFAULT);
-+
-+	ASSERT_NE(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, (void *)s,
-+				    sizeof(invalid_attr)), 0);
-+	ASSERT_EQ(errno, EINVAL);
-+
-+	ASSERT_NE(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &invalid_attr, 0), 0);
-+	ASSERT_EQ(errno, EINVAL);
-+
-+	ASSERT_NE(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &invalid_attr,
-+				    sizeof(invalid_attr) / 2), 0);
-+	ASSERT_EQ(errno, EINVAL);
-+
-+	ASSERT_NE(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &invalid_attr,
-+				    sizeof(invalid_attr) / 2), 0);
-+	ASSERT_EQ(errno, EINVAL);
-+
-+	ASSERT_EQ(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE,
-+				    (void *)&large_attr, sizeof(large_attr)), 0);
-+
-+	large_attr.attr2.attr_set = MOUNT_ATTR_RDONLY;
-+	ASSERT_NE(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE,
-+				    (void *)&large_attr, sizeof(large_attr)), 0);
-+
-+	large_attr.attr2.attr_set = 0;
-+	large_attr.attr1.attr_set = MOUNT_ATTR_RDONLY;
-+	ASSERT_EQ(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE,
-+				    (void *)&large_attr, sizeof(large_attr)), 0);
-+
-+	expected_flags = old_flags;
-+	expected_flags |= MS_RDONLY;
-+
-+	new_flags = read_mnt_flags("/mnt/A");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B/BB");
-+	ASSERT_EQ(new_flags, expected_flags);
-+}
-+
-+TEST_F(mount_setattr, basic)
-+{
-+	unsigned int old_flags = 0, new_flags = 0, expected_flags = 0;
-+	struct mount_attr attr = {
-+		.attr_set	= MOUNT_ATTR_RDONLY | MOUNT_ATTR_NOEXEC | MOUNT_ATTR_RELATIME,
-+		.attr_clr	= MOUNT_ATTR__ATIME,
-+	};
-+
-+	old_flags = read_mnt_flags("/mnt/A");
-+	ASSERT_GT(old_flags, 0);
-+
-+	ASSERT_EQ(sys_mount_setattr(-1, "/mnt/A", 0, &attr, sizeof(attr)), 0);
-+
-+	expected_flags = old_flags;
-+	expected_flags |= MS_RDONLY;
-+	expected_flags |= MS_NOEXEC;
-+	expected_flags &= ~MS_NOATIME;
-+	expected_flags |= MS_RELATIME;
-+
-+	new_flags = read_mnt_flags("/mnt/A");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA");
-+	ASSERT_EQ(new_flags, old_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B");
-+	ASSERT_EQ(new_flags, old_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B/BB");
-+	ASSERT_EQ(new_flags, old_flags);
-+}
-+
-+TEST_F(mount_setattr, basic_recursive)
++FIXTURE_SETUP(ext4_xattr)
 +{
 +	int fd;
-+	unsigned int old_flags = 0, new_flags = 0, expected_flags = 0;
-+	struct mount_attr attr = {
-+		.attr_set	= MOUNT_ATTR_RDONLY | MOUNT_ATTR_NOEXEC | MOUNT_ATTR_RELATIME,
-+		.attr_clr	= MOUNT_ATTR__ATIME,
-+	};
 +
-+	old_flags = read_mnt_flags("/mnt/A");
-+	ASSERT_GT(old_flags, 0);
-+
-+	ASSERT_EQ(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &attr, sizeof(attr)), 0);
-+
-+	expected_flags = old_flags;
-+	expected_flags |= MS_RDONLY;
-+	expected_flags |= MS_NOEXEC;
-+	expected_flags &= ~MS_NOATIME;
-+	expected_flags |= MS_RELATIME;
-+
-+	new_flags = read_mnt_flags("/mnt/A");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B/BB");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	memset(&attr, 0, sizeof(attr));
-+	attr.attr_clr = MOUNT_ATTR_RDONLY;
-+	attr.propagation = MAKE_PROPAGATION_SHARED;
-+	ASSERT_EQ(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &attr, sizeof(attr)), 0);
-+
-+	expected_flags &= ~MS_RDONLY;
-+	new_flags = read_mnt_flags("/mnt/A");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	ASSERT_EQ(is_shared_mount("/mnt/A"), true);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	ASSERT_EQ(is_shared_mount("/mnt/A/AA"), true);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	ASSERT_EQ(is_shared_mount("/mnt/A/AA/B"), true);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B/BB");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	ASSERT_EQ(is_shared_mount("/mnt/A/AA/B/BB"), true);
-+
-+	fd = open("/mnt/A/AA/B/b", O_RDWR | O_CLOEXEC | O_CREAT | O_EXCL, 0777);
++	fd = open("/tmp/idmap_mounts.ext4", O_CREAT | O_WRONLY, 0600);
 +	ASSERT_GE(fd, 0);
-+
-+	/*
-+	 * We're holding a fd open for writing so this needs to fail somewhere
-+	 * in the middle and the mount options need to be unchanged.
-+	 */
-+	attr.attr_set = MOUNT_ATTR_RDONLY;
-+	ASSERT_LT(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &attr, sizeof(attr)), 0);
-+
-+	new_flags = read_mnt_flags("/mnt/A");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	ASSERT_EQ(is_shared_mount("/mnt/A"), true);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	ASSERT_EQ(is_shared_mount("/mnt/A/AA"), true);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	ASSERT_EQ(is_shared_mount("/mnt/A/AA/B"), true);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B/BB");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	ASSERT_EQ(is_shared_mount("/mnt/A/AA/B/BB"), true);
-+
-+	EXPECT_EQ(close(fd), 0);
++	ASSERT_EQ(ftruncate(fd, 640 * 1024), 0);
++	ASSERT_EQ(close(fd), 0);
++	ASSERT_EQ(system("mkfs.ext4 /tmp/idmap_mounts.ext4"), 0);
++	ASSERT_EQ(mkdir("/tmp/ext4", 0777), 0);
++	ASSERT_EQ(system("mount -o loop -t ext4 /tmp/idmap_mounts.ext4 /tmp/ext4"), 0);
 +}
 +
-+TEST_F(mount_setattr, mount_has_writers)
++FIXTURE_TEARDOWN(ext4_xattr)
 +{
-+	int fd, dfd;
-+	unsigned int old_flags = 0, new_flags = 0;
-+	struct mount_attr attr = {
-+		.attr_set	= MOUNT_ATTR_RDONLY | MOUNT_ATTR_NOEXEC | MOUNT_ATTR_RELATIME,
-+		.attr_clr	= MOUNT_ATTR__ATIME,
-+		.propagation	= MAKE_PROPAGATION_SHARED,
-+	};
-+
-+	old_flags = read_mnt_flags("/mnt/A");
-+	ASSERT_GT(old_flags, 0);
-+
-+	fd = open("/mnt/A/AA/B/b", O_RDWR | O_CLOEXEC | O_CREAT | O_EXCL, 0777);
-+	ASSERT_GE(fd, 0);
-+
-+	/*
-+	 * We're holding a fd open to a mount somwhere in the middle so this
-+	 * needs to fail somewhere in the middle. After this the mount options
-+	 * need to be unchanged.
-+	 */
-+	ASSERT_LT(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &attr, sizeof(attr)), 0);
-+
-+	new_flags = read_mnt_flags("/mnt/A");
-+	ASSERT_EQ(new_flags, old_flags);
-+
-+	ASSERT_EQ(is_shared_mount("/mnt/A"), false);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA");
-+	ASSERT_EQ(new_flags, old_flags);
-+
-+	ASSERT_EQ(is_shared_mount("/mnt/A/AA"), false);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B");
-+	ASSERT_EQ(new_flags, old_flags);
-+
-+	ASSERT_EQ(is_shared_mount("/mnt/A/AA/B"), false);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B/BB");
-+	ASSERT_EQ(new_flags, old_flags);
-+
-+	ASSERT_EQ(is_shared_mount("/mnt/A/AA/B/BB"), false);
-+
-+	dfd = open("/mnt/A/AA/B", O_DIRECTORY | O_CLOEXEC);
-+	ASSERT_GE(dfd, 0);
-+	EXPECT_EQ(fsync(dfd), 0);
-+	EXPECT_EQ(close(dfd), 0);
-+
-+	EXPECT_EQ(fsync(fd), 0);
-+	EXPECT_EQ(close(fd), 0);
-+
-+	/* All writers are gone so this should succeed. */
-+	ASSERT_EQ(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &attr, sizeof(attr)), 0);
++	umount("/tmp/ext4/dest");
++	umount("/tmp/ext4");
++	rmdir("/tmp/ext4");
++	unlink("/tmp/idmap_mounts.ext4");
 +}
 +
-+TEST_F(mount_setattr, mixed_mount_options)
++struct getacl_should_be_data {
++	char path[256];
++	uid_t uid;
++};
++
++static int getacl_should_be_uid(void *data)
 +{
-+	unsigned int old_flags1 = 0, old_flags2 = 0, new_flags = 0, expected_flags = 0;
-+	struct mount_attr attr = {
-+		.attr_clr = MOUNT_ATTR_RDONLY | MOUNT_ATTR_NOSUID | MOUNT_ATTR_NOEXEC | MOUNT_ATTR__ATIME,
-+		.attr_set = MOUNT_ATTR_RELATIME,
-+	};
++	struct getacl_should_be_data *ssb = data;
++	char cmd[512];
++	int ret;
 +
-+	old_flags1 = read_mnt_flags("/mnt/B");
-+	ASSERT_GT(old_flags1, 0);
-+
-+	old_flags2 = read_mnt_flags("/mnt/B/BB");
-+	ASSERT_GT(old_flags2, 0);
-+
-+	ASSERT_EQ(sys_mount_setattr(-1, "/mnt/B", AT_RECURSIVE, &attr, sizeof(attr)), 0);
-+
-+	expected_flags = old_flags2;
-+	expected_flags &= ~(MS_RDONLY | MS_NOEXEC | MS_NOATIME | MS_NOSUID);
-+	expected_flags |= MS_RELATIME;
-+
-+	new_flags = read_mnt_flags("/mnt/B");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	expected_flags = old_flags2;
-+	expected_flags &= ~(MS_RDONLY | MS_NOEXEC | MS_NOATIME | MS_NOSUID);
-+	expected_flags |= MS_RELATIME;
-+
-+	new_flags = read_mnt_flags("/mnt/B/BB");
-+	ASSERT_EQ(new_flags, expected_flags);
-+}
-+
-+TEST_F(mount_setattr, time_changes)
-+{
-+	unsigned int old_flags = 0, new_flags = 0, expected_flags = 0;
-+	struct mount_attr attr = {
-+		.attr_set	= MOUNT_ATTR_NODIRATIME | MOUNT_ATTR_NOATIME,
-+	};
-+
-+	ASSERT_NE(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &attr, sizeof(attr)), 0);
-+
-+	attr.attr_set = MOUNT_ATTR_STRICTATIME;
-+	ASSERT_NE(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &attr, sizeof(attr)), 0);
-+
-+	attr.attr_set = MOUNT_ATTR_STRICTATIME | MOUNT_ATTR_NOATIME;
-+	ASSERT_NE(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &attr, sizeof(attr)), 0);
-+
-+	attr.attr_set = MOUNT_ATTR_STRICTATIME | MOUNT_ATTR_NOATIME;
-+	attr.attr_clr = MOUNT_ATTR__ATIME;
-+	ASSERT_NE(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &attr, sizeof(attr)), 0);
-+
-+	attr.attr_set = 0;
-+	attr.attr_clr = MOUNT_ATTR_STRICTATIME;
-+	ASSERT_NE(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &attr, sizeof(attr)), 0);
-+
-+	attr.attr_clr = MOUNT_ATTR_NOATIME;
-+	ASSERT_NE(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &attr, sizeof(attr)), 0);
-+
-+	old_flags = read_mnt_flags("/mnt/A");
-+	ASSERT_GT(old_flags, 0);
-+
-+	attr.attr_set = MOUNT_ATTR_NODIRATIME | MOUNT_ATTR_NOATIME;
-+	attr.attr_clr = MOUNT_ATTR__ATIME;
-+	ASSERT_EQ(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &attr, sizeof(attr)), 0);
-+
-+	expected_flags = old_flags;
-+	expected_flags |= MS_NOATIME;
-+	expected_flags |= MS_NODIRATIME;
-+
-+	new_flags = read_mnt_flags("/mnt/A");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B/BB");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	memset(&attr, 0, sizeof(attr));
-+	attr.attr_set &= ~MOUNT_ATTR_NOATIME;
-+	attr.attr_set |= MOUNT_ATTR_RELATIME;
-+	attr.attr_clr |= MOUNT_ATTR__ATIME;
-+	ASSERT_EQ(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &attr, sizeof(attr)), 0);
-+
-+	expected_flags &= ~MS_NOATIME;
-+	expected_flags |= MS_RELATIME;
-+
-+	new_flags = read_mnt_flags("/mnt/A");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B/BB");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	memset(&attr, 0, sizeof(attr));
-+	attr.attr_set &= ~MOUNT_ATTR_RELATIME;
-+	attr.attr_set |= MOUNT_ATTR_STRICTATIME;
-+	attr.attr_clr |= MOUNT_ATTR__ATIME;
-+	ASSERT_EQ(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &attr, sizeof(attr)), 0);
-+
-+	expected_flags &= ~MS_RELATIME;
-+
-+	new_flags = read_mnt_flags("/mnt/A");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B/BB");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	memset(&attr, 0, sizeof(attr));
-+	attr.attr_set &= ~MOUNT_ATTR_STRICTATIME;
-+	attr.attr_set |= MOUNT_ATTR_NOATIME;
-+	attr.attr_clr |= MOUNT_ATTR__ATIME;
-+	ASSERT_EQ(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &attr, sizeof(attr)), 0);
-+
-+	expected_flags |= MS_NOATIME;
-+	new_flags = read_mnt_flags("/mnt/A");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B/BB");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	memset(&attr, 0, sizeof(attr));
-+	ASSERT_EQ(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &attr, sizeof(attr)), 0);
-+
-+	new_flags = read_mnt_flags("/mnt/A");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B/BB");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	memset(&attr, 0, sizeof(attr));
-+	attr.attr_clr = MOUNT_ATTR_NODIRATIME;
-+	ASSERT_EQ(sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &attr, sizeof(attr)), 0);
-+
-+	expected_flags &= ~MS_NODIRATIME;
-+
-+	new_flags = read_mnt_flags("/mnt/A");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B/BB");
-+	ASSERT_EQ(new_flags, expected_flags);
-+}
-+
-+TEST_F(mount_setattr, multi_threaded)
-+{
-+	int i, j, nthreads, ret = 0;
-+	unsigned int old_flags = 0, new_flags = 0, expected_flags = 0;
-+	pthread_attr_t pattr;
-+	pthread_t threads[DEFAULT_THREADS];
-+
-+	old_flags = read_mnt_flags("/mnt/A");
-+	ASSERT_GT(old_flags, 0);
-+
-+	/* Try to change mount options from multiple threads. */
-+	nthreads = get_nprocs_conf();
-+	if (nthreads > DEFAULT_THREADS)
-+		nthreads = DEFAULT_THREADS;
-+
-+	pthread_attr_init(&pattr);
-+	for (i = 0; i < nthreads; i++)
-+		ASSERT_EQ(pthread_create(&threads[i], &pattr, mount_setattr_thread, NULL), 0);
-+
-+	for (j = 0; j < i; j++) {
-+		void *retptr = NULL;
-+
-+		EXPECT_EQ(pthread_join(threads[j], &retptr), 0);
-+
-+		ret += ptr_to_int(retptr);
-+		EXPECT_EQ(ret, 0);
++	snprintf(cmd, sizeof(cmd), "getfacl %s | grep user:%u:rwx", ssb->path, ssb->uid);
++	ret = system(cmd);
++	if (ret < 0) {
++		perror("system");
++		return -1;
 +	}
-+	pthread_attr_destroy(&pattr);
++	if (!WIFEXITED(ret))
++		return -1;
++	return WEXITSTATUS(ret);
++}
 +
++static int ls_path(void *data)
++{
++	char cmd[PATH_MAX];
++	char *path = data;
++	int ret;
++
++	snprintf(cmd, sizeof(cmd), "ls %s", path);
++	ret = system(cmd);
++	if (ret < 0) {
++		perror("system");
++		return -1;
++	}
++	if (!WIFEXITED(ret))
++		return -1;
++	return WEXITSTATUS(ret);
++}
++
++TEST_F(ext4_xattr, setattr_didnt_work)
++{
++	int mount_fd, ret;
++	struct mount_attr attr = {};
++	struct getacl_should_be_data ssb;
++
++	ASSERT_EQ(mkdir("/tmp/ext4/source", 0777), 0);
++	ASSERT_EQ(mkdir("/tmp/ext4/dest", 0777), 0);
++
++	mount_fd = sys_open_tree(-EBADF, "/tmp/ext4/source",
++				 OPEN_TREE_CLONE | OPEN_TREE_CLOEXEC | AT_EMPTY_PATH);
++	ASSERT_GE(mount_fd, 0);
++
++	ASSERT_EQ(sys_move_mount(mount_fd, "", -EBADF, "/tmp/ext4/dest",
++				 MOVE_MOUNT_F_EMPTY_PATH), 0);
++
++	attr.attr_set = MOUNT_ATTR_SHIFT;
++	attr.userns = get_userns_fd(100010, 100020, 5);
++	ASSERT_GE(attr.userns, 0);
++	ret = sys_mount_setattr(mount_fd, "", AT_EMPTY_PATH | AT_RECURSIVE,
++				    &attr, sizeof(attr));
++	ASSERT_EQ(close(mount_fd), 0);
 +	ASSERT_EQ(ret, 0);
 +
-+	expected_flags = old_flags;
-+	expected_flags |= MS_RDONLY;
-+	expected_flags |= MS_NOSUID;
-+	new_flags = read_mnt_flags("/mnt/A");
-+	ASSERT_EQ(new_flags, expected_flags);
++	ASSERT_EQ(mkdir("/tmp/ext4/source/foo", 0700), 0);
++	ASSERT_EQ(chown("/tmp/ext4/source/foo", 100010, 100010), 0);
 +
-+	ASSERT_EQ(is_shared_mount("/mnt/A"), true);
++	ASSERT_EQ(system("setfacl -m u:100010:rwx /tmp/ext4/source/foo"), 0);
++	EXPECT_EQ(system("getfacl /tmp/ext4/source/foo | grep user:100010:rwx"), 0);
++	EXPECT_EQ(system("getfacl /tmp/ext4/dest/foo | grep user:100020:rwx"), 0);
 +
-+	new_flags = read_mnt_flags("/mnt/A/AA");
-+	ASSERT_EQ(new_flags, expected_flags);
++	snprintf(ssb.path, sizeof(ssb.path), "/tmp/ext4/source/foo");
++	ssb.uid = 4294967295;
++	EXPECT_EQ(run_in(attr.userns, getacl_should_be_uid, &ssb), 0);
 +
-+	ASSERT_EQ(is_shared_mount("/mnt/A/AA"), true);
++	snprintf(ssb.path, sizeof(ssb.path), "/tmp/ext4/dest/foo");
++	ssb.uid = 100010;
++	EXPECT_EQ(run_in(attr.userns, getacl_should_be_uid, &ssb), 0);
 +
-+	new_flags = read_mnt_flags("/mnt/A/AA/B");
-+	ASSERT_EQ(new_flags, expected_flags);
++	/*
++	 * now, dir is owned by someone else in the user namespace, but we can
++	 * still read it because of acls
++	 */
++	ASSERT_EQ(chown("/tmp/ext4/source/foo", 100012, 100012), 0);
++	EXPECT_EQ(run_in(attr.userns, ls_path, "/tmp/ext4/dest/foo"), 0);
 +
-+	ASSERT_EQ(is_shared_mount("/mnt/A/AA/B"), true);
-+
-+	new_flags = read_mnt_flags("/mnt/A/AA/B/BB");
-+	ASSERT_EQ(new_flags, expected_flags);
-+
-+	ASSERT_EQ(is_shared_mount("/mnt/A/AA/B/BB"), true);
-+}
-+
-+TEST_F(mount_setattr, wrong_user_namespace)
-+{
-+	int ret;
-+	struct mount_attr attr = {
-+		.attr_set = MOUNT_ATTR_RDONLY,
-+	};
-+
-+	EXPECT_EQ(create_and_enter_userns(), 0);
-+	ret = sys_mount_setattr(-1, "/mnt/A", AT_RECURSIVE, &attr, sizeof(attr));
-+	ASSERT_LT(ret, 0);
-+	ASSERT_EQ(errno, EPERM);
-+}
-+
-+TEST_F(mount_setattr, wrong_mount_namespace)
-+{
-+	int fd, ret;
-+	struct mount_attr attr = {
-+		.attr_set = MOUNT_ATTR_RDONLY,
-+	};
-+
-+	fd = open("/mnt/A", O_DIRECTORY | O_CLOEXEC);
-+	ASSERT_GE(fd, 0);
-+
-+	ASSERT_EQ(unshare(CLONE_NEWNS), 0);
-+
-+	ret = sys_mount_setattr(fd, "", AT_EMPTY_PATH | AT_RECURSIVE, &attr, sizeof(attr));
-+	ASSERT_LT(ret, 0);
-+	ASSERT_EQ(errno, EINVAL);
++	/*
++	 * if we delete the acls, the ls should fail because it's 700.
++	 */
++	ASSERT_EQ(system("setfacl --remove-all /tmp/ext4/source/foo"), 0);
++	EXPECT_NE(run_in(attr.userns, ls_path, "/tmp/ext4/dest/foo"), 0);
 +}
 +
 +TEST_HARNESS_MAIN
