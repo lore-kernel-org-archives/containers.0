@@ -4,63 +4,63 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D5DDC4363A
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:39:20 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4E9D1C388F7
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:39:30 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id AC7782076B
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:39:19 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AC7782076B
+	by mail.kernel.org (Postfix) with ESMTPS id D4DD12076B
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:39:29 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D4DD12076B
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 2EA9587371;
-	Thu, 29 Oct 2020 00:39:19 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id jTzYwRUsj-MD; Thu, 29 Oct 2020 00:39:18 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 45EED8736E;
-	Thu, 29 Oct 2020 00:39:18 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 34A65C088B;
-	Thu, 29 Oct 2020 00:39:18 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 0BE32C0051
- for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:39:17 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id E34C4203EF
- for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:39:16 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 7E80B20414;
+	Thu, 29 Oct 2020 00:39:29 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
- by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id HVkaN6GlP-1b
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id JIYdrqRK17-h; Thu, 29 Oct 2020 00:39:28 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by silver.osuosl.org (Postfix) with ESMTP id 6C9C5203BA;
+	Thu, 29 Oct 2020 00:39:28 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 58DD8C0893;
+	Thu, 29 Oct 2020 00:39:28 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 6BA79C0051
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:39:15 +0000 (UTC)
+ Thu, 29 Oct 2020 00:39:26 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by fraxinus.osuosl.org (Postfix) with ESMTP id 6787885ACD
+ for <containers@lists.linux-foundation.org>;
+ Thu, 29 Oct 2020 00:39:26 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from fraxinus.osuosl.org ([127.0.0.1])
+ by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id jwOuJugp0PSh
+ for <containers@lists.linux-foundation.org>;
+ Thu, 29 Oct 2020 00:39:26 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by silver.osuosl.org (Postfix) with ESMTPS id A8BC7203BA
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id D60E385A88
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:39:15 +0000 (UTC)
+ Thu, 29 Oct 2020 00:39:25 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kXvv6-0008Ep-K8; Thu, 29 Oct 2020 00:36:00 +0000
+ id 1kXvuz-0008Ep-Kw; Thu, 29 Oct 2020 00:35:53 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH 28/34] audit: handle idmapped mounts
-Date: Thu, 29 Oct 2020 01:32:46 +0100
-Message-Id: <20201029003252.2128653-29-christian.brauner@ubuntu.com>
+Subject: [PATCH 24/34] would_dump: handle idmapped mounts
+Date: Thu, 29 Oct 2020 01:32:42 +0100
+Message-Id: <20201029003252.2128653-25-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.0
 In-Reply-To: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
 References: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
@@ -102,255 +102,37 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Audit will sometimes log the inode's i_uid and i_gid. Enable audit to log the
-mapped inode when it is accessed from an idmapped mount.
+When determining whether or not to create a coredump the vfs will verify that
+the caller is privileged over the inode. Make the would_dump() helper handle
+idmapped mounts by passing down the mount's user namespace of the exec file.
 
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
- fs/namei.c            | 14 +++++++-------
- include/linux/audit.h | 10 ++++++----
- ipc/mqueue.c          |  8 ++++----
- kernel/auditsc.c      | 26 ++++++++++++++------------
- 4 files changed, 31 insertions(+), 27 deletions(-)
+ fs/exec.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/fs/namei.c b/fs/namei.c
-index d6dbfab126d7..545ce391a12d 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -1006,7 +1006,7 @@ static inline int may_follow_link(struct nameidata *nd, const struct inode *inod
- 	if (nd->flags & LOOKUP_RCU)
- 		return -ECHILD;
- 
--	audit_inode(nd->name, nd->stack[0].link.dentry, 0);
-+	audit_inode(nd->name, user_ns, nd->stack[0].link.dentry, 0);
- 	audit_log_path_denied(AUDIT_ANOM_LINK, "follow_link");
- 	return -EACCES;
- }
-@@ -2413,7 +2413,7 @@ int filename_lookup(int dfd, struct filename *name, unsigned flags,
- 		retval = path_lookupat(&nd, flags | LOOKUP_REVAL, path);
- 
- 	if (likely(!retval))
--		audit_inode(name, path->dentry,
-+		audit_inode(name, mnt_user_ns(path->mnt), path->dentry,
- 			    flags & LOOKUP_MOUNTPOINT ? AUDIT_INODE_NOEVAL : 0);
- 	restore_nameidata();
- 	putname(name);
-@@ -2455,7 +2455,7 @@ static struct filename *filename_parentat(int dfd, struct filename *name,
- 	if (likely(!retval)) {
- 		*last = nd.last;
- 		*type = nd.last_type;
--		audit_inode(name, parent->dentry, AUDIT_INODE_PARENT);
-+		audit_inode(name, mnt_user_ns(parent->mnt), parent->dentry, AUDIT_INODE_PARENT);
- 	} else {
- 		putname(name);
- 		name = ERR_PTR(retval);
-@@ -3239,7 +3239,7 @@ static const char *open_last_lookups(struct nameidata *nd,
- 			if (unlikely(error))
- 				return ERR_PTR(error);
- 		}
--		audit_inode(nd->name, dir, AUDIT_INODE_PARENT);
-+		audit_inode(nd->name, mnt_user_ns(nd->path.mnt), dir, AUDIT_INODE_PARENT);
- 		/* trailing slashes? */
- 		if (unlikely(nd->last.name[nd->last.len]))
- 			return ERR_PTR(-EISDIR);
-@@ -3305,7 +3305,7 @@ static int do_open(struct nameidata *nd,
- 			return error;
- 	}
- 	if (!(file->f_mode & FMODE_CREATED))
--		audit_inode(nd->name, nd->path.dentry, 0);
-+		audit_inode(nd->name, mnt_user_ns(nd->path.mnt), nd->path.dentry, 0);
- 	if (open_flag & O_CREAT) {
- 		if ((open_flag & O_EXCL) && !(file->f_mode & FMODE_CREATED))
- 			return -EEXIST;
-@@ -3414,7 +3414,7 @@ static int do_tmpfile(struct nameidata *nd, unsigned flags,
- 		goto out2;
- 	dput(path.dentry);
- 	path.dentry = child;
--	audit_inode(nd->name, child, 0);
-+	audit_inode(nd->name, user_ns, child, 0);
- 	/* Don't check for other permissions, the inode was just created */
- 	error = may_open(&path, 0, op->open_flag);
- 	if (error)
-@@ -3433,7 +3433,7 @@ static int do_o_path(struct nameidata *nd, unsigned flags, struct file *file)
- 	struct path path;
- 	int error = path_lookupat(nd, flags, &path);
- 	if (!error) {
--		audit_inode(nd->name, path.dentry, 0);
-+		audit_inode(nd->name, mnt_user_ns(path.mnt), path.dentry, 0);
- 		error = vfs_open(&path, file);
- 		path_put(&path);
- 	}
-diff --git a/include/linux/audit.h b/include/linux/audit.h
-index b3d859831a31..217d2b0c273e 100644
---- a/include/linux/audit.h
-+++ b/include/linux/audit.h
-@@ -293,8 +293,8 @@ extern void __audit_syscall_exit(int ret_success, long ret_value);
- extern struct filename *__audit_reusename(const __user char *uptr);
- extern void __audit_getname(struct filename *name);
- extern void __audit_getcwd(void);
--extern void __audit_inode(struct filename *name, const struct dentry *dentry,
--				unsigned int flags);
-+extern void __audit_inode(struct filename *name, struct user_namespace *user_ns,
-+			  const struct dentry *dentry, unsigned int flags);
- extern void __audit_file(const struct file *);
- extern void __audit_inode_child(struct inode *parent,
- 				const struct dentry *dentry,
-@@ -357,10 +357,11 @@ static inline void audit_getcwd(void)
- 		__audit_getcwd();
- }
- static inline void audit_inode(struct filename *name,
-+				struct user_namespace *user_ns,
- 				const struct dentry *dentry,
- 				unsigned int aflags) {
- 	if (unlikely(!audit_dummy_context()))
--		__audit_inode(name, dentry, aflags);
-+		__audit_inode(name, user_ns, dentry, aflags);
- }
- static inline void audit_file(struct file *file)
+diff --git a/fs/exec.c b/fs/exec.c
+index 8e75d7a33514..76de175eeba8 100644
+--- a/fs/exec.c
++++ b/fs/exec.c
+@@ -1391,14 +1391,15 @@ EXPORT_SYMBOL(begin_new_exec);
+ void would_dump(struct linux_binprm *bprm, struct file *file)
  {
-@@ -371,7 +372,7 @@ static inline void audit_inode_parent_hidden(struct filename *name,
- 						const struct dentry *dentry)
- {
- 	if (unlikely(!audit_dummy_context()))
--		__audit_inode(name, dentry,
-+		__audit_inode(name, &init_user_ns, dentry,
- 				AUDIT_INODE_PARENT | AUDIT_INODE_HIDDEN);
- }
- static inline void audit_inode_child(struct inode *parent,
-@@ -587,6 +588,7 @@ static inline void audit_getname(struct filename *name)
- static inline void audit_getcwd(void)
- { }
- static inline void audit_inode(struct filename *name,
-+				struct user_namespace *user_ns,
- 				const struct dentry *dentry,
- 				unsigned int aflags)
- { }
-diff --git a/ipc/mqueue.c b/ipc/mqueue.c
-index beff0cfcd1e8..08ade6410563 100644
---- a/ipc/mqueue.c
-+++ b/ipc/mqueue.c
-@@ -849,8 +849,8 @@ static void remove_notification(struct mqueue_inode_info *info)
- 	info->notify_user_ns = NULL;
- }
+ 	struct inode *inode = file_inode(file);
+-	if (inode_permission(inode, MAY_READ) < 0) {
++	struct user_namespace *ns = mnt_user_ns(file->f_path.mnt);
++	if (mapped_inode_permission(ns, inode, MAY_READ) < 0) {
+ 		struct user_namespace *old, *user_ns;
+ 		bprm->interp_flags |= BINPRM_FLAGS_ENFORCE_NONDUMP;
  
--static int prepare_open(struct dentry *dentry, int oflag, int ro,
--			umode_t mode, struct filename *name,
-+static int prepare_open(struct user_namespace *user_ns, struct dentry *dentry,
-+			int oflag, int ro, umode_t mode, struct filename *name,
- 			struct mq_attr *attr)
- {
- 	static const int oflag2acc[O_ACCMODE] = { MAY_READ, MAY_WRITE,
-@@ -867,7 +867,7 @@ static int prepare_open(struct dentry *dentry, int oflag, int ro,
- 				  mqueue_create_attr, attr);
- 	}
- 	/* it already existed */
--	audit_inode(name, dentry, 0);
-+	audit_inode(name, user_ns, dentry, 0);
- 	if ((oflag & (O_CREAT|O_EXCL)) == (O_CREAT|O_EXCL))
- 		return -EEXIST;
- 	if ((oflag & O_ACCMODE) == (O_RDWR | O_WRONLY))
-@@ -903,7 +903,7 @@ static int do_mq_open(const char __user *u_name, int oflag, umode_t mode,
- 		goto out_putfd;
- 	}
- 	path.mnt = mntget(mnt);
--	error = prepare_open(path.dentry, oflag, ro, mode, name, attr);
-+	error = prepare_open(mnt_user_ns(path.mnt), path.dentry, oflag, ro, mode, name, attr);
- 	if (!error) {
- 		struct file *file = dentry_open(&path, oflag, current_cred());
- 		if (!IS_ERR(file))
-diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-index 9cdecdea61d9..0dc26fcf4742 100644
---- a/kernel/auditsc.c
-+++ b/kernel/auditsc.c
-@@ -1936,6 +1936,7 @@ void __audit_getname(struct filename *name)
- }
+ 		/* Ensure mm->user_ns contains the executable */
+ 		user_ns = old = bprm->mm->user_ns;
+ 		while ((user_ns != &init_user_ns) &&
+-		       !privileged_wrt_inode_uidgid(user_ns, &init_user_ns, inode))
++		       !privileged_wrt_inode_uidgid(user_ns, ns, inode))
+ 			user_ns = user_ns->parent;
  
- static inline int audit_copy_fcaps(struct audit_names *name,
-+				   struct user_namespace *user_ns,
- 				   const struct dentry *dentry)
- {
- 	struct cpu_vfs_cap_data caps;
-@@ -1944,7 +1945,7 @@ static inline int audit_copy_fcaps(struct audit_names *name,
- 	if (!dentry)
- 		return 0;
- 
--	rc = get_vfs_caps_from_disk(dentry, &caps);
-+	rc = get_mapped_vfs_caps_from_disk(user_ns, dentry, &caps);
- 	if (rc)
- 		return rc;
- 
-@@ -1960,21 +1961,22 @@ static inline int audit_copy_fcaps(struct audit_names *name,
- 
- /* Copy inode data into an audit_names. */
- static void audit_copy_inode(struct audit_names *name,
--			     const struct dentry *dentry,
--			     struct inode *inode, unsigned int flags)
-+			     struct user_namespace *user_ns,
-+			     const struct dentry *dentry, struct inode *inode,
-+			     unsigned int flags)
- {
- 	name->ino   = inode->i_ino;
- 	name->dev   = inode->i_sb->s_dev;
- 	name->mode  = inode->i_mode;
--	name->uid   = inode->i_uid;
--	name->gid   = inode->i_gid;
-+	name->uid   = i_uid_into_mnt(user_ns, inode);
-+	name->gid   = i_gid_into_mnt(user_ns, inode);
- 	name->rdev  = inode->i_rdev;
- 	security_inode_getsecid(inode, &name->osid);
- 	if (flags & AUDIT_INODE_NOEVAL) {
- 		name->fcap_ver = -1;
- 		return;
- 	}
--	audit_copy_fcaps(name, dentry);
-+	audit_copy_fcaps(name, user_ns, dentry);
- }
- 
- /**
-@@ -1983,8 +1985,8 @@ static void audit_copy_inode(struct audit_names *name,
-  * @dentry: dentry being audited
-  * @flags: attributes for this particular entry
-  */
--void __audit_inode(struct filename *name, const struct dentry *dentry,
--		   unsigned int flags)
-+void __audit_inode(struct filename *name, struct user_namespace *user_ns,
-+		   const struct dentry *dentry, unsigned int flags)
- {
- 	struct audit_context *context = audit_context();
- 	struct inode *inode = d_backing_inode(dentry);
-@@ -2078,12 +2080,12 @@ void __audit_inode(struct filename *name, const struct dentry *dentry,
- 		n->type = AUDIT_TYPE_NORMAL;
- 	}
- 	handle_path(dentry);
--	audit_copy_inode(n, dentry, inode, flags & AUDIT_INODE_NOEVAL);
-+	audit_copy_inode(n, user_ns, dentry, inode, flags & AUDIT_INODE_NOEVAL);
- }
- 
- void __audit_file(const struct file *file)
- {
--	__audit_inode(NULL, file->f_path.dentry, 0);
-+	__audit_inode(NULL, mnt_user_ns(file->f_path.mnt), file->f_path.dentry, 0);
- }
- 
- /**
-@@ -2175,7 +2177,7 @@ void __audit_inode_child(struct inode *parent,
- 		n = audit_alloc_name(context, AUDIT_TYPE_PARENT);
- 		if (!n)
- 			return;
--		audit_copy_inode(n, NULL, parent, 0);
-+		audit_copy_inode(n, &init_user_ns, NULL, parent, 0);
- 	}
- 
- 	if (!found_child) {
-@@ -2194,7 +2196,7 @@ void __audit_inode_child(struct inode *parent,
- 	}
- 
- 	if (inode)
--		audit_copy_inode(found_child, dentry, inode, 0);
-+		audit_copy_inode(found_child, &init_user_ns, dentry, inode, 0);
- 	else
- 		found_child->ino = AUDIT_INO_UNSET;
- }
+ 		if (old != user_ns) {
 -- 
 2.29.0
 
