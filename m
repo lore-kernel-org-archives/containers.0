@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5A42AC4363A
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:37:05 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F7ABC56201
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:37:36 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id E504F207DE
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:37:04 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E504F207DE
+	by mail.kernel.org (Postfix) with ESMTPS id 97D4820790
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:37:35 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 97D4820790
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 9CF9386887;
-	Thu, 29 Oct 2020 00:37:04 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 24D6D8643D;
+	Thu, 29 Oct 2020 00:37:35 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id tcZDOmQotjlR; Thu, 29 Oct 2020 00:37:02 +0000 (UTC)
+	with ESMTP id Lia_AfTzYGEF; Thu, 29 Oct 2020 00:37:34 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 7B99E8687D;
-	Thu, 29 Oct 2020 00:37:02 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id ADE9786403;
+	Thu, 29 Oct 2020 00:37:34 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 6ED93C088B;
-	Thu, 29 Oct 2020 00:37:02 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id B737CC0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id A90C4C088B;
+	Thu, 29 Oct 2020 00:37:34 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 455E3C0051
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:37:00 +0000 (UTC)
+ Thu, 29 Oct 2020 00:37:33 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id B295F8736E
+ by fraxinus.osuosl.org (Postfix) with ESMTP id 3FAD286407
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:37:00 +0000 (UTC)
+ Thu, 29 Oct 2020 00:37:33 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id PPTFSstR+jgj
+ with ESMTP id SPR2wPJ40nCf
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:37:00 +0000 (UTC)
+ Thu, 29 Oct 2020 00:37:32 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by hemlock.osuosl.org (Postfix) with ESMTPS id 34A1B87365
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id 9C1C686403
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:37:00 +0000 (UTC)
+ Thu, 29 Oct 2020 00:37:32 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kXvuw-0008Ep-5z; Thu, 29 Oct 2020 00:35:50 +0000
+ id 1kXvvB-0008Ep-Sh; Thu, 29 Oct 2020 00:36:05 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH 22/34] af_unix: handle idmapped mounts
-Date: Thu, 29 Oct 2020 01:32:40 +0100
-Message-Id: <20201029003252.2128653-23-christian.brauner@ubuntu.com>
+Subject: [PATCH 31/34] expfs: handle idmapped mounts
+Date: Thu, 29 Oct 2020 01:32:49 +0100
+Message-Id: <20201029003252.2128653-32-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.0
 In-Reply-To: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
 References: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
@@ -102,29 +102,37 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-When binding a non-abstract AF_UNIX socket it will gain a representation in the
-filesystem. Enable the socket infrastructure to handle idmapped mounts by using
-the new vfs_mapped_mknod() helper. Non-idmapped mounts will not see any altered
-behavior.
+In follow-up patches we will port overlayfs to support idmapped mounts and
+since it makes use of expfs port expfs to handle idmapped mounts by using one
+of our newly introduced idmapped mount aware lookup helpers.
 
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
- net/unix/af_unix.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/exportfs/expfs.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/net/unix/af_unix.c b/net/unix/af_unix.c
-index 41c3303c3357..f79f7ce3243f 100644
---- a/net/unix/af_unix.c
-+++ b/net/unix/af_unix.c
-@@ -996,7 +996,7 @@ static int unix_mknod(const char *sun_path, umode_t mode, struct path *res)
- 	 */
- 	err = security_path_mknod(&path, dentry, mode, 0);
- 	if (!err) {
--		err = vfs_mknod(d_inode(path.dentry), dentry, mode, 0);
-+		err = vfs_mapped_mknod(mnt_user_ns(path.mnt), d_inode(path.dentry), dentry, mode, 0);
- 		if (!err) {
- 			res->mnt = mntget(path.mnt);
- 			res->dentry = dget(dentry);
+diff --git a/fs/exportfs/expfs.c b/fs/exportfs/expfs.c
+index 2dd55b172d57..8066e8bdc912 100644
+--- a/fs/exportfs/expfs.c
++++ b/fs/exportfs/expfs.c
+@@ -145,7 +145,7 @@ static struct dentry *reconnect_one(struct vfsmount *mnt,
+ 	if (err)
+ 		goto out_err;
+ 	dprintk("%s: found name: %s\n", __func__, nbuf);
+-	tmp = lookup_one_len_unlocked(nbuf, parent, strlen(nbuf));
++	tmp = lookup_one_len_mapped_unlocked(nbuf, parent, strlen(nbuf), mnt_user_ns(mnt));
+ 	if (IS_ERR(tmp)) {
+ 		dprintk("%s: lookup failed: %d\n", __func__, PTR_ERR(tmp));
+ 		err = PTR_ERR(tmp);
+@@ -525,7 +525,7 @@ struct dentry *exportfs_decode_fh(struct vfsmount *mnt, struct fid *fid,
+ 		}
+ 
+ 		inode_lock(target_dir->d_inode);
+-		nresult = lookup_one_len(nbuf, target_dir, strlen(nbuf));
++		nresult = lookup_one_len_mapped(nbuf, target_dir, strlen(nbuf), mnt_user_ns(mnt));
+ 		if (!IS_ERR(nresult)) {
+ 			if (unlikely(nresult->d_inode != result->d_inode)) {
+ 				dput(nresult);
 -- 
 2.29.0
 
