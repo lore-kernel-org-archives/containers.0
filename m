@@ -7,61 +7,60 @@ X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 59355C4363A
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:35:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2EBFCC4363A
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:36:00 +0000 (UTC)
 Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id A10B820791
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:35:58 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A10B820791
+	by mail.kernel.org (Postfix) with ESMTPS id 9A6B820790
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:35:59 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9A6B820790
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 13B2B873B1;
-	Thu, 29 Oct 2020 00:35:58 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 3CB1487338;
+	Thu, 29 Oct 2020 00:35:59 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id QOEJ21LjWyJ5; Thu, 29 Oct 2020 00:35:57 +0000 (UTC)
+	with ESMTP id PCdNCY8gCspZ; Thu, 29 Oct 2020 00:35:57 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 37037872FB;
+	by hemlock.osuosl.org (Postfix) with ESMTP id 5328B8736E;
 	Thu, 29 Oct 2020 00:35:57 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 0B82DC0893;
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 36FDAC1AD8;
 	Thu, 29 Oct 2020 00:35:57 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 8DF95C0051
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 2E1FBC0051
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:35:55 +0000 (UTC)
+ Thu, 29 Oct 2020 00:35:56 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id 77CE58643D
+ by silver.osuosl.org (Postfix) with ESMTP id 18876204E1
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:35:55 +0000 (UTC)
+ Thu, 29 Oct 2020 00:35:56 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id R8mhJc480jds
+ with ESMTP id HWYU9fAV5J4G
  for <containers@lists.linux-foundation.org>;
  Thu, 29 Oct 2020 00:35:54 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id 3BAAC86403
+ by silver.osuosl.org (Postfix) with ESMTPS id 48B9E203BA
  for <containers@lists.linux-foundation.org>;
  Thu, 29 Oct 2020 00:35:54 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kXvuL-0008Ep-Mt; Thu, 29 Oct 2020 00:35:13 +0000
+ id 1kXvuN-0008Ep-Br; Thu, 29 Oct 2020 00:35:15 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH 01/34] namespace: take lock_mount_hash() directly when
- changing flags
-Date: Thu, 29 Oct 2020 01:32:19 +0100
-Message-Id: <20201029003252.2128653-2-christian.brauner@ubuntu.com>
+Subject: [PATCH 02/34] namespace: only take read lock in do_reconfigure_mnt()
+Date: Thu, 29 Oct 2020 01:32:20 +0100
+Message-Id: <20201029003252.2128653-3-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.0
 In-Reply-To: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
 References: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
@@ -103,87 +102,79 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Changing mount options always ends up taking lock_mount_hash() but when
-MNT_READONLY is requested and neither the mount nor the superblock are
-not already MNT_READONLY we end up taking the lock, dropping it, and
-retaking it to change the other mount attributes. Instead of this,
-acquire the lock once when changing mount properties. This simplifies
-the locking in these codepath, makes them easier to reason about and
-avoids having to reacquire the lock right after dropping it.
+do_reconfigure_mnt() used to take the down_write(&sb->s_umount) lock
+which seems unnecessary since we're not changing the superblock. We're
+only checking whether it is already read-only. Setting other mount
+attributes is protected by lock_mount_hash() afaict and not by s_umount.
 
+So I think the history of down_write(&sb->s_umount) lock being taken
+when setting mount attributes dates back to the introduction of
+MNT_READONLY in [2]. Afaict, this introduced the concept of having
+read-only mounts in contrast to just having a read-only superblock. When
+it got introduced it was simply plumbed into do_remount() which already
+took down_write(&sb->s_umount) because it was only used to actually
+change the superblock before [2]. Afaict, it would've already been
+possible back then to only use down_read(&sb->s_umount) for
+MS_BIND | MS_REMOUNT since actual mount options were protected by
+the vfsmount lock already. But that would've meant special casing the
+locking for MS_BIND | MS_REMOUNT in do_remount() which people might not
+have considered worth it.
+Then in [1] MS_BIND | MS_REMOUNT mount option changes were split out of
+do_remount() into do_reconfigure_mnt() but the down_write(&sb->s_umount)
+lock was simply copied over.
+Now that we have this be a separate helper only take
+the down_read(&sb->s_umount) lock since we're only interested in
+checking whether the super block is currently read-only and blocking any
+writers from changing it. Essentially, checking that the super block is
+read-only has the advantage that we can avoid having to go into the
+slowpath and through MNT_WRITE_HOLD and can simply set the read-only
+flag on the mount in set_mount_attributes().
+
+[1]: commit 43f5e655eff7 ("vfs: Separate changing mount flags full remount")
+[2]: commit 2e4b7fcd9260 ("[PATCH] r/o bind mounts: honor mount writer counts at remount")
 Cc: Al Viro <viro@zeniv.linux.org.uk>
 Cc: David Howells <dhowells@redhat.com>
 Cc: linux-fsdevel@vger.kernel.org
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
- fs/namespace.c | 13 ++++++-------
- 1 file changed, 6 insertions(+), 7 deletions(-)
+ fs/namespace.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/fs/namespace.c b/fs/namespace.c
-index cebaa3e81794..20ee291a7af4 100644
+index 20ee291a7af4..6e0d5bb63197 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -463,7 +463,6 @@ static int mnt_make_readonly(struct mount *mnt)
- {
- 	int ret = 0;
- 
--	lock_mount_hash();
- 	mnt->mnt.mnt_flags |= MNT_WRITE_HOLD;
- 	/*
- 	 * After storing MNT_WRITE_HOLD, we'll read the counters. This store
-@@ -497,15 +496,12 @@ static int mnt_make_readonly(struct mount *mnt)
- 	 */
- 	smp_wmb();
- 	mnt->mnt.mnt_flags &= ~MNT_WRITE_HOLD;
--	unlock_mount_hash();
- 	return ret;
+@@ -2507,10 +2507,6 @@ static int change_mount_ro_state(struct mount *mnt, unsigned int mnt_flags)
+ 	return __mnt_unmake_readonly(mnt);
  }
  
- static int __mnt_unmake_readonly(struct mount *mnt)
- {
--	lock_mount_hash();
- 	mnt->mnt.mnt_flags &= ~MNT_READONLY;
--	unlock_mount_hash();
- 	return 0;
- }
- 
-@@ -2517,11 +2513,9 @@ static int change_mount_ro_state(struct mount *mnt, unsigned int mnt_flags)
-  */
+-/*
+- * Update the user-settable attributes on a mount.  The caller must hold
+- * sb->s_umount for writing.
+- */
  static void set_mount_attributes(struct mount *mnt, unsigned int mnt_flags)
  {
--	lock_mount_hash();
  	mnt_flags |= mnt->mnt.mnt_flags & ~MNT_USER_SETTABLE_MASK;
- 	mnt->mnt.mnt_flags = mnt_flags;
- 	touch_mnt_namespace(mnt->mnt_ns);
--	unlock_mount_hash();
- }
- 
- static void mnt_warn_timestamp_expiry(struct path *mountpoint, struct vfsmount *mnt)
-@@ -2567,9 +2561,11 @@ static int do_reconfigure_mnt(struct path *path, unsigned int mnt_flags)
+@@ -2560,13 +2556,17 @@ static int do_reconfigure_mnt(struct path *path, unsigned int mnt_flags)
+ 	if (!can_change_locked_flags(mnt, mnt_flags))
  		return -EPERM;
  
- 	down_write(&sb->s_umount);
-+	lock_mount_hash();
+-	down_write(&sb->s_umount);
++	/*
++	 * We're only checking whether the superblock is read-only not changing
++	 * it, so only take down_read(&sb->s_umount).
++	 */
++	down_read(&sb->s_umount);
+ 	lock_mount_hash();
  	ret = change_mount_ro_state(mnt, mnt_flags);
  	if (ret == 0)
  		set_mount_attributes(mnt, mnt_flags);
-+	unlock_mount_hash();
- 	up_write(&sb->s_umount);
+ 	unlock_mount_hash();
+-	up_write(&sb->s_umount);
++	up_read(&sb->s_umount);
  
  	mnt_warn_timestamp_expiry(path, &mnt->mnt);
-@@ -2610,8 +2606,11 @@ static int do_remount(struct path *path, int ms_flags, int sb_flags,
- 		err = -EPERM;
- 		if (ns_capable(sb->s_user_ns, CAP_SYS_ADMIN)) {
- 			err = reconfigure_super(fc);
--			if (!err)
-+			if (!err) {
-+				lock_mount_hash();
- 				set_mount_attributes(mnt, mnt_flags);
-+				unlock_mount_hash();
-+			}
- 		}
- 		up_write(&sb->s_umount);
- 	}
+ 
 -- 
 2.29.0
 
