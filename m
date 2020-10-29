@@ -2,68 +2,70 @@ Return-Path: <SRS0=MeFG=EE=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2C891C55179
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 16:15:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 87CB1C4363A
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 16:20:01 +0000 (UTC)
 Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 6462520756
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 16:15:27 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6462520756
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=poettering.net
+	by mail.kernel.org (Postfix) with ESMTPS id D0342206FB
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 16:19:59 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D0342206FB
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id BD87A875A5;
-	Thu, 29 Oct 2020 16:15:26 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id BA105875AB;
+	Thu, 29 Oct 2020 16:19:59 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 0jrqVzWdA-SC; Thu, 29 Oct 2020 16:15:24 +0000 (UTC)
+	with ESMTP id 8KouwTHLH9aS; Thu, 29 Oct 2020 16:19:58 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id EF4C78759E;
-	Thu, 29 Oct 2020 16:15:23 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id DB7A2875A9;
+	Thu, 29 Oct 2020 16:19:58 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id E2572C0859;
-	Thu, 29 Oct 2020 16:15:23 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 6CA23C0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id C00D3C0859;
+	Thu, 29 Oct 2020 16:19:58 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 74FE7C0051
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 16:15:22 +0000 (UTC)
+ Thu, 29 Oct 2020 16:19:57 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id 5567786B81
+ by whitealder.osuosl.org (Postfix) with ESMTP id 658BE86657
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 16:15:22 +0000 (UTC)
+ Thu, 29 Oct 2020 16:19:57 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id GXlFyXMf_Nrf
+ with ESMTP id mQRCk8VI6eSj
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 16:15:20 +0000 (UTC)
-X-Greylist: delayed 00:10:12 by SQLgrey-1.7.6
-Received: from gardel.0pointer.net (gardel.0pointer.net [85.214.157.71])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id 94BE186B80
+ Thu, 29 Oct 2020 16:19:56 +0000 (UTC)
+X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
+Received: from youngberry.canonical.com (youngberry.canonical.com
+ [91.189.89.112])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 29D85860D6
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 16:15:20 +0000 (UTC)
-Received: from gardel-login.0pointer.net (gardel.0pointer.net [85.214.157.71])
- by gardel.0pointer.net (Postfix) with ESMTP id 8D3CAE80409;
- Thu, 29 Oct 2020 17:05:05 +0100 (CET)
-Received: by gardel-login.0pointer.net (Postfix, from userid 1000)
- id E22A4160834; Thu, 29 Oct 2020 17:05:03 +0100 (CET)
-Date: Thu, 29 Oct 2020 17:05:02 +0100
-From: Lennart Poettering <lennart@poettering.net>
-To: "Eric W. Biederman" <ebiederm@xmission.com>
+ Thu, 29 Oct 2020 16:19:56 +0000 (UTC)
+Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
+ helo=wittgenstein) by youngberry.canonical.com with esmtpsa
+ (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
+ (envelope-from <christian.brauner@ubuntu.com>)
+ id 1kYAe2-00056E-O9; Thu, 29 Oct 2020 16:19:22 +0000
+Date: Thu, 29 Oct 2020 17:19:20 +0100
+From: Christian Brauner <christian.brauner@ubuntu.com>
+To: Dave Chinner <david@fromorbit.com>
 Subject: Re: [PATCH 00/34] fs: idmapped mounts
-Message-ID: <20201029160502.GA333141@gardel-login>
+Message-ID: <20201029161920.zp7p3335x3q2a36e@wittgenstein>
 References: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
- <87pn51ghju.fsf@x220.int.ebiederm.org>
+ <20201029022733.GB306023@dread.disaster.area>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <87pn51ghju.fsf@x220.int.ebiederm.org>
-Cc: Mimi Zohar <zohar@linux.ibm.com>, David Howells <dhowells@redhat.com>,
+In-Reply-To: <20201029022733.GB306023@dread.disaster.area>
+Cc: Lennart Poettering <lennart@poettering.net>,
+ Mimi Zohar <zohar@linux.ibm.com>, David Howells <dhowells@redhat.com>,
  Andreas Dilger <adilger.kernel@dilger.ca>,
  containers@lists.linux-foundation.org, Tycho Andersen <tycho@tycho.ws>,
  Miklos Szeredi <miklos@szeredi.hu>, smbarber@chromium.org,
@@ -82,9 +84,9 @@ Cc: Mimi Zohar <zohar@linux.ibm.com>, David Howells <dhowells@redhat.com>,
  Stephen Smalley <stephen.smalley.work@gmail.com>,
  Jonathan Corbet <corbet@lwn.net>, linux-unionfs@vger.kernel.org,
  linux-security-module@vger.kernel.org, linux-audit@redhat.com,
- linux-api@vger.kernel.org, Casey Schaufler <casey@schaufler-ca.com>,
- Alban Crequy <alban@kinvolk.io>, linux-integrity@vger.kernel.org,
- Todd Kjos <tkjos@google.com>
+ "Eric W. Biederman" <ebiederm@xmission.com>, linux-api@vger.kernel.org,
+ Casey Schaufler <casey@schaufler-ca.com>, Alban Crequy <alban@kinvolk.io>,
+ linux-integrity@vger.kernel.org, Todd Kjos <tkjos@google.com>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -96,67 +98,142 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Do, 29.10.20 10:47, Eric W. Biederman (ebiederm@xmission.com) wrote:
-
-> Is that the use case you are looking at removing the need for
-> systemd-homed to avoid chowning after lugging encrypted home directories
-> from one system to another?  Why would it be desirable to avoid the
-> chown?
-
-Yes, I am very interested in seeing Christian's work succeed, for the
-usecase in systemd-homed. In systemd-homed each user gets their own
-private file system, and these fs shall be owned by the user's local
-UID, regardless in which system it is used. The UID should be an
-artifact of the local, individual system in this model, and thus
-the UID on of the same user/home on system A might be picked as 1010
-and on another as 1543, and on a third as 1323, and it shouldn't
-matter. This way, home directories become migratable without having to
-universially sync UID assignments: it doesn't matter anymore what the
-local UID is.
-
-Right now we do a recursive chown() at login time to ensure the home
-dir is properly owned. This has two disadvantages:
-
-1. It's slow. In particular on large home dirs, it takes a while to go
-   through the whole user's homedir tree and chown/adjust ACLs for
-   everything.
-
-2. Because it is so slow we take a shortcut right now: if the
-   top-level home dir inode itself is owned by the correct user, we
-   skip the recursive chowning. This means in the typical case where a
-   user uses the same system most of the time, and thus the UID is
-   stable we can avoid the slowness. But this comes at a drawback: if
-   the user for some reason ends up with files in their homedir owned
-   by an unrelated user, then we'll never notice or readjust.
-
-> If the goal is to solve fragmented administration of uid assignment I
-> suggest that it might be better to solve the administration problem so
-> that all of the uids of interest get assigned the same way on all of the
-> systems of interest.
-
-Well, the goal is to make things simple and be able to use the home
-dir everywhere without any prior preparation, without central UID
-assignment authority.
-
-The goal is to have a scheme that requires no administration, by
-making the UID management problem go away. Hence, if you suggest
-solving this by having a central administrative authority: this is
-exactly what the model wants to get away from.
-
-Or to say this differently: just because I personally use three
-different computers, I certainly don't want to set up LDAP or sync
-UIDs manually.
-
-Lennart
-
---
-Lennart Poettering, Berlin
-_______________________________________________
-Containers mailing list
-Containers@lists.linux-foundation.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
+T24gVGh1LCBPY3QgMjksIDIwMjAgYXQgMDE6Mjc6MzNQTSArMTEwMCwgRGF2ZSBDaGlubmVyIHdy
+b3RlOgo+IE9uIFRodSwgT2N0IDI5LCAyMDIwIGF0IDAxOjMyOjE4QU0gKzAxMDAsIENocmlzdGlh
+biBCcmF1bmVyIHdyb3RlOgo+ID4gSGV5IGV2ZXJ5b25lLAo+ID4gCj4gPiBJIHZhbmlzaGVkIGZv
+ciBhIGxpdHRsZSB3aGlsZSB0byBmb2N1cyBvbiB0aGlzIHdvcmsgaGVyZSBzbyBzb3JyeSBmb3IK
+PiA+IG5vdCBiZWluZyBhdmFpbGFibGUgYnkgbWFpbCBmb3IgYSB3aGlsZS4KPiA+IAo+ID4gU2lu
+Y2UgcXVpdGUgYSBsb25nIHRpbWUgd2UgaGF2ZSBpc3N1ZXMgd2l0aCBzaGFyaW5nIG1vdW50cyBi
+ZXR3ZWVuCj4gPiBtdWx0aXBsZSB1bnByaXZpbGVnZWQgY29udGFpbmVycyB3aXRoIGRpZmZlcmVu
+dCBpZCBtYXBwaW5ncywgc2hhcmluZyBhCj4gPiByb290ZnMgYmV0d2VlbiBtdWx0aXBsZSBjb250
+YWluZXJzIHdpdGggZGlmZmVyZW50IGlkIG1hcHBpbmdzLCBhbmQgYWxzbwo+ID4gc2hhcmluZyBy
+ZWd1bGFyIGRpcmVjdG9yaWVzIGFuZCBmaWxlc3lzdGVtcyBiZXR3ZWVuIHVzZXJzIHdpdGggZGlm
+ZmVyZW50Cj4gPiB1aWRzIGFuZCBnaWRzLiBUaGUgbGF0dGVyIHVzZS1jYXNlcyBoYXZlIGJlY29t
+ZSBldmVuIG1vcmUgaW1wb3J0YW50IHdpdGgKPiA+IHRoZSBhdmFpbGFiaWxpdHkgYW5kIGFkb3B0
+aW9uIG9mIHN5c3RlbWQtaG9tZWQgKGNmLiBbMV0pIHRvIGltcGxlbWVudAo+ID4gcG9ydGFibGUg
+aG9tZSBkaXJlY3Rvcmllcy4KPiA+IAo+ID4gVGhlIHNvbHV0aW9ucyB3ZSBoYXZlIHRyaWVkIGFu
+ZCBwcm9wb3NlZCBzbyBmYXIgaW5jbHVkZSB0aGUgaW50cm9kdWN0aW9uCj4gPiBvZiBmc2lkIG1h
+cHBpbmdzLCBhIHRpbnkgb3ZlcmxheSBiYXNlZCBmaWxlc3lzdGVtLCBhbmQgYW4gYXBwcm9hY2gg
+dG8KPiA+IGNhbGwgb3ZlcnJpZGUgY3JlZHMgaW4gdGhlIHZmcy4gTm9uZSBvZiB0aGVzZSBzb2x1
+dGlvbnMgaGF2ZSBjb3ZlcmVkIGFsbAo+ID4gb2YgdGhlIGFib3ZlIHVzZS1jYXNlcy4KPiA+IAo+
+ID4gVGhlIHNvbHV0aW9uIHByb3Bvc2VkIGhlcmUgaGFzIGl0J3Mgb3JpZ2lucyBpbiBtdWx0aXBs
+ZSBkaXNjdXNzaW9ucwo+ID4gZHVyaW5nIExpbnV4IFBsdW1iZXJzIDIwMTcgZHVyaW5nIGFuZCBh
+ZnRlciB0aGUgZW5kIG9mIHRoZSBjb250YWluZXJzCj4gPiBtaWNyb2NvbmZlcmVuY2UuCj4gPiBU
+byB0aGUgYmVzdCBvZiBteSBrbm93bGVkZ2UgdGhpcyBpbnZvbHZlZCBBbGVrc2EsIFN0w6lwaGFu
+ZSwgRXJpYywgRGF2aWQsCj4gPiBKYW1lcywgYW5kIG15c2VsZi4gQSB2YXJpYW50IG9mIHRoZSBz
+b2x1dGlvbiBwcm9wb3NlZCBoZXJlIGhhcyBhbHNvIGJlZW4KPiA+IGRpc2N1c3NlZCwgYWdhaW4g
+dG8gdGhlIGJlc3Qgb2YgbXkga25vd2xlZGdlLCBhZnRlciBhIExpbnV4IGNvbmZlcmVuY2UKPiA+
+IGluIFN0LiBQZXRlcnNidXJnIGluIFJ1c3NpYSBiZXR3ZWVuIENocmlzdG9waCwgVHljaG8sIGFu
+ZCBteXNlbGYgaW4gMjAxNwo+ID4gYWZ0ZXIgTGludXggUGx1bWJlcnMuCj4gPiBJJ3ZlIHRha2Vu
+IHRoZSB0aW1lIHRvIGZpbmFsbHkgaW1wbGVtZW50IGEgd29ya2luZyB2ZXJzaW9uIG9mIHRoaXMK
+PiA+IHNvbHV0aW9uIG92ZXIgdGhlIGxhc3Qgd2Vla3MgdG8gdGhlIGJlc3Qgb2YgbXkgYWJpbGl0
+aWVzLiBUeWNobyBoYXMKPiA+IHNpZ25lZCB1cCBmb3IgdGhpcyBzbGlndGhseSBjcmF6eSBlbmRl
+YXZvdXIgYXMgd2VsbCBhbmQgaGUgaGFzIGhlbHBlZAo+ID4gd2l0aCB0aGUgY29udmVyc2lvbiBv
+ZiB0aGUgeGF0dHIgY29kZXBhdGhzLgo+ID4gCj4gPiBUaGUgY29yZSBpZGVhIGlzIHRvIG1ha2Ug
+aWRtYXBwaW5ncyBhIHByb3BlcnR5IG9mIHN0cnVjdCB2ZnNtb3VudAo+ID4gaW5zdGVhZCBvZiB0
+eWluZyBpdCB0byBhIHByb2Nlc3MgYmVpbmcgaW5zaWRlIG9mIGEgdXNlciBuYW1lc3BhY2Ugd2hp
+Y2gKPiA+IGhhcyBiZWVuIHRoZSBjYXNlIGZvciBhbGwgb3RoZXIgcHJvcG9zZWQgYXBwcm9hY2hl
+cy4KPiA+IEl0IG1lYW5zIHRoYXQgaWRtYXBwaW5ncyBiZWNvbWUgYSBwcm9wZXJ0eSBvZiBiaW5k
+LW1vdW50cywgaS5lLiBlYWNoCj4gPiBiaW5kLW1vdW50IGNhbiBoYXZlIGEgc2VwYXJhdGUgaWRt
+YXBwaW5nLiBUaGlzIGhhcyB0aGUgb2J2aW91cyBhZHZhbnRhZ2UKPiA+IHRoYXQgaWRtYXBwZWQg
+bW91bnRzIGNhbiBiZSBjcmVhdGVkIGluc2lkZSBvZiB0aGUgaW5pdGlhbCB1c2VyCj4gPiBuYW1l
+c3BhY2UsIGkuZS4gb24gdGhlIGhvc3QgaXRzZWxmIGluc3RlYWQgb2YgcmVxdWlyaW5nIHRoZSBj
+YWxsZXIgdG8gYmUKPiA+IGxvY2F0ZWQgaW5zaWRlIG9mIGEgdXNlciBuYW1lc3BhY2UuIFRoaXMg
+ZW5hYmxlcyBzdWNoIHVzZS1jYXNlcyBhcyBlLmcuCj4gPiBtYWtpbmcgYSB1c2Igc3RpY2sgYXZh
+aWxhYmxlIGluIG11bHRpcGxlIGxvY2F0aW9ucyB3aXRoIGRpZmZlcmVudAo+ID4gaWRtYXBwaW5n
+cyAoc2VlIHRoZSB2ZmF0IHBvcnQgdGhhdCBpcyBwYXJ0IG9mIHRoaXMgcGF0Y2ggc2VyaWVzKS4K
+PiA+IAo+ID4gVGhlIHZmc21vdW50IHN0cnVjdCBnYWlucyBhIG5ldyBzdHJ1Y3QgdXNlcl9uYW1l
+c3BhY2UgbWVtYmVyLiBUaGUKPiA+IGlkbWFwcGluZyBvZiB0aGUgdXNlciBuYW1lc3BhY2UgYmVj
+b21lcyB0aGUgaWRtYXBwaW5nIG9mIHRoZSBtb3VudC4gQQo+ID4gY2FsbGVyIHRoYXQgaXMgZWl0
+aGVyIHByaXZpbGVnZWQgd2l0aCByZXNwZWN0IHRvIHRoZSB1c2VyIG5hbWVzcGFjZSBvZgo+ID4g
+dGhlIHN1cGVyYmxvY2sgb2YgdGhlIHVuZGVybHlpbmcgZmlsZXN5c3RlbSBvciBhIGNhbGxlciB0
+aGF0IGlzCj4gPiBwcml2aWxlZ2VkIHdpdGggcmVzcGVjdCB0byB0aGUgdXNlciBuYW1lc3BhY2Ug
+YSBtb3VudCBoYXMgYmVlbiBpZG1hcHBlZAo+ID4gd2l0aCBjYW4gY3JlYXRlIGEgbmV3IGJpbmQt
+bW91bnQgYW5kIG1hcmsgaXQgd2l0aCBhIHVzZXIgbmFtZXNwYWNlLiBUaGUKPiA+IHVzZXIgbmFt
+ZXNwYWNlIHRoZSBtb3VudCB3aWxsIGJlIG1hcmtlZCB3aXRoIGNhbiBiZSBzcGVjaWZpZWQgYnkg
+cGFzc2luZwo+ID4gYSBmaWxlIGRlc2NyaXB0b3IgcmVmZXJpbmcgdG8gdGhlIHVzZXIgbmFtZXNw
+YWNlIGFzIGFuIGFyZ3VtZW50IHRvIHRoZQo+ID4gbmV3IG1vdW50X3NldGF0dHIoKSBzeXNjYWxs
+IHRvZ2V0aGVyIHdpdGggdGhlIG5ldyBNT1VOVF9BVFRSX0lETUFQIGZsYWcuCj4gPiBCeSBkZWZh
+dWx0IHZmc21vdW50cyBhcmUgbWFya2VkIHdpdGggdGhlIGluaXRpYWwgdXNlciBuYW1lc3BhY2Ug
+YW5kIG5vCj4gPiBiZWhhdmlvcmFsIG9yIHBlcmZvcm1hbmNlIGNoYW5nZXMgc2hvdWxkIGJlIG9i
+c2VydmVkLiBBbGwgbWFwcGluZwo+ID4gb3BlcmF0aW9ucyBhcmUgbm9wcyBmb3IgdGhlIGluaXRp
+YWwgdXNlciBuYW1lc3BhY2UuCj4gPiAKPiA+IFdoZW4gYSBmaWxlL2lub2RlIGlzIGFjY2Vzc2Vk
+IHRocm91Z2ggYW4gaWRtYXBwZWQgbW91bnQgdGhlIGlfdWlkIGFuZAo+ID4gaV9naWQgb2YgdGhl
+IGlub2RlIHdpbGwgYmUgcmVtYXBwZWQgYWNjb3JkaW5nIHRvIHRoZSB1c2VyIG5hbWVzcGFjZSB0
+aGUKPiA+IG1vdW50IGhhcyBiZWVuIG1hcmtlZCB3aXRoLiBXaGVuIGEgbmV3IG9iamVjdCBpcyBj
+cmVhdGVkIGJhc2VkIG9uIHRoZQo+ID4gZnN1aWQgYW5kIGZzZ2lkIG9mIHRoZSBjYWxsZXIgdGhl
+eSB3aWxsIHNpbWlsYXJseSBiZSByZW1hcHBlZCBhY2NvcmRpbmcKPiA+IHRvIHRoZSB1c2VyIG5h
+bWVzcGFjZSBvZiB0aGUgbW91bnQgdGhleSBjYXJlIGNyZWF0ZWQgZnJvbS4KPiA+IAo+ID4gVGhp
+cyBtZWFucyB0aGUgdXNlciBuYW1lc3BhY2Ugb2YgdGhlIG1vdW50IG5lZWRzIHRvIGJlIHBhc3Nl
+ZCBkb3duIGludG8KPiA+IGEgZmV3IHJlbGV2YW50IGlub2RlX29wZXJhdGlvbnMuIFRoaXMgbW9z
+dGx5IGluY2x1ZGVzIGlub2RlIG9wZXJhdGlvbnMKPiA+IHRoYXQgY3JlYXRlIGZpbGVzeXN0ZW0g
+b2JqZWN0cyBvciBjaGFuZ2UgZmlsZSBhdHRyaWJ1dGVzLgo+IAo+IFRoYXQncyByZWFsbHkgcXVp
+dGUgLi4uIG1lc3N5LgoKSSBkb24ndCBhZ3JlZS4gSXQncyBjaGFuZ2VzIGFsbCBhY3Jvc3MgdGhl
+IHZmcyBidXQgaXQncyBub3QgaGFja3kgaW4gYW55CndheSBzaW5jZSBpdCBjbGVhbmx5IHBhc3Nl
+cyBkb3duIGFuIGFkZGl0aW9uYWwgYXJndW1lbnQgKEknbSBiaWFzZWQgb2YKY291cnNlLikuIAoK
+PiAKPiBNYXliZSBJJ20gbWlzc2luZyBzb21ldGhpbmcsIGJ1dCBpZiB5b3UgaGF2ZSB0aGUgdXNl
+cl9ucyB0byBiZSB1c2VkCj4gZm9yIHRoZSBWRlMgb3BlcmF0aW9uIHdlIGFyZSBhYm91dCB0byBl
+eGVjdXRlIHRoZW4gd2h5IGNhbid0IHdlIHVzZQo+IHRoZSBzYW1lIG1vZGVsIGFzIGN1cnJlbnRf
+ZnN1aWQvY3VycmVudF9mc2dpZCgpIGZvciBwYXNzaW5nIHRoZQo+IGZpbGVzeXN0ZW0gY3JlZGVu
+dGlhbHMgZG93biB0byB0aGUgZmlsZXN5c3RlbSBvcGVyYXRpb25zPyAgaS5lLgo+IGF0dGFjaCBp
+dCB0byB0aGUgY3VycmVudC0+Y3JlZC0+ZnNfdXNlcm5zLCBhbmQgdGhlbiB0aGUgZmlsZXN5c3Rl
+bQo+IGNvZGUgdGhhdCBhY3R1YWxseSBuZWVkcyB0byBrbm93IHRoZSBjdXJyZW50IHVzZXJucyBj
+YW4gY2FsbAo+IGN1cnJlbnRfZnNfdXNlcl9ucygpIGluc3RlYWQgb2YgY3VycmVudF91c2VyX25z
+KCkuICBpLmUuCj4gCj4gI2RlZmluZSBjdXJyZW50X2ZzX3VzZXJfbnMoKQlcCj4gCShjdXJyZW50
+LT5jcmVkLT5mc191c2VybnMgPyBjdXJyZW50LT5jcmVkLT5mc191c2VybnMgXAo+IAkJCQkgIDog
+Y3VycmVudC0+Y3JlZC0+dXNlcm5zKQo+IAo+IEF0IHRoaXMgcG9pbnQsIHRoZSBmaWxlc3lzdGVt
+IHdpbGwgbm93IGFsd2F5cyBoYXZlIHRoZSBjb3JyZWN0Cj4gdXNlcm5zIGl0IGlzIHN1cHBvc2Vk
+IHRvIHVzZSBmb3IgbWFwcGluZyB0aGUgdWlkL2dpZCwgcmlnaHQ/CgpUaGFua3MgZm9yIHRoaXMg
+aW50ZXJlc3RpbmcgaWRlYSEgSSBoYXZlIHNvbWUgdHJvdWJsZXMgd2l0aCBpdCB0aG91Z2guCgpU
+aGlzIGFwcHJvYWNoIChhbHdheXMpIHNlZW1lZCBjb25jZXB0dWFsbHkgd3JvbmcgdG8gbWUuIExp
+a2UgVHljaG8gc2FpZApzb21ld2hlcmUgZWxzZSB0aGlzIGJhc2ljYWxseSB3b3VsZCBhY3QgbGlr
+ZSBhIGdsb2JhbCB2YXJpYWJsZSB3aGljaAppc24ndCBncmVhdC4KClRoZXJlJ3MgYWxzbyBhIHN1
+YnN0YW50aWFsIGRpZmZlcmVuY2UgYmV0d2VlbiBpbiB0aGF0IHRoZSBjdXJyZW50IGZzdWlkCmFu
+ZCBmc2dpZCBhcmUgYW4gYWN0dWFsIHByb3BlcnR5IG9mIHRoZSBjYWxsZXJzIGNyZWRzIHNvIHRv
+IGhhdmUgdGhlbSBpbgp0aGVyZSBtYWtlcyBwZXJmZWN0IHNlbnNlLiBCdXQgdGhlIHVzZXIgbmFt
+ZXNwYWNlIG9mIHRoZSB2ZnNtb3VudCBpcyBhCnByb3BlcnR5IG9mIHRoZSBtb3VudCBhbmQgYXMg
+c3VjaCBnbHVlaW5nIGl0IHRvIHRoZSBjYWxsZXJzIGNyZWRzIHdoZW4KY2FsbGluZyBpbnRvIHRo
+ZSB2ZnMgaXMganVzdCB3ZWlyZCBhbmQgSSB3b3VsZCB2ZXJ5IG11Y2ggbGlrZSB0byBhdm9pZAp0
+aGlzLiBJZiBpbm9kZSdzIHdvdWxkbid0IGhhdmUgYW4gaV9zYiBtZW1iZXIgd2Ugd291bGRuJ3Qg
+c3VkZGVubHkgc3RhcnQKdG8gcGFzcyBkb3duIHRoZSBzX3VzZXJfbnMgdmlhIHRoZSBjYWxsZXJz
+IGNyZWRzIHRvIHRoZSBmaWxlc3lzdGVtcy4KCkknbSBhbHNvIG5vdCBmb25kIG9mIGhhdmluZyB0
+byBjYWxsIHByZXBhcmVfY3JlZHMoKSBhbmQgb3ZlcnJpZGVfY3JlZHMoKQphbGwgYWNyb3NzIHRo
+ZSB2ZnMuIEl0J3MgbWVzc3kgYW5kIHByZXBhcmVfY3JlZHMoKSBpcyBlc3BlY2lhbGx5CnByb2Js
+ZW1hdGljIGR1cmluZyBSQ1UgcGF0aHdhbGsgd2hlcmUgd2UgY2FuJ3QgY2FsbCBpdC4gV2UgY291
+bGQKaW4gcGF0aF9pbml0KCkgYXQgdGhlIHN0YXJ0IG9mIGV2ZXJ5IGV2ZXJ5IGxvb2t1cCBvcGVy
+YXRpb24gY2FsbApwcmVwYXJlX2NyZWRzKCkgYW5kIHRoZW4gb3ZlcnJpZGUgdGhlbSB3aGVuIHdl
+IG5lZWQgdG8gc3dpdGNoIHRoZQpmc191c2VybnMgZ2xvYmFsIHZhcmlhYmxlIGFuZCB0aGVuIHB1
+dF9jcmVkcygpIGF0IHRoZSBlbmQgb2YgZXZlcnkgcGF0aAp3YWxrIGluIHRlcm1pbmF0ZV93YWxr
+KCkuIEJ1dCB0aGlzIG1lYW5zIHBlbmFsaXppbmcgZXZlcnkgbG9va3VwCm9wZXJhdGlvbnMgd2l0
+aCBhbiBhZGRpdGlvbmFsIHByZXBhcmVfY3JlZHMoKSB3aGljaCBuZWVkcyB0byBiZSBjYWxsZWQK
+YXQgbGVhc3Qgb25jZSwgSSB0aGluay4gVGhlbiBkdXJpbmcgbG9va3VwIHdlIHdvdWxkIG5lZWQg
+dG8Kb3ZlcnJpZGUvY2hhbmdlIHRoaXMgbmV3IGdsb2JhbCBmc191c2VybnMgdmFyaWFibGUgcG90
+ZW50aWFsbHkgYXQgZWFjaAptb3VudHBvaW50IGNyb3NzaW5nIHRvIHN3aXRjaCBiYWNrIHRvIHRo
+ZSBjb3JyZWN0IGZzX3VzZXJucyBmb3IgaWRtYXBwZWQKYW5kIG5vbi1pZG1hcHBlZCBtb3VudHMu
+IFdlJ2QgYWxzbyBuZWVkIHRvIHJlYXJyYW5nZSBhIGJ1bmNoIG9mCnRlcm1pbmF0ZV93YWxrKCkg
+Y2FsbHMgYW5kIHdlIHdvdWxkIGxpa2UgZW5kIHVwIHdpdGggYSBjb21wYXJhYmxlIGFtb3VudApv
+ZiBjaGFuZ2VzIG9ubHkgdGhhdCB0aGV5IHdvdWxkIGluZGVlZCBiZSBtb3JlIG1lc3N5IHNpbmNl
+IHdlJ3JlCnN0cmFwcGluZyBmc191c2VybnMgdG8gdGhlIGNhbGxlcidzIGNyZWRzLgoKSSBhbiBh
+bHRlcm5hdGl2ZSBtaWdodCBiZSB0byBoYXZlIGEgY29tYmluZWQgYXBwcm9hY2ggd2hlcmUgeW91
+IHBhc3MgdGhlCnVzZXIgbmFtZXNwYWNlIGFyb3VuZCBpbiB0aGUgdmZzIGJ1dCB3aGVuIGNhbGxp
+bmcgaW50byB0aGUgZmlsZXN5c3RlbQp1c2UgdGhlIGZzX3VzZXJucyBnbG9iYWwgdmFyaWFibGUg
+YXBwcm9hY2ggYnV0IEkgd291bGQgdmVyeSBtdWNoIHByZWZlcgp0byBhdm9pZCB0aGlzIGFuZCBp
+bnN0ZWFkIGNsZWFubHkgcGFzcyBkb3duIHRoZSB1c2VyIG5hbWVzcGFjZQpjb3JyZWN0bHkuIFRo
+YXQncyBtb3JlIHdvcmssIGl0J2xsIHRha2UgbG9uZ2VyIGJ1dCBJIGFuZCBvdGhlcnMgYXJlCmFy
+b3VuZCB0byBzZWUgdGhlc2UgY2hhbmdlcyB0aHJvdWdoLgoKPiAKPiBBbHNvLCBpZiB3ZSBhcmUg
+cGFzc2luZyB3b3JrIG9mZiB0byB3b3JrZXIgdGhyZWFkcywgZHVwbGljYXRpbmcKPiB0aGUgY3Vy
+cmVudCBjcmVkcyB3aWxsIGNhcHR1cmUgdGhpcyBpbmZvcm1hdGlvbiBhbmQgd29uJ3QgbGVhdmUK
+PiByYW5kb20gbGFuZG1pbmVzIHdoZXJlIHN0dWZmIGRvZXNuJ3Qgd29yayBhcyBpdCBzaG91bGQg
+YmVjYXVzZSB0aGUKPiB3b3JrZXIgdGhyZWFkIGlzIHVuYXdhcmUgb2YgdGhlIHVzZXJucyB0aGF0
+IGl0IGlzIHN1cHBvc2VkIHRvIGJlCj4gZG9pbmcgZmlsZXN5dHNlbSBvcGVyYXRpb25zIHVuZGVy
+Li4uCgpUaGF0IHNlZW1zIGxpa2UgYSBwcm9ibGVtIHRoYXQgY2FuIGJlIGhhbmRsZWQgYnkgc2lt
+cGx5IGtlZXBpbmcgdGhlCnVzZXJucyBhcm91bmQgc2ltaWxhciB0byBob3cgd2UgbmVlZCB0byBh
+bHJlYWR5IGtlZXAgY3JlZHMgYXJvdW5kLgoKQ2hyaXN0aWFuCl9fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRh
+aW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5k
+YXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
