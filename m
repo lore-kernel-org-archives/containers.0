@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C7613C55179
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:36:18 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A4EECC4363A
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:36:21 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 505E720790
-	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:36:18 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 505E720790
+	by mail.kernel.org (Postfix) with ESMTPS id 2D14120790
+	for <containers@archiver.kernel.org>; Thu, 29 Oct 2020 00:36:21 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2D14120790
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 0EAB98643D;
-	Thu, 29 Oct 2020 00:36:18 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id dQKONP5X0V2V; Thu, 29 Oct 2020 00:36:14 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 309A6869EB;
-	Thu, 29 Oct 2020 00:36:14 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 1B00FC1AD7;
-	Thu, 29 Oct 2020 00:36:14 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 83D3AC0051
- for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:36:11 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 7F60B87403
- for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:36:11 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id EA1EF873B4;
+	Thu, 29 Oct 2020 00:36:20 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
- by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id 9OS8V0Eesjts
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id nwXrNo9xSLMI; Thu, 29 Oct 2020 00:36:19 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by hemlock.osuosl.org (Postfix) with ESMTP id B8EF98744F;
+	Thu, 29 Oct 2020 00:36:19 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id B430EC088B;
+	Thu, 29 Oct 2020 00:36:19 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 67986C0051
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:36:09 +0000 (UTC)
+ Thu, 29 Oct 2020 00:36:18 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by whitealder.osuosl.org (Postfix) with ESMTP id 552B7869BD
+ for <containers@lists.linux-foundation.org>;
+ Thu, 29 Oct 2020 00:36:18 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from whitealder.osuosl.org ([127.0.0.1])
+ by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id KrAFolx40OJF
+ for <containers@lists.linux-foundation.org>;
+ Thu, 29 Oct 2020 00:36:16 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by hemlock.osuosl.org (Postfix) with ESMTPS id ABBDD8744F
+ by whitealder.osuosl.org (Postfix) with ESMTPS id D4AAE869A0
  for <containers@lists.linux-foundation.org>;
- Thu, 29 Oct 2020 00:36:09 +0000 (UTC)
+ Thu, 29 Oct 2020 00:36:15 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kXvue-0008Ep-Dl; Thu, 29 Oct 2020 00:35:32 +0000
+ id 1kXvun-0008Ep-LI; Thu, 29 Oct 2020 00:35:41 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH 12/34] xattr: handle idmapped mounts
-Date: Thu, 29 Oct 2020 01:32:30 +0100
-Message-Id: <20201029003252.2128653-13-christian.brauner@ubuntu.com>
+Subject: [PATCH 17/34] namei: introduce struct renamedata
+Date: Thu, 29 Oct 2020 01:32:35 +0100
+Message-Id: <20201029003252.2128653-18-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.0
 In-Reply-To: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
 References: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
@@ -102,643 +102,193 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-From: Tycho Andersen <tycho@tycho.pizza>
+In order to handle idmapped mounts we will extend the vfs rename helper
+to take two new arguments in follow up patches. Since this operations already
+takes a bunch of arguments add a simple struct renamedata (based on struct
+nameidata) and make the current helper to use it before we extend it.
 
-When interacting with extended attributes the vfs verifies that the
-caller is privileged over the inode with which the extended attribute is
-associated. Add helpers to handle extended attributes on idmapped
-mounts. If the inode is accessed through an idmapped mount we need to
-map it according to the mount's user namespace. Afterwards the checks
-are identical to non-idmapped mounts.
-This patch adds helpers to get, set, and remove extended attributes on
-idmapped mounts. The four helpers vfs_mapped_getxattr(),
-vfs_mapped_setxattr(), __vfs_mapped_removexattr(), and
-vfs_mapped_removexattr() are either used directly by the vfs (e.g.
-vfs_mapped_getxattr_alloc()) or by the filesystems targeted in this
-first interation.
-
-If the initial user namespace is passed all operations are a nop so
-non-idmapped mounts will not see a change in behavior and will also not
-see any performance impact. It also means that the non-idmapped-mount
-aware helpers can be implemented on top of their idmapped-mount aware
-counterparts by passing the initial user namespace.
-
-Signed-off-by: Tycho Andersen <tycho@tycho.pizza>
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
- fs/xattr.c            | 252 +++++++++++++++++++++++++++++-------------
- include/linux/xattr.h |  23 ++++
- 2 files changed, 196 insertions(+), 79 deletions(-)
+ fs/namei.c | 144 ++++++++++++++++++++++++++++++++---------------------
+ 1 file changed, 88 insertions(+), 56 deletions(-)
 
-diff --git a/fs/xattr.c b/fs/xattr.c
-index 96ff53b42251..cdda2baeb9f7 100644
---- a/fs/xattr.c
-+++ b/fs/xattr.c
-@@ -83,7 +83,8 @@ xattr_resolve_name(struct inode *inode, const char **name)
-  * because different namespaces have very different rules.
-  */
- static int
--xattr_permission(struct inode *inode, const char *name, int mask)
-+xattr_permission(struct user_namespace *user_ns, struct inode *inode,
-+		 const char *name, int mask)
- {
- 	/*
- 	 * We can never set or remove an extended attribute on a read-only
-@@ -127,11 +128,11 @@ xattr_permission(struct inode *inode, const char *name, int mask)
- 		if (!S_ISREG(inode->i_mode) && !S_ISDIR(inode->i_mode))
- 			return (mask & MAY_WRITE) ? -EPERM : -ENODATA;
- 		if (S_ISDIR(inode->i_mode) && (inode->i_mode & S_ISVTX) &&
--		    (mask & MAY_WRITE) && !inode_owner_or_capable(inode))
-+		    (mask & MAY_WRITE) && !mapped_inode_owner_or_capable(user_ns, inode))
- 			return -EPERM;
- 	}
- 
--	return inode_permission(inode, mask);
-+	return mapped_inode_permission(user_ns, inode, mask);
- }
- 
- /*
-@@ -161,9 +162,10 @@ xattr_supported_namespace(struct inode *inode, const char *prefix)
- }
- EXPORT_SYMBOL(xattr_supported_namespace);
- 
--int
--__vfs_setxattr(struct dentry *dentry, struct inode *inode, const char *name,
--	       const void *value, size_t size, int flags)
-+static int
-+__vfs_mapped_setxattr(struct user_namespace *user_ns, struct dentry *dentry,
-+		  struct inode *inode, const char *name, const void *value,
-+		  size_t size, int flags)
- {
- 	const struct xattr_handler *handler;
- 
-@@ -174,7 +176,14 @@ __vfs_setxattr(struct dentry *dentry, struct inode *inode, const char *name,
- 		return -EOPNOTSUPP;
- 	if (size == 0)
- 		value = "";  /* empty EA, do not remove */
--	return handler->set(handler, dentry, inode, name, value, size, flags);
-+	return xattr_handler_set(handler, user_ns, dentry, inode, name, value, size, flags);
-+}
-+
-+int
-+__vfs_setxattr(struct dentry *dentry, struct inode *inode, const char *name,
-+	       const void *value, size_t size, int flags)
-+{
-+	return __vfs_mapped_setxattr(&init_user_ns, dentry, inode, name, value, size, flags);
- }
- EXPORT_SYMBOL(__vfs_setxattr);
- 
-@@ -182,6 +191,7 @@ EXPORT_SYMBOL(__vfs_setxattr);
-  *  __vfs_setxattr_noperm - perform setxattr operation without performing
-  *  permission checks.
-  *
-+ *  @user_ns - user namespace of the mount
-  *  @dentry - object to perform setxattr on
-  *  @name - xattr name to set
-  *  @value - value to set @name to
-@@ -194,8 +204,10 @@ EXPORT_SYMBOL(__vfs_setxattr);
-  *  is executed. It also assumes that the caller will make the appropriate
-  *  permission checks.
-  */
--int __vfs_setxattr_noperm(struct dentry *dentry, const char *name,
--		const void *value, size_t size, int flags)
-+static int
-+__vfs_mapped_setxattr_noperm(struct user_namespace *user_ns,
-+			     struct dentry *dentry, const char *name,
-+			     const void *value, size_t size, int flags)
- {
- 	struct inode *inode = dentry->d_inode;
- 	int error = -EAGAIN;
-@@ -205,7 +217,7 @@ int __vfs_setxattr_noperm(struct dentry *dentry, const char *name,
- 	if (issec)
- 		inode->i_flags &= ~S_NOSEC;
- 	if (inode->i_opflags & IOP_XATTR) {
--		error = __vfs_setxattr(dentry, inode, name, value, size, flags);
-+		error = __vfs_mapped_setxattr(user_ns, dentry, inode, name, value, size, flags);
- 		if (!error) {
- 			fsnotify_xattr(dentry);
- 			security_inode_post_setxattr(dentry, name, value,
-@@ -231,27 +243,23 @@ int __vfs_setxattr_noperm(struct dentry *dentry, const char *name,
- 	return error;
+diff --git a/fs/namei.c b/fs/namei.c
+index 76ee4d52bd5e..781f11795a22 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -4221,62 +4221,24 @@ SYSCALL_DEFINE2(link, const char __user *, oldname, const char __user *, newname
+ 	return do_linkat(AT_FDCWD, oldname, AT_FDCWD, newname, 0);
  }
  
 -/**
-- * __vfs_setxattr_locked - set an extended attribute while holding the inode
-- * lock
+- * vfs_rename - rename a filesystem object
+- * @old_dir:	parent of source
+- * @old_dentry:	source
+- * @new_dir:	parent of destination
+- * @new_dentry:	destination
+- * @delegated_inode: returns an inode needing a delegation break
+- * @flags:	rename flags
 - *
-- *  @dentry: object to perform setxattr on
-- *  @name: xattr name to set
-- *  @value: value to set @name to
-- *  @size: size of @value
-- *  @flags: flags to pass into filesystem operations
-- *  @delegated_inode: on return, will contain an inode pointer that
-- *  a delegation was broken on, NULL if none.
+- * The caller must hold multiple mutexes--see lock_rename()).
+- *
+- * If vfs_rename discovers a delegation in need of breaking at either
+- * the source or destination, it will return -EWOULDBLOCK and return a
+- * reference to the inode in delegated_inode.  The caller should then
+- * break the delegation and retry.  Because breaking a delegation may
+- * take a long time, the caller should drop all locks before doing
+- * so.
+- *
+- * Alternatively, a caller may pass NULL for delegated_inode.  This may
+- * be appropriate for callers that expect the underlying filesystem not
+- * to be NFS exported.
+- *
+- * The worst of all namespace operations - renaming directory. "Perverted"
+- * doesn't even start to describe it. Somebody in UCB had a heck of a trip...
+- * Problems:
+- *
+- *	a) we can get into loop creation.
+- *	b) race potential - two innocent renames can create a loop together.
+- *	   That's where 4.4 screws up. Current fix: serialization on
+- *	   sb->s_vfs_rename_mutex. We might be more accurate, but that's another
+- *	   story.
+- *	c) we have to lock _four_ objects - parents and victim (if it exists),
+- *	   and source (if it is not a directory).
+- *	   And that - after we got ->i_mutex on parents (until then we don't know
+- *	   whether the target exists).  Solution: try to be smart with locking
+- *	   order for inodes.  We rely on the fact that tree topology may change
+- *	   only under ->s_vfs_rename_mutex _and_ that parent of the object we
+- *	   move will be locked.  Thus we can rank directories by the tree
+- *	   (ancestors first) and rank all non-directories after them.
+- *	   That works since everybody except rename does "lock parent, lookup,
+- *	   lock child" and rename is under ->s_vfs_rename_mutex.
+- *	   HOWEVER, it relies on the assumption that any object with ->lookup()
+- *	   has no more than 1 dentry.  If "hybrid" objects will ever appear,
+- *	   we'd better make sure that there's no link(2) for them.
+- *	d) conversion from fhandle to dentry may come in the wrong moment - when
+- *	   we are removing the target. Solution: we will have to grab ->i_mutex
+- *	   in the fhandle_to_dentry code. [FIXME - current nfsfh.c relies on
+- *	   ->i_mutex on parents, which works but leads to some truly excessive
+- *	   locking].
 - */
--int
--__vfs_setxattr_locked(struct dentry *dentry, const char *name,
--		const void *value, size_t size, int flags,
--		struct inode **delegated_inode)
-+int __vfs_setxattr_noperm(struct dentry *dentry, const char *name,
-+		const void *value, size_t size, int flags)
-+{
-+	return __vfs_mapped_setxattr_noperm(&init_user_ns, dentry, name, value,
-+					    size, flags);
-+}
+-int vfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+-	       struct inode *new_dir, struct dentry *new_dentry,
+-	       struct inode **delegated_inode, unsigned int flags)
++struct renamedata {
++	struct inode *old_dir;
++	struct dentry *old_dentry;
++	struct inode *new_dir;
++	struct dentry *new_dentry;
++	struct inode **delegated_inode;
++	unsigned int flags;
++} __randomize_layout;
 +
-+static int
-+__vfs_mapped_setxattr_locked(struct user_namespace *user_ns,
-+			     struct dentry *dentry, const char *name,
-+			     const void *value, size_t size, int flags,
-+			     struct inode **delegated_inode)
++static int __vfs_rename(struct renamedata *rd)
  {
- 	struct inode *inode = dentry->d_inode;
  	int error;
+ 	struct user_namespace *user_ns = &init_user_ns;
++	struct inode *old_dir = rd->old_dir, *new_dir = rd->new_dir;
++	struct dentry *old_dentry = rd->old_dentry,
++		      *new_dentry = rd->new_dentry;
++	struct inode **delegated_inode = rd->delegated_inode;
++	unsigned int flags = rd->flags;
+ 	bool is_dir = d_is_dir(old_dentry);
+ 	struct inode *source = old_dentry->d_inode;
+ 	struct inode *target = new_dentry->d_inode;
+@@ -4395,11 +4357,76 @@ int vfs_rename(struct inode *old_dir, struct dentry *old_dentry,
  
--	error = xattr_permission(inode, name, MAY_WRITE);
-+	error = xattr_permission(user_ns, inode, name, MAY_WRITE);
- 	if (error)
- 		return error;
- 
-@@ -263,16 +271,37 @@ __vfs_setxattr_locked(struct dentry *dentry, const char *name,
- 	if (error)
- 		goto out;
- 
--	error = __vfs_setxattr_noperm(dentry, name, value, size, flags);
-+	error = __vfs_mapped_setxattr_noperm(user_ns, dentry, name, value, size, flags);
- 
- out:
  	return error;
  }
 +
 +/**
-+ * __vfs_setxattr_locked - set an extended attribute while holding the inode
-+ * lock
++ * vfs_rename - rename a filesystem object
++ * @old_dir:	parent of source
++ * @old_dentry:	source
++ * @new_dir:	parent of destination
++ * @new_dentry:	destination
++ * @delegated_inode: returns an inode needing a delegation break
++ * @flags:	rename flags
 + *
-+ *  @dentry: object to perform setxattr on
-+ *  @name: xattr name to set
-+ *  @value: value to set @name to
-+ *  @size: size of @value
-+ *  @flags: flags to pass into filesystem operations
-+ *  @delegated_inode: on return, will contain an inode pointer that
-+ *  a delegation was broken on, NULL if none.
++ * The caller must hold multiple mutexes--see lock_rename()).
++ *
++ * If vfs_rename discovers a delegation in need of breaking at either
++ * the source or destination, it will return -EWOULDBLOCK and return a
++ * reference to the inode in delegated_inode.  The caller should then
++ * break the delegation and retry.  Because breaking a delegation may
++ * take a long time, the caller should drop all locks before doing
++ * so.
++ *
++ * Alternatively, a caller may pass NULL for delegated_inode.  This may
++ * be appropriate for callers that expect the underlying filesystem not
++ * to be NFS exported.
++ *
++ * The worst of all namespace operations - renaming directory. "Perverted"
++ * doesn't even start to describe it. Somebody in UCB had a heck of a trip...
++ * Problems:
++ *
++ *	a) we can get into loop creation.
++ *	b) race potential - two innocent renames can create a loop together.
++ *	   That's where 4.4 screws up. Current fix: serialization on
++ *	   sb->s_vfs_rename_mutex. We might be more accurate, but that's another
++ *	   story.
++ *	c) we have to lock _four_ objects - parents and victim (if it exists),
++ *	   and source (if it is not a directory).
++ *	   And that - after we got ->i_mutex on parents (until then we don't know
++ *	   whether the target exists).  Solution: try to be smart with locking
++ *	   order for inodes.  We rely on the fact that tree topology may change
++ *	   only under ->s_vfs_rename_mutex _and_ that parent of the object we
++ *	   move will be locked.  Thus we can rank directories by the tree
++ *	   (ancestors first) and rank all non-directories after them.
++ *	   That works since everybody except rename does "lock parent, lookup,
++ *	   lock child" and rename is under ->s_vfs_rename_mutex.
++ *	   HOWEVER, it relies on the assumption that any object with ->lookup()
++ *	   has no more than 1 dentry.  If "hybrid" objects will ever appear,
++ *	   we'd better make sure that there's no link(2) for them.
++ *	d) conversion from fhandle to dentry may come in the wrong moment - when
++ *	   we are removing the target. Solution: we will have to grab ->i_mutex
++ *	   in the fhandle_to_dentry code. [FIXME - current nfsfh.c relies on
++ *	   ->i_mutex on parents, which works but leads to some truly excessive
++ *	   locking].
 + */
-+int
-+__vfs_setxattr_locked(struct dentry *dentry, const char *name,
-+		const void *value, size_t size, int flags,
-+		struct inode **delegated_inode)
++int vfs_rename(struct inode *old_dir, struct dentry *old_dentry,
++	       struct inode *new_dir, struct dentry *new_dentry,
++	       struct inode **delegated_inode, unsigned int flags)
 +{
-+	return __vfs_mapped_setxattr_locked(&init_user_ns, dentry, name, value,
-+					    size, flags, delegated_inode);
++	struct renamedata rd = {
++		.old_dir	 = old_dir,
++		.new_dir	 = new_dir,
++		.old_dentry	 = old_dentry,
++		.delegated_inode = delegated_inode,
++		.flags		 = flags,
++	};
++	return __vfs_rename(&rd);
 +}
- EXPORT_SYMBOL_GPL(__vfs_setxattr_locked);
+ EXPORT_SYMBOL(vfs_rename);
  
- int
--vfs_setxattr(struct dentry *dentry, const char *name, const void *value,
--		size_t size, int flags)
-+vfs_mapped_setxattr(struct user_namespace *user_ns, struct dentry *dentry,
-+		const char *name, const void *value, size_t size, int flags)
+ static int do_renameat2(int olddfd, const char __user *oldname, int newdfd,
+ 			const char __user *newname, unsigned int flags)
  {
- 	struct inode *inode = dentry->d_inode;
- 	struct inode *delegated_inode = NULL;
-@@ -280,8 +309,8 @@ vfs_setxattr(struct dentry *dentry, const char *name, const void *value,
- 
- retry_deleg:
- 	inode_lock(inode);
--	error = __vfs_setxattr_locked(dentry, name, value, size, flags,
--	    &delegated_inode);
-+	error = __vfs_mapped_setxattr_locked(user_ns, dentry, name, value, size,
-+					     flags, &delegated_inode);
- 	inode_unlock(inode);
- 
- 	if (delegated_inode) {
-@@ -291,6 +320,14 @@ vfs_setxattr(struct dentry *dentry, const char *name, const void *value,
- 	}
- 	return error;
- }
-+EXPORT_SYMBOL_GPL(vfs_mapped_setxattr);
-+
-+int
-+vfs_setxattr(struct dentry *dentry, const char *name, const void *value,
-+		size_t size, int flags)
-+{
-+	return vfs_mapped_setxattr(&init_user_ns, dentry, name, value, size, flags);
-+}
- EXPORT_SYMBOL_GPL(vfs_setxattr);
- 
- static ssize_t
-@@ -319,24 +356,17 @@ xattr_getsecurity(struct inode *inode, const char *name, void *value,
- 	return len;
- }
- 
--/*
-- * vfs_getxattr_alloc - allocate memory, if necessary, before calling getxattr
-- *
-- * Allocate memory, if not already allocated, or re-allocate correct size,
-- * before retrieving the extended attribute.
-- *
-- * Returns the result of alloc, if failed, or the getxattr operation.
-- */
- ssize_t
--vfs_getxattr_alloc(struct dentry *dentry, const char *name, char **xattr_value,
--		   size_t xattr_size, gfp_t flags)
-+vfs_mapped_getxattr_alloc(struct user_namespace *user_ns, struct dentry *dentry,
-+		      const char *name, char **xattr_value, size_t xattr_size,
-+		      gfp_t flags)
- {
- 	const struct xattr_handler *handler;
- 	struct inode *inode = dentry->d_inode;
- 	char *value = *xattr_value;
- 	int error;
- 
--	error = xattr_permission(inode, name, MAY_READ);
-+	error = xattr_permission(user_ns, inode, name, MAY_READ);
++	struct renamedata rd;
+ 	struct dentry *old_dentry, *new_dentry;
+ 	struct dentry *trap;
+ 	struct path old_path, new_path;
+@@ -4505,9 +4532,14 @@ static int do_renameat2(int olddfd, const char __user *oldname, int newdfd,
+ 				     &new_path, new_dentry, flags);
  	if (error)
- 		return error;
- 
-@@ -361,6 +391,22 @@ vfs_getxattr_alloc(struct dentry *dentry, const char *name, char **xattr_value,
- 	return error;
- }
- 
-+/*
-+ * vfs_getxattr_alloc - allocate memory, if necessary, before calling getxattr
-+ *
-+ * Allocate memory, if not already allocated, or re-allocate correct size,
-+ * before retrieving the extended attribute.
-+ *
-+ * Returns the result of alloc, if failed, or the getxattr operation.
-+ */
-+ssize_t
-+vfs_getxattr_alloc(struct dentry *dentry, const char *name, char **xattr_value,
-+		   size_t xattr_size, gfp_t flags)
-+{
-+	return vfs_mapped_getxattr_alloc(&init_user_ns, dentry, name, xattr_value,
-+				     xattr_size, flags);
-+}
+ 		goto exit5;
+-	error = vfs_rename(old_path.dentry->d_inode, old_dentry,
+-			   new_path.dentry->d_inode, new_dentry,
+-			   &delegated_inode, flags);
 +
- ssize_t
- __vfs_getxattr(struct dentry *dentry, struct inode *inode, const char *name,
- 	       void *value, size_t size)
-@@ -377,12 +423,13 @@ __vfs_getxattr(struct dentry *dentry, struct inode *inode, const char *name,
- EXPORT_SYMBOL(__vfs_getxattr);
- 
- ssize_t
--vfs_getxattr(struct dentry *dentry, const char *name, void *value, size_t size)
-+vfs_mapped_getxattr(struct user_namespace *user_ns, struct dentry *dentry,
-+		const char *name, void *value, size_t size)
- {
- 	struct inode *inode = dentry->d_inode;
- 	int error;
- 
--	error = xattr_permission(inode, name, MAY_READ);
-+	error = xattr_permission(user_ns, inode, name, MAY_READ);
- 	if (error)
- 		return error;
- 
-@@ -405,6 +452,13 @@ vfs_getxattr(struct dentry *dentry, const char *name, void *value, size_t size)
- nolsm:
- 	return __vfs_getxattr(dentry, inode, name, value, size);
- }
-+EXPORT_SYMBOL_GPL(vfs_mapped_getxattr);
-+
-+ssize_t
-+vfs_getxattr(struct dentry *dentry, const char *name, void *value, size_t size)
-+{
-+	return vfs_mapped_getxattr(&init_user_ns, dentry, name, value, size);
-+}
- EXPORT_SYMBOL_GPL(vfs_getxattr);
- 
- ssize_t
-@@ -428,7 +482,7 @@ vfs_listxattr(struct dentry *dentry, char *list, size_t size)
- EXPORT_SYMBOL_GPL(vfs_listxattr);
- 
- int
--__vfs_removexattr(struct dentry *dentry, const char *name)
-+__vfs_mapped_removexattr(struct user_namespace *user_ns, struct dentry *dentry, const char *name)
- {
- 	struct inode *inode = d_inode(dentry);
- 	const struct xattr_handler *handler;
-@@ -438,27 +492,26 @@ __vfs_removexattr(struct dentry *dentry, const char *name)
- 		return PTR_ERR(handler);
- 	if (!handler->set)
- 		return -EOPNOTSUPP;
--	return handler->set(handler, dentry, inode, name, NULL, 0, XATTR_REPLACE);
-+	return xattr_handler_set(handler, user_ns, dentry, inode, name, NULL, 0, XATTR_REPLACE);
- }
--EXPORT_SYMBOL(__vfs_removexattr);
-+EXPORT_SYMBOL(__vfs_mapped_removexattr);
- 
--/**
-- * __vfs_removexattr_locked - set an extended attribute while holding the inode
-- * lock
-- *
-- *  @dentry: object to perform setxattr on
-- *  @name: name of xattr to remove
-- *  @delegated_inode: on return, will contain an inode pointer that
-- *  a delegation was broken on, NULL if none.
-- */
- int
--__vfs_removexattr_locked(struct dentry *dentry, const char *name,
--		struct inode **delegated_inode)
-+__vfs_removexattr(struct dentry *dentry, const char *name)
-+{
-+	return __vfs_mapped_removexattr(&init_user_ns, dentry, name);
-+}
-+EXPORT_SYMBOL(__vfs_removexattr);
-+
-+static int
-+__vfs_mapped_removexattr_locked(struct user_namespace *user_ns,
-+				struct dentry *dentry, const char *name,
-+				struct inode **delegated_inode)
- {
- 	struct inode *inode = dentry->d_inode;
- 	int error;
- 
--	error = xattr_permission(inode, name, MAY_WRITE);
-+	error = xattr_permission(user_ns, inode, name, MAY_WRITE);
- 	if (error)
- 		return error;
- 
-@@ -470,7 +523,7 @@ __vfs_removexattr_locked(struct dentry *dentry, const char *name,
- 	if (error)
- 		goto out;
- 
--	error = __vfs_removexattr(dentry, name);
-+	error = __vfs_mapped_removexattr(user_ns, dentry, name);
- 
- 	if (!error) {
- 		fsnotify_xattr(dentry);
-@@ -480,10 +533,27 @@ __vfs_removexattr_locked(struct dentry *dentry, const char *name,
- out:
- 	return error;
- }
-+
-+/**
-+ * __vfs_removexattr_locked - set an extended attribute while holding the inode
-+ * lock
-+ *
-+ *  @dentry: object to perform setxattr on
-+ *  @name: name of xattr to remove
-+ *  @delegated_inode: on return, will contain an inode pointer that
-+ *  a delegation was broken on, NULL if none.
-+ */
-+int
-+__vfs_removexattr_locked(struct dentry *dentry, const char *name,
-+			 struct inode **delegated_inode)
-+{
-+	return __vfs_mapped_removexattr_locked(&init_user_ns, dentry, name, delegated_inode);
-+}
- EXPORT_SYMBOL_GPL(__vfs_removexattr_locked);
- 
- int
--vfs_removexattr(struct dentry *dentry, const char *name)
-+vfs_mapped_removexattr(struct user_namespace *user_ns, struct dentry *dentry,
-+		       const char *name)
- {
- 	struct inode *inode = dentry->d_inode;
- 	struct inode *delegated_inode = NULL;
-@@ -491,7 +561,7 @@ vfs_removexattr(struct dentry *dentry, const char *name)
- 
- retry_deleg:
- 	inode_lock(inode);
--	error = __vfs_removexattr_locked(dentry, name, &delegated_inode);
-+	error = __vfs_mapped_removexattr_locked(user_ns, dentry, name, &delegated_inode);
- 	inode_unlock(inode);
- 
- 	if (delegated_inode) {
-@@ -502,14 +572,22 @@ vfs_removexattr(struct dentry *dentry, const char *name)
- 
- 	return error;
- }
-+EXPORT_SYMBOL_GPL(vfs_mapped_removexattr);
-+
-+int
-+vfs_removexattr(struct dentry *dentry, const char *name)
-+{
-+	return vfs_mapped_removexattr(&init_user_ns, dentry, name);
-+}
- EXPORT_SYMBOL_GPL(vfs_removexattr);
- 
- /*
-  * Extended attribute SET operations
-  */
- static long
--setxattr(struct dentry *d, const char __user *name, const void __user *value,
--	 size_t size, int flags)
-+setxattr(struct user_namespace *user_ns, struct dentry *d,
-+	 const char __user *name, const void __user *value, size_t size,
-+	 int flags)
- {
- 	int error;
- 	void *kvalue = NULL;
-@@ -536,16 +614,16 @@ setxattr(struct dentry *d, const char __user *name, const void __user *value,
- 		}
- 		if ((strcmp(kname, XATTR_NAME_POSIX_ACL_ACCESS) == 0) ||
- 		    (strcmp(kname, XATTR_NAME_POSIX_ACL_DEFAULT) == 0))
--			posix_acl_fix_xattr_from_user(&init_user_ns, kvalue, size);
-+			posix_acl_fix_xattr_from_user(user_ns, kvalue, size);
- 		else if (strcmp(kname, XATTR_NAME_CAPS) == 0) {
--			error = cap_convert_nscap(&init_user_ns, d, &kvalue, size);
-+			error = cap_convert_nscap(user_ns, d, &kvalue, size);
- 			if (error < 0)
- 				goto out;
- 			size = error;
- 		}
- 	}
- 
--	error = vfs_setxattr(d, kname, kvalue, size, flags);
-+	error = vfs_mapped_setxattr(user_ns, d, kname, kvalue, size, flags);
- out:
- 	kvfree(kvalue);
- 
-@@ -558,13 +636,17 @@ static int path_setxattr(const char __user *pathname,
- {
- 	struct path path;
- 	int error;
-+
- retry:
- 	error = user_path_at(AT_FDCWD, pathname, lookup_flags, &path);
- 	if (error)
- 		return error;
- 	error = mnt_want_write(path.mnt);
- 	if (!error) {
--		error = setxattr(path.dentry, name, value, size, flags);
-+		struct user_namespace *user_ns;
-+
-+		user_ns = mnt_user_ns(path.mnt);
-+		error = setxattr(user_ns, path.dentry, name, value, size, flags);
- 		mnt_drop_write(path.mnt);
- 	}
- 	path_put(&path);
-@@ -600,7 +682,11 @@ SYSCALL_DEFINE5(fsetxattr, int, fd, const char __user *, name,
- 	audit_file(f.file);
- 	error = mnt_want_write_file(f.file);
- 	if (!error) {
--		error = setxattr(f.file->f_path.dentry, name, value, size, flags);
-+		struct user_namespace *user_ns;
-+
-+		user_ns = mnt_user_ns(f.file->f_path.mnt);
-+		error = setxattr(user_ns, f.file->f_path.dentry, name, value,
-+				 size, flags);
- 		mnt_drop_write_file(f.file);
- 	}
- 	fdput(f);
-@@ -612,7 +698,7 @@ SYSCALL_DEFINE5(fsetxattr, int, fd, const char __user *, name,
-  */
- static ssize_t
- getxattr(struct dentry *d, const char __user *name, void __user *value,
--	 size_t size)
-+	 size_t size, struct user_namespace *user_ns)
- {
- 	ssize_t error;
- 	void *kvalue = NULL;
-@@ -632,11 +718,11 @@ getxattr(struct dentry *d, const char __user *name, void __user *value,
- 			return -ENOMEM;
- 	}
- 
--	error = vfs_getxattr(d, kname, kvalue, size);
-+	error = vfs_mapped_getxattr(user_ns, d, kname, kvalue, size);
- 	if (error > 0) {
- 		if ((strcmp(kname, XATTR_NAME_POSIX_ACL_ACCESS) == 0) ||
- 		    (strcmp(kname, XATTR_NAME_POSIX_ACL_DEFAULT) == 0))
--			posix_acl_fix_xattr_to_user(&init_user_ns, kvalue, error);
-+			posix_acl_fix_xattr_to_user(user_ns, kvalue, error);
- 		if (size && copy_to_user(value, kvalue, error))
- 			error = -EFAULT;
- 	} else if (error == -ERANGE && size >= XATTR_SIZE_MAX) {
-@@ -654,13 +740,15 @@ static ssize_t path_getxattr(const char __user *pathname,
- 			     const char __user *name, void __user *value,
- 			     size_t size, unsigned int lookup_flags)
- {
-+	struct user_namespace *user_ns;
- 	struct path path;
- 	ssize_t error;
- retry:
- 	error = user_path_at(AT_FDCWD, pathname, lookup_flags, &path);
- 	if (error)
- 		return error;
--	error = getxattr(path.dentry, name, value, size);
-+	user_ns = mnt_user_ns(path.mnt);
-+	error = getxattr(path.dentry, name, value, size, user_ns);
- 	path_put(&path);
- 	if (retry_estale(error, lookup_flags)) {
- 		lookup_flags |= LOOKUP_REVAL;
-@@ -684,13 +772,15 @@ SYSCALL_DEFINE4(lgetxattr, const char __user *, pathname,
- SYSCALL_DEFINE4(fgetxattr, int, fd, const char __user *, name,
- 		void __user *, value, size_t, size)
- {
-+	struct user_namespace *user_ns;
- 	struct fd f = fdget(fd);
- 	ssize_t error = -EBADF;
- 
- 	if (!f.file)
- 		return error;
- 	audit_file(f.file);
--	error = getxattr(f.file->f_path.dentry, name, value, size);
-+	user_ns = mnt_user_ns(f.file->f_path.mnt);
-+	error = getxattr(f.file->f_path.dentry, name, value, size, user_ns);
- 	fdput(f);
- 	return error;
- }
-@@ -774,7 +864,7 @@ SYSCALL_DEFINE3(flistxattr, int, fd, char __user *, list, size_t, size)
-  * Extended attribute REMOVE operations
-  */
- static long
--removexattr(struct dentry *d, const char __user *name)
-+removexattr(struct user_namespace *user_ns, struct dentry *d, const char __user *name)
- {
- 	int error;
- 	char kname[XATTR_NAME_MAX + 1];
-@@ -785,7 +875,7 @@ removexattr(struct dentry *d, const char __user *name)
- 	if (error < 0)
- 		return error;
- 
--	return vfs_removexattr(d, kname);
-+	return vfs_mapped_removexattr(user_ns, d, kname);
- }
- 
- static int path_removexattr(const char __user *pathname,
-@@ -799,7 +889,9 @@ static int path_removexattr(const char __user *pathname,
- 		return error;
- 	error = mnt_want_write(path.mnt);
- 	if (!error) {
--		error = removexattr(path.dentry, name);
-+		struct user_namespace *user_ns = mnt_user_ns(path.mnt);
-+
-+		error = removexattr(user_ns, path.dentry, name);
- 		mnt_drop_write(path.mnt);
- 	}
- 	path_put(&path);
-@@ -832,7 +924,9 @@ SYSCALL_DEFINE2(fremovexattr, int, fd, const char __user *, name)
- 	audit_file(f.file);
- 	error = mnt_want_write_file(f.file);
- 	if (!error) {
--		error = removexattr(f.file->f_path.dentry, name);
-+		struct user_namespace *user_ns = mnt_user_ns(f.file->f_path.mnt);
-+
-+		error = removexattr(user_ns, f.file->f_path.dentry, name);
- 		mnt_drop_write_file(f.file);
- 	}
- 	fdput(f);
-diff --git a/include/linux/xattr.h b/include/linux/xattr.h
-index 908441e74f51..b2eeecdf6669 100644
---- a/include/linux/xattr.h
-+++ b/include/linux/xattr.h
-@@ -16,6 +16,7 @@
- #include <linux/types.h>
- #include <linux/spinlock.h>
- #include <linux/mm.h>
-+#include <linux/user_namespace.h>
- #include <uapi/linux/xattr.h>
- 
- struct inode;
-@@ -45,6 +46,19 @@ struct xattr_handler {
- #endif
- };
- 
-+static inline int xattr_handler_set(const struct xattr_handler *handler,
-+			  struct user_namespace *user_ns, struct dentry *dentry,
-+			  struct inode *inode, const char *name,
-+			  const void *buffer, size_t size, int flags)
-+{
-+#ifdef CONFIG_IDMAP_MOUNTS
-+	if (handler->set_mapped)
-+		return handler->set_mapped(handler, user_ns, dentry, inode,
-+					   name, buffer, size, flags);
-+#endif
-+	return handler->set(handler, dentry, inode, name, buffer, size, flags);
-+}
-+
- const char *xattr_full_name(const struct xattr_handler *, const char *);
- 
- struct xattr {
-@@ -55,18 +69,27 @@ struct xattr {
- 
- ssize_t __vfs_getxattr(struct dentry *, struct inode *, const char *, void *, size_t);
- ssize_t vfs_getxattr(struct dentry *, const char *, void *, size_t);
-+ssize_t vfs_mapped_getxattr(struct user_namespace *user_ns, struct dentry *dentry,
-+			const char *name, void *value, size_t size);
- ssize_t vfs_listxattr(struct dentry *d, char *list, size_t size);
- int __vfs_setxattr(struct dentry *, struct inode *, const char *, const void *, size_t, int);
- int __vfs_setxattr_noperm(struct dentry *, const char *, const void *, size_t, int);
- int __vfs_setxattr_locked(struct dentry *, const char *, const void *, size_t, int, struct inode **);
-+int vfs_mapped_setxattr(struct user_namespace *, struct dentry *, const char *, const void *, size_t, int);
- int vfs_setxattr(struct dentry *, const char *, const void *, size_t, int);
- int __vfs_removexattr(struct dentry *, const char *);
-+int __vfs_mapped_removexattr(struct user_namespace *, struct dentry *, const char *);
- int __vfs_removexattr_locked(struct dentry *, const char *, struct inode **);
- int vfs_removexattr(struct dentry *, const char *);
-+int vfs_mapped_removexattr(struct user_namespace *user_ns, struct dentry *, const char *);
- 
- ssize_t generic_listxattr(struct dentry *dentry, char *buffer, size_t buffer_size);
- ssize_t vfs_getxattr_alloc(struct dentry *dentry, const char *name,
- 			   char **xattr_value, size_t size, gfp_t flags);
-+ssize_t vfs_mapped_getxattr_alloc(struct user_namespace *user_ns,
-+			      struct dentry *dentry, const char *name,
-+			      char **xattr_value, size_t xattr_size,
-+			      gfp_t flags);
- 
- int xattr_supported_namespace(struct inode *inode, const char *prefix);
- 
++	rd.old_dir	   = old_path.dentry->d_inode;
++	rd.old_dentry	   = old_dentry;
++	rd.new_dir	   = new_path.dentry->d_inode;
++	rd.new_dentry	   = new_dentry;
++	rd.delegated_inode = &delegated_inode;
++	rd.flags	   = flags;
++	error = __vfs_rename(&rd);
+ exit5:
+ 	dput(new_dentry);
+ exit4:
 -- 
 2.29.0
 
