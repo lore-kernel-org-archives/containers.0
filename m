@@ -8,99 +8,99 @@ X-Spam-Status: No, score=-4.8 required=3.0 tests=BAYES_00,DKIM_ADSP_CUSTOM_MED,
 	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4652DC388F7
-	for <containers@archiver.kernel.org>; Sat, 31 Oct 2020 08:32:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B893CC388F7
+	for <containers@archiver.kernel.org>; Sat, 31 Oct 2020 08:52:02 +0000 (UTC)
 Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id A63502074F
-	for <containers@archiver.kernel.org>; Sat, 31 Oct 2020 08:32:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 1E2F120756
+	for <containers@archiver.kernel.org>; Sat, 31 Oct 2020 08:52:01 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="nkyMxNml"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A63502074F
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="tQB+6tZP"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1E2F120756
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 13F212D059;
-	Sat, 31 Oct 2020 08:32:02 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 7F1572A0D9;
+	Sat, 31 Oct 2020 08:52:01 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id NG0m9Ms6Wre0; Sat, 31 Oct 2020 08:31:57 +0000 (UTC)
+	with ESMTP id cjzWvXtJ5U8B; Sat, 31 Oct 2020 08:52:00 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id B27D820020;
-	Sat, 31 Oct 2020 08:31:56 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 0082627515;
+	Sat, 31 Oct 2020 08:52:00 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 95DA9C0859;
-	Sat, 31 Oct 2020 08:31:56 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 74E5AC0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id D374EC0859;
+	Sat, 31 Oct 2020 08:51:59 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id DEC31C0051
  for <containers@lists.linux-foundation.org>;
- Sat, 31 Oct 2020 08:31:54 +0000 (UTC)
+ Sat, 31 Oct 2020 08:51:58 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id 579028730C
+ by whitealder.osuosl.org (Postfix) with ESMTP id C2B3F873A1
  for <containers@lists.linux-foundation.org>;
- Sat, 31 Oct 2020 08:31:54 +0000 (UTC)
+ Sat, 31 Oct 2020 08:51:58 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id kON5wDP9orBA
+ with ESMTP id XOzKpg+OmgtK
  for <containers@lists.linux-foundation.org>;
- Sat, 31 Oct 2020 08:31:53 +0000 (UTC)
+ Sat, 31 Oct 2020 08:51:58 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-wm1-f66.google.com (mail-wm1-f66.google.com
- [209.85.128.66])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id 2ED1C8726A
+Received: from mail-wr1-f66.google.com (mail-wr1-f66.google.com
+ [209.85.221.66])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id C2EE5870FE
  for <containers@lists.linux-foundation.org>;
- Sat, 31 Oct 2020 08:31:53 +0000 (UTC)
-Received: by mail-wm1-f66.google.com with SMTP id d3so4851145wma.4
+ Sat, 31 Oct 2020 08:51:57 +0000 (UTC)
+Received: by mail-wr1-f66.google.com with SMTP id y12so8888794wrp.6
  for <containers@lists.linux-foundation.org>;
- Sat, 31 Oct 2020 01:31:53 -0700 (PDT)
+ Sat, 31 Oct 2020 01:51:57 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
  h=cc:subject:to:references:from:message-id:date:user-agent
  :mime-version:in-reply-to:content-language:content-transfer-encoding;
- bh=gwESmo+bSPSmTJDiKLpcaTLVBvMkudbYKi/iPkEZuo8=;
- b=nkyMxNmlnja8d0utNiobAlC4APn36Pl708MmnUPDMdFITVDcTP0XnCiIKIoA9yzYaU
- wXdw6yDDz4ty8XvOekZa1GvefK8dZWlMygC4GqGlxg/oQgsGuTak+dYWNQcAYNgx/Ba9
- EoMNa6AjxR7UucvurifKIpJABa8QxBHbigOF5Iw+9ENXAFbDHLBGMavfXDh5ckqy+zzo
- vdrYs91S5MTyLvzq9EJ1c8CkntthSXWkhqqojnBJiPYU0B7OkNsK3SiVzFaN0mf3BTP8
- Nti50Bb9ju841uiOilMhCEhjU05s6oDIDuhx1uDOk9Abq0HyhiS6LqkWPm7DnBasEEFm
- 0PdQ==
+ bh=+69KEmce40v1epkbBxC+EGokBd+WLifMbLXb2C4t/lA=;
+ b=tQB+6tZP3FxHXK7vRjRjl/DIqF0zdN8CH995uIGjnRYMeb7zfG3AnSikMcEhoErZ7L
+ aeZ26T5pUjYsPq/DvXOWuE4qkkvHAROor6YF7IH8C6ibRohhhXEeOJfqgrO2+rFK1Twx
+ y2uzRz7LyHoBOmO0eg1H+WhIW+DHKLEA3QP6eSYvxBPSQvLm+UAsFrOz5plzIA38Cs0z
+ /NOmTMk8SsuKG6JRVKssbaZy9i+TTP/1j3sn8fQ7CTcGwfemBuIrXF0hfxdJDs/8EWSp
+ pd3YD52nz5BO+nxcIFQ5TZ1Lu153VJI0TbvtpZFPXPg4YG8Dqfg6Dc1xeWccNOM/nzE8
+ g0gw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
  h=x-gm-message-state:cc:subject:to:references:from:message-id:date
  :user-agent:mime-version:in-reply-to:content-language
  :content-transfer-encoding;
- bh=gwESmo+bSPSmTJDiKLpcaTLVBvMkudbYKi/iPkEZuo8=;
- b=fMxdu9hpKTrCM8L2X8cYynfz2PkmkXbFNyrTflV+1c0TpFv76uhQ5vkAJhnuYdHiS1
- anLGOAOa8uxYwRYguoqb8035i5PVzVTndbV91+6NufxnbTb2Hf4eJH73emLpzlw92HaE
- b4wh/CmbPPytLDIQuYRuc1CssYgmRaI9Tjyj002ulyjjzkcuqCftwXdcUr0i3f1FbaiW
- AJT1kLgNHUcYPOZfYUuAb9RKnaxqvJ4cFDsoOnzLZm83gmNAXxm6Eu+5IDle9Rnx4wRP
- k/EzyR2CNlMArKnwrI7uJ4qJYzLGUb8mevS55tPX4p2eJHW11kR1EWKiNd83p8hpVNXd
- UFJA==
-X-Gm-Message-State: AOAM533PImsMjz/9tzXqpko58LBsBtuyEMIFFBkL2pvw+P2kKUZuRbk5
- 8nXZbK0iHLz4ReBPSPYHvOg=
-X-Google-Smtp-Source: ABdhPJzI04cLpRhHAbCXpntnIa72kZwXW3SoQdziwX2vZGAsDt8H5Ev+5h0mLvDdEjRUbGa4wcdOtw==
-X-Received: by 2002:a1c:8087:: with SMTP id b129mr7036629wmd.10.1604133111490; 
- Sat, 31 Oct 2020 01:31:51 -0700 (PDT)
+ bh=+69KEmce40v1epkbBxC+EGokBd+WLifMbLXb2C4t/lA=;
+ b=LYd7LIhdMKgpaSs8CmB0BS1aTMJ1G89NgIyni/0Ykjm/6x7QnwWvWBRU0rHfo9BcT5
+ +vkG05gQAD5gnudp57qSUXT415DORC9H3tp8fFLWDb1179zxZ5l/qsEGPZqMgF/seCir
+ rc54ZdkxeQoacw5EXBp/vfwECmoJ8YdIVwzHG31iEHw1kh1pa2F3U+BqZ1DqRxRk+f+U
+ ZPD4DkfinXG4elK38FseC0UkL/YgruHMFAivI6DIkcL0nUhszVH67cSbZlffSWX72GRm
+ iZM5vXqbmOm4/qkxDkBMSlJfQUsVseLFQjV2MkyIKUDB/n9PexXrkpVmw6S4GxDbiZWb
+ dBZg==
+X-Gm-Message-State: AOAM530XdsXQrR3ko96BBeiYhF1FJ6B55cfktkiqI9WpTvGfCLzlN84q
+ hYvXybTJbh32k/dedGlclQ0=
+X-Google-Smtp-Source: ABdhPJxD1Wl7Aoo5KK/QUcpzK+vCCHNuYnBktAz8VMEEa+l0I3PpBYpYhQz5VAv2fBzlLxAc8NGsCA==
+X-Received: by 2002:adf:fd82:: with SMTP id d2mr8149160wrr.304.1604134316071; 
+ Sat, 31 Oct 2020 01:51:56 -0700 (PDT)
 Received: from ?IPv6:2001:a61:245a:d801:2e74:88ad:ef9:5218?
  ([2001:a61:245a:d801:2e74:88ad:ef9:5218])
- by smtp.gmail.com with ESMTPSA id t12sm14001675wrm.25.2020.10.31.01.31.49
+ by smtp.gmail.com with ESMTPSA id v6sm7438264wmj.6.2020.10.31.01.51.54
  (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
- Sat, 31 Oct 2020 01:31:50 -0700 (PDT)
+ Sat, 31 Oct 2020 01:51:55 -0700 (PDT)
 Subject: Re: For review: seccomp_user_notif(2) manual page [v2]
 To: Jann Horn <jannh@google.com>
 References: <63598b4f-6ce3-5a11-4552-cdfe308f68e4@gmail.com>
  <CAG48ez0fBE6AJfWh0in=WKkgt98y=KjAen=SQPyTYtvsUbF1yA@mail.gmail.com>
- <0de41eb1-e1fd-85da-61b7-fac4e3006726@gmail.com>
- <CAG48ez3qKg-ReY4R=S_thQ6tOzv2ZHV=xW5qBxpqs0iSjH_oFQ@mail.gmail.com>
+ <93cfdc79-4c48-bceb-3620-4c63e9f4822e@gmail.com>
+ <CAG48ez3nH2Oiz9wMSpvUxxX_TRYTT98d3Nj1vnCuJOj9CCXH8Q@mail.gmail.com>
 From: "Michael Kerrisk (man-pages)" <mtk.manpages@gmail.com>
-Message-ID: <9f9b8b86-6e49-17ef-e414-82e489b0b99a@gmail.com>
-Date: Sat, 31 Oct 2020 09:31:48 +0100
+Message-ID: <b43b50a2-fa5c-419d-ad24-3fd40bc26dba@gmail.com>
+Date: Sat, 31 Oct 2020 09:51:51 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
  Thunderbird/78.3.1
 MIME-Version: 1.0
-In-Reply-To: <CAG48ez3qKg-ReY4R=S_thQ6tOzv2ZHV=xW5qBxpqs0iSjH_oFQ@mail.gmail.com>
+In-Reply-To: <CAG48ez3nH2Oiz9wMSpvUxxX_TRYTT98d3Nj1vnCuJOj9CCXH8Q@mail.gmail.com>
 Content-Language: en-US
 Cc: Giuseppe Scrivano <gscrivan@redhat.com>, Song Liu <songliubraving@fb.com>,
  Will Drewry <wad@chromium.org>, Kees Cook <keescook@chromium.org>,
@@ -127,41 +127,10 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On 10/30/20 8:14 PM, Jann Horn wrote:
-> On Thu, Oct 29, 2020 at 3:19 PM Michael Kerrisk (man-pages)
+On 10/30/20 8:20 PM, Jann Horn wrote:
+> On Thu, Oct 29, 2020 at 8:14 PM Michael Kerrisk (man-pages)
 > <mtk.manpages@gmail.com> wrote:
 >> On 10/29/20 2:42 AM, Jann Horn wrote:
->>> On Mon, Oct 26, 2020 at 10:55 AM Michael Kerrisk (man-pages)
->>> <mtk.manpages@gmail.com> wrote:
->>>>        static bool
->>>>        getTargetPathname(struct seccomp_notif *req, int notifyFd,
->>>>                          char *path, size_t len)
->>>>        {
->>>>            char procMemPath[PATH_MAX];
->>>>
->>>>            snprintf(procMemPath, sizeof(procMemPath), "/proc/%d/mem", req->pid);
->>>>
->>>>            int procMemFd = open(procMemPath, O_RDONLY);
->>>>            if (procMemFd == -1)
->>>>                errExit("\tS: open");
->>>>
->>>>            /* Check that the process whose info we are accessing is still alive.
->>>>               If the SECCOMP_IOCTL_NOTIF_ID_VALID operation (performed
->>>>               in checkNotificationIdIsValid()) succeeds, we know that the
->>>>               /proc/PID/mem file descriptor that we opened corresponds to the
->>>>               process for which we received a notification. If that process
->>>>               subsequently terminates, then read() on that file descriptor
->>>>               will return 0 (EOF). */
->>>>
->>>>            checkNotificationIdIsValid(notifyFd, req->id);
->>>>
->>>>            /* Read bytes at the location containing the pathname argument
->>>>               (i.e., the first argument) of the mkdir(2) call */
->>>>
->>>>            ssize_t nread = pread(procMemFd, path, len, req->data.args[0]);
->>>>            if (nread == -1)
->>>>                errExit("pread");
->>>
 >>> As discussed at
 >>> <https://lore.kernel.org/r/CAG48ez0m4Y24ZBZCh+Tf4ORMm9_q4n7VOzpGjwGF7_Fe8EQH=Q@mail.gmail.com>,
 >>> we need to re-check checkNotificationIdIsValid() after reading remote
@@ -175,92 +144,91 @@ On 10/30/20 8:14 PM, Jann Horn wrote:
 >>> read; and to make that not have any security impact, we need to check
 >>> whether UAF read occurred before using the read value. This should
 >>> probably be called out elsewhere in the manpage, too...
+>>>
+>>> Now, of course, **reading** is the easy case. The difficult case is if
+>>> we have to **write** to the remote process... because then we can't
+>>> play games like that. If we write data to a freed pointer, we're
+>>> screwed, that's it. (And for somewhat unrelated bonus fun, consider
+>>> that /proc/$pid/mem is originally intended for process debugging,
+>>> including installing breakpoints, and will therefore happily write
+>>> over "readonly" private mappings, such as typical mappings of
+>>> executable code.)
+>>>
+>>> So, uuuuh... I guess if anyone wants to actually write memory back to
+>>> the target process, we'd better come up with some dedicated API for
+>>> that, using an ioctl on the seccomp fd that magically freezes the
+>>> target process inside the syscall while writing to its memory, or
+>>> something like that? And until then, the manpage should have a big fat
+>>> warning that writing to the target's memory is simply not possible
+>>> (safely).
 >>
->> Thanks very much for pointing me at this!
+>> Thank you for your very clear explanation! It turned out to be
+>> trivially easy to demonstrate this issue with a slightly modified
+>> version of my program.
 >>
->> So, I want to conform that the fix to the code is as simple as
->> adding a check following the pread() call, something like:
+>> As well as the change to the code example that I already mentioned
+>> my reply of a few hours ago, I've added the following text to the
+>> page:
 >>
->> [[
->>      ssize_t nread = pread(procMemFd, path, len, req->data.args[argNum]);
->>      if (nread == -1)
->>         errExit("Supervisor: pread");
->>
->>      if (nread == 0) {
->>         fprintf(stderr, "\tS: pread() of /proc/PID/mem "
->>                 "returned 0 (EOF)\n");
->>         exit(EXIT_FAILURE);
->>      }
->>
->>      if (close(procMemFd) == -1)
->>         errExit("Supervisor: close-/proc/PID/mem");
->>
->> +    /* Once again check that the notification ID is still valid. The
->> +       case we are particularly concerned about here is that just
->> +       before we fetched the pathname, the target's blocked system
->> +       call was interrupted by a signal handler, and after the handler
->> +       returned, the target carried on execution (past the interrupted
->> +       system call). In that case, we have no guarantees about what we
->> +       are reading, since the target's memory may have been arbitrarily
->> +       changed by subsequent operations. */
->> +
->> +    if (!notificationIdIsValid(notifyFd, req->id, "post-open"))
->> +        return false;
->> +
->>      /* We have no guarantees about what was in the memory of the target
->>         process. We therefore treat the buffer returned by pread() as
->>         untrusted input. The buffer should be terminated by a null byte;
->>         if not, then we will trigger an error for the target process. */
->>
->>      if (strnlen(path, nread) < nread)
->>          return true;
->> ]]
+>>    Caveats regarding the use of /proc/[tid]/mem
+>>        The discussion above noted the need to use the
+>>        SECCOMP_IOCTL_NOTIF_ID_VALID ioctl(2) when opening the
+>>        /proc/[tid]/mem file of the target to avoid the possibility of
+>>        accessing the memory of the wrong process in the event that the
+>>        target terminates and its ID is recycled by another (unrelated)
+>>        thread.  However, the use of this ioctl(2) operation is also
+>>        necessary in other situations, as explained in the following
+>>        pargraphs.
 > 
-> Yeah, that should do the job. 
+> (nit: paragraphs)
 
-Thanks.
+I spotted that one also already. But thanks for reading carefully!
 
-> With the caveat that a cancelled syscall
-> could've also led to the memory being munmap()ed, so the nread==0 case
-> could also happen legitimately - so you might want to move this check
-> up above the nread==0 (mm went away) and nread==-1 (mm still exists,
-> but read from address failed, errno EIO) checks if the error message
-> shouldn't appear spuriously.
+>>        Consider the following scenario, where the supervisor tries to
+>>        read the pathname argument of a target's blocked mount(2) system
+>>        call:
+> [...]
+>> Seem okay?
+> 
+> Yeah, sounds good.
+> 
+>> By the way, is there any analogous kind of issue concerning
+>> pidfd_getfd()? I'm thinking not, but I wonder if I've missed
+>> something.
+> 
+> When it is used by a seccomp supervisor, you mean? I think basically
+> the same thing applies - when resource identifiers (such as memory
+> addresses or file descriptors) are passed to a syscall, it generally
+> has to be assumed that those identifiers may become invalid and be
+> reused as soon as the syscall has returned.
 
-In any case, I've been refactoring (simplifying) that code a little.
-I haven't so far rearranged the order of the checks, but I already
-log message for the nread==0 case. (Instead, there will eventually
-be an error when the response is sent.)
+I probably needed to be more explicit. Would the following (i.e., a
+single cookie check) not be sufficient to handle the above scenario.
+Here, the target is making a syscall a system call that employs the
+file descriptor 'tfd':
 
-I also haven't exactly tested the scenario you describe in the
-seccomp unotify scenario, but I think the above is not correct. Here 
-are two scenarios I did test, simply with mmap() and /proc/PID/mem
-(no seccomp involved): 
+T: makes syscall that triggers notification
+S: Get notification
+S: pidfd = pidfd_open(T, 0);
+S: sfd = pifd_getfd(pidfd, tfd, 0)
+S: check that the cookie is still valid
+S: do operation with sfd [*]
 
-Scenario 1:
-A creates a mapping at address X
-B opens /proc/A/mem and and lseeks on resulting FD to offset X
-A terminates
-B reads from FD ==> read() returns 0 (EOF)
+By contrast, I can see that we might want to do multiple cookie
+checks in the /proc/PID/mem case, since the supervisor might do
+multiple reads.
 
-Scenario 2:
-A creates a mapping at address X
-B opens /proc/A/mem and and lseeks on resulting FD to offset X
-A unmaps mapping at address X
-B reads from FD ==> read() returns -1 / EIO.
-
-That last scenario seems to contradict what you say, since I
-think you meant that in this case read() should return 0 in
-that case. Have I misunderstood you?
+Or, do you mean: there really needs to be another cookie check after
+the point [*], since, if the the target's syscall was interrupted
+and 'tfd' was closed/resused, then the supervisor would be operating
+with a file descriptor that refers to an open file description
+(a "struct file") that is no longer meaningful in the target?
+(Thinking about it, I think this probably is what you mean, but 
+I want to confirm.)
 
 Thanks,
 
 Michael
-
-
-
-
-
 -- 
 Michael Kerrisk
 Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
