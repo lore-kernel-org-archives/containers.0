@@ -6,72 +6,72 @@ X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
 	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3FA40C2D0A3
-	for <containers@archiver.kernel.org>; Sun,  1 Nov 2020 14:46:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D58DC2D0A3
+	for <containers@archiver.kernel.org>; Sun,  1 Nov 2020 14:47:13 +0000 (UTC)
 Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id B40E32224F
-	for <containers@archiver.kernel.org>; Sun,  1 Nov 2020 14:46:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id C136620719
+	for <containers@archiver.kernel.org>; Sun,  1 Nov 2020 14:47:12 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="TXCoiwu2"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B40E32224F
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="q3mdWyij"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C136620719
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 6411B879FE;
-	Sun,  1 Nov 2020 14:46:16 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 7C17787A05;
+	Sun,  1 Nov 2020 14:47:12 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id DyBNkYCjJJMf; Sun,  1 Nov 2020 14:46:16 +0000 (UTC)
+	with ESMTP id cz9MCJmBT4nl; Sun,  1 Nov 2020 14:47:12 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 01C3E879F9;
-	Sun,  1 Nov 2020 14:46:15 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 2A97E87A02;
+	Sun,  1 Nov 2020 14:47:12 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id D9191C088B;
-	Sun,  1 Nov 2020 14:46:15 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id D6654C0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 195C8C088B;
+	Sun,  1 Nov 2020 14:47:12 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id D80FCC0051
  for <containers@lists.linux-foundation.org>;
- Sun,  1 Nov 2020 14:46:13 +0000 (UTC)
+ Sun,  1 Nov 2020 14:47:10 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id C27DA8758D
+ by whitealder.osuosl.org (Postfix) with ESMTP id CD9E386E8B
  for <containers@lists.linux-foundation.org>;
- Sun,  1 Nov 2020 14:46:13 +0000 (UTC)
+ Sun,  1 Nov 2020 14:47:10 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id TeBw-Cg9EnVS
+ with ESMTP id 2BX+jRIdmUgy
  for <containers@lists.linux-foundation.org>;
- Sun,  1 Nov 2020 14:46:12 +0000 (UTC)
+ Sun,  1 Nov 2020 14:47:09 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
 Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
- by hemlock.osuosl.org (Postfix) with ESMTPS id 95616872CF
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 6AC8086DBB
  for <containers@lists.linux-foundation.org>;
- Sun,  1 Nov 2020 14:46:12 +0000 (UTC)
+ Sun,  1 Nov 2020 14:47:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
  d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
  References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
  Content-Transfer-Encoding:Content-ID:Content-Description;
- bh=nVK1pkiziQ92kaQ/g40iRxNnuEGCqnYOXHidgZ1R1Sw=; b=TXCoiwu2LqeUACFNts/RtI1sNW
- AL3/iF3Fr92m5DK6yU59krsIzhlhvGU7WbruotfIWfVcCX9v9+eh0ewIy0MuYWUSA1pUjoHsM6UBa
- j7uutfCrr9Tr+r/GDt4Ug74KoxS5mAef22Yya/Fj4vg6YgJf/E/UEFPF/BlX/Jvy9xLPOK5ATkBB2
- C/PkZYggOKQKIJGaVcnwY1WLgrcNW/vrVsKWXvte84lE6NZORjZd/hKVufdtiGryZ+Ks8yb16iik+
- LQbI90fVQmt3eNgP583eFcHO3rYz2MkTxwhnEULzH/qY2/LT2RUFWQdQgdOriWrA701EA00Ks4GDQ
- 2EqUMtDg==;
+ bh=ecTJHGTyUmsna16Nipqp/caudodMDR0L+6mieeHEVz0=; b=q3mdWyijCuChf1I+Nl89lM1Hi/
+ 8QLngbL3lC1CUTaJQgH/l7Pdwl+4KIblTZJvnZtejunYcHjL3djEY8TdKoHYN6/27P2iKnQHDu2uG
+ AI+fb51LwOCrwtw+Iy/+FwtHDgH+DA+lwLK/OADJQZk/zyf9D4PiZkzR5iAl9/mmQWn9MpsoF4VDI
+ DyFp3zwImLfoJmCnI0vntmirHu+SW+YoTdKfXYoiDF1SJvYaga+iHBvq+ktMmoQOciLo90leiyiZA
+ J0eTamb8RlQl3U+yihGs05QJ0ifcE1hZ10yx/Qe6q7/ykqutkrivTlB/L/LUPhzohONGtzltfUQ5R
+ 4Qb+/11w==;
 Received: from hch by casper.infradead.org with local (Exim 4.92.3 #3 (Red Hat
- Linux)) id 1kZEc4-0006Y5-Kp; Sun, 01 Nov 2020 14:45:44 +0000
-Date: Sun, 1 Nov 2020 14:45:44 +0000
+ Linux)) id 1kZEcq-0006a4-4R; Sun, 01 Nov 2020 14:46:32 +0000
+Date: Sun, 1 Nov 2020 14:46:32 +0000
 From: Christoph Hellwig <hch@infradead.org>
 To: Christian Brauner <christian.brauner@ubuntu.com>
-Subject: Re: [PATCH 05/34] fs: introduce MOUNT_ATTR_IDMAP
-Message-ID: <20201101144544.GC23378@infradead.org>
+Subject: Re: [PATCH 06/34] fs: add id translation helpers
+Message-ID: <20201101144632.GD23378@infradead.org>
 References: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
- <20201029003252.2128653-6-christian.brauner@ubuntu.com>
+ <20201029003252.2128653-7-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <20201029003252.2128653-6-christian.brauner@ubuntu.com>
+In-Reply-To: <20201029003252.2128653-7-christian.brauner@ubuntu.com>
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by
  casper.infradead.org. See http://www.infradead.org/rpr.html
 Cc: Lennart Poettering <lennart@poettering.net>,
@@ -113,53 +113,25 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Thu, Oct 29, 2020 at 01:32:23AM +0100, Christian Brauner wrote:
-> Introduce a new mount bind mount property to allow idmapping mounts. The
-> MOUNT_ATTR_IDMAP flag can be set via the new mount_setattr() syscall
-> together with a file descriptor referring to a user namespace.
-
-Shouldn't this go to the end of the series once all the infrastructure
-is in place?
-
-> +config IDMAP_MOUNTS
-> +	bool "Support id mappings per mount"
-> +	default n
-
-n is the default default.
-
-But why do we need a config option here anyway?
-
-> +#ifdef CONFIG_IDMAP_MOUNTS
-> +		if (kattr->attr_set & MNT_IDMAPPED) {
-> +			struct user_namespace *user_ns;
-> +			struct vfsmount *vmnt;
-
-All the code here looks like it should go into a helper.
-
-> +				struct user_namespace *user_ns = READ_ONCE(m->mnt.mnt_user_ns);
-> +				WRITE_ONCE(m->mnt.mnt_user_ns, get_user_ns(kattr->userns));
-
-More unreadable long lines.
-
-> +	if (attr->attr_set & MOUNT_ATTR_IDMAP) {
-> +		struct ns_common *ns;
-> +		struct user_namespace *user_ns;
-> +		struct file *file;
-> +
-> +		file = fget(attr->userns);
-
-The code here looks like another candidate for a self contained helper.
-
-> +
-> +static inline struct user_namespace *mnt_user_ns(const struct vfsmount *mnt)
+> +static inline kuid_t kuid_into_mnt(struct user_namespace *to, kuid_t kuid)
 > +{
 > +#ifdef CONFIG_IDMAP_MOUNTS
-> +	return READ_ONCE(mnt->mnt_user_ns);
+> +	return make_kuid(to, __kuid_val(kuid));
 > +#else
-> +	return &init_user_ns;
+> +	return kuid;
+> +#endif
+> +}
+> +
+> +static inline kgid_t kgid_into_mnt(struct user_namespace *to, kgid_t kgid)
+> +{
+> +#ifdef CONFIG_IDMAP_MOUNTS
+> +	return make_kgid(to, __kgid_val(kgid));
+> +#else
+> +	return kgid;
 > +#endif
 
-How is the READ_ONCE on a pointer going to work?
+If you want to keep the config option please at least have on
+#ifdef/#else/#endif instead of this mess.
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
