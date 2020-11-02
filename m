@@ -1,4 +1,4 @@
-Return-Path: <SRS0=2jwm=EH=lists.linux-foundation.org=containers-bounces@kernel.org>
+Return-Path: <SRS0=UpRV=EI=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
@@ -6,97 +6,98 @@ X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
 	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 68AFBC2D0A3
-	for <containers@archiver.kernel.org>; Sun,  1 Nov 2020 14:48:39 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 779F7C00A89
+	for <containers@archiver.kernel.org>; Mon,  2 Nov 2020 08:14:56 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id EBE962224F
-	for <containers@archiver.kernel.org>; Sun,  1 Nov 2020 14:48:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 969892225E
+	for <containers@archiver.kernel.org>; Mon,  2 Nov 2020 08:14:55 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="u4A9GPin"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EBE962224F
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=sargun.me header.i=@sargun.me header.b="soliju8D"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 969892225E
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=sargun.me
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id BD11287A37;
-	Sun,  1 Nov 2020 14:48:38 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 14F43203DE;
+	Mon,  2 Nov 2020 08:14:55 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id qkkVsCpY8sNt; Sun,  1 Nov 2020 14:48:38 +0000 (UTC)
+	with ESMTP id uFW4+zt7arAY; Mon,  2 Nov 2020 08:14:53 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 6AF5187A2E;
-	Sun,  1 Nov 2020 14:48:38 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 6FCD620035;
+	Mon,  2 Nov 2020 08:14:53 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 59378C088B;
-	Sun,  1 Nov 2020 14:48:38 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 3CE7CC0051
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 5395AC088B;
+	Mon,  2 Nov 2020 08:14:53 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 9736CC0051
  for <containers@lists.linux-foundation.org>;
- Sun,  1 Nov 2020 14:48:37 +0000 (UTC)
+ Mon,  2 Nov 2020 08:14:51 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id 334E387A2E
+ by hemlock.osuosl.org (Postfix) with ESMTP id 92718872E4
  for <containers@lists.linux-foundation.org>;
- Sun,  1 Nov 2020 14:48:37 +0000 (UTC)
+ Mon,  2 Nov 2020 08:14:51 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id 5FHrSHbTi1V0
+ with ESMTP id bI84aipBjbgX
  for <containers@lists.linux-foundation.org>;
- Sun,  1 Nov 2020 14:48:36 +0000 (UTC)
+ Mon,  2 Nov 2020 08:14:50 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id A7C1387A11
+Received: from mail-ed1-f67.google.com (mail-ed1-f67.google.com
+ [209.85.208.67])
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 26803871B7
  for <containers@lists.linux-foundation.org>;
- Sun,  1 Nov 2020 14:48:36 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
- d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
- References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
- Content-Transfer-Encoding:Content-ID:Content-Description;
- bh=wOeDmyzsiaD9d4vQIUmd2QRH3McGyUDmsoqxKEoWZww=; b=u4A9GPinHUcyv/GuBI9CUkuCA3
- cGrepLQETbEhTnlzMKHcI/xVbGsuLVVjpOnXqaLJ2xM7aA/e4IeUFFy4pl/XhoOMxIO1NWJO77hgs
- TxcTs1U4UkGlh3HmXIDyBvl+HqeLCfTcMG40+Ccb4S+3Imr6e1DI9LpMSvnmIZteEo3+cLZ0CEl2w
- tj4uibh+Bk02kRbkODztXDTTPL39VWuytSTYPqpY5MxoGALTRxEIEhWnPEw/Rw1KLJoB/5uYztCZJ
- fulyNsYFTfQC6hY8dEMmCU6IdqK6FVgpc52QqtBY3sR+nY0H3cNgFYjE7VIBfLeRPcfH1ZvPU3WAk
- tdVc5nDA==;
-Received: from hch by casper.infradead.org with local (Exim 4.92.3 #3 (Red Hat
- Linux)) id 1kZEeP-0006fC-Iw; Sun, 01 Nov 2020 14:48:09 +0000
-Date: Sun, 1 Nov 2020 14:48:09 +0000
-From: Christoph Hellwig <hch@infradead.org>
-To: Christian Brauner <christian.brauner@ubuntu.com>
-Subject: Re: [PATCH 07/34] capability: handle idmapped mounts
-Message-ID: <20201101144809.GE23378@infradead.org>
-References: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
- <20201029003252.2128653-8-christian.brauner@ubuntu.com>
+ Mon,  2 Nov 2020 08:14:50 +0000 (UTC)
+Received: by mail-ed1-f67.google.com with SMTP id v4so13485524edi.0
+ for <containers@lists.linux-foundation.org>;
+ Mon, 02 Nov 2020 00:14:50 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sargun.me; s=google;
+ h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+ :cc; bh=NVZ44lAakVATpaZn6AFMxLNo91zcFdfPA6KergmIid0=;
+ b=soliju8DduPmBCZLNq75kh9Cjsyu3/wq1kAN37XH8goV0Up7F182Vp9DHzuuUBhMF7
+ jqBgZ7ZzKJqc5CIdq82G7mDGVnFLoK8BiHObC4pnK1LH45Vz7jnV8eeV3IgQTVuPFg12
+ WZebtk8+oMrxX+jk59A8UgduGtdfL57NKzi4k=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=1e100.net; s=20161025;
+ h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+ :message-id:subject:to:cc;
+ bh=NVZ44lAakVATpaZn6AFMxLNo91zcFdfPA6KergmIid0=;
+ b=iN4HMaPNMZMpXMIgroSfQt++s284W/W1x2Qu43ym5HXbYevlaopqS3gJ5fTA+WjeUG
+ VN33QySMGxEDVxS2AMUvcIZGgWSH8ggUKX7YHM6Hp1DzUhFBa091/8Oo5NrtKDXhfBIW
+ h/uCgNQmmgmYjElq0pwxvcF+keaNUsbT8MOZcZqu/cVHsQeF5lBZBWpqvzxwNXKmJFpw
+ Gvu4HTpIbcFt4byiDQSS9dN3cvlWwX1erWCZhL/j15Eermx/8tbPhHFKJNaIc6C+h4cZ
+ 7hIil+MzySs8QHp5GatRWERK4XNoLmQLEc4KCAtV4Xnja3gJyV8/B8YJegVRra3teSlu
+ znLQ==
+X-Gm-Message-State: AOAM533TpsVTEgxbBzHrgTKDrbJ4sAMOQM4Lsqa1hDT6bDNhoYuQQDJd
+ Kd0lrh1IkepAAdZWvVQx5crQ49JD608EUZcSp6QRYV355ewk20JN
+X-Google-Smtp-Source: ABdhPJyJ0vM7BjDtdEvFrChTYmDsUK3Y0Vog1NSqXCYj/o5upyCHDtPrccnZ5JayxBS8Fg5dur90nO5Uh2xWbLdvISA=
+X-Received: by 2002:a17:907:1008:: with SMTP id
+ ox8mr8177911ejb.189.1604304490618; 
+ Mon, 02 Nov 2020 00:08:10 -0800 (PST)
 MIME-Version: 1.0
-Content-Disposition: inline
-In-Reply-To: <20201029003252.2128653-8-christian.brauner@ubuntu.com>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by
- casper.infradead.org. See http://www.infradead.org/rpr.html
-Cc: Lennart Poettering <lennart@poettering.net>,
- Mimi Zohar <zohar@linux.ibm.com>, David Howells <dhowells@redhat.com>,
- Andreas Dilger <adilger.kernel@dilger.ca>,
- containers@lists.linux-foundation.org, Tycho Andersen <tycho@tycho.ws>,
- Miklos Szeredi <miklos@szeredi.hu>, smbarber@chromium.org,
- Christoph Hellwig <hch@infradead.org>, linux-ext4@vger.kernel.org,
- Mrunal Patel <mpatel@redhat.com>, Kees Cook <keescook@chromium.org>,
- Arnd Bergmann <arnd@arndb.de>, Jann Horn <jannh@google.com>,
- selinux@vger.kernel.org, Josh Triplett <josh@joshtriplett.org>,
- linux-fsdevel@vger.kernel.org, Alexander Viro <viro@zeniv.linux.org.uk>,
- Andy Lutomirski <luto@kernel.org>,
- OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
- Geoffrey Thomas <geofft@ldpreload.com>,
- James Bottomley <James.Bottomley@hansenpartnership.com>,
- John Johansen <john.johansen@canonical.com>, Theodore Tso <tytso@mit.edu>,
- Seth Forshee <seth.forshee@canonical.com>,
- Dmitry Kasatkin <dmitry.kasatkin@gmail.com>,
- Stephen Smalley <stephen.smalley.work@gmail.com>,
- Jonathan Corbet <corbet@lwn.net>, linux-unionfs@vger.kernel.org,
- linux-security-module@vger.kernel.org, linux-audit@redhat.com,
- "Eric W. Biederman" <ebiederm@xmission.com>, linux-api@vger.kernel.org,
- Casey Schaufler <casey@schaufler-ca.com>, Alban Crequy <alban@kinvolk.io>,
- linux-integrity@vger.kernel.org, Todd Kjos <tkjos@google.com>
+References: <63598b4f-6ce3-5a11-4552-cdfe308f68e4@gmail.com>
+ <20201029085312.GC29881@ircssh-2.c.rugged-nimbus-611.internal>
+ <48e5937b-80f5-c48b-1c67-e8c9db263ca5@gmail.com>
+ <20201030202720.GA4088@ircssh-2.c.rugged-nimbus-611.internal>
+ <606199d6-b48c-fee2-6e79-1e52bd7f429f@gmail.com>
+In-Reply-To: <606199d6-b48c-fee2-6e79-1e52bd7f429f@gmail.com>
+From: Sargun Dhillon <sargun@sargun.me>
+Date: Mon, 2 Nov 2020 00:07:34 -0800
+Message-ID: <CAMp4zn9AaQ46EyG6QFrF33efpUHnK_TyMYkTicr=iwY5hcKrBg@mail.gmail.com>
+Subject: Re: For review: seccomp_user_notif(2) manual page [v2]
+To: "Michael Kerrisk (man-pages)" <mtk.manpages@gmail.com>
+Cc: Giuseppe Scrivano <gscrivan@redhat.com>, Song Liu <songliubraving@fb.com>,
+ Will Drewry <wad@chromium.org>, Kees Cook <keescook@chromium.org>,
+ Daniel Borkmann <daniel@iogearbox.net>, linux-man <linux-man@vger.kernel.org>,
+ Robert Sesek <rsesek@google.com>,
+ Containers <containers@lists.linux-foundation.org>,
+ Jann Horn <jannh@google.com>, lkml <linux-kernel@vger.kernel.org>,
+ Alexei Starovoitov <ast@kernel.org>, bpf <bpf@vger.kernel.org>,
+ Andy Lutomirski <luto@amacapital.net>,
+ Christian Brauner <christian@brauner.io>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -113,20 +114,199 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
->  /**
->   * capable_wrt_inode_uidgid - Check nsown_capable and uid and gid mapped
->   * @inode: The inode in question
-> @@ -501,9 +513,7 @@ bool privileged_wrt_inode_uidgid(struct user_namespace *ns, const struct inode *
->   */
->  bool capable_wrt_inode_uidgid(const struct inode *inode, int cap)
->  {
-> +	return capable_wrt_mapped_inode_uidgid(&init_user_ns, inode, cap);
->  }
->  EXPORT_SYMBOL(capable_wrt_inode_uidgid);
+On Sat, Oct 31, 2020 at 9:27 AM Michael Kerrisk (man-pages)
+<mtk.manpages@gmail.com> wrote:
+>
+> Hello Sargun,
+>
+> Thanks for your reply.
+>
+> On 10/30/20 9:27 PM, Sargun Dhillon wrote:
+> > On Thu, Oct 29, 2020 at 09:37:21PM +0100, Michael Kerrisk (man-pages)
+> > wrote:
+>
+> [...]
+>
+> >>> I think I commented in another thread somewhere that the
+> >>> supervisor is not notified if the syscall is preempted. Therefore
+> >>> if it is performing a preemptible, long-running syscall, you need
+> >>> to poll SECCOMP_IOCTL_NOTIF_ID_VALID in the background, otherwise
+> >>> you can end up in a bad situation -- like leaking resources, or
+> >>> holding on to file descriptors after the program under
+> >>> supervision has intended to release them.
+> >>
+> >> It's been a long day, and I'm not sure I reallu understand this.
+> >> Could you outline the scnario in more detail?
+> >>
+> > S: Sets up filter + interception for accept T: socket(AF_INET,
+> > SOCK_STREAM, 0) = 7 T: bind(7, {127.0.0.1, 4444}, ..) T: listen(7,
+> > 10) T: pidfd_getfd(T, 7) = 7 # For the sake of discussion.
+>
+> Presumably, the preceding line should have been:
+>
+> S: pidfd_getfd(T, 7) = 7 # For the sake of discussion.
+> (s/T:/S:/)
+>
+> right?
 
-Please avoid these silly wrappers and just switch all callers to pass
-the namespaces instead of creating boilerplate code.  Same for the other
-functions where you do this even even worse the method calls.
+Right.
+>
+>
+> > T: accept(7, ...) S: Intercepts accept S: Does accept in background
+> > T: Receives signal, and accept(...) responds in EINTR T: close(7) S:
+> > Still running accept(7, ....), holding port 4444, so if now T
+> > retries to bind to port 4444, things fail.
+>
+> Okay -- I understand. Presumably the solution here is not to
+> block in accept(), but rather to use poll() to monitor both the
+> notification FD and the listening socket FD?
+>
+You need to have some kind of mechanism to periodically check
+if the notification is still alive, and preempt the accept. It doesn't
+matter how exactly you "background" the accept (threads, or
+O_NONBLOCK + epoll).
+
+The thing is you need to make sure that when the process
+cancels a syscall, you need to release the resources you
+may have acquired on its behalf or bad things can happen.
+
+> >>> A very specific example is if you're performing an accept on
+> >>> behalf of the program generating the notification, and the
+> >>> program intends to reuse the port. You can get into all sorts of
+> >>> awkward situations there.
+> >>
+> >> [...]
+> >>
+> > See above
+>
+> [...]
+>
+> >>> In addition, if it is a socket, it inherits the cgroup v1 classid
+> >>> and netprioidx of the receiving process.
+> >>>
+> >>> The argument of this is as follows:
+> >>>
+> >>> struct seccomp_notif_addfd { __u64 id; __u32 flags; __u32 srcfd;
+> >>> __u32 newfd; __u32 newfd_flags; };
+> >>>
+> >>> id This is the cookie value that was obtained using
+> >>> SECCOMP_IOCTL_NOTIF_RECV.
+> >>>
+> >>> flags A bitmask that includes zero or more of the
+> >>> SECCOMP_ADDFD_FLAG_* bits set
+> >>>
+> >>> SECCOMP_ADDFD_FLAG_SETFD - Use dup2 (or dup3?) like semantics
+> >>> when copying the file descriptor.
+> >>>
+> >>> srcfd The file descriptor number to copy in the supervisor
+> >>> process.
+> >>>
+> >>> newfd If the SECCOMP_ADDFD_FLAG_SETFD flag is specified this will
+> >>> be the file descriptor that is used in the dup2 semantics. If
+> >>> this file descriptor exists in the receiving process, it is
+> >>> closed and replaced by this file descriptor in an atomic fashion.
+> >>> If the copy process fails due to a MAC failure, or if srcfd is
+> >>> invalid, the newfd will not be closed in the receiving process.
+> >>
+> >> Great description!
+> >>
+> >>> If SECCOMP_ADDFD_FLAG_SETFD it not set, then this value must be
+> >>> 0.
+> >>>
+> >>> newfd_flags The file descriptor flags to set on the file
+> >>> descriptor after it has been received by the process. The only
+> >>> flag that can currently be specified is O_CLOEXEC.
+> >>>
+> >>> On success, this operation returns the file descriptor number in
+> >>> the receiving process. On failure, -1 is returned.
+> >>>
+> >>> It can fail with the following error codes:
+> >>>
+> >>> EINPROGRESS The cookie number specified hasn't been received by
+> >>> the listener
+> >>
+> >> I don't understand this. Can you say more about the scenario?
+> >>
+> >
+> > This should not really happen. But if you do a ADDFD(...), on a
+> > notification *before* you've received it, you will get this error. So
+> > for example,
+> > --> epoll(....) -> returns
+> > --> RECV(...) cookie id is 777
+> > --> epoll(...) -> returns
+> > <-- ioctl(ADDFD, id = 778) # Notice how we haven't done a receive yet
+> > where we've received a notification for 778.
+>
+> Got it. Looking also at the source code, I came up with the
+> following:
+>
+>               EINPROGRESS
+>                      The user-space notification specified in the id
+>                      field exists but has not yet been fetched (by a
+>                      SECCOMP_IOCTL_NOTIF_RECV) or has already been
+>                      responded to (by a SECCOMP_IOCTL_NOTIF_SEND).
+>
+> Does that seem okay?
+>
+Looks good to me.
+
+> >>> ENOENT The cookie number is not valid. This can happen if a
+> >>> response has already been sent, or if the syscall was
+> >>> interrupted
+> >>>
+> >>> EBADF If the file descriptor specified in srcfd is invalid, or if
+> >>> the fd is out of range of the destination program.
+> >>
+> >> The piece "or if the fd is out of range of the destination program"
+> >> is not clear to me. Can you say some more please.
+> >>
+> >
+> > IIRC the maximum fd range is specific in proc by some sysctl named
+> > nr_open. It's also evaluated against RLIMITs, and nr_max.
+> >
+> > If nr-open (maximum fds open per process, iiirc) is 1000, even if 10
+> > FDs are open, it wont work if newfd is 1001.
+>
+> Actually, the relevant limit seems to be just the RLIMIT_NOFILE
+> resource limit at least in my reading of fs/file.c::replace_fd().
+> So I made the text
+>
+>               EBADF  Allocating the file descriptor in the target would
+>                      cause the target's RLIMIT_NOFILE limit to be
+>                      exceeded (see getrlimit(2)).
+>
+>
+
+If you're above RLIMIT_NOFILE, you get EBADF.
+
+When we do __receive_fd with a specific fd (newfd specified):
+https://elixir.bootlin.com/linux/latest/source/fs/file.c#L1086
+
+it calls replace_fd, which calls expand_files. expand_files
+can fail with EMFILE.
+
+> >>> EINVAL If flags or new_flags were unrecognized, or if newfd is
+> >>> non-zero, and SECCOMP_ADDFD_FLAG_SETFD has not been set.
+> >>>
+> >>> EMFILE Too many files are open by the destination process.
+>
+> I'm not sure that the error can really occur. That's the error
+> that in most other places occurs when RLIMIT_NOFILE is exceeded.
+> But I may have missed something. More precisely, when do you think
+> EMFILE can occur?
+>
+It can happen if the user specifies a newfd which is too large.
+
+> [...]
+>
+> Thanks,
+>
+> Michael
+>
+> --
+> Michael Kerrisk
+> Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
+> Linux/UNIX System Programming Training: http://man7.org/training/
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
