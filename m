@@ -6,65 +6,65 @@ X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5920AC00A89
-	for <containers@archiver.kernel.org>; Mon,  2 Nov 2020 13:24:23 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4CC06C00A89
+	for <containers@archiver.kernel.org>; Mon,  2 Nov 2020 13:25:52 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id C03E122268
-	for <containers@archiver.kernel.org>; Mon,  2 Nov 2020 13:24:22 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C03E122268
+	by mail.kernel.org (Postfix) with ESMTPS id 960D6223BE
+	for <containers@archiver.kernel.org>; Mon,  2 Nov 2020 13:25:51 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 960D6223BE
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 3A9DB86D38;
-	Mon,  2 Nov 2020 13:24:22 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 1A24B86AD9;
+	Mon,  2 Nov 2020 13:25:51 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from whitealder.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id 3lprRFxfEAyH; Mon,  2 Nov 2020 13:25:49 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by whitealder.osuosl.org (Postfix) with ESMTP id BFCA6869CD;
+	Mon,  2 Nov 2020 13:25:49 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id AC478C088B;
+	Mon,  2 Nov 2020 13:25:49 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id A99A0C0051
+ for <containers@lists.linux-foundation.org>;
+ Mon,  2 Nov 2020 13:25:47 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by fraxinus.osuosl.org (Postfix) with ESMTP id 94F1086DD2
+ for <containers@lists.linux-foundation.org>;
+ Mon,  2 Nov 2020 13:25:47 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id XJsc6BKHwymx; Mon,  2 Nov 2020 13:24:21 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 767C686813;
-	Mon,  2 Nov 2020 13:24:21 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 65127C088B;
-	Mon,  2 Nov 2020 13:24:21 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id B67A0C0051
- for <containers@lists.linux-foundation.org>;
- Mon,  2 Nov 2020 13:24:19 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 9137D2010F
- for <containers@lists.linux-foundation.org>;
- Mon,  2 Nov 2020 13:24:19 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id x+JuPCBVeF2L
+ with ESMTP id aLQKb95v4nmm
  for <containers@lists.linux-foundation.org>;
- Mon,  2 Nov 2020 13:24:18 +0000 (UTC)
+ Mon,  2 Nov 2020 13:25:46 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by silver.osuosl.org (Postfix) with ESMTPS id 6401920027
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id BE3A186813
  for <containers@lists.linux-foundation.org>;
- Mon,  2 Nov 2020 13:24:17 +0000 (UTC)
+ Mon,  2 Nov 2020 13:25:46 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kZZoC-00072k-J9; Mon, 02 Nov 2020 13:23:40 +0000
-Date: Mon, 2 Nov 2020 14:23:38 +0100
+ id 1kZZpp-0007CP-3c; Mon, 02 Nov 2020 13:25:21 +0000
+Date: Mon, 2 Nov 2020 14:25:16 +0100
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Christoph Hellwig <hch@infradead.org>
-Subject: Re: [PATCH 07/34] capability: handle idmapped mounts
-Message-ID: <20201102132338.ocq7z4oyn3aholi4@wittgenstein>
+Subject: Re: [PATCH 06/34] fs: add id translation helpers
+Message-ID: <20201102132516.rvm2muir7pwahrpq@wittgenstein>
 References: <20201029003252.2128653-1-christian.brauner@ubuntu.com>
- <20201029003252.2128653-8-christian.brauner@ubuntu.com>
- <20201101144809.GE23378@infradead.org>
+ <20201029003252.2128653-7-christian.brauner@ubuntu.com>
+ <20201101144632.GD23378@infradead.org>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <20201101144809.GE23378@infradead.org>
+In-Reply-To: <20201101144632.GD23378@infradead.org>
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>,
  James Bottomley <James.Bottomley@hansenpartnership.com>,
@@ -103,34 +103,28 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Sun, Nov 01, 2020 at 02:48:09PM +0000, Christoph Hellwig wrote:
-> >  /**
-> >   * capable_wrt_inode_uidgid - Check nsown_capable and uid and gid mapped
-> >   * @inode: The inode in question
-> > @@ -501,9 +513,7 @@ bool privileged_wrt_inode_uidgid(struct user_namespace *ns, const struct inode *
-> >   */
-> >  bool capable_wrt_inode_uidgid(const struct inode *inode, int cap)
-> >  {
-> > +	return capable_wrt_mapped_inode_uidgid(&init_user_ns, inode, cap);
-> >  }
-> >  EXPORT_SYMBOL(capable_wrt_inode_uidgid);
+On Sun, Nov 01, 2020 at 02:46:32PM +0000, Christoph Hellwig wrote:
+> > +static inline kuid_t kuid_into_mnt(struct user_namespace *to, kuid_t kuid)
+> > +{
+> > +#ifdef CONFIG_IDMAP_MOUNTS
+> > +	return make_kuid(to, __kuid_val(kuid));
+> > +#else
+> > +	return kuid;
+> > +#endif
+> > +}
+> > +
+> > +static inline kgid_t kgid_into_mnt(struct user_namespace *to, kgid_t kgid)
+> > +{
+> > +#ifdef CONFIG_IDMAP_MOUNTS
+> > +	return make_kgid(to, __kgid_val(kgid));
+> > +#else
+> > +	return kgid;
+> > +#endif
 > 
-> Please avoid these silly wrappers and just switch all callers to pass
-> the namespaces instead of creating boilerplate code.  Same for the other
-> functions where you do this even even worse the method calls.
+> If you want to keep the config option please at least have on
+> #ifdef/#else/#endif instead of this mess.
 
-Christoph,
-
-Thanks for the review!  
-
-Ok, so I'll switch:
-- all helpers to take an additional argument
-  (capable_wrt_inode_uidgid()/inode_permission()/vfs_*() etc.)
-- all inode method calls to take an additional argument (I assume that's
-  what you're referring to: ->create()/->mknod()/->mkdir() etc.)
-  I've always assumed that this is what we'd be doing in the end anyway
-  (I've mentioned it in the commit message for the inode_operations
-  method's. This will be a bit of work but we can get that done!)
+Understood.
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
