@@ -2,117 +2,99 @@ Return-Path: <SRS0=KLId=EK=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.0 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 17A8DC55178
-	for <containers@archiver.kernel.org>; Wed,  4 Nov 2020 18:57:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 26FD9C388F7
+	for <containers@archiver.kernel.org>; Wed,  4 Nov 2020 21:57:21 +0000 (UTC)
 Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 849D82080D
-	for <containers@archiver.kernel.org>; Wed,  4 Nov 2020 18:57:08 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 7890A20795
+	for <containers@archiver.kernel.org>; Wed,  4 Nov 2020 21:57:20 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="M8V29X75"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 849D82080D
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=chromium.org
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="JHF7WZzW"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7890A20795
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 12A1D860D1;
-	Wed,  4 Nov 2020 18:57:08 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id E55F085EC2;
+	Wed,  4 Nov 2020 21:57:19 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id nFyxL6y81L2e; Wed,  4 Nov 2020 18:57:07 +0000 (UTC)
+	with ESMTP id UhsqwpTEWePb; Wed,  4 Nov 2020 21:57:18 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 930AD85F92;
-	Wed,  4 Nov 2020 18:57:07 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id CE97185EBE;
+	Wed,  4 Nov 2020 21:57:18 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 7B87BC088B;
-	Wed,  4 Nov 2020 18:57:07 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id B2779C0889;
+	Wed,  4 Nov 2020 21:57:18 +0000 (UTC)
 Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 75630C0051
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 91E36C0051
  for <containers@lists.linux-foundation.org>;
- Wed,  4 Nov 2020 18:57:06 +0000 (UTC)
+ Wed,  4 Nov 2020 21:57:17 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 5F5658676E
+ by whitealder.osuosl.org (Postfix) with ESMTP id 8B8F68610F
  for <containers@lists.linux-foundation.org>;
- Wed,  4 Nov 2020 18:57:06 +0000 (UTC)
+ Wed,  4 Nov 2020 21:57:17 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id G1kSEjvglBKA
+ with ESMTP id 4a18iZkjzjWF
  for <containers@lists.linux-foundation.org>;
- Wed,  4 Nov 2020 18:57:05 +0000 (UTC)
+ Wed,  4 Nov 2020 21:57:16 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-pl1-f195.google.com (mail-pl1-f195.google.com
- [209.85.214.195])
- by whitealder.osuosl.org (Postfix) with ESMTPS id BE3FF866B1
+Received: from us-smtp-delivery-124.mimecast.com
+ (us-smtp-delivery-124.mimecast.com [63.128.21.124])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 240C585C56
  for <containers@lists.linux-foundation.org>;
- Wed,  4 Nov 2020 18:57:05 +0000 (UTC)
-Received: by mail-pl1-f195.google.com with SMTP id x23so10732483plr.6
- for <containers@lists.linux-foundation.org>;
- Wed, 04 Nov 2020 10:57:05 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=chromium.org; s=google;
- h=date:from:to:cc:subject:message-id:references:mime-version
- :content-disposition:in-reply-to;
- bh=eFbEFkCwKJ1hR3ookQi/7V8Itg1IPtT/zHbmeIxSz6g=;
- b=M8V29X75bdxqtjcKywJmnyr1FqzkhvieUPrJY63jv4RFhMimKu9+P3nJ1F+HndPJsh
- QzfeuWZuKcE8FrwefX0HGV1DUScWByoTiabA2VGBkCDVtSUXskkYKZXjTs191p7kBgsy
- q5yRcPFcVQ+sw3CiP8F/EyXbTycT5ga0dpB7M=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=1e100.net; s=20161025;
- h=x-gm-message-state:date:from:to:cc:subject:message-id:references
- :mime-version:content-disposition:in-reply-to;
- bh=eFbEFkCwKJ1hR3ookQi/7V8Itg1IPtT/zHbmeIxSz6g=;
- b=JCF99lQ6mLrn8d9l+r2HpEmIa61S/DFO7nMlH5Ccahga9TRlDq/vY/R2pYfyWDqAEZ
- CAY4BGnyspuxnFZICOcEOmLZhbbzKRH2gjNDXVnLD2AXypr1OpuQ6bcXKwUqAx+J4XAo
- de7qZcJp8BYyx5Nk1CCCtXSMxAlyM/VM60dQqq4zsZ6hZO2iJfM9kRo7W69ZY4gy3GMp
- O4BdUaT4HhboMDEgH/LFcQTPktN0VbPk9tYvG2QkMPFzrkKXsQ2IE4YlHP+aRzz2bdIB
- VBOsYU/FbtFMb+Dc3vz0CEwIbtPpfb/HKTiij2HQ/YvhwzOkSP+yStPtdmXdvJyvOHk2
- lJTA==
-X-Gm-Message-State: AOAM5304KHs8jXwS0bJmSNVUk+LnR7tVpL3oNOAmaqkvRNUS7xI+BAyV
- rtq+x9o8wd04xkTBJy/TRQyp+w==
-X-Google-Smtp-Source: ABdhPJyu2rjAfEpo9PsZku1g5A6IasXMm5exN3bYVxllgILGsUnNv/NS1FwRd/sfhdORw2FuF5f16w==
-X-Received: by 2002:a17:902:ff0e:b029:d6:820d:cb81 with SMTP id
- f14-20020a170902ff0eb02900d6820dcb81mr31394012plj.47.1604516225344; 
- Wed, 04 Nov 2020 10:57:05 -0800 (PST)
-Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
- by smtp.gmail.com with ESMTPSA id q16sm3066965pff.114.2020.11.04.10.57.03
- (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
- Wed, 04 Nov 2020 10:57:04 -0800 (PST)
-Date: Wed, 4 Nov 2020 10:57:03 -0800
-From: Kees Cook <keescook@chromium.org>
-To: YiFei Zhu <zhuyifei1999@gmail.com>
-Subject: Re: [PATCH v4 seccomp 5/5] seccomp/cache: Report cache data through
- /proc/pid/seccomp_cache
-Message-ID: <202011041052.0D14CD6@keescook>
-References: <202010121556.1110776B83@keescook>
- <CABqSeAT2-vNVUrXSWiGp=cXCvz8LbOrTBo1GbSZP2Z+CKdegJA@mail.gmail.com>
- <CABqSeASc-3n_LXpYhb+PYkeAOsfSjih4qLMZ5t=q5yckv3w0nQ@mail.gmail.com>
- <202010221520.44C5A7833E@keescook>
- <CABqSeAT4L65_uS=45uxPZALKaDSDocMviMginLOV2N0h-e1AzA@mail.gmail.com>
- <202010231945.90FA4A4AA@keescook>
- <CABqSeAQ4cCwiPuXEeaGdErMmLDCGxJ-RgweAbUqdrdm+XJXxeg@mail.gmail.com>
- <CABqSeATiV0sQvqpvCuqkOXNbjetY=1=6ry_SciMVmo63W9A88A@mail.gmail.com>
- <202011031612.6AA505157@keescook>
- <CABqSeASFkTFn8ix8-5D0vdZ_FR9bR1PpU3j5eQPYOMshK6FuNA@mail.gmail.com>
+ Wed,  4 Nov 2020 21:57:15 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+ s=mimecast20190719; t=1604527034;
+ h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+ to:to:cc:cc:mime-version:mime-version:content-type:content-type;
+ bh=xLd9UIzjawre+4pDsoByOIIICry9R8qSsVwWyLpC9EE=;
+ b=JHF7WZzWvV4DAbSDDbivY4HZ18ou+C+DVZOGRlHPwt0fyj2MH2xsi3UOAVN8EwnUW8bU/s
+ Q8g9CeZvVVPaNMF3NVUBnvjv+ucdliggR0svFrpqNFxPr1GEDEMKywZWPOvvq6fcFn7Frm
+ YclhVOSVPkgTCsNTMzvCaMcFZttU/Eg=
+Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
+ [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
+ us-mta-324-tl20Fq8cNliFsTh3atdMzA-1; Wed, 04 Nov 2020 16:57:11 -0500
+X-MC-Unique: tl20Fq8cNliFsTh3atdMzA-1
+Received: from smtp.corp.redhat.com (int-mx05.intmail.prod.int.phx2.redhat.com
+ [10.5.11.15])
+ (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+ (No client certificate requested)
+ by mimecast-mx01.redhat.com (Postfix) with ESMTPS id E3C51803652;
+ Wed,  4 Nov 2020 21:57:06 +0000 (UTC)
+Received: from mail (ovpn-116-241.rdu2.redhat.com [10.10.116.241])
+ by smtp.corp.redhat.com (Postfix) with ESMTPS id 59A125578B;
+ Wed,  4 Nov 2020 21:57:03 +0000 (UTC)
+Date: Wed, 4 Nov 2020 16:57:02 -0500
+From: Andrea Arcangeli <aarcange@redhat.com>
+To: Kees Cook <keescook@chromium.org>
+Subject: RFC: default to spec_store_bypass_disable=prctl spectre_v2_user=prctl
+Message-ID: <20201104215702.GG24993@redhat.com>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <CABqSeASFkTFn8ix8-5D0vdZ_FR9bR1PpU3j5eQPYOMshK6FuNA@mail.gmail.com>
-Cc: Andrea Arcangeli <aarcange@redhat.com>,
- Giuseppe Scrivano <gscrivan@redhat.com>,
- Valentin Rothberg <vrothber@redhat.com>, Jann Horn <jannh@google.com>,
- YiFei Zhu <yifeifz2@illinois.edu>,
+User-Agent: Mutt/1.14.7 (2020-08-29)
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.15
+Cc: Tobin Feldman-Fitzthum <tobin@ibm.com>,
+ Hubertus Franke <frankeh@us.ibm.com>, Jack Chen <jianyan2@illinois.edu>,
+ Giuseppe Scrivano <gscrivan@redhat.com>, YiFei Zhu <yifeifz2@illinois.edu>,
+ Waiman Long <longman@redhat.com>, Tianyin Xu <tyxu@illinois.edu>,
+ Jann Horn <jannh@google.com>, Jiri Kosina <jikos@kernel.org>,
+ Valentin Rothberg <vrothber@redhat.com>,
+ Josep Torrellas <torrella@illinois.edu>, Thomas Gleixner <tglx@linutronix.de>,
+ Will Drewry <wad@chromium.org>,
  Linux Containers <containers@lists.linux-foundation.org>,
- Tobin Feldman-Fitzthum <tobin@ibm.com>,
  kernel list <linux-kernel@vger.kernel.org>,
- Andy Lutomirski <luto@amacapital.net>, Hubertus Franke <frankeh@us.ibm.com>,
- David Laight <David.Laight@aculab.com>, Jack Chen <jianyan2@illinois.edu>,
+ Andy Lutomirski <luto@amacapital.net>,
  Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
- Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>,
- bpf <bpf@vger.kernel.org>, Tianyin Xu <tyxu@illinois.edu>
+ David Laight <David.Laight@aculab.com>, bpf <bpf@vger.kernel.org>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -129,38 +111,253 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Wed, Nov 04, 2020 at 05:40:51AM -0600, YiFei Zhu wrote:
-> On Tue, Nov 3, 2020 at 6:29 PM Kees Cook <keescook@chromium.org> wrote:
-> > Yeah, this is very interesting. That there is anything measurably _slower_
-> > with the cache is surprising. Though with only 4 runs, I wonder if it's
-> > still noisy? What happens at 10 runs -- more importantly what is the
-> > standard deviation?
+Hello,
+
+[ Given the CC list and your mention of spectre_v2_user=prctl is spot
+  on to show the badness... I spawned a new thread to suggest another
+  thing related to seccomp that I've been intending to suggest for
+  a while ]
+
+On Tue, Nov 03, 2020 at 04:29:38PM -0800, Kees Cook wrote:
+> I assume this is from Indirect Branch Prediction Barrier (IBPB) and
+> Single Threaded Indirect Branch Prediction (STIBP) (which get enabled
+> for threads under seccomp by default).
 > 
-> I could do that. it just takes such a long time. Each run takes about
-> 20 minutes so with 10 runs per environment, 3 environments (native + 2
-> docker) per boot, and 4 boots (2 bootparam * 2 compile config), it's
-> 27 hours of compilation. I should probably script it at that point.
+> Try booting with "spectre_v2_user=prctl"
 
-Yeah, I was facing the same issues. Though perhaps hackbench (with
-multiple CPUs) would be a better test (and it's much faster):
+We need to change the kernel default to
+"spec_store_bypass_disable=prctl spectre_v2_user=prctl".
 
-https://lore.kernel.org/lkml/7723ae8d-8333-ba17-6983-a45ec8b11c54@redhat.com/
+I've been recommending to everyone to use
+"spec_store_bypass_disable=prctl spectre_v2_user=prctl" for a while
+now. I already recommend to Yifei too a few months ago when he first
+found out of the huge seccomp regression when he upgraded his codebase
+to the upstream kernel with both STIBP/SSBD enabled in seccomp jails.
 
-(I usually run this with a CNT of 20 to get quick results.)
+Here's below a tentative RFC, the code is actually trivial, if you
+could help reviewing/improving the commit header it would be great.
 
-> > I assume this is from Indirect Branch Prediction Barrier (IBPB) and
-> > Single Threaded Indirect Branch Prediction (STIBP) (which get enabled
-> > for threads under seccomp by default).
-> >
-> > Try booting with "spectre_v2_user=prctl"
-> 
-> Hmm, to make sure, boot with just "spectre_v2_user=prctl" on the
-> command line and test the performance of that?
+Thanks,
+Andrea
 
-Right, see if that eliminates the 3 minute jump seen for seccomp.
+From 3f7adb783262dc7f4e71cdbf07b4ef9f6b8d3ed9 Mon Sep 17 00:00:00 2001
+From: Andrea Arcangeli <aarcange@redhat.com>
+Date: Wed, 4 Nov 2020 15:20:33 -0500
+Subject: [PATCH 1/1] x86: change default to spec_store_bypass_disable=prctl
+ spectre_v2_user=prctl
 
--- 
-Kees Cook
+Switch the kernel default of SSBD and STIBP to the ones with
+CONFIG_SECCOMP=n (i.e. spec_store_bypass_disable=prctl
+spectre_v2_user=prctl) even if CONFIG_SECCOMP=y.
+
+Several motivations listed below:
+
+- If SMT is enabled the seccomp jail can still attack the rest of the
+  system even with spectre_v2_user=seccomp by using MDS-HT (except on
+  XEON PHI where MDS can be tamed with SMT left enabled, but that's a
+  special case). Setting STIBP become a very expensive window dressing
+  after MDS-HT was discovered.
+
+- The seccomp jail cannot attack the kernel with spectre-v2-HT
+  regardless (even if STIBP is not set), but with MDS-HT the seccomp
+  jail can attack the kernel too.
+
+- With spec_store_bypass_disable=prctl the seccomp jail can attack the
+  other userland (guest or host mode) using spectre-v2-HT, but the
+  userland attack is already mitigated by both ASLR and pid namespaces
+  for host userland and through virt isolation with libkrun or
+  kata. (if something if somebody is worried about spectre-v2-HT it's
+  best to mount proc with hidepid=2,gid=proc on workstations where not
+  all apps may run under container runtimes, rather than slowing down
+  all seccomp jails, but the best is to add pid namespaces to the
+  seccomp jail). As opposed MDS-HT is not mitigated and the seccomp
+  jail can still attack all other host and guest userland if SMT is
+  enabled even with spec_store_bypass_disable=seccomp.
+
+- If full security is required then MDS-HT must also be mitigated with
+  nosmt and then spectre_v2_user=prctl and spectre_v2_user=seccomp
+  would become identical.
+
+- Setting spectre_v2_user=seccomp is overall lower priority than to
+  setting javascript.options.wasm false in about:config to protect
+  against remote wasm MDS-HT, instead of worrying about Spectre-v2-HT
+  and STIBP which again is already statistically well mitigated by
+  other means in userland and it's fully mitigated in kernel with
+  retpolines (unlike the wasm assist call with MDS-HT).
+
+- SSBD is needed to prevent reading the JIT memory and the primary
+  user being the OpenJDK. However the primary user of SSBD wouldn't be
+  covered by spec_store_bypass_disable=seccomp because it doesn't use
+  seccomp and the primary user also explicitly declined to set
+  PR_SET_SPECULATION_CTRL+PR_SPEC_STORE_BYPASS despite it easily
+  could. In fact it would need to set it only when the sandboxing
+  mechanism is enabled for javaws applets, but it still declined it by
+  declaring security within the same user address space as an
+  untenable objective for their JIT, even in the sandboxing case where
+  performance would be a lesser concern (for the record: I kind of
+  disagree in not setting PR_SPEC_STORE_BYPASS in the sandbox case and
+  I prefer to run javaws through a wrapper that sets
+  PR_SPEC_STORE_BYPASS if I need). In turn it can be inferred that
+  even if the primary user of SSBD would use seccomp, they would
+  invoke it with SECCOMP_FILTER_FLAG_SPEC_ALLOW by now.
+
+- runc/crun already set SECCOMP_FILTER_FLAG_SPEC_ALLOW by default, k8s
+  and podman have a default json seccomp allowlist that cannot be
+  slowed down, so for the #1 seccomp user this change is already a
+  noop.
+
+- systemd/sshd or other apps that use seccomp, if they really need
+  STIBP or SSBD, they need to explicitly set the
+  PR_SET_SPECULATION_CTRL by now. The stibp/ssbd seccomp blind
+  catch-all approach was done probably initially with a wishful
+  thinking objective to pretend to have a peace of mind that it could
+  magically fix it all. That was wishful thinking before MDS-HT was
+  discovered, but after MDS-HT has been discovered it become just
+  window dressing.
+
+- For qemu "-sandbox" seccomp jail it wouldn't make sense to set STIBP
+  or SSBD. SSBD doesn't help with KVM because there's no JIT (if it's
+  needed with TCG it should be an opt-in with
+  PR_SET_SPECULATION_CTRL+PR_SPEC_STORE_BYPASS and it shouldn't
+  slowdown KVM for nothing). For qemu+KVM STIBP would be even more
+  window dressing than it is for all other apps, because in the
+  qemu+KVM case there's not only the MDS attack to worry about with
+  SMT enabled. Even after disabling SMT, there's still a theoretical
+  spectre-v2 attack possible within the same thread context from guest
+  mode to host ring3 that the host kernel retpoline mitigation has no
+  theoretical chance to mitigate. On some kernels a
+  ibrs-always/ibrs-retpoline opt-in model is provided that will
+  enabled IBRS in the qemu host ring3 userland which fixes this
+  theoretical concern. Only after enabling IBRS in the host userland
+  it would then make sense to proceed and worry about STIBP and an
+  attack on the other host userland, but then again SMT would need to
+  be disabled for full security anyway, so that would render STIBP
+  again a noop.
+
+- last but not the least: the lack of "spec_store_bypass_disable=prctl
+  spectre_v2_user=prctl" means the moment a guest boots and
+  sshd/systemd runs, the guest kernel will write to SPEC_CTRL MSR
+  which will make the guest vmexit forever slower, forcing KVM to
+  issue a very slow rdmsr instruction at every vmexit. So the end
+  result is that SPEC_CTRL MSR is only available in GCE. Most other
+  public cloud providers don't expose SPEC_CTRL, which means that not
+  only STIBP/SSBD isn't available, but IBPB isn't available either
+  (which would cause no overhead to the guest or the hypervisor
+  because it's write only and requires no reading during vmexit). So
+  the current default already net loss in security (missing IBPB)
+  which means most public cloud providers cannot achieve a fully
+  secure guest with nosmt (and nosmt is enough to fully mitigate
+  MDS-HT). It also means GCE and is unfairly penalized in performance
+  because it provides the option to enable full security in the guest
+  as an opt-in (i.e. nosmt and IBPB). So this change will allow all
+  cloud providers to expose SPEC_CTRL without incurring into any
+  hypervisor slowdown and at the same time it will remove the unfair
+  penalization of GCE performance for doing the right thing and it'll
+  allow to get full security with nosmt with IBPB being available (and
+  STIBP becoming meaningless).
+
+Example to put things in prospective: the STIBP enabled in seccomp has
+never been about protecting apps using seccomp like sshd from an
+attack from a malicious userland, but to the contrary it has always
+been about protecting the system from an attack from sshd, after a
+successful remote network exploit against sshd. In fact initially it
+wasn't obvious STIBP would work both ways (STIBP was about preventing
+the task that runs with STIBP to be attacked with spectre-v2-HT, but
+accidentally in the STIBP case it also prevents the attack in the
+other direction). In the hypothetical case that sshd has been remotely
+exploited the last concern should be STIBP being set, because it'll be
+still possible to obtain info even from the kernel by using MDS if
+nosmt wasn't set (and if it was set, STIBP is a noop in the first
+place). As opposed kernel cannot leak anything with spectre-v2 HT
+because of retpolines and the userland is mitigated by ASLR already
+and ideally PID namespaces too. If something it'd be worth checking if
+sshd run the seccomp thread under pid namespaces too if available in
+the running kernel. SSBD also would be a noop for sshd, since sshd
+uses no JIT. If sshd prefers to keep doing the STIBP window dressing
+exercise, it still can even after this change of defaults by opting-in
+with PR_SPEC_STORE_BYPASS.
+
+Ultimately setting SSBD and STIBP by default for all seccomp jails is
+a bad sweet spot and bad default with more cons than pros that end up
+reducing security in the public cloud (by giving an huge incentive to
+not expose SPEC_CTRL which would be needed to get full security with
+IBPB after setting nosmt in the guest) and by excessively hurting
+performance to more secure apps using seccomp that end up having to
+opt out with SECCOMP_FILTER_FLAG_SPEC_ALLOW.
+
+The following is the verified result of the new default with SMT
+enabled:
+
+(gdb) print spectre_v2_user_stibp
+$1 = SPECTRE_V2_USER_PRCTL
+(gdb) print spectre_v2_user_ibpb
+$2 = SPECTRE_V2_USER_PRCTL
+(gdb) print ssb_mode
+$3 = SPEC_STORE_BYPASS_PRCTL
+
+Signed-off-by: Andrea Arcangeli <aarcange@redhat.com>
+---
+ Documentation/admin-guide/kernel-parameters.txt | 5 ++---
+ arch/x86/kernel/cpu/bugs.c                      | 4 ++--
+ 2 files changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
+index 526d65d8573a..105401a3582f 100644
+--- a/Documentation/admin-guide/kernel-parameters.txt
++++ b/Documentation/admin-guide/kernel-parameters.txt
+@@ -4980,8 +4980,7 @@
+ 			auto    - Kernel selects the mitigation depending on
+ 				  the available CPU features and vulnerability.
+ 
+-			Default mitigation:
+-			If CONFIG_SECCOMP=y then "seccomp", otherwise "prctl"
++			Default mitigation: "prctl"
+ 
+ 			Not specifying this option is equivalent to
+ 			spectre_v2_user=auto.
+@@ -5025,7 +5024,7 @@
+ 				  will disable SSB unless they explicitly opt out.
+ 
+ 			Default mitigations:
+-			X86:	If CONFIG_SECCOMP=y "seccomp", otherwise "prctl"
++			X86:	"prctl"
+ 
+ 			On powerpc the options are:
+ 
+diff --git a/arch/x86/kernel/cpu/bugs.c b/arch/x86/kernel/cpu/bugs.c
+index d3f0db463f96..5ec39397fe9c 100644
+--- a/arch/x86/kernel/cpu/bugs.c
++++ b/arch/x86/kernel/cpu/bugs.c
+@@ -721,11 +721,11 @@ spectre_v2_user_select_mitigation(enum spectre_v2_mitigation_cmd v2_cmd)
+ 	case SPECTRE_V2_USER_CMD_FORCE:
+ 		mode = SPECTRE_V2_USER_STRICT;
+ 		break;
++	case SPECTRE_V2_USER_CMD_AUTO:
+ 	case SPECTRE_V2_USER_CMD_PRCTL:
+ 	case SPECTRE_V2_USER_CMD_PRCTL_IBPB:
+ 		mode = SPECTRE_V2_USER_PRCTL;
+ 		break;
+-	case SPECTRE_V2_USER_CMD_AUTO:
+ 	case SPECTRE_V2_USER_CMD_SECCOMP:
+ 	case SPECTRE_V2_USER_CMD_SECCOMP_IBPB:
+ 		if (IS_ENABLED(CONFIG_SECCOMP))
+@@ -1132,7 +1132,6 @@ static enum ssb_mitigation __init __ssb_select_mitigation(void)
+ 		return mode;
+ 
+ 	switch (cmd) {
+-	case SPEC_STORE_BYPASS_CMD_AUTO:
+ 	case SPEC_STORE_BYPASS_CMD_SECCOMP:
+ 		/*
+ 		 * Choose prctl+seccomp as the default mode if seccomp is
+@@ -1146,6 +1145,7 @@ static enum ssb_mitigation __init __ssb_select_mitigation(void)
+ 	case SPEC_STORE_BYPASS_CMD_ON:
+ 		mode = SPEC_STORE_BYPASS_DISABLE;
+ 		break;
++	case SPEC_STORE_BYPASS_CMD_AUTO:
+ 	case SPEC_STORE_BYPASS_CMD_PRCTL:
+ 		mode = SPEC_STORE_BYPASS_PRCTL;
+ 		break;
+
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
