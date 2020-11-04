@@ -7,110 +7,105 @@ X-Spam-Status: No, score=-3.3 required=3.0 tests=BAYES_00,DKIM_ADSP_CUSTOM_MED,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 45486C2D0A3
-	for <containers@archiver.kernel.org>; Wed,  4 Nov 2020 11:41:09 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C33CC2D0A3
+	for <containers@archiver.kernel.org>; Wed,  4 Nov 2020 11:48:39 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id AAF25223AB
-	for <containers@archiver.kernel.org>; Wed,  4 Nov 2020 11:41:08 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id B27782071A
+	for <containers@archiver.kernel.org>; Wed,  4 Nov 2020 11:48:38 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="TA/upDzk"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AAF25223AB
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ZdFcNNsE"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B27782071A
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 0EE008691C;
-	Wed,  4 Nov 2020 11:41:08 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 0F5B9874CF;
+	Wed,  4 Nov 2020 11:48:38 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from hemlock.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id jxslBL8ajxk3; Wed,  4 Nov 2020 11:48:37 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by hemlock.osuosl.org (Postfix) with ESMTP id 5ECF2874BC;
+	Wed,  4 Nov 2020 11:48:37 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 3BF2DC0889;
+	Wed,  4 Nov 2020 11:48:37 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id CD728C0051
+ for <containers@lists.linux-foundation.org>;
+ Wed,  4 Nov 2020 11:48:35 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by whitealder.osuosl.org (Postfix) with ESMTP id C48B986AED
+ for <containers@lists.linux-foundation.org>;
+ Wed,  4 Nov 2020 11:48:35 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id qFtWQuZQIRHO; Wed,  4 Nov 2020 11:41:06 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 69D9286960;
-	Wed,  4 Nov 2020 11:41:06 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 56D77C0889;
-	Wed,  4 Nov 2020 11:41:06 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id CB5F0C0051
- for <containers@lists.linux-foundation.org>;
- Wed,  4 Nov 2020 11:41:04 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id B7CDF2047C
- for <containers@lists.linux-foundation.org>;
- Wed,  4 Nov 2020 11:41:04 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id e77gIHifThe9
+ with ESMTP id Vzttv8UtNrU4
  for <containers@lists.linux-foundation.org>;
- Wed,  4 Nov 2020 11:41:03 +0000 (UTC)
+ Wed,  4 Nov 2020 11:48:35 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-pf1-f193.google.com (mail-pf1-f193.google.com
- [209.85.210.193])
- by silver.osuosl.org (Postfix) with ESMTPS id C71752039D
+Received: from mail-pl1-f194.google.com (mail-pl1-f194.google.com
+ [209.85.214.194])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 23F45869C4
  for <containers@lists.linux-foundation.org>;
- Wed,  4 Nov 2020 11:41:03 +0000 (UTC)
-Received: by mail-pf1-f193.google.com with SMTP id j18so17092235pfa.0
+ Wed,  4 Nov 2020 11:48:35 +0000 (UTC)
+Received: by mail-pl1-f194.google.com with SMTP id g11so3670421pll.13
  for <containers@lists.linux-foundation.org>;
- Wed, 04 Nov 2020 03:41:03 -0800 (PST)
+ Wed, 04 Nov 2020 03:48:35 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
  h=mime-version:references:in-reply-to:from:date:message-id:subject:to
- :cc; bh=LrTKUro/EAfrSfquqr6fzY3elZ7+MZodt7l7Rb7VaMA=;
- b=TA/upDzkSlqE8bbPerc9M1oYcPB/SCguB/fv6tsU0qNJEICokPJOWWbzUO1heqjx1X
- 3MJkKQbgC+mF0e9Skbu2tODntCXpim0YAGDgj8FN7sDDIYQ3LWENybyqXCZl/be+XIV7
- WkLl+XHEOUOo5pQruyx0qVAlxfInjmoyHlqVQGeveukro3khLO1jYepKUOZHrwFZ9ajK
- qadPobf/QXXP57jlIZ1IuZ5JjtLZc2rA7A6Suqtp3Kq9x2PAu07ziUDnyQuTlnoexYBH
- aFgJjI+kgZNHMfPu8OpcuPuLOyBtB9ucJUa6Vc1pIoNedcqDe7XyKvzwxbAnHqPdVC/8
- 3d2A==
+ :cc; bh=7IzbM9m4aaHXdrXJm05MLSazuYENXBo0KE7aGRSwMEM=;
+ b=ZdFcNNsEPd+MrYWXHoLvBaTyKHUZhwFwZu3J/PQqzp5Y/s91VRqgtwgRqnPdnsJFzV
+ u8ndi/4ac74yeUDpbQr7HXPlEJnbasb7cO8o7gJ5QfnXfnqvT0IrHsEaICKEwxEa70A2
+ YXFhqPLDhnbJkNUfiRkcSqJ8rcr7T7iBd7vGmo4WjMykCP58kLBQOzps+/fitCtmG7lx
+ rqQXdb82DTVqzyozftIz+18xHfX9wm2lvzWUKmKLYyJ3imRpyuFKCfkdabT8dbUsAWYG
+ nv0yauU0g8FHPsO317oAA4Yrr0jRGmrdqn85extqA7+6MeHG+mc31wlEfpFhQQxxW9Z6
+ hBNQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
  h=x-gm-message-state:mime-version:references:in-reply-to:from:date
  :message-id:subject:to:cc;
- bh=LrTKUro/EAfrSfquqr6fzY3elZ7+MZodt7l7Rb7VaMA=;
- b=TW/5OpMaT2x0/ivbaEW7Lwk6g282agJsvbaVeaNQSKnINQRFAIfC92i/OIw57BPrhf
- QwhT56xAZvGqCr7oJKh/YkJgFHzZfAgMtMDio7XdWVYSF9YXJM5T5a8tPBZKJSVO0J+M
- cPvKh8ZiDiK8xjjcit9BL9zaVlDoqbgH3ORsrujHVS6zPg4kwD5e+vTszyUZUaQJ6sfC
- VMv+vAzEwEgI2DPo15df5p0zMiK5Gf4+GgxcHqXA4kOdvQr/ipU1coyqxsShBbGAUAgr
- nPFqRPuhOOTX9+4QC97m6rpH3IP3UI5pVEVxB5YiPykTVMqBySNl7j300o6ELn6ojnSo
- fa5A==
-X-Gm-Message-State: AOAM532JTbS3gZtqnDbCAjFiOeP6eLUh+lp258uX0S6bdO6bAUj3jPiR
- xeVKoASi9IAepE7tZa/+7mVDge3nkHAWMk+wgh0=
-X-Google-Smtp-Source: ABdhPJxXrmLrL+mP1OQCNUcSRgpIRR5lxJCHjx9kumQZ9Rb2jjUaKiD5ojjTiFRpWH3+G31Xb1/FBX1ZKkxWCv735h0=
-X-Received: by 2002:a63:f445:: with SMTP id p5mr20807325pgk.293.1604490063419; 
- Wed, 04 Nov 2020 03:41:03 -0800 (PST)
+ bh=7IzbM9m4aaHXdrXJm05MLSazuYENXBo0KE7aGRSwMEM=;
+ b=azt0N6y1WNl43Gejp4Km7K1BKA6djw1pTaW3h91zt1zsGKm0M0bzuoZhiffWOlHl+W
+ mhhW8JCBv63AEYSyrwgfLz73dHok7XLaAfnsmIpTq7xDh0jGssFf39M7R8SjBwluyA4J
+ tSy78YO5FuPLM945W5DgPT9r8VhNO/isJt6N5Z96i0+wMwnehFFtSXKSbuhuDqt4FsZc
+ Qfm6L908t29Fu4a18cktpSApHT1anFR4dN/9Xr+yeU8LXhq05lg5CIT5cOk+aWOMqfsH
+ DA8+E84TE/loIItC2gSB2vHR85R0EKzVJbVd/UqR3Zk6RsRve2PWI8gUIJeqotjqDgZt
+ hqQw==
+X-Gm-Message-State: AOAM532yazrIKP8NbiyVTxYcKyRUoTWZMK8PLSCpNBZj/tei52sggOZD
+ Xt3bwt28UqAVNITE8+bvGuT/LMfBSH5AYqR8vWA=
+X-Google-Smtp-Source: ABdhPJwhKGHgOtsgYmsX8K8geLNyRT+0OoRlLf1+UEBmK6aJHTGU8p2K0A8JMelevcl7yJOdhQWuD2QnmsGaSXA3des=
+X-Received: by 2002:a17:902:d30c:b029:d6:8208:bb1 with SMTP id
+ b12-20020a170902d30cb02900d682080bb1mr29348288plc.44.1604490514732; Wed, 04
+ Nov 2020 03:48:34 -0800 (PST)
 MIME-Version: 1.0
-References: <202010091613.B671C86@keescook>
- <CABqSeARZWBQrLkzd3ozF16ghkADQqcN4rUoJS2MKkd=73g4nVA@mail.gmail.com>
- <202010121556.1110776B83@keescook>
- <CABqSeAT2-vNVUrXSWiGp=cXCvz8LbOrTBo1GbSZP2Z+CKdegJA@mail.gmail.com>
- <CABqSeASc-3n_LXpYhb+PYkeAOsfSjih4qLMZ5t=q5yckv3w0nQ@mail.gmail.com>
- <202010221520.44C5A7833E@keescook>
- <CABqSeAT4L65_uS=45uxPZALKaDSDocMviMginLOV2N0h-e1AzA@mail.gmail.com>
- <202010231945.90FA4A4AA@keescook>
- <CABqSeAQ4cCwiPuXEeaGdErMmLDCGxJ-RgweAbUqdrdm+XJXxeg@mail.gmail.com>
- <CABqSeATiV0sQvqpvCuqkOXNbjetY=1=6ry_SciMVmo63W9A88A@mail.gmail.com>
- <202011031612.6AA505157@keescook>
-In-Reply-To: <202011031612.6AA505157@keescook>
+References: <cover.1604410035.git.yifeifz2@illinois.edu>
+ <4ec2970fcc819eb4d5dac2bd35233ccdadfda845.1604410035.git.yifeifz2@illinois.edu>
+ <87wnz1to9n.fsf@mpe.ellerman.id.au>
+In-Reply-To: <87wnz1to9n.fsf@mpe.ellerman.id.au>
 From: YiFei Zhu <zhuyifei1999@gmail.com>
-Date: Wed, 4 Nov 2020 05:40:51 -0600
-Message-ID: <CABqSeASFkTFn8ix8-5D0vdZ_FR9bR1PpU3j5eQPYOMshK6FuNA@mail.gmail.com>
-Subject: Re: [PATCH v4 seccomp 5/5] seccomp/cache: Report cache data through
- /proc/pid/seccomp_cache
-To: Kees Cook <keescook@chromium.org>
-Cc: Andrea Arcangeli <aarcange@redhat.com>,
- Giuseppe Scrivano <gscrivan@redhat.com>,
- Valentin Rothberg <vrothber@redhat.com>, Jann Horn <jannh@google.com>,
- YiFei Zhu <yifeifz2@illinois.edu>,
- Linux Containers <containers@lists.linux-foundation.org>,
- Tobin Feldman-Fitzthum <tobin@ibm.com>,
- kernel list <linux-kernel@vger.kernel.org>,
- Andy Lutomirski <luto@amacapital.net>, Hubertus Franke <frankeh@us.ibm.com>,
- David Laight <David.Laight@aculab.com>, Jack Chen <jianyan2@illinois.edu>,
- Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
+Date: Wed, 4 Nov 2020 05:48:21 -0600
+Message-ID: <CABqSeAQ+3sjLXH7GVt_tZrFT_e0nNMm8QgT+FBNQYSOc8viM=A@mail.gmail.com>
+Subject: Re: [PATCH seccomp 3/8] powerpc: Enable seccomp architecture tracking
+To: Michael Ellerman <mpe@ellerman.id.au>
+Cc: linux-sh@vger.kernel.org, Tobin Feldman-Fitzthum <tobin@ibm.com>,
+ Hubertus Franke <frankeh@us.ibm.com>, Jack Chen <jianyan2@illinois.edu>,
+ linux-riscv@lists.infradead.org, Andrea Arcangeli <aarcange@redhat.com>,
+ linux-s390@vger.kernel.org, YiFei Zhu <yifeifz2@illinois.edu>,
+ linux-csky@vger.kernel.org, Tianyin Xu <tyxu@illinois.edu>,
+ linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>,
+ Jann Horn <jannh@google.com>, Valentin Rothberg <vrothber@redhat.com>,
  Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>,
- bpf <bpf@vger.kernel.org>, Tianyin Xu <tyxu@illinois.edu>
+ linux-parisc@vger.kernel.org,
+ Linux Containers <containers@lists.linux-foundation.org>,
+ kernel list <linux-kernel@vger.kernel.org>,
+ Andy Lutomirski <luto@amacapital.net>,
+ Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
+ David Laight <David.Laight@aculab.com>,
+ Giuseppe Scrivano <gscrivan@redhat.com>, linuxppc-dev@lists.ozlabs.org
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -127,25 +122,44 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Tue, Nov 3, 2020 at 6:29 PM Kees Cook <keescook@chromium.org> wrote:
-> Yeah, this is very interesting. That there is anything measurably _slower_
-> with the cache is surprising. Though with only 4 runs, I wonder if it's
-> still noisy? What happens at 10 runs -- more importantly what is the
-> standard deviation?
-
-I could do that. it just takes such a long time. Each run takes about
-20 minutes so with 10 runs per environment, 3 environments (native + 2
-docker) per boot, and 4 boots (2 bootparam * 2 compile config), it's
-27 hours of compilation. I should probably script it at that point.
-
-> I assume this is from Indirect Branch Prediction Barrier (IBPB) and
-> Single Threaded Indirect Branch Prediction (STIBP) (which get enabled
-> for threads under seccomp by default).
+On Wed, Nov 4, 2020 at 4:22 AM Michael Ellerman <mpe@ellerman.id.au> wrote:
+> > +#ifdef __LITTLE_ENDIAN__
 >
-> Try booting with "spectre_v2_user=prctl"
+> As Kees mentioned this should (must?!) match the configured endian.
+>
+> But I think it would still be better to use the CONFIG symbol, which is
+> CONFIG_CPU_LITTLE_ENDIAN.
 
-Hmm, to make sure, boot with just "spectre_v2_user=prctl" on the
-command line and test the performance of that?
+My attempt here is to be consistent with asm/syscall.h
+syscall_get_arch [1]. Would it make sense to change that to
+CONFIG_CPU_LITTLE_ENDIAN then?
+
+[1] https://elixir.bootlin.com/linux/latest/source/arch/powerpc/include/asm/syscall.h#L116
+
+> > +# define SECCOMP_ARCH_NATIVE         (AUDIT_ARCH_PPC64 | __SECCOMP_ARCH_LE)
+>
+> You use __SECCOMP_ARCH_LE there, but previously you only defined
+> __SECCOMP_ARCH_LE_BIT.
+>
+> Is there some magic somewhere that defines __SECCOMP_ARCH_LE based on
+> __SECCOMP_ARCH_LE_BIT ?
+
+Oops, my bad here.
+
+> > +# define SECCOMP_ARCH_NATIVE_NR              NR_syscalls
+> > +# define SECCOMP_ARCH_NATIVE_NAME    "ppc64"
+>
+> What's the name used for?
+
+This is used in the last patch in this series to report in procfs the
+name of each architecture tracked by the bitmap cache.
+
+> Usually we use "ppc64" for 64-bit big endian and "ppc64le" for 64-bit
+> little endian.
+>
+> And usually we use "ppc" for 32-bit.
+
+Ok.
 
 YiFei Zhu
 _______________________________________________
