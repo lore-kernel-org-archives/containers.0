@@ -2,105 +2,93 @@ Return-Path: <SRS0=KLId=EK=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.0 required=3.0 tests=BAYES_00,DKIM_INVALID,
+X-Spam-Status: No, score=-9.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E989AC4741F
-	for <containers@archiver.kernel.org>; Wed,  4 Nov 2020 10:03:14 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EE64FC4741F
+	for <containers@archiver.kernel.org>; Wed,  4 Nov 2020 10:22:43 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 4F86A221F9
-	for <containers@archiver.kernel.org>; Wed,  4 Nov 2020 10:03:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 2178B223AB
+	for <containers@archiver.kernel.org>; Wed,  4 Nov 2020 10:22:42 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=sargun.me header.i=@sargun.me header.b="lAaVIzYS"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4F86A221F9
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=sargun.me
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=ellerman.id.au header.i=@ellerman.id.au header.b="oDkd83Ut"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2178B223AB
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ellerman.id.au
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id B11A286905;
-	Wed,  4 Nov 2020 10:03:13 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 820C620C41;
+	Wed,  4 Nov 2020 10:22:42 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from silver.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id p5ZuwgA0OYMI; Wed,  4 Nov 2020 10:22:41 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by silver.osuosl.org (Postfix) with ESMTP id 0E6FF2049E;
+	Wed,  4 Nov 2020 10:22:41 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id D97C6C088B;
+	Wed,  4 Nov 2020 10:22:40 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 0CE81C0051
+ for <containers@lists.linux-foundation.org>;
+ Wed,  4 Nov 2020 10:22:39 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by whitealder.osuosl.org (Postfix) with ESMTP id EEBA78691C
+ for <containers@lists.linux-foundation.org>;
+ Wed,  4 Nov 2020 10:22:38 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id Uw44lzzFAhfR; Wed,  4 Nov 2020 10:03:11 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id C8306868E6;
-	Wed,  4 Nov 2020 10:03:11 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id B621DC0889;
-	Wed,  4 Nov 2020 10:03:11 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 40F95C0051
- for <containers@lists.linux-foundation.org>;
- Wed,  4 Nov 2020 10:03:10 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id 2EB9086538
- for <containers@lists.linux-foundation.org>;
- Wed,  4 Nov 2020 10:03:10 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id OqZBL5Fpz5ME
+ with ESMTP id BrEpMXR9YuhK
  for <containers@lists.linux-foundation.org>;
- Wed,  4 Nov 2020 10:03:08 +0000 (UTC)
+ Wed,  4 Nov 2020 10:22:37 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-io1-f67.google.com (mail-io1-f67.google.com
- [209.85.166.67])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id C0B8F86511
+Received: from ozlabs.org (bilbo.ozlabs.org [203.11.71.1])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id B5AA586903
  for <containers@lists.linux-foundation.org>;
- Wed,  4 Nov 2020 10:03:08 +0000 (UTC)
-Received: by mail-io1-f67.google.com with SMTP id u21so11037158iol.12
- for <containers@lists.linux-foundation.org>;
- Wed, 04 Nov 2020 02:03:08 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sargun.me; s=google;
- h=date:from:to:cc:subject:message-id:references:mime-version
- :content-disposition:in-reply-to:user-agent;
- bh=I/qnNqIEzF/JGwjaQW+05VIgXbzEydcUrLQJFysm65c=;
- b=lAaVIzYSjh41fqLw228RfK/BmRZfAyxF9EjD4VsHSZpTo9d1yqsbzU+QOQCcFu2RaP
- jbuSW47wD21ZZeaxUqUIvXAH8Ooj3v76JhvUa4gl1jny0Iqt0VHURF4KQSyIpfLeDswO
- d16fc3syqnol4EuBDq4dvAl6Oedt8x9zMQJzw=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=1e100.net; s=20161025;
- h=x-gm-message-state:date:from:to:cc:subject:message-id:references
- :mime-version:content-disposition:in-reply-to:user-agent;
- bh=I/qnNqIEzF/JGwjaQW+05VIgXbzEydcUrLQJFysm65c=;
- b=MgrlXrAKZRtbYbQONWtCwvh1YGq6WIdLFSSpKHwIzJ7u4/4Jddh+N+RjgdoioYLceX
- SU6x/yY4vthxnsHX1ndHRtqcs4zulyyUFBid3JMm+UDSAns9gPTynYRQqpwfxRz1WPmm
- yfsIaLLkYEPKTQLk4IpQJ4Zll/FZ72EpxidoXGvLkkWNKSSKi1/kPrpOs8YUqeANak76
- 1fZjD7GeryndU4f5j3amjC8HVMV6lSm1ad4ImzANL7TSe3KSbYCrizGdqJ8Ysp66Jivs
- A7HeSw9koBZB9GLBrhMsttxpF3V1TblaNliC+qfPwjgMOqyzJQoMq3yEfZN8HTCHNS28
- iR5g==
-X-Gm-Message-State: AOAM531pwecWzBASoAr/GPYnEVz/pQGtY2OKivXfahzEZ2csR2BMsq+h
- nwludkQysMg4e1Zkn92FURTu8Q==
-X-Google-Smtp-Source: ABdhPJziP3wEYIARudJhnmZenGYBccMmhy85xPBeVaK5oV64Hr3bdUaKsi+ZLRVJbPLCEBkK69fRYA==
-X-Received: by 2002:a02:9716:: with SMTP id x22mr5300621jai.114.1604484187652; 
- Wed, 04 Nov 2020 02:03:07 -0800 (PST)
-Received: from ircssh-2.c.rugged-nimbus-611.internal
- (80.60.198.104.bc.googleusercontent.com. [104.198.60.80])
- by smtp.gmail.com with ESMTPSA id u8sm1104103ilm.36.2020.11.04.02.03.06
- (version=TLS1_2 cipher=ECDHE-ECDSA-CHACHA20-POLY1305 bits=256/256);
- Wed, 04 Nov 2020 02:03:07 -0800 (PST)
-Date: Wed, 4 Nov 2020 10:03:05 +0000
-From: Sargun Dhillon <sargun@sargun.me>
-To: Alexey Gladkov <gladkov.alexey@gmail.com>
-Subject: Re: [RFC PATCH v1 4/4] Allow to change the user namespace in which
- user rlimits are counted
-Message-ID: <20201104100304.GA20449@ircssh-2.c.rugged-nimbus-611.internal>
-References: <cover.1604335819.git.gladkov.alexey@gmail.com>
- <2718f7b13189dfd159414efb68e3533552593140.1604335819.git.gladkov.alexey@gmail.com>
+ Wed,  4 Nov 2020 10:22:37 +0000 (UTC)
+Received: from authenticated.ozlabs.org (localhost [127.0.0.1])
+ (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+ key-exchange ECDHE (P-256) server-signature RSA-PSS (4096 bits) server-digest
+ SHA256) (No client certificate requested)
+ by mail.ozlabs.org (Postfix) with ESMTPSA id 4CR2lS6ZW8z9sTL;
+ Wed,  4 Nov 2020 21:22:28 +1100 (AEDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=ellerman.id.au;
+ s=201909; t=1604485355;
+ bh=L70AG7tzTd7Z55u+Fj8DTKuCWP9ecgUCCOxcamNMHIs=;
+ h=From:To:Cc:Subject:In-Reply-To:References:Date:From;
+ b=oDkd83UtH0Srm5gou9o8FbK7V4IaynA9LCA2YJKhl+5lUnI+xkZjuVD5VI7pJ+a2M
+ HfsMI0MoloEkD3kwT+0vUtyCVb5PM2a9WPF6rkPmZB+9idXkIb7EMvyH3VOFzyp/Ps
+ 68txSVLNJRowCRuykY+i+5Ewg7c/SwxbVOrNc5RWW00H/82L7EDvL4Qy2KV2oBLDUb
+ 2yVheHA/7sjVh0E3O3cAIx/q6Zcp5FGUuuzsq1Mfee0O7JtPXB0z7fnfD69DrTlxhD
+ Ug36BFsOA8q9k55mb81BwQUF1fU4SM3xLLRlc5FTkEqiwDPXMtmP7ZL6xkIZIdCtj0
+ qdybn2J+0q8JQ==
+From: Michael Ellerman <mpe@ellerman.id.au>
+To: YiFei Zhu <zhuyifei1999@gmail.com>, containers@lists.linux-foundation.org
+Subject: Re: [PATCH seccomp 3/8] powerpc: Enable seccomp architecture tracking
+In-Reply-To: <4ec2970fcc819eb4d5dac2bd35233ccdadfda845.1604410035.git.yifeifz2@illinois.edu>
+References: <cover.1604410035.git.yifeifz2@illinois.edu>
+ <4ec2970fcc819eb4d5dac2bd35233ccdadfda845.1604410035.git.yifeifz2@illinois.edu>
+Date: Wed, 04 Nov 2020 21:22:28 +1100
+Message-ID: <87wnz1to9n.fsf@mpe.ellerman.id.au>
 MIME-Version: 1.0
-Content-Disposition: inline
-In-Reply-To: <2718f7b13189dfd159414efb68e3533552593140.1604335819.git.gladkov.alexey@gmail.com>
-User-Agent: Mutt/1.9.4 (2018-02-28)
-Cc: Kees Cook <keescook@chromium.org>,
- Kernel Hardening <kernel-hardening@lists.openwall.com>,
- Linux Containers <containers@lists.linux-foundation.org>,
- LKML <linux-kernel@vger.kernel.org>,
- "Eric W . Biederman" <ebiederm@xmission.com>,
- Alexey Gladkov <legion@kernel.org>, Christian Brauner <christian@brauner.io>
+Cc: linux-sh@vger.kernel.org, Tobin Feldman-Fitzthum <tobin@ibm.com>,
+ Hubertus Franke <frankeh@us.ibm.com>, Jack Chen <jianyan2@illinois.edu>,
+ linux-riscv@lists.infradead.org, Andrea Arcangeli <aarcange@redhat.com>,
+ linux-s390@vger.kernel.org, YiFei Zhu <yifeifz2@illinois.edu>,
+ linux-csky@vger.kernel.org, Tianyin Xu <tyxu@illinois.edu>,
+ linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>,
+ Jann Horn <jannh@google.com>, Valentin Rothberg <vrothber@redhat.com>,
+ Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>,
+ linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org,
+ Andy Lutomirski <luto@amacapital.net>,
+ Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
+ David Laight <David.Laight@aculab.com>,
+ Giuseppe Scrivano <gscrivan@redhat.com>, linuxppc-dev@lists.ozlabs.org
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -117,391 +105,75 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Mon, Nov 02, 2020 at 05:50:33PM +0100, Alexey Gladkov wrote:
-> Add a new prctl to change the user namespace in which the process
-> counter is located. A pointer to the user namespace is in cred struct
-> to be inherited by all child processes.
-> 
-> Signed-off-by: Alexey Gladkov <gladkov.alexey@gmail.com>
+YiFei Zhu <zhuyifei1999@gmail.com> writes:
+> From: YiFei Zhu <yifeifz2@illinois.edu>
+>
+> To enable seccomp constant action bitmaps, we need to have a static
+> mapping to the audit architecture and system call table size. Add these
+> for powerpc.
+>
+> Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
 > ---
->  fs/exec.c                  |  2 +-
->  fs/io-wq.c                 | 13 ++++++++-----
->  fs/io-wq.h                 |  1 +
->  fs/io_uring.c              |  1 +
->  include/linux/cred.h       |  8 ++++++++
->  include/uapi/linux/prctl.h |  5 +++++
->  kernel/cred.c              | 35 +++++++++++++++++++++++++++++------
->  kernel/exit.c              |  2 +-
->  kernel/fork.c              |  4 ++--
->  kernel/sys.c               | 22 +++++++++++++++++++++-
->  kernel/user_namespace.c    |  3 +++
->  11 files changed, 80 insertions(+), 16 deletions(-)
-> 
-> diff --git a/fs/exec.c b/fs/exec.c
-> index c45dfc716394..574b1381276c 100644
-> --- a/fs/exec.c
-> +++ b/fs/exec.c
-> @@ -1837,7 +1837,7 @@ static int __do_execve_file(int fd, struct filename *filename,
->  		goto out_ret;
->  	}
+>  arch/powerpc/include/asm/seccomp.h | 21 +++++++++++++++++++++
+>  1 file changed, 21 insertions(+)
+>
+> diff --git a/arch/powerpc/include/asm/seccomp.h b/arch/powerpc/include/asm/seccomp.h
+> index 51209f6071c5..3efcc83e9cc6 100644
+> --- a/arch/powerpc/include/asm/seccomp.h
+> +++ b/arch/powerpc/include/asm/seccomp.h
+> @@ -8,4 +8,25 @@
 >  
-> -	processes = get_rlimit_counter(&init_user_ns, current_euid(), UCOUNT_RLIMIT_NPROC);
-> +	processes = get_rlimit_counter(current_rlimit_ns(), current_euid(), UCOUNT_RLIMIT_NPROC);
+>  #include <asm-generic/seccomp.h>
 >  
->  	/*
->  	 * We move the actual failure in case of RLIMIT_NPROC excess from
-> diff --git a/fs/io-wq.c b/fs/io-wq.c
-> index c3b0843abc9b..19e43ec115cb 100644
-> --- a/fs/io-wq.c
-> +++ b/fs/io-wq.c
-> @@ -116,6 +116,7 @@ struct io_wq {
->  
->  	struct task_struct *manager;
->  	struct user_struct *user;
-It seems like user would be unused here, and you could use creds->user?
+> +#ifdef __LITTLE_ENDIAN__
 
-> +	const struct cred *creds;
->  	refcount_t refs;
->  	struct completion done;
->  
-> @@ -217,7 +218,7 @@ static void io_worker_exit(struct io_worker *worker)
->  	if (worker->flags & IO_WORKER_F_RUNNING)
->  		atomic_dec(&acct->nr_running);
->  	if (!(worker->flags & IO_WORKER_F_BOUND))
-> -		dec_rlimit_counter(&init_user_ns, wqe->wq->user->uid, UCOUNT_RLIMIT_NPROC);
-> +		dec_rlimit_counter(wqe->wq->creds->rlimit_ns, wqe->wq->user->uid, UCOUNT_RLIMIT_NPROC);
->  	worker->flags = 0;
->  	preempt_enable();
->  
-> @@ -350,9 +351,9 @@ static void __io_worker_busy(struct io_wqe *wqe, struct io_worker *worker,
->  			worker->flags |= IO_WORKER_F_BOUND;
->  			wqe->acct[IO_WQ_ACCT_UNBOUND].nr_workers--;
->  			wqe->acct[IO_WQ_ACCT_BOUND].nr_workers++;
-> -			dec_rlimit_counter(&init_user_ns, wqe->wq->user->uid, UCOUNT_RLIMIT_NPROC);
-> +			dec_rlimit_counter(wqe->wq->creds->rlimit_ns, wqe->wq->user->uid, UCOUNT_RLIMIT_NPROC);
->  		} else {
-> -			if (!inc_rlimit_counter(&init_user_ns, wqe->wq->user->uid, UCOUNT_RLIMIT_NPROC))
-> +			if (!inc_rlimit_counter(wqe->wq->creds->rlimit_ns, wqe->wq->user->uid, UCOUNT_RLIMIT_NPROC))
->  				return;
->  			worker->flags &= ~IO_WORKER_F_BOUND;
->  			wqe->acct[IO_WQ_ACCT_UNBOUND].nr_workers++;
-> @@ -662,7 +663,7 @@ static bool create_io_worker(struct io_wq *wq, struct io_wqe *wqe, int index)
->  	}
->  
->  	if (index == IO_WQ_ACCT_UNBOUND &&
-> -	    !inc_rlimit_counter(&init_user_ns, wq->user->uid, UCOUNT_RLIMIT_NPROC)) {
-> +	    !inc_rlimit_counter(wq->creds->rlimit_ns, wq->user->uid, UCOUNT_RLIMIT_NPROC)) {
->  		kfree(worker);
->  		return false;
->  	}
-> @@ -772,7 +773,8 @@ static bool io_wq_can_queue(struct io_wqe *wqe, struct io_wqe_acct *acct,
->  	if (free_worker)
->  		return true;
->  
-> -	processes = get_rlimit_counter(&init_user_ns, wqe->wq->user->uid, UCOUNT_RLIMIT_NPROC);
-> +	processes = get_rlimit_counter(wqe->wq->creds->rlimit_ns, wqe->wq->user->uid,
-> +			UCOUNT_RLIMIT_NPROC);
->  
->  	if (processes >= acct->max_workers &&
->  	    !(capable(CAP_SYS_RESOURCE) || capable(CAP_SYS_ADMIN)))
-> @@ -1049,6 +1051,7 @@ struct io_wq *io_wq_create(unsigned bounded, struct io_wq_data *data)
->  
->  	/* caller must already hold a reference to this */
->  	wq->user = data->user;
-> +	wq->creds = data->creds;
->  
->  	for_each_node(node) {
->  		struct io_wqe *wqe;
-> diff --git a/fs/io-wq.h b/fs/io-wq.h
-> index 071f1a997800..6acc3a04c38f 100644
-> --- a/fs/io-wq.h
-> +++ b/fs/io-wq.h
-> @@ -105,6 +105,7 @@ typedef void (io_wq_work_fn)(struct io_wq_work **);
->  
->  struct io_wq_data {
->  	struct user_struct *user;
-> +	const struct cred *creds;
->  
->  	io_wq_work_fn *do_work;
->  	free_work_fn *free_work;
-> diff --git a/fs/io_uring.c b/fs/io_uring.c
-> index 493e5047e67c..e419923968b3 100644
-> --- a/fs/io_uring.c
-> +++ b/fs/io_uring.c
-> @@ -6933,6 +6933,7 @@ static int io_init_wq_offload(struct io_ring_ctx *ctx,
->  	int ret = 0;
->  
->  	data.user = ctx->user;
-> +	data.creds = ctx->creds;
->  	data.free_work = io_free_work;
->  	data.do_work = io_wq_submit_work;
->  
-> diff --git a/include/linux/cred.h b/include/linux/cred.h
-> index 18639c069263..43aee68d117f 100644
-> --- a/include/linux/cred.h
-> +++ b/include/linux/cred.h
-> @@ -144,6 +144,7 @@ struct cred {
->  #endif
->  	struct user_struct *user;	/* real user ID subscription */
->  	struct user_namespace *user_ns; /* user_ns the caps and keyrings are relative to. */
-> +	struct user_namespace *rlimit_ns; /* user_ns in which rlimits is tracked */
->  	struct group_info *group_info;	/* supplementary groups for euid/fsgid */
->  	/* RCU deletion */
->  	union {
-> @@ -170,6 +171,7 @@ extern int set_security_override_from_ctx(struct cred *, const char *);
->  extern int set_create_files_as(struct cred *, struct inode *);
->  extern int cred_fscmp(const struct cred *, const struct cred *);
->  extern void __init cred_init(void);
-> +extern int set_rlimit_ns(struct user_namespace *ns);
->  
->  /*
->   * check for validity of credentials
-> @@ -370,6 +372,7 @@ static inline void put_cred(const struct cred *_cred)
->  
->  #define task_uid(task)		(task_cred_xxx((task), uid))
->  #define task_euid(task)		(task_cred_xxx((task), euid))
-> +#define task_rlimit_ns(task)	(task_cred_xxx((task), rlimit_ns))
->  
->  #define current_cred_xxx(xxx)			\
->  ({						\
-> @@ -390,11 +393,16 @@ static inline void put_cred(const struct cred *_cred)
->  extern struct user_namespace init_user_ns;
->  #ifdef CONFIG_USER_NS
->  #define current_user_ns()	(current_cred_xxx(user_ns))
-> +#define current_rlimit_ns()	(current_cred_xxx(rlimit_ns))
->  #else
->  static inline struct user_namespace *current_user_ns(void)
->  {
->  	return &init_user_ns;
->  }
-> +static inline struct user_namespace *current_rlimit_ns(void)
-> +{
-> +	return &init_user_ns;
-> +}
->  #endif
->  
->  
-> diff --git a/include/uapi/linux/prctl.h b/include/uapi/linux/prctl.h
-> index 07b4f8131e36..4f853f903415 100644
-> --- a/include/uapi/linux/prctl.h
-> +++ b/include/uapi/linux/prctl.h
-> @@ -238,4 +238,9 @@ struct prctl_mm_map {
->  #define PR_SET_IO_FLUSHER		57
->  #define PR_GET_IO_FLUSHER		58
->  
-> +#define PR_SET_RLIMIT_USER_NAMESPACE	59
-> +#define PR_GET_RLIMIT_USER_NAMESPACE	60
-> +# define PR_RLIMIT_BIND_GLOBAL_USERNS	(1UL << 0)
-> +# define PR_RLIMIT_BIND_CURRENT_USERNS	(1UL << 1)
-> +
->  #endif /* _LINUX_PRCTL_H */
-> diff --git a/kernel/cred.c b/kernel/cred.c
-> index 748704db1f6b..7b90e1ef9c9a 100644
-> --- a/kernel/cred.c
-> +++ b/kernel/cred.c
-> @@ -59,6 +59,7 @@ struct cred init_cred = {
->  	.cap_bset		= CAP_FULL_SET,
->  	.user			= INIT_USER,
->  	.user_ns		= &init_user_ns,
-> +	.rlimit_ns		= &init_user_ns,
->  	.group_info		= &init_groups,
->  };
->  
-> @@ -120,6 +121,7 @@ static void put_cred_rcu(struct rcu_head *rcu)
->  		put_group_info(cred->group_info);
->  	free_uid(cred->user);
->  	put_user_ns(cred->user_ns);
-> +	put_user_ns(cred->rlimit_ns);
->  	kmem_cache_free(cred_jar, cred);
->  }
->  
-> @@ -270,6 +272,7 @@ struct cred *prepare_creds(void)
->  	get_group_info(new->group_info);
->  	get_uid(new->user);
->  	get_user_ns(new->user_ns);
-> +	get_user_ns(new->rlimit_ns);
->  
->  #ifdef CONFIG_KEYS
->  	key_get(new->session_keyring);
-> @@ -345,7 +348,7 @@ int copy_creds(struct task_struct *p, unsigned long clone_flags)
->  #endif
->  		clone_flags & CLONE_THREAD
->  	    ) {
-> -		if (!inc_rlimit_counter(&init_user_ns, task_euid(p), UCOUNT_RLIMIT_NPROC))
-> +		if (!inc_rlimit_counter(task_rlimit_ns(p), task_euid(p), UCOUNT_RLIMIT_NPROC))
->  			return -EACCES;
->  		p->real_cred = get_cred(p->cred);
->  		get_cred(p->cred);
-> @@ -385,7 +388,7 @@ int copy_creds(struct task_struct *p, unsigned long clone_flags)
->  	}
->  #endif
->  
-> -	if (!inc_rlimit_counter(&init_user_ns, new->euid, UCOUNT_RLIMIT_NPROC))
-> +	if (!inc_rlimit_counter(new->rlimit_ns, new->euid, UCOUNT_RLIMIT_NPROC))
->  		return -EACCES;
->  	p->cred = p->real_cred = get_cred(new);
->  	alter_cred_subscribers(new, 2);
-> @@ -487,13 +490,13 @@ int commit_creds(struct cred *new)
->  	 * perhaps this limit is exceeded in the parent user namespace.
->  	 */
->  	alter_cred_subscribers(new, 2);
-> -	if (new->user != old->user &&
-> -	    !inc_rlimit_counter(&init_user_ns, new->euid, UCOUNT_RLIMIT_NPROC))
-> +	if ((new->user != old->user || new->rlimit_ns != old->rlimit_ns) &&
-> +	    !inc_rlimit_counter(new->rlimit_ns, new->euid, UCOUNT_RLIMIT_NPROC))
->  		task->flags |= PF_NPROC_UNS_EXCEEDED;
->  	rcu_assign_pointer(task->real_cred, new);
->  	rcu_assign_pointer(task->cred, new);
-> -	if (new->user != old->user)
-> -		dec_rlimit_counter(&init_user_ns, old->euid, UCOUNT_RLIMIT_NPROC);
-> +	if (new->user != old->user || new->rlimit_ns != old->rlimit_ns)
-> +		dec_rlimit_counter(old->rlimit_ns, old->euid, UCOUNT_RLIMIT_NPROC);
->  	alter_cred_subscribers(old, -2);
->  
->  	/* send notifications */
-> @@ -789,6 +792,26 @@ int set_create_files_as(struct cred *new, struct inode *inode)
->  }
->  EXPORT_SYMBOL(set_create_files_as);
->  
-> +/*
-> + * Change the rlimit user namespace of the current task, replacing the existing
-> + * one. If the given namespace is NULL, then initial user namespace will be
-> + * used.
-> + *
-> + * Return: 0 on success; -errno on failure.
-> + */
-> +int set_rlimit_ns(struct user_namespace *ns)
-> +{
-> +	struct cred *new;
-> +
-> +	new = prepare_creds();
-> +	if (!new)
-> +		return -ENOMEM;
-> +
-> +	new->rlimit_ns = ns ? ns : &init_user_ns;
-> +
-> +	return commit_creds(new);
-> +}
-> +
->  #ifdef CONFIG_DEBUG_CREDENTIALS
->  
->  bool creds_are_invalid(const struct cred *cred)
-> diff --git a/kernel/exit.c b/kernel/exit.c
-> index 5a0d7dd1ad64..998436d32373 100644
-> --- a/kernel/exit.c
-> +++ b/kernel/exit.c
-> @@ -187,7 +187,7 @@ void release_task(struct task_struct *p)
->  	/* don't need to get the RCU readlock here - the process is dead and
->  	 * can't be modifying its own credentials. But shut RCU-lockdep up */
->  	rcu_read_lock();
-> -	dec_rlimit_counter(&init_user_ns, task_euid(p), UCOUNT_RLIMIT_NPROC);
-> +	dec_rlimit_counter(task_rlimit_ns(p), task_euid(p), UCOUNT_RLIMIT_NPROC);
->  	rcu_read_unlock();
->  
->  	cgroup_release(p);
-> diff --git a/kernel/fork.c b/kernel/fork.c
-> index d2b28634dc8f..43f3c54fe4c6 100644
-> --- a/kernel/fork.c
-> +++ b/kernel/fork.c
-> @@ -1963,7 +1963,7 @@ static __latent_entropy struct task_struct *copy_process(
->  		current->flags &= ~PF_NPROC_UNS_EXCEEDED;
->  		goto bad_fork_free;
->  	}
-> -	processes = get_rlimit_counter(&init_user_ns, p->real_cred->euid,
-> +	processes = get_rlimit_counter(task_rlimit_ns(p), task_euid(p),
->  			UCOUNT_RLIMIT_NPROC);
->  	if (processes >= task_rlimit(p, RLIMIT_NPROC)) {
->  		if (p->real_cred->user != INIT_USER &&
-> @@ -2366,7 +2366,7 @@ static __latent_entropy struct task_struct *copy_process(
->  #endif
->  	delayacct_tsk_free(p);
->  bad_fork_cleanup_count:
-> -	dec_rlimit_counter(&init_user_ns, p->cred->euid, UCOUNT_RLIMIT_NPROC);
-> +	dec_rlimit_counter(task_rlimit_ns(p), task_euid(p), UCOUNT_RLIMIT_NPROC);
->  	exit_creds(p);
->  bad_fork_free:
->  	p->state = TASK_DEAD;
-> diff --git a/kernel/sys.c b/kernel/sys.c
-> index db780ec32d86..917cbd7fc674 100644
-> --- a/kernel/sys.c
-> +++ b/kernel/sys.c
-> @@ -467,7 +467,7 @@ static int set_user(struct cred *new)
->  	if (!new_user)
->  		return -EAGAIN;
->  
-> -	processes = get_rlimit_counter(&init_user_ns, new_user->uid, UCOUNT_RLIMIT_NPROC);
-> +	processes = get_rlimit_counter(new->rlimit_ns, new_user->uid, UCOUNT_RLIMIT_NPROC);
->  
->  	/*
->  	 * We don't fail in case of NPROC limit excess here because too many
-> @@ -2529,6 +2529,26 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
->  
->  		error = (current->flags & PR_IO_FLUSHER) == PR_IO_FLUSHER;
->  		break;
-> +	case PR_SET_RLIMIT_USER_NAMESPACE:
-> +		if (!capable(CAP_SYS_RESOURCE))
-> +			return -EPERM;
-Can you have CAP_SYS_RESOURCE in the init user ns while you're in a non-init 
-user ns? Shouldn't that only matter if you want to set yourself to 
-PR_RLIMIT_BIND_GLOBAL_USERNS anyways and you just want to make sure they have 
-CAP_SYS_RESOURCE in the current namespace for PR_RLIMIT_BIND_CURRENT_USERNS?
+As Kees mentioned this should (must?!) match the configured endian.
 
+But I think it would still be better to use the CONFIG symbol, which is
+CONFIG_CPU_LITTLE_ENDIAN.
 
+> +#define __SECCOMP_ARCH_LE_BIT		__AUDIT_ARCH_LE
+> +#else
+> +#define __SECCOMP_ARCH_LE_BIT		0
+> +#endif
 > +
-> +		switch (arg2) {
-> +		case PR_RLIMIT_BIND_GLOBAL_USERNS:
-> +			error = set_rlimit_ns(&init_user_ns);
-> +			break;
-> +		case PR_RLIMIT_BIND_CURRENT_USERNS:
-> +			error = set_rlimit_ns(current_user_ns());
-> +			break;
-To some degree, this isn't so much "per user namespace rlimits", as much as it 
-is hierarchical rlimits. I'm not going to nitpick about names, but it might be 
-worth exploring. Especially because the way the patch is written, it would be 
-easy to introduce a third user namespace for rlimits with different mappings.
+> +#ifdef CONFIG_PPC64
+> +# define SECCOMP_ARCH_NATIVE		(AUDIT_ARCH_PPC64 | __SECCOMP_ARCH_LE)
 
-The downside I see with a sysctl is that changing it midway through the user 
-namespaces lifetime could be confusing, and difficult to get right.
+You use __SECCOMP_ARCH_LE there, but previously you only defined
+__SECCOMP_ARCH_LE_BIT.
 
-> +		default:
-> +			error = -EINVAL;
-> +		}
-> +		break;
-> +	case PR_GET_RLIMIT_USER_NAMESPACE:
-> +		error = current_rlimit_ns() == &init_user_ns
-> +			? PR_RLIMIT_BIND_GLOBAL_USERNS
-> +			: PR_RLIMIT_BIND_CURRENT_USERNS;
-> +		break;
-It would be nice to have this be a sysctl, so everyone who does
-setns() would get the behaviour, and if a process wants to 
+Is there some magic somewhere that defines __SECCOMP_ARCH_LE based on
+__SECCOMP_ARCH_LE_BIT ?
 
->  	default:
->  		error = -EINVAL;
->  		break;
-> diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-> index 87804e0371fe..346df35ceba9 100644
-> --- a/kernel/user_namespace.c
-> +++ b/kernel/user_namespace.c
-> @@ -56,6 +56,8 @@ static void set_cred_user_ns(struct cred *cred, struct user_namespace *user_ns)
->  #endif
->  	/* tgcred will be cleared in our caller bc CLONE_THREAD won't be set */
->  	cred->user_ns = user_ns;
+> +# define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
+> +# define SECCOMP_ARCH_NATIVE_NAME	"ppc64"
+
+What's the name used for?
+
+Usually we use "ppc64" for 64-bit big endian and "ppc64le" for 64-bit
+little endian.
+
+> +# ifdef CONFIG_COMPAT
+> +#  define SECCOMP_ARCH_COMPAT		(AUDIT_ARCH_PPC | __SECCOMP_ARCH_LE)
+> +#  define SECCOMP_ARCH_COMPAT_NR	NR_syscalls
+> +#  define SECCOMP_ARCH_COMPAT_NAME	"powerpc"
+
+And usually we use "ppc" for 32-bit.
+
+> +# endif
+> +#else /* !CONFIG_PPC64 */
+> +# define SECCOMP_ARCH_NATIVE		(AUDIT_ARCH_PPC | __SECCOMP_ARCH_LE)
+> +# define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
+> +# define SECCOMP_ARCH_NATIVE_NAME	"powerpc"
+> +#endif
 > +
-> +	cred->rlimit_ns = &init_user_ns;
->  }
->  
->  /*
-> @@ -121,6 +123,7 @@ int create_user_ns(struct cred *new)
->  	for (i = 0; i < UCOUNT_COUNTS; i++) {
->  		ns->ucount_max[i] = INT_MAX;
->  	}
-> +	ns->ucount_max[UCOUNT_RLIMIT_NPROC] = rlimit(RLIMIT_NPROC);
->  	ns->ucounts = ucounts;
->  
->  	/* Inherit USERNS_SETGROUPS_ALLOWED from our parent */
+>  #endif	/* _ASM_POWERPC_SECCOMP_H */
 > -- 
-> 2.25.4
-> 
+> 2.29.2
+
+
+cheers
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
