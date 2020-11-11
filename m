@@ -8,90 +8,90 @@ X-Spam-Status: No, score=-12.3 required=3.0 tests=BAYES_00,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E9061C388F9
-	for <containers@archiver.kernel.org>; Wed, 11 Nov 2020 13:34:46 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5BFC1C388F9
+	for <containers@archiver.kernel.org>; Wed, 11 Nov 2020 13:34:49 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 5A74A2074B
-	for <containers@archiver.kernel.org>; Wed, 11 Nov 2020 13:34:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id B61C72074B
+	for <containers@archiver.kernel.org>; Wed, 11 Nov 2020 13:34:48 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="AiHrWEt1"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5A74A2074B
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="F8D/Y+HZ"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B61C72074B
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id AFE938638E;
-	Wed, 11 Nov 2020 13:34:45 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 5057C868AD;
+	Wed, 11 Nov 2020 13:34:48 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id qaUvGVaW1xY5; Wed, 11 Nov 2020 13:34:45 +0000 (UTC)
+	with ESMTP id MB9uVsdaZePl; Wed, 11 Nov 2020 13:34:47 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 58D0386226;
-	Wed, 11 Nov 2020 13:34:45 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 936E88686D;
+	Wed, 11 Nov 2020 13:34:47 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 4921EC0889;
-	Wed, 11 Nov 2020 13:34:45 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id F3BB6C016F
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 87887C1AD4;
+	Wed, 11 Nov 2020 13:34:47 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 9F02CC016F
  for <containers@lists.linux-foundation.org>;
- Wed, 11 Nov 2020 13:34:43 +0000 (UTC)
+ Wed, 11 Nov 2020 13:34:45 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id D2A918757D
+ by silver.osuosl.org (Postfix) with ESMTP id 7DEC3204AA
  for <containers@lists.linux-foundation.org>;
- Wed, 11 Nov 2020 13:34:43 +0000 (UTC)
+ Wed, 11 Nov 2020 13:34:45 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id qCzarZcQMC1e
+ with ESMTP id 52rsMiGWfo6X
  for <containers@lists.linux-foundation.org>;
- Wed, 11 Nov 2020 13:34:43 +0000 (UTC)
+ Wed, 11 Nov 2020 13:34:44 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-qt1-f194.google.com (mail-qt1-f194.google.com
- [209.85.160.194])
- by hemlock.osuosl.org (Postfix) with ESMTPS id 3824087570
+Received: from mail-qk1-f193.google.com (mail-qk1-f193.google.com
+ [209.85.222.193])
+ by silver.osuosl.org (Postfix) with ESMTPS id A4DEC2DE2A
  for <containers@lists.linux-foundation.org>;
- Wed, 11 Nov 2020 13:34:43 +0000 (UTC)
-Received: by mail-qt1-f194.google.com with SMTP id i12so1261451qtj.0
+ Wed, 11 Nov 2020 13:34:44 +0000 (UTC)
+Received: by mail-qk1-f193.google.com with SMTP id 199so1580724qkg.9
  for <containers@lists.linux-foundation.org>;
- Wed, 11 Nov 2020 05:34:43 -0800 (PST)
+ Wed, 11 Nov 2020 05:34:44 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
  h=from:to:cc:subject:date:message-id:in-reply-to:references
  :mime-version:content-transfer-encoding;
- bh=Z8BEo0x7DBxygVu3ezyut+Q+/5lHQFyLMFsea6yH4dY=;
- b=AiHrWEt19R14SjvDJPKLr7v7i72FmAs7tKIcKGMSWFQwQ/DIoBrkASCkncBIALbImW
- ovXjCz0vPL0IwyG05D0ScobV3buaYwTntzRWG4DvErPgobGS3lP6aF57Y5z/ROppbM15
- U5alV4hGDTuqamCbUCRSnEElgLlyHQqyfApA9IFdiByMiEgJ9T5aChZZ8FuOLffq7taE
- 8RCryXNGD6+QzxN4QWCFwCmheQXdMAr5LaXXLZuZJoit1BPXhkYBBltSg8ODItIgxHp4
- ULkURkvuGrMOziExOLhaMa/N/5bMiNtXHKjvWx5fTW5xKcw7pTxjO4xz/fvpWPD8dS5Q
- jWQg==
+ bh=KyUFBIsp7WG/ZlJY7JJxE8NR9eUIpLAxO9Zr6R0PBAI=;
+ b=F8D/Y+HZfrpZoxY1WSpU1XD08FGxbbmSRvBeCuS4pVYlmDmDfHK+86TEUz2GSieEB6
+ /G826gCZaufPpqw9yqU3gNUSRCTgM9O12K4UhmNyeNdIkVTjqwPtJI9Lf+tvkb9Fg8+c
+ qRpmL5clJ5CA1S+ea2Ab7oCBQhLxWEhivtggHkttRUxU6H+6bwKCbKQw40vyQeowP2ps
+ XMXoUoPJxCmgod7Htt5aWIQRnBxAeBFeM00worN++PmF2dIyJGX4tB4Z/JpSdxEQSkmp
+ 0SlWBQ6C7R2fx7uyThUkfX85xTr/0pRg1d8IYFbC/KQ5PAYWXyryWS92ixdQ2PxoggBD
+ zMoA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
  h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
  :references:mime-version:content-transfer-encoding;
- bh=Z8BEo0x7DBxygVu3ezyut+Q+/5lHQFyLMFsea6yH4dY=;
- b=h2n84F5gT/7MnYeKNursgkTYgSWnZdLIGi4nFpsjKOYF1p41Wd48+c6Om0fx6AToYO
- IgQH/3DoovF8zzRKAncCbEp244ez7AWFbqYqUDE/r810IBu0zVfWinkLcdc/M4k62KKN
- aourx/kcrgJqh+Jd0iSHV6sMBbNY5cXYiqMvpTCcKEk1qVpqaoMoyPbTw6AmWQZ7JGHl
- 1g9UOexcjfMY4CfIaIUjIKKm9wNwSVjT3g5v59U0kLyo9p3dIcRsrvhztzkPzeAW58tq
- 3KRoB6AjIQpxWVzF5WgaMptEsQBDUNeAHe2UduMsMPRet2HqKSbOBUcRUB4FAQo14axN
- CeWA==
-X-Gm-Message-State: AOAM530eewDg1fntJSmyqTtdxKIRF7fbPx+bDWwn9fvjF4GxlCzoMH+o
- XtI1ysSogMPwxHz1T0emjqDbGnxVz94QnA==
-X-Google-Smtp-Source: ABdhPJyZWAhNIXxg3LfT4oElO/X43US70dnQmIy4NoyGeM0Dg949Sb1UtyuDuo3lMLZdX0WTBziFrQ==
-X-Received: by 2002:aed:2744:: with SMTP id n62mr24170273qtd.67.1605101681720; 
- Wed, 11 Nov 2020 05:34:41 -0800 (PST)
+ bh=KyUFBIsp7WG/ZlJY7JJxE8NR9eUIpLAxO9Zr6R0PBAI=;
+ b=qxx5qBfON5cH+vDwrcVWww3+LYzAFgb/rtVQqiIkoNVAGnqfTYFPoIrSnXSVYS0Tdx
+ q+u0624x42FPq5VDctgdKMtqfEdjDXQzFq+F0DMaz9DSzEVT3kmwXzdjEzizzRx94gE5
+ i5tEWZ0q5muzZrVN4DFTTjHwq5E1L0APqU171SlWJZDLJ3Cog8lCliJc4KI8i8U2PuV6
+ Cjkj03doqbVAxECTh6SXSzhAjzyBBfNGCPd8lzCEpyBGDlJ2H8vL2JP6OiN65YPuTcqR
+ gs7eJJIzFhAwPeM9ACyMcDaegRMZ6GA+j92v1kUruol7ggWw/Zo9O0l24lr0M4LIZbHD
+ TGfg==
+X-Gm-Message-State: AOAM533GZWyhqviS6BD5iMm23oqJ4cJl7rqERdydio2x9zYLh4GQi+06
+ 1LkzbbkQYvwcXH/1gkOG1coFsBxPpGHsCA==
+X-Google-Smtp-Source: ABdhPJz84XkbzmcCHTc2+SdZFUqORQfeEggNtVRT4ylMevKQ8zIMjt4i44s0v7vCLpX1u6c6tS/Tlw==
+X-Received: by 2002:a37:4145:: with SMTP id o66mr19607495qka.426.1605101683404; 
+ Wed, 11 Nov 2020 05:34:43 -0800 (PST)
 Received: from localhost.localdomain
  (host-173-230-99-154.tnkngak.clients.pavlovmedia.com. [173.230.99.154])
- by smtp.gmail.com with ESMTPSA id r190sm1997814qkf.101.2020.11.11.05.34.40
+ by smtp.gmail.com with ESMTPSA id r190sm1997814qkf.101.2020.11.11.05.34.41
  (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
- Wed, 11 Nov 2020 05:34:41 -0800 (PST)
+ Wed, 11 Nov 2020 05:34:42 -0800 (PST)
 From: YiFei Zhu <zhuyifei1999@gmail.com>
 To: containers@lists.linux-foundation.org
-Subject: [PATCH seccomp v2 6/8] sh: Enable seccomp architecture tracking
-Date: Wed, 11 Nov 2020 07:33:52 -0600
-Message-Id: <61ae084cd4783b9b50860d9dedb4a348cf1b7b6f.1605101222.git.yifeifz2@illinois.edu>
+Subject: [PATCH seccomp v2 7/8] xtensa: Enable seccomp architecture tracking
+Date: Wed, 11 Nov 2020 07:33:53 -0600
+Message-Id: <79669648ba167d668ea6ffb4884250abcd5ed254.1605101222.git.yifeifz2@illinois.edu>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <cover.1605101222.git.yifeifz2@illinois.edu>
 References: <cover.1605101222.git.yifeifz2@illinois.edu>
@@ -129,32 +129,42 @@ From: YiFei Zhu <yifeifz2@illinois.edu>
 
 To enable seccomp constant action bitmaps, we need to have a static
 mapping to the audit architecture and system call table size. Add these
-for sh.
+for xtensa.
 
 Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
 ---
- arch/sh/include/asm/seccomp.h | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ arch/xtensa/include/asm/Kbuild    |  1 -
+ arch/xtensa/include/asm/seccomp.h | 11 +++++++++++
+ 2 files changed, 11 insertions(+), 1 deletion(-)
+ create mode 100644 arch/xtensa/include/asm/seccomp.h
 
-diff --git a/arch/sh/include/asm/seccomp.h b/arch/sh/include/asm/seccomp.h
-index 54111e4d32b8..d4578395fd66 100644
---- a/arch/sh/include/asm/seccomp.h
-+++ b/arch/sh/include/asm/seccomp.h
-@@ -8,4 +8,14 @@
- #define __NR_seccomp_exit __NR_exit
- #define __NR_seccomp_sigreturn __NR_rt_sigreturn
- 
-+#ifdef CONFIG_CPU_LITTLE_ENDIAN
-+#define __SECCOMP_ARCH_LE		__AUDIT_ARCH_LE
-+#else
-+#define __SECCOMP_ARCH_LE		0
-+#endif
+diff --git a/arch/xtensa/include/asm/Kbuild b/arch/xtensa/include/asm/Kbuild
+index c59c42a1221a..9718e9593564 100644
+--- a/arch/xtensa/include/asm/Kbuild
++++ b/arch/xtensa/include/asm/Kbuild
+@@ -7,5 +7,4 @@ generic-y += mcs_spinlock.h
+ generic-y += param.h
+ generic-y += qrwlock.h
+ generic-y += qspinlock.h
+-generic-y += seccomp.h
+ generic-y += user.h
+diff --git a/arch/xtensa/include/asm/seccomp.h b/arch/xtensa/include/asm/seccomp.h
+new file mode 100644
+index 000000000000..f1cb6b0a9e1f
+--- /dev/null
++++ b/arch/xtensa/include/asm/seccomp.h
+@@ -0,0 +1,11 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef _ASM_SECCOMP_H
++#define _ASM_SECCOMP_H
 +
-+#define SECCOMP_ARCH_NATIVE		(AUDIT_ARCH_SH | __SECCOMP_ARCH_LE)
++#include <asm-generic/seccomp.h>
++
++#define SECCOMP_ARCH_NATIVE		AUDIT_ARCH_XTENSA
 +#define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
-+#define SECCOMP_ARCH_NATIVE_NAME	"sh"
++#define SECCOMP_ARCH_NATIVE_NAME	"xtensa"
 +
- #endif /* __ASM_SECCOMP_H */
++#endif /* _ASM_SECCOMP_H */
 -- 
 2.29.2
 
