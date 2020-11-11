@@ -1,124 +1,99 @@
-Return-Path: <containers-bounces@lists.linux-foundation.org>
+Return-Path: <SRS0=9Lh8=ER=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_FAIL,SPF_HELO_NONE,URIBL_BLOCKED autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.3 required=3.0 tests=BAYES_00,DKIM_ADSP_CUSTOM_MED,
+	DKIM_INVALID,DKIM_SIGNED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 56320C2D0A3
-	for <containers@archiver.kernel.org>; Mon,  9 Nov 2020 15:04:05 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D5E66C388F9
+	for <containers@archiver.kernel.org>; Wed, 11 Nov 2020 13:34:36 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id A2561221E9
-	for <containers@archiver.kernel.org>; Mon,  9 Nov 2020 15:04:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 23728206D9
+	for <containers@archiver.kernel.org>; Wed, 11 Nov 2020 13:34:35 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="XBIiWh0W"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A2561221E9
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=linux.ibm.com
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="YJSxGfIb"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 23728206D9
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 08B4486141;
-	Mon,  9 Nov 2020 15:04:04 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 52BEE87439;
+	Wed, 11 Nov 2020 13:34:33 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from hemlock.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id Uafbta8UgQLi; Wed, 11 Nov 2020 13:34:32 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by hemlock.osuosl.org (Postfix) with ESMTP id 8DEBA8736E;
+	Wed, 11 Nov 2020 13:34:32 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 6BC42C0889;
+	Wed, 11 Nov 2020 13:34:32 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 490D9C016F
+ for <containers@lists.linux-foundation.org>;
+ Wed, 11 Nov 2020 13:34:31 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by fraxinus.osuosl.org (Postfix) with ESMTP id 3E07C86191
+ for <containers@lists.linux-foundation.org>;
+ Wed, 11 Nov 2020 13:34:31 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 5zKRjzfhwUwq; Mon,  9 Nov 2020 15:04:03 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 065878612B;
-	Mon,  9 Nov 2020 15:04:02 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id D9607C088B;
-	Mon,  9 Nov 2020 15:04:02 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id AF13AC016F
- for <containers@lists.linux-foundation.org>;
- Mon,  9 Nov 2020 15:04:01 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 9B56F20426
- for <containers@lists.linux-foundation.org>;
- Mon,  9 Nov 2020 15:04:01 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id skIgPePCoPTV
+ with ESMTP id 2nCHFkpS_PEr
  for <containers@lists.linux-foundation.org>;
- Mon,  9 Nov 2020 15:04:00 +0000 (UTC)
+ Wed, 11 Nov 2020 13:34:30 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com
- [148.163.158.5])
- by silver.osuosl.org (Postfix) with ESMTPS id 87C732010E
+Received: from mail-qt1-f196.google.com (mail-qt1-f196.google.com
+ [209.85.160.196])
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id 87A38860B2
  for <containers@lists.linux-foundation.org>;
- Mon,  9 Nov 2020 15:04:00 +0000 (UTC)
-Received: from pps.filterd (m0098419.ppops.net [127.0.0.1])
- by mx0b-001b2d01.pphosted.com (8.16.0.42/8.16.0.42) with SMTP id
- 0A9EXJ3S007393; Mon, 9 Nov 2020 10:03:25 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com;
- h=date : from : to : cc :
- subject : message-id : references : mime-version : content-type :
- in-reply-to; s=pp1; bh=z5oC/8a+GTxhWeb+ZbLr8Xr4K+9R59YBdDdSSh5RKRM=;
- b=XBIiWh0WE20556srxE4tLXEI6LHTLU0XOZ47YJ+y5FuzrW6vuf5w3TIr9w02PGtl0Vm2
- DuyXTJVwYsCISKNILJK+M1iFuUbShIE99Jq3DvQ0X1oX8LTGL34og77coACb+wK/HnCR
- AVRIlisnmRGpjCYnFi2E9U+kSrjh53XqIuAVfOxVS9IbINjiz9ouXPIQfH7yUyevg9fc
- 0cuNK+RY6Rh+1w1zFDzDYDLhR8XfzoI7LW78lTBKqQts2p3iPmUCCyCpGOO1FeUilMD3
- 8ctNR0S83H168re3lA8+p6vac/432WdtO2v2czqxzZ5czK9JDYTlY7G1LjWXEnXT8HFU zQ== 
-Received: from pps.reinject (localhost [127.0.0.1])
- by mx0b-001b2d01.pphosted.com with ESMTP id 34q5urdbxp-1
- (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
- Mon, 09 Nov 2020 10:03:25 -0500
-Received: from m0098419.ppops.net (m0098419.ppops.net [127.0.0.1])
- by pps.reinject (8.16.0.36/8.16.0.36) with SMTP id 0A9EXd3B009077;
- Mon, 9 Nov 2020 10:03:23 -0500
-Received: from ppma04ams.nl.ibm.com (63.31.33a9.ip4.static.sl-reverse.com
- [169.51.49.99])
- by mx0b-001b2d01.pphosted.com with ESMTP id 34q5urdbtv-1
- (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
- Mon, 09 Nov 2020 10:03:23 -0500
-Received: from pps.filterd (ppma04ams.nl.ibm.com [127.0.0.1])
- by ppma04ams.nl.ibm.com (8.16.0.42/8.16.0.42) with SMTP id 0A9F1mKL012969;
- Mon, 9 Nov 2020 15:03:19 GMT
-Received: from b06avi18878370.portsmouth.uk.ibm.com
- (b06avi18878370.portsmouth.uk.ibm.com [9.149.26.194])
- by ppma04ams.nl.ibm.com with ESMTP id 34p26phjpu-1
- (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
- Mon, 09 Nov 2020 15:03:18 +0000
-Received: from d06av26.portsmouth.uk.ibm.com (d06av26.portsmouth.uk.ibm.com
- [9.149.105.62])
- by b06avi18878370.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP
- id 0A9F3Gqd55771522
- (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
- Mon, 9 Nov 2020 15:03:16 GMT
-Received: from d06av26.portsmouth.uk.ibm.com (unknown [127.0.0.1])
- by IMSVA (Postfix) with ESMTP id 8080BAE055;
- Mon,  9 Nov 2020 15:03:16 +0000 (GMT)
-Received: from d06av26.portsmouth.uk.ibm.com (unknown [127.0.0.1])
- by IMSVA (Postfix) with ESMTP id 9050FAE051;
- Mon,  9 Nov 2020 15:03:15 +0000 (GMT)
-Received: from osiris (unknown [9.171.58.192])
- by d06av26.portsmouth.uk.ibm.com (Postfix) with ESMTPS;
- Mon,  9 Nov 2020 15:03:15 +0000 (GMT)
-Date: Mon, 9 Nov 2020 16:03:14 +0100
-From: Heiko Carstens <hca@linux.ibm.com>
-To: YiFei Zhu <zhuyifei1999@gmail.com>
-Subject: Re: [PATCH seccomp 5/8] s390: Enable seccomp architecture tracking
-Message-ID: <20201109150314.GA16690@osiris>
-References: <cover.1604410035.git.yifeifz2@illinois.edu>
- <0fbe0c14d598e18effad3b648ab4808f9cd95eba.1604410035.git.yifeifz2@illinois.edu>
+ Wed, 11 Nov 2020 13:34:30 +0000 (UTC)
+Received: by mail-qt1-f196.google.com with SMTP id j31so1226169qtb.8
+ for <containers@lists.linux-foundation.org>;
+ Wed, 11 Nov 2020 05:34:30 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
+ h=from:to:cc:subject:date:message-id:mime-version
+ :content-transfer-encoding;
+ bh=ADY2JmYxE9Xly9S24Z1LRnTUA3RyY71p6BFzajWHuao=;
+ b=YJSxGfIbb1UUIY/29x8l4T1Jgc/yvQs31iNrz+gq8lShwrVPuHybhNR6GJR2b7ujTh
+ QXkNda2M3eSKkjAcLLD3C+040OUac/TeqxIQ4kKWh1L61WubktOhPd4WOSZc7To8b+sR
+ jcvHPDdLofNDeZQFZI6zTyzwiTZI58E4j7EHZSBLV1AVXppIZtxsLNOxs1YSHzxtaIyi
+ /8HpFYA+y+MUg78ZtzBB1bfvaT8TL/NlfNctAizFSHUGW5eGeI6PDGrklFXYAAJQKgEB
+ E8onifEyVUdSHl7UZUr5Lsm3j3fv9Fv5friHKntdo5FtOXwpCVL7DFWbsNCOMCfZLyYf
+ O7Sg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=1e100.net; s=20161025;
+ h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+ :content-transfer-encoding;
+ bh=ADY2JmYxE9Xly9S24Z1LRnTUA3RyY71p6BFzajWHuao=;
+ b=cX1/squc/eJkuTY/aXAW/0a3tz4/EkooSAg1BiwRz+umgYVGxXYZOk0+9i+KdYLvG2
+ tue+EXT2LL+FmTao8M4VcHbt4MvKuiGuMCyb47lo4nr6cq+Oft2FkKAg+1EBeG3kKYD6
+ +TQBrgLu/dyhBAPSvEkWGdna2FgB4kLmTYgsawtPmevayixLOH/VmMgOWImqNmhw7VrY
+ dBhQzg/J7xaGur7RVuP7AqPCbRHxaRnsULOMiGnu8K5OrXgXif5NMg41wdRJD6yEnThA
+ VtUSnswGQPG0jaI6xZTzmjq4okDM8wffS+wRLLBncO/VU2K/EXTt4EINpS//fZAAi9bv
+ 7ybg==
+X-Gm-Message-State: AOAM531/SNMNHgdTcH8Y7ZkkPJqB7264JyKKrn5t2AokR0HZvlY8FJpm
+ TZ93PWkgj1ZYaphGr2TfZs7N4dJmBzFHaQ==
+X-Google-Smtp-Source: ABdhPJzHUfo2j/Nsf18vB+1vJm4vfXG7t/Ethu+Cj5/ykTWucn6CwriV6xUlfxlPz1n756bgw31C9g==
+X-Received: by 2002:ac8:130d:: with SMTP id e13mr23000296qtj.3.1605101669342; 
+ Wed, 11 Nov 2020 05:34:29 -0800 (PST)
+Received: from localhost.localdomain
+ (host-173-230-99-154.tnkngak.clients.pavlovmedia.com. [173.230.99.154])
+ by smtp.gmail.com with ESMTPSA id r190sm1997814qkf.101.2020.11.11.05.34.27
+ (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+ Wed, 11 Nov 2020 05:34:28 -0800 (PST)
+From: YiFei Zhu <zhuyifei1999@gmail.com>
+To: containers@lists.linux-foundation.org
+Subject: [PATCH seccomp v2 0/8] seccomp: add bitmap cache support on remaining
+ arches and report cache in procfs
+Date: Wed, 11 Nov 2020 07:33:46 -0600
+Message-Id: <cover.1605101222.git.yifeifz2@illinois.edu>
+X-Mailer: git-send-email 2.29.2
 MIME-Version: 1.0
-Content-Disposition: inline
-In-Reply-To: <0fbe0c14d598e18effad3b648ab4808f9cd95eba.1604410035.git.yifeifz2@illinois.edu>
-X-TM-AS-GCONF: 00
-X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:6.0.312, 18.0.737
- definitions=2020-11-09_02:2020-11-05,
- 2020-11-09 signatures=0
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- phishscore=0 mlxlogscore=859
- bulkscore=0 malwarescore=0 priorityscore=1501 spamscore=0
- lowpriorityscore=0 impostorscore=0 suspectscore=1 adultscore=0 mlxscore=0
- clxscore=1011 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2009150000 definitions=main-2011090098
 Cc: linux-sh@vger.kernel.org, Tobin Feldman-Fitzthum <tobin@ibm.com>,
  Hubertus Franke <frankeh@us.ibm.com>, Jack Chen <jianyan2@illinois.edu>,
  linux-riscv@lists.infradead.org, Andrea Arcangeli <aarcange@redhat.com>,
@@ -126,8 +101,8 @@ Cc: linux-sh@vger.kernel.org, Tobin Feldman-Fitzthum <tobin@ibm.com>,
  linux-csky@vger.kernel.org, Tianyin Xu <tyxu@illinois.edu>,
  linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>,
  Jann Horn <jannh@google.com>, Valentin Rothberg <vrothber@redhat.com>,
- Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>,
- linux-parisc@vger.kernel.org, containers@lists.linux-foundation.org,
+ Aleksa Sarai <cyphar@cyphar.com>, Josep Torrellas <torrella@illinois.edu>,
+ Will Drewry <wad@chromium.org>, linux-parisc@vger.kernel.org,
  linux-kernel@vger.kernel.org, Andy Lutomirski <luto@amacapital.net>,
  Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
  David Laight <David.Laight@aculab.com>,
@@ -148,37 +123,60 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Tue, Nov 03, 2020 at 07:43:01AM -0600, YiFei Zhu wrote:
-> From: YiFei Zhu <yifeifz2@illinois.edu>
-> 
-> To enable seccomp constant action bitmaps, we need to have a static
-> mapping to the audit architecture and system call table size. Add these
-> for s390.
-> 
-> Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
-> ---
->  arch/s390/include/asm/seccomp.h | 9 +++++++++
->  1 file changed, 9 insertions(+)
-> 
-> diff --git a/arch/s390/include/asm/seccomp.h b/arch/s390/include/asm/seccomp.h
-> index 795bbe0d7ca6..71d46f0ba97b 100644
-> --- a/arch/s390/include/asm/seccomp.h
-> +++ b/arch/s390/include/asm/seccomp.h
-> @@ -16,4 +16,13 @@
->  
->  #include <asm-generic/seccomp.h>
->  
-> +#define SECCOMP_ARCH_NATIVE		AUDIT_ARCH_S390X
-> +#define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
-> +#define SECCOMP_ARCH_NATIVE_NAME	"s390x"
-> +#ifdef CONFIG_COMPAT
-> +# define SECCOMP_ARCH_COMPAT		AUDIT_ARCH_S390
-> +# define SECCOMP_ARCH_COMPAT_NR		NR_syscalls
-> +# define SECCOMP_ARCH_COMPAT_NAME	"s390"
-> +#endif
-> +
+From: YiFei Zhu <yifeifz2@illinois.edu>
 
-Acked-by: Heiko Carstens <hca@linux.ibm.com>
+This patch series enables bitmap cache for the remaining arches with
+SECCOMP_FILTER, other than MIPS.
+
+I was unable to find any of the arches having subarch-specific NR_syscalls
+macros, so generic NR_syscalls is used. SH's syscall_get_arch seems to
+only have the 32-bit subarch implementation. I'm not sure if this is
+expected.
+
+This series has not been tested; I have not built all the cross compilers
+necessary to build test, let alone run the kernel or benchmark the
+performance, so help on making sure the bitmap cache works as expected
+(selftests/seccomp/{seccomp_benchmark,seccomp_bpf}) would be appreciated.
+The series applies on top of Kees's for-next/seccomp branch.
+
+v1 -> v2:
+* ppc, sh: s/__SECCOMP_ARCH_LE_BIT/__SECCOMP_ARCH_LE/
+* ppc: add "le" suffix to arch name when the arch is little endian.
+* ppc: add explanation of why __LITTLE_ENDIAN__ is used to commit message.
+
+YiFei Zhu (8):
+  csky: Enable seccomp architecture tracking
+  parisc: Enable seccomp architecture tracking
+  powerpc: Enable seccomp architecture tracking
+  riscv: Enable seccomp architecture tracking
+  s390: Enable seccomp architecture tracking
+  sh: Enable seccomp architecture tracking
+  xtensa: Enable seccomp architecture tracking
+  seccomp/cache: Report cache data through /proc/pid/seccomp_cache
+
+ arch/Kconfig                       | 15 ++++++++
+ arch/csky/include/asm/Kbuild       |  1 -
+ arch/csky/include/asm/seccomp.h    | 11 ++++++
+ arch/parisc/include/asm/Kbuild     |  1 -
+ arch/parisc/include/asm/seccomp.h  | 22 +++++++++++
+ arch/powerpc/include/asm/seccomp.h | 23 ++++++++++++
+ arch/riscv/include/asm/seccomp.h   | 10 +++++
+ arch/s390/include/asm/seccomp.h    |  9 +++++
+ arch/sh/include/asm/seccomp.h      | 10 +++++
+ arch/xtensa/include/asm/Kbuild     |  1 -
+ arch/xtensa/include/asm/seccomp.h  | 11 ++++++
+ fs/proc/base.c                     |  6 +++
+ include/linux/seccomp.h            |  7 ++++
+ kernel/seccomp.c                   | 59 ++++++++++++++++++++++++++++++
+ 14 files changed, 183 insertions(+), 3 deletions(-)
+ create mode 100644 arch/csky/include/asm/seccomp.h
+ create mode 100644 arch/parisc/include/asm/seccomp.h
+ create mode 100644 arch/xtensa/include/asm/seccomp.h
+
+
+base-commit: 38c37e8fd3d2590c4234d8cfbc22158362f0eb04
+--
+2.29.2
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
