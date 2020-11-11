@@ -8,90 +8,90 @@ X-Spam-Status: No, score=-12.3 required=3.0 tests=BAYES_00,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F284C5517A
-	for <containers@archiver.kernel.org>; Wed, 11 Nov 2020 13:34:42 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 16F59C388F9
+	for <containers@archiver.kernel.org>; Wed, 11 Nov 2020 13:34:45 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id A44C6206D9
-	for <containers@archiver.kernel.org>; Wed, 11 Nov 2020 13:34:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPS id 7E8CF206D9
+	for <containers@archiver.kernel.org>; Wed, 11 Nov 2020 13:34:44 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="vNGoRE4T"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A44C6206D9
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="kqmci847"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7E8CF206D9
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 521568756A;
-	Wed, 11 Nov 2020 13:34:41 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id BD7A1204D7;
+	Wed, 11 Nov 2020 13:34:43 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id Hpl8r9FQ8lO2; Wed, 11 Nov 2020 13:34:40 +0000 (UTC)
+	with ESMTP id c85EXpF7LF7P; Wed, 11 Nov 2020 13:34:42 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id E18B787370;
-	Wed, 11 Nov 2020 13:34:40 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 08A56204AA;
+	Wed, 11 Nov 2020 13:34:42 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id CFCBBC0889;
-	Wed, 11 Nov 2020 13:34:40 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id E6D00C0889;
+	Wed, 11 Nov 2020 13:34:41 +0000 (UTC)
 Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id ACA31C016F
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 618E7C016F
  for <containers@lists.linux-foundation.org>;
- Wed, 11 Nov 2020 13:34:39 +0000 (UTC)
+ Wed, 11 Nov 2020 13:34:40 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 974798688B
+ by whitealder.osuosl.org (Postfix) with ESMTP id 44D918686D
  for <containers@lists.linux-foundation.org>;
- Wed, 11 Nov 2020 13:34:39 +0000 (UTC)
+ Wed, 11 Nov 2020 13:34:40 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id ZWYSeoP012Yj
+ with ESMTP id Y81TI5HstKa1
  for <containers@lists.linux-foundation.org>;
- Wed, 11 Nov 2020 13:34:38 +0000 (UTC)
+ Wed, 11 Nov 2020 13:34:39 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-qt1-f195.google.com (mail-qt1-f195.google.com
- [209.85.160.195])
- by whitealder.osuosl.org (Postfix) with ESMTPS id 1BE408688A
+Received: from mail-qv1-f67.google.com (mail-qv1-f67.google.com
+ [209.85.219.67])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id AA10D86885
  for <containers@lists.linux-foundation.org>;
- Wed, 11 Nov 2020 13:34:38 +0000 (UTC)
-Received: by mail-qt1-f195.google.com with SMTP id 3so1249149qtx.3
+ Wed, 11 Nov 2020 13:34:39 +0000 (UTC)
+Received: by mail-qv1-f67.google.com with SMTP id z17so838448qvy.11
  for <containers@lists.linux-foundation.org>;
- Wed, 11 Nov 2020 05:34:38 -0800 (PST)
+ Wed, 11 Nov 2020 05:34:39 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20161025;
  h=from:to:cc:subject:date:message-id:in-reply-to:references
  :mime-version:content-transfer-encoding;
- bh=p4ug0/ujexdr5eX2KHZwXV+5OEEE0LQ6CHuZfwOYci4=;
- b=vNGoRE4T2vueWtMyfIqsMJnHQf5sexlSfNm5+JYWvZrbhr28FRAtAv3lFmTY0+4W0Y
- WcYZoYHknNJQqlmA5lKA2IjQ5N2wYEjtpuzYl7OO06EsiIGv6XJZ3Kb9UjRl3/b7/1X8
- XfCjrkryG0QaqerFaC1fcQ9Tr2HyAB4KKtxuVtQp0xutUOI57AMaDr4CA2MgmoE4mjCv
- KB12O8KYoI95e70wD3aaXcRNbfK6zccMr68ebqQN7E8uk7S2TR1coNLaubqwUvBts/Lv
- zorqhisqngJ2ZuCEG1/njxhxTc7yrzx1m99VyQR+bb/RgHndyJV5i+iGi1vdeZUV7FdW
- piDg==
+ bh=do2IkGTsgJZMce9dLCi5y9V7vjNX63EvX8bAUDpEGLM=;
+ b=kqmci8479r1GmpSX/CsPK24jcw4ackZR09/fqBvzcYwOBOneuWx5PFapDrNR/y91zk
+ ExAMU598dyHT/RcJ0vEsvLy4Ops+sFNh3zgqOE4JArPSyF7W9sja/hApRc2rC1Nwm2hJ
+ u50FMSKsKEcagX5U7XeUcBUJxC1PhPsCIK1LzOF+1qxQDwvzDgWYavL+OHfPE2kcPPFp
+ EApyeIYNOUYqsqaYXaV0Ji65m4GhaGRycYlamUWs8R5m/Eh5ESQ0qNfQZrDakTPeWfnR
+ dkjvod65hl/fav16KIifE1cRgTcdlFaQ87PvVYqF5inQSFpWoASygEZjooid8wnIuGLL
+ DptQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
  h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
  :references:mime-version:content-transfer-encoding;
- bh=p4ug0/ujexdr5eX2KHZwXV+5OEEE0LQ6CHuZfwOYci4=;
- b=nANs+V+I3+RSeUGxqC3VZtOEvYMtpRYGO6WFvIlDam9n/bW9AeudX9tCQBR+gWCT43
- 6k0WbST73vAMvkuRpJrLt3UvJKpWnS0g6656dyxSJmUc7tzbj2SHEEg8TtRl/GwOLGtv
- ajurCPQ8QjXxFkideWsTUcLgXgEXJSDXo9secragic4A7WnkBoja7kCkwycSc6rYpzVe
- LKqD+2VKN3BgL7Z0DOfA8lh97ATTyfJN4PFmHV5fPbWRBujVkZpSsxZw9RjXTjJK57qA
- xfT5k6BJ+8CrFO4FLFISEGswxiMkJG6IGivwahsGR8Tn+yYJZfhha5R4cX25x3DFfMWm
- ++2A==
-X-Gm-Message-State: AOAM531gXAg8tOJZv32j7jltWcQHhJ1+iLKUZp5cWXCV1m4rRj9X4pns
- Voc2jSYWIAF6MmQXI77WN5SeiGysWzqDpg==
-X-Google-Smtp-Source: ABdhPJyVXjxkJWplKVPB4NFyM0YLYj5IP428vFSUkWNwwyzA8cf7e/mXCgVyvFukKTHkEaORyR7aHQ==
-X-Received: by 2002:aed:39c2:: with SMTP id m60mr12461442qte.206.1605101676823; 
- Wed, 11 Nov 2020 05:34:36 -0800 (PST)
+ bh=do2IkGTsgJZMce9dLCi5y9V7vjNX63EvX8bAUDpEGLM=;
+ b=bbrTCA/rCvvIUN2jSw5fZjmtJsfLAow6wN9QEqD29vPzxrinyyfN119A682iB7LZIm
+ jGUwRhXuCL10KRuO2I210r4+CbtiSSNTpcvfJs2GHx9Uaueqc1NHGGHE3ShawhfWu/s0
+ VOjCJpZe2qAdEAcbafy+Iclh56hXnl3qku2FLPpb/6ixPFmARFqyxnSxS8FjVs8d+HdW
+ 9/7h70TM7XGSb4AnPXmm4AwlUUTD1Wadl7TsaQtqkY+IjicHHEpcELvl7fHI2LXN4Ep5
+ eRdT2hwqRMsWJxSAhyE+uXbhJVosiyWZJ6q3jVDndfDxoO7zt0s4gzof6o+YWexLEpiC
+ gvgg==
+X-Gm-Message-State: AOAM532byaC6R3RKX3xDE5EIwfGHLoQOY2GLpm/JwZ/pPyCXz4Nqmlnl
+ uuqX/nf9Iiu7ite3ux2jB4CFrGPzJGcpiQ==
+X-Google-Smtp-Source: ABdhPJzFsUI0zV9/mJU71uSGXIEeuyYH9ZXGj+0WaVMtZXX0iy4+DwFsWuBQL0cgOtuNbH4AHKgOyQ==
+X-Received: by 2002:a0c:e443:: with SMTP id d3mr13987966qvm.18.1605101678476; 
+ Wed, 11 Nov 2020 05:34:38 -0800 (PST)
 Received: from localhost.localdomain
  (host-173-230-99-154.tnkngak.clients.pavlovmedia.com. [173.230.99.154])
- by smtp.gmail.com with ESMTPSA id r190sm1997814qkf.101.2020.11.11.05.34.35
+ by smtp.gmail.com with ESMTPSA id r190sm1997814qkf.101.2020.11.11.05.34.37
  (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
- Wed, 11 Nov 2020 05:34:36 -0800 (PST)
+ Wed, 11 Nov 2020 05:34:37 -0800 (PST)
 From: YiFei Zhu <zhuyifei1999@gmail.com>
 To: containers@lists.linux-foundation.org
-Subject: [PATCH seccomp v2 3/8] powerpc: Enable seccomp architecture tracking
-Date: Wed, 11 Nov 2020 07:33:49 -0600
-Message-Id: <0b64925362671cdaa26d01bfe50b3ba5e164adfd.1605101222.git.yifeifz2@illinois.edu>
+Subject: [PATCH seccomp v2 4/8] riscv: Enable seccomp architecture tracking
+Date: Wed, 11 Nov 2020 07:33:50 -0600
+Message-Id: <58ef925d00505cbb77478fa6bd2b48ab2d902460.1605101222.git.yifeifz2@illinois.edu>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <cover.1605101222.git.yifeifz2@illinois.edu>
 References: <cover.1605101222.git.yifeifz2@illinois.edu>
@@ -129,48 +129,32 @@ From: YiFei Zhu <yifeifz2@illinois.edu>
 
 To enable seccomp constant action bitmaps, we need to have a static
 mapping to the audit architecture and system call table size. Add these
-for powerpc.
-
-__LITTLE_ENDIAN__ is used here instead of CONFIG_CPU_LITTLE_ENDIAN
-to keep it consistent with asm/syscall.h.
+for riscv.
 
 Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
 ---
- arch/powerpc/include/asm/seccomp.h | 23 +++++++++++++++++++++++
- 1 file changed, 23 insertions(+)
+ arch/riscv/include/asm/seccomp.h | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/arch/powerpc/include/asm/seccomp.h b/arch/powerpc/include/asm/seccomp.h
-index 51209f6071c5..ac2033f134f0 100644
---- a/arch/powerpc/include/asm/seccomp.h
-+++ b/arch/powerpc/include/asm/seccomp.h
-@@ -8,4 +8,27 @@
+diff --git a/arch/riscv/include/asm/seccomp.h b/arch/riscv/include/asm/seccomp.h
+index bf7744ee3b3d..c7ee6a3507be 100644
+--- a/arch/riscv/include/asm/seccomp.h
++++ b/arch/riscv/include/asm/seccomp.h
+@@ -7,4 +7,14 @@
  
  #include <asm-generic/seccomp.h>
  
-+#ifdef __LITTLE_ENDIAN__
-+#define __SECCOMP_ARCH_LE		__AUDIT_ARCH_LE
-+#define __SECCOMP_ARCH_LE_NAME		"le"
-+#else
-+#define __SECCOMP_ARCH_LE		0
-+#define __SECCOMP_ARCH_LE_NAME
++#ifdef CONFIG_64BIT
++# define SECCOMP_ARCH_NATIVE		AUDIT_ARCH_RISCV64
++# define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
++# define SECCOMP_ARCH_NATIVE_NAME	"riscv64"
++#else /* !CONFIG_64BIT */
++# define SECCOMP_ARCH_NATIVE		AUDIT_ARCH_RISCV32
++# define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
++# define SECCOMP_ARCH_NATIVE_NAME	"riscv32"
 +#endif
 +
-+#ifdef CONFIG_PPC64
-+# define SECCOMP_ARCH_NATIVE		(AUDIT_ARCH_PPC64 | __SECCOMP_ARCH_LE)
-+# define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
-+# define SECCOMP_ARCH_NATIVE_NAME	"ppc64" __SECCOMP_ARCH_LE_NAME
-+# ifdef CONFIG_COMPAT
-+#  define SECCOMP_ARCH_COMPAT		(AUDIT_ARCH_PPC | __SECCOMP_ARCH_LE)
-+#  define SECCOMP_ARCH_COMPAT_NR	NR_syscalls
-+#  define SECCOMP_ARCH_COMPAT_NAME	"ppc" __SECCOMP_ARCH_LE_NAME
-+# endif
-+#else /* !CONFIG_PPC64 */
-+# define SECCOMP_ARCH_NATIVE		(AUDIT_ARCH_PPC | __SECCOMP_ARCH_LE)
-+# define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
-+# define SECCOMP_ARCH_NATIVE_NAME	"ppc" __SECCOMP_ARCH_LE_NAME
-+#endif
-+
- #endif	/* _ASM_POWERPC_SECCOMP_H */
+ #endif /* _ASM_SECCOMP_H */
 -- 
 2.29.2
 
