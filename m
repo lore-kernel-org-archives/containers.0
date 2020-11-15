@@ -4,63 +4,63 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 59D18C2D0E4
-	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:47:41 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D0A1DC6369E
+	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:47:59 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 0CC6623A32
-	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:47:41 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0CC6623A32
+	by mail.kernel.org (Postfix) with ESMTPS id 7F1CA24182
+	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:47:59 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7F1CA24182
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id EACCE86149;
-	Sun, 15 Nov 2020 10:47:40 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id JHvHUlswxWz5; Sun, 15 Nov 2020 10:47:40 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 6C86A85EC2;
-	Sun, 15 Nov 2020 10:47:40 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 56F79C0891;
-	Sun, 15 Nov 2020 10:47:40 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 618ADC07FF
- for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:47:39 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 50324871B6
- for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:47:39 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 5C531871B5;
+	Sun, 15 Nov 2020 10:47:59 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
- by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id 2gvkmi-yMBtP
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id byxzhv2IgkVZ; Sun, 15 Nov 2020 10:47:57 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by hemlock.osuosl.org (Postfix) with ESMTP id 8F453871B6;
+	Sun, 15 Nov 2020 10:47:57 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 7C7B0C0891;
+	Sun, 15 Nov 2020 10:47:57 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id D8AD3C07FF
  for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:47:38 +0000 (UTC)
+ Sun, 15 Nov 2020 10:47:55 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by fraxinus.osuosl.org (Postfix) with ESMTP id C6C5485F4D
+ for <containers@lists.linux-foundation.org>;
+ Sun, 15 Nov 2020 10:47:55 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from fraxinus.osuosl.org ([127.0.0.1])
+ by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id y0S0BAF-NYUC
+ for <containers@lists.linux-foundation.org>;
+ Sun, 15 Nov 2020 10:47:55 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by hemlock.osuosl.org (Postfix) with ESMTPS id F33A2871B5
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id 2251F85EC2
  for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:47:37 +0000 (UTC)
+ Sun, 15 Nov 2020 10:47:55 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1keFRc-0000Kt-PM; Sun, 15 Nov 2020 10:39:40 +0000
+ id 1keFRS-0000Kt-Ok; Sun, 15 Nov 2020 10:39:31 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v2 28/39] exec: handle idmapped mounts
-Date: Sun, 15 Nov 2020 11:37:07 +0100
-Message-Id: <20201115103718.298186-29-christian.brauner@ubuntu.com>
+Subject: [PATCH v2 25/39] init: handle idmapped mounts
+Date: Sun, 15 Nov 2020 11:37:04 +0100
+Message-Id: <20201115103718.298186-26-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201115103718.298186-1-christian.brauner@ubuntu.com>
 References: <20201115103718.298186-1-christian.brauner@ubuntu.com>
@@ -102,12 +102,8 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-When executing a setuid binary the kernel will verify in bprm_fill_uid() that
-the inode has a mapping in the caller's user namespace before setting the
-callers uid and gid. Let bprm_fill_uid() handle idmapped mounts. If the inode
-is accessed through an idmapped mount it is mapped according to the mount's
-user namespace. Afterwards the checks are identical to non-idmapped mounts.On
-regular mounts this is a nop.
+Enable the init helpers to handle idmapped mounts by passing down the mount's
+user namespace.
 
 Cc: Christoph Hellwig <hch@lst.de>
 Cc: David Howells <dhowells@redhat.com>
@@ -116,41 +112,51 @@ Cc: linux-fsdevel@vger.kernel.org
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
 /* v2 */
-unchanged
+patch introduced
 ---
- fs/exec.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+ fs/init.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/exec.c b/fs/exec.c
-index 10c06fdf78a7..7d6d3dd17e84 100644
---- a/fs/exec.c
-+++ b/fs/exec.c
-@@ -1567,6 +1567,7 @@ static void check_unsafe_exec(struct linux_binprm *bprm)
- static void bprm_fill_uid(struct linux_binprm *bprm, struct file *file)
- {
- 	/* Handle suid and sgid on files */
-+	struct user_namespace *user_ns;
- 	struct inode *inode;
- 	unsigned int mode;
- 	kuid_t uid;
-@@ -1583,13 +1584,15 @@ static void bprm_fill_uid(struct linux_binprm *bprm, struct file *file)
- 	if (!(mode & (S_ISUID|S_ISGID)))
- 		return;
- 
-+	user_ns = mnt_user_ns(file->f_path.mnt);
-+
- 	/* Be careful if suid/sgid is set */
- 	inode_lock(inode);
- 
- 	/* reload atomically mode/uid/gid now that lock held */
- 	mode = inode->i_mode;
--	uid = inode->i_uid;
--	gid = inode->i_gid;
-+	uid = i_uid_into_mnt(user_ns, inode);
-+	gid = i_gid_into_mnt(user_ns, inode);
- 	inode_unlock(inode);
- 
- 	/* We ignore suid/sgid if there are no mappings for them in the ns */
+diff --git a/fs/init.c b/fs/init.c
+index 76f493600030..334e4c9c07eb 100644
+--- a/fs/init.c
++++ b/fs/init.c
+@@ -49,7 +49,7 @@ int __init init_chdir(const char *filename)
+ 	error = kern_path(filename, LOOKUP_FOLLOW | LOOKUP_DIRECTORY, &path);
+ 	if (error)
+ 		return error;
+-	error = inode_permission(&init_user_ns, path.dentry->d_inode,
++	error = inode_permission(mnt_user_ns(path.mnt), path.dentry->d_inode,
+ 				 MAY_EXEC | MAY_CHDIR);
+ 	if (!error)
+ 		set_fs_pwd(current->fs, &path);
+@@ -65,7 +65,7 @@ int __init init_chroot(const char *filename)
+ 	error = kern_path(filename, LOOKUP_FOLLOW | LOOKUP_DIRECTORY, &path);
+ 	if (error)
+ 		return error;
+-	error = inode_permission(&init_user_ns, path.dentry->d_inode,
++	error = inode_permission(mnt_user_ns(path.mnt), path.dentry->d_inode,
+ 				 MAY_EXEC | MAY_CHDIR);
+ 	if (error)
+ 		goto dput_and_out;
+@@ -120,7 +120,7 @@ int __init init_eaccess(const char *filename)
+ 	error = kern_path(filename, LOOKUP_FOLLOW, &path);
+ 	if (error)
+ 		return error;
+-	error = inode_permission(&init_user_ns, d_inode(path.dentry),
++	error = inode_permission(mnt_user_ns(path.mnt), d_inode(path.dentry),
+ 				 MAY_ACCESS);
+ 	path_put(&path);
+ 	return error;
+@@ -190,7 +190,7 @@ int __init init_link(const char *oldname, const char *newname)
+ 	error = security_path_link(old_path.dentry, &new_path, new_dentry);
+ 	if (error)
+ 		goto out_dput;
+-	error = vfs_link(old_path.dentry, &init_user_ns, 
++	error = vfs_link(old_path.dentry, &init_user_ns,
+ 			 new_path.dentry->d_inode, new_dentry, NULL);
+ out_dput:
+ 	done_path_create(&new_path, new_dentry);
 -- 
 2.29.2
 
