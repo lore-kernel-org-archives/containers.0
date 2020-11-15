@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 40BE9C55ABD
-	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:48:47 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 61F0CC55ABD
+	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:49:03 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id E4FBA23A32
-	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:48:46 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E4FBA23A32
+	by mail.kernel.org (Postfix) with ESMTPS id 120AC23A32
+	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:49:03 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 120AC23A32
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id C5B30871A0;
-	Sun, 15 Nov 2020 10:48:46 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id EQWMARXDPR55; Sun, 15 Nov 2020 10:48:46 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id EB85387164;
-	Sun, 15 Nov 2020 10:48:45 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id D53A3C0891;
-	Sun, 15 Nov 2020 10:48:45 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 5615FC07FF
- for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:48:44 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id 5182B85F4D
- for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:48:44 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id DE59D85EC2;
+	Sun, 15 Nov 2020 10:49:02 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
- by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id PDZfuLqaJO5Q
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id n7v92pqPqjf7; Sun, 15 Nov 2020 10:49:01 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 1976785F4D;
+	Sun, 15 Nov 2020 10:49:01 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 0725BC0891;
+	Sun, 15 Nov 2020 10:49:01 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id B32C7C07FF
  for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:48:43 +0000 (UTC)
+ Sun, 15 Nov 2020 10:48:59 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by whitealder.osuosl.org (Postfix) with ESMTP id AE9778690C
+ for <containers@lists.linux-foundation.org>;
+ Sun, 15 Nov 2020 10:48:59 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from whitealder.osuosl.org ([127.0.0.1])
+ by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id BVVCVfuF51vW
+ for <containers@lists.linux-foundation.org>;
+ Sun, 15 Nov 2020 10:48:58 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id 8FC4685EC2
+ by whitealder.osuosl.org (Postfix) with ESMTPS id B43CE8689E
  for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:48:43 +0000 (UTC)
+ Sun, 15 Nov 2020 10:48:58 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1keFRj-0000Kt-8Y; Sun, 15 Nov 2020 10:39:47 +0000
+ id 1keFRC-0000Kt-3n; Sun, 15 Nov 2020 10:39:14 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v2 30/39] apparmor: handle idmapped mounts
-Date: Sun, 15 Nov 2020 11:37:09 +0100
-Message-Id: <20201115103718.298186-31-christian.brauner@ubuntu.com>
+Subject: [PATCH v2 20/39] open: handle idmapped mounts
+Date: Sun, 15 Nov 2020 11:36:59 +0100
+Message-Id: <20201115103718.298186-21-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201115103718.298186-1-christian.brauner@ubuntu.com>
 References: <20201115103718.298186-1-christian.brauner@ubuntu.com>
@@ -69,12 +69,12 @@ Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>,
  James Bottomley <James.Bottomley@hansenpartnership.com>,
  Andreas Dilger <adilger.kernel@dilger.ca>,
- containers@lists.linux-foundation.org, Tycho Andersen <tycho@tycho.ws>,
- Jonathan Corbet <corbet@lwn.net>, smbarber@chromium.org,
- linux-ext4@vger.kernel.org, Mrunal Patel <mpatel@redhat.com>,
- Kees Cook <keescook@chromium.org>, Arnd Bergmann <arnd@arndb.de>,
- Jann Horn <jannh@google.com>, selinux@vger.kernel.org,
- Josh Triplett <josh@joshtriplett.org>,
+ containers@lists.linux-foundation.org, Christoph Hellwig <hch@lst.de>,
+ Tycho Andersen <tycho@tycho.ws>, Jonathan Corbet <corbet@lwn.net>,
+ smbarber@chromium.org, linux-ext4@vger.kernel.org,
+ Mrunal Patel <mpatel@redhat.com>, Kees Cook <keescook@chromium.org>,
+ Arnd Bergmann <arnd@arndb.de>, Jann Horn <jannh@google.com>,
+ selinux@vger.kernel.org, Josh Triplett <josh@joshtriplett.org>,
  Seth Forshee <seth.forshee@canonical.com>, Aleksa Sarai <cyphar@cyphar.com>,
  Andy Lutomirski <luto@kernel.org>,
  OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
@@ -102,140 +102,162 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-The i_uid and i_gid are only ever used when logging for AppArmor. This is
-already broken in a bunch of places where the global root id is reported
-instead of the i_uid or i_gid of the file. Nonetheless, be kind and log the
-mapped inode if we're coming from an idmapped mount.
+For core file operations such as changing directories or chrooting,
+determining file access, changing mode or ownership the vfs will verify
+that the caller is privileged over the inode. Extend the various helpers to
+handle idmapped mounts. If the inode is accessed through an idmapped mount
+it is mapped according to the mount's user namespace.  Afterwards the
+permissions checks are identical to non-idmapped mounts.  When changing
+file ownership we need to map the mount from the mount's user namespace. If
+the initial user namespace is passed all mapping operations are a nop so
+non-idmapped mounts will not see a change in behavior and will also not see
+any performance impact.
 
+Cc: Christoph Hellwig <hch@lst.de>
+Cc: David Howells <dhowells@redhat.com>
+Cc: Al Viro <viro@zeniv.linux.org.uk>
+Cc: linux-fsdevel@vger.kernel.org
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
 /* v2 */
 unchanged
 ---
- security/apparmor/domain.c |  9 ++++++---
- security/apparmor/file.c   |  5 ++++-
- security/apparmor/lsm.c    | 12 ++++++++----
- 3 files changed, 18 insertions(+), 8 deletions(-)
+ fs/open.c | 31 ++++++++++++++++++++++++-------
+ 1 file changed, 24 insertions(+), 7 deletions(-)
 
-diff --git a/security/apparmor/domain.c b/security/apparmor/domain.c
-index 16f184bc48de..4f997dba4573 100644
---- a/security/apparmor/domain.c
-+++ b/security/apparmor/domain.c
-@@ -10,12 +10,14 @@
+diff --git a/fs/open.c b/fs/open.c
+index 137dcc52d2f8..2e2eb55976b1 100644
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -401,6 +401,7 @@ static const struct cred *access_override_creds(void)
  
- #include <linux/errno.h>
- #include <linux/fdtable.h>
-+#include <linux/fs.h>
- #include <linux/file.h>
- #include <linux/mount.h>
- #include <linux/syscalls.h>
- #include <linux/tracehook.h>
- #include <linux/personality.h>
- #include <linux/xattr.h>
-+#include <linux/user_namespace.h>
- 
- #include "include/audit.h"
- #include "include/apparmorfs.h"
-@@ -858,8 +860,10 @@ int apparmor_bprm_creds_for_exec(struct linux_binprm *bprm)
- 	const char *info = NULL;
- 	int error = 0;
- 	bool unsafe = false;
-+	struct user_namespace *user_ns = mnt_user_ns(bprm->file->f_path.mnt);
-+	kuid_t i_uid = i_uid_into_mnt(user_ns, file_inode(bprm->file));
- 	struct path_cond cond = {
--		file_inode(bprm->file)->i_uid,
-+		i_uid,
- 		file_inode(bprm->file)->i_mode
- 	};
- 
-@@ -967,8 +971,7 @@ int apparmor_bprm_creds_for_exec(struct linux_binprm *bprm)
- 	error = fn_for_each(label, profile,
- 			aa_audit_file(profile, &nullperms, OP_EXEC, MAY_EXEC,
- 				      bprm->filename, NULL, new,
--				      file_inode(bprm->file)->i_uid, info,
--				      error));
-+				      i_uid, info, error));
- 	aa_put_label(new);
- 	goto done;
- }
-diff --git a/security/apparmor/file.c b/security/apparmor/file.c
-index 92acf9a49405..d6d9e71f1900 100644
---- a/security/apparmor/file.c
-+++ b/security/apparmor/file.c
-@@ -11,6 +11,8 @@
- #include <linux/tty.h>
- #include <linux/fdtable.h>
- #include <linux/file.h>
-+#include <linux/fs.h>
-+#include <linux/mount.h>
- 
- #include "include/apparmor.h"
- #include "include/audit.h"
-@@ -508,8 +510,9 @@ static int __file_path_perm(const char *op, struct aa_label *label,
+ static long do_faccessat(int dfd, const char __user *filename, int mode, int flags)
  {
- 	struct aa_profile *profile;
- 	struct aa_perms perms = {};
-+	struct user_namespace *user_ns = mnt_user_ns(file->f_path.mnt);
- 	struct path_cond cond = {
--		.uid = file_inode(file)->i_uid,
-+		.uid = i_uid_into_mnt(user_ns, file_inode(file)),
- 		.mode = file_inode(file)->i_mode
- 	};
- 	char *buffer;
-diff --git a/security/apparmor/lsm.c b/security/apparmor/lsm.c
-index ffeaee5ed968..ece9afc3994f 100644
---- a/security/apparmor/lsm.c
-+++ b/security/apparmor/lsm.c
-@@ -224,7 +224,8 @@ static int common_perm(const char *op, const struct path *path, u32 mask,
-  */
- static int common_perm_cond(const char *op, const struct path *path, u32 mask)
++	struct user_namespace *user_ns;
+ 	struct path path;
+ 	struct inode *inode;
+ 	int res;
+@@ -441,7 +442,8 @@ static long do_faccessat(int dfd, const char __user *filename, int mode, int fla
+ 			goto out_path_release;
+ 	}
+ 
+-	res = inode_permission(&init_user_ns, inode, mode | MAY_ACCESS);
++	user_ns = mnt_user_ns(path.mnt);
++	res = inode_permission(user_ns, inode, mode | MAY_ACCESS);
+ 	/* SuS v2 requires we report a read only fs too */
+ 	if (res || !(mode & S_IWOTH) || special_file(inode->i_mode))
+ 		goto out_path_release;
+@@ -489,6 +491,7 @@ SYSCALL_DEFINE2(access, const char __user *, filename, int, mode)
+ 
+ SYSCALL_DEFINE1(chdir, const char __user *, filename)
  {
--	struct path_cond cond = { d_backing_inode(path->dentry)->i_uid,
-+	struct user_namespace *user_ns = mnt_user_ns(path->mnt);
-+	struct path_cond cond = { i_uid_into_mnt(user_ns, d_backing_inode(path->dentry)),
- 				  d_backing_inode(path->dentry)->i_mode
- 	};
++	struct user_namespace *user_ns;
+ 	struct path path;
+ 	int error;
+ 	unsigned int lookup_flags = LOOKUP_FOLLOW | LOOKUP_DIRECTORY;
+@@ -497,7 +500,8 @@ SYSCALL_DEFINE1(chdir, const char __user *, filename)
+ 	if (error)
+ 		goto out;
  
-@@ -266,12 +267,13 @@ static int common_perm_rm(const char *op, const struct path *dir,
- 			  struct dentry *dentry, u32 mask)
+-	error = inode_permission(&init_user_ns, path.dentry->d_inode, MAY_EXEC | MAY_CHDIR);
++	user_ns = mnt_user_ns(path.mnt);
++	error = inode_permission(user_ns, path.dentry->d_inode, MAY_EXEC | MAY_CHDIR);
+ 	if (error)
+ 		goto dput_and_out;
+ 
+@@ -515,6 +519,7 @@ SYSCALL_DEFINE1(chdir, const char __user *, filename)
+ 
+ SYSCALL_DEFINE1(fchdir, unsigned int, fd)
  {
- 	struct inode *inode = d_backing_inode(dentry);
-+	struct user_namespace *user_ns = mnt_user_ns(dir->mnt);
- 	struct path_cond cond = { };
++	struct user_namespace *user_ns;
+ 	struct fd f = fdget_raw(fd);
+ 	int error;
  
- 	if (!inode || !path_mediated_fs(dentry))
- 		return 0;
+@@ -526,7 +531,8 @@ SYSCALL_DEFINE1(fchdir, unsigned int, fd)
+ 	if (!d_can_lookup(f.file->f_path.dentry))
+ 		goto out_putf;
  
--	cond.uid = inode->i_uid;
-+	cond.uid = i_uid_into_mnt(user_ns, inode);
- 	cond.mode = inode->i_mode;
+-	error = inode_permission(&init_user_ns, file_inode(f.file), MAY_EXEC | MAY_CHDIR);
++	user_ns = mnt_user_ns(f.file->f_path.mnt);
++	error = inode_permission(user_ns, file_inode(f.file), MAY_EXEC | MAY_CHDIR);
+ 	if (!error)
+ 		set_fs_pwd(current->fs, &f.file->f_path);
+ out_putf:
+@@ -537,6 +543,7 @@ SYSCALL_DEFINE1(fchdir, unsigned int, fd)
  
- 	return common_perm_dir_dentry(op, dir, dentry, mask, &cond);
-@@ -361,11 +363,12 @@ static int apparmor_path_rename(const struct path *old_dir, struct dentry *old_d
+ SYSCALL_DEFINE1(chroot, const char __user *, filename)
+ {
++	struct user_namespace *user_ns;
+ 	struct path path;
+ 	int error;
+ 	unsigned int lookup_flags = LOOKUP_FOLLOW | LOOKUP_DIRECTORY;
+@@ -545,7 +552,8 @@ SYSCALL_DEFINE1(chroot, const char __user *, filename)
+ 	if (error)
+ 		goto out;
  
- 	label = begin_current_label_crit_section();
- 	if (!unconfined(label)) {
-+		struct user_namespace *user_ns = mnt_user_ns(old_dir->mnt);
- 		struct path old_path = { .mnt = old_dir->mnt,
- 					 .dentry = old_dentry };
- 		struct path new_path = { .mnt = new_dir->mnt,
- 					 .dentry = new_dentry };
--		struct path_cond cond = { d_backing_inode(old_dentry)->i_uid,
-+		struct path_cond cond = { i_uid_into_mnt(user_ns, d_backing_inode(old_dentry)),
- 					  d_backing_inode(old_dentry)->i_mode
- 		};
+-	error = inode_permission(&init_user_ns, path.dentry->d_inode, MAY_EXEC | MAY_CHDIR);
++	user_ns = mnt_user_ns(path.mnt);
++	error = inode_permission(user_ns, path.dentry->d_inode, MAY_EXEC | MAY_CHDIR);
+ 	if (error)
+ 		goto dput_and_out;
  
-@@ -420,8 +423,9 @@ static int apparmor_file_open(struct file *file)
+@@ -570,6 +578,7 @@ SYSCALL_DEFINE1(chroot, const char __user *, filename)
  
- 	label = aa_get_newest_cred_label(file->f_cred);
- 	if (!unconfined(label)) {
-+		struct user_namespace *user_ns = mnt_user_ns(file->f_path.mnt);
- 		struct inode *inode = file_inode(file);
--		struct path_cond cond = { inode->i_uid, inode->i_mode };
-+		struct path_cond cond = { i_uid_into_mnt(user_ns, inode), inode->i_mode };
+ int chmod_common(const struct path *path, umode_t mode)
+ {
++	struct user_namespace *user_ns;
+ 	struct inode *inode = path->dentry->d_inode;
+ 	struct inode *delegated_inode = NULL;
+ 	struct iattr newattrs;
+@@ -585,7 +594,8 @@ int chmod_common(const struct path *path, umode_t mode)
+ 		goto out_unlock;
+ 	newattrs.ia_mode = (mode & S_IALLUGO) | (inode->i_mode & ~S_IALLUGO);
+ 	newattrs.ia_valid = ATTR_MODE | ATTR_CTIME;
+-	error = notify_change(&init_user_ns, path->dentry, &newattrs, &delegated_inode);
++	user_ns = mnt_user_ns(path->mnt);
++	error = notify_change(user_ns, path->dentry, &newattrs, &delegated_inode);
+ out_unlock:
+ 	inode_unlock(inode);
+ 	if (delegated_inode) {
+@@ -646,6 +656,7 @@ SYSCALL_DEFINE2(chmod, const char __user *, filename, umode_t, mode)
  
- 		error = aa_path_perm(OP_OPEN, label, &file->f_path, 0,
- 				     aa_map_file_to_perms(file), &cond);
+ int chown_common(const struct path *path, uid_t user, gid_t group)
+ {
++	struct user_namespace *user_ns;
+ 	struct inode *inode = path->dentry->d_inode;
+ 	struct inode *delegated_inode = NULL;
+ 	int error;
+@@ -656,6 +667,12 @@ int chown_common(const struct path *path, uid_t user, gid_t group)
+ 	uid = make_kuid(current_user_ns(), user);
+ 	gid = make_kgid(current_user_ns(), group);
+ 
++	user_ns = mnt_user_ns(path->mnt);
++	if (mnt_idmapped(path->mnt)) {
++		uid = kuid_from_mnt(user_ns, uid);
++		gid = kgid_from_mnt(user_ns, gid);
++	}
++
+ retry_deleg:
+ 	newattrs.ia_valid =  ATTR_CTIME;
+ 	if (user != (uid_t) -1) {
+@@ -676,7 +693,7 @@ int chown_common(const struct path *path, uid_t user, gid_t group)
+ 	inode_lock(inode);
+ 	error = security_path_chown(path, uid, gid);
+ 	if (!error)
+-		error = notify_change(&init_user_ns, path->dentry, &newattrs, &delegated_inode);
++		error = notify_change(user_ns, path->dentry, &newattrs, &delegated_inode);
+ 	inode_unlock(inode);
+ 	if (delegated_inode) {
+ 		error = break_deleg_wait(&delegated_inode);
+@@ -1133,7 +1150,7 @@ struct file *filp_open(const char *filename, int flags, umode_t mode)
+ {
+ 	struct filename *name = getname_kernel(filename);
+ 	struct file *file = ERR_CAST(name);
+-	
++
+ 	if (!IS_ERR(name)) {
+ 		file = file_open_name(name, flags, mode);
+ 		putname(name);
 -- 
 2.29.2
 
