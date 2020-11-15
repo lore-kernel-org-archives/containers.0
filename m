@@ -4,63 +4,63 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D0A1DC6369E
-	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:47:59 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 23312C2D0E4
+	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:48:27 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 7F1CA24182
-	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:47:59 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7F1CA24182
+	by mail.kernel.org (Postfix) with ESMTPS id C44DD24137
+	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:48:26 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C44DD24137
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 5C531871B5;
-	Sun, 15 Nov 2020 10:47:59 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 8D9308689E;
+	Sun, 15 Nov 2020 10:48:26 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from whitealder.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id oaSMBWIUojwR; Sun, 15 Nov 2020 10:48:24 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by whitealder.osuosl.org (Postfix) with ESMTP id BB216868A5;
+	Sun, 15 Nov 2020 10:48:24 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id A8F96C0891;
+	Sun, 15 Nov 2020 10:48:24 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id E2BD3C07FF
+ for <containers@lists.linux-foundation.org>;
+ Sun, 15 Nov 2020 10:48:22 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by hemlock.osuosl.org (Postfix) with ESMTP id D754C871B6
+ for <containers@lists.linux-foundation.org>;
+ Sun, 15 Nov 2020 10:48:22 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id byxzhv2IgkVZ; Sun, 15 Nov 2020 10:47:57 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 8F453871B6;
-	Sun, 15 Nov 2020 10:47:57 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 7C7B0C0891;
-	Sun, 15 Nov 2020 10:47:57 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id D8AD3C07FF
- for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:47:55 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id C6C5485F4D
- for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:47:55 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id y0S0BAF-NYUC
+ with ESMTP id m-1FKlTYEpaj
  for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:47:55 +0000 (UTC)
+ Sun, 15 Nov 2020 10:48:22 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id 2251F85EC2
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 4B549871A0
  for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:47:55 +0000 (UTC)
+ Sun, 15 Nov 2020 10:48:22 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1keFRS-0000Kt-Ok; Sun, 15 Nov 2020 10:39:31 +0000
+ id 1keFRI-0000Kt-US; Sun, 15 Nov 2020 10:39:21 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v2 25/39] init: handle idmapped mounts
-Date: Sun, 15 Nov 2020 11:37:04 +0100
-Message-Id: <20201115103718.298186-26-christian.brauner@ubuntu.com>
+Subject: [PATCH v2 22/39] utimes: handle idmapped mounts
+Date: Sun, 15 Nov 2020 11:37:01 +0100
+Message-Id: <20201115103718.298186-23-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201115103718.298186-1-christian.brauner@ubuntu.com>
 References: <20201115103718.298186-1-christian.brauner@ubuntu.com>
@@ -102,8 +102,8 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Enable the init helpers to handle idmapped mounts by passing down the mount's
-user namespace.
+Enable the vfs_utimes() helper to handle idmapped mounts by passing down
+the mount's user namespace.
 
 Cc: Christoph Hellwig <hch@lst.de>
 Cc: David Howells <dhowells@redhat.com>
@@ -112,51 +112,34 @@ Cc: linux-fsdevel@vger.kernel.org
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
 /* v2 */
-patch introduced
+unchanged
 ---
- fs/init.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ fs/utimes.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/fs/init.c b/fs/init.c
-index 76f493600030..334e4c9c07eb 100644
---- a/fs/init.c
-+++ b/fs/init.c
-@@ -49,7 +49,7 @@ int __init init_chdir(const char *filename)
- 	error = kern_path(filename, LOOKUP_FOLLOW | LOOKUP_DIRECTORY, &path);
- 	if (error)
- 		return error;
--	error = inode_permission(&init_user_ns, path.dentry->d_inode,
-+	error = inode_permission(mnt_user_ns(path.mnt), path.dentry->d_inode,
- 				 MAY_EXEC | MAY_CHDIR);
- 	if (!error)
- 		set_fs_pwd(current->fs, &path);
-@@ -65,7 +65,7 @@ int __init init_chroot(const char *filename)
- 	error = kern_path(filename, LOOKUP_FOLLOW | LOOKUP_DIRECTORY, &path);
- 	if (error)
- 		return error;
--	error = inode_permission(&init_user_ns, path.dentry->d_inode,
-+	error = inode_permission(mnt_user_ns(path.mnt), path.dentry->d_inode,
- 				 MAY_EXEC | MAY_CHDIR);
- 	if (error)
- 		goto dput_and_out;
-@@ -120,7 +120,7 @@ int __init init_eaccess(const char *filename)
- 	error = kern_path(filename, LOOKUP_FOLLOW, &path);
- 	if (error)
- 		return error;
--	error = inode_permission(&init_user_ns, d_inode(path.dentry),
-+	error = inode_permission(mnt_user_ns(path.mnt), d_inode(path.dentry),
- 				 MAY_ACCESS);
- 	path_put(&path);
- 	return error;
-@@ -190,7 +190,7 @@ int __init init_link(const char *oldname, const char *newname)
- 	error = security_path_link(old_path.dentry, &new_path, new_dentry);
- 	if (error)
- 		goto out_dput;
--	error = vfs_link(old_path.dentry, &init_user_ns, 
-+	error = vfs_link(old_path.dentry, &init_user_ns,
- 			 new_path.dentry->d_inode, new_dentry, NULL);
- out_dput:
- 	done_path_create(&new_path, new_dentry);
+diff --git a/fs/utimes.c b/fs/utimes.c
+index 1a4130bee157..ead17d623aaa 100644
+--- a/fs/utimes.c
++++ b/fs/utimes.c
+@@ -22,6 +22,7 @@ int vfs_utimes(const struct path *path, struct timespec64 *times)
+ 	struct iattr newattrs;
+ 	struct inode *inode = path->dentry->d_inode;
+ 	struct inode *delegated_inode = NULL;
++	struct user_namespace *user_ns;
+ 
+ 	if (times) {
+ 		if (!nsec_valid(times[0].tv_nsec) ||
+@@ -61,8 +62,9 @@ int vfs_utimes(const struct path *path, struct timespec64 *times)
+ 		newattrs.ia_valid |= ATTR_TOUCH;
+ 	}
+ retry_deleg:
++	user_ns = mnt_user_ns(path->mnt);
+ 	inode_lock(inode);
+-	error = notify_change(&init_user_ns, path->dentry, &newattrs, &delegated_inode);
++	error = notify_change(user_ns, path->dentry, &newattrs, &delegated_inode);
+ 	inode_unlock(inode);
+ 	if (delegated_inode) {
+ 		error = break_deleg_wait(&delegated_inode);
 -- 
 2.29.2
 
