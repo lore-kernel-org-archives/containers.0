@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 19C38C2D0E4
-	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:50:43 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1106AC55ABD
+	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:50:47 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id CAB0C23A32
-	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:50:42 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org CAB0C23A32
+	by mail.kernel.org (Postfix) with ESMTPS id BFF5C23A32
+	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:50:46 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BFF5C23A32
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 79535871B5;
-	Sun, 15 Nov 2020 10:50:42 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 82AA786AF9;
+	Sun, 15 Nov 2020 10:50:46 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 89dd1VXww6Lc; Sun, 15 Nov 2020 10:50:41 +0000 (UTC)
+	with ESMTP id AiW6DAybVuXF; Sun, 15 Nov 2020 10:50:46 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id D524E87164;
-	Sun, 15 Nov 2020 10:50:41 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 0F46786A8E;
+	Sun, 15 Nov 2020 10:50:46 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id C8EB8C0891;
-	Sun, 15 Nov 2020 10:50:41 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 12A4DC07FF
+	by lists.linuxfoundation.org (Postfix) with ESMTP id E46EDC0891;
+	Sun, 15 Nov 2020 10:50:45 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 6384AC07FF
  for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:50:41 +0000 (UTC)
+ Sun, 15 Nov 2020 10:50:45 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id 0897B860E6
+ by whitealder.osuosl.org (Postfix) with ESMTP id 4FBD286AF9
  for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:50:41 +0000 (UTC)
+ Sun, 15 Nov 2020 10:50:45 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id gl5LuEtWUbK7
+ with ESMTP id ZwnIs41RjC1m
  for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:50:40 +0000 (UTC)
+ Sun, 15 Nov 2020 10:50:44 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id B0E2E85F4D
+ by whitealder.osuosl.org (Postfix) with ESMTPS id AC94086A8E
  for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:50:39 +0000 (UTC)
+ Sun, 15 Nov 2020 10:50:44 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1keFRF-0000Kt-Ej; Sun, 15 Nov 2020 10:39:17 +0000
+ id 1keFRy-0000Kt-8T; Sun, 15 Nov 2020 10:40:02 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v2 21/39] af_unix: handle idmapped mounts
-Date: Sun, 15 Nov 2020 11:37:00 +0100
-Message-Id: <20201115103718.298186-22-christian.brauner@ubuntu.com>
+Subject: [PATCH v2 35/39] ecryptfs: do not mount on top of idmapped mounts
+Date: Sun, 15 Nov 2020 11:37:14 +0100
+Message-Id: <20201115103718.298186-36-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201115103718.298186-1-christian.brauner@ubuntu.com>
 References: <20201115103718.298186-1-christian.brauner@ubuntu.com>
@@ -102,10 +102,8 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-When binding a non-abstract AF_UNIX socket it will gain a representation in the
-filesystem. Enable the socket infrastructure to handle idmapped mounts by
-passing down the user namespace of the mount the socket will be created
-from. Non-idmapped mounts will not see any altered behavior.
+Prevent ecryptfs from being mounted on top of idmapped mounts until we have
+ported it to handle this case and added proper testing for it.
 
 Cc: Christoph Hellwig <hch@lst.de>
 Cc: David Howells <dhowells@redhat.com>
@@ -114,24 +112,28 @@ Cc: linux-fsdevel@vger.kernel.org
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
 /* v2 */
-unchanged
+patch introduced
 ---
- net/unix/af_unix.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/ecryptfs/main.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/net/unix/af_unix.c b/net/unix/af_unix.c
-index b4987805e5e5..4be33240e9cc 100644
---- a/net/unix/af_unix.c
-+++ b/net/unix/af_unix.c
-@@ -996,7 +996,7 @@ static int unix_mknod(const char *sun_path, umode_t mode, struct path *res)
- 	 */
- 	err = security_path_mknod(&path, dentry, mode, 0);
- 	if (!err) {
--		err = vfs_mknod(&init_user_ns, d_inode(path.dentry), dentry, mode, 0);
-+		err = vfs_mknod(mnt_user_ns(path.mnt), d_inode(path.dentry), dentry, mode, 0);
- 		if (!err) {
- 			res->mnt = mntget(path.mnt);
- 			res->dentry = dget(dentry);
+diff --git a/fs/ecryptfs/main.c b/fs/ecryptfs/main.c
+index e63259fdef28..c739f42157db 100644
+--- a/fs/ecryptfs/main.c
++++ b/fs/ecryptfs/main.c
+@@ -531,6 +531,12 @@ static struct dentry *ecryptfs_mount(struct file_system_type *fs_type, int flags
+ 		goto out_free;
+ 	}
+ 
++	if (mnt_idmapped(path.mnt)) {
++		rc = -EINVAL;
++		printk(KERN_ERR "Mounting on idmapped mounts currently disallowed\n");
++		goto out_free;
++	}
++
+ 	if (check_ruid && !uid_eq(d_inode(path.dentry)->i_uid, current_uid())) {
+ 		rc = -EPERM;
+ 		printk(KERN_ERR "Mount of device (uid: %d) not owned by "
 -- 
 2.29.2
 
