@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4E358C2D0E4
-	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:49:37 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E7CCC2D0E4
+	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:50:34 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 07FBD23A32
-	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:49:37 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 07FBD23A32
+	by mail.kernel.org (Postfix) with ESMTPS id 5688923A32
+	for <containers@archiver.kernel.org>; Sun, 15 Nov 2020 10:50:34 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5688923A32
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id DEFB7871B5;
-	Sun, 15 Nov 2020 10:49:36 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id ZJh5a-nbdmSX; Sun, 15 Nov 2020 10:49:36 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 640F487164;
-	Sun, 15 Nov 2020 10:49:36 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 50BF6C0891;
-	Sun, 15 Nov 2020 10:49:36 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id E7D06C07FF
- for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:49:34 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id CB1792037C
- for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:49:34 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id EA60B20015;
+	Sun, 15 Nov 2020 10:50:33 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
- by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id z6IxB02XqaxQ
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id NsbgFTUmeOcO; Sun, 15 Nov 2020 10:50:32 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by silver.osuosl.org (Postfix) with ESMTP id B47092037C;
+	Sun, 15 Nov 2020 10:50:31 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id AE543C0891;
+	Sun, 15 Nov 2020 10:50:31 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 79ADEC07FF
  for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:49:33 +0000 (UTC)
+ Sun, 15 Nov 2020 10:50:30 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by whitealder.osuosl.org (Postfix) with ESMTP id 7C77286117
+ for <containers@lists.linux-foundation.org>;
+ Sun, 15 Nov 2020 10:50:28 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from whitealder.osuosl.org ([127.0.0.1])
+ by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id u-k8pjd1PhK9
+ for <containers@lists.linux-foundation.org>;
+ Sun, 15 Nov 2020 10:50:27 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by silver.osuosl.org (Postfix) with ESMTPS id BB2842010C
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 31E9B86055
  for <containers@lists.linux-foundation.org>;
- Sun, 15 Nov 2020 10:49:33 +0000 (UTC)
+ Sun, 15 Nov 2020 10:50:13 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1keFRW-0000Kt-5S; Sun, 15 Nov 2020 10:39:34 +0000
+ id 1keFRZ-0000Kt-Ci; Sun, 15 Nov 2020 10:39:37 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v2 26/39] ioctl: handle idmapped mounts
-Date: Sun, 15 Nov 2020 11:37:05 +0100
-Message-Id: <20201115103718.298186-27-christian.brauner@ubuntu.com>
+Subject: [PATCH v2 27/39] would_dump: handle idmapped mounts
+Date: Sun, 15 Nov 2020 11:37:06 +0100
+Message-Id: <20201115103718.298186-28-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201115103718.298186-1-christian.brauner@ubuntu.com>
 References: <20201115103718.298186-1-christian.brauner@ubuntu.com>
@@ -102,8 +102,9 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Enable generic ioctls to handle idmapped mounts by passing down the mount's
-user namespace.
+When determining whether or not to create a coredump the vfs will verify that
+the caller is privileged over the inode. Make the would_dump() helper handle
+idmapped mounts by passing down the mount's user namespace of the exec file.
 
 Cc: Christoph Hellwig <hch@lst.de>
 Cc: David Howells <dhowells@redhat.com>
@@ -112,48 +113,33 @@ Cc: linux-fsdevel@vger.kernel.org
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
 /* v2 */
-patch introduced
+unchanged
 ---
- fs/remap_range.c   | 7 +++++--
- fs/verity/enable.c | 2 +-
- 2 files changed, 6 insertions(+), 3 deletions(-)
+ fs/exec.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/fs/remap_range.c b/fs/remap_range.c
-index 9e5b27641756..fe7f07228462 100644
---- a/fs/remap_range.c
-+++ b/fs/remap_range.c
-@@ -432,13 +432,16 @@ EXPORT_SYMBOL(vfs_clone_file_range);
- /* Check whether we are allowed to dedupe the destination file */
- static bool allow_file_dedupe(struct file *file)
+diff --git a/fs/exec.c b/fs/exec.c
+index b499a1a03934..10c06fdf78a7 100644
+--- a/fs/exec.c
++++ b/fs/exec.c
+@@ -1391,14 +1391,15 @@ EXPORT_SYMBOL(begin_new_exec);
+ void would_dump(struct linux_binprm *bprm, struct file *file)
  {
-+	struct user_namespace *user_ns = mnt_user_ns(file->f_path.mnt);
-+	struct inode *inode = file_inode(file);
-+
- 	if (capable(CAP_SYS_ADMIN))
- 		return true;
- 	if (file->f_mode & FMODE_WRITE)
- 		return true;
--	if (uid_eq(current_fsuid(), file_inode(file)->i_uid))
-+	if (uid_eq(current_fsuid(), i_uid_into_mnt(user_ns, inode)))
- 		return true;
--	if (!inode_permission(&init_user_ns, file_inode(file), MAY_WRITE))
-+	if (!inode_permission(user_ns, inode, MAY_WRITE))
- 		return true;
- 	return false;
- }
-diff --git a/fs/verity/enable.c b/fs/verity/enable.c
-index 7449ef0050f4..8b9ea0f0850f 100644
---- a/fs/verity/enable.c
-+++ b/fs/verity/enable.c
-@@ -369,7 +369,7 @@ int fsverity_ioctl_enable(struct file *filp, const void __user *uarg)
- 	 * has verity enabled, and to stabilize the data being hashed.
- 	 */
+ 	struct inode *inode = file_inode(file);
+-	if (inode_permission(&init_user_ns, inode, MAY_READ) < 0) {
++	struct user_namespace *ns = mnt_user_ns(file->f_path.mnt);
++	if (inode_permission(ns, inode, MAY_READ) < 0) {
+ 		struct user_namespace *old, *user_ns;
+ 		bprm->interp_flags |= BINPRM_FLAGS_ENFORCE_NONDUMP;
  
--	err = inode_permission(&init_user_ns, inode, MAY_WRITE);
-+	err = inode_permission(mnt_user_ns(filp->f_path.mnt), inode, MAY_WRITE);
- 	if (err)
- 		return err;
+ 		/* Ensure mm->user_ns contains the executable */
+ 		user_ns = old = bprm->mm->user_ns;
+ 		while ((user_ns != &init_user_ns) &&
+-		       !privileged_wrt_inode_uidgid(user_ns, &init_user_ns, inode))
++		       !privileged_wrt_inode_uidgid(user_ns, ns, inode))
+ 			user_ns = user_ns->parent;
  
+ 		if (old != user_ns) {
 -- 
 2.29.2
 
