@@ -2,93 +2,128 @@ Return-Path: <SRS0=EloL=E5=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 44CC5C2D0E4
-	for <containers@archiver.kernel.org>; Mon, 23 Nov 2020 07:46:25 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 583F9C2D0E4
+	for <containers@archiver.kernel.org>; Mon, 23 Nov 2020 15:47:36 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id BE8682073C
-	for <containers@archiver.kernel.org>; Mon, 23 Nov 2020 07:46:24 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BE8682073C
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
+	by mail.kernel.org (Postfix) with ESMTPS id B8DD4208FE
+	for <containers@archiver.kernel.org>; Mon, 23 Nov 2020 15:47:35 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B8DD4208FE
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=tycho.pizza
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 47A1885FB4;
-	Mon, 23 Nov 2020 07:46:24 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id pBDmGsRuLFDW; Mon, 23 Nov 2020 07:46:23 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 73BAF85FAE;
-	Mon, 23 Nov 2020 07:46:23 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 59B09C0891;
-	Mon, 23 Nov 2020 07:46:23 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 94CB4C0052
- for <containers@lists.linux-foundation.org>;
- Mon, 23 Nov 2020 07:46:22 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 7DE908667B
- for <containers@lists.linux-foundation.org>;
- Mon, 23 Nov 2020 07:46:22 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 4A14B8707F;
+	Mon, 23 Nov 2020 15:47:35 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id yQQNBJE21VjX; Mon, 23 Nov 2020 15:47:34 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by hemlock.osuosl.org (Postfix) with ESMTP id B305E87028;
+	Mon, 23 Nov 2020 15:47:34 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id A033BC0891;
+	Mon, 23 Nov 2020 15:47:34 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 4B27CC0052
+ for <containers@lists.linux-foundation.org>;
+ Mon, 23 Nov 2020 15:47:33 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by whitealder.osuosl.org (Postfix) with ESMTP id 3988B8672A
+ for <containers@lists.linux-foundation.org>;
+ Mon, 23 Nov 2020 15:47:33 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id EKngYWdSELoU
+ with ESMTP id tzccYl2E292c
  for <containers@lists.linux-foundation.org>;
- Mon, 23 Nov 2020 07:46:21 +0000 (UTC)
-X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from youngberry.canonical.com (youngberry.canonical.com
- [91.189.89.112])
- by hemlock.osuosl.org (Postfix) with ESMTPS id 5DB5B8653F
+ Mon, 23 Nov 2020 15:47:32 +0000 (UTC)
+X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
+Received: from new4-smtp.messagingengine.com (new4-smtp.messagingengine.com
+ [66.111.4.230])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 9BDC386726
  for <containers@lists.linux-foundation.org>;
- Mon, 23 Nov 2020 07:46:21 +0000 (UTC)
-Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
- helo=wittgenstein) by youngberry.canonical.com with esmtpsa
- (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
- (envelope-from <christian.brauner@ubuntu.com>)
- id 1kh6X5-0007Jl-9M; Mon, 23 Nov 2020 07:45:07 +0000
-Date: Mon, 23 Nov 2020 08:45:05 +0100
-From: Christian Brauner <christian.brauner@ubuntu.com>
-To: Paul Moore <paul@paul-moore.com>
-Subject: Re: [PATCH v2 14/39] commoncap: handle idmapped mounts
-Message-ID: <20201123074505.ds5hpqo5kgyvjksb@wittgenstein>
+ Mon, 23 Nov 2020 15:47:32 +0000 (UTC)
+Received: from compute6.internal (compute6.nyi.internal [10.202.2.46])
+ by mailnew.nyi.internal (Postfix) with ESMTP id D00855803A4;
+ Mon, 23 Nov 2020 10:47:30 -0500 (EST)
+Received: from mailfrontend2 ([10.202.2.163])
+ by compute6.internal (MEProxy); Mon, 23 Nov 2020 10:47:30 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tycho.pizza; h=
+ date:from:to:cc:subject:message-id:references:mime-version
+ :content-type:in-reply-to; s=fm1; bh=YCozEjPGEAusuu5kWcPoz4VuSgu
+ BS8YGOeXbic2f3Rk=; b=pvyJJQ7dtuKuZyz5d3i/Y2P3BtpwgiXvwkMU5BeT/T2
+ WF7NIU3puTeGziHc3V8c4P08DDWx0C/mg8YCh+U9Sca9z/JBHq4wxcxz+bm/x/Js
+ ill0yaXVsNoxFGfzUBheTBFxcrVd8m1grxm7s7iqfhMx/pqXZTmktPvPSGUH1K+i
+ VvxsyMeiQnZ801Wg/2mHiLsPZGF/gI01gimS5m/ZBxf0fuByrLF38kRtIG8KpJoC
+ GjM0bMurgM8uw9HPIxfjJfQMxd6piCxFrXhJwKKVnPi4S2MGSK9vrSe50wmN6ozJ
+ wPMGgnj6yqYl5/R8VxfTmCS+UTwBxYo6D54TxCJcS8A==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+ messagingengine.com; h=cc:content-type:date:from:in-reply-to
+ :message-id:mime-version:references:subject:to:x-me-proxy
+ :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; bh=YCozEj
+ PGEAusuu5kWcPoz4VuSguBS8YGOeXbic2f3Rk=; b=WeTek+Xz2c2hE5akKms3c+
+ JeQuMni5IamwAYJBT/m7URxRjdbl3G1N+579hB8TJU7hVr8i4qroe26PJ3If/+wN
+ Qy/X8fRJQXhvKWoGWjNKkJOYeaW/AZ0EpTpZIyp6yvUY5A3Rrv+LpcWilbxoFfyJ
+ OP2LRptG+oKP0efDk+2PvtUyoy9XYB07mY8m0aI7DiEIgovl7mAXAN3Bf0YNAFRl
+ jxkRqX5pKm7uJ55WMJLJWPae4lZpqOCzd0ZA9zA5cLRvER2UcwplWM5qIoZCOWR5
+ wc6xoAs15KiJGximzPI2SWI4DgpHPxy+EhzRGjAX7GrlMgOFuCnOTi8X3+CgTwPw
+ ==
+X-ME-Sender: <xms:kNm7X-6VybmnIE7HxBF78RbqSph39ZGAjm52Jziqp6YhvS6SutsV3g>
+ <xme:kNm7X37G5hrBHr_ofSXlbfBd7NIArMQy5vyzjbdcfCZMiQhtsghJXDiLqbJDjXPbG
+ 4pkUDJOybMd7fnmfxg>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedujedrudegiedgkedvucetufdoteggodetrfdotf
+ fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
+ uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
+ cujfgurhepfffhvffukfhfgggtuggjsehttdertddttddvnecuhfhrohhmpefvhigthhho
+ ucetnhguvghrshgvnhcuoehthigthhhosehthigthhhordhpihiiiigrqeenucggtffrrg
+ htthgvrhhnpeegkeefjeegkedtjefgfeduleekueetjeeghffhuefgffefleehgeeifedv
+ gfethfenucfkphepuddvkedruddtjedrvdeguddrudejgeenucevlhhushhtvghrufhiii
+ gvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpehthigthhhosehthigthhhordhpihii
+ iigr
+X-ME-Proxy: <xmx:kNm7X9cPIAKRhCP04Kj8q43f_nFo2EYWIGVCCaxjvTW9N8SJ8w8jVQ>
+ <xmx:kNm7X7JU-QaZeelrk4qvOdP93F1LE0ucN_vNnd5Copq4DsgabUHEbQ>
+ <xmx:kNm7XyLAnKZzuImxS6me0molLz2ayvhe0zjr3tUiP9xn0aaEnjdKTw>
+ <xmx:ktm7X-pza5kZuwtkUTGD6q3OiEh8E1SHpU53XCgKODHJj5cEjL4fZA>
+Received: from cisco (unknown [128.107.241.174])
+ by mail.messagingengine.com (Postfix) with ESMTPA id C041D3064ABE;
+ Mon, 23 Nov 2020 10:47:21 -0500 (EST)
+Date: Mon, 23 Nov 2020 10:47:19 -0500
+From: Tycho Andersen <tycho@tycho.pizza>
+To: Christian Brauner <christian.brauner@ubuntu.com>
+Subject: Re: [PATCH v2 07/39] mount: attach mappings to mounts
+Message-ID: <20201123154719.GD4025434@cisco>
 References: <20201115103718.298186-1-christian.brauner@ubuntu.com>
- <20201115103718.298186-15-christian.brauner@ubuntu.com>
- <CAHC9VhRqk1WMXyHTsrLcJnpxMPgJs_CxeG2uCaaBGgHqK_jj=g@mail.gmail.com>
+ <20201115103718.298186-8-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <CAHC9VhRqk1WMXyHTsrLcJnpxMPgJs_CxeG2uCaaBGgHqK_jj=g@mail.gmail.com>
-Cc: Lennart Poettering <lennart@poettering.net>,
- Mimi Zohar <zohar@linux.ibm.com>, David Howells <dhowells@redhat.com>,
- Andreas Dilger <adilger.kernel@dilger.ca>,
- containers@lists.linux-foundation.org, Christoph Hellwig <hch@lst.de>,
- Tycho Andersen <tycho@tycho.ws>, Jonathan Corbet <corbet@lwn.net>,
- smbarber@chromium.org, Christoph Hellwig <hch@infradead.org>,
- linux-ext4@vger.kernel.org, Mrunal Patel <mpatel@redhat.com>,
- Kees Cook <keescook@chromium.org>, Arnd Bergmann <arnd@arndb.de>,
- Jann Horn <jannh@google.com>, selinux@vger.kernel.org,
- Josh Triplett <josh@joshtriplett.org>, linux-fsdevel@vger.kernel.org,
- Aleksa Sarai <cyphar@cyphar.com>, Alexander Viro <viro@zeniv.linux.org.uk>,
- Andy Lutomirski <luto@kernel.org>,
- OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
- Geoffrey Thomas <geofft@ldpreload.com>,
+In-Reply-To: <20201115103718.298186-8-christian.brauner@ubuntu.com>
+Cc: Andy Lutomirski <luto@kernel.org>, Mimi Zohar <zohar@linux.ibm.com>,
  James Bottomley <James.Bottomley@hansenpartnership.com>,
+ Andreas Dilger <adilger.kernel@dilger.ca>, Christoph Hellwig <hch@lst.de>,
+ Jonathan Corbet <corbet@lwn.net>, smbarber@chromium.org,
+ Christoph Hellwig <hch@infradead.org>,
+ Casey Schaufler <casey@schaufler-ca.com>, linux-ext4@vger.kernel.org,
+ Mrunal Patel <mpatel@redhat.com>, Kees Cook <keescook@chromium.org>,
+ Arnd Bergmann <arnd@arndb.de>, Jann Horn <jannh@google.com>,
+ selinux@vger.kernel.org, Josh Triplett <josh@joshtriplett.org>,
+ Seth Forshee <seth.forshee@canonical.com>, Aleksa Sarai <cyphar@cyphar.com>,
+ Alexander Viro <viro@zeniv.linux.org.uk>,
+ Lennart Poettering <lennart@poettering.net>,
+ OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
+ Geoffrey Thomas <geofft@ldpreload.com>, David Howells <dhowells@redhat.com>,
  John Johansen <john.johansen@canonical.com>, Theodore Tso <tytso@mit.edu>,
- Seth Forshee <seth.forshee@canonical.com>,
  Dmitry Kasatkin <dmitry.kasatkin@gmail.com>,
- Stephen Smalley <stephen.smalley.work@gmail.com>,
- linux-security-module@vger.kernel.org, linux-audit@redhat.com,
- "Eric W. Biederman" <ebiederm@xmission.com>, linux-api@vger.kernel.org,
- Casey Schaufler <casey@schaufler-ca.com>, Alban Crequy <alban@kinvolk.io>,
- linux-integrity@vger.kernel.org, Todd Kjos <tkjos@google.com>
+ containers@lists.linux-foundation.org, linux-security-module@vger.kernel.org,
+ linux-audit@redhat.com, "Eric W. Biederman" <ebiederm@xmission.com>,
+ linux-api@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+ Alban Crequy <alban@kinvolk.io>, linux-integrity@vger.kernel.org,
+ Stephen Smalley <stephen.smalley.work@gmail.com>, Todd Kjos <tkjos@google.com>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -105,87 +140,26 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Sun, Nov 22, 2020 at 04:18:55PM -0500, Paul Moore wrote:
-> On Sun, Nov 15, 2020 at 5:39 AM Christian Brauner
-> <christian.brauner@ubuntu.com> wrote:
-> > When interacting with user namespace and non-user namespace aware
-> > filesystem capabilities the vfs will perform various security checks to
-> > determine whether or not the filesystem capabilities can be used by the
-> > caller (e.g. during exec), or even whether they need to be removed. The
-> > main infrastructure for this resides in the capability codepaths but they
-> > are called through the LSM security infrastructure even though they are not
-> > technically an LSM or optional. This extends the existing security hooks
-> > security_inode_removexattr(), security_inode_killpriv(),
-> > security_inode_getsecurity() to pass down the mount's user namespace and
-> > makes them aware of idmapped mounts.
-> > In order to actually get filesystem capabilities from disk the capability
-> > infrastructure exposes the get_vfs_caps_from_disk() helper. For user
-> > namespace aware filesystem capabilities a root uid is stored alongside the
-> > capabilities.
-> > In order to determine whether the caller can make use of the filesystem
-> > capability or whether it needs to be ignored it is translated according to
-> > the superblock's user namespace. If it can be translated to uid 0 according
-> > to that id mapping the caller can use the filesystem capabilities stored on
-> > disk. If we are accessing the inode that holds the filesystem capabilities
-> > through an idmapped mount we need to map the root uid according to the
-> > mount's user namespace.
-> > Afterwards the checks are identical to non-idmapped mounts. Reading
-> > filesystem caps from disk enforces that the root uid associated with the
-> > filesystem capability must have a mapping in the superblock's user
-> > namespace and that the caller is either in the same user namespace or is a
-> > descendant of the superblock's user namespace. For filesystems that are
-> > mountable inside user namespace the container can just mount the filesystem
-> > and won't usually need to idmap it. If it does create an idmapped mount it
-> > can mark it with a user namespace it has created and which is therefore a
-> > descendant of the s_user_ns. For filesystems that are not mountable inside
-> > user namespaces the descendant rule is trivially true because the s_user_ns
-> > will be the initial user namespace.
-> >
-> > If the initial user namespace is passed all operations are a nop so
-> > non-idmapped mounts will not see a change in behavior and will also not see
-> > any performance impact.
-> >
-> > Cc: Christoph Hellwig <hch@lst.de>
-> > Cc: David Howells <dhowells@redhat.com>
-> > Cc: Al Viro <viro@zeniv.linux.org.uk>
-> > Cc: linux-fsdevel@vger.kernel.org
-> > Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
-> 
-> ...
-> 
-> > diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-> > index 8dba8f0983b5..ddb9213a3e81 100644
-> > --- a/kernel/auditsc.c
-> > +++ b/kernel/auditsc.c
-> > @@ -1944,7 +1944,7 @@ static inline int audit_copy_fcaps(struct audit_names *name,
-> >         if (!dentry)
-> >                 return 0;
-> >
-> > -       rc = get_vfs_caps_from_disk(dentry, &caps);
-> > +       rc = get_vfs_caps_from_disk(&init_user_ns, dentry, &caps);
-> >         if (rc)
-> >                 return rc;
-> >
-> > @@ -2495,7 +2495,8 @@ int __audit_log_bprm_fcaps(struct linux_binprm *bprm,
-> >         ax->d.next = context->aux;
-> >         context->aux = (void *)ax;
-> >
-> > -       get_vfs_caps_from_disk(bprm->file->f_path.dentry, &vcaps);
-> > +       get_vfs_caps_from_disk(mnt_user_ns(bprm->file->f_path.mnt),
-> > +                              bprm->file->f_path.dentry, &vcaps);
-> 
-> As audit currently records information in the context of the
-> initial/host namespace I'm guessing we don't want the mnt_user_ns()
-> call above; it seems like &init_user_ns would be the right choice
-> (similar to audit_copy_fcaps()), yes?
+On Sun, Nov 15, 2020 at 11:36:46AM +0100, Christian Brauner wrote:
+> +static inline struct user_namespace *mnt_user_ns(const struct vfsmount *mnt)
+> +{
+> +	return mnt->mnt_user_ns;
+> +}
 
-Ok, sounds good. It also makes the patchset simpler.
-Note that I'm currently not on the audit mailing list so this is likely
-not going to show up there.
+I think you might want a READ_ONCE() here. Right now it seems ok, since the
+mnt_user_ns can't change, but if we ever allow it to change (and I see you have
+a idmapped_mounts_wip_v2_allow_to_change_idmapping branch on your public tree
+:D), the pattern of,
 
-(Fwiw, I responded to you in your other mail too.)
+        user_ns = mnt_user_ns(path->mnt);
+        if (mnt_idmapped(path->mnt)) {
+                uid = kuid_from_mnt(user_ns, uid);
+                gid = kgid_from_mnt(user_ns, gid);
+        }
 
-Christian
+could race.
+
+Tycho
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
