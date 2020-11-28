@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0AAABC63798
-	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:53:02 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 40B54C63798
+	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:53:35 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id A112C22240
-	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:53:01 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A112C22240
+	by mail.kernel.org (Postfix) with ESMTPS id BEA8F208CA
+	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:53:34 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BEA8F208CA
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 5536F870B0;
-	Sat, 28 Nov 2020 21:53:01 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 3BBC120472;
+	Sat, 28 Nov 2020 21:53:34 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id x5tfzRIsm1wd; Sat, 28 Nov 2020 21:53:00 +0000 (UTC)
+	with ESMTP id qW+AxUuo1rPH; Sat, 28 Nov 2020 21:53:33 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id D3CC3870A5;
-	Sat, 28 Nov 2020 21:53:00 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 0EBF920335;
+	Sat, 28 Nov 2020 21:53:33 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id C13ECC0891;
-	Sat, 28 Nov 2020 21:53:00 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id EC6DDC0891;
+	Sat, 28 Nov 2020 21:53:32 +0000 (UTC)
 Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id F35DEC0052
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 5B8FCC0052
  for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:52:58 +0000 (UTC)
+ Sat, 28 Nov 2020 21:53:31 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id D210120335
+ by silver.osuosl.org (Postfix) with ESMTP id 3CFCB20472
  for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:52:58 +0000 (UTC)
+ Sat, 28 Nov 2020 21:53:31 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id PxPlt1Lzwl9g
+ with ESMTP id PdMOJfegAgPD
  for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:52:57 +0000 (UTC)
+ Sat, 28 Nov 2020 21:53:30 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by silver.osuosl.org (Postfix) with ESMTPS id BB59020472
+ by silver.osuosl.org (Postfix) with ESMTPS id 75F0C20335
  for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:52:57 +0000 (UTC)
+ Sat, 28 Nov 2020 21:53:30 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kj83e-0002aM-EF; Sat, 28 Nov 2020 21:47:06 +0000
+ id 1kj83M-0002aM-Pu; Sat, 28 Nov 2020 21:46:48 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v3 35/38] overlayfs: do not mount on top of idmapped mounts
-Date: Sat, 28 Nov 2020 22:35:24 +0100
-Message-Id: <20201128213527.2669807-36-christian.brauner@ubuntu.com>
+Subject: [PATCH v3 28/38] exec: handle idmapped mounts
+Date: Sat, 28 Nov 2020 22:35:17 +0100
+Message-Id: <20201128213527.2669807-29-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
 References: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
@@ -101,8 +101,13 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Prevent overlayfs from being mounted on top of idmapped mounts until we
-have ported it to handle this case and added proper testing for it.
+When executing a setuid binary the kernel will verify in bprm_fill_uid() that
+the inode has a mapping in the caller's user namespace before setting the
+callers uid and gid. Let bprm_fill_uid() handle idmapped mounts. If the inode
+is accessed through an idmapped mount it is mapped according to the mount's
+user namespace. Afterwards the checks are identical to non-idmapped mounts. If
+the initial user namespace is passed nothing changes so non-idmapped mounts will
+see identical behavior as before.
 
 Cc: Christoph Hellwig <hch@lst.de>
 Cc: David Howells <dhowells@redhat.com>
@@ -111,32 +116,44 @@ Cc: linux-fsdevel@vger.kernel.org
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
 /* v2 */
-patch introduced
+unchanged
 
 /* v3 */
-- Amir Goldstein <amir73il@gmail.com>:
-  - Move check for idmapped lower layers into ovl_mount_dir_noesc().
-- David Howells <dhowells@redhat.com>:
-  - Adapt check after removing mnt_idmapped() helper.
+unchanged
 ---
- fs/overlayfs/super.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ fs/exec.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/fs/overlayfs/super.c b/fs/overlayfs/super.c
-index 0d4f2baf6836..5002f97b01e6 100644
---- a/fs/overlayfs/super.c
-+++ b/fs/overlayfs/super.c
-@@ -811,6 +811,10 @@ static int ovl_mount_dir_noesc(const char *name, struct path *path)
- 		pr_err("filesystem on '%s' not supported\n", name);
- 		goto out_put;
- 	}
-+	if (mnt_user_ns(path->mnt) != &init_user_ns) {
-+		pr_err("idmapped layers are currently not supported\n");
-+		goto out_put;
-+	}
- 	if (!d_is_dir(path->dentry)) {
- 		pr_err("'%s' not a directory\n", name);
- 		goto out_put;
+diff --git a/fs/exec.c b/fs/exec.c
+index 10c06fdf78a7..7d6d3dd17e84 100644
+--- a/fs/exec.c
++++ b/fs/exec.c
+@@ -1567,6 +1567,7 @@ static void check_unsafe_exec(struct linux_binprm *bprm)
+ static void bprm_fill_uid(struct linux_binprm *bprm, struct file *file)
+ {
+ 	/* Handle suid and sgid on files */
++	struct user_namespace *user_ns;
+ 	struct inode *inode;
+ 	unsigned int mode;
+ 	kuid_t uid;
+@@ -1583,13 +1584,15 @@ static void bprm_fill_uid(struct linux_binprm *bprm, struct file *file)
+ 	if (!(mode & (S_ISUID|S_ISGID)))
+ 		return;
+ 
++	user_ns = mnt_user_ns(file->f_path.mnt);
++
+ 	/* Be careful if suid/sgid is set */
+ 	inode_lock(inode);
+ 
+ 	/* reload atomically mode/uid/gid now that lock held */
+ 	mode = inode->i_mode;
+-	uid = inode->i_uid;
+-	gid = inode->i_gid;
++	uid = i_uid_into_mnt(user_ns, inode);
++	gid = i_gid_into_mnt(user_ns, inode);
+ 	inode_unlock(inode);
+ 
+ 	/* We ignore suid/sgid if there are no mappings for them in the ns */
 -- 
 2.29.2
 
