@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 039A6C64E7B
-	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:48:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 282F3C63798
+	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:48:44 +0000 (UTC)
 Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 8AE7220857
-	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:48:41 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8AE7220857
+	by mail.kernel.org (Postfix) with ESMTPS id C11C720857
+	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:48:43 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C11C720857
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 1940520345;
-	Sat, 28 Nov 2020 21:48:41 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 9180B20472;
+	Sat, 28 Nov 2020 21:48:43 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id kO5FA38HjSND; Sat, 28 Nov 2020 21:47:52 +0000 (UTC)
+	with ESMTP id irfvJx1tH7ff; Sat, 28 Nov 2020 21:48:25 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 78B86204C1;
-	Sat, 28 Nov 2020 21:47:41 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id D04BC20334;
+	Sat, 28 Nov 2020 21:48:25 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 61D34C1833;
-	Sat, 28 Nov 2020 21:47:41 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 1548DC0052
+	by lists.linuxfoundation.org (Postfix) with ESMTP id BCAABC0891;
+	Sat, 28 Nov 2020 21:48:25 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id E84FEC0052
  for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:47:40 +0000 (UTC)
+ Sat, 28 Nov 2020 21:48:23 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 0909887BEA
+ by silver.osuosl.org (Postfix) with ESMTP id 69AEE20335
  for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:47:40 +0000 (UTC)
+ Sat, 28 Nov 2020 21:48:23 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id AHLVAuxvJ9Gb
+ with ESMTP id LPz7qmvKxOic
  for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:47:27 +0000 (UTC)
+ Sat, 28 Nov 2020 21:47:39 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by whitealder.osuosl.org (Postfix) with ESMTPS id D427387BC3
+ by silver.osuosl.org (Postfix) with ESMTPS id C24A020506
  for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:47:26 +0000 (UTC)
+ Sat, 28 Nov 2020 21:47:27 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kj82e-0002aM-Cd; Sat, 28 Nov 2020 21:46:04 +0000
+ id 1kj82w-0002aM-E1; Sat, 28 Nov 2020 21:46:22 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v3 12/38] acl: handle idmapped mounts
-Date: Sat, 28 Nov 2020 22:35:01 +0100
-Message-Id: <20201128213527.2669807-13-christian.brauner@ubuntu.com>
+Subject: [PATCH v3 18/38] namei: prepare for idmapped mounts
+Date: Sat, 28 Nov 2020 22:35:07 +0100
+Message-Id: <20201128213527.2669807-19-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
 References: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
@@ -101,30 +101,13 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-The posix acl permission checking helpers determine whether a caller is
-privileged over an inode according to the acls associated with the inode.
-Add helpers that make it possible to handle acls on idampped mounts.
-
-The vfs and the filesystems targeted by this first iteration make use of
-posix_acl_fix_xattr_from_user() and posix_acl_fix_xattr_to_user() to
-translate basic posix access and default permissions such as the ACL_USER
-and ACL_GROUP type according to the initial user namespace (or the
-superblock's user namespace) to and from the caller's current user
-namespace. Adapt these two helpers to handle idmapped mounts whereby we
-either shift from or into the mount's user namespace depending on in which
-direction we're translating.
-Similarly, cap_convert_nscap() is used by the vfs to translate user
-namespace and non-user namespace aware filesystem capabilities from the
-superblock's user namespace to the caller's user namespace. Enable it to
-handle idmapped mounts by accounting for the mount's user namespace.
-
-In addition the fileystems targeted in the first iteration of this patch
-series make use of the posix_acl_chmod() and, posix_acl_update_mode()
-helpers. Both helpers perform permission checks on the target inode. Let
-them handle idmapped mounts. These two helpers are called when posix acls
-are set by the respective filesystems to handle this case we extend the
-->set() method to take an additional user namespace argument to pass the
-mount's user namespace down.
+The various vfs_*() helpers are called by filesystems or by the vfs itself to
+perform core operations create, link, mkdir, mknod, rename, rmdir, tmpfile and
+unlink. Enable them to handle idmapped mounts. If the inode is accessed through
+an idmapped mount it is mapped according to the mount's user namespace.
+Afterwards the checks and operations are identical to non-idmapped mounts. If
+the initial user namespace is passed nothing changes so non-idmapped mounts will
+see identical behavior as before.
 
 Cc: Christoph Hellwig <hch@lst.de>
 Cc: David Howells <dhowells@redhat.com>
@@ -140,1380 +123,891 @@ Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 /* v3 */
 unchanged
 ---
- Documentation/filesystems/locking.rst |  6 +--
- Documentation/filesystems/porting.rst |  2 +
- fs/9p/acl.c                           |  3 +-
- fs/9p/xattr.c                         |  1 +
- fs/afs/xattr.c                        |  2 +
- fs/btrfs/acl.c                        |  2 +-
- fs/btrfs/inode.c                      |  2 +-
- fs/btrfs/xattr.c                      |  2 +
- fs/ceph/acl.c                         |  2 +-
- fs/ceph/inode.c                       |  2 +-
- fs/ceph/xattr.c                       |  1 +
- fs/cifs/xattr.c                       |  1 +
- fs/ecryptfs/inode.c                   |  1 +
- fs/ext2/acl.c                         |  2 +-
- fs/ext2/inode.c                       |  2 +-
- fs/ext2/xattr_security.c              |  1 +
- fs/ext2/xattr_trusted.c               |  1 +
- fs/ext2/xattr_user.c                  |  1 +
- fs/ext4/acl.c                         |  2 +-
- fs/ext4/inode.c                       |  2 +-
- fs/ext4/xattr_hurd.c                  |  1 +
- fs/ext4/xattr_security.c              |  1 +
- fs/ext4/xattr_trusted.c               |  1 +
- fs/ext4/xattr_user.c                  |  1 +
- fs/f2fs/acl.c                         |  2 +-
- fs/f2fs/file.c                        |  2 +-
- fs/f2fs/xattr.c                       |  2 +
- fs/fuse/xattr.c                       |  2 +
- fs/gfs2/acl.c                         |  2 +-
- fs/gfs2/inode.c                       |  2 +-
- fs/gfs2/xattr.c                       |  1 +
- fs/hfs/attr.c                         |  1 +
- fs/hfsplus/xattr.c                    |  1 +
- fs/hfsplus/xattr_security.c           |  1 +
- fs/hfsplus/xattr_trusted.c            |  1 +
- fs/hfsplus/xattr_user.c               |  1 +
- fs/jffs2/acl.c                        |  2 +-
- fs/jffs2/fs.c                         |  2 +-
- fs/jffs2/security.c                   |  1 +
- fs/jffs2/xattr_trusted.c              |  1 +
- fs/jffs2/xattr_user.c                 |  1 +
- fs/jfs/acl.c                          |  2 +-
- fs/jfs/file.c                         |  2 +-
- fs/jfs/xattr.c                        |  2 +
- fs/kernfs/inode.c                     |  2 +
- fs/nfs/nfs4proc.c                     |  3 ++
- fs/nfsd/nfs2acl.c                     |  4 +-
- fs/nfsd/nfs3acl.c                     |  4 +-
- fs/nfsd/nfs4acl.c                     |  4 +-
- fs/ocfs2/acl.c                        |  2 +-
- fs/ocfs2/xattr.c                      |  3 ++
- fs/orangefs/acl.c                     |  2 +-
- fs/orangefs/inode.c                   |  2 +-
- fs/orangefs/xattr.c                   |  1 +
- fs/overlayfs/super.c                  |  3 ++
- fs/posix_acl.c                        | 54 +++++++++++++++++----------
- fs/reiserfs/xattr_acl.c               |  4 +-
- fs/reiserfs/xattr_security.c          |  3 +-
- fs/reiserfs/xattr_trusted.c           |  3 +-
- fs/reiserfs/xattr_user.c              |  3 +-
- fs/ubifs/xattr.c                      |  1 +
- fs/xattr.c                            | 10 ++---
- fs/xfs/xfs_acl.c                      |  2 +-
- fs/xfs/xfs_iops.c                     |  2 +-
- fs/xfs/xfs_xattr.c                    |  3 +-
- include/linux/capability.h            |  3 +-
- include/linux/posix_acl.h             |  9 +++--
- include/linux/posix_acl_xattr.h       | 12 ++++--
- include/linux/xattr.h                 |  6 +--
- mm/shmem.c                            |  3 +-
- net/socket.c                          |  1 +
- security/commoncap.c                  | 17 ++++++---
- 72 files changed, 159 insertions(+), 80 deletions(-)
+ drivers/base/devtmpfs.c  |   8 +--
+ fs/cachefiles/namei.c    |  10 ++--
+ fs/ecryptfs/inode.c      |  22 ++++----
+ fs/init.c                |  12 ++---
+ fs/namei.c               | 108 +++++++++++++++++++++++++--------------
+ fs/nfsd/nfs4recover.c    |   6 +--
+ fs/nfsd/vfs.c            |  19 ++++---
+ fs/overlayfs/dir.c       |   4 +-
+ fs/overlayfs/overlayfs.h |  20 ++++----
+ include/linux/fs.h       |  25 +++++----
+ ipc/mqueue.c             |   2 +-
+ net/unix/af_unix.c       |   2 +-
+ 12 files changed, 144 insertions(+), 94 deletions(-)
 
-diff --git a/Documentation/filesystems/locking.rst b/Documentation/filesystems/locking.rst
-index c0f2c7586531..e3b33c59b7f6 100644
---- a/Documentation/filesystems/locking.rst
-+++ b/Documentation/filesystems/locking.rst
-@@ -126,9 +126,9 @@ prototypes::
- 	int (*get)(const struct xattr_handler *handler, struct dentry *dentry,
- 		   struct inode *inode, const char *name, void *buffer,
- 		   size_t size);
--	int (*set)(const struct xattr_handler *handler, struct dentry *dentry,
--		   struct inode *inode, const char *name, const void *buffer,
--		   size_t size, int flags);
-+	int (*set)(const struct xattr_handler *handler, struct user_namespace *user_ns,
-+                   struct dentry *dentry, struct inode *inode, const char *name,
-+                   const void *buffer, size_t size, int flags);
+diff --git a/drivers/base/devtmpfs.c b/drivers/base/devtmpfs.c
+index 2e0c3cdb4184..fd4e86c58111 100644
+--- a/drivers/base/devtmpfs.c
++++ b/drivers/base/devtmpfs.c
+@@ -162,7 +162,7 @@ static int dev_mkdir(const char *name, umode_t mode)
+ 	if (IS_ERR(dentry))
+ 		return PTR_ERR(dentry);
  
- locking rules:
- 	all may block
-diff --git a/Documentation/filesystems/porting.rst b/Documentation/filesystems/porting.rst
-index 867036aa90b8..de1dcec3b5b8 100644
---- a/Documentation/filesystems/porting.rst
-+++ b/Documentation/filesystems/porting.rst
-@@ -717,6 +717,8 @@ be removed.  Switch while you still can; the old one won't stay.
- **mandatory**
+-	err = vfs_mkdir(d_inode(path.dentry), dentry, mode);
++	err = vfs_mkdir(&init_user_ns, d_inode(path.dentry), dentry, mode);
+ 	if (!err)
+ 		/* mark as kernel-created inode */
+ 		d_inode(dentry)->i_private = &thread;
+@@ -212,7 +212,7 @@ static int handle_create(const char *nodename, umode_t mode, kuid_t uid,
+ 	if (IS_ERR(dentry))
+ 		return PTR_ERR(dentry);
  
- ->setxattr() and xattr_handler.set() get dentry and inode passed separately.
-+The xattr_handler.set() gets passed the user namespace of the mount the inode
-+is seen from so filesystems can idmap the i_uid and i_gid accordingly.
- dentry might be yet to be attached to inode, so do _not_ use its ->d_inode
- in the instances.  Rationale: !@#!@# security_d_instantiate() needs to be
- called before we attach dentry to inode and !@#!@##!@$!$#!@#$!@$!@$ smack
-diff --git a/fs/9p/acl.c b/fs/9p/acl.c
-index d77b28e8d57a..650b14dd3ccd 100644
---- a/fs/9p/acl.c
-+++ b/fs/9p/acl.c
-@@ -239,6 +239,7 @@ static int v9fs_xattr_get_acl(const struct xattr_handler *handler,
- }
+-	err = vfs_mknod(d_inode(path.dentry), dentry, mode, dev->devt);
++	err = vfs_mknod(&init_user_ns, d_inode(path.dentry), dentry, mode, dev->devt);
+ 	if (!err) {
+ 		struct iattr newattrs;
  
- static int v9fs_xattr_set_acl(const struct xattr_handler *handler,
-+			      struct user_namespace *user_ns,
- 			      struct dentry *dentry, struct inode *inode,
- 			      const char *name, const void *value,
- 			      size_t size, int flags)
-@@ -279,7 +280,7 @@ static int v9fs_xattr_set_acl(const struct xattr_handler *handler,
- 			struct iattr iattr = { 0 };
- 			struct posix_acl *old_acl = acl;
- 
--			retval = posix_acl_update_mode(inode, &iattr.ia_mode, &acl);
-+			retval = posix_acl_update_mode(user_ns, inode, &iattr.ia_mode, &acl);
- 			if (retval)
- 				goto err_out;
- 			if (!acl) {
-diff --git a/fs/9p/xattr.c b/fs/9p/xattr.c
-index ac8ff8ca4c11..13d8cb1712d6 100644
---- a/fs/9p/xattr.c
-+++ b/fs/9p/xattr.c
-@@ -147,6 +147,7 @@ static int v9fs_xattr_handler_get(const struct xattr_handler *handler,
- }
- 
- static int v9fs_xattr_handler_set(const struct xattr_handler *handler,
-+				  struct user_namespace *user_ns,
- 				  struct dentry *dentry, struct inode *inode,
- 				  const char *name, const void *value,
- 				  size_t size, int flags)
-diff --git a/fs/afs/xattr.c b/fs/afs/xattr.c
-index 95c573dcda11..2ec1c6551ab6 100644
---- a/fs/afs/xattr.c
-+++ b/fs/afs/xattr.c
-@@ -120,6 +120,7 @@ static const struct afs_operation_ops afs_store_acl_operation = {
-  * Set a file's AFS3 ACL.
-  */
- static int afs_xattr_set_acl(const struct xattr_handler *handler,
-+			     struct user_namespace *user_ns,
-                              struct dentry *dentry,
-                              struct inode *inode, const char *name,
-                              const void *buffer, size_t size, int flags)
-@@ -248,6 +249,7 @@ static const struct afs_operation_ops yfs_store_opaque_acl2_operation = {
-  * Set a file's YFS ACL.
-  */
- static int afs_xattr_set_yfs(const struct xattr_handler *handler,
-+			     struct user_namespace *user_ns,
-                              struct dentry *dentry,
-                              struct inode *inode, const char *name,
-                              const void *buffer, size_t size, int flags)
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index a0af1b952c4d..b5a683e895c6 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -113,7 +113,7 @@ int btrfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
- 	umode_t old_mode = inode->i_mode;
- 
- 	if (type == ACL_TYPE_ACCESS && acl) {
--		ret = posix_acl_update_mode(inode, &inode->i_mode, &acl);
-+		ret = posix_acl_update_mode(&init_user_ns, inode, &inode->i_mode, &acl);
- 		if (ret)
- 			return ret;
- 	}
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e65c54b7e828..e6f4aed0d311 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4891,7 +4891,7 @@ static int btrfs_setattr(struct dentry *dentry, struct iattr *attr)
- 		err = btrfs_dirty_inode(inode);
- 
- 		if (!err && attr->ia_valid & ATTR_MODE)
--			err = posix_acl_chmod(inode, inode->i_mode);
-+			err = posix_acl_chmod(&init_user_ns, inode, inode->i_mode);
- 	}
- 
- 	return err;
-diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
-index 95d9aebff2c4..a6adb9decdfc 100644
---- a/fs/btrfs/xattr.c
-+++ b/fs/btrfs/xattr.c
-@@ -360,6 +360,7 @@ static int btrfs_xattr_handler_get(const struct xattr_handler *handler,
- }
- 
- static int btrfs_xattr_handler_set(const struct xattr_handler *handler,
-+				   struct user_namespace *user_ns,
- 				   struct dentry *unused, struct inode *inode,
- 				   const char *name, const void *buffer,
- 				   size_t size, int flags)
-@@ -369,6 +370,7 @@ static int btrfs_xattr_handler_set(const struct xattr_handler *handler,
- }
- 
- static int btrfs_xattr_handler_set_prop(const struct xattr_handler *handler,
-+					struct user_namespace *user_ns,
- 					struct dentry *unused, struct inode *inode,
- 					const char *name, const void *value,
- 					size_t size, int flags)
-diff --git a/fs/ceph/acl.c b/fs/ceph/acl.c
-index e0465741c591..bceab4c01585 100644
---- a/fs/ceph/acl.c
-+++ b/fs/ceph/acl.c
-@@ -100,7 +100,7 @@ int ceph_set_acl(struct inode *inode, struct posix_acl *acl, int type)
- 	case ACL_TYPE_ACCESS:
- 		name = XATTR_NAME_POSIX_ACL_ACCESS;
- 		if (acl) {
--			ret = posix_acl_update_mode(inode, &new_mode, &acl);
-+			ret = posix_acl_update_mode(&init_user_ns, inode, &new_mode, &acl);
- 			if (ret)
- 				goto out;
+@@ -242,7 +242,7 @@ static int dev_rmdir(const char *name)
+ 		return PTR_ERR(dentry);
+ 	if (d_really_is_positive(dentry)) {
+ 		if (d_inode(dentry)->i_private == &thread)
+-			err = vfs_rmdir(d_inode(parent.dentry), dentry);
++			err = vfs_rmdir(&init_user_ns, d_inode(parent.dentry), dentry);
+ 		else
+ 			err = -EPERM;
+ 	} else {
+@@ -330,7 +330,7 @@ static int handle_remove(const char *nodename, struct device *dev)
+ 			inode_lock(d_inode(dentry));
+ 			notify_change(&init_user_ns, dentry, &newattrs, NULL);
+ 			inode_unlock(d_inode(dentry));
+-			err = vfs_unlink(d_inode(parent.dentry), dentry, NULL);
++			err = vfs_unlink(&init_user_ns, d_inode(parent.dentry), dentry, NULL);
+ 			if (!err || err == -ENOENT)
+ 				deleted = 1;
  		}
-diff --git a/fs/ceph/inode.c b/fs/ceph/inode.c
-index 06645c2efa6f..19ec845ba5ec 100644
---- a/fs/ceph/inode.c
-+++ b/fs/ceph/inode.c
-@@ -2266,7 +2266,7 @@ int ceph_setattr(struct dentry *dentry, struct iattr *attr)
- 	err = __ceph_setattr(inode, attr);
+diff --git a/fs/cachefiles/namei.c b/fs/cachefiles/namei.c
+index 7b987de0babe..ae01fac0a80c 100644
+--- a/fs/cachefiles/namei.c
++++ b/fs/cachefiles/namei.c
+@@ -311,7 +311,7 @@ static int cachefiles_bury_object(struct cachefiles_cache *cache,
+ 			cachefiles_io_error(cache, "Unlink security error");
+ 		} else {
+ 			trace_cachefiles_unlink(object, rep, why);
+-			ret = vfs_unlink(d_inode(dir), rep, NULL);
++			ret = vfs_unlink(&init_user_ns, d_inode(dir), rep, NULL);
  
- 	if (err >= 0 && (attr->ia_valid & ATTR_MODE))
--		err = posix_acl_chmod(inode, attr->ia_mode);
-+		err = posix_acl_chmod(&init_user_ns, inode, attr->ia_mode);
+ 			if (preemptive)
+ 				cachefiles_mark_object_buried(cache, rep, why);
+@@ -413,8 +413,10 @@ static int cachefiles_bury_object(struct cachefiles_cache *cache,
+ 		cachefiles_io_error(cache, "Rename security error %d", ret);
+ 	} else {
+ 		struct renamedata rd = {
++			.old_user_ns	= &init_user_ns,
+ 			.old_dir	= d_inode(dir),
+ 			.old_dentry	= rep,
++			.new_user_ns	= &init_user_ns,
+ 			.new_dir	= d_inode(cache->graveyard),
+ 			.new_dentry	= grave,
+ 		};
+@@ -566,7 +568,7 @@ int cachefiles_walk_to_object(struct cachefiles_object *parent,
+ 			if (ret < 0)
+ 				goto create_error;
+ 			start = jiffies;
+-			ret = vfs_mkdir(d_inode(dir), next, 0);
++			ret = vfs_mkdir(&init_user_ns, d_inode(dir), next, 0);
+ 			cachefiles_hist(cachefiles_mkdir_histogram, start);
+ 			if (!key)
+ 				trace_cachefiles_mkdir(object, next, ret);
+@@ -602,7 +604,7 @@ int cachefiles_walk_to_object(struct cachefiles_object *parent,
+ 			if (ret < 0)
+ 				goto create_error;
+ 			start = jiffies;
+-			ret = vfs_create(d_inode(dir), next, S_IFREG, true);
++			ret = vfs_create(&init_user_ns, d_inode(dir), next, S_IFREG, true);
+ 			cachefiles_hist(cachefiles_create_histogram, start);
+ 			trace_cachefiles_create(object, next, ret);
+ 			if (ret < 0)
+@@ -796,7 +798,7 @@ struct dentry *cachefiles_get_directory(struct cachefiles_cache *cache,
+ 		ret = security_path_mkdir(&path, subdir, 0700);
+ 		if (ret < 0)
+ 			goto mkdir_error;
+-		ret = vfs_mkdir(d_inode(dir), subdir, 0700);
++		ret = vfs_mkdir(&init_user_ns, d_inode(dir), subdir, 0700);
+ 		if (ret < 0)
+ 			goto mkdir_error;
  
- 	return err;
- }
-diff --git a/fs/ceph/xattr.c b/fs/ceph/xattr.c
-index 197cb1234341..a01e0563049a 100644
---- a/fs/ceph/xattr.c
-+++ b/fs/ceph/xattr.c
-@@ -1163,6 +1163,7 @@ static int ceph_get_xattr_handler(const struct xattr_handler *handler,
- }
- 
- static int ceph_set_xattr_handler(const struct xattr_handler *handler,
-+				  struct user_namespace *user_ns,
- 				  struct dentry *unused, struct inode *inode,
- 				  const char *name, const void *value,
- 				  size_t size, int flags)
-diff --git a/fs/cifs/xattr.c b/fs/cifs/xattr.c
-index b8299173ea7e..33935bd038aa 100644
---- a/fs/cifs/xattr.c
-+++ b/fs/cifs/xattr.c
-@@ -99,6 +99,7 @@ static int cifs_creation_time_set(unsigned int xid, struct cifs_tcon *pTcon,
- }
- 
- static int cifs_xattr_set(const struct xattr_handler *handler,
-+			  struct user_namespace *user_ns,
- 			  struct dentry *dentry, struct inode *inode,
- 			  const char *name, const void *value,
- 			  size_t size, int flags)
 diff --git a/fs/ecryptfs/inode.c b/fs/ecryptfs/inode.c
-index 2454aef02a68..28cf830f0a4d 100644
+index 838949ede439..42066c5613ca 100644
 --- a/fs/ecryptfs/inode.c
 +++ b/fs/ecryptfs/inode.c
-@@ -1131,6 +1131,7 @@ static int ecryptfs_xattr_get(const struct xattr_handler *handler,
- }
+@@ -141,7 +141,7 @@ static int ecryptfs_do_unlink(struct inode *dir, struct dentry *dentry,
+ 	else if (d_unhashed(lower_dentry))
+ 		rc = -EINVAL;
+ 	else
+-		rc = vfs_unlink(lower_dir_inode, lower_dentry, NULL);
++		rc = vfs_unlink(&init_user_ns, lower_dir_inode, lower_dentry, NULL);
+ 	if (rc) {
+ 		printk(KERN_ERR "Error in vfs_unlink; rc = [%d]\n", rc);
+ 		goto out_unlock;
+@@ -180,7 +180,8 @@ ecryptfs_do_create(struct inode *directory_inode,
  
- static int ecryptfs_xattr_set(const struct xattr_handler *handler,
-+			      struct user_namespace *user_ns,
- 			      struct dentry *dentry, struct inode *inode,
- 			      const char *name, const void *value, size_t size,
- 			      int flags)
-diff --git a/fs/ext2/acl.c b/fs/ext2/acl.c
-index cf4c77f8dd08..826987b23ccb 100644
---- a/fs/ext2/acl.c
-+++ b/fs/ext2/acl.c
-@@ -223,7 +223,7 @@ ext2_set_acl(struct inode *inode, struct posix_acl *acl, int type)
- 	umode_t mode = inode->i_mode;
- 
- 	if (type == ACL_TYPE_ACCESS && acl) {
--		error = posix_acl_update_mode(inode, &mode, &acl);
-+		error = posix_acl_update_mode(&init_user_ns, inode, &mode, &acl);
- 		if (error)
- 			return error;
- 		update_mode = 1;
-diff --git a/fs/ext2/inode.c b/fs/ext2/inode.c
-index 8eccb67d04b2..5ff1e5e3c0fe 100644
---- a/fs/ext2/inode.c
-+++ b/fs/ext2/inode.c
-@@ -1690,7 +1690,7 @@ int ext2_setattr(struct dentry *dentry, struct iattr *iattr)
+ 	lower_dentry = ecryptfs_dentry_to_lower(ecryptfs_dentry);
+ 	lower_dir_dentry = lock_parent(lower_dentry);
+-	rc = vfs_create(d_inode(lower_dir_dentry), lower_dentry, mode, true);
++	rc = vfs_create(&init_user_ns, d_inode(lower_dir_dentry), lower_dentry,
++			mode, true);
+ 	if (rc) {
+ 		printk(KERN_ERR "%s: Failure to create dentry in lower fs; "
+ 		       "rc = [%d]\n", __func__, rc);
+@@ -190,7 +191,7 @@ ecryptfs_do_create(struct inode *directory_inode,
+ 	inode = __ecryptfs_get_inode(d_inode(lower_dentry),
+ 				     directory_inode->i_sb);
+ 	if (IS_ERR(inode)) {
+-		vfs_unlink(d_inode(lower_dir_dentry), lower_dentry, NULL);
++		vfs_unlink(&init_user_ns, d_inode(lower_dir_dentry), lower_dentry, NULL);
+ 		goto out_lock;
  	}
- 	setattr_copy(&init_user_ns, inode, iattr);
- 	if (iattr->ia_valid & ATTR_MODE)
--		error = posix_acl_chmod(inode, inode->i_mode);
-+		error = posix_acl_chmod(&init_user_ns, inode, inode->i_mode);
- 	mark_inode_dirty(inode);
+ 	fsstack_copy_attr_times(directory_inode, d_inode(lower_dir_dentry));
+@@ -436,8 +437,8 @@ static int ecryptfs_link(struct dentry *old_dentry, struct inode *dir,
+ 	dget(lower_old_dentry);
+ 	dget(lower_new_dentry);
+ 	lower_dir_dentry = lock_parent(lower_new_dentry);
+-	rc = vfs_link(lower_old_dentry, d_inode(lower_dir_dentry),
+-		      lower_new_dentry, NULL);
++	rc = vfs_link(lower_old_dentry, &init_user_ns,
++		      d_inode(lower_dir_dentry), lower_new_dentry, NULL);
+ 	if (rc || d_really_is_negative(lower_new_dentry))
+ 		goto out_lock;
+ 	rc = ecryptfs_interpose(lower_new_dentry, new_dentry, dir->i_sb);
+@@ -481,7 +482,7 @@ static int ecryptfs_symlink(struct inode *dir, struct dentry *dentry,
+ 						  strlen(symname));
+ 	if (rc)
+ 		goto out_lock;
+-	rc = vfs_symlink(d_inode(lower_dir_dentry), lower_dentry,
++	rc = vfs_symlink(&init_user_ns, d_inode(lower_dir_dentry), lower_dentry,
+ 			 encoded_symname);
+ 	kfree(encoded_symname);
+ 	if (rc || d_really_is_negative(lower_dentry))
+@@ -507,7 +508,7 @@ static int ecryptfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode
  
+ 	lower_dentry = ecryptfs_dentry_to_lower(dentry);
+ 	lower_dir_dentry = lock_parent(lower_dentry);
+-	rc = vfs_mkdir(d_inode(lower_dir_dentry), lower_dentry, mode);
++	rc = vfs_mkdir(&init_user_ns, d_inode(lower_dir_dentry), lower_dentry, mode);
+ 	if (rc || d_really_is_negative(lower_dentry))
+ 		goto out;
+ 	rc = ecryptfs_interpose(lower_dentry, dentry, dir->i_sb);
+@@ -541,7 +542,7 @@ static int ecryptfs_rmdir(struct inode *dir, struct dentry *dentry)
+ 	else if (d_unhashed(lower_dentry))
+ 		rc = -EINVAL;
+ 	else
+-		rc = vfs_rmdir(lower_dir_inode, lower_dentry);
++		rc = vfs_rmdir(&init_user_ns, lower_dir_inode, lower_dentry);
+ 	if (!rc) {
+ 		clear_nlink(d_inode(dentry));
+ 		fsstack_copy_attr_times(dir, lower_dir_inode);
+@@ -563,7 +564,8 @@ ecryptfs_mknod(struct inode *dir, struct dentry *dentry, umode_t mode, dev_t dev
+ 
+ 	lower_dentry = ecryptfs_dentry_to_lower(dentry);
+ 	lower_dir_dentry = lock_parent(lower_dentry);
+-	rc = vfs_mknod(d_inode(lower_dir_dentry), lower_dentry, mode, dev);
++	rc = vfs_mknod(&init_user_ns, d_inode(lower_dir_dentry), lower_dentry,
++		       mode, dev);
+ 	if (rc || d_really_is_negative(lower_dentry))
+ 		goto out;
+ 	rc = ecryptfs_interpose(lower_dentry, dentry, dir->i_sb);
+@@ -621,8 +623,10 @@ ecryptfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 		goto out_lock;
+ 	}
+ 
++	rd.old_user_ns	= &init_user_ns;
+ 	rd.old_dir	= d_inode(lower_old_dir_dentry);
+ 	rd.old_dentry	= lower_old_dentry;
++	rd.new_user_ns	= &init_user_ns;
+ 	rd.new_dir	= d_inode(lower_new_dir_dentry);
+ 	rd.new_dentry	= lower_new_dentry;
+ 	rc = vfs_rename(&rd);
+diff --git a/fs/init.c b/fs/init.c
+index 2b4842f4802b..76f493600030 100644
+--- a/fs/init.c
++++ b/fs/init.c
+@@ -160,8 +160,8 @@ int __init init_mknod(const char *filename, umode_t mode, unsigned int dev)
+ 		mode &= ~current_umask();
+ 	error = security_path_mknod(&path, dentry, mode, dev);
+ 	if (!error)
+-		error = vfs_mknod(path.dentry->d_inode, dentry, mode,
+-				  new_decode_dev(dev));
++		error = vfs_mknod(&init_user_ns, path.dentry->d_inode, dentry,
++				  mode, new_decode_dev(dev));
+ 	done_path_create(&path, dentry);
  	return error;
-diff --git a/fs/ext2/xattr_security.c b/fs/ext2/xattr_security.c
-index 9a682e440acb..f536f656b1dd 100644
---- a/fs/ext2/xattr_security.c
-+++ b/fs/ext2/xattr_security.c
-@@ -19,6 +19,7 @@ ext2_xattr_security_get(const struct xattr_handler *handler,
- 
- static int
- ext2_xattr_security_set(const struct xattr_handler *handler,
-+			struct user_namespace *user_ns,
- 			struct dentry *unused, struct inode *inode,
- 			const char *name, const void *value,
- 			size_t size, int flags)
-diff --git a/fs/ext2/xattr_trusted.c b/fs/ext2/xattr_trusted.c
-index 49add1107850..2a20108a8253 100644
---- a/fs/ext2/xattr_trusted.c
-+++ b/fs/ext2/xattr_trusted.c
-@@ -26,6 +26,7 @@ ext2_xattr_trusted_get(const struct xattr_handler *handler,
- 
- static int
- ext2_xattr_trusted_set(const struct xattr_handler *handler,
-+		       struct user_namespace *user_ns,
- 		       struct dentry *unused, struct inode *inode,
- 		       const char *name, const void *value,
- 		       size_t size, int flags)
-diff --git a/fs/ext2/xattr_user.c b/fs/ext2/xattr_user.c
-index c243a3b4d69d..e710f491663c 100644
---- a/fs/ext2/xattr_user.c
-+++ b/fs/ext2/xattr_user.c
-@@ -30,6 +30,7 @@ ext2_xattr_user_get(const struct xattr_handler *handler,
- 
- static int
- ext2_xattr_user_set(const struct xattr_handler *handler,
-+		    struct user_namespace *user_ns,
- 		    struct dentry *unused, struct inode *inode,
- 		    const char *name, const void *value,
- 		    size_t size, int flags)
-diff --git a/fs/ext4/acl.c b/fs/ext4/acl.c
-index 68aaed48315f..4aad060010d8 100644
---- a/fs/ext4/acl.c
-+++ b/fs/ext4/acl.c
-@@ -245,7 +245,7 @@ ext4_set_acl(struct inode *inode, struct posix_acl *acl, int type)
- 	ext4_fc_start_update(inode);
- 
- 	if ((type == ACL_TYPE_ACCESS) && acl) {
--		error = posix_acl_update_mode(inode, &mode, &acl);
-+		error = posix_acl_update_mode(&init_user_ns, inode, &mode, &acl);
- 		if (error)
- 			goto out_stop;
- 		if (mode != inode->i_mode)
-diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
-index 96e33198066f..f0487795afd1 100644
---- a/fs/ext4/inode.c
-+++ b/fs/ext4/inode.c
-@@ -5511,7 +5511,7 @@ int ext4_setattr(struct dentry *dentry, struct iattr *attr)
- 		ext4_orphan_del(NULL, inode);
- 
- 	if (!error && (ia_valid & ATTR_MODE))
--		rc = posix_acl_chmod(inode, inode->i_mode);
-+		rc = posix_acl_chmod(&init_user_ns, inode, inode->i_mode);
- 
- err_out:
- 	if  (error)
-diff --git a/fs/ext4/xattr_hurd.c b/fs/ext4/xattr_hurd.c
-index 8cfa74a56361..74925eace7dc 100644
---- a/fs/ext4/xattr_hurd.c
-+++ b/fs/ext4/xattr_hurd.c
-@@ -32,6 +32,7 @@ ext4_xattr_hurd_get(const struct xattr_handler *handler,
- 
- static int
- ext4_xattr_hurd_set(const struct xattr_handler *handler,
-+		    struct user_namespace *user_ns,
- 		    struct dentry *unused, struct inode *inode,
- 		    const char *name, const void *value,
- 		    size_t size, int flags)
-diff --git a/fs/ext4/xattr_security.c b/fs/ext4/xattr_security.c
-index 197a9d8a15ef..cf6c772200b9 100644
---- a/fs/ext4/xattr_security.c
-+++ b/fs/ext4/xattr_security.c
-@@ -23,6 +23,7 @@ ext4_xattr_security_get(const struct xattr_handler *handler,
- 
- static int
- ext4_xattr_security_set(const struct xattr_handler *handler,
-+			struct user_namespace *user_ns,
- 			struct dentry *unused, struct inode *inode,
- 			const char *name, const void *value,
- 			size_t size, int flags)
-diff --git a/fs/ext4/xattr_trusted.c b/fs/ext4/xattr_trusted.c
-index e9389e5d75c3..b62112b9cb3b 100644
---- a/fs/ext4/xattr_trusted.c
-+++ b/fs/ext4/xattr_trusted.c
-@@ -30,6 +30,7 @@ ext4_xattr_trusted_get(const struct xattr_handler *handler,
- 
- static int
- ext4_xattr_trusted_set(const struct xattr_handler *handler,
-+		       struct user_namespace *user_ns,
- 		       struct dentry *unused, struct inode *inode,
- 		       const char *name, const void *value,
- 		       size_t size, int flags)
-diff --git a/fs/ext4/xattr_user.c b/fs/ext4/xattr_user.c
-index d4546184b34b..6cd01df6e8a5 100644
---- a/fs/ext4/xattr_user.c
-+++ b/fs/ext4/xattr_user.c
-@@ -31,6 +31,7 @@ ext4_xattr_user_get(const struct xattr_handler *handler,
- 
- static int
- ext4_xattr_user_set(const struct xattr_handler *handler,
-+		    struct user_namespace *user_ns,
- 		    struct dentry *unused, struct inode *inode,
- 		    const char *name, const void *value,
- 		    size_t size, int flags)
-diff --git a/fs/f2fs/acl.c b/fs/f2fs/acl.c
-index 306413589827..50735e8a354e 100644
---- a/fs/f2fs/acl.c
-+++ b/fs/f2fs/acl.c
-@@ -213,7 +213,7 @@ static int __f2fs_set_acl(struct inode *inode, int type,
- 	case ACL_TYPE_ACCESS:
- 		name_index = F2FS_XATTR_INDEX_POSIX_ACL_ACCESS;
- 		if (acl && !ipage) {
--			error = posix_acl_update_mode(inode, &mode, &acl);
-+			error = posix_acl_update_mode(&init_user_ns, inode, &mode, &acl);
- 			if (error)
- 				return error;
- 			set_acl_inode(inode, mode);
-diff --git a/fs/f2fs/file.c b/fs/f2fs/file.c
-index bdb5534835ab..3633a558ddcc 100644
---- a/fs/f2fs/file.c
-+++ b/fs/f2fs/file.c
-@@ -944,7 +944,7 @@ int f2fs_setattr(struct dentry *dentry, struct iattr *attr)
- 	__setattr_copy(&init_user_ns, inode, attr);
- 
- 	if (attr->ia_valid & ATTR_MODE) {
--		err = posix_acl_chmod(inode, f2fs_get_inode_mode(inode));
-+		err = posix_acl_chmod(&init_user_ns, inode, f2fs_get_inode_mode(inode));
- 		if (err || is_inode_flag_set(inode, FI_ACL_MODE)) {
- 			inode->i_mode = F2FS_I(inode)->i_acl_mode;
- 			clear_inode_flag(inode, FI_ACL_MODE);
-diff --git a/fs/f2fs/xattr.c b/fs/f2fs/xattr.c
-index d772bf13a814..2b0b270ca80e 100644
---- a/fs/f2fs/xattr.c
-+++ b/fs/f2fs/xattr.c
-@@ -64,6 +64,7 @@ static int f2fs_xattr_generic_get(const struct xattr_handler *handler,
  }
- 
- static int f2fs_xattr_generic_set(const struct xattr_handler *handler,
-+		struct user_namespace *user_ns,
- 		struct dentry *unused, struct inode *inode,
- 		const char *name, const void *value,
- 		size_t size, int flags)
-@@ -107,6 +108,7 @@ static int f2fs_xattr_advise_get(const struct xattr_handler *handler,
- }
- 
- static int f2fs_xattr_advise_set(const struct xattr_handler *handler,
-+		struct user_namespace *user_ns,
- 		struct dentry *unused, struct inode *inode,
- 		const char *name, const void *value,
- 		size_t size, int flags)
-diff --git a/fs/fuse/xattr.c b/fs/fuse/xattr.c
-index 371bdcbc7233..518590494fdc 100644
---- a/fs/fuse/xattr.c
-+++ b/fs/fuse/xattr.c
-@@ -182,6 +182,7 @@ static int fuse_xattr_get(const struct xattr_handler *handler,
- }
- 
- static int fuse_xattr_set(const struct xattr_handler *handler,
-+			  struct user_namespace *user_ns,
- 			  struct dentry *dentry, struct inode *inode,
- 			  const char *name, const void *value, size_t size,
- 			  int flags)
-@@ -205,6 +206,7 @@ static int no_xattr_get(const struct xattr_handler *handler,
- }
- 
- static int no_xattr_set(const struct xattr_handler *handler,
-+			struct user_namespace *user_ns,
- 			struct dentry *dentry, struct inode *nodee,
- 			const char *name, const void *value,
- 			size_t size, int flags)
-diff --git a/fs/gfs2/acl.c b/fs/gfs2/acl.c
-index 2e939f5fe751..ce88ef29eef0 100644
---- a/fs/gfs2/acl.c
-+++ b/fs/gfs2/acl.c
-@@ -130,7 +130,7 @@ int gfs2_set_acl(struct inode *inode, struct posix_acl *acl, int type)
- 
- 	mode = inode->i_mode;
- 	if (type == ACL_TYPE_ACCESS && acl) {
--		ret = posix_acl_update_mode(inode, &mode, &acl);
-+		ret = posix_acl_update_mode(&init_user_ns, inode, &mode, &acl);
- 		if (ret)
- 			goto unlock;
- 	}
-diff --git a/fs/gfs2/inode.c b/fs/gfs2/inode.c
-index 2cf9ed1575c4..a29b66116c01 100644
---- a/fs/gfs2/inode.c
-+++ b/fs/gfs2/inode.c
-@@ -1992,7 +1992,7 @@ static int gfs2_setattr(struct dentry *dentry, struct iattr *attr)
- 	else {
- 		error = gfs2_setattr_simple(inode, attr);
- 		if (!error && attr->ia_valid & ATTR_MODE)
--			error = posix_acl_chmod(inode, inode->i_mode);
-+			error = posix_acl_chmod(&init_user_ns, inode, inode->i_mode);
- 	}
- 
- error:
-diff --git a/fs/gfs2/xattr.c b/fs/gfs2/xattr.c
-index 9d7667bc4292..8e0eb5b3528f 100644
---- a/fs/gfs2/xattr.c
-+++ b/fs/gfs2/xattr.c
-@@ -1214,6 +1214,7 @@ int __gfs2_xattr_set(struct inode *inode, const char *name,
- }
- 
- static int gfs2_xattr_set(const struct xattr_handler *handler,
-+			  struct user_namespace *user_ns,
- 			  struct dentry *unused, struct inode *inode,
- 			  const char *name, const void *value,
- 			  size_t size, int flags)
-diff --git a/fs/hfs/attr.c b/fs/hfs/attr.c
-index 74fa62643136..ed2a50535bc1 100644
---- a/fs/hfs/attr.c
-+++ b/fs/hfs/attr.c
-@@ -121,6 +121,7 @@ static int hfs_xattr_get(const struct xattr_handler *handler,
- }
- 
- static int hfs_xattr_set(const struct xattr_handler *handler,
-+			 struct user_namespace *user_ns,
- 			 struct dentry *unused, struct inode *inode,
- 			 const char *name, const void *value, size_t size,
- 			 int flags)
-diff --git a/fs/hfsplus/xattr.c b/fs/hfsplus/xattr.c
-index bb0b27d88e50..0fc6000659db 100644
---- a/fs/hfsplus/xattr.c
-+++ b/fs/hfsplus/xattr.c
-@@ -858,6 +858,7 @@ static int hfsplus_osx_getxattr(const struct xattr_handler *handler,
- }
- 
- static int hfsplus_osx_setxattr(const struct xattr_handler *handler,
-+				struct user_namespace *user_ns,
- 				struct dentry *unused, struct inode *inode,
- 				const char *name, const void *buffer,
- 				size_t size, int flags)
-diff --git a/fs/hfsplus/xattr_security.c b/fs/hfsplus/xattr_security.c
-index cfbe6a3bfb1e..00c82f82a1dd 100644
---- a/fs/hfsplus/xattr_security.c
-+++ b/fs/hfsplus/xattr_security.c
-@@ -23,6 +23,7 @@ static int hfsplus_security_getxattr(const struct xattr_handler *handler,
- }
- 
- static int hfsplus_security_setxattr(const struct xattr_handler *handler,
-+				     struct user_namespace *user_ns,
- 				     struct dentry *unused, struct inode *inode,
- 				     const char *name, const void *buffer,
- 				     size_t size, int flags)
-diff --git a/fs/hfsplus/xattr_trusted.c b/fs/hfsplus/xattr_trusted.c
-index fbad91e1dada..e3a2712a55d1 100644
---- a/fs/hfsplus/xattr_trusted.c
-+++ b/fs/hfsplus/xattr_trusted.c
-@@ -22,6 +22,7 @@ static int hfsplus_trusted_getxattr(const struct xattr_handler *handler,
- }
- 
- static int hfsplus_trusted_setxattr(const struct xattr_handler *handler,
-+				    struct user_namespace *user_ns,
- 				    struct dentry *unused, struct inode *inode,
- 				    const char *name, const void *buffer,
- 				    size_t size, int flags)
-diff --git a/fs/hfsplus/xattr_user.c b/fs/hfsplus/xattr_user.c
-index 74d19faf255e..497f8114a132 100644
---- a/fs/hfsplus/xattr_user.c
-+++ b/fs/hfsplus/xattr_user.c
-@@ -22,6 +22,7 @@ static int hfsplus_user_getxattr(const struct xattr_handler *handler,
- }
- 
- static int hfsplus_user_setxattr(const struct xattr_handler *handler,
-+				 struct user_namespace *user_ns,
- 				 struct dentry *unused, struct inode *inode,
- 				 const char *name, const void *buffer,
- 				 size_t size, int flags)
-diff --git a/fs/jffs2/acl.c b/fs/jffs2/acl.c
-index 093ffbd82395..cf07a2fdf8bf 100644
---- a/fs/jffs2/acl.c
-+++ b/fs/jffs2/acl.c
-@@ -236,7 +236,7 @@ int jffs2_set_acl(struct inode *inode, struct posix_acl *acl, int type)
- 		if (acl) {
- 			umode_t mode;
- 
--			rc = posix_acl_update_mode(inode, &mode, &acl);
-+			rc = posix_acl_update_mode(&init_user_ns, inode, &mode, &acl);
- 			if (rc)
- 				return rc;
- 			if (inode->i_mode != mode) {
-diff --git a/fs/jffs2/fs.c b/fs/jffs2/fs.c
-index 67993808f4da..ee9f51bab4c6 100644
---- a/fs/jffs2/fs.c
-+++ b/fs/jffs2/fs.c
-@@ -201,7 +201,7 @@ int jffs2_setattr(struct dentry *dentry, struct iattr *iattr)
- 
- 	rc = jffs2_do_setattr(inode, iattr);
- 	if (!rc && (iattr->ia_valid & ATTR_MODE))
--		rc = posix_acl_chmod(inode, inode->i_mode);
-+		rc = posix_acl_chmod(&init_user_ns, inode, inode->i_mode);
- 
- 	return rc;
- }
-diff --git a/fs/jffs2/security.c b/fs/jffs2/security.c
-index c2332e30f218..451e603c61c1 100644
---- a/fs/jffs2/security.c
-+++ b/fs/jffs2/security.c
-@@ -57,6 +57,7 @@ static int jffs2_security_getxattr(const struct xattr_handler *handler,
- }
- 
- static int jffs2_security_setxattr(const struct xattr_handler *handler,
-+				   struct user_namespace *user_ns,
- 				   struct dentry *unused, struct inode *inode,
- 				   const char *name, const void *buffer,
- 				   size_t size, int flags)
-diff --git a/fs/jffs2/xattr_trusted.c b/fs/jffs2/xattr_trusted.c
-index 5d6030826c52..ca1afca47910 100644
---- a/fs/jffs2/xattr_trusted.c
-+++ b/fs/jffs2/xattr_trusted.c
-@@ -25,6 +25,7 @@ static int jffs2_trusted_getxattr(const struct xattr_handler *handler,
- }
- 
- static int jffs2_trusted_setxattr(const struct xattr_handler *handler,
-+				  struct user_namespace *user_ns,
- 				  struct dentry *unused, struct inode *inode,
- 				  const char *name, const void *buffer,
- 				  size_t size, int flags)
-diff --git a/fs/jffs2/xattr_user.c b/fs/jffs2/xattr_user.c
-index 9d027b4abcf9..f6bc7da9c0d3 100644
---- a/fs/jffs2/xattr_user.c
-+++ b/fs/jffs2/xattr_user.c
-@@ -25,6 +25,7 @@ static int jffs2_user_getxattr(const struct xattr_handler *handler,
- }
- 
- static int jffs2_user_setxattr(const struct xattr_handler *handler,
-+			       struct user_namespace *user_ns,
- 			       struct dentry *unused, struct inode *inode,
- 			       const char *name, const void *buffer,
- 			       size_t size, int flags)
-diff --git a/fs/jfs/acl.c b/fs/jfs/acl.c
-index 92cc0ac2d1fc..cf79a34bfada 100644
---- a/fs/jfs/acl.c
-+++ b/fs/jfs/acl.c
-@@ -101,7 +101,7 @@ int jfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
- 	tid = txBegin(inode->i_sb, 0);
- 	mutex_lock(&JFS_IP(inode)->commit_mutex);
- 	if (type == ACL_TYPE_ACCESS && acl) {
--		rc = posix_acl_update_mode(inode, &mode, &acl);
-+		rc = posix_acl_update_mode(&init_user_ns, inode, &mode, &acl);
- 		if (rc)
- 			goto end_tx;
- 		if (mode != inode->i_mode)
-diff --git a/fs/jfs/file.c b/fs/jfs/file.c
-index ff49876e9c9b..61c3b0c1fbf6 100644
---- a/fs/jfs/file.c
-+++ b/fs/jfs/file.c
-@@ -122,7 +122,7 @@ int jfs_setattr(struct dentry *dentry, struct iattr *iattr)
- 	mark_inode_dirty(inode);
- 
- 	if (iattr->ia_valid & ATTR_MODE)
--		rc = posix_acl_chmod(inode, inode->i_mode);
-+		rc = posix_acl_chmod(&init_user_ns, inode, inode->i_mode);
- 	return rc;
- }
- 
-diff --git a/fs/jfs/xattr.c b/fs/jfs/xattr.c
-index db41e7803163..2c83750bdf2b 100644
---- a/fs/jfs/xattr.c
-+++ b/fs/jfs/xattr.c
-@@ -932,6 +932,7 @@ static int jfs_xattr_get(const struct xattr_handler *handler,
- }
- 
- static int jfs_xattr_set(const struct xattr_handler *handler,
-+			 struct user_namespace *user_ns,
- 			 struct dentry *unused, struct inode *inode,
- 			 const char *name, const void *value,
- 			 size_t size, int flags)
-@@ -950,6 +951,7 @@ static int jfs_xattr_get_os2(const struct xattr_handler *handler,
- }
- 
- static int jfs_xattr_set_os2(const struct xattr_handler *handler,
-+			     struct user_namespace *user_ns,
- 			     struct dentry *unused, struct inode *inode,
- 			     const char *name, const void *value,
- 			     size_t size, int flags)
-diff --git a/fs/kernfs/inode.c b/fs/kernfs/inode.c
-index 86bd4c593b78..74ee0ffcfe71 100644
---- a/fs/kernfs/inode.c
-+++ b/fs/kernfs/inode.c
-@@ -319,6 +319,7 @@ static int kernfs_vfs_xattr_get(const struct xattr_handler *handler,
- }
- 
- static int kernfs_vfs_xattr_set(const struct xattr_handler *handler,
-+				struct user_namespace *user_ns,
- 				struct dentry *unused, struct inode *inode,
- 				const char *suffix, const void *value,
- 				size_t size, int flags)
-@@ -385,6 +386,7 @@ static int kernfs_vfs_user_xattr_rm(struct kernfs_node *kn,
- }
- 
- static int kernfs_vfs_user_xattr_set(const struct xattr_handler *handler,
-+				     struct user_namespace *user_ns,
- 				     struct dentry *unused, struct inode *inode,
- 				     const char *suffix, const void *value,
- 				     size_t size, int flags)
-diff --git a/fs/nfs/nfs4proc.c b/fs/nfs/nfs4proc.c
-index 9e0ca9b2b210..77504501323c 100644
---- a/fs/nfs/nfs4proc.c
-+++ b/fs/nfs/nfs4proc.c
-@@ -7486,6 +7486,7 @@ nfs4_release_lockowner(struct nfs_server *server, struct nfs4_lock_state *lsp)
- #define XATTR_NAME_NFSV4_ACL "system.nfs4_acl"
- 
- static int nfs4_xattr_set_nfs4_acl(const struct xattr_handler *handler,
-+				   struct user_namespace *user_ns,
- 				   struct dentry *unused, struct inode *inode,
- 				   const char *key, const void *buf,
- 				   size_t buflen, int flags)
-@@ -7508,6 +7509,7 @@ static bool nfs4_xattr_list_nfs4_acl(struct dentry *dentry)
- #ifdef CONFIG_NFS_V4_SECURITY_LABEL
- 
- static int nfs4_xattr_set_nfs4_label(const struct xattr_handler *handler,
-+				     struct user_namespace *user_ns,
- 				     struct dentry *unused, struct inode *inode,
- 				     const char *key, const void *buf,
- 				     size_t buflen, int flags)
-@@ -7558,6 +7560,7 @@ nfs4_listxattr_nfs4_label(struct inode *inode, char *list, size_t list_len)
- 
- #ifdef CONFIG_NFS_V4_2
- static int nfs4_xattr_set_nfs4_user(const struct xattr_handler *handler,
-+				    struct user_namespace *user_ns,
- 				    struct dentry *unused, struct inode *inode,
- 				    const char *key, const void *buf,
- 				    size_t buflen, int flags)
-diff --git a/fs/nfsd/nfs2acl.c b/fs/nfsd/nfs2acl.c
-index 6a900f770dd2..e5f06f21c24a 100644
---- a/fs/nfsd/nfs2acl.c
-+++ b/fs/nfsd/nfs2acl.c
-@@ -113,10 +113,10 @@ static __be32 nfsacld_proc_setacl(struct svc_rqst *rqstp)
- 
- 	fh_lock(fh);
- 
--	error = set_posix_acl(inode, ACL_TYPE_ACCESS, argp->acl_access);
-+	error = set_posix_acl(&init_user_ns, inode, ACL_TYPE_ACCESS, argp->acl_access);
+@@ -190,8 +190,8 @@ int __init init_link(const char *oldname, const char *newname)
+ 	error = security_path_link(old_path.dentry, &new_path, new_dentry);
  	if (error)
- 		goto out_drop_lock;
--	error = set_posix_acl(inode, ACL_TYPE_DEFAULT, argp->acl_default);
-+	error = set_posix_acl(&init_user_ns, inode, ACL_TYPE_DEFAULT, argp->acl_default);
- 	if (error)
- 		goto out_drop_lock;
- 
-diff --git a/fs/nfsd/nfs3acl.c b/fs/nfsd/nfs3acl.c
-index 34a394e50e1d..3618f62e118e 100644
---- a/fs/nfsd/nfs3acl.c
-+++ b/fs/nfsd/nfs3acl.c
-@@ -103,10 +103,10 @@ static __be32 nfsd3_proc_setacl(struct svc_rqst *rqstp)
- 
- 	fh_lock(fh);
- 
--	error = set_posix_acl(inode, ACL_TYPE_ACCESS, argp->acl_access);
-+	error = set_posix_acl(&init_user_ns, inode, ACL_TYPE_ACCESS, argp->acl_access);
- 	if (error)
- 		goto out_drop_lock;
--	error = set_posix_acl(inode, ACL_TYPE_DEFAULT, argp->acl_default);
-+	error = set_posix_acl(&init_user_ns, inode, ACL_TYPE_DEFAULT, argp->acl_default);
- 
- out_drop_lock:
- 	fh_unlock(fh);
-diff --git a/fs/nfsd/nfs4acl.c b/fs/nfsd/nfs4acl.c
-index 71292a0d6f09..0b35bc490aee 100644
---- a/fs/nfsd/nfs4acl.c
-+++ b/fs/nfsd/nfs4acl.c
-@@ -781,12 +781,12 @@ nfsd4_set_nfs4_acl(struct svc_rqst *rqstp, struct svc_fh *fhp,
- 
- 	fh_lock(fhp);
- 
--	host_error = set_posix_acl(inode, ACL_TYPE_ACCESS, pacl);
-+	host_error = set_posix_acl(&init_user_ns, inode, ACL_TYPE_ACCESS, pacl);
- 	if (host_error < 0)
- 		goto out_drop_lock;
- 
- 	if (S_ISDIR(inode->i_mode)) {
--		host_error = set_posix_acl(inode, ACL_TYPE_DEFAULT, dpacl);
-+		host_error = set_posix_acl(&init_user_ns, inode, ACL_TYPE_DEFAULT, dpacl);
- 	}
- 
- out_drop_lock:
-diff --git a/fs/ocfs2/acl.c b/fs/ocfs2/acl.c
-index 7b07f5df3a29..7e64dbe93251 100644
---- a/fs/ocfs2/acl.c
-+++ b/fs/ocfs2/acl.c
-@@ -274,7 +274,7 @@ int ocfs2_iop_set_acl(struct inode *inode, struct posix_acl *acl, int type)
- 	if (type == ACL_TYPE_ACCESS && acl) {
- 		umode_t mode;
- 
--		status = posix_acl_update_mode(inode, &mode, &acl);
-+		status = posix_acl_update_mode(&init_user_ns, inode, &mode, &acl);
- 		if (status)
- 			goto unlock;
- 
-diff --git a/fs/ocfs2/xattr.c b/fs/ocfs2/xattr.c
-index 9ccd19d8f7b1..7b034aef0b0d 100644
---- a/fs/ocfs2/xattr.c
-+++ b/fs/ocfs2/xattr.c
-@@ -7249,6 +7249,7 @@ static int ocfs2_xattr_security_get(const struct xattr_handler *handler,
- }
- 
- static int ocfs2_xattr_security_set(const struct xattr_handler *handler,
-+				    struct user_namespace *user_ns,
- 				    struct dentry *unused, struct inode *inode,
- 				    const char *name, const void *value,
- 				    size_t size, int flags)
-@@ -7321,6 +7322,7 @@ static int ocfs2_xattr_trusted_get(const struct xattr_handler *handler,
- }
- 
- static int ocfs2_xattr_trusted_set(const struct xattr_handler *handler,
-+				   struct user_namespace *user_ns,
- 				   struct dentry *unused, struct inode *inode,
- 				   const char *name, const void *value,
- 				   size_t size, int flags)
-@@ -7351,6 +7353,7 @@ static int ocfs2_xattr_user_get(const struct xattr_handler *handler,
- }
- 
- static int ocfs2_xattr_user_set(const struct xattr_handler *handler,
-+				struct user_namespace *user_ns,
- 				struct dentry *unused, struct inode *inode,
- 				const char *name, const void *value,
- 				size_t size, int flags)
-diff --git a/fs/orangefs/acl.c b/fs/orangefs/acl.c
-index a25e6c890975..ba55d61906c2 100644
---- a/fs/orangefs/acl.c
-+++ b/fs/orangefs/acl.c
-@@ -132,7 +132,7 @@ int orangefs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
- 		 * and "mode" to the new desired value. It is up to
- 		 * us to propagate the new mode back to the server...
- 		 */
--		error = posix_acl_update_mode(inode, &iattr.ia_mode, &acl);
-+		error = posix_acl_update_mode(&init_user_ns, inode, &iattr.ia_mode, &acl);
- 		if (error) {
- 			gossip_err("%s: posix_acl_update_mode err: %d\n",
- 				   __func__,
-diff --git a/fs/orangefs/inode.c b/fs/orangefs/inode.c
-index 8ac9491ceb9a..563fe9ab8eb2 100644
---- a/fs/orangefs/inode.c
-+++ b/fs/orangefs/inode.c
-@@ -861,7 +861,7 @@ int __orangefs_setattr(struct inode *inode, struct iattr *iattr)
- 
- 	if (iattr->ia_valid & ATTR_MODE)
- 		/* change mod on a file that has ACLs */
--		ret = posix_acl_chmod(inode, inode->i_mode);
-+		ret = posix_acl_chmod(&init_user_ns, inode, inode->i_mode);
- 
- 	ret = 0;
+ 		goto out_dput;
+-	error = vfs_link(old_path.dentry, new_path.dentry->d_inode, new_dentry,
+-			 NULL);
++	error = vfs_link(old_path.dentry, &init_user_ns, 
++			 new_path.dentry->d_inode, new_dentry, NULL);
+ out_dput:
+ 	done_path_create(&new_path, new_dentry);
  out:
-diff --git a/fs/orangefs/xattr.c b/fs/orangefs/xattr.c
-index bdc285aea360..41a4145ba697 100644
---- a/fs/orangefs/xattr.c
-+++ b/fs/orangefs/xattr.c
-@@ -526,6 +526,7 @@ ssize_t orangefs_listxattr(struct dentry *dentry, char *buffer, size_t size)
+@@ -210,7 +210,7 @@ int __init init_symlink(const char *oldname, const char *newname)
+ 		return PTR_ERR(dentry);
+ 	error = security_path_symlink(&path, dentry, oldname);
+ 	if (!error)
+-		error = vfs_symlink(path.dentry->d_inode, dentry, oldname);
++		error = vfs_symlink(&init_user_ns, path.dentry->d_inode, dentry, oldname);
+ 	done_path_create(&path, dentry);
+ 	return error;
  }
- 
- static int orangefs_xattr_set_default(const struct xattr_handler *handler,
-+				      struct user_namespace *user_ns,
- 				      struct dentry *unused,
- 				      struct inode *inode,
- 				      const char *name,
-diff --git a/fs/overlayfs/super.c b/fs/overlayfs/super.c
-index 64f5f8f6f84e..9c12df942407 100644
---- a/fs/overlayfs/super.c
-+++ b/fs/overlayfs/super.c
-@@ -935,6 +935,7 @@ ovl_posix_acl_xattr_get(const struct xattr_handler *handler,
- 
- static int __maybe_unused
- ovl_posix_acl_xattr_set(const struct xattr_handler *handler,
-+			struct user_namespace *user_ns,
- 			struct dentry *dentry, struct inode *inode,
- 			const char *name, const void *value,
- 			size_t size, int flags)
-@@ -999,6 +1000,7 @@ static int ovl_own_xattr_get(const struct xattr_handler *handler,
+@@ -233,7 +233,7 @@ int __init init_mkdir(const char *pathname, umode_t mode)
+ 		mode &= ~current_umask();
+ 	error = security_path_mkdir(&path, dentry, mode);
+ 	if (!error)
+-		error = vfs_mkdir(path.dentry->d_inode, dentry, mode);
++		error = vfs_mkdir(&init_user_ns, path.dentry->d_inode, dentry, mode);
+ 	done_path_create(&path, dentry);
+ 	return error;
  }
- 
- static int ovl_own_xattr_set(const struct xattr_handler *handler,
-+			     struct user_namespace *user_ns,
- 			     struct dentry *dentry, struct inode *inode,
- 			     const char *name, const void *value,
- 			     size_t size, int flags)
-@@ -1014,6 +1016,7 @@ static int ovl_other_xattr_get(const struct xattr_handler *handler,
+diff --git a/fs/namei.c b/fs/namei.c
+index 0a2450de83bb..b91bf923d22c 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -2820,10 +2820,10 @@ void unlock_rename(struct dentry *p1, struct dentry *p2)
  }
+ EXPORT_SYMBOL(unlock_rename);
  
- static int ovl_other_xattr_set(const struct xattr_handler *handler,
-+			       struct user_namespace *user_ns,
- 			       struct dentry *dentry, struct inode *inode,
- 			       const char *name, const void *value,
- 			       size_t size, int flags)
-diff --git a/fs/posix_acl.c b/fs/posix_acl.c
-index 87b5ec67000b..ee6c017802c3 100644
---- a/fs/posix_acl.c
-+++ b/fs/posix_acl.c
-@@ -559,7 +559,7 @@ __posix_acl_chmod(struct posix_acl **acl, gfp_t gfp, umode_t mode)
- EXPORT_SYMBOL(__posix_acl_chmod);
- 
- int
--posix_acl_chmod(struct inode *inode, umode_t mode)
-+posix_acl_chmod(struct user_namespace *user_ns, struct inode *inode, umode_t mode)
+-int vfs_create(struct inode *dir, struct dentry *dentry, umode_t mode,
+-		bool want_excl)
++int vfs_create(struct user_namespace *user_ns, struct inode *dir,
++	       struct dentry *dentry, umode_t mode, bool want_excl)
  {
- 	struct posix_acl *acl;
- 	int ret = 0;
-@@ -638,6 +638,7 @@ EXPORT_SYMBOL_GPL(posix_acl_create);
+-	int error = may_create(&init_user_ns, dir, dentry);
++	int error = may_create(user_ns, dir, dentry);
+ 	if (error)
+ 		return error;
+ 
+@@ -3298,7 +3298,8 @@ static int do_open(struct nameidata *nd,
+ 	return error;
+ }
+ 
+-struct dentry *vfs_tmpfile(struct dentry *dentry, umode_t mode, int open_flag)
++struct dentry *vfs_tmpfile(struct user_namespace *user_ns,
++			   struct dentry *dentry, umode_t mode, int open_flag)
+ {
+ 	struct dentry *child = NULL;
+ 	struct inode *dir = dentry->d_inode;
+@@ -3306,7 +3307,7 @@ struct dentry *vfs_tmpfile(struct dentry *dentry, umode_t mode, int open_flag)
+ 	int error;
+ 
+ 	/* we want directory to be writable */
+-	error = inode_permission(&init_user_ns, dir, MAY_WRITE | MAY_EXEC);
++	error = inode_permission(user_ns, dir, MAY_WRITE | MAY_EXEC);
+ 	if (error)
+ 		goto out_err;
+ 	error = -EOPNOTSUPP;
+@@ -3341,6 +3342,7 @@ static int do_tmpfile(struct nameidata *nd, unsigned flags,
+ 		const struct open_flags *op,
+ 		struct file *file)
+ {
++	struct user_namespace *user_ns;
+ 	struct dentry *child;
+ 	struct path path;
+ 	int error = path_lookupat(nd, flags | LOOKUP_DIRECTORY, &path);
+@@ -3349,7 +3351,8 @@ static int do_tmpfile(struct nameidata *nd, unsigned flags,
+ 	error = mnt_want_write(path.mnt);
+ 	if (unlikely(error))
+ 		goto out;
+-	child = vfs_tmpfile(path.dentry, op->mode, op->open_flag);
++	user_ns = mnt_user_ns(path.mnt);
++	child = vfs_tmpfile(user_ns, path.dentry, op->mode, op->open_flag);
+ 	error = PTR_ERR(child);
+ 	if (IS_ERR(child))
+ 		goto out2;
+@@ -3561,10 +3564,11 @@ inline struct dentry *user_path_create(int dfd, const char __user *pathname,
+ }
+ EXPORT_SYMBOL(user_path_create);
+ 
+-int vfs_mknod(struct inode *dir, struct dentry *dentry, umode_t mode, dev_t dev)
++int vfs_mknod(struct user_namespace *user_ns, struct inode *dir,
++	      struct dentry *dentry, umode_t mode, dev_t dev)
+ {
+ 	bool is_whiteout = S_ISCHR(mode) && dev == WHITEOUT_DEV;
+-	int error = may_create(&init_user_ns, dir, dentry);
++	int error = may_create(user_ns, dir, dentry);
+ 
+ 	if (error)
+ 		return error;
+@@ -3611,6 +3615,7 @@ static int may_mknod(umode_t mode)
+ static long do_mknodat(int dfd, const char __user *filename, umode_t mode,
+ 		unsigned int dev)
+ {
++	struct user_namespace *user_ns;
+ 	struct dentry *dentry;
+ 	struct path path;
+ 	int error;
+@@ -3629,18 +3634,22 @@ static long do_mknodat(int dfd, const char __user *filename, umode_t mode,
+ 	error = security_path_mknod(&path, dentry, mode, dev);
+ 	if (error)
+ 		goto out;
++
++	user_ns = mnt_user_ns(path.mnt);
+ 	switch (mode & S_IFMT) {
+ 		case 0: case S_IFREG:
+-			error = vfs_create(path.dentry->d_inode,dentry,mode,true);
++			error = vfs_create(user_ns, path.dentry->d_inode,
++					   dentry, mode, true);
+ 			if (!error)
+ 				ima_post_path_mknod(dentry);
+ 			break;
+ 		case S_IFCHR: case S_IFBLK:
+-			error = vfs_mknod(path.dentry->d_inode,dentry,mode,
+-					new_decode_dev(dev));
++			error = vfs_mknod(user_ns, path.dentry->d_inode, dentry,
++					  mode, new_decode_dev(dev));
+ 			break;
+ 		case S_IFIFO: case S_IFSOCK:
+-			error = vfs_mknod(path.dentry->d_inode,dentry,mode,0);
++			error = vfs_mknod(user_ns, path.dentry->d_inode, dentry,
++					  mode, 0);
+ 			break;
+ 	}
+ out:
+@@ -3663,9 +3672,10 @@ SYSCALL_DEFINE3(mknod, const char __user *, filename, umode_t, mode, unsigned, d
+ 	return do_mknodat(AT_FDCWD, filename, mode, dev);
+ }
+ 
+-int vfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
++int vfs_mkdir(struct user_namespace *user_ns, struct inode *dir,
++	      struct dentry *dentry, umode_t mode)
+ {
+-	int error = may_create(&init_user_ns, dir, dentry);
++	int error = may_create(user_ns, dir, dentry);
+ 	unsigned max_links = dir->i_sb->s_max_links;
+ 
+ 	if (error)
+@@ -3704,8 +3714,11 @@ static long do_mkdirat(int dfd, const char __user *pathname, umode_t mode)
+ 	if (!IS_POSIXACL(path.dentry->d_inode))
+ 		mode &= ~current_umask();
+ 	error = security_path_mkdir(&path, dentry, mode);
+-	if (!error)
+-		error = vfs_mkdir(path.dentry->d_inode, dentry, mode);
++	if (!error) {
++		struct user_namespace *user_ns;
++		user_ns = mnt_user_ns(path.mnt);
++		error = vfs_mkdir(user_ns, path.dentry->d_inode, dentry, mode);
++	}
+ 	done_path_create(&path, dentry);
+ 	if (retry_estale(error, lookup_flags)) {
+ 		lookup_flags |= LOOKUP_REVAL;
+@@ -3724,9 +3737,10 @@ SYSCALL_DEFINE2(mkdir, const char __user *, pathname, umode_t, mode)
+ 	return do_mkdirat(AT_FDCWD, pathname, mode);
+ }
+ 
+-int vfs_rmdir(struct inode *dir, struct dentry *dentry)
++int vfs_rmdir(struct user_namespace *user_ns, struct inode *dir,
++		     struct dentry *dentry)
+ {
+-	int error = may_delete(&init_user_ns, dir, dentry, 1);
++	int error = may_delete(user_ns, dir, dentry, 1);
+ 
+ 	if (error)
+ 		return error;
+@@ -3766,6 +3780,7 @@ EXPORT_SYMBOL(vfs_rmdir);
+ 
+ long do_rmdir(int dfd, struct filename *name)
+ {
++	struct user_namespace *user_ns;
+ 	int error = 0;
+ 	struct dentry *dentry;
+ 	struct path path;
+@@ -3806,7 +3821,8 @@ long do_rmdir(int dfd, struct filename *name)
+ 	error = security_path_rmdir(&path, dentry);
+ 	if (error)
+ 		goto exit3;
+-	error = vfs_rmdir(path.dentry->d_inode, dentry);
++	user_ns = mnt_user_ns(path.mnt);
++	error = vfs_rmdir(user_ns, path.dentry->d_inode, dentry);
+ exit3:
+ 	dput(dentry);
+ exit2:
+@@ -3845,10 +3861,11 @@ SYSCALL_DEFINE1(rmdir, const char __user *, pathname)
+  * be appropriate for callers that expect the underlying filesystem not
+  * to be NFS exported.
+  */
+-int vfs_unlink(struct inode *dir, struct dentry *dentry, struct inode **delegated_inode)
++int vfs_unlink(struct user_namespace *user_ns, struct inode *dir,
++	       struct dentry *dentry, struct inode **delegated_inode)
+ {
+ 	struct inode *target = dentry->d_inode;
+-	int error = may_delete(&init_user_ns, dir, dentry, 0);
++	int error = may_delete(user_ns, dir, dentry, 0);
+ 
+ 	if (error)
+ 		return error;
+@@ -3919,6 +3936,8 @@ long do_unlinkat(int dfd, struct filename *name)
+ 	dentry = __lookup_hash(&last, path.dentry, lookup_flags);
+ 	error = PTR_ERR(dentry);
+ 	if (!IS_ERR(dentry)) {
++		struct user_namespace *user_ns;
++
+ 		/* Why not before? Because we want correct error value */
+ 		if (last.name[last.len])
+ 			goto slashes;
+@@ -3929,7 +3948,8 @@ long do_unlinkat(int dfd, struct filename *name)
+ 		error = security_path_unlink(&path, dentry);
+ 		if (error)
+ 			goto exit2;
+-		error = vfs_unlink(path.dentry->d_inode, dentry, &delegated_inode);
++		user_ns = mnt_user_ns(path.mnt);
++		error = vfs_unlink(user_ns, path.dentry->d_inode, dentry, &delegated_inode);
+ exit2:
+ 		dput(dentry);
+ 	}
+@@ -3978,9 +3998,10 @@ SYSCALL_DEFINE1(unlink, const char __user *, pathname)
+ 	return do_unlinkat(AT_FDCWD, getname(pathname));
+ }
+ 
+-int vfs_symlink(struct inode *dir, struct dentry *dentry, const char *oldname)
++int vfs_symlink(struct user_namespace *user_ns, struct inode *dir,
++		struct dentry *dentry, const char *oldname)
+ {
+-	int error = may_create(&init_user_ns, dir, dentry);
++	int error = may_create(user_ns, dir, dentry);
+ 
+ 	if (error)
+ 		return error;
+@@ -4018,8 +4039,12 @@ static long do_symlinkat(const char __user *oldname, int newdfd,
+ 		goto out_putname;
+ 
+ 	error = security_path_symlink(&path, dentry, from->name);
+-	if (!error)
+-		error = vfs_symlink(path.dentry->d_inode, dentry, from->name);
++	if (!error) {
++		struct user_namespace *user_ns;
++		user_ns = mnt_user_ns(path.mnt);
++		error = vfs_symlink(user_ns, path.dentry->d_inode, dentry,
++				    from->name);
++	}
+ 	done_path_create(&path, dentry);
+ 	if (retry_estale(error, lookup_flags)) {
+ 		lookup_flags |= LOOKUP_REVAL;
+@@ -4044,6 +4069,7 @@ SYSCALL_DEFINE2(symlink, const char __user *, oldname, const char __user *, newn
+ /**
+  * vfs_link - create a new link
+  * @old_dentry:	object to be linked
++ * @user_ns:	the user namespace of the mount
+  * @dir:	new parent
+  * @new_dentry:	where to create the new link
+  * @delegated_inode: returns inode needing a delegation break
+@@ -4060,7 +4086,9 @@ SYSCALL_DEFINE2(symlink, const char __user *, oldname, const char __user *, newn
+  * be appropriate for callers that expect the underlying filesystem not
+  * to be NFS exported.
+  */
+-int vfs_link(struct dentry *old_dentry, struct inode *dir, struct dentry *new_dentry, struct inode **delegated_inode)
++int vfs_link(struct dentry *old_dentry, struct user_namespace *user_ns,
++	     struct inode *dir, struct dentry *new_dentry,
++	     struct inode **delegated_inode)
+ {
+ 	struct inode *inode = old_dentry->d_inode;
+ 	unsigned max_links = dir->i_sb->s_max_links;
+@@ -4069,7 +4097,7 @@ int vfs_link(struct dentry *old_dentry, struct inode *dir, struct dentry *new_de
+ 	if (!inode)
+ 		return -ENOENT;
+ 
+-	error = may_create(&init_user_ns, dir, new_dentry);
++	error = may_create(user_ns, dir, new_dentry);
+ 	if (error)
+ 		return error;
+ 
+@@ -4086,7 +4114,7 @@ int vfs_link(struct dentry *old_dentry, struct inode *dir, struct dentry *new_de
+ 	 * be writen back improperly if their true value is unknown to
+ 	 * the vfs.
+ 	 */
+-	if (HAS_UNMAPPED_ID(&init_user_ns, inode))
++	if (HAS_UNMAPPED_ID(user_ns, inode))
+ 		return -EPERM;
+ 	if (!dir->i_op->link)
+ 		return -EPERM;
+@@ -4133,6 +4161,7 @@ EXPORT_SYMBOL(vfs_link);
+ static int do_linkat(int olddfd, const char __user *oldname, int newdfd,
+ 	      const char __user *newname, int flags)
+ {
++	struct user_namespace *user_ns;
+ 	struct dentry *new_dentry;
+ 	struct path old_path, new_path;
+ 	struct inode *delegated_inode = NULL;
+@@ -4174,7 +4203,9 @@ static int do_linkat(int olddfd, const char __user *oldname, int newdfd,
+ 	error = security_path_link(old_path.dentry, &new_path, new_dentry);
+ 	if (error)
+ 		goto out_dput;
+-	error = vfs_link(old_path.dentry, new_path.dentry->d_inode, new_dentry, &delegated_inode);
++	user_ns = mnt_user_ns(new_path.mnt);
++	error = vfs_link(old_path.dentry, user_ns, new_path.dentry->d_inode,
++			 new_dentry, &delegated_inode);
+ out_dput:
+ 	done_path_create(&new_path, new_dentry);
+ 	if (delegated_inode) {
+@@ -4208,8 +4239,10 @@ SYSCALL_DEFINE2(link, const char __user *, oldname, const char __user *, newname
  
  /**
-  * posix_acl_update_mode  -  update mode in set_acl
-+ * @user_ns: user namespace the inode is accessed from
-  * @inode: target inode
-  * @mode_p: mode (pointer) for update
-  * @acl: acl pointer
-@@ -651,8 +652,8 @@ EXPORT_SYMBOL_GPL(posix_acl_create);
-  *
-  * Called from set_acl inode operations.
-  */
--int posix_acl_update_mode(struct inode *inode, umode_t *mode_p,
--			  struct posix_acl **acl)
-+int posix_acl_update_mode(struct user_namespace *user_ns, struct inode *inode,
-+			  umode_t *mode_p, struct posix_acl **acl)
+  * vfs_rename - rename a filesystem object
++ * @old_user_ns: user namespace the old inode is accessed from
+  * @old_dir:	parent of source
+  * @old_dentry:	source
++ * @new_user_ns: user namespace the old inode is accessed from
+  * @new_dir:	parent of destination
+  * @new_dentry:	destination
+  * @delegated_inode: returns an inode needing a delegation break
+@@ -4259,7 +4292,6 @@ SYSCALL_DEFINE2(link, const char __user *, oldname, const char __user *, newname
+ int vfs_rename(struct renamedata *rd)
  {
- 	umode_t mode = inode->i_mode;
  	int error;
-@@ -662,8 +663,8 @@ int posix_acl_update_mode(struct inode *inode, umode_t *mode_p,
- 		return error;
- 	if (error == 0)
- 		*acl = NULL;
--	if (!in_group_p(inode->i_gid) &&
--	    !capable_wrt_inode_uidgid(&init_user_ns, inode, CAP_FSETID))
-+	if (!in_group_p(i_gid_into_mnt(user_ns, inode)) &&
-+	    !capable_wrt_inode_uidgid(user_ns, inode, CAP_FSETID))
- 		mode &= ~S_ISGID;
- 	*mode_p = mode;
- 	return 0;
-@@ -675,7 +676,8 @@ EXPORT_SYMBOL(posix_acl_update_mode);
-  */
- static void posix_acl_fix_xattr_userns(
- 	struct user_namespace *to, struct user_namespace *from,
--	void *value, size_t size)
-+	struct user_namespace *mnt_user_ns,
-+	void *value, size_t size, bool from_user)
- {
- 	struct posix_acl_xattr_header *header = value;
- 	struct posix_acl_xattr_entry *entry = (void *)(header + 1), *end;
-@@ -700,10 +702,18 @@ static void posix_acl_fix_xattr_userns(
- 		switch(le16_to_cpu(entry->e_tag)) {
- 		case ACL_USER:
- 			uid = make_kuid(from, le32_to_cpu(entry->e_id));
-+			if (from_user)
-+				uid = kuid_from_mnt(mnt_user_ns, uid);
-+			else
-+				uid = kuid_into_mnt(mnt_user_ns, uid);
- 			entry->e_id = cpu_to_le32(from_kuid(to, uid));
- 			break;
- 		case ACL_GROUP:
- 			gid = make_kgid(from, le32_to_cpu(entry->e_id));
-+			if (from_user)
-+				gid = kgid_from_mnt(mnt_user_ns, gid);
-+			else
-+				gid = kgid_into_mnt(mnt_user_ns, gid);
- 			entry->e_id = cpu_to_le32(from_kgid(to, gid));
- 			break;
- 		default:
-@@ -712,21 +722,25 @@ static void posix_acl_fix_xattr_userns(
- 	}
- }
- 
--void posix_acl_fix_xattr_from_user(void *value, size_t size)
-+void posix_acl_fix_xattr_from_user(struct user_namespace *mnt_user_ns,
-+				   void *value, size_t size)
- {
- 	struct user_namespace *user_ns = current_user_ns();
--	if (user_ns == &init_user_ns)
-+	if ((user_ns == &init_user_ns) && (mnt_user_ns == &init_user_ns))
- 		return;
--	posix_acl_fix_xattr_userns(&init_user_ns, user_ns, value, size);
-+	posix_acl_fix_xattr_userns(&init_user_ns, user_ns, mnt_user_ns, value, size, true);
- }
-+EXPORT_SYMBOL(posix_acl_fix_xattr_from_user);
- 
--void posix_acl_fix_xattr_to_user(void *value, size_t size)
-+void posix_acl_fix_xattr_to_user(struct user_namespace *mnt_user_ns,
-+				 void *value, size_t size)
- {
- 	struct user_namespace *user_ns = current_user_ns();
--	if (user_ns == &init_user_ns)
-+	if ((user_ns == &init_user_ns) && (mnt_user_ns == &init_user_ns))
- 		return;
--	posix_acl_fix_xattr_userns(user_ns, &init_user_ns, value, size);
-+	posix_acl_fix_xattr_userns(user_ns, &init_user_ns, mnt_user_ns, value, size, false);
- }
-+EXPORT_SYMBOL(posix_acl_fix_xattr_to_user);
- 
- /*
-  * Convert from extended attribute to in-memory representation.
-@@ -865,7 +879,8 @@ posix_acl_xattr_get(const struct xattr_handler *handler,
- }
- 
- int
--set_posix_acl(struct inode *inode, int type, struct posix_acl *acl)
-+set_posix_acl(struct user_namespace *user_ns, struct inode *inode,
-+	      int type, struct posix_acl *acl)
- {
- 	if (!IS_POSIXACL(inode))
- 		return -EOPNOTSUPP;
-@@ -874,7 +889,7 @@ set_posix_acl(struct inode *inode, int type, struct posix_acl *acl)
- 
- 	if (type == ACL_TYPE_DEFAULT && !S_ISDIR(inode->i_mode))
- 		return acl ? -EACCES : 0;
--	if (!inode_owner_or_capable(&init_user_ns, inode))
-+	if (!inode_owner_or_capable(user_ns, inode))
- 		return -EPERM;
- 
- 	if (acl) {
-@@ -888,9 +903,10 @@ EXPORT_SYMBOL(set_posix_acl);
- 
- static int
- posix_acl_xattr_set(const struct xattr_handler *handler,
--		    struct dentry *unused, struct inode *inode,
--		    const char *name, const void *value,
--		    size_t size, int flags)
-+			   struct user_namespace *user_ns,
-+			   struct dentry *unused, struct inode *inode,
-+			   const char *name, const void *value, size_t size,
-+			   int flags)
- {
- 	struct posix_acl *acl = NULL;
- 	int ret;
-@@ -900,7 +916,7 @@ posix_acl_xattr_set(const struct xattr_handler *handler,
- 		if (IS_ERR(acl))
- 			return PTR_ERR(acl);
- 	}
--	ret = set_posix_acl(inode, handler->flags, acl);
-+	ret = set_posix_acl(user_ns, inode, handler->flags, acl);
- 	posix_acl_release(acl);
- 	return ret;
- }
-@@ -934,7 +950,7 @@ int simple_set_acl(struct inode *inode, struct posix_acl *acl, int type)
- 	int error;
- 
- 	if (type == ACL_TYPE_ACCESS) {
--		error = posix_acl_update_mode(inode,
-+		error = posix_acl_update_mode(&init_user_ns, inode,
- 				&inode->i_mode, &acl);
- 		if (error)
- 			return error;
-diff --git a/fs/reiserfs/xattr_acl.c b/fs/reiserfs/xattr_acl.c
-index ccd40df6eb45..b8f397134c17 100644
---- a/fs/reiserfs/xattr_acl.c
-+++ b/fs/reiserfs/xattr_acl.c
-@@ -40,7 +40,7 @@ reiserfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
- 	reiserfs_write_unlock(inode->i_sb);
- 	if (error == 0) {
- 		if (type == ACL_TYPE_ACCESS && acl) {
--			error = posix_acl_update_mode(inode, &mode, &acl);
-+			error = posix_acl_update_mode(&init_user_ns, inode, &mode, &acl);
- 			if (error)
- 				goto unlock;
- 			update_mode = 1;
-@@ -399,5 +399,5 @@ int reiserfs_acl_chmod(struct inode *inode)
- 	    !reiserfs_posixacl(inode->i_sb))
+-	struct user_namespace *user_ns = &init_user_ns;
+ 	struct inode *old_dir = rd->old_dir, *new_dir = rd->new_dir;
+ 	struct dentry *old_dentry = rd->old_dentry,
+ 		      *new_dentry = rd->new_dentry;
+@@ -4275,19 +4307,19 @@ int vfs_rename(struct renamedata *rd)
+ 	if (source == target)
  		return 0;
  
--	return posix_acl_chmod(inode, inode->i_mode);
-+	return posix_acl_chmod(&init_user_ns, inode, inode->i_mode);
- }
-diff --git a/fs/reiserfs/xattr_security.c b/fs/reiserfs/xattr_security.c
-index 20be9a0e5870..c98411a46c64 100644
---- a/fs/reiserfs/xattr_security.c
-+++ b/fs/reiserfs/xattr_security.c
-@@ -21,7 +21,8 @@ security_get(const struct xattr_handler *handler, struct dentry *unused,
- }
- 
- static int
--security_set(const struct xattr_handler *handler, struct dentry *unused,
-+security_set(const struct xattr_handler *handler, struct user_namespace *user_ns,
-+	     struct dentry *unused,
- 	     struct inode *inode, const char *name, const void *buffer,
- 	     size_t size, int flags)
- {
-diff --git a/fs/reiserfs/xattr_trusted.c b/fs/reiserfs/xattr_trusted.c
-index 5ed48da3d02b..d197cd9da0ec 100644
---- a/fs/reiserfs/xattr_trusted.c
-+++ b/fs/reiserfs/xattr_trusted.c
-@@ -20,7 +20,8 @@ trusted_get(const struct xattr_handler *handler, struct dentry *unused,
- }
- 
- static int
--trusted_set(const struct xattr_handler *handler, struct dentry *unused,
-+trusted_set(const struct xattr_handler *handler, struct user_namespace *user_ns,
-+	    struct dentry *unused,
- 	    struct inode *inode, const char *name, const void *buffer,
- 	    size_t size, int flags)
- {
-diff --git a/fs/reiserfs/xattr_user.c b/fs/reiserfs/xattr_user.c
-index a573ca45bacc..a79112aa0b4d 100644
---- a/fs/reiserfs/xattr_user.c
-+++ b/fs/reiserfs/xattr_user.c
-@@ -18,7 +18,8 @@ user_get(const struct xattr_handler *handler, struct dentry *unused,
- }
- 
- static int
--user_set(const struct xattr_handler *handler, struct dentry *unused,
-+user_set(const struct xattr_handler *handler, struct user_namespace *user_ns,
-+	 struct dentry *unused,
- 	 struct inode *inode, const char *name, const void *buffer,
- 	 size_t size, int flags)
- {
-diff --git a/fs/ubifs/xattr.c b/fs/ubifs/xattr.c
-index a0b9b349efe6..87d710d0e5b1 100644
---- a/fs/ubifs/xattr.c
-+++ b/fs/ubifs/xattr.c
-@@ -681,6 +681,7 @@ static int xattr_get(const struct xattr_handler *handler,
- }
- 
- static int xattr_set(const struct xattr_handler *handler,
-+			   struct user_namespace *user_ns,
- 			   struct dentry *dentry, struct inode *inode,
- 			   const char *name, const void *value,
- 			   size_t size, int flags)
-diff --git a/fs/xattr.c b/fs/xattr.c
-index fcc79c2a1ea1..ff9ffe77a4b2 100644
---- a/fs/xattr.c
-+++ b/fs/xattr.c
-@@ -174,7 +174,7 @@ __vfs_setxattr(struct dentry *dentry, struct inode *inode, const char *name,
- 		return -EOPNOTSUPP;
- 	if (size == 0)
- 		value = "";  /* empty EA, do not remove */
--	return handler->set(handler, dentry, inode, name, value, size, flags);
-+	return handler->set(handler, &init_user_ns, dentry, inode, name, value, size, flags);
- }
- EXPORT_SYMBOL(__vfs_setxattr);
- 
-@@ -438,7 +438,7 @@ __vfs_removexattr(struct dentry *dentry, const char *name)
- 		return PTR_ERR(handler);
- 	if (!handler->set)
- 		return -EOPNOTSUPP;
--	return handler->set(handler, dentry, inode, name, NULL, 0, XATTR_REPLACE);
-+	return handler->set(handler, &init_user_ns, dentry, inode, name, NULL, 0, XATTR_REPLACE);
- }
- EXPORT_SYMBOL(__vfs_removexattr);
- 
-@@ -536,9 +536,9 @@ setxattr(struct dentry *d, const char __user *name, const void __user *value,
- 		}
- 		if ((strcmp(kname, XATTR_NAME_POSIX_ACL_ACCESS) == 0) ||
- 		    (strcmp(kname, XATTR_NAME_POSIX_ACL_DEFAULT) == 0))
--			posix_acl_fix_xattr_from_user(kvalue, size);
-+			posix_acl_fix_xattr_from_user(&init_user_ns, kvalue, size);
- 		else if (strcmp(kname, XATTR_NAME_CAPS) == 0) {
--			error = cap_convert_nscap(d, &kvalue, size);
-+			error = cap_convert_nscap(&init_user_ns, d, &kvalue, size);
- 			if (error < 0)
- 				goto out;
- 			size = error;
-@@ -636,7 +636,7 @@ getxattr(struct dentry *d, const char __user *name, void __user *value,
- 	if (error > 0) {
- 		if ((strcmp(kname, XATTR_NAME_POSIX_ACL_ACCESS) == 0) ||
- 		    (strcmp(kname, XATTR_NAME_POSIX_ACL_DEFAULT) == 0))
--			posix_acl_fix_xattr_to_user(kvalue, error);
-+			posix_acl_fix_xattr_to_user(&init_user_ns, kvalue, error);
- 		if (size && copy_to_user(value, kvalue, error))
- 			error = -EFAULT;
- 	} else if (error == -ERANGE && size >= XATTR_SIZE_MAX) {
-diff --git a/fs/xfs/xfs_acl.c b/fs/xfs/xfs_acl.c
-index c544951a0c07..2e9d2d2878ce 100644
---- a/fs/xfs/xfs_acl.c
-+++ b/fs/xfs/xfs_acl.c
-@@ -244,7 +244,7 @@ xfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
+-	error = may_delete(user_ns, old_dir, old_dentry, is_dir);
++	error = may_delete(rd->old_user_ns, old_dir, old_dentry, is_dir);
+ 	if (error)
  		return error;
  
- 	if (type == ACL_TYPE_ACCESS) {
--		error = posix_acl_update_mode(inode, &mode, &acl);
-+		error = posix_acl_update_mode(&init_user_ns, inode, &mode, &acl);
- 		if (error)
- 			return error;
- 		set_mode = true;
-diff --git a/fs/xfs/xfs_iops.c b/fs/xfs/xfs_iops.c
-index b1be836cf35e..c5f0db50c00f 100644
---- a/fs/xfs/xfs_iops.c
-+++ b/fs/xfs/xfs_iops.c
-@@ -810,7 +810,7 @@ xfs_setattr_nonsize(
- 	 * 	     Posix ACL code seems to care about this issue either.
- 	 */
- 	if ((mask & ATTR_MODE) && !(flags & XFS_ATTR_NOACL)) {
--		error = posix_acl_chmod(inode, inode->i_mode);
-+		error = posix_acl_chmod(&init_user_ns, inode, inode->i_mode);
- 		if (error)
- 			return error;
+ 	if (!target) {
+-		error = may_create(user_ns, new_dir, new_dentry);
++		error = may_create(rd->new_user_ns, new_dir, new_dentry);
+ 	} else {
+ 		new_is_dir = d_is_dir(new_dentry);
+ 
+ 		if (!(flags & RENAME_EXCHANGE))
+-			error = may_delete(user_ns, new_dir, new_dentry, is_dir);
++			error = may_delete(rd->new_user_ns, new_dir, new_dentry, is_dir);
+ 		else
+-			error = may_delete(user_ns, new_dir, new_dentry, new_is_dir);
++			error = may_delete(rd->new_user_ns, new_dir, new_dentry, new_is_dir);
  	}
-diff --git a/fs/xfs/xfs_xattr.c b/fs/xfs/xfs_xattr.c
-index bca48b308c02..76c9bdab2234 100644
---- a/fs/xfs/xfs_xattr.c
-+++ b/fs/xfs/xfs_xattr.c
-@@ -38,7 +38,8 @@ xfs_xattr_get(const struct xattr_handler *handler, struct dentry *unused,
- }
+ 	if (error)
+ 		return error;
+@@ -4301,12 +4333,12 @@ int vfs_rename(struct renamedata *rd)
+ 	 */
+ 	if (new_dir != old_dir) {
+ 		if (is_dir) {
+-			error = inode_permission(&init_user_ns, source, MAY_WRITE);
++			error = inode_permission(rd->old_user_ns, source, MAY_WRITE);
+ 			if (error)
+ 				return error;
+ 		}
+ 		if ((flags & RENAME_EXCHANGE) && new_is_dir) {
+-			error = inode_permission(&init_user_ns, target, MAY_WRITE);
++			error = inode_permission(rd->new_user_ns, target, MAY_WRITE);
+ 			if (error)
+ 				return error;
+ 		}
+@@ -4497,8 +4529,10 @@ static int do_renameat2(int olddfd, const char __user *oldname, int newdfd,
  
- static int
--xfs_xattr_set(const struct xattr_handler *handler, struct dentry *unused,
-+xfs_xattr_set(const struct xattr_handler *handler, struct user_namespace *user_ns,
-+		struct dentry *unused,
- 		struct inode *inode, const char *name, const void *value,
- 		size_t size, int flags)
+ 	rd.old_dir	   = old_path.dentry->d_inode;
+ 	rd.old_dentry	   = old_dentry;
++	rd.old_user_ns	   = mnt_user_ns(old_path.mnt);
+ 	rd.new_dir	   = new_path.dentry->d_inode;
+ 	rd.new_dentry	   = new_dentry;
++	rd.new_user_ns	   = mnt_user_ns(new_path.mnt);
+ 	rd.delegated_inode = &delegated_inode;
+ 	rd.flags	   = flags;
+ 	error = vfs_rename(&rd);
+diff --git a/fs/nfsd/nfs4recover.c b/fs/nfsd/nfs4recover.c
+index 186fa2c2c6ba..891395c6c7d3 100644
+--- a/fs/nfsd/nfs4recover.c
++++ b/fs/nfsd/nfs4recover.c
+@@ -233,7 +233,7 @@ nfsd4_create_clid_dir(struct nfs4_client *clp)
+ 		 * as well be forgiving and just succeed silently.
+ 		 */
+ 		goto out_put;
+-	status = vfs_mkdir(d_inode(dir), dentry, S_IRWXU);
++	status = vfs_mkdir(&init_user_ns, d_inode(dir), dentry, S_IRWXU);
+ out_put:
+ 	dput(dentry);
+ out_unlock:
+@@ -353,7 +353,7 @@ nfsd4_unlink_clid_dir(char *name, int namlen, struct nfsd_net *nn)
+ 	status = -ENOENT;
+ 	if (d_really_is_negative(dentry))
+ 		goto out;
+-	status = vfs_rmdir(d_inode(dir), dentry);
++	status = vfs_rmdir(&init_user_ns, d_inode(dir), dentry);
+ out:
+ 	dput(dentry);
+ out_unlock:
+@@ -443,7 +443,7 @@ purge_old(struct dentry *parent, struct dentry *child, struct nfsd_net *nn)
+ 	if (nfs4_has_reclaimed_state(name, nn))
+ 		goto out_free;
+ 
+-	status = vfs_rmdir(d_inode(parent), child);
++	status = vfs_rmdir(&init_user_ns, d_inode(parent), child);
+ 	if (status)
+ 		printk("failed to remove client recovery directory %pd\n",
+ 				child);
+diff --git a/fs/nfsd/vfs.c b/fs/nfsd/vfs.c
+index 3d7a8cd61098..49837c995377 100644
+--- a/fs/nfsd/vfs.c
++++ b/fs/nfsd/vfs.c
+@@ -1245,12 +1245,12 @@ nfsd_create_locked(struct svc_rqst *rqstp, struct svc_fh *fhp,
+ 	host_err = 0;
+ 	switch (type) {
+ 	case S_IFREG:
+-		host_err = vfs_create(dirp, dchild, iap->ia_mode, true);
++		host_err = vfs_create(&init_user_ns, dirp, dchild, iap->ia_mode, true);
+ 		if (!host_err)
+ 			nfsd_check_ignore_resizing(iap);
+ 		break;
+ 	case S_IFDIR:
+-		host_err = vfs_mkdir(dirp, dchild, iap->ia_mode);
++		host_err = vfs_mkdir(&init_user_ns, dirp, dchild, iap->ia_mode);
+ 		if (!host_err && unlikely(d_unhashed(dchild))) {
+ 			struct dentry *d;
+ 			d = lookup_one_len(dchild->d_name.name,
+@@ -1278,7 +1278,8 @@ nfsd_create_locked(struct svc_rqst *rqstp, struct svc_fh *fhp,
+ 	case S_IFBLK:
+ 	case S_IFIFO:
+ 	case S_IFSOCK:
+-		host_err = vfs_mknod(dirp, dchild, iap->ia_mode, rdev);
++		host_err = vfs_mknod(&init_user_ns, dirp, dchild,
++				     iap->ia_mode, rdev);
+ 		break;
+ 	default:
+ 		printk(KERN_WARNING "nfsd: bad file type %o in nfsd_create\n",
+@@ -1476,7 +1477,7 @@ do_nfsd_create(struct svc_rqst *rqstp, struct svc_fh *fhp,
+ 	if (!IS_POSIXACL(dirp))
+ 		iap->ia_mode &= ~current_umask();
+ 
+-	host_err = vfs_create(dirp, dchild, iap->ia_mode, true);
++	host_err = vfs_create(&init_user_ns, dirp, dchild, iap->ia_mode, true);
+ 	if (host_err < 0) {
+ 		fh_drop_write(fhp);
+ 		goto out_nfserr;
+@@ -1600,7 +1601,7 @@ nfsd_symlink(struct svc_rqst *rqstp, struct svc_fh *fhp,
+ 	if (IS_ERR(dnew))
+ 		goto out_nfserr;
+ 
+-	host_err = vfs_symlink(d_inode(dentry), dnew, path);
++	host_err = vfs_symlink(&init_user_ns, d_inode(dentry), dnew, path);
+ 	err = nfserrno(host_err);
+ 	if (!err)
+ 		err = nfserrno(commit_metadata(fhp));
+@@ -1668,7 +1669,7 @@ nfsd_link(struct svc_rqst *rqstp, struct svc_fh *ffhp,
+ 	err = nfserr_noent;
+ 	if (d_really_is_negative(dold))
+ 		goto out_dput;
+-	host_err = vfs_link(dold, dirp, dnew, NULL);
++	host_err = vfs_link(dold, &init_user_ns, dirp, dnew, NULL);
+ 	if (!host_err) {
+ 		err = nfserrno(commit_metadata(ffhp));
+ 		if (!err)
+@@ -1788,8 +1789,10 @@ nfsd_rename(struct svc_rqst *rqstp, struct svc_fh *ffhp, char *fname, int flen,
+ 		goto out_dput_old;
+ 	} else {
+ 		struct renamedata rd = {
++			.old_user_ns	= &init_user_ns,
+ 			.old_dir	= fdir,
+ 			.old_dentry	= odentry,
++			.new_user_ns	= &init_user_ns,
+ 			.new_dir	= tdir,
+ 			.new_dentry	= ndentry,
+ 		};
+@@ -1879,9 +1882,9 @@ nfsd_unlink(struct svc_rqst *rqstp, struct svc_fh *fhp, int type,
+ 
+ 	if (type != S_IFDIR) {
+ 		nfsd_close_cached_files(rdentry);
+-		host_err = vfs_unlink(dirp, rdentry, NULL);
++		host_err = vfs_unlink(&init_user_ns, dirp, rdentry, NULL);
+ 	} else {
+-		host_err = vfs_rmdir(dirp, rdentry);
++		host_err = vfs_rmdir(&init_user_ns, dirp, rdentry);
+ 	}
+ 
+ 	if (!host_err)
+diff --git a/fs/overlayfs/dir.c b/fs/overlayfs/dir.c
+index a1794c838b78..fa6e3fde9a26 100644
+--- a/fs/overlayfs/dir.c
++++ b/fs/overlayfs/dir.c
+@@ -821,9 +821,9 @@ static int ovl_remove_upper(struct dentry *dentry, bool is_dir,
+ 		goto out_dput_upper;
+ 
+ 	if (is_dir)
+-		err = vfs_rmdir(dir, upper);
++		err = vfs_rmdir(&init_user_ns, dir, upper);
+ 	else
+-		err = vfs_unlink(dir, upper, NULL);
++		err = vfs_unlink(&init_user_ns, dir, upper, NULL);
+ 	ovl_dir_modified(dentry->d_parent, ovl_type_origin(dentry));
+ 
+ 	/*
+diff --git a/fs/overlayfs/overlayfs.h b/fs/overlayfs/overlayfs.h
+index 73da8710b0f0..0249ea876dc3 100644
+--- a/fs/overlayfs/overlayfs.h
++++ b/fs/overlayfs/overlayfs.h
+@@ -121,7 +121,7 @@ static inline const char *ovl_xattr(struct ovl_fs *ofs, enum ovl_xattr ox)
+ 
+ static inline int ovl_do_rmdir(struct inode *dir, struct dentry *dentry)
  {
-diff --git a/include/linux/capability.h b/include/linux/capability.h
-index 041e336f3369..0d54ca8abaed 100644
---- a/include/linux/capability.h
-+++ b/include/linux/capability.h
-@@ -273,6 +273,7 @@ static inline bool checkpoint_restore_ns_capable(struct user_namespace *ns)
- /* audit system wants to get cap info from files as well */
- extern int get_vfs_caps_from_disk(const struct dentry *dentry, struct cpu_vfs_cap_data *cpu_caps);
+-	int err = vfs_rmdir(dir, dentry);
++	int err = vfs_rmdir(&init_user_ns, dir, dentry);
  
--extern int cap_convert_nscap(struct dentry *dentry, void **ivalue, size_t size);
-+extern int cap_convert_nscap(struct user_namespace *user_ns,
-+			     struct dentry *dentry, void **ivalue, size_t size);
+ 	pr_debug("rmdir(%pd2) = %i\n", dentry, err);
+ 	return err;
+@@ -129,7 +129,7 @@ static inline int ovl_do_rmdir(struct inode *dir, struct dentry *dentry)
  
- #endif /* !_LINUX_CAPABILITY_H */
-diff --git a/include/linux/posix_acl.h b/include/linux/posix_acl.h
-index 8276baefed13..28a789218d83 100644
---- a/include/linux/posix_acl.h
-+++ b/include/linux/posix_acl.h
-@@ -71,13 +71,13 @@ extern int __posix_acl_create(struct posix_acl **, gfp_t, umode_t *);
- extern int __posix_acl_chmod(struct posix_acl **, gfp_t, umode_t);
- 
- extern struct posix_acl *get_posix_acl(struct inode *, int);
--extern int set_posix_acl(struct inode *, int, struct posix_acl *);
-+extern int set_posix_acl(struct user_namespace *, struct inode *, int, struct posix_acl *);
- 
- #ifdef CONFIG_FS_POSIX_ACL
--extern int posix_acl_chmod(struct inode *, umode_t);
-+extern int posix_acl_chmod(struct user_namespace *, struct inode *, umode_t);
- extern int posix_acl_create(struct inode *, umode_t *, struct posix_acl **,
- 		struct posix_acl **);
--extern int posix_acl_update_mode(struct inode *, umode_t *, struct posix_acl **);
-+extern int posix_acl_update_mode(struct user_namespace *, struct inode *, umode_t *, struct posix_acl **);
- 
- extern int simple_set_acl(struct inode *, struct posix_acl *, int);
- extern int simple_acl_create(struct inode *, struct inode *);
-@@ -94,7 +94,8 @@ static inline void cache_no_acl(struct inode *inode)
- 	inode->i_default_acl = NULL;
- }
- #else
--static inline int posix_acl_chmod(struct inode *inode, umode_t mode)
-+static inline int posix_acl_chmod(struct user_namespace *user_ns,
-+				  struct inode *inode, umode_t mode)
+ static inline int ovl_do_unlink(struct inode *dir, struct dentry *dentry)
  {
- 	return 0;
- }
-diff --git a/include/linux/posix_acl_xattr.h b/include/linux/posix_acl_xattr.h
-index 2387709991b5..9fdac573e1cb 100644
---- a/include/linux/posix_acl_xattr.h
-+++ b/include/linux/posix_acl_xattr.h
-@@ -33,13 +33,17 @@ posix_acl_xattr_count(size_t size)
- }
+-	int err = vfs_unlink(dir, dentry, NULL);
++	int err = vfs_unlink(&init_user_ns, dir, dentry, NULL);
  
- #ifdef CONFIG_FS_POSIX_ACL
--void posix_acl_fix_xattr_from_user(void *value, size_t size);
--void posix_acl_fix_xattr_to_user(void *value, size_t size);
-+void posix_acl_fix_xattr_from_user(struct user_namespace *mnt_user_ns,
-+				   void *value, size_t size);
-+void posix_acl_fix_xattr_to_user(struct user_namespace *mnt_user_ns,
-+				 void *value, size_t size);
- #else
--static inline void posix_acl_fix_xattr_from_user(void *value, size_t size)
-+static inline void posix_acl_fix_xattr_from_user(struct user_namespace *mnt_user_ns,
-+						 void *value, size_t size)
+ 	pr_debug("unlink(%pd2) = %i\n", dentry, err);
+ 	return err;
+@@ -138,7 +138,7 @@ static inline int ovl_do_unlink(struct inode *dir, struct dentry *dentry)
+ static inline int ovl_do_link(struct dentry *old_dentry, struct inode *dir,
+ 			      struct dentry *new_dentry)
  {
- }
--static inline void posix_acl_fix_xattr_to_user(void *value, size_t size)
-+static inline void posix_acl_fix_xattr_to_user(struct user_namespace *mnt_user_ns,
-+					       void *value, size_t size)
+-	int err = vfs_link(old_dentry, dir, new_dentry, NULL);
++	int err = vfs_link(old_dentry, &init_user_ns, dir, new_dentry, NULL);
+ 
+ 	pr_debug("link(%pd2, %pd2) = %i\n", old_dentry, new_dentry, err);
+ 	return err;
+@@ -147,7 +147,7 @@ static inline int ovl_do_link(struct dentry *old_dentry, struct inode *dir,
+ static inline int ovl_do_create(struct inode *dir, struct dentry *dentry,
+ 				umode_t mode)
  {
- }
- #endif
-diff --git a/include/linux/xattr.h b/include/linux/xattr.h
-index 10b4dc2709f0..6d2ef03ba399 100644
---- a/include/linux/xattr.h
-+++ b/include/linux/xattr.h
-@@ -34,9 +34,9 @@ struct xattr_handler {
- 	int (*get)(const struct xattr_handler *, struct dentry *dentry,
- 		   struct inode *inode, const char *name, void *buffer,
- 		   size_t size);
--	int (*set)(const struct xattr_handler *, struct dentry *dentry,
--		   struct inode *inode, const char *name, const void *buffer,
--		   size_t size, int flags);
-+	int (*set)(const struct xattr_handler *, struct user_namespace *user_ns,
-+		   struct dentry *dentry, struct inode *inode, const char *name,
-+		   const void *buffer, size_t size, int flags);
- };
+-	int err = vfs_create(dir, dentry, mode, true);
++	int err = vfs_create(&init_user_ns, dir, dentry, mode, true);
  
- const char *xattr_full_name(const struct xattr_handler *, const char *);
-diff --git a/mm/shmem.c b/mm/shmem.c
-index 368555ddc411..8fdf52576e06 100644
---- a/mm/shmem.c
-+++ b/mm/shmem.c
-@@ -1143,7 +1143,7 @@ static int shmem_setattr(struct dentry *dentry, struct iattr *attr)
- 
- 	setattr_copy(&init_user_ns, inode, attr);
- 	if (attr->ia_valid & ATTR_MODE)
--		error = posix_acl_chmod(inode, inode->i_mode);
-+		error = posix_acl_chmod(&init_user_ns, inode, inode->i_mode);
- 	return error;
- }
- 
-@@ -3278,6 +3278,7 @@ static int shmem_xattr_handler_get(const struct xattr_handler *handler,
- }
- 
- static int shmem_xattr_handler_set(const struct xattr_handler *handler,
-+				   struct user_namespace *user_ns,
- 				   struct dentry *unused, struct inode *inode,
- 				   const char *name, const void *value,
- 				   size_t size, int flags)
-diff --git a/net/socket.c b/net/socket.c
-index 6e6cccc2104f..3bf36327f531 100644
---- a/net/socket.c
-+++ b/net/socket.c
-@@ -334,6 +334,7 @@ static const struct xattr_handler sockfs_xattr_handler = {
- };
- 
- static int sockfs_security_xattr_set(const struct xattr_handler *handler,
-+				     struct user_namespace *user_ns,
- 				     struct dentry *dentry, struct inode *inode,
- 				     const char *suffix, const void *value,
- 				     size_t size, int flags)
-diff --git a/security/commoncap.c b/security/commoncap.c
-index 4cd2bdfd0a8b..abefe9223b5e 100644
---- a/security/commoncap.c
-+++ b/security/commoncap.c
-@@ -451,15 +451,18 @@ int cap_inode_getsecurity(struct inode *inode, const char *name, void **buffer,
- }
- 
- static kuid_t rootid_from_xattr(const void *value, size_t size,
--				struct user_namespace *task_ns)
-+				struct user_namespace *task_ns,
-+				struct user_namespace *user_ns)
+ 	pr_debug("create(%pd2, 0%o) = %i\n", dentry, mode, err);
+ 	return err;
+@@ -156,7 +156,7 @@ static inline int ovl_do_create(struct inode *dir, struct dentry *dentry,
+ static inline int ovl_do_mkdir(struct inode *dir, struct dentry *dentry,
+ 			       umode_t mode)
  {
- 	const struct vfs_ns_cap_data *nscap = value;
-+	kuid_t rootkid;
- 	uid_t rootid = 0;
- 
- 	if (size == XATTR_CAPS_SZ_3)
- 		rootid = le32_to_cpu(nscap->rootid);
- 
--	return make_kuid(task_ns, rootid);
-+	rootkid = make_kuid(task_ns, rootid);
-+	return kuid_from_mnt(user_ns, rootkid);
+-	int err = vfs_mkdir(dir, dentry, mode);
++	int err = vfs_mkdir(&init_user_ns, dir, dentry, mode);
+ 	pr_debug("mkdir(%pd2, 0%o) = %i\n", dentry, mode, err);
+ 	return err;
  }
- 
- static bool validheader(size_t size, const struct vfs_cap_data *cap)
-@@ -473,7 +476,8 @@ static bool validheader(size_t size, const struct vfs_cap_data *cap)
-  *
-  * If all is ok, we return the new size, on error return < 0.
-  */
--int cap_convert_nscap(struct dentry *dentry, void **ivalue, size_t size)
-+int cap_convert_nscap(struct user_namespace *user_ns, struct dentry *dentry,
-+		      void **ivalue, size_t size)
+@@ -164,7 +164,7 @@ static inline int ovl_do_mkdir(struct inode *dir, struct dentry *dentry,
+ static inline int ovl_do_mknod(struct inode *dir, struct dentry *dentry,
+ 			       umode_t mode, dev_t dev)
  {
- 	struct vfs_ns_cap_data *nscap;
- 	uid_t nsrootid;
-@@ -489,14 +493,14 @@ int cap_convert_nscap(struct dentry *dentry, void **ivalue, size_t size)
- 		return -EINVAL;
- 	if (!validheader(size, cap))
- 		return -EINVAL;
--	if (!capable_wrt_inode_uidgid(&init_user_ns, inode, CAP_SETFCAP))
-+	if (!capable_wrt_inode_uidgid(user_ns, inode, CAP_SETFCAP))
- 		return -EPERM;
--	if (size == XATTR_CAPS_SZ_2)
-+	if (size == XATTR_CAPS_SZ_2 && (user_ns == &init_user_ns))
- 		if (ns_capable(inode->i_sb->s_user_ns, CAP_SETFCAP))
- 			/* user is privileged, just write the v2 */
- 			return size;
+-	int err = vfs_mknod(dir, dentry, mode, dev);
++	int err = vfs_mknod(&init_user_ns, dir, dentry, mode, dev);
  
--	rootid = rootid_from_xattr(*ivalue, size, task_ns);
-+	rootid = rootid_from_xattr(*ivalue, size, task_ns, user_ns);
- 	if (!uid_valid(rootid))
- 		return -EINVAL;
+ 	pr_debug("mknod(%pd2, 0%o, 0%o) = %i\n", dentry, mode, dev, err);
+ 	return err;
+@@ -173,7 +173,7 @@ static inline int ovl_do_mknod(struct inode *dir, struct dentry *dentry,
+ static inline int ovl_do_symlink(struct inode *dir, struct dentry *dentry,
+ 				 const char *oldname)
+ {
+-	int err = vfs_symlink(dir, dentry, oldname);
++	int err = vfs_symlink(&init_user_ns, dir, dentry, oldname);
  
-@@ -520,6 +524,7 @@ int cap_convert_nscap(struct dentry *dentry, void **ivalue, size_t size)
- 	*ivalue = nscap;
- 	return newsize;
+ 	pr_debug("symlink(\"%s\", %pd2) = %i\n", oldname, dentry, err);
+ 	return err;
+@@ -213,8 +213,10 @@ static inline int ovl_do_rename(struct inode *olddir, struct dentry *olddentry,
+ {
+ 	int err;
+ 	struct renamedata rd = {
++		.old_user_ns	= &init_user_ns,
+ 		.old_dir 	= olddir,
+ 		.old_dentry 	= olddentry,
++		.new_user_ns	= &init_user_ns,
+ 		.new_dir 	= newdir,
+ 		.new_dentry 	= newdentry,
+ 		.flags 		= flags,
+@@ -231,14 +233,14 @@ static inline int ovl_do_rename(struct inode *olddir, struct dentry *olddentry,
+ 
+ static inline int ovl_do_whiteout(struct inode *dir, struct dentry *dentry)
+ {
+-	int err = vfs_whiteout(dir, dentry);
++	int err = vfs_whiteout(&init_user_ns, dir, dentry);
+ 	pr_debug("whiteout(%pd2) = %i\n", dentry, err);
+ 	return err;
  }
-+EXPORT_SYMBOL(cap_convert_nscap);
  
+ static inline struct dentry *ovl_do_tmpfile(struct dentry *dentry, umode_t mode)
+ {
+-	struct dentry *ret = vfs_tmpfile(dentry, mode, 0);
++	struct dentry *ret = vfs_tmpfile(&init_user_ns, dentry, mode, 0);
+ 	int err = PTR_ERR_OR_ZERO(ret);
+ 
+ 	pr_debug("tmpfile(%pd2, 0%o) = %i\n", dentry, mode, err);
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 3a27d84df7fb..7475d15ed209 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1765,17 +1765,20 @@ extern bool inode_owner_or_capable(struct user_namespace *user_ns, const struct
  /*
-  * Calculate the new process capability sets from the capability sets attached
+  * VFS helper functions..
+  */
+-extern int vfs_create(struct inode *, struct dentry *, umode_t, bool);
+-extern int vfs_mkdir(struct inode *, struct dentry *, umode_t);
+-extern int vfs_mknod(struct inode *, struct dentry *, umode_t, dev_t);
+-extern int vfs_symlink(struct inode *, struct dentry *, const char *);
+-extern int vfs_link(struct dentry *, struct inode *, struct dentry *, struct inode **);
+-extern int vfs_rmdir(struct inode *, struct dentry *);
+-extern int vfs_unlink(struct inode *, struct dentry *, struct inode **);
++extern int vfs_create(struct user_namespace *, struct inode *, struct dentry *, umode_t, bool);
++extern int vfs_mkdir(struct user_namespace *, struct inode *, struct dentry *, umode_t);
++extern int vfs_mknod(struct user_namespace *, struct inode *, struct dentry *, umode_t, dev_t);
++extern int vfs_symlink(struct user_namespace *, struct inode *, struct dentry *, const char *);
++extern int vfs_link(struct dentry *, struct user_namespace *, struct inode *,
++		    struct dentry *, struct inode **);
++extern int vfs_rmdir(struct user_namespace *, struct inode *, struct dentry *);
++extern int vfs_unlink(struct user_namespace *, struct inode *, struct dentry *, struct inode **);
+ 
+ struct renamedata {
++	struct user_namespace *old_user_ns;
+ 	struct inode *old_dir;
+ 	struct dentry *old_dentry;
++	struct user_namespace *new_user_ns;
+ 	struct inode *new_dir;
+ 	struct dentry *new_dentry;
+ 	struct inode **delegated_inode;
+@@ -1784,12 +1787,14 @@ struct renamedata {
+ 
+ extern int vfs_rename(struct renamedata *);
+ 
+-static inline int vfs_whiteout(struct inode *dir, struct dentry *dentry)
++static inline int vfs_whiteout(struct user_namespace *user_ns,
++			       struct inode *dir, struct dentry *dentry)
+ {
+-	return vfs_mknod(dir, dentry, S_IFCHR | WHITEOUT_MODE, WHITEOUT_DEV);
++	return vfs_mknod(user_ns, dir, dentry, S_IFCHR | WHITEOUT_MODE, WHITEOUT_DEV);
+ }
+ 
+-extern struct dentry *vfs_tmpfile(struct dentry *dentry, umode_t mode,
++extern struct dentry *vfs_tmpfile(struct user_namespace *user_ns,
++				  struct dentry *dentry, umode_t mode,
+ 				  int open_flag);
+ 
+ int vfs_mkobj(struct dentry *, umode_t,
+diff --git a/ipc/mqueue.c b/ipc/mqueue.c
+index 693f01fe1216..8b8c300854db 100644
+--- a/ipc/mqueue.c
++++ b/ipc/mqueue.c
+@@ -965,7 +965,7 @@ SYSCALL_DEFINE1(mq_unlink, const char __user *, u_name)
+ 		err = -ENOENT;
+ 	} else {
+ 		ihold(inode);
+-		err = vfs_unlink(d_inode(dentry->d_parent), dentry, NULL);
++		err = vfs_unlink(&init_user_ns, d_inode(dentry->d_parent), dentry, NULL);
+ 	}
+ 	dput(dentry);
+ 
+diff --git a/net/unix/af_unix.c b/net/unix/af_unix.c
+index f568526d4a02..b4987805e5e5 100644
+--- a/net/unix/af_unix.c
++++ b/net/unix/af_unix.c
+@@ -996,7 +996,7 @@ static int unix_mknod(const char *sun_path, umode_t mode, struct path *res)
+ 	 */
+ 	err = security_path_mknod(&path, dentry, mode, 0);
+ 	if (!err) {
+-		err = vfs_mknod(d_inode(path.dentry), dentry, mode, 0);
++		err = vfs_mknod(&init_user_ns, d_inode(path.dentry), dentry, mode, 0);
+ 		if (!err) {
+ 			res->mnt = mntget(path.mnt);
+ 			res->dentry = dget(dentry);
 -- 
 2.29.2
 
