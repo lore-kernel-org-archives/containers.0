@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 74773C63798
-	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:54:50 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8E58DC63777
+	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:54:57 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 226C120857
-	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:54:50 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 226C120857
+	by mail.kernel.org (Postfix) with ESMTPS id 2955822240
+	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:54:56 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2955822240
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 07D02870BD;
-	Sat, 28 Nov 2020 21:54:50 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id ubqebbOGlQwx; Sat, 28 Nov 2020 21:54:47 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id E9909870CD;
-	Sat, 28 Nov 2020 21:54:47 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id D64A3C0891;
-	Sat, 28 Nov 2020 21:54:47 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 2115EC0052
- for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:54:47 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 1D04087BE6
- for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:54:47 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id BF92B87C10;
+	Sat, 28 Nov 2020 21:54:56 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
- by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id lycBdtLMfKMF
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id q0E7SFqslR1z; Sat, 28 Nov 2020 21:54:55 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by whitealder.osuosl.org (Postfix) with ESMTP id 0F64987BF1;
+	Sat, 28 Nov 2020 21:54:55 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 03E1FC0891;
+	Sat, 28 Nov 2020 21:54:55 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 50DC6C0052
  for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:54:45 +0000 (UTC)
+ Sat, 28 Nov 2020 21:54:54 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by silver.osuosl.org (Postfix) with ESMTP id 2C37720335
+ for <containers@lists.linux-foundation.org>;
+ Sat, 28 Nov 2020 21:54:54 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from silver.osuosl.org ([127.0.0.1])
+ by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id LrHo7JxVrQcx
+ for <containers@lists.linux-foundation.org>;
+ Sat, 28 Nov 2020 21:54:50 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by whitealder.osuosl.org (Postfix) with ESMTPS id 4D90187BF1
+ by silver.osuosl.org (Postfix) with ESMTPS id 54D46204C1
  for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:54:45 +0000 (UTC)
+ Sat, 28 Nov 2020 21:54:50 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kj83Z-0002aM-CP; Sat, 28 Nov 2020 21:47:01 +0000
+ id 1kj83U-0002aM-OM; Sat, 28 Nov 2020 21:46:56 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v3 33/38] ext4: support idmapped mounts
-Date: Sat, 28 Nov 2020 22:35:22 +0100
-Message-Id: <20201128213527.2669807-34-christian.brauner@ubuntu.com>
+Subject: [PATCH v3 31/38] ima: handle idmapped mounts
+Date: Sat, 28 Nov 2020 22:35:20 +0100
+Message-Id: <20201128213527.2669807-32-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
 References: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
@@ -68,12 +68,12 @@ MIME-Version: 1.0
 Cc: Andy Lutomirski <luto@kernel.org>, Mimi Zohar <zohar@linux.ibm.com>,
  James Bottomley <James.Bottomley@hansenpartnership.com>,
  Andreas Dilger <adilger.kernel@dilger.ca>,
- containers@lists.linux-foundation.org, Christoph Hellwig <hch@lst.de>,
- Tycho Andersen <tycho@tycho.ws>, Paul Moore <paul@paul-moore.com>,
- Jonathan Corbet <corbet@lwn.net>, smbarber@chromium.org,
- linux-ext4@vger.kernel.org, Mrunal Patel <mpatel@redhat.com>,
- Kees Cook <keescook@chromium.org>, Arnd Bergmann <arnd@arndb.de>,
- selinux@vger.kernel.org, Josh Triplett <josh@joshtriplett.org>,
+ containers@lists.linux-foundation.org, Tycho Andersen <tycho@tycho.ws>,
+ Paul Moore <paul@paul-moore.com>, Jonathan Corbet <corbet@lwn.net>,
+ smbarber@chromium.org, linux-ext4@vger.kernel.org,
+ Mrunal Patel <mpatel@redhat.com>, Kees Cook <keescook@chromium.org>,
+ Arnd Bergmann <arnd@arndb.de>, selinux@vger.kernel.org,
+ Josh Triplett <josh@joshtriplett.org>,
  Seth Forshee <seth.forshee@canonical.com>, Aleksa Sarai <cyphar@cyphar.com>,
  Lennart Poettering <lennart@poettering.net>,
  OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
@@ -101,123 +101,12 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-This enables ext4 to support idmapped mounts. All dedicated helpers we need for
-this exist. The vfs will have already made sure that the fsids can be translated
-after having been shifted if they are on an idmapped mount.
+IMA does sometimes access the inode's i_uid and compares it against the rules'
+fowner. Enable IMA to handle idmapped mounts by passing down the mount's user
+namespace. We simply make use of the helpers we introduced before. If the
+initial user namespace is passed nothing changes so non-idmapped mounts will see
+identical behavior as before.
 
-This implements helpers for the new inode operations that we've added. The core
-change is the allocation of a new inode based on the mount's user namespace.
-Code duplication is virtually non-existent because we can implement the
-non-idmapped mount aware inode methods on top of the idmapped mount aware inode
-methods. If the initial user namespace is passed nothing changes so non-idmapped
-mounts will see identical behavior as before.
-
-It is also noteworthy that the idmapped mount implementation allows us to
-cleanly handle ioctls() too. I've kept this as a single patch for now since the
-change is overall fairly mechanical but I'm happy to split this.
-
-Let's create simple example where we idmap an ext4 filesystem:
-
- root@f2-vm:~# truncate -s 5G ext4.img
-
- root@f2-vm:~# mkfs.ext4 ./ext4.img
- mke2fs 1.45.5 (07-Jan-2020)
- Discarding device blocks: done
- Creating filesystem with 1310720 4k blocks and 327680 inodes
- Filesystem UUID: 3fd91794-c6ca-4b0f-9964-289a000919cf
- Superblock backups stored on blocks:
-         32768, 98304, 163840, 229376, 294912, 819200, 884736
-
- Allocating group tables: done
- Writing inode tables: done
- Creating journal (16384 blocks): done
- Writing superblocks and filesystem accounting information: done
-
- root@f2-vm:~# losetup -f --show ./ext4.img
- /dev/loop0
-
- root@f2-vm:~# mount /dev/loop0 /mnt
-
- root@f2-vm:~# ls -al /mnt/
- total 24
- drwxr-xr-x  3 root root  4096 Oct 28 13:34 .
- drwxr-xr-x 30 root root  4096 Oct 28 13:22 ..
- drwx------  2 root root 16384 Oct 28 13:34 lost+found
-
- # Let's create an idmapped mount at /idmapped1 where we map uid and gid 0 to
- # uid and gid 1000
- root@f2-vm:/# ./mount2 -mb:0:1000:1 /mnt/ /idmapped1/
-
- root@f2-vm:/# ls -al /idmapped1/
- total 24
- drwxr-xr-x  3 ubuntu ubuntu  4096 Oct 28 13:34 .
- drwxr-xr-x 30 root   root    4096 Oct 28 13:22 ..
- drwx------  2 ubuntu ubuntu 16384 Oct 28 13:34 lost+found
-
- # Let's create an idmapped mount at /idmapped2 where we map uid and gid 0 to
- # uid and gid 2000
- root@f2-vm:/# ./mount2 -mb:0:2000:1 /mnt/ /idmapped2/
-
- root@f2-vm:/# ls -al /idmapped2/
- total 24
- drwxr-xr-x  3 2000 2000  4096 Oct 28 13:34 .
- drwxr-xr-x 31 root root  4096 Oct 28 13:39 ..
- drwx------  2 2000 2000 16384 Oct 28 13:34 lost+found
-
-Let's create another example where we idmap the rootfs filesystem without a
-mapping for uid 0 and gid 0:
-
- # Create an idmapped mount of for a full POSIX range of rootfs under /mnt
- # but without a mapping for uid 0 to reduce attack surface
-
- root@f2-vm:/# ./mount2 -mb:1:1:65536 / /mnt/
-
- # Since we don't have a mapping for uid and gid 0 all files owned by uid and
- # gid 0 should show up as uid and gid 65534:
- root@f2-vm:/# ls -al /mnt/
- total 664
- drwxr-xr-x 31 nobody nogroup   4096 Oct 28 13:39 .
- drwxr-xr-x 31 root   root      4096 Oct 28 13:39 ..
- lrwxrwxrwx  1 nobody nogroup      7 Aug 25 07:44 bin -> usr/bin
- drwxr-xr-x  4 nobody nogroup   4096 Oct 28 13:17 boot
- drwxr-xr-x  2 nobody nogroup   4096 Aug 25 07:48 dev
- drwxr-xr-x 81 nobody nogroup   4096 Oct 28 04:00 etc
- drwxr-xr-x  4 nobody nogroup   4096 Oct 28 04:00 home
- lrwxrwxrwx  1 nobody nogroup      7 Aug 25 07:44 lib -> usr/lib
- lrwxrwxrwx  1 nobody nogroup      9 Aug 25 07:44 lib32 -> usr/lib32
- lrwxrwxrwx  1 nobody nogroup      9 Aug 25 07:44 lib64 -> usr/lib64
- lrwxrwxrwx  1 nobody nogroup     10 Aug 25 07:44 libx32 -> usr/libx32
- drwx------  2 nobody nogroup  16384 Aug 25 07:47 lost+found
- drwxr-xr-x  2 nobody nogroup   4096 Aug 25 07:44 media
- drwxr-xr-x 31 nobody nogroup   4096 Oct 28 13:39 mnt
- drwxr-xr-x  2 nobody nogroup   4096 Aug 25 07:44 opt
- drwxr-xr-x  2 nobody nogroup   4096 Apr 15  2020 proc
- drwx--x--x  6 nobody nogroup   4096 Oct 28 13:34 root
- drwxr-xr-x  2 nobody nogroup   4096 Aug 25 07:46 run
- lrwxrwxrwx  1 nobody nogroup      8 Aug 25 07:44 sbin -> usr/sbin
- drwxr-xr-x  2 nobody nogroup   4096 Aug 25 07:44 srv
- drwxr-xr-x  2 nobody nogroup   4096 Apr 15  2020 sys
- drwxrwxrwt 10 nobody nogroup   4096 Oct 28 13:19 tmp
- drwxr-xr-x 14 nobody nogroup   4096 Oct 20 13:00 usr
- drwxr-xr-x 12 nobody nogroup   4096 Aug 25 07:45 var
-
- # Since we do have a mapping for uid and gid 1000 all files owned by uid and
- # gid 1000 should simply show up as uid and gid 1000:
- root@f2-vm:/# ls -al /mnt/home/ubuntu/
- total 40
- drwxr-xr-x 3 ubuntu ubuntu  4096 Oct 28 00:43 .
- drwxr-xr-x 4 nobody nogroup 4096 Oct 28 04:00 ..
- -rw------- 1 ubuntu ubuntu  2936 Oct 28 12:26 .bash_history
- -rw-r--r-- 1 ubuntu ubuntu   220 Feb 25  2020 .bash_logout
- -rw-r--r-- 1 ubuntu ubuntu  3771 Feb 25  2020 .bashrc
- -rw-r--r-- 1 ubuntu ubuntu   807 Feb 25  2020 .profile
- -rw-r--r-- 1 ubuntu ubuntu     0 Oct 16 16:11 .sudo_as_admin_successful
- -rw------- 1 ubuntu ubuntu  1144 Oct 28 00:43 .viminfo
-
-Cc: Christoph Hellwig <hch@lst.de>
-Cc: David Howells <dhowells@redhat.com>
-Cc: Al Viro <viro@zeniv.linux.org.uk>
-Cc: linux-fsdevel@vger.kernel.org
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
 /* v2 */
@@ -226,381 +115,445 @@ unchanged
 /* v3 */
 unchanged
 ---
- fs/ext4/Kconfig  |  9 +++++++++
- fs/ext4/acl.c    |  2 +-
- fs/ext4/ext4.h   | 13 +++++++------
- fs/ext4/ialloc.c |  7 ++++---
- fs/ext4/inode.c  | 11 +++++++----
- fs/ext4/ioctl.c  | 18 ++++++++++--------
- fs/ext4/namei.c  | 30 ++++++++++++++++--------------
- fs/ext4/super.c  |  6 +++++-
- 8 files changed, 59 insertions(+), 37 deletions(-)
+ fs/attr.c                                    |  2 +-
+ fs/namei.c                                   |  4 +--
+ include/linux/ima.h                          | 15 ++++++-----
+ security/integrity/ima/ima.h                 | 19 ++++++++-----
+ security/integrity/ima/ima_api.c             | 10 ++++---
+ security/integrity/ima/ima_appraise.c        | 14 +++++-----
+ security/integrity/ima/ima_asymmetric_keys.c |  2 +-
+ security/integrity/ima/ima_main.c            | 28 ++++++++++++--------
+ security/integrity/ima/ima_policy.c          | 17 ++++++------
+ security/integrity/ima/ima_queue_keys.c      |  2 +-
+ 10 files changed, 66 insertions(+), 47 deletions(-)
 
-diff --git a/fs/ext4/Kconfig b/fs/ext4/Kconfig
-index 619dd35ddd48..5918c05cfe5b 100644
---- a/fs/ext4/Kconfig
-+++ b/fs/ext4/Kconfig
-@@ -118,3 +118,12 @@ config EXT4_KUNIT_TESTS
- 	  to the KUnit documentation in Documentation/dev-tools/kunit/.
- 
- 	  If unsure, say N.
-+
-+config EXT4_IDMAP_MOUNTS
-+	bool "Support vfs idmapped mounts in ext4"
-+	depends on EXT4_FS
-+	default n
-+	help
-+	  The vfs allows to expose a filesystem at different mountpoints with
-+	  differnet idmappings. Allow ext4 to be exposed through idmapped
-+	  mounts.
-diff --git a/fs/ext4/acl.c b/fs/ext4/acl.c
-index 3ab0a69b974b..7c413bd4d2f2 100644
---- a/fs/ext4/acl.c
-+++ b/fs/ext4/acl.c
-@@ -246,7 +246,7 @@ ext4_set_acl(struct user_namespace *user_ns, struct inode *inode,
- 	ext4_fc_start_update(inode);
- 
- 	if ((type == ACL_TYPE_ACCESS) && acl) {
--		error = posix_acl_update_mode(&init_user_ns, inode, &mode, &acl);
-+		error = posix_acl_update_mode(user_ns, inode, &mode, &acl);
- 		if (error)
- 			goto out_stop;
- 		if (mode != inode->i_mode)
-diff --git a/fs/ext4/ext4.h b/fs/ext4/ext4.h
-index b89efd36ea7e..bf6c92794480 100644
---- a/fs/ext4/ext4.h
-+++ b/fs/ext4/ext4.h
-@@ -2724,18 +2724,19 @@ extern int ext4fs_dirhash(const struct inode *dir, const char *name, int len,
- 
- /* ialloc.c */
- extern int ext4_mark_inode_used(struct super_block *sb, int ino);
--extern struct inode *__ext4_new_inode(handle_t *, struct inode *, umode_t,
-+extern struct inode *__ext4_new_inode(struct user_namespace *, handle_t *,
-+				      struct inode *, umode_t,
- 				      const struct qstr *qstr, __u32 goal,
- 				      uid_t *owner, __u32 i_flags,
- 				      int handle_type, unsigned int line_no,
- 				      int nblocks);
- 
--#define ext4_new_inode(handle, dir, mode, qstr, goal, owner, i_flags) \
--	__ext4_new_inode((handle), (dir), (mode), (qstr), (goal), (owner), \
--			 i_flags, 0, 0, 0)
--#define ext4_new_inode_start_handle(dir, mode, qstr, goal, owner, \
-+#define ext4_new_inode(handle, dir, mode, qstr, goal, owner, i_flags)          \
-+	__ext4_new_inode(&init_user_ns, (handle), (dir), (mode), (qstr),       \
-+			 (goal), (owner), i_flags, 0, 0, 0)
-+#define ext4_new_inode_start_handle(user_ns, dir, mode, qstr, goal, owner, \
- 				    type, nblocks)		    \
--	__ext4_new_inode(NULL, (dir), (mode), (qstr), (goal), (owner), \
-+	__ext4_new_inode((user_ns), NULL, (dir), (mode), (qstr), (goal), (owner), \
- 			 0, (type), __LINE__, (nblocks))
- 
- 
-diff --git a/fs/ext4/ialloc.c b/fs/ext4/ialloc.c
-index d91f69282311..93251687c6a2 100644
---- a/fs/ext4/ialloc.c
-+++ b/fs/ext4/ialloc.c
-@@ -919,7 +919,8 @@ static int ext4_xattr_credits_for_new_inode(struct inode *dir, mode_t mode,
-  * For other inodes, search forward from the parent directory's block
-  * group to find a free inode.
-  */
--struct inode *__ext4_new_inode(handle_t *handle, struct inode *dir,
-+struct inode *__ext4_new_inode(struct user_namespace *user_ns,
-+			       handle_t *handle, struct inode *dir,
- 			       umode_t mode, const struct qstr *qstr,
- 			       __u32 goal, uid_t *owner, __u32 i_flags,
- 			       int handle_type, unsigned int line_no,
-@@ -969,10 +970,10 @@ struct inode *__ext4_new_inode(handle_t *handle, struct inode *dir,
- 		i_gid_write(inode, owner[1]);
- 	} else if (test_opt(sb, GRPID)) {
- 		inode->i_mode = mode;
--		inode->i_uid = current_fsuid();
-+		inode->i_uid = fsuid_into_mnt(user_ns);
- 		inode->i_gid = dir->i_gid;
- 	} else
--		inode_init_owner(inode, &init_user_ns, dir, mode);
-+		inode_init_owner(inode, user_ns, dir, mode);
- 
- 	if (ext4_has_feature_project(sb) &&
- 	    ext4_test_inode_flag(dir, EXT4_INODE_PROJINHERIT))
-diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
-index a1a4a00ecfa0..0bbedb8070d9 100644
---- a/fs/ext4/inode.c
-+++ b/fs/ext4/inode.c
-@@ -20,6 +20,7 @@
-  */
- 
- #include <linux/fs.h>
-+#include <linux/mount.h>
- #include <linux/time.h>
- #include <linux/highuid.h>
- #include <linux/pagemap.h>
-@@ -5325,7 +5326,7 @@ int ext4_setattr(struct user_namespace *user_ns, struct dentry *dentry,
- 				  ATTR_GID | ATTR_TIMES_SET))))
- 		return -EPERM;
- 
--	error = setattr_prepare(&init_user_ns, dentry, attr);
-+	error = setattr_prepare(user_ns, dentry, attr);
- 	if (error)
- 		return error;
- 
-@@ -5500,7 +5501,7 @@ int ext4_setattr(struct user_namespace *user_ns, struct dentry *dentry,
- 	}
+diff --git a/fs/attr.c b/fs/attr.c
+index fb78896a1ce5..c4c442d4b17d 100644
+--- a/fs/attr.c
++++ b/fs/attr.c
+@@ -357,7 +357,7 @@ int notify_change(struct user_namespace *user_ns, struct dentry *dentry,
  
  	if (!error) {
--		setattr_copy(&init_user_ns, inode, attr);
-+		setattr_copy(user_ns, inode, attr);
- 		mark_inode_dirty(inode);
+ 		fsnotify_change(dentry, ia_valid);
+-		ima_inode_post_setattr(dentry);
++		ima_inode_post_setattr(user_ns, dentry);
+ 		evm_inode_post_setattr(dentry, ia_valid);
  	}
  
-@@ -5512,7 +5513,7 @@ int ext4_setattr(struct user_namespace *user_ns, struct dentry *dentry,
- 		ext4_orphan_del(NULL, inode);
+diff --git a/fs/namei.c b/fs/namei.c
+index 1d6a0da8bf81..6e564147ead8 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -3333,7 +3333,7 @@ struct dentry *vfs_tmpfile(struct user_namespace *user_ns,
+ 		inode->i_state |= I_LINKABLE;
+ 		spin_unlock(&inode->i_lock);
+ 	}
+-	ima_post_create_tmpfile(inode);
++	ima_post_create_tmpfile(user_ns, inode);
+ 	return child;
  
- 	if (!error && (ia_valid & ATTR_MODE))
--		rc = posix_acl_chmod(&init_user_ns, inode, inode->i_mode);
-+		rc = posix_acl_chmod(user_ns, inode, inode->i_mode);
+ out_err:
+@@ -3645,7 +3645,7 @@ static long do_mknodat(int dfd, const char __user *filename, umode_t mode,
+ 			error = vfs_create(user_ns, path.dentry->d_inode,
+ 					   dentry, mode, true);
+ 			if (!error)
+-				ima_post_path_mknod(dentry);
++				ima_post_path_mknod(user_ns, dentry);
+ 			break;
+ 		case S_IFCHR: case S_IFBLK:
+ 			error = vfs_mknod(user_ns, path.dentry->d_inode, dentry,
+diff --git a/include/linux/ima.h b/include/linux/ima.h
+index 8fa7bcfb2da2..c3e3c260ad40 100644
+--- a/include/linux/ima.h
++++ b/include/linux/ima.h
+@@ -16,7 +16,7 @@ struct linux_binprm;
+ #ifdef CONFIG_IMA
+ extern int ima_bprm_check(struct linux_binprm *bprm);
+ extern int ima_file_check(struct file *file, int mask);
+-extern void ima_post_create_tmpfile(struct inode *inode);
++extern void ima_post_create_tmpfile(struct user_namespace *user_ns, struct inode *inode);
+ extern void ima_file_free(struct file *file);
+ extern int ima_file_mmap(struct file *file, unsigned long prot);
+ extern int ima_file_mprotect(struct vm_area_struct *vma, unsigned long prot);
+@@ -27,7 +27,8 @@ extern int ima_read_file(struct file *file, enum kernel_read_file_id id,
+ 			 bool contents);
+ extern int ima_post_read_file(struct file *file, void *buf, loff_t size,
+ 			      enum kernel_read_file_id id);
+-extern void ima_post_path_mknod(struct dentry *dentry);
++extern void ima_post_path_mknod(struct user_namespace *user_ns,
++				struct dentry *dentry);
+ extern int ima_file_hash(struct file *file, char *buf, size_t buf_size);
+ extern void ima_kexec_cmdline(int kernel_fd, const void *buf, int size);
  
- err_out:
- 	if  (error)
-@@ -5526,6 +5527,7 @@ int ext4_setattr(struct user_namespace *user_ns, struct dentry *dentry,
- int ext4_getattr(const struct path *path, struct kstat *stat,
- 		 u32 request_mask, unsigned int query_flags)
- {
-+	struct user_namespace *user_ns;
- 	struct inode *inode = d_inode(path->dentry);
- 	struct ext4_inode *raw_inode;
- 	struct ext4_inode_info *ei = EXT4_I(inode);
-@@ -5559,7 +5561,8 @@ int ext4_getattr(const struct path *path, struct kstat *stat,
- 				  STATX_ATTR_NODUMP |
- 				  STATX_ATTR_VERITY);
- 
--	generic_fillattr(&init_user_ns, inode, stat);
-+	user_ns = mnt_user_ns(path->mnt);
-+	generic_fillattr(user_ns, inode, stat);
+@@ -61,7 +62,8 @@ static inline int ima_file_check(struct file *file, int mask)
  	return 0;
  }
  
-diff --git a/fs/ext4/ioctl.c b/fs/ext4/ioctl.c
-index e35aba820254..6fff34587f0b 100644
---- a/fs/ext4/ioctl.c
-+++ b/fs/ext4/ioctl.c
-@@ -111,6 +111,7 @@ void ext4_reset_inode_seed(struct inode *inode)
-  *
-  */
- static long swap_inode_boot_loader(struct super_block *sb,
-+				struct user_namespace *user_ns,
- 				struct inode *inode)
+-static inline void ima_post_create_tmpfile(struct inode *inode)
++static inline void ima_post_create_tmpfile(struct user_namespace *user_ns,
++					   struct inode *inode)
  {
- 	handle_t *handle;
-@@ -139,7 +140,7 @@ static long swap_inode_boot_loader(struct super_block *sb,
- 	}
- 
- 	if (IS_RDONLY(inode) || IS_APPEND(inode) || IS_IMMUTABLE(inode) ||
--	    !inode_owner_or_capable(&init_user_ns, inode) || !capable(CAP_SYS_ADMIN)) {
-+	    !inode_owner_or_capable(user_ns, inode) || !capable(CAP_SYS_ADMIN)) {
- 		err = -EPERM;
- 		goto journal_err_out;
- 	}
-@@ -814,6 +815,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 	struct inode *inode = file_inode(filp);
- 	struct super_block *sb = inode->i_sb;
- 	struct ext4_inode_info *ei = EXT4_I(inode);
-+	struct user_namespace *user_ns = mnt_user_ns(filp->f_path.mnt);
- 	unsigned int flags;
- 
- 	ext4_debug("cmd = %u, arg = %lu\n", cmd, arg);
-@@ -829,7 +831,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 	case FS_IOC_SETFLAGS: {
- 		int err;
- 
--		if (!inode_owner_or_capable(&init_user_ns, inode))
-+		if (!inode_owner_or_capable(user_ns, inode))
- 			return -EACCES;
- 
- 		if (get_user(flags, (int __user *) arg))
-@@ -871,7 +873,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 		__u32 generation;
- 		int err;
- 
--		if (!inode_owner_or_capable(&init_user_ns, inode))
-+		if (!inode_owner_or_capable(user_ns, inode))
- 			return -EPERM;
- 
- 		if (ext4_has_metadata_csum(inode->i_sb)) {
-@@ -1010,7 +1012,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 	case EXT4_IOC_MIGRATE:
- 	{
- 		int err;
--		if (!inode_owner_or_capable(&init_user_ns, inode))
-+		if (!inode_owner_or_capable(user_ns, inode))
- 			return -EACCES;
- 
- 		err = mnt_want_write_file(filp);
-@@ -1032,7 +1034,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 	case EXT4_IOC_ALLOC_DA_BLKS:
- 	{
- 		int err;
--		if (!inode_owner_or_capable(&init_user_ns, inode))
-+		if (!inode_owner_or_capable(user_ns, inode))
- 			return -EACCES;
- 
- 		err = mnt_want_write_file(filp);
-@@ -1051,7 +1053,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 		err = mnt_want_write_file(filp);
- 		if (err)
- 			return err;
--		err = swap_inode_boot_loader(sb, inode);
-+		err = swap_inode_boot_loader(sb, user_ns, inode);
- 		mnt_drop_write_file(filp);
- 		return err;
- 	}
-@@ -1214,7 +1216,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 
- 	case EXT4_IOC_CLEAR_ES_CACHE:
- 	{
--		if (!inode_owner_or_capable(&init_user_ns, inode))
-+		if (!inode_owner_or_capable(user_ns, inode))
- 			return -EACCES;
- 		ext4_clear_inode_es(inode);
- 		return 0;
-@@ -1260,7 +1262,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 			return -EFAULT;
- 
- 		/* Make sure caller has proper permission */
--		if (!inode_owner_or_capable(&init_user_ns, inode))
-+		if (!inode_owner_or_capable(user_ns, inode))
- 			return -EACCES;
- 
- 		if (fa.fsx_xflags & ~EXT4_SUPPORTED_FS_XFLAGS)
-diff --git a/fs/ext4/namei.c b/fs/ext4/namei.c
-index 194bc37fba55..f76d2f730366 100644
---- a/fs/ext4/namei.c
-+++ b/fs/ext4/namei.c
-@@ -2616,8 +2616,8 @@ static int ext4_create(struct user_namespace *user_ns, struct inode *dir,
- 	credits = (EXT4_DATA_TRANS_BLOCKS(dir->i_sb) +
- 		   EXT4_INDEX_EXTRA_TRANS_BLOCKS + 3);
- retry:
--	inode = ext4_new_inode_start_handle(dir, mode, &dentry->d_name, 0,
--					    NULL, EXT4_HT_DIR, credits);
-+	inode = ext4_new_inode_start_handle(user_ns, dir, mode, &dentry->d_name,
-+					    0, NULL, EXT4_HT_DIR, credits);
- 	handle = ext4_journal_current_handle();
- 	err = PTR_ERR(inode);
- 	if (!IS_ERR(inode)) {
-@@ -2651,8 +2651,8 @@ static int ext4_mknod(struct user_namespace *user_ns, struct inode *dir,
- 	credits = (EXT4_DATA_TRANS_BLOCKS(dir->i_sb) +
- 		   EXT4_INDEX_EXTRA_TRANS_BLOCKS + 3);
- retry:
--	inode = ext4_new_inode_start_handle(dir, mode, &dentry->d_name, 0,
--					    NULL, EXT4_HT_DIR, credits);
-+	inode = ext4_new_inode_start_handle(user_ns, dir, mode, &dentry->d_name,
-+					    0, NULL, EXT4_HT_DIR, credits);
- 	handle = ext4_journal_current_handle();
- 	err = PTR_ERR(inode);
- 	if (!IS_ERR(inode)) {
-@@ -2683,7 +2683,7 @@ static int ext4_tmpfile(struct user_namespace *user_ns, struct inode *dir,
- 		return err;
- 
- retry:
--	inode = ext4_new_inode_start_handle(dir, mode,
-+	inode = ext4_new_inode_start_handle(user_ns, dir, mode,
- 					    NULL, 0, NULL,
- 					    EXT4_HT_DIR,
- 			EXT4_MAXQUOTAS_INIT_BLOCKS(dir->i_sb) +
-@@ -2798,7 +2798,7 @@ static int ext4_mkdir(struct user_namespace *user_ns, struct inode *dir,
- 	credits = (EXT4_DATA_TRANS_BLOCKS(dir->i_sb) +
- 		   EXT4_INDEX_EXTRA_TRANS_BLOCKS + 3);
- retry:
--	inode = ext4_new_inode_start_handle(dir, S_IFDIR | mode,
-+	inode = ext4_new_inode_start_handle(user_ns, dir, S_IFDIR | mode,
- 					    &dentry->d_name,
- 					    0, NULL, EXT4_HT_DIR, credits);
- 	handle = ext4_journal_current_handle();
-@@ -3335,7 +3335,7 @@ static int ext4_symlink(struct user_namespace *user_ns, struct inode *dir,
- 			  EXT4_INDEX_EXTRA_TRANS_BLOCKS + 3;
- 	}
- 
--	inode = ext4_new_inode_start_handle(dir, S_IFLNK|S_IRWXUGO,
-+	inode = ext4_new_inode_start_handle(user_ns, dir, S_IFLNK|S_IRWXUGO,
- 					    &dentry->d_name, 0, NULL,
- 					    EXT4_HT_DIR, credits);
- 	handle = ext4_journal_current_handle();
-@@ -3667,7 +3667,8 @@ static void ext4_update_dir_count(handle_t *handle, struct ext4_renament *ent)
- 	}
  }
  
--static struct inode *ext4_whiteout_for_rename(struct ext4_renament *ent,
-+static struct inode *ext4_whiteout_for_rename(struct user_namespace *user_ns,
-+					      struct ext4_renament *ent,
- 					      int credits, handle_t **h)
- {
- 	struct inode *wh;
-@@ -3681,7 +3682,8 @@ static struct inode *ext4_whiteout_for_rename(struct ext4_renament *ent,
- 	credits += (EXT4_MAXQUOTAS_TRANS_BLOCKS(ent->dir->i_sb) +
- 		    EXT4_XATTR_TRANS_BLOCKS + 4);
- retry:
--	wh = ext4_new_inode_start_handle(ent->dir, S_IFCHR | WHITEOUT_MODE,
-+	wh = ext4_new_inode_start_handle(user_ns, ent->dir,
-+					 S_IFCHR | WHITEOUT_MODE,
- 					 &ent->dentry->d_name, 0, NULL,
- 					 EXT4_HT_DIR, credits);
+@@ -105,7 +107,8 @@ static inline int ima_post_read_file(struct file *file, void *buf, loff_t size,
+ 	return 0;
+ }
  
-@@ -3708,9 +3710,9 @@ static struct inode *ext4_whiteout_for_rename(struct ext4_renament *ent,
-  * while new_{dentry,inode) refers to the destination dentry/inode
-  * This comes from rename(const char *oldpath, const char *newpath)
+-static inline void ima_post_path_mknod(struct dentry *dentry)
++static inline void ima_post_path_mknod(struct user_namespace *user_ns,
++				       struct dentry *dentry)
+ {
+ 	return;
+ }
+@@ -141,7 +144,7 @@ static inline void ima_post_key_create_or_update(struct key *keyring,
+ 
+ #ifdef CONFIG_IMA_APPRAISE
+ extern bool is_ima_appraise_enabled(void);
+-extern void ima_inode_post_setattr(struct dentry *dentry);
++extern void ima_inode_post_setattr(struct user_namespace *user_ns, struct dentry *dentry);
+ extern int ima_inode_setxattr(struct dentry *dentry, const char *xattr_name,
+ 		       const void *xattr_value, size_t xattr_value_len);
+ extern int ima_inode_removexattr(struct dentry *dentry, const char *xattr_name);
+@@ -151,7 +154,7 @@ static inline bool is_ima_appraise_enabled(void)
+ 	return 0;
+ }
+ 
+-static inline void ima_inode_post_setattr(struct dentry *dentry)
++static inline void ima_inode_post_setattr(struct user_namespace *user_ns, struct dentry *dentry)
+ {
+ 	return;
+ }
+diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+index 6ebefec616e4..54da7b1a2faa 100644
+--- a/security/integrity/ima/ima.h
++++ b/security/integrity/ima/ima.h
+@@ -252,8 +252,9 @@ static inline void ima_process_queued_keys(void) {}
+ #endif /* CONFIG_IMA_QUEUE_EARLY_BOOT_KEYS */
+ 
+ /* LIM API function definitions */
+-int ima_get_action(struct inode *inode, const struct cred *cred, u32 secid,
+-		   int mask, enum ima_hooks func, int *pcr,
++int ima_get_action(struct user_namespace *user_ns, struct inode *inode,
++		   const struct cred *cred, u32 secid, int mask,
++		   enum ima_hooks func, int *pcr,
+ 		   struct ima_template_desc **template_desc,
+ 		   const char *keyring);
+ int ima_must_measure(struct inode *inode, int mask, enum ima_hooks func);
+@@ -265,7 +266,8 @@ void ima_store_measurement(struct integrity_iint_cache *iint, struct file *file,
+ 			   struct evm_ima_xattr_data *xattr_value,
+ 			   int xattr_len, const struct modsig *modsig, int pcr,
+ 			   struct ima_template_desc *template_desc);
+-void process_buffer_measurement(struct inode *inode, const void *buf, int size,
++void process_buffer_measurement(struct user_namespace *user_ns,
++				struct inode *inode, const void *buf, int size,
+ 				const char *eventname, enum ima_hooks func,
+ 				int pcr, const char *keyring);
+ void ima_audit_measurement(struct integrity_iint_cache *iint,
+@@ -280,8 +282,9 @@ void ima_free_template_entry(struct ima_template_entry *entry);
+ const char *ima_d_path(const struct path *path, char **pathbuf, char *filename);
+ 
+ /* IMA policy related functions */
+-int ima_match_policy(struct inode *inode, const struct cred *cred, u32 secid,
+-		     enum ima_hooks func, int mask, int flags, int *pcr,
++int ima_match_policy(struct user_namespace *user_ns, struct inode *inode,
++		     const struct cred *cred, u32 secid, enum ima_hooks func,
++		     int mask, int flags, int *pcr,
+ 		     struct ima_template_desc **template_desc,
+ 		     const char *keyring);
+ void ima_init_policy(void);
+@@ -312,7 +315,8 @@ int ima_appraise_measurement(enum ima_hooks func,
+ 			     struct file *file, const unsigned char *filename,
+ 			     struct evm_ima_xattr_data *xattr_value,
+ 			     int xattr_len, const struct modsig *modsig);
+-int ima_must_appraise(struct inode *inode, int mask, enum ima_hooks func);
++int ima_must_appraise(struct user_namespace *user_ns, struct inode *inode,
++		      int mask, enum ima_hooks func);
+ void ima_update_xattr(struct integrity_iint_cache *iint, struct file *file);
+ enum integrity_status ima_get_cache_status(struct integrity_iint_cache *iint,
+ 					   enum ima_hooks func);
+@@ -339,7 +343,8 @@ static inline int ima_appraise_measurement(enum ima_hooks func,
+ 	return INTEGRITY_UNKNOWN;
+ }
+ 
+-static inline int ima_must_appraise(struct inode *inode, int mask,
++static inline int ima_must_appraise(struct user_namespace *user_ns,
++				    struct inode *inode, int mask,
+ 				    enum ima_hooks func)
+ {
+ 	return 0;
+diff --git a/security/integrity/ima/ima_api.c b/security/integrity/ima/ima_api.c
+index 4f39fb93f278..ec51ada849a5 100644
+--- a/security/integrity/ima/ima_api.c
++++ b/security/integrity/ima/ima_api.c
+@@ -162,6 +162,7 @@ void ima_add_violation(struct file *file, const unsigned char *filename,
+ 
+ /**
+  * ima_get_action - appraise & measure decision based on policy.
++ * @user_ns: userns of the mount through which the inode is accessed
+  * @inode: pointer to the inode associated with the object being validated
+  * @cred: pointer to credentials structure to validate
+  * @secid: secid of the task being validated
+@@ -183,8 +184,9 @@ void ima_add_violation(struct file *file, const unsigned char *filename,
+  * Returns IMA_MEASURE, IMA_APPRAISE mask.
+  *
   */
--static int ext4_rename(struct inode *old_dir, struct dentry *old_dentry,
--		       struct inode *new_dir, struct dentry *new_dentry,
--		       unsigned int flags)
-+static int ext4_rename(struct user_namespace *user_ns, struct inode *old_dir,
-+		       struct dentry *old_dentry, struct inode *new_dir,
-+		       struct dentry *new_dentry, unsigned int flags)
+-int ima_get_action(struct inode *inode, const struct cred *cred, u32 secid,
+-		   int mask, enum ima_hooks func, int *pcr,
++int ima_get_action(struct user_namespace *user_ns, struct inode *inode,
++		   const struct cred *cred, u32 secid, int mask,
++		   enum ima_hooks func, int *pcr,
+ 		   struct ima_template_desc **template_desc,
+ 		   const char *keyring)
  {
- 	handle_t *handle = NULL;
- 	struct ext4_renament old = {
-@@ -3794,7 +3796,7 @@ static int ext4_rename(struct inode *old_dir, struct dentry *old_dentry,
- 			goto end_rename;
- 		}
- 	} else {
--		whiteout = ext4_whiteout_for_rename(&old, credits, &handle);
-+		whiteout = ext4_whiteout_for_rename(user_ns, &old, credits, &handle);
- 		if (IS_ERR(whiteout)) {
- 			retval = PTR_ERR(whiteout);
- 			whiteout = NULL;
-@@ -4108,7 +4110,7 @@ static int ext4_rename2(struct user_namespace *user_ns, struct inode *old_dir,
- 					 new_dir, new_dentry);
- 	}
+@@ -192,8 +194,8 @@ int ima_get_action(struct inode *inode, const struct cred *cred, u32 secid,
  
--	return ext4_rename(old_dir, old_dentry, new_dir, new_dentry, flags);
-+	return ext4_rename(user_ns, old_dir, old_dentry, new_dir, new_dentry, flags);
+ 	flags &= ima_policy_flag;
+ 
+-	return ima_match_policy(inode, cred, secid, func, mask, flags, pcr,
+-				template_desc, keyring);
++	return ima_match_policy(user_ns, inode, cred, secid, func, mask, flags,
++				pcr, template_desc, keyring);
  }
  
  /*
-diff --git a/fs/ext4/super.c b/fs/ext4/super.c
-index 6633b20224d5..6420bd1d569a 100644
---- a/fs/ext4/super.c
-+++ b/fs/ext4/super.c
-@@ -5008,7 +5008,7 @@ static int ext4_fill_super(struct super_block *sb, void *data, int silent)
+diff --git a/security/integrity/ima/ima_appraise.c b/security/integrity/ima/ima_appraise.c
+index 3492f0b2da1c..162f00660a4a 100644
+--- a/security/integrity/ima/ima_appraise.c
++++ b/security/integrity/ima/ima_appraise.c
+@@ -63,7 +63,8 @@ bool is_ima_appraise_enabled(void)
+  *
+  * Return 1 to appraise or hash
+  */
+-int ima_must_appraise(struct inode *inode, int mask, enum ima_hooks func)
++int ima_must_appraise(struct user_namespace *user_ns, struct inode *inode,
++		      int mask, enum ima_hooks func)
+ {
+ 	u32 secid;
+ 
+@@ -71,8 +72,8 @@ int ima_must_appraise(struct inode *inode, int mask, enum ima_hooks func)
+ 		return 0;
+ 
+ 	security_task_getsecid(current, &secid);
+-	return ima_match_policy(inode, current_cred(), secid, func, mask,
+-				IMA_APPRAISE | IMA_HASH, NULL, NULL, NULL);
++	return ima_match_policy(user_ns, inode, current_cred(), secid, func,
++				mask, IMA_APPRAISE | IMA_HASH, NULL, NULL, NULL);
+ }
+ 
+ static int ima_fix_xattr(struct dentry *dentry,
+@@ -345,7 +346,7 @@ int ima_check_blacklist(struct integrity_iint_cache *iint,
+ 
+ 		rc = is_binary_blacklisted(digest, digestsize);
+ 		if ((rc == -EPERM) && (iint->flags & IMA_MEASURE))
+-			process_buffer_measurement(NULL, digest, digestsize,
++			process_buffer_measurement(NULL, NULL, digest, digestsize,
+ 						   "blacklisted-hash", NONE,
+ 						   pcr, NULL);
+ 	}
+@@ -496,6 +497,7 @@ void ima_update_xattr(struct integrity_iint_cache *iint, struct file *file)
+ 
+ /**
+  * ima_inode_post_setattr - reflect file metadata changes
++ * @user_ns: user namespace of the mount
+  * @dentry: pointer to the affected dentry
+  *
+  * Changes to a dentry's metadata might result in needing to appraise.
+@@ -503,7 +505,7 @@ void ima_update_xattr(struct integrity_iint_cache *iint, struct file *file)
+  * This function is called from notify_change(), which expects the caller
+  * to lock the inode's i_mutex.
+  */
+-void ima_inode_post_setattr(struct dentry *dentry)
++void ima_inode_post_setattr(struct user_namespace *user_ns, struct dentry *dentry)
+ {
+ 	struct inode *inode = d_backing_inode(dentry);
+ 	struct integrity_iint_cache *iint;
+@@ -513,7 +515,7 @@ void ima_inode_post_setattr(struct dentry *dentry)
+ 	    || !(inode->i_opflags & IOP_XATTR))
+ 		return;
+ 
+-	action = ima_must_appraise(inode, MAY_ACCESS, POST_SETATTR);
++	action = ima_must_appraise(user_ns, inode, MAY_ACCESS, POST_SETATTR);
+ 	if (!action)
+ 		__vfs_removexattr(&init_user_ns, dentry, XATTR_NAME_IMA);
+ 	iint = integrity_iint_find(inode);
+diff --git a/security/integrity/ima/ima_asymmetric_keys.c b/security/integrity/ima/ima_asymmetric_keys.c
+index 1c68c500c26f..9810f3bfa57f 100644
+--- a/security/integrity/ima/ima_asymmetric_keys.c
++++ b/security/integrity/ima/ima_asymmetric_keys.c
+@@ -58,7 +58,7 @@ void ima_post_key_create_or_update(struct key *keyring, struct key *key,
+ 	 * if the IMA policy is configured to measure a key linked
+ 	 * to the given keyring.
+ 	 */
+-	process_buffer_measurement(NULL, payload, payload_len,
++	process_buffer_measurement(NULL, NULL, payload, payload_len,
+ 				   keyring->description, KEY_CHECK, 0,
+ 				   keyring->description);
+ }
+diff --git a/security/integrity/ima/ima_main.c b/security/integrity/ima/ima_main.c
+index 2d1af8899cab..562003bab943 100644
+--- a/security/integrity/ima/ima_main.c
++++ b/security/integrity/ima/ima_main.c
+@@ -218,8 +218,8 @@ static int process_measurement(struct file *file, const struct cred *cred,
+ 	 * bitmask based on the appraise/audit/measurement policy.
+ 	 * Included is the appraise submask.
+ 	 */
+-	action = ima_get_action(inode, cred, secid, mask, func, &pcr,
+-				&template_desc, NULL);
++	action = ima_get_action(mnt_user_ns(file->f_path.mnt), inode, cred,
++				secid, mask, func, &pcr, &template_desc, NULL);
+ 	violation_check = ((func == FILE_CHECK || func == MMAP_CHECK) &&
+ 			   (ima_policy_flag & IMA_MEASURE));
+ 	if (!action && !violation_check)
+@@ -431,8 +431,9 @@ int ima_file_mprotect(struct vm_area_struct *vma, unsigned long prot)
+ 
+ 	security_task_getsecid(current, &secid);
+ 	inode = file_inode(vma->vm_file);
+-	action = ima_get_action(inode, current_cred(), secid, MAY_EXEC,
+-				MMAP_CHECK, &pcr, &template, 0);
++	action = ima_get_action(mnt_user_ns(vma->vm_file->f_path.mnt), inode,
++				current_cred(), secid, MAY_EXEC, MMAP_CHECK,
++				&pcr, &template, 0);
+ 
+ 	/* Is the mmap'ed file in policy? */
+ 	if (!(action & (IMA_MEASURE | IMA_APPRAISE_SUBMASK)))
+@@ -568,12 +569,13 @@ EXPORT_SYMBOL_GPL(ima_file_hash);
+  * Skip calling process_measurement(), but indicate which newly, created
+  * tmpfiles are in policy.
+  */
+-void ima_post_create_tmpfile(struct inode *inode)
++void ima_post_create_tmpfile(struct user_namespace *user_ns,
++			     struct inode *inode)
+ {
+ 	struct integrity_iint_cache *iint;
+ 	int must_appraise;
+ 
+-	must_appraise = ima_must_appraise(inode, MAY_ACCESS, FILE_CHECK);
++	must_appraise = ima_must_appraise(user_ns, inode, MAY_ACCESS, FILE_CHECK);
+ 	if (!must_appraise)
+ 		return;
+ 
+@@ -589,18 +591,19 @@ void ima_post_create_tmpfile(struct inode *inode)
+ 
+ /**
+  * ima_post_path_mknod - mark as a new inode
++ * @user_ns: user namespace of the mount
+  * @dentry: newly created dentry
+  *
+  * Mark files created via the mknodat syscall as new, so that the
+  * file data can be written later.
+  */
+-void ima_post_path_mknod(struct dentry *dentry)
++void ima_post_path_mknod(struct user_namespace *user_ns, struct dentry *dentry)
+ {
+ 	struct integrity_iint_cache *iint;
+ 	struct inode *inode = dentry->d_inode;
+ 	int must_appraise;
+ 
+-	must_appraise = ima_must_appraise(inode, MAY_ACCESS, FILE_CHECK);
++	must_appraise = ima_must_appraise(user_ns, inode, MAY_ACCESS, FILE_CHECK);
+ 	if (!must_appraise)
+ 		return;
+ 
+@@ -780,6 +783,7 @@ int ima_post_load_data(char *buf, loff_t size,
+ 
+ /*
+  * process_buffer_measurement - Measure the buffer to ima log.
++ * @userns: user namespace of the mount through which the inode is accessed
+  * @inode: inode associated with the object being measured (NULL for KEY_CHECK)
+  * @buf: pointer to the buffer that needs to be added to the log.
+  * @size: size of buffer(in bytes).
+@@ -790,7 +794,8 @@ int ima_post_load_data(char *buf, loff_t size,
+  *
+  * Based on policy, the buffer is measured into the ima log.
+  */
+-void process_buffer_measurement(struct inode *inode, const void *buf, int size,
++void process_buffer_measurement(struct user_namespace *user_ns,
++				struct inode *inode, const void *buf, int size,
+ 				const char *eventname, enum ima_hooks func,
+ 				int pcr, const char *keyring)
+ {
+@@ -823,7 +828,7 @@ void process_buffer_measurement(struct inode *inode, const void *buf, int size,
+ 	 */
+ 	if (func) {
+ 		security_task_getsecid(current, &secid);
+-		action = ima_get_action(inode, current_cred(), secid, 0, func,
++		action = ima_get_action(user_ns, inode, current_cred(), secid, 0, func,
+ 					&pcr, &template, keyring);
+ 		if (!(action & IMA_MEASURE))
+ 			return;
+@@ -895,7 +900,8 @@ void ima_kexec_cmdline(int kernel_fd, const void *buf, int size)
+ 	if (!f.file)
+ 		return;
+ 
+-	process_buffer_measurement(file_inode(f.file), buf, size,
++	process_buffer_measurement(mnt_user_ns(f.file->f_path.mnt),
++				   file_inode(f.file), buf, size,
+ 				   "kexec-cmdline", KEXEC_CMDLINE, 0, NULL);
+ 	fdput(f);
+ }
+diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
+index 9b5adeaa47fc..003d974ce2f3 100644
+--- a/security/integrity/ima/ima_policy.c
++++ b/security/integrity/ima/ima_policy.c
+@@ -497,10 +497,10 @@ static bool ima_match_keyring(struct ima_rule_entry *rule,
+  *
+  * Returns true on rule match, false on failure.
+  */
+-static bool ima_match_rules(struct ima_rule_entry *rule, struct inode *inode,
++static bool ima_match_rules(struct ima_rule_entry *rule,
++			    struct user_namespace *user_ns, struct inode *inode,
+ 			    const struct cred *cred, u32 secid,
+-			    enum ima_hooks func, int mask,
+-			    const char *keyring)
++			    enum ima_hooks func, int mask, const char *keyring)
+ {
+ 	int i;
+ 
+@@ -539,7 +539,7 @@ static bool ima_match_rules(struct ima_rule_entry *rule, struct inode *inode,
  	}
  
- 	block = ext4_count_free_clusters(sb);
--	ext4_free_blocks_count_set(sbi->s_es, 
-+	ext4_free_blocks_count_set(sbi->s_es,
- 				   EXT4_C2B(sbi, block));
- 	ext4_superblock_csum_set(sb);
- 	err = percpu_counter_init(&sbi->s_freeclusters_counter, block,
-@@ -6631,7 +6631,11 @@ static struct file_system_type ext4_fs_type = {
- 	.name		= "ext4",
- 	.mount		= ext4_mount,
- 	.kill_sb	= kill_block_super,
-+#ifdef CONFIG_EXT4_IDMAP_MOUNTS
-+	.fs_flags	= FS_REQUIRES_DEV | FS_ALLOW_IDMAP,
-+#else
- 	.fs_flags	= FS_REQUIRES_DEV,
-+#endif
- };
- MODULE_ALIAS_FS("ext4");
+ 	if ((rule->flags & IMA_FOWNER) &&
+-	    !rule->fowner_op(inode->i_uid, rule->fowner))
++	    !rule->fowner_op(i_uid_into_mnt(user_ns, inode), rule->fowner))
+ 		return false;
+ 	for (i = 0; i < MAX_LSM_RULES; i++) {
+ 		int rc = 0;
+@@ -620,8 +620,9 @@ static int get_subaction(struct ima_rule_entry *rule, enum ima_hooks func)
+  * list when walking it.  Reads are many orders of magnitude more numerous
+  * than writes so ima_match_policy() is classical RCU candidate.
+  */
+-int ima_match_policy(struct inode *inode, const struct cred *cred, u32 secid,
+-		     enum ima_hooks func, int mask, int flags, int *pcr,
++int ima_match_policy(struct user_namespace *user_ns, struct inode *inode,
++		     const struct cred *cred, u32 secid, enum ima_hooks func,
++		     int mask, int flags, int *pcr,
+ 		     struct ima_template_desc **template_desc,
+ 		     const char *keyring)
+ {
+@@ -637,8 +638,8 @@ int ima_match_policy(struct inode *inode, const struct cred *cred, u32 secid,
+ 		if (!(entry->action & actmask))
+ 			continue;
  
+-		if (!ima_match_rules(entry, inode, cred, secid, func, mask,
+-				     keyring))
++		if (!ima_match_rules(entry, user_ns, inode, cred, secid, func,
++				     mask, keyring))
+ 			continue;
+ 
+ 		action |= entry->flags & IMA_ACTION_FLAGS;
+diff --git a/security/integrity/ima/ima_queue_keys.c b/security/integrity/ima/ima_queue_keys.c
+index 69a8626a35c0..2bacc4f3e6ba 100644
+--- a/security/integrity/ima/ima_queue_keys.c
++++ b/security/integrity/ima/ima_queue_keys.c
+@@ -158,7 +158,7 @@ void ima_process_queued_keys(void)
+ 
+ 	list_for_each_entry_safe(entry, tmp, &ima_keys, list) {
+ 		if (!timer_expired)
+-			process_buffer_measurement(NULL, entry->payload,
++			process_buffer_measurement(NULL, NULL, entry->payload,
+ 						   entry->payload_len,
+ 						   entry->keyring_name,
+ 						   KEY_CHECK, 0,
 -- 
 2.29.2
 
