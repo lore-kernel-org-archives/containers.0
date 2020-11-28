@@ -1,91 +1,91 @@
-Return-Path: <SRS0=Xasr=FA=lists.linux-foundation.org=containers-bounces@kernel.org>
+Return-Path: <SRS0=+MRp=FC=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-15.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C8990C56202
-	for <containers@archiver.kernel.org>; Thu, 26 Nov 2020 13:16:46 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E375C63777
+	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 18:12:38 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 186C520DD4
-	for <containers@archiver.kernel.org>; Thu, 26 Nov 2020 13:16:45 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=kinvolk.io header.i=@kinvolk.io header.b="aH1WQcBa"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 186C520DD4
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=kinvolk.io
+	by mail.kernel.org (Postfix) with ESMTPS id 28CCF22263
+	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 18:12:36 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 28CCF22263
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=hallyn.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id A706C8745D;
-	Thu, 26 Nov 2020 13:16:45 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 577C9873FD;
+	Sat, 28 Nov 2020 18:12:36 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id JC1pnCzNwuws; Thu, 26 Nov 2020 13:16:44 +0000 (UTC)
+	with ESMTP id nFSFhRmS4oUW; Sat, 28 Nov 2020 18:12:32 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id D5AA58740B;
-	Thu, 26 Nov 2020 13:16:44 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 3D4A5873EB;
+	Sat, 28 Nov 2020 18:12:32 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id C0B80C0891;
-	Thu, 26 Nov 2020 13:16:44 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 3B66CC0052
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 269EAC163C;
+	Sat, 28 Nov 2020 18:12:32 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 18130C0052
  for <containers@lists.linux-foundation.org>;
- Thu, 26 Nov 2020 13:16:43 +0000 (UTC)
+ Sat, 28 Nov 2020 18:12:30 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 227CF8772A
+ by silver.osuosl.org (Postfix) with ESMTP id E12682E34E
  for <containers@lists.linux-foundation.org>;
- Thu, 26 Nov 2020 13:16:43 +0000 (UTC)
+ Sat, 28 Nov 2020 18:12:29 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id syme4lLdC6AC
+ with ESMTP id lwG9w3RbHbel
  for <containers@lists.linux-foundation.org>;
- Thu, 26 Nov 2020 13:16:41 +0000 (UTC)
+ Sat, 28 Nov 2020 18:12:25 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-lj1-f181.google.com (mail-lj1-f181.google.com
- [209.85.208.181])
- by whitealder.osuosl.org (Postfix) with ESMTPS id 86AB88740B
+Received: from mail.hallyn.com (mail.hallyn.com [178.63.66.53])
+ by silver.osuosl.org (Postfix) with ESMTPS id 23D0020482
  for <containers@lists.linux-foundation.org>;
- Thu, 26 Nov 2020 13:16:41 +0000 (UTC)
-Received: by mail-lj1-f181.google.com with SMTP id y7so2295478lji.8
- for <containers@lists.linux-foundation.org>;
- Thu, 26 Nov 2020 05:16:41 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kinvolk.io; s=google;
- h=mime-version:from:date:message-id:subject:to:cc
- :content-transfer-encoding;
- bh=8QNZUu2Cb3lWrQ6TZfg+vI39J3foEyVGk8naM+GJ9AI=;
- b=aH1WQcBaYy4asjjBlbIWGuZmqJDEI3r9QB7qPEANzc+zwav4fWgWZGvbpNU8DSGOVg
- LTlG5tkdoAtJzI3DXJlCP7ImQY5/b1ZmZoDRYGuoQRQSURyv9vgRtg8H9TzFNcx+rPFX
- pk8jvHfjzDQaeKuXgKpMvmLWDLqD/P0+UvupQ=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=1e100.net; s=20161025;
- h=x-gm-message-state:mime-version:from:date:message-id:subject:to:cc
- :content-transfer-encoding;
- bh=8QNZUu2Cb3lWrQ6TZfg+vI39J3foEyVGk8naM+GJ9AI=;
- b=JVxc9LONGKgDTiwiTBloftehEnWIZruLjyjVNu83/l/lijTWCCQfbnG9CHoDwnwxWr
- CAf1IpVPDZ90elv6SECv/dPjwuhnuEImj2BlcO6WGAu5UZ1WAxHceeJ9v42goM0hcS/V
- 81e+IBGF74ALyhFrRZYWHjKAisF+xQr1l+TfsLncUf6SnBWEDNdJ++x0j6wF8D2gssm3
- ZVkzKOpodDGQmLu0onFbkfU0areT2MmurbE3PKwoeL6rUchY7OPG5j4RKpafTuQY2ldG
- U8c+E80k2+DbAbWgbaCnMN18v1e/GmR6Jp3o42Knf2oPbs8AyhoS//lgAoBmANBUeTLS
- TmnA==
-X-Gm-Message-State: AOAM530WgqjBkUFFa/gVtin8gl+mMCzkRlelGTt8Hc/nn5Kl9nbG2nU/
- R18V7ezl/6q6VNdLuHLQfR63TwRveir67GndUptSaepuMOQP9A==
-X-Google-Smtp-Source: ABdhPJx4fFNWx1/Gke8sRMXIL1e1HJpim6R8QFHoYzSOnw8kqnMXPE3V3AqD25oLsRDjC5osy/UzyaKLn83jMce05n0=
-X-Received: by 2002:a5d:5604:: with SMTP id l4mr3708930wrv.127.1606396185044; 
- Thu, 26 Nov 2020 05:09:45 -0800 (PST)
+ Sat, 28 Nov 2020 18:12:25 +0000 (UTC)
+Received: by mail.hallyn.com (Postfix, from userid 1001)
+ id 957E9960; Sat, 28 Nov 2020 12:12:22 -0600 (CST)
+Date: Sat, 28 Nov 2020 12:12:22 -0600
+From: "Serge E. Hallyn" <serge@hallyn.com>
+To: Christian Brauner <christian.brauner@ubuntu.com>
+Subject: Re: [PATCH v2 10/39] inode: add idmapped mount aware init and
+ permission helpers
+Message-ID: <20201128181222.GA18570@mail.hallyn.com>
+References: <20201115103718.298186-1-christian.brauner@ubuntu.com>
+ <20201115103718.298186-11-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
-From: Alban Crequy <alban@kinvolk.io>
-Date: Thu, 26 Nov 2020 14:09:33 +0100
-Message-ID: <CADZs7q4sw71iNHmV8EOOXhUKJMORPzF7thraxZYddTZsxta-KQ@mail.gmail.com>
-Subject: SECCOMP_IOCTL_NOTIF_ADDFD race condition
-To: LKML <linux-kernel@vger.kernel.org>, 
- Linux Containers <containers@lists.linux-foundation.org>
-Cc: Giuseppe Scrivano <gscrivan@redhat.com>, Kees Cook <keescook@chromium.org>
+Content-Disposition: inline
+In-Reply-To: <20201115103718.298186-11-christian.brauner@ubuntu.com>
+User-Agent: Mutt/1.9.4 (2018-02-28)
+Cc: Lennart Poettering <lennart@poettering.net>,
+ Mimi Zohar <zohar@linux.ibm.com>, David Howells <dhowells@redhat.com>,
+ Andreas Dilger <adilger.kernel@dilger.ca>,
+ containers@lists.linux-foundation.org, Christoph Hellwig <hch@lst.de>,
+ Tycho Andersen <tycho@tycho.ws>, Jonathan Corbet <corbet@lwn.net>,
+ smbarber@chromium.org, Christoph Hellwig <hch@infradead.org>,
+ linux-ext4@vger.kernel.org, Mrunal Patel <mpatel@redhat.com>,
+ Kees Cook <keescook@chromium.org>, Arnd Bergmann <arnd@arndb.de>,
+ Jann Horn <jannh@google.com>, selinux@vger.kernel.org,
+ Josh Triplett <josh@joshtriplett.org>, linux-fsdevel@vger.kernel.org,
+ Aleksa Sarai <cyphar@cyphar.com>, Alexander Viro <viro@zeniv.linux.org.uk>,
+ Andy Lutomirski <luto@kernel.org>,
+ OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
+ Geoffrey Thomas <geofft@ldpreload.com>,
+ James Bottomley <James.Bottomley@hansenpartnership.com>,
+ John Johansen <john.johansen@canonical.com>, Theodore Tso <tytso@mit.edu>,
+ Seth Forshee <seth.forshee@canonical.com>,
+ Dmitry Kasatkin <dmitry.kasatkin@gmail.com>,
+ Stephen Smalley <stephen.smalley.work@gmail.com>,
+ linux-security-module@vger.kernel.org, linux-audit@redhat.com,
+ "Eric W. Biederman" <ebiederm@xmission.com>, linux-api@vger.kernel.org,
+ Casey Schaufler <casey@schaufler-ca.com>, Alban Crequy <alban@kinvolk.io>,
+ linux-integrity@vger.kernel.org, Todd Kjos <tkjos@google.com>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -97,102 +97,1094 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-SGksCgpXaXRoIHRoZSBhZGRmZCBmZWF0dXJlIChhZGRlZCBpbiDigJxzZWNjb21wOiBJbnRyb2R1
-Y2UgYWRkZmQgaW9jdGwgdG8Kc2VjY29tcCB1c2VyIG5vdGlmaWVy4oCdLCBjb21taXQgN2NmOTdi
-MTI1NDU1KSwgdGhlIG5ldyBmaWxlIGlzCmluc3RhbGxlZCBpbiB0aGUgdGFyZ2V0IHByb2Nlc3Mg
-ZHVyaW5nIHRoZSBTRUNDT01QX0lPQ1RMX05PVElGX0FEREZECm9wZXJhdGlvbiBhbmQgbm90IGF0
-IHRoZSBlbmQgd2l0aCB0aGUgU0VDQ09NUF9JT0NUTF9OT1RJRl9TRU5ECm9wZXJhdGlvbi4gVGhp
-cyBjYW4gY2F1c2UgcmFjZSBjb25kaXRpb25zIHdoZW4gdGhlIHRhcmdldCBwcm9jZXNzIGlzCmlu
-dGVycnVwdGVkIGJ5IGEgc2lnbmFsIChFSU5UUikgYW5kIHJlc3RhcnRlZCBhdXRvbWF0aWNhbGx5
-LgoKVGhpcyBpcyBtb3JlIG5vdGljZWFibGUgaW4gbXVsdGl0aHJlYWRlZCBwcm9jZXNzZXMgbGlr
-ZSB3aXRoIEdvbGFuZy4KSW4gR29sYW5nIDEuMTQ6Cmh0dHBzOi8vZ29sYW5nLm9yZy9kb2MvZ28x
-LjE0Cj4gIkEgY29uc2VxdWVuY2Ugb2YgdGhlIGltcGxlbWVudGF0aW9uIG9mIHByZWVtcHRpb24g
-aXMgdGhhdCBvbiBVbml4IHN5c3RlbXMsIGluY2x1ZGluZyBMaW51eCBhbmQgbWFjT1Mgc3lzdGVt
-cywgcHJvZ3JhbXMgYnVpbHQgd2l0aCBHbyAxLjE0IHdpbGwgcmVjZWl2ZSBtb3JlIHNpZ25hbHMg
-dGhhbiBwcm9ncmFtcyBidWlsdCB3aXRoIGVhcmxpZXIgcmVsZWFzZXMuIFRoaXMgbWVhbnMgdGhh
-dCBwcm9ncmFtcyB0aGF0IHVzZSBwYWNrYWdlcyBsaWtlIHN5c2NhbGwgb3IgZ29sYW5nLm9yZy94
-L3N5cy91bml4IHdpbGwgc2VlIG1vcmUgc2xvdyBzeXN0ZW0gY2FsbHMgZmFpbCB3aXRoIEVJTlRS
-IGVycm9ycy4gVGhvc2UgcHJvZ3JhbXMgd2lsbCBoYXZlIHRvIGhhbmRsZSB0aG9zZSBlcnJvcnMg
-aW4gc29tZSB3YXksIG1vc3QgbGlrZWx5IGxvb3BpbmcgdG8gdHJ5IHRoZSBzeXN0ZW0gY2FsbCBh
-Z2Fpbi4iCgpJbiBteSB0ZXN0LCBJIGFkZGVkIGEgc2VjY29tcCBwb2xpY3kgd2hpY2ggcmV0dXJu
-cwpTRUNDT01QX1JFVF9VU0VSX05PVElGIG9uIGV4ZWN2ZSgpIGFuZCBJIGFkZGVkIGEgc2xlZXAo
-MikgaW4gdGhlCnNlY2NvbXAgYWdlbnQgKHVzaW5nIGh0dHBzOi8vZ2l0aHViLmNvbS9raW52b2xr
-L3NlY2NvbXBhZ2VudC8pIGJldHdlZW4KU0VDQ09NUF9JT0NUTF9OT1RJRl9SRUNWIGFuZCBTRUND
-T01QX0lPQ1RMX05PVElGX1NFTkQgdG8gbWFrZSBpdCBhIGJpdApzbG93IHRvIHJlcGx5IHdpdGgg
-U0VDQ09NUF9VU0VSX05PVElGX0ZMQUdfQ09OVElOVUUuIEkgZ290IHRoZQpmb2xsb3dpbmcgc3Ry
-YWNlIGxvZyBnb2luZyBvbiBpbiBhIGxvb3A6CgpbcGlkIDI2NTYxOTldIGV4ZWN2ZSgiL2Jpbi9z
-aCIsIFsic2giLCAiLWMiLCAic2xlZXAgaW5maW5pdHkiXSwKMHhjMDAwMDYzYjAwIC8qIDExIHZh
-cnMgKi8gPHVuZmluaXNoZWQgLi4uPgpbcGlkIDI2NTYyMDBdIDwuLi4gbmFub3NsZWVwIHJlc3Vt
-ZWQ+TlVMTCkgPSAwCltwaWQgMjY1NjIwMF0gZXBvbGxfcHdhaXQoNywgW10sIDEyOCwgMCwgTlVM
-TCwgMCkgPSAwCltwaWQgMjY1NjIwMF0gZ2V0cGlkKCkgICAgICAgICAgICAgICAgICA9IDEKW3Bp
-ZCAyNjU2MjAwXSB0Z2tpbGwoMSwgMSwgU0lHVVJHKSAgICAgID0gMApbcGlkIDI2NTYxOTldIDwu
-Li4gZXhlY3ZlIHJlc3VtZWQ+KSAgICAgPSA/IEVSRVNUQVJUU1lTIChUbyBiZQpyZXN0YXJ0ZWQg
-aWYgU0FfUkVTVEFSVCBpcyBzZXQpCltwaWQgMjY1NjIwMF0gbmFub3NsZWVwKHt0dl9zZWM9MCwg
-dHZfbnNlYz0xMDAwMDAwMH0sICA8dW5maW5pc2hlZCAuLi4+CltwaWQgMjY1NjE5OV0gLS0tIFNJ
-R1VSRyB7c2lfc2lnbm89U0lHVVJHLCBzaV9jb2RlPVNJX1RLSUxMLCBzaV9waWQ9MSwKc2lfdWlk
-PTB9IC0tLQpbcGlkIDI2NTYxOTldIHJ0X3NpZ3JldHVybih7bWFzaz1bXX0pICAgPSA1OQpbcGlk
-IDI2NTYxOTldIGV4ZWN2ZSgiL2Jpbi9zaCIsIFsic2giLCAiLWMiLCAic2xlZXAgaW5maW5pdHki
-XSwKMHhjMDAwMDYzYjAwIC8qIDExIHZhcnMgKi8gPHVuZmluaXNoZWQgLi4uPgoKT24gdGhlIHNl
-Y2NvbXAgYWdlbnQgc2lkZSwgdGhlIGlvY3RsKFNFQ0NPTVBfSU9DVExfTk9USUZfU0VORCkgcmV0
-dXJucwpFTk9FTlQsIGFuZCB0aGVuIGl0IHJlY2VpdmVzIHRoZSBzYW1lIG5vdGlmaWNhdGlvbiBh
-dCB0aGUgbmV4dAppdGVyYXRpb24gb2YgdGhlIGxvb3AuCgpUaGUgU0lHVVJHIHNpZ25hbCBpcyBz
-ZW50IGJ5IHRoZSBHb2xhbmcgcnVudGltZSwgY2F1c2luZyB0aGUgZXhlY3ZlIHRvCmJlIGludGVy
-cnVwdGVkLCBhbmQgcmVzdGFydGVkIGF1dG9tYXRpY2FsbHksIHRyaWdnZXJpbmcgdGhlIG5ldwpz
-ZWNjb21wIG5vdGlmaWNhdGlvbi4gSW4gdGhpcyBleGFtcGxlIHdpdGggZXhlY3ZlLCB0aGlzIGlz
-IG5vdCBhIGJpZwpkZWFsIGJlY2F1c2UgdGhlIHNlY2NvbXAgYWdlbnQgZG9lc24ndCBhZGQgYSBm
-ZC4gQnV0IG9uIGEgb3BlbigpIG9yCmFjY2VwdCgpIHN5c2NhbGwsIEkgZmVhciB0aGF0IHRoZSBz
-ZWNjb21wIGFnZW50IGNvdWxkIGluc3RhbGwgYSBmaWxlCmRlc2NyaXB0b3Igd2l0aG91dCBrbm93
-aW5nIHRoYXQgdGhlIHN5c2NhbGwgd2lsbCBiZSBpbnRlcnJ1cHRlZCBzb29uCmFmdGVyLCBidXQg
-YmVmb3JlIHRoZSBTRUNDT01QX0lPQ1RMX05PVElGX1NFTkQgaXMgY29tcGxldGVkLgoKSSB1bmRl
-cnN0YW5kIHRoZSBuZWVkIHRvIGhhdmUgdHdvIGRpZmZlcmVudCBpb2N0bCgpIHRvIGFkZCB0aGUg
-ZmQgYW5kCnRvIHJlcGx5IHRvIHRoZSBzZWNjb21wIG5vdGlmaWNhdGlvbiBiZWNhdXNlIHRoZSBz
-ZWNjb21wIGFnZW50IG5lZWRzCnRvIGtub3cgdGhlIGZkIG51bWJlciBiZWluZyBhc3NpZ25lZCBi
-ZWZvcmUgc3BlY2lmeWluZyB0aGUgcmV0dXJuCnZhbHVlIG9mIHRoZSBzeXNjYWxsIHdpdGggdGhh
-dCBudW1iZXIuCgpXaGF0IGRvIHlvdSB0aGluayBpcyB0aGUgYmVzdCB3YXkgdG8gc29sdmUgdGhp
-cyBwcm9ibGVtPyBIZXJlIGFyZSBhIGZldyBpZGVhczoKCi0gSWRlYSAxOiBhZGQgYSBzZWNvbmQg
-ZmxhZyBmb3IgdGhlIHN0cnVjdCBzZWNjb21wX25vdGlmX3Jlc3AK4oCcU0VDQ09NUF9VU0VSX05P
-VElGX0ZMQUdfUkVUVVJOX0ZE4oCdIHRvIGluc3RydWN0IHNlY2NvbXAgdG8gb3ZlcnJpZGUKdGhl
-IHJldHVybiB2YWx1ZSB3aXRoIHRoZSBmaXJzdCBmZCB0byBpbnN0YWxsLiBJdCB3b3VsZCBub3Qg
-aGVscCB0bwplbXVsYXRlIHJlY3Zmcm9tKCkgd2l0aCBTQ01fUklHSFRTIGJ1dCBpdCB3aWxsIHNv
-bHZlIHRoZSBwcm9ibGVtIGZvcgpzeXNjYWxscyB0aGF0IHJldHVybiBhIGZkIGJlY2F1c2Ugd2Ug
-Y2FuIHRoZW4gaW1wbGVtZW50IGEgbmV3IGlvY3RsCijigJxTRUNDT01QX0lPQ1RMX05PVElGX1NF
-TkRfV0lUSF9GRFPigJ0/KSB0aGF0IGRvZXMgdGhlIGFkZGZkIGFuZCB0aGUKbm90aWZpY2F0aW9u
-IHJlc3BvbnNlIGluIG9uZSBzdGVwLgoKT3RoZXIgaWRlYXMgYnV0IHRoZXkgY2F1c2UgbW9yZSBw
-cm9ibGVtczoKCi0gSWRlYSAyOiBXZSBuZWVkIHNvbWUga2luZCBvZiB0cmFuc2FjdGlvbnMgd2hl
-cmUgdGhlIGZkIGlzIHNlbnQgd2l0aAp0aGUgZmlyc3QgaW9jdGwoKSBhbmQgaW5zdGFsbGVkIGlu
-IHRoZSBmZCB0YWJsZSBidXQgbWFya2VkIHNvbWVob3cgdG8KYmUgY2xvc2VkIGF1dG9tYXRpY2Fs
-bHkgaWYgdGhlIHN5c2NhbGwgaXMgaW50ZXJydXB0ZWQgd2l0aCBFSU5UUgpvdXRzaWRlIG9mIHRo
-ZSBjb250cm9sIG9mIHRoZSBzZWNjb21wIGFnZW50LiBUaGUgbmV3IGZkIGluIHRoZSBmZAp0YWJs
-ZSB3b3VsZCBiZSBjb21taXR0ZWQgYXQgdGhlIGVuZCBpZiB0aGUgc3lzY2FsbCBpcyBub3QgaW50
-ZXJydXB0ZWQuCkJ1dCB0aGlzIGludHJvZHVjZXMgb3RoZXIgaXNzdWVzOiBhbm90aGVyIHRocmVh
-ZCBjb3VsZCBjYWxsIGR1cCgpIG9uCnRoZSBmZCBiZWZvcmUgaXQgZ2V0cyBjbG9zZWQuIE9yIGFu
-b3RoZXIgcHJvY2VzcyBzaGFyaW5nIHRoZSBmZCB0YWJsZQp3aXRoIENMT05FX0ZJTEVTIGNvdWxk
-IGRvIHRoZSBzYW1lLiBTaG91bGQgdGhlIG5vdC15ZXQtY29tbWl0dGVkIGZkcwpiZSB2aXNpYmxl
-IGluIC9wcm9jLzxwaWQ+L2ZkLz8gT3IgaW5oZXJpdGVkIHRvIG5ldyBwcm9jZXNzZXMgY3JlYXRl
-ZApieSBmb3JrKCk/CgotIElkZWEgMzogV2UgY291bGQgYWRkIGZkcyBpbiBhIHRlbXBvcmFyeSBs
-b2NhdGlvbiBidXQgbm90IGluIHRoZQpgc3RydWN0IGZpbGVzX3N0cnVjdGAgb2YgdGhlIHRhcmdl
-dCBwcm9jZXNzLCBhbmQgb25seSBjb21taXQgYXQKU0VDQ09NUF9JT0NUTF9OT1RJRl9TRU5EIHRp
-bWUuIEluIHRoaXMgd2F5LCB0aHJlYWRzIG9yIHByb2Nlc3NlcwpzaGFyaW5nIHRoZSBmZCB0YWJs
-ZSB3aXRoIENMT05FX0ZJTEVTIHdvdWxkIG5vdCBiZSBpbXBhY3RlZC4gSG93ZXZlciwKdGhpcyBj
-b3VsZCBvcGVuIG5ldyByYWNlIGNvbmRpdGlvbnMgaWYgb3RoZXIgdGhyZWFkcyBhcmUgaW5zdGFs
-bGluZwpmZHMgaW4gdGhlIHNhbWUgc2xvdHMgaW4gdGhlIGZkIHRhYmxlLiBBbHNvLCB0aGlzIHNl
-ZW1zIHF1aXRlCmRhbmdlcm91cyB0byBhZGQgdGhpcyBjb25jZXB0IG9mICJpbmZsaWdodCIgZmQg
-Zm9yIHNlY2NvbXAgYmVjYXVzZQp0aGVyZSBhcmUgYWxyZWFkeSBpbmZsaWdodCBmZHMgZm9yIFND
-TV9SSUdIVCBhbmQgYSBnYXJiYWdlIGNvbGxlY3Rvcgp0byBjbGVhbiBjaXJjdWxhciByZWZlcmVu
-Y2VzIChuZXQvdW5peC9nYXJiYWdlLmMpLiBJZiB3ZSBhZGQgYW4KaW5mbGlnaHQgZmQgbWVjaGFu
-aXNtIG9uIHNlY2NvbXAsIGEgbWFsaWNpb3VzIHVzZXIgY291bGQganVzdCB1c2UKU0VDQ09NUF9J
-T0NUTF9OT1RJRl9BRERGRCB0byBzZW5kIGEgdW5peCBzb2NrZXQgdGhhdCBoYXMgdGhlCnNlY2Nv
-bXAtZmQgaW5mbGlnaHQgaW4gU0NNX1JJR0hULiBUaGVuLCB0aGUgbWFsaWNpb3VzIHNlY2NvbXAg
-YWdlbnQKd291bGQgY2xvc2Uoc2VjY29tcEZkKSBhbmQgd2Ugd2lsbCBiZSBpbiBhIHNpdHVhdGlv
-biB3aGVyZSBib3RoIHRoZQpzZWNjb21wLWZkIGFuZCB0aGUgdW5peCBzb2NrZXQgYXJlIG5vdCBh
-dHRhY2hlZCB0byBhbnkgcHJvY2VzcyBidXQKdGhleSByZWZlcmVuY2UgZWFjaCBvdGhlciwgc28g
-dGhleSBjYW5ub3QgYmUgY2xvc2VkLgoKV2hhdCBkbyB5b3UgdGhpbms/IElzIHRoZXJlIGEgYmV0
-dGVyIHNvbHV0aW9uPwoKQ2hlZXJzCkFsYmFuCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlz
-dHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3Jn
-L21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On Sun, Nov 15, 2020 at 11:36:49AM +0100, Christian Brauner wrote:
+> The inode_owner_or_capable() helper determines whether the caller is the
+> owner of the inode or is capable with respect to that inode. Allow it to
+> handle idmapped mounts. If the inode is accessed through an idmapped mount
+> we first need to map it according to the mount's user namespace.
+> Afterwards the checks are identical to non-idmapped mounts. If the initial
+> user namespace is passed all operations are a nop so non-idmapped mounts
+> will not see a change in behavior and will not see any performance impact.
+> 
+> Similarly, we allow the inode_init_owner() helper to handle idmapped
+> mounts. It initializes a new inode on idmapped mounts by mapping the fsuid
+> and fsgid of the caller from the mount's user namespace. If the initial
+> user namespace is passed all operations are a nop so non-idmapped mounts
+> will not see a change in behavior and will also not see any performance
+> impact.
+> 
+> Cc: Christoph Hellwig <hch@lst.de>
+> Cc: David Howells <dhowells@redhat.com>
+> Cc: Al Viro <viro@zeniv.linux.org.uk>
+> Cc: linux-fsdevel@vger.kernel.org
+> Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
+> ---
+> /* v2 */
+> - Christoph Hellwig:
+>   - Don't pollute the vfs with additional helpers simply extend the existing
+>     helpers with an additional argument and switch all callers.
+> ---
+>  fs/9p/acl.c                  |  2 +-
+>  fs/9p/vfs_inode.c            |  2 +-
+>  fs/attr.c                    |  6 +++---
+>  fs/bfs/dir.c                 |  2 +-
+>  fs/btrfs/inode.c             |  2 +-
+>  fs/btrfs/ioctl.c             | 10 +++++-----
+>  fs/btrfs/tests/btrfs-tests.c |  2 +-
+>  fs/crypto/policy.c           |  2 +-
+>  fs/efivarfs/file.c           |  2 +-
+>  fs/ext2/ialloc.c             |  2 +-
+>  fs/ext2/ioctl.c              |  6 +++---
+>  fs/ext4/ialloc.c             |  2 +-
+>  fs/ext4/ioctl.c              | 14 +++++++-------
+>  fs/f2fs/file.c               | 14 +++++++-------
+>  fs/f2fs/namei.c              |  2 +-
+>  fs/f2fs/xattr.c              |  2 +-
+>  fs/fcntl.c                   |  2 +-
+>  fs/gfs2/file.c               |  2 +-
+>  fs/hfsplus/inode.c           |  2 +-
+>  fs/hfsplus/ioctl.c           |  2 +-
+>  fs/hugetlbfs/inode.c         |  2 +-
+>  fs/inode.c                   | 23 ++++++++++++++---------
+>  fs/jfs/ioctl.c               |  2 +-
+>  fs/jfs/jfs_inode.c           |  2 +-
+>  fs/minix/bitmap.c            |  2 +-
+>  fs/namei.c                   |  4 ++--
+>  fs/nilfs2/inode.c            |  2 +-
+>  fs/nilfs2/ioctl.c            |  2 +-
+>  fs/ocfs2/dlmfs/dlmfs.c       |  4 ++--
+>  fs/ocfs2/ioctl.c             |  2 +-
+>  fs/ocfs2/namei.c             |  2 +-
+>  fs/omfs/inode.c              |  2 +-
+>  fs/overlayfs/dir.c           |  2 +-
+>  fs/overlayfs/file.c          |  4 ++--
+>  fs/overlayfs/super.c         |  2 +-
+>  fs/overlayfs/util.c          |  2 +-
+>  fs/posix_acl.c               |  2 +-
+>  fs/ramfs/inode.c             |  2 +-
+>  fs/reiserfs/ioctl.c          |  4 ++--
+>  fs/reiserfs/namei.c          |  2 +-
+>  fs/sysv/ialloc.c             |  2 +-
+>  fs/ubifs/dir.c               |  2 +-
+>  fs/ubifs/ioctl.c             |  2 +-
+>  fs/udf/ialloc.c              |  2 +-
+>  fs/ufs/ialloc.c              |  2 +-
+>  fs/xattr.c                   |  2 +-
+>  fs/xfs/xfs_ioctl.c           |  2 +-
+>  fs/zonefs/super.c            |  2 +-
+>  include/linux/fs.h           |  7 ++++---
+>  kernel/bpf/inode.c           |  2 +-
+>  mm/madvise.c                 |  2 +-
+>  mm/mincore.c                 |  2 +-
+>  mm/shmem.c                   |  2 +-
+>  security/selinux/hooks.c     |  4 ++--
+>  54 files changed, 95 insertions(+), 89 deletions(-)
+> 
+> diff --git a/fs/9p/acl.c b/fs/9p/acl.c
+> index 6261719f6f2a..d77b28e8d57a 100644
+> --- a/fs/9p/acl.c
+> +++ b/fs/9p/acl.c
+> @@ -258,7 +258,7 @@ static int v9fs_xattr_set_acl(const struct xattr_handler *handler,
+>  
+>  	if (S_ISLNK(inode->i_mode))
+>  		return -EOPNOTSUPP;
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EPERM;
+>  	if (value) {
+>  		/* update the cached acl value */
+> diff --git a/fs/9p/vfs_inode.c b/fs/9p/vfs_inode.c
+> index ae0c38ad1fcb..f058e89df30f 100644
+> --- a/fs/9p/vfs_inode.c
+> +++ b/fs/9p/vfs_inode.c
+> @@ -251,7 +251,7 @@ int v9fs_init_inode(struct v9fs_session_info *v9ses,
+>  {
+>  	int err = 0;
+>  
+> -	inode_init_owner(inode, NULL, mode);
+> +	inode_init_owner(inode, &init_user_ns, NULL, mode);
+>  	inode->i_blocks = 0;
+>  	inode->i_rdev = rdev;
+>  	inode->i_atime = inode->i_mtime = inode->i_ctime = current_time(inode);
+> diff --git a/fs/attr.c b/fs/attr.c
+> index c9e29e589cec..00ae0b000146 100644
+> --- a/fs/attr.c
+> +++ b/fs/attr.c
+> @@ -87,7 +87,7 @@ int setattr_prepare(struct dentry *dentry, struct iattr *attr)
+>  
+>  	/* Make sure a caller can chmod. */
+>  	if (ia_valid & ATTR_MODE) {
+> -		if (!inode_owner_or_capable(inode))
+> +		if (!inode_owner_or_capable(&init_user_ns, inode))
+>  			return -EPERM;
+>  		/* Also check the setgid bit! */
+>  		if (!in_group_p((ia_valid & ATTR_GID) ? attr->ia_gid :
+> @@ -98,7 +98,7 @@ int setattr_prepare(struct dentry *dentry, struct iattr *attr)
+>  
+>  	/* Check for setting the inode time. */
+>  	if (ia_valid & (ATTR_MTIME_SET | ATTR_ATIME_SET | ATTR_TIMES_SET)) {
+> -		if (!inode_owner_or_capable(inode))
+> +		if (!inode_owner_or_capable(&init_user_ns, inode))
+>  			return -EPERM;
+>  	}
+>  
+> @@ -243,7 +243,7 @@ int notify_change(struct dentry * dentry, struct iattr * attr, struct inode **de
+>  		if (IS_IMMUTABLE(inode))
+>  			return -EPERM;
+>  
+> -		if (!inode_owner_or_capable(inode)) {
+> +		if (!inode_owner_or_capable(&init_user_ns, inode)) {
+>  			error = inode_permission(&init_user_ns, inode,
+>  						 MAY_WRITE);
+>  			if (error)
+> diff --git a/fs/bfs/dir.c b/fs/bfs/dir.c
+> index d8dfe3a0cb39..c5ae76a87be5 100644
+> --- a/fs/bfs/dir.c
+> +++ b/fs/bfs/dir.c
+> @@ -96,7 +96,7 @@ static int bfs_create(struct inode *dir, struct dentry *dentry, umode_t mode,
+>  	}
+>  	set_bit(ino, info->si_imap);
+>  	info->si_freei--;
+> -	inode_init_owner(inode, dir, mode);
+> +	inode_init_owner(inode, &init_user_ns, dir, mode);
+>  	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
+>  	inode->i_blocks = 0;
+>  	inode->i_op = &bfs_file_inops;
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 32e3bf88d4f7..ed1a5bf5f068 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -6015,7 +6015,7 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+>  	if (ret != 0)
+>  		goto fail_unlock;
+>  
+> -	inode_init_owner(inode, dir, mode);
+> +	inode_init_owner(inode, &init_user_ns, dir, mode);
+>  	inode_set_bytes(inode, 0);
+>  
+>  	inode->i_mtime = current_time(inode);
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 771ee08920ed..39f25b5d06ed 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -205,7 +205,7 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+>  	const char *comp = NULL;
+>  	u32 binode_flags;
+>  
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EPERM;
+>  
+>  	if (btrfs_root_readonly(root))
+> @@ -417,7 +417,7 @@ static int btrfs_ioctl_fssetxattr(struct file *file, void __user *arg)
+>  	unsigned old_i_flags;
+>  	int ret = 0;
+>  
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EPERM;
+>  
+>  	if (btrfs_root_readonly(root))
+> @@ -1813,7 +1813,7 @@ static noinline int __btrfs_ioctl_snap_create(struct file *file,
+>  			btrfs_info(BTRFS_I(file_inode(file))->root->fs_info,
+>  				   "Snapshot src from another FS");
+>  			ret = -EXDEV;
+> -		} else if (!inode_owner_or_capable(src_inode)) {
+> +		} else if (!inode_owner_or_capable(&init_user_ns, src_inode)) {
+>  			/*
+>  			 * Subvolume creation is not restricted, but snapshots
+>  			 * are limited to own subvolumes only
+> @@ -1933,7 +1933,7 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
+>  	u64 flags;
+>  	int ret = 0;
+>  
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EPERM;
+>  
+>  	ret = mnt_want_write_file(file);
+> @@ -4403,7 +4403,7 @@ static long _btrfs_ioctl_set_received_subvol(struct file *file,
+>  	int ret = 0;
+>  	int received_uuid_changed;
+>  
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EPERM;
+>  
+>  	ret = mnt_want_write_file(file);
+> diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
+> index 999c14e5d0bd..ac8e604d44e3 100644
+> --- a/fs/btrfs/tests/btrfs-tests.c
+> +++ b/fs/btrfs/tests/btrfs-tests.c
+> @@ -56,7 +56,7 @@ struct inode *btrfs_new_test_inode(void)
+>  
+>  	inode = new_inode(test_mnt->mnt_sb);
+>  	if (inode)
+> -		inode_init_owner(inode, NULL, S_IFREG);
+> +		inode_init_owner(inode, &init_user_ns, NULL, S_IFREG);
+>  
+>  	return inode;
+>  }
+> diff --git a/fs/crypto/policy.c b/fs/crypto/policy.c
+> index 4441d9944b9e..6ddd9f0d8b36 100644
+> --- a/fs/crypto/policy.c
+> +++ b/fs/crypto/policy.c
+> @@ -462,7 +462,7 @@ int fscrypt_ioctl_set_policy(struct file *filp, const void __user *arg)
+>  		return -EFAULT;
+>  	policy.version = version;
+>  
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EACCES;
+>  
+>  	ret = mnt_want_write_file(filp);
+> diff --git a/fs/efivarfs/file.c b/fs/efivarfs/file.c
+> index feaa5e182b7b..e6bc0302643b 100644
+> --- a/fs/efivarfs/file.c
+> +++ b/fs/efivarfs/file.c
+> @@ -137,7 +137,7 @@ efivarfs_ioc_setxflags(struct file *file, void __user *arg)
+>  	unsigned int oldflags = efivarfs_getflags(inode);
+>  	int error;
+>  
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EACCES;
+>  
+>  	if (copy_from_user(&flags, arg, sizeof(flags)))
+> diff --git a/fs/ext2/ialloc.c b/fs/ext2/ialloc.c
+> index 432c3febea6d..5081f2dd8a20 100644
+> --- a/fs/ext2/ialloc.c
+> +++ b/fs/ext2/ialloc.c
+> @@ -551,7 +551,7 @@ struct inode *ext2_new_inode(struct inode *dir, umode_t mode,
+>  		inode->i_uid = current_fsuid();
+>  		inode->i_gid = dir->i_gid;
+>  	} else
+> -		inode_init_owner(inode, dir, mode);
+> +		inode_init_owner(inode, &init_user_ns, dir, mode);
+>  
+>  	inode->i_ino = ino;
+>  	inode->i_blocks = 0;
+> diff --git a/fs/ext2/ioctl.c b/fs/ext2/ioctl.c
+> index 32a8d10b579d..b399cbb7022d 100644
+> --- a/fs/ext2/ioctl.c
+> +++ b/fs/ext2/ioctl.c
+> @@ -39,7 +39,7 @@ long ext2_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+>  		if (ret)
+>  			return ret;
+>  
+> -		if (!inode_owner_or_capable(inode)) {
+> +		if (!inode_owner_or_capable(&init_user_ns, inode)) {
+>  			ret = -EACCES;
+>  			goto setflags_out;
+>  		}
+> @@ -84,7 +84,7 @@ long ext2_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+>  	case EXT2_IOC_SETVERSION: {
+>  		__u32 generation;
+>  
+> -		if (!inode_owner_or_capable(inode))
+> +		if (!inode_owner_or_capable(&init_user_ns, inode))
+>  			return -EPERM;
+>  		ret = mnt_want_write_file(filp);
+>  		if (ret)
+> @@ -117,7 +117,7 @@ long ext2_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+>  		if (!test_opt(inode->i_sb, RESERVATION) ||!S_ISREG(inode->i_mode))
+>  			return -ENOTTY;
+>  
+> -		if (!inode_owner_or_capable(inode))
+> +		if (!inode_owner_or_capable(&init_user_ns, inode))
+>  			return -EACCES;
+>  
+>  		if (get_user(rsv_window_size, (int __user *)arg))
+> diff --git a/fs/ext4/ialloc.c b/fs/ext4/ialloc.c
+> index b215c564bc31..d91f69282311 100644
+> --- a/fs/ext4/ialloc.c
+> +++ b/fs/ext4/ialloc.c
+> @@ -972,7 +972,7 @@ struct inode *__ext4_new_inode(handle_t *handle, struct inode *dir,
+>  		inode->i_uid = current_fsuid();
+>  		inode->i_gid = dir->i_gid;
+>  	} else
+> -		inode_init_owner(inode, dir, mode);
+> +		inode_init_owner(inode, &init_user_ns, dir, mode);
+>  
+>  	if (ext4_has_feature_project(sb) &&
+>  	    ext4_test_inode_flag(dir, EXT4_INODE_PROJINHERIT))
+> diff --git a/fs/ext4/ioctl.c b/fs/ext4/ioctl.c
+> index f0381876a7e5..e35aba820254 100644
+> --- a/fs/ext4/ioctl.c
+> +++ b/fs/ext4/ioctl.c
+> @@ -139,7 +139,7 @@ static long swap_inode_boot_loader(struct super_block *sb,
+>  	}
+>  
+>  	if (IS_RDONLY(inode) || IS_APPEND(inode) || IS_IMMUTABLE(inode) ||
+> -	    !inode_owner_or_capable(inode) || !capable(CAP_SYS_ADMIN)) {
+> +	    !inode_owner_or_capable(&init_user_ns, inode) || !capable(CAP_SYS_ADMIN)) {
+>  		err = -EPERM;
+>  		goto journal_err_out;
+>  	}
+> @@ -829,7 +829,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+>  	case FS_IOC_SETFLAGS: {
+>  		int err;
+>  
+> -		if (!inode_owner_or_capable(inode))
+> +		if (!inode_owner_or_capable(&init_user_ns, inode))
+>  			return -EACCES;
+>  
+>  		if (get_user(flags, (int __user *) arg))
+> @@ -871,7 +871,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+>  		__u32 generation;
+>  		int err;
+>  
+> -		if (!inode_owner_or_capable(inode))
+> +		if (!inode_owner_or_capable(&init_user_ns, inode))
+>  			return -EPERM;
+>  
+>  		if (ext4_has_metadata_csum(inode->i_sb)) {
+> @@ -1010,7 +1010,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+>  	case EXT4_IOC_MIGRATE:
+>  	{
+>  		int err;
+> -		if (!inode_owner_or_capable(inode))
+> +		if (!inode_owner_or_capable(&init_user_ns, inode))
+>  			return -EACCES;
+>  
+>  		err = mnt_want_write_file(filp);
+> @@ -1032,7 +1032,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+>  	case EXT4_IOC_ALLOC_DA_BLKS:
+>  	{
+>  		int err;
+> -		if (!inode_owner_or_capable(inode))
+> +		if (!inode_owner_or_capable(&init_user_ns, inode))
+>  			return -EACCES;
+>  
+>  		err = mnt_want_write_file(filp);
+> @@ -1214,7 +1214,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+>  
+>  	case EXT4_IOC_CLEAR_ES_CACHE:
+>  	{
+> -		if (!inode_owner_or_capable(inode))
+> +		if (!inode_owner_or_capable(&init_user_ns, inode))
+>  			return -EACCES;
+>  		ext4_clear_inode_es(inode);
+>  		return 0;
+> @@ -1260,7 +1260,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+>  			return -EFAULT;
+>  
+>  		/* Make sure caller has proper permission */
+> -		if (!inode_owner_or_capable(inode))
+> +		if (!inode_owner_or_capable(&init_user_ns, inode))
+>  			return -EACCES;
+>  
+>  		if (fa.fsx_xflags & ~EXT4_SUPPORTED_FS_XFLAGS)
+> diff --git a/fs/f2fs/file.c b/fs/f2fs/file.c
+> index ee861c6d9ff0..333442e96cc4 100644
+> --- a/fs/f2fs/file.c
+> +++ b/fs/f2fs/file.c
+> @@ -1955,7 +1955,7 @@ static int f2fs_ioc_setflags(struct file *filp, unsigned long arg)
+>  	u32 iflags;
+>  	int ret;
+>  
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EACCES;
+>  
+>  	if (get_user(fsflags, (int __user *)arg))
+> @@ -2002,7 +2002,7 @@ static int f2fs_ioc_start_atomic_write(struct file *filp)
+>  	struct f2fs_sb_info *sbi = F2FS_I_SB(inode);
+>  	int ret;
+>  
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EACCES;
+>  
+>  	if (!S_ISREG(inode->i_mode))
+> @@ -2069,7 +2069,7 @@ static int f2fs_ioc_commit_atomic_write(struct file *filp)
+>  	struct inode *inode = file_inode(filp);
+>  	int ret;
+>  
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EACCES;
+>  
+>  	ret = mnt_want_write_file(filp);
+> @@ -2111,7 +2111,7 @@ static int f2fs_ioc_start_volatile_write(struct file *filp)
+>  	struct inode *inode = file_inode(filp);
+>  	int ret;
+>  
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EACCES;
+>  
+>  	if (!S_ISREG(inode->i_mode))
+> @@ -2146,7 +2146,7 @@ static int f2fs_ioc_release_volatile_write(struct file *filp)
+>  	struct inode *inode = file_inode(filp);
+>  	int ret;
+>  
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EACCES;
+>  
+>  	ret = mnt_want_write_file(filp);
+> @@ -2175,7 +2175,7 @@ static int f2fs_ioc_abort_volatile_write(struct file *filp)
+>  	struct inode *inode = file_inode(filp);
+>  	int ret;
+>  
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EACCES;
+>  
+>  	ret = mnt_want_write_file(filp);
+> @@ -3153,7 +3153,7 @@ static int f2fs_ioc_fssetxattr(struct file *filp, unsigned long arg)
+>  		return -EFAULT;
+>  
+>  	/* Make sure caller has proper permission */
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EACCES;
+>  
+>  	if (fa.fsx_xflags & ~F2FS_SUPPORTED_XFLAGS)
+> diff --git a/fs/f2fs/namei.c b/fs/f2fs/namei.c
+> index 8fa37d1434de..66b522e61e50 100644
+> --- a/fs/f2fs/namei.c
+> +++ b/fs/f2fs/namei.c
+> @@ -46,7 +46,7 @@ static struct inode *f2fs_new_inode(struct inode *dir, umode_t mode)
+>  
+>  	nid_free = true;
+>  
+> -	inode_init_owner(inode, dir, mode);
+> +	inode_init_owner(inode, &init_user_ns, dir, mode);
+>  
+>  	inode->i_ino = ino;
+>  	inode->i_blocks = 0;
+> diff --git a/fs/f2fs/xattr.c b/fs/f2fs/xattr.c
+> index 65afcc3cc68a..d772bf13a814 100644
+> --- a/fs/f2fs/xattr.c
+> +++ b/fs/f2fs/xattr.c
+> @@ -114,7 +114,7 @@ static int f2fs_xattr_advise_set(const struct xattr_handler *handler,
+>  	unsigned char old_advise = F2FS_I(inode)->i_advise;
+>  	unsigned char new_advise;
+>  
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EPERM;
+>  	if (value == NULL)
+>  		return -EINVAL;
+> diff --git a/fs/fcntl.c b/fs/fcntl.c
+> index 19ac5baad50f..df091d435603 100644
+> --- a/fs/fcntl.c
+> +++ b/fs/fcntl.c
+> @@ -46,7 +46,7 @@ static int setfl(int fd, struct file * filp, unsigned long arg)
+>  
+>  	/* O_NOATIME can only be set by the owner or superuser */
+>  	if ((arg & O_NOATIME) && !(filp->f_flags & O_NOATIME))
+> -		if (!inode_owner_or_capable(inode))
+> +		if (!inode_owner_or_capable(&init_user_ns, inode))
+>  			return -EPERM;
+>  
+>  	/* required for strict SunOS emulation */
+> diff --git a/fs/gfs2/file.c b/fs/gfs2/file.c
+> index b39b339feddc..1d994bdfffaa 100644
+> --- a/fs/gfs2/file.c
+> +++ b/fs/gfs2/file.c
+> @@ -238,7 +238,7 @@ static int do_gfs2_set_flags(struct file *filp, u32 reqflags, u32 mask,
+>  		goto out;
+>  
+>  	error = -EACCES;
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		goto out;
+>  
+>  	error = 0;
+> diff --git a/fs/hfsplus/inode.c b/fs/hfsplus/inode.c
+> index e3da9e96b835..02d51cbcff04 100644
+> --- a/fs/hfsplus/inode.c
+> +++ b/fs/hfsplus/inode.c
+> @@ -376,7 +376,7 @@ struct inode *hfsplus_new_inode(struct super_block *sb, struct inode *dir,
+>  		return NULL;
+>  
+>  	inode->i_ino = sbi->next_cnid++;
+> -	inode_init_owner(inode, dir, mode);
+> +	inode_init_owner(inode, &init_user_ns, dir, mode);
+>  	set_nlink(inode, 1);
+>  	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
+>  
+> diff --git a/fs/hfsplus/ioctl.c b/fs/hfsplus/ioctl.c
+> index ce15b9496b77..3edb1926d127 100644
+> --- a/fs/hfsplus/ioctl.c
+> +++ b/fs/hfsplus/ioctl.c
+> @@ -91,7 +91,7 @@ static int hfsplus_ioctl_setflags(struct file *file, int __user *user_flags)
+>  	if (err)
+>  		goto out;
+>  
+> -	if (!inode_owner_or_capable(inode)) {
+> +	if (!inode_owner_or_capable(&init_user_ns, inode)) {
+>  		err = -EACCES;
+>  		goto out_drop_write;
+>  	}
+> diff --git a/fs/hugetlbfs/inode.c b/fs/hugetlbfs/inode.c
+> index b5c109703daa..fed6ddfc3f3a 100644
+> --- a/fs/hugetlbfs/inode.c
+> +++ b/fs/hugetlbfs/inode.c
+> @@ -836,7 +836,7 @@ static struct inode *hugetlbfs_get_inode(struct super_block *sb,
+>  		struct hugetlbfs_inode_info *info = HUGETLBFS_I(inode);
+>  
+>  		inode->i_ino = get_next_ino();
+> -		inode_init_owner(inode, dir, mode);
+> +		inode_init_owner(inode, &init_user_ns, dir, mode);
+>  		lockdep_set_class(&inode->i_mapping->i_mmap_rwsem,
+>  				&hugetlbfs_i_mmap_rwsem_key);
+>  		inode->i_mapping->a_ops = &hugetlbfs_aops;
+> diff --git a/fs/inode.c b/fs/inode.c
+> index 7a15372d9c2d..d6dfa876c58d 100644
+> --- a/fs/inode.c
+> +++ b/fs/inode.c
+> @@ -2132,13 +2132,14 @@ EXPORT_SYMBOL(init_special_inode);
+>  /**
+>   * inode_init_owner - Init uid,gid,mode for new inode according to posix standards
+>   * @inode: New inode
+> + * @user_ns: User namespace the inode is accessed from
+>   * @dir: Directory inode
+>   * @mode: mode of the new inode
+>   */
+> -void inode_init_owner(struct inode *inode, const struct inode *dir,
+> -			umode_t mode)
+> +void inode_init_owner(struct inode *inode, struct user_namespace *user_ns,
+> +		      const struct inode *dir, umode_t mode)
+>  {
+> -	inode->i_uid = current_fsuid();
+> +	inode->i_uid = fsuid_into_mnt(user_ns);
+>  	if (dir && dir->i_mode & S_ISGID) {
+>  		inode->i_gid = dir->i_gid;
+>  
+> @@ -2146,31 +2147,35 @@ void inode_init_owner(struct inode *inode, const struct inode *dir,
+>  		if (S_ISDIR(mode))
+>  			mode |= S_ISGID;
+>  		else if ((mode & (S_ISGID | S_IXGRP)) == (S_ISGID | S_IXGRP) &&
+> -			 !in_group_p(inode->i_gid) &&
+> -			 !capable_wrt_inode_uidgid(&init_user_ns, dir, CAP_FSETID))
+> +			 !in_group_p(i_gid_into_mnt(user_ns, inode)) &&
+> +			 !capable_wrt_inode_uidgid(user_ns, dir, CAP_FSETID))
+>  			mode &= ~S_ISGID;
+>  	} else
+> -		inode->i_gid = current_fsgid();
+> +		inode->i_gid = fsgid_into_mnt(user_ns);
+>  	inode->i_mode = mode;
+>  }
+>  EXPORT_SYMBOL(inode_init_owner);
+>  
+>  /**
+>   * inode_owner_or_capable - check current task permissions to inode
+> + * @user_ns: User namespace the inode is accessed from
+>   * @inode: inode being checked
+>   *
+>   * Return true if current either has CAP_FOWNER in a namespace with the
+>   * inode owner uid mapped, or owns the file.
+>   */
+> -bool inode_owner_or_capable(const struct inode *inode)
+> +bool inode_owner_or_capable(struct user_namespace *user_ns,
+> +			    const struct inode *inode)
+>  {
+> +	kuid_t i_uid;
+>  	struct user_namespace *ns;
+>  
+> -	if (uid_eq(current_fsuid(), inode->i_uid))
+> +	i_uid = i_uid_into_mnt(user_ns, inode);
+
+Is there a way to end up in a situation where current_fsuid() is
+INVALID_UID?  The only way I can think of is to enter a userns
+which requires CAP_SYS_ADMIN to it in the first place.  But actually
+that suffices here.  If inode->i_uid is invalid in user_ns, and
+I enter my userns without setting a uid, the uid_eq() below will
+pass and I'll get privilege over someone else's inode, right?
+
+> +	if (uid_eq(current_fsuid(), i_uid))
+>  		return true;
+>  
+>  	ns = current_user_ns();
+> -	if (kuid_has_mapping(ns, inode->i_uid) && ns_capable(ns, CAP_FOWNER))
+> +	if (kuid_has_mapping(ns, i_uid) && ns_capable(ns, CAP_FOWNER))
+>  		return true;
+>  	return false;
+>  }
+> diff --git a/fs/jfs/ioctl.c b/fs/jfs/ioctl.c
+> index 10ee0ecca1a8..2581d4db58ff 100644
+> --- a/fs/jfs/ioctl.c
+> +++ b/fs/jfs/ioctl.c
+> @@ -76,7 +76,7 @@ long jfs_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+>  		if (err)
+>  			return err;
+>  
+> -		if (!inode_owner_or_capable(inode)) {
+> +		if (!inode_owner_or_capable(&init_user_ns, inode)) {
+>  			err = -EACCES;
+>  			goto setflags_out;
+>  		}
+> diff --git a/fs/jfs/jfs_inode.c b/fs/jfs/jfs_inode.c
+> index 4cef170630db..282a785bbf29 100644
+> --- a/fs/jfs/jfs_inode.c
+> +++ b/fs/jfs/jfs_inode.c
+> @@ -64,7 +64,7 @@ struct inode *ialloc(struct inode *parent, umode_t mode)
+>  		goto fail_put;
+>  	}
+>  
+> -	inode_init_owner(inode, parent, mode);
+> +	inode_init_owner(inode, &init_user_ns, parent, mode);
+>  	/*
+>  	 * New inodes need to save sane values on disk when
+>  	 * uid & gid mount options are used
+> diff --git a/fs/minix/bitmap.c b/fs/minix/bitmap.c
+> index f4e5e5181a14..d99a78c83fbc 100644
+> --- a/fs/minix/bitmap.c
+> +++ b/fs/minix/bitmap.c
+> @@ -252,7 +252,7 @@ struct inode *minix_new_inode(const struct inode *dir, umode_t mode, int *error)
+>  		iput(inode);
+>  		return NULL;
+>  	}
+> -	inode_init_owner(inode, dir, mode);
+> +	inode_init_owner(inode, &init_user_ns, dir, mode);
+>  	inode->i_ino = j;
+>  	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
+>  	inode->i_blocks = 0;
+> diff --git a/fs/namei.c b/fs/namei.c
+> index 38222f92efb6..35952c28ee29 100644
+> --- a/fs/namei.c
+> +++ b/fs/namei.c
+> @@ -1047,7 +1047,7 @@ int may_linkat(struct path *link)
+>  	/* Source inode owner (or CAP_FOWNER) can hardlink all they like,
+>  	 * otherwise, it must be a safe source.
+>  	 */
+> -	if (safe_hardlink_source(inode) || inode_owner_or_capable(inode))
+> +	if (safe_hardlink_source(inode) || inode_owner_or_capable(&init_user_ns, inode))
+>  		return 0;
+>  
+>  	audit_log_path_denied(AUDIT_ANOM_LINK, "linkat");
+> @@ -2897,7 +2897,7 @@ static int may_open(const struct path *path, int acc_mode, int flag)
+>  	}
+>  
+>  	/* O_NOATIME can only be set by the owner or superuser */
+> -	if (flag & O_NOATIME && !inode_owner_or_capable(inode))
+> +	if (flag & O_NOATIME && !inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EPERM;
+>  
+>  	return 0;
+> diff --git a/fs/nilfs2/inode.c b/fs/nilfs2/inode.c
+> index b6517220cad5..d286c3bf7d43 100644
+> --- a/fs/nilfs2/inode.c
+> +++ b/fs/nilfs2/inode.c
+> @@ -348,7 +348,7 @@ struct inode *nilfs_new_inode(struct inode *dir, umode_t mode)
+>  	/* reference count of i_bh inherits from nilfs_mdt_read_block() */
+>  
+>  	atomic64_inc(&root->inodes_count);
+> -	inode_init_owner(inode, dir, mode);
+> +	inode_init_owner(inode, &init_user_ns, dir, mode);
+>  	inode->i_ino = ino;
+>  	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
+>  
+> diff --git a/fs/nilfs2/ioctl.c b/fs/nilfs2/ioctl.c
+> index 07d26f61f22a..b053b40315bf 100644
+> --- a/fs/nilfs2/ioctl.c
+> +++ b/fs/nilfs2/ioctl.c
+> @@ -132,7 +132,7 @@ static int nilfs_ioctl_setflags(struct inode *inode, struct file *filp,
+>  	unsigned int flags, oldflags;
+>  	int ret;
+>  
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EACCES;
+>  
+>  	if (get_user(flags, (int __user *)argp))
+> diff --git a/fs/ocfs2/dlmfs/dlmfs.c b/fs/ocfs2/dlmfs/dlmfs.c
+> index 583820ec63e2..64491af88239 100644
+> --- a/fs/ocfs2/dlmfs/dlmfs.c
+> +++ b/fs/ocfs2/dlmfs/dlmfs.c
+> @@ -329,7 +329,7 @@ static struct inode *dlmfs_get_root_inode(struct super_block *sb)
+>  
+>  	if (inode) {
+>  		inode->i_ino = get_next_ino();
+> -		inode_init_owner(inode, NULL, mode);
+> +		inode_init_owner(inode, &init_user_ns, NULL, mode);
+>  		inode->i_atime = inode->i_mtime = inode->i_ctime = current_time(inode);
+>  		inc_nlink(inode);
+>  
+> @@ -352,7 +352,7 @@ static struct inode *dlmfs_get_inode(struct inode *parent,
+>  		return NULL;
+>  
+>  	inode->i_ino = get_next_ino();
+> -	inode_init_owner(inode, parent, mode);
+> +	inode_init_owner(inode, &init_user_ns, parent, mode);
+>  	inode->i_atime = inode->i_mtime = inode->i_ctime = current_time(inode);
+>  
+>  	ip = DLMFS_I(inode);
+> diff --git a/fs/ocfs2/ioctl.c b/fs/ocfs2/ioctl.c
+> index 89984172fc4a..50c9b30ee9f6 100644
+> --- a/fs/ocfs2/ioctl.c
+> +++ b/fs/ocfs2/ioctl.c
+> @@ -96,7 +96,7 @@ static int ocfs2_set_inode_attr(struct inode *inode, unsigned flags,
+>  	}
+>  
+>  	status = -EACCES;
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		goto bail_unlock;
+>  
+>  	if (!S_ISDIR(inode->i_mode))
+> diff --git a/fs/ocfs2/namei.c b/fs/ocfs2/namei.c
+> index c46bf7f581a1..51a80acbb97e 100644
+> --- a/fs/ocfs2/namei.c
+> +++ b/fs/ocfs2/namei.c
+> @@ -198,7 +198,7 @@ static struct inode *ocfs2_get_init_inode(struct inode *dir, umode_t mode)
+>  	 * callers. */
+>  	if (S_ISDIR(mode))
+>  		set_nlink(inode, 2);
+> -	inode_init_owner(inode, dir, mode);
+> +	inode_init_owner(inode, &init_user_ns, dir, mode);
+>  	status = dquot_initialize(inode);
+>  	if (status)
+>  		return ERR_PTR(status);
+> diff --git a/fs/omfs/inode.c b/fs/omfs/inode.c
+> index ce93ccca8639..eed9e1273104 100644
+> --- a/fs/omfs/inode.c
+> +++ b/fs/omfs/inode.c
+> @@ -48,7 +48,7 @@ struct inode *omfs_new_inode(struct inode *dir, umode_t mode)
+>  		goto fail;
+>  
+>  	inode->i_ino = new_block;
+> -	inode_init_owner(inode, NULL, mode);
+> +	inode_init_owner(inode, &init_user_ns, NULL, mode);
+>  	inode->i_mapping->a_ops = &omfs_aops;
+>  
+>  	inode->i_atime = inode->i_mtime = inode->i_ctime = current_time(inode);
+> diff --git a/fs/overlayfs/dir.c b/fs/overlayfs/dir.c
+> index 28a075b5f5b2..80b2fab73df7 100644
+> --- a/fs/overlayfs/dir.c
+> +++ b/fs/overlayfs/dir.c
+> @@ -636,7 +636,7 @@ static int ovl_create_object(struct dentry *dentry, int mode, dev_t rdev,
+>  	inode->i_state |= I_CREATING;
+>  	spin_unlock(&inode->i_lock);
+>  
+> -	inode_init_owner(inode, dentry->d_parent->d_inode, mode);
+> +	inode_init_owner(inode, &init_user_ns, dentry->d_parent->d_inode, mode);
+>  	attr.mode = inode->i_mode;
+>  
+>  	err = ovl_create_or_link(dentry, inode, &attr, false);
+> diff --git a/fs/overlayfs/file.c b/fs/overlayfs/file.c
+> index f966b5108358..d58b49a1ea3b 100644
+> --- a/fs/overlayfs/file.c
+> +++ b/fs/overlayfs/file.c
+> @@ -53,7 +53,7 @@ static struct file *ovl_open_realfile(const struct file *file,
+>  	err = inode_permission(&init_user_ns, realinode, MAY_OPEN | acc_mode);
+>  	if (err) {
+>  		realfile = ERR_PTR(err);
+> -	} else if (!inode_owner_or_capable(realinode)) {
+> +	} else if (!inode_owner_or_capable(&init_user_ns, realinode)) {
+>  		realfile = ERR_PTR(-EPERM);
+>  	} else {
+>  		realfile = open_with_fake_path(&file->f_path, flags, realinode,
+> @@ -582,7 +582,7 @@ static long ovl_ioctl_set_flags(struct file *file, unsigned int cmd,
+>  	struct inode *inode = file_inode(file);
+>  	unsigned int oldflags;
+>  
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EACCES;
+>  
+>  	ret = mnt_want_write_file(file);
+> diff --git a/fs/overlayfs/super.c b/fs/overlayfs/super.c
+> index 196fe3e3f02b..82f2c35894e4 100644
+> --- a/fs/overlayfs/super.c
+> +++ b/fs/overlayfs/super.c
+> @@ -960,7 +960,7 @@ ovl_posix_acl_xattr_set(const struct xattr_handler *handler,
+>  		goto out_acl_release;
+>  	}
+>  	err = -EPERM;
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		goto out_acl_release;
+>  
+>  	posix_acl_release(acl);
+> diff --git a/fs/overlayfs/util.c b/fs/overlayfs/util.c
+> index ff67da201303..0a1f4bccb5da 100644
+> --- a/fs/overlayfs/util.c
+> +++ b/fs/overlayfs/util.c
+> @@ -481,7 +481,7 @@ struct file *ovl_path_open(struct path *path, int flags)
+>  		return ERR_PTR(err);
+>  
+>  	/* O_NOATIME is an optimization, don't fail if not permitted */
+> -	if (inode_owner_or_capable(inode))
+> +	if (inode_owner_or_capable(&init_user_ns, inode))
+>  		flags |= O_NOATIME;
+>  
+>  	return dentry_open(path, flags, current_cred());
+> diff --git a/fs/posix_acl.c b/fs/posix_acl.c
+> index 5b6296cc89c4..87b5ec67000b 100644
+> --- a/fs/posix_acl.c
+> +++ b/fs/posix_acl.c
+> @@ -874,7 +874,7 @@ set_posix_acl(struct inode *inode, int type, struct posix_acl *acl)
+>  
+>  	if (type == ACL_TYPE_DEFAULT && !S_ISDIR(inode->i_mode))
+>  		return acl ? -EACCES : 0;
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EPERM;
+>  
+>  	if (acl) {
+> diff --git a/fs/ramfs/inode.c b/fs/ramfs/inode.c
+> index ee179a81b3da..83641b9614bd 100644
+> --- a/fs/ramfs/inode.c
+> +++ b/fs/ramfs/inode.c
+> @@ -67,7 +67,7 @@ struct inode *ramfs_get_inode(struct super_block *sb,
+>  
+>  	if (inode) {
+>  		inode->i_ino = get_next_ino();
+> -		inode_init_owner(inode, dir, mode);
+> +		inode_init_owner(inode, &init_user_ns, dir, mode);
+>  		inode->i_mapping->a_ops = &ramfs_aops;
+>  		mapping_set_gfp_mask(inode->i_mapping, GFP_HIGHUSER);
+>  		mapping_set_unevictable(inode->i_mapping);
+> diff --git a/fs/reiserfs/ioctl.c b/fs/reiserfs/ioctl.c
+> index adb21bea3d60..4f1cbd930179 100644
+> --- a/fs/reiserfs/ioctl.c
+> +++ b/fs/reiserfs/ioctl.c
+> @@ -59,7 +59,7 @@ long reiserfs_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+>  			if (err)
+>  				break;
+>  
+> -			if (!inode_owner_or_capable(inode)) {
+> +			if (!inode_owner_or_capable(&init_user_ns, inode)) {
+>  				err = -EPERM;
+>  				goto setflags_out;
+>  			}
+> @@ -101,7 +101,7 @@ long reiserfs_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+>  		err = put_user(inode->i_generation, (int __user *)arg);
+>  		break;
+>  	case REISERFS_IOC_SETVERSION:
+> -		if (!inode_owner_or_capable(inode)) {
+> +		if (!inode_owner_or_capable(&init_user_ns, inode)) {
+>  			err = -EPERM;
+>  			break;
+>  		}
+> diff --git a/fs/reiserfs/namei.c b/fs/reiserfs/namei.c
+> index 1594687582f0..6e43aec49b43 100644
+> --- a/fs/reiserfs/namei.c
+> +++ b/fs/reiserfs/namei.c
+> @@ -615,7 +615,7 @@ static int new_inode_init(struct inode *inode, struct inode *dir, umode_t mode)
+>  	 * the quota init calls have to know who to charge the quota to, so
+>  	 * we have to set uid and gid here
+>  	 */
+> -	inode_init_owner(inode, dir, mode);
+> +	inode_init_owner(inode, &init_user_ns, dir, mode);
+>  	return dquot_initialize(inode);
+>  }
+>  
+> diff --git a/fs/sysv/ialloc.c b/fs/sysv/ialloc.c
+> index 6c9801986af6..96288d35dcb9 100644
+> --- a/fs/sysv/ialloc.c
+> +++ b/fs/sysv/ialloc.c
+> @@ -163,7 +163,7 @@ struct inode * sysv_new_inode(const struct inode * dir, umode_t mode)
+>  	*sbi->s_sb_fic_count = cpu_to_fs16(sbi, count);
+>  	fs16_add(sbi, sbi->s_sb_total_free_inodes, -1);
+>  	dirty_sb(sb);
+> -	inode_init_owner(inode, dir, mode);
+> +	inode_init_owner(inode, &init_user_ns, dir, mode);
+>  	inode->i_ino = fs16_to_cpu(sbi, ino);
+>  	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
+>  	inode->i_blocks = 0;
+> diff --git a/fs/ubifs/dir.c b/fs/ubifs/dir.c
+> index 155521e51ac5..1639331f9543 100644
+> --- a/fs/ubifs/dir.c
+> +++ b/fs/ubifs/dir.c
+> @@ -94,7 +94,7 @@ struct inode *ubifs_new_inode(struct ubifs_info *c, struct inode *dir,
+>  	 */
+>  	inode->i_flags |= S_NOCMTIME;
+>  
+> -	inode_init_owner(inode, dir, mode);
+> +	inode_init_owner(inode, &init_user_ns, dir, mode);
+>  	inode->i_mtime = inode->i_atime = inode->i_ctime =
+>  			 current_time(inode);
+>  	inode->i_mapping->nrpages = 0;
+> diff --git a/fs/ubifs/ioctl.c b/fs/ubifs/ioctl.c
+> index 4363d85a3fd4..2326d5122beb 100644
+> --- a/fs/ubifs/ioctl.c
+> +++ b/fs/ubifs/ioctl.c
+> @@ -155,7 +155,7 @@ long ubifs_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+>  		if (IS_RDONLY(inode))
+>  			return -EROFS;
+>  
+> -		if (!inode_owner_or_capable(inode))
+> +		if (!inode_owner_or_capable(&init_user_ns, inode))
+>  			return -EACCES;
+>  
+>  		if (get_user(flags, (int __user *) arg))
+> diff --git a/fs/udf/ialloc.c b/fs/udf/ialloc.c
+> index 84ed23edebfd..e2d07cc1d3c3 100644
+> --- a/fs/udf/ialloc.c
+> +++ b/fs/udf/ialloc.c
+> @@ -103,7 +103,7 @@ struct inode *udf_new_inode(struct inode *dir, umode_t mode)
+>  		mutex_unlock(&sbi->s_alloc_mutex);
+>  	}
+>  
+> -	inode_init_owner(inode, dir, mode);
+> +	inode_init_owner(inode, &init_user_ns, dir, mode);
+>  	if (UDF_QUERY_FLAG(sb, UDF_FLAG_UID_SET))
+>  		inode->i_uid = sbi->s_uid;
+>  	if (UDF_QUERY_FLAG(sb, UDF_FLAG_GID_SET))
+> diff --git a/fs/ufs/ialloc.c b/fs/ufs/ialloc.c
+> index 969fd60436d3..a04c6ea490a0 100644
+> --- a/fs/ufs/ialloc.c
+> +++ b/fs/ufs/ialloc.c
+> @@ -289,7 +289,7 @@ struct inode *ufs_new_inode(struct inode *dir, umode_t mode)
+>  	ufs_mark_sb_dirty(sb);
+>  
+>  	inode->i_ino = cg * uspi->s_ipg + bit;
+> -	inode_init_owner(inode, dir, mode);
+> +	inode_init_owner(inode, &init_user_ns, dir, mode);
+>  	inode->i_blocks = 0;
+>  	inode->i_generation = 0;
+>  	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
+> diff --git a/fs/xattr.c b/fs/xattr.c
+> index 61a9947f62f4..fcc79c2a1ea1 100644
+> --- a/fs/xattr.c
+> +++ b/fs/xattr.c
+> @@ -127,7 +127,7 @@ xattr_permission(struct inode *inode, const char *name, int mask)
+>  		if (!S_ISREG(inode->i_mode) && !S_ISDIR(inode->i_mode))
+>  			return (mask & MAY_WRITE) ? -EPERM : -ENODATA;
+>  		if (S_ISDIR(inode->i_mode) && (inode->i_mode & S_ISVTX) &&
+> -		    (mask & MAY_WRITE) && !inode_owner_or_capable(inode))
+> +		    (mask & MAY_WRITE) && !inode_owner_or_capable(&init_user_ns, inode))
+>  			return -EPERM;
+>  	}
+>  
+> diff --git a/fs/xfs/xfs_ioctl.c b/fs/xfs/xfs_ioctl.c
+> index 97bd29fc8c43..218e80afc859 100644
+> --- a/fs/xfs/xfs_ioctl.c
+> +++ b/fs/xfs/xfs_ioctl.c
+> @@ -1300,7 +1300,7 @@ xfs_ioctl_setattr_get_trans(
+>  	 * The user ID of the calling process must be equal to the file owner
+>  	 * ID, except in cases where the CAP_FSETID capability is applicable.
+>  	 */
+> -	if (!inode_owner_or_capable(VFS_I(ip))) {
+> +	if (!inode_owner_or_capable(&init_user_ns, VFS_I(ip))) {
+>  		error = -EPERM;
+>  		goto out_cancel;
+>  	}
+> diff --git a/fs/zonefs/super.c b/fs/zonefs/super.c
+> index ff5930be096c..5021a41e880c 100644
+> --- a/fs/zonefs/super.c
+> +++ b/fs/zonefs/super.c
+> @@ -1221,7 +1221,7 @@ static void zonefs_init_dir_inode(struct inode *parent, struct inode *inode,
+>  	struct super_block *sb = parent->i_sb;
+>  
+>  	inode->i_ino = blkdev_nr_zones(sb->s_bdev->bd_disk) + type + 1;
+> -	inode_init_owner(inode, parent, S_IFDIR | 0555);
+> +	inode_init_owner(inode, &init_user_ns, parent, S_IFDIR | 0555);
+>  	inode->i_op = &zonefs_dir_inode_operations;
+>  	inode->i_fop = &simple_dir_operations;
+>  	set_nlink(inode, 2);
+> diff --git a/include/linux/fs.h b/include/linux/fs.h
+> index 8f6fb065450b..a5845a67a34b 100644
+> --- a/include/linux/fs.h
+> +++ b/include/linux/fs.h
+> @@ -1744,7 +1744,7 @@ static inline int sb_start_intwrite_trylock(struct super_block *sb)
+>  }
+>  
+>  
+> -extern bool inode_owner_or_capable(const struct inode *inode);
+> +extern bool inode_owner_or_capable(struct user_namespace *user_ns, const struct inode *inode);
+>  
+>  /*
+>   * VFS helper functions..
+> @@ -1786,8 +1786,9 @@ extern long compat_ptr_ioctl(struct file *file, unsigned int cmd,
+>  /*
+>   * VFS file helper functions.
+>   */
+> -extern void inode_init_owner(struct inode *inode, const struct inode *dir,
+> -			umode_t mode);
+> +extern void inode_init_owner(struct inode *inode,
+> +			     struct user_namespace *user_ns,
+> +			     const struct inode *dir, umode_t mode);
+>  extern bool may_open_dev(const struct path *path);
+>  
+>  /*
+> diff --git a/kernel/bpf/inode.c b/kernel/bpf/inode.c
+> index f1c393e5d47d..cfd2e0868f2d 100644
+> --- a/kernel/bpf/inode.c
+> +++ b/kernel/bpf/inode.c
+> @@ -122,7 +122,7 @@ static struct inode *bpf_get_inode(struct super_block *sb,
+>  	inode->i_mtime = inode->i_atime;
+>  	inode->i_ctime = inode->i_atime;
+>  
+> -	inode_init_owner(inode, dir, mode);
+> +	inode_init_owner(inode, &init_user_ns, dir, mode);
+>  
+>  	return inode;
+>  }
+> diff --git a/mm/madvise.c b/mm/madvise.c
+> index 8afabc363b6b..a3ab05c08c28 100644
+> --- a/mm/madvise.c
+> +++ b/mm/madvise.c
+> @@ -539,7 +539,7 @@ static inline bool can_do_pageout(struct vm_area_struct *vma)
+>  	 * otherwise we'd be including shared non-exclusive mappings, which
+>  	 * opens a side channel.
+>  	 */
+> -	return inode_owner_or_capable(file_inode(vma->vm_file)) ||
+> +	return inode_owner_or_capable(&init_user_ns, file_inode(vma->vm_file)) ||
+>  		inode_permission(&init_user_ns, file_inode(vma->vm_file), MAY_WRITE) == 0;
+>  }
+>  
+> diff --git a/mm/mincore.c b/mm/mincore.c
+> index d5a58e61eac6..ad2dfb7a4500 100644
+> --- a/mm/mincore.c
+> +++ b/mm/mincore.c
+> @@ -166,7 +166,7 @@ static inline bool can_do_mincore(struct vm_area_struct *vma)
+>  	 * for writing; otherwise we'd be including shared non-exclusive
+>  	 * mappings, which opens a side channel.
+>  	 */
+> -	return inode_owner_or_capable(file_inode(vma->vm_file)) ||
+> +	return inode_owner_or_capable(&init_user_ns, file_inode(vma->vm_file)) ||
+>  		inode_permission(&init_user_ns, file_inode(vma->vm_file), MAY_WRITE) == 0;
+>  }
+>  
+> diff --git a/mm/shmem.c b/mm/shmem.c
+> index 537c137698f8..1bd6a9487222 100644
+> --- a/mm/shmem.c
+> +++ b/mm/shmem.c
+> @@ -2303,7 +2303,7 @@ static struct inode *shmem_get_inode(struct super_block *sb, const struct inode
+>  	inode = new_inode(sb);
+>  	if (inode) {
+>  		inode->i_ino = ino;
+> -		inode_init_owner(inode, dir, mode);
+> +		inode_init_owner(inode, &init_user_ns, dir, mode);
+>  		inode->i_blocks = 0;
+>  		inode->i_atime = inode->i_mtime = inode->i_ctime = current_time(inode);
+>  		inode->i_generation = prandom_u32();
+> diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
+> index 6b1826fc3658..14a195fa55eb 100644
+> --- a/security/selinux/hooks.c
+> +++ b/security/selinux/hooks.c
+> @@ -3133,13 +3133,13 @@ static int selinux_inode_setxattr(struct dentry *dentry, const char *name,
+>  	}
+>  
+>  	if (!selinux_initialized(&selinux_state))
+> -		return (inode_owner_or_capable(inode) ? 0 : -EPERM);
+> +		return (inode_owner_or_capable(&init_user_ns, inode) ? 0 : -EPERM);
+>  
+>  	sbsec = inode->i_sb->s_security;
+>  	if (!(sbsec->flags & SBLABEL_MNT))
+>  		return -EOPNOTSUPP;
+>  
+> -	if (!inode_owner_or_capable(inode))
+> +	if (!inode_owner_or_capable(&init_user_ns, inode))
+>  		return -EPERM;
+>  
+>  	ad.type = LSM_AUDIT_DATA_DENTRY;
+> -- 
+> 2.29.2
+_______________________________________________
+Containers mailing list
+Containers@lists.linux-foundation.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+
