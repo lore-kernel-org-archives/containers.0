@@ -5,62 +5,63 @@ X-Spam-Level:
 X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 255BEC63777
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 28DCBC64E7B
 	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:46:55 +0000 (UTC)
 Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 94822204EA
+	by mail.kernel.org (Postfix) with ESMTPS id B5ED8221FF
 	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:46:54 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 94822204EA
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B5ED8221FF
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 4706C870A5;
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 8F3FD86FE9;
 	Sat, 28 Nov 2020 21:46:54 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id TLLQ4Gd49Xfl; Sat, 28 Nov 2020 21:46:53 +0000 (UTC)
+	with ESMTP id og58EK_yfNM3; Sat, 28 Nov 2020 21:46:53 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id AC9C286FE9;
+	by fraxinus.osuosl.org (Postfix) with ESMTP id C4AAE87051;
 	Sat, 28 Nov 2020 21:46:53 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 948A4C0891;
+	by lists.linuxfoundation.org (Postfix) with ESMTP id B9314C0891;
 	Sat, 28 Nov 2020 21:46:53 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 559D3C0052
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 9E141C0052
  for <containers@lists.linux-foundation.org>;
  Sat, 28 Nov 2020 21:46:52 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id 5136E87078
+ by hemlock.osuosl.org (Postfix) with ESMTP id 8C7CA87768
  for <containers@lists.linux-foundation.org>;
  Sat, 28 Nov 2020 21:46:52 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id ycwtzm3hXyqW
+ with ESMTP id qrUJUix9NHb8
  for <containers@lists.linux-foundation.org>;
  Sat, 28 Nov 2020 21:46:51 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id 5B22986FE9
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 511CA8752F
  for <containers@lists.linux-foundation.org>;
  Sat, 28 Nov 2020 21:46:51 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kj825-0002aM-Gy; Sat, 28 Nov 2020 21:45:30 +0000
+ id 1kj823-0002aM-3k; Sat, 28 Nov 2020 21:45:27 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v3 02/38] mount: make {lock,unlock}_mount_hash() static
-Date: Sat, 28 Nov 2020 22:34:51 +0100
-Message-Id: <20201128213527.2669807-3-christian.brauner@ubuntu.com>
+Subject: [PATCH v3 01/38] namespace: take lock_mount_hash() directly when
+ changing flags
+Date: Sat, 28 Nov 2020 22:34:50 +0100
+Message-Id: <20201128213527.2669807-2-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
 References: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
@@ -101,12 +102,15 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-The lock_mount_hash() and unlock_mount_hash() helpers are never called outside a
-single file. Remove them from the header and make them static to reflect this
-fact. There's no need to have them callable from other places right now, as
-Christoph observed.
+Changing mount options always ends up taking lock_mount_hash() but when
+MNT_READONLY is requested and neither the mount nor the superblock are
+MNT_READONLY we end up taking the lock, dropping it, and retaking it to change
+the other mount attributes. Instead, let's acquire the lock once when changing
+the mount attributes. This simplifies the locking in these codepath, makes them
+easier to reason about and avoids having to reacquire the lock right after
+dropping it.
 
-Suggested-by: Christoph Hellwig <hch@lst.de>
+Cc: Christoph Hellwig <hch@lst.de>
 Cc: David Howells <dhowells@redhat.com>
 Cc: Al Viro <viro@zeniv.linux.org.uk>
 Cc: linux-fsdevel@vger.kernel.org
@@ -114,57 +118,95 @@ Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
 /* v2 */
 - Christoph Hellwig <hch@lst.de>:
-  - Add a patch to make {lock,unlock)_mount_hash() static.
+  - Remove pointless __mnt_unmake_readonly() helper.
+  - Even though Christoph suggested to lockdep_assert_held() into places that
+    require {lock,unlock}_mount_hash() it seems that seqlock's don't support
+    it.
 
 /* v3 */
 unchanged
 ---
- fs/mount.h     | 10 ----------
- fs/namespace.c | 10 ++++++++++
- 2 files changed, 10 insertions(+), 10 deletions(-)
+ fs/namespace.c | 22 ++++++++--------------
+ 1 file changed, 8 insertions(+), 14 deletions(-)
 
-diff --git a/fs/mount.h b/fs/mount.h
-index c7abb7b394d8..562d96d57bad 100644
---- a/fs/mount.h
-+++ b/fs/mount.h
-@@ -125,16 +125,6 @@ static inline void get_mnt_ns(struct mnt_namespace *ns)
- 
- extern seqlock_t mount_lock;
- 
--static inline void lock_mount_hash(void)
--{
--	write_seqlock(&mount_lock);
--}
--
--static inline void unlock_mount_hash(void)
--{
--	write_sequnlock(&mount_lock);
--}
--
- struct proc_mounts {
- 	struct mnt_namespace *ns;
- 	struct path root;
 diff --git a/fs/namespace.c b/fs/namespace.c
-index f183161833ad..798bbf4f48ad 100644
+index cebaa3e81794..f183161833ad 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -87,6 +87,16 @@ EXPORT_SYMBOL_GPL(fs_kobj);
-  */
- __cacheline_aligned_in_smp DEFINE_SEQLOCK(mount_lock);
- 
-+static inline void lock_mount_hash(void)
-+{
-+	write_seqlock(&mount_lock);
-+}
-+
-+static inline void unlock_mount_hash(void)
-+{
-+	write_sequnlock(&mount_lock);
-+}
-+
- static inline struct hlist_head *m_hash(struct vfsmount *mnt, struct dentry *dentry)
+@@ -463,7 +463,6 @@ static int mnt_make_readonly(struct mount *mnt)
  {
- 	unsigned long tmp = ((unsigned long)mnt / L1_CACHE_BYTES);
+ 	int ret = 0;
+ 
+-	lock_mount_hash();
+ 	mnt->mnt.mnt_flags |= MNT_WRITE_HOLD;
+ 	/*
+ 	 * After storing MNT_WRITE_HOLD, we'll read the counters. This store
+@@ -497,18 +496,9 @@ static int mnt_make_readonly(struct mount *mnt)
+ 	 */
+ 	smp_wmb();
+ 	mnt->mnt.mnt_flags &= ~MNT_WRITE_HOLD;
+-	unlock_mount_hash();
+ 	return ret;
+ }
+ 
+-static int __mnt_unmake_readonly(struct mount *mnt)
+-{
+-	lock_mount_hash();
+-	mnt->mnt.mnt_flags &= ~MNT_READONLY;
+-	unlock_mount_hash();
+-	return 0;
+-}
+-
+ int sb_prepare_remount_readonly(struct super_block *sb)
+ {
+ 	struct mount *mnt;
+@@ -2508,7 +2498,8 @@ static int change_mount_ro_state(struct mount *mnt, unsigned int mnt_flags)
+ 	if (readonly_request)
+ 		return mnt_make_readonly(mnt);
+ 
+-	return __mnt_unmake_readonly(mnt);
++	mnt->mnt.mnt_flags &= ~MNT_READONLY;
++	return 0;
+ }
+ 
+ /*
+@@ -2517,11 +2508,9 @@ static int change_mount_ro_state(struct mount *mnt, unsigned int mnt_flags)
+  */
+ static void set_mount_attributes(struct mount *mnt, unsigned int mnt_flags)
+ {
+-	lock_mount_hash();
+ 	mnt_flags |= mnt->mnt.mnt_flags & ~MNT_USER_SETTABLE_MASK;
+ 	mnt->mnt.mnt_flags = mnt_flags;
+ 	touch_mnt_namespace(mnt->mnt_ns);
+-	unlock_mount_hash();
+ }
+ 
+ static void mnt_warn_timestamp_expiry(struct path *mountpoint, struct vfsmount *mnt)
+@@ -2567,9 +2556,11 @@ static int do_reconfigure_mnt(struct path *path, unsigned int mnt_flags)
+ 		return -EPERM;
+ 
+ 	down_write(&sb->s_umount);
++	lock_mount_hash();
+ 	ret = change_mount_ro_state(mnt, mnt_flags);
+ 	if (ret == 0)
+ 		set_mount_attributes(mnt, mnt_flags);
++	unlock_mount_hash();
+ 	up_write(&sb->s_umount);
+ 
+ 	mnt_warn_timestamp_expiry(path, &mnt->mnt);
+@@ -2610,8 +2601,11 @@ static int do_remount(struct path *path, int ms_flags, int sb_flags,
+ 		err = -EPERM;
+ 		if (ns_capable(sb->s_user_ns, CAP_SYS_ADMIN)) {
+ 			err = reconfigure_super(fc);
+-			if (!err)
++			if (!err) {
++				lock_mount_hash();
+ 				set_mount_attributes(mnt, mnt_flags);
++				unlock_mount_hash();
++			}
+ 		}
+ 		up_write(&sb->s_umount);
+ 	}
 -- 
 2.29.2
 
