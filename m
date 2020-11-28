@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ADC87C63798
-	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:52:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0AAABC63798
+	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:53:02 +0000 (UTC)
 Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 5790D20857
-	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:52:41 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5790D20857
+	by mail.kernel.org (Postfix) with ESMTPS id A112C22240
+	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:53:01 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A112C22240
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 3A7D3870B3;
-	Sat, 28 Nov 2020 21:52:41 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 5536F870B0;
+	Sat, 28 Nov 2020 21:53:01 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id W2Fao5MkYWjv; Sat, 28 Nov 2020 21:52:40 +0000 (UTC)
+	with ESMTP id x5tfzRIsm1wd; Sat, 28 Nov 2020 21:53:00 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id A5AE5870A5;
-	Sat, 28 Nov 2020 21:52:40 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id D3CC3870A5;
+	Sat, 28 Nov 2020 21:53:00 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id A0BE6C0891;
-	Sat, 28 Nov 2020 21:52:40 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 0A6D8C0052
+	by lists.linuxfoundation.org (Postfix) with ESMTP id C13ECC0891;
+	Sat, 28 Nov 2020 21:53:00 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id F35DEC0052
  for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:52:39 +0000 (UTC)
+ Sat, 28 Nov 2020 21:52:58 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id EC5EF87B9C
+ by silver.osuosl.org (Postfix) with ESMTP id D210120335
  for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:52:38 +0000 (UTC)
+ Sat, 28 Nov 2020 21:52:58 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id jXONAuebh--l
+ with ESMTP id PxPlt1Lzwl9g
  for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:52:38 +0000 (UTC)
+ Sat, 28 Nov 2020 21:52:57 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by whitealder.osuosl.org (Postfix) with ESMTPS id 3571587BA5
+ by silver.osuosl.org (Postfix) with ESMTPS id BB59020472
  for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:52:38 +0000 (UTC)
+ Sat, 28 Nov 2020 21:52:57 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kj83H-0002aM-QC; Sat, 28 Nov 2020 21:46:43 +0000
+ id 1kj83e-0002aM-EF; Sat, 28 Nov 2020 21:47:06 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v3 26/38] ioctl: handle idmapped mounts
-Date: Sat, 28 Nov 2020 22:35:15 +0100
-Message-Id: <20201128213527.2669807-27-christian.brauner@ubuntu.com>
+Subject: [PATCH v3 35/38] overlayfs: do not mount on top of idmapped mounts
+Date: Sat, 28 Nov 2020 22:35:24 +0100
+Message-Id: <20201128213527.2669807-36-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
 References: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
@@ -101,9 +101,8 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Enable generic ioctls to handle idmapped mounts by passing down the mount's user
-namespace. If the initial user namespace is passed nothing changes so
-non-idmapped mounts will see identical behavior as before.
+Prevent overlayfs from being mounted on top of idmapped mounts until we
+have ported it to handle this case and added proper testing for it.
 
 Cc: Christoph Hellwig <hch@lst.de>
 Cc: David Howells <dhowells@redhat.com>
@@ -115,48 +114,29 @@ Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 patch introduced
 
 /* v3 */
-unchanged
+- Amir Goldstein <amir73il@gmail.com>:
+  - Move check for idmapped lower layers into ovl_mount_dir_noesc().
+- David Howells <dhowells@redhat.com>:
+  - Adapt check after removing mnt_idmapped() helper.
 ---
- fs/remap_range.c   | 7 +++++--
- fs/verity/enable.c | 2 +-
- 2 files changed, 6 insertions(+), 3 deletions(-)
+ fs/overlayfs/super.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/fs/remap_range.c b/fs/remap_range.c
-index 9e5b27641756..fe7f07228462 100644
---- a/fs/remap_range.c
-+++ b/fs/remap_range.c
-@@ -432,13 +432,16 @@ EXPORT_SYMBOL(vfs_clone_file_range);
- /* Check whether we are allowed to dedupe the destination file */
- static bool allow_file_dedupe(struct file *file)
- {
-+	struct user_namespace *user_ns = mnt_user_ns(file->f_path.mnt);
-+	struct inode *inode = file_inode(file);
-+
- 	if (capable(CAP_SYS_ADMIN))
- 		return true;
- 	if (file->f_mode & FMODE_WRITE)
- 		return true;
--	if (uid_eq(current_fsuid(), file_inode(file)->i_uid))
-+	if (uid_eq(current_fsuid(), i_uid_into_mnt(user_ns, inode)))
- 		return true;
--	if (!inode_permission(&init_user_ns, file_inode(file), MAY_WRITE))
-+	if (!inode_permission(user_ns, inode, MAY_WRITE))
- 		return true;
- 	return false;
- }
-diff --git a/fs/verity/enable.c b/fs/verity/enable.c
-index 7449ef0050f4..8b9ea0f0850f 100644
---- a/fs/verity/enable.c
-+++ b/fs/verity/enable.c
-@@ -369,7 +369,7 @@ int fsverity_ioctl_enable(struct file *filp, const void __user *uarg)
- 	 * has verity enabled, and to stabilize the data being hashed.
- 	 */
- 
--	err = inode_permission(&init_user_ns, inode, MAY_WRITE);
-+	err = inode_permission(mnt_user_ns(filp->f_path.mnt), inode, MAY_WRITE);
- 	if (err)
- 		return err;
- 
+diff --git a/fs/overlayfs/super.c b/fs/overlayfs/super.c
+index 0d4f2baf6836..5002f97b01e6 100644
+--- a/fs/overlayfs/super.c
++++ b/fs/overlayfs/super.c
+@@ -811,6 +811,10 @@ static int ovl_mount_dir_noesc(const char *name, struct path *path)
+ 		pr_err("filesystem on '%s' not supported\n", name);
+ 		goto out_put;
+ 	}
++	if (mnt_user_ns(path->mnt) != &init_user_ns) {
++		pr_err("idmapped layers are currently not supported\n");
++		goto out_put;
++	}
+ 	if (!d_is_dir(path->dentry)) {
+ 		pr_err("'%s' not a directory\n", name);
+ 		goto out_put;
 -- 
 2.29.2
 
