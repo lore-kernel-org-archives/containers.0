@@ -7,61 +7,60 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 28DCBC64E7B
-	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:46:55 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B8834C63798
+	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:46:56 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id B5ED8221FF
-	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:46:54 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B5ED8221FF
+	by mail.kernel.org (Postfix) with ESMTPS id 57091204EA
+	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:46:56 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 57091204EA
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 8F3FD86FE9;
-	Sat, 28 Nov 2020 21:46:54 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id F02E48752F;
+	Sat, 28 Nov 2020 21:46:55 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id og58EK_yfNM3; Sat, 28 Nov 2020 21:46:53 +0000 (UTC)
+	with ESMTP id p0WOBmb1YnKy; Sat, 28 Nov 2020 21:46:53 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id C4AAE87051;
+	by hemlock.osuosl.org (Postfix) with ESMTP id EAEA6877CF;
 	Sat, 28 Nov 2020 21:46:53 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id B9314C0891;
+	by lists.linuxfoundation.org (Postfix) with ESMTP id D6D79C1D9F;
 	Sat, 28 Nov 2020 21:46:53 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 9E141C0052
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id BCB8FC0052
  for <containers@lists.linux-foundation.org>;
  Sat, 28 Nov 2020 21:46:52 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 8C7CA87768
+ by whitealder.osuosl.org (Postfix) with ESMTP id A3C8787B9F
  for <containers@lists.linux-foundation.org>;
  Sat, 28 Nov 2020 21:46:52 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id qrUJUix9NHb8
+ with ESMTP id ObxlPTPciAon
  for <containers@lists.linux-foundation.org>;
  Sat, 28 Nov 2020 21:46:51 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by hemlock.osuosl.org (Postfix) with ESMTPS id 511CA8752F
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 93BAA87B9C
  for <containers@lists.linux-foundation.org>;
  Sat, 28 Nov 2020 21:46:51 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kj823-0002aM-3k; Sat, 28 Nov 2020 21:45:27 +0000
+ id 1kj82K-0002aM-Pg; Sat, 28 Nov 2020 21:45:45 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v3 01/38] namespace: take lock_mount_hash() directly when
- changing flags
-Date: Sat, 28 Nov 2020 22:34:50 +0100
-Message-Id: <20201128213527.2669807-2-christian.brauner@ubuntu.com>
+Subject: [PATCH v3 07/38] mount: attach mappings to mounts
+Date: Sat, 28 Nov 2020 22:34:56 +0100
+Message-Id: <20201128213527.2669807-8-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
 References: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
@@ -102,13 +101,29 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Changing mount options always ends up taking lock_mount_hash() but when
-MNT_READONLY is requested and neither the mount nor the superblock are
-MNT_READONLY we end up taking the lock, dropping it, and retaking it to change
-the other mount attributes. Instead, let's acquire the lock once when changing
-the mount attributes. This simplifies the locking in these codepath, makes them
-easier to reason about and avoids having to reacquire the lock right after
-dropping it.
+In order to support per-mount idmappings vfsmounts will be marked with user
+namespaces. The idmapping associated with that user namespace will be used to
+map the ids of vfs objects when they are accessed through that mount. By
+default all vfsmounts are marked with the initial user namespace. The initial
+user namespace is used to indicate that a mount is not idmapped. All operations
+behave as before.
+
+Based on prior discussions we want to attach the whole user namespace and not
+just a dedicated idmapping struct. This allows us to reuse all the helpers that
+already exist for dealing with idmappings instead of introducing a whole new
+range of helpers. In addition, if we decide in the future that we are confident
+enough to enable unprivileged users to setup idmapped mounts we can allow
+already idmapped mounts to be marked with another user namespace. The permission
+checking would then take into account whether the caller is privileged in the
+user namespace the mount is currently marked with. For now, we will enforce in
+later patches that once a mount has been idmapped it can't be remapped. This
+keeps permission checking and life-cycle management simple, especially since
+users can always create a new mount with a different idmapping anyway.
+
+The idea to attach user namespaces to vfsmounts has been floated around in
+various forms at Linux Plumbers in ~2018 with the original idea tracing back to
+a discussion during a conference in St. Petersburg between Christoph, Tycho, and
+myself.
 
 Cc: Christoph Hellwig <hch@lst.de>
 Cc: David Howells <dhowells@redhat.com>
@@ -117,96 +132,89 @@ Cc: linux-fsdevel@vger.kernel.org
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
 /* v2 */
+patch introduced
 - Christoph Hellwig <hch@lst.de>:
-  - Remove pointless __mnt_unmake_readonly() helper.
-  - Even though Christoph suggested to lockdep_assert_held() into places that
-    require {lock,unlock}_mount_hash() it seems that seqlock's don't support
-    it.
+  - Split internal implementation into separate patch and move syscall
+    implementation later.
 
 /* v3 */
-unchanged
+- David Howells <dhowells@redhat.com>:
+  - Remove MNT_IDMAPPED flag. We can simply check the pointer and use
+    smp_load_acquire() in later patches.
+
+- Tycho Andersen <tycho@tycho.pizza>:
+  - Use READ_ONCE() in mnt_user_ns().
 ---
- fs/namespace.c | 22 ++++++++--------------
- 1 file changed, 8 insertions(+), 14 deletions(-)
+ fs/namespace.c        | 9 +++++++++
+ include/linux/fs.h    | 1 +
+ include/linux/mount.h | 6 ++++++
+ 3 files changed, 16 insertions(+)
 
 diff --git a/fs/namespace.c b/fs/namespace.c
-index cebaa3e81794..f183161833ad 100644
+index f9ea31b7eb7f..a1fda548c3af 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -463,7 +463,6 @@ static int mnt_make_readonly(struct mount *mnt)
- {
- 	int ret = 0;
- 
--	lock_mount_hash();
- 	mnt->mnt.mnt_flags |= MNT_WRITE_HOLD;
- 	/*
- 	 * After storing MNT_WRITE_HOLD, we'll read the counters. This store
-@@ -497,18 +496,9 @@ static int mnt_make_readonly(struct mount *mnt)
- 	 */
- 	smp_wmb();
- 	mnt->mnt.mnt_flags &= ~MNT_WRITE_HOLD;
--	unlock_mount_hash();
- 	return ret;
- }
- 
--static int __mnt_unmake_readonly(struct mount *mnt)
--{
--	lock_mount_hash();
--	mnt->mnt.mnt_flags &= ~MNT_READONLY;
--	unlock_mount_hash();
--	return 0;
--}
--
- int sb_prepare_remount_readonly(struct super_block *sb)
- {
- 	struct mount *mnt;
-@@ -2508,7 +2498,8 @@ static int change_mount_ro_state(struct mount *mnt, unsigned int mnt_flags)
- 	if (readonly_request)
- 		return mnt_make_readonly(mnt);
- 
--	return __mnt_unmake_readonly(mnt);
-+	mnt->mnt.mnt_flags &= ~MNT_READONLY;
-+	return 0;
- }
- 
- /*
-@@ -2517,11 +2508,9 @@ static int change_mount_ro_state(struct mount *mnt, unsigned int mnt_flags)
-  */
- static void set_mount_attributes(struct mount *mnt, unsigned int mnt_flags)
- {
--	lock_mount_hash();
- 	mnt_flags |= mnt->mnt.mnt_flags & ~MNT_USER_SETTABLE_MASK;
- 	mnt->mnt.mnt_flags = mnt_flags;
- 	touch_mnt_namespace(mnt->mnt_ns);
--	unlock_mount_hash();
- }
- 
- static void mnt_warn_timestamp_expiry(struct path *mountpoint, struct vfsmount *mnt)
-@@ -2567,9 +2556,11 @@ static int do_reconfigure_mnt(struct path *path, unsigned int mnt_flags)
- 		return -EPERM;
- 
- 	down_write(&sb->s_umount);
-+	lock_mount_hash();
- 	ret = change_mount_ro_state(mnt, mnt_flags);
- 	if (ret == 0)
- 		set_mount_attributes(mnt, mnt_flags);
-+	unlock_mount_hash();
- 	up_write(&sb->s_umount);
- 
- 	mnt_warn_timestamp_expiry(path, &mnt->mnt);
-@@ -2610,8 +2601,11 @@ static int do_remount(struct path *path, int ms_flags, int sb_flags,
- 		err = -EPERM;
- 		if (ns_capable(sb->s_user_ns, CAP_SYS_ADMIN)) {
- 			err = reconfigure_super(fc);
--			if (!err)
-+			if (!err) {
-+				lock_mount_hash();
- 				set_mount_attributes(mnt, mnt_flags);
-+				unlock_mount_hash();
-+			}
- 		}
- 		up_write(&sb->s_umount);
+@@ -220,6 +220,7 @@ static struct mount *alloc_vfsmnt(const char *name)
+ 		INIT_HLIST_NODE(&mnt->mnt_mp_list);
+ 		INIT_LIST_HEAD(&mnt->mnt_umounting);
+ 		INIT_HLIST_HEAD(&mnt->mnt_stuck_children);
++		mnt->mnt.mnt_user_ns = &init_user_ns;
  	}
+ 	return mnt;
+ 
+@@ -559,6 +560,11 @@ int sb_prepare_remount_readonly(struct super_block *sb)
+ 
+ static void free_vfsmnt(struct mount *mnt)
+ {
++	struct user_namespace *ns;
++
++	ns = mnt_user_ns(&mnt->mnt);
++	if (ns != &init_user_ns)
++		put_user_ns(ns);
+ 	kfree_const(mnt->mnt_devname);
+ #ifdef CONFIG_SMP
+ 	free_percpu(mnt->mnt_pcp);
+@@ -1067,6 +1073,9 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
+ 	mnt->mnt.mnt_flags &= ~(MNT_WRITE_HOLD|MNT_MARKED|MNT_INTERNAL);
+ 
+ 	atomic_inc(&sb->s_active);
++	mnt->mnt.mnt_user_ns = mnt_user_ns(&old->mnt);
++	if (mnt->mnt.mnt_user_ns != &init_user_ns)
++		mnt->mnt.mnt_user_ns = get_user_ns(mnt->mnt.mnt_user_ns);
+ 	mnt->mnt.mnt_sb = sb;
+ 	mnt->mnt.mnt_root = dget(root);
+ 	mnt->mnt_mountpoint = mnt->mnt.mnt_root;
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index f59b7f16f216..004686f49e32 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -2276,6 +2276,7 @@ struct file_system_type {
+ #define FS_HAS_SUBTYPE		4
+ #define FS_USERNS_MOUNT		8	/* Can be mounted by userns root */
+ #define FS_DISALLOW_NOTIFY_PERM	16	/* Disable fanotify permission events */
++#define FS_ALLOW_IDMAP         32      /* FS has been updated to handle vfs idmappings. */
+ #define FS_THP_SUPPORT		8192	/* Remove once all fs converted */
+ #define FS_RENAME_DOES_D_MOVE	32768	/* FS will handle d_move() during rename() internally. */
+ 	int (*init_fs_context)(struct fs_context *);
+diff --git a/include/linux/mount.h b/include/linux/mount.h
+index aaf343b38671..d0d4a270acea 100644
+--- a/include/linux/mount.h
++++ b/include/linux/mount.h
+@@ -72,8 +72,14 @@ struct vfsmount {
+ 	struct dentry *mnt_root;	/* root of the mounted tree */
+ 	struct super_block *mnt_sb;	/* pointer to superblock */
+ 	int mnt_flags;
++	struct user_namespace *mnt_user_ns;
+ } __randomize_layout;
+ 
++static inline struct user_namespace *mnt_user_ns(const struct vfsmount *mnt)
++{
++	return READ_ONCE(mnt->mnt_user_ns);
++}
++
+ struct file; /* forward dec */
+ struct path;
+ 
 -- 
 2.29.2
 
