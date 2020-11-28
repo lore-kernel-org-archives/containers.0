@@ -5,62 +5,62 @@ X-Spam-Level:
 X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D9AD4C63777
-	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:52:08 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5EE20C63777
+	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:52:26 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 69241208CA
-	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:52:08 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 69241208CA
+	by mail.kernel.org (Postfix) with ESMTPS id F237720857
+	for <containers@archiver.kernel.org>; Sat, 28 Nov 2020 21:52:25 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F237720857
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 1BD23870B0;
-	Sat, 28 Nov 2020 21:52:08 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id rgsDe6_wI9yJ; Sat, 28 Nov 2020 21:52:07 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 683B9870A5;
-	Sat, 28 Nov 2020 21:52:07 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 57330C0891;
-	Sat, 28 Nov 2020 21:52:07 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 6AEA0C0052
- for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:52:05 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 5800687801
- for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:52:05 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 8269B87802;
+	Sat, 28 Nov 2020 21:52:25 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
- by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id kwM-ep1Eq0LP
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id m8OMpMu-ec2y; Sat, 28 Nov 2020 21:52:24 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by hemlock.osuosl.org (Postfix) with ESMTP id 8F000877CB;
+	Sat, 28 Nov 2020 21:52:24 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 7A798C0891;
+	Sat, 28 Nov 2020 21:52:24 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 0DB49C0052
  for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:52:02 +0000 (UTC)
+ Sat, 28 Nov 2020 21:52:23 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by fraxinus.osuosl.org (Postfix) with ESMTP id EF40D870B0
+ for <containers@lists.linux-foundation.org>;
+ Sat, 28 Nov 2020 21:52:22 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from fraxinus.osuosl.org ([127.0.0.1])
+ by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id xYlG6ZVUeVEx
+ for <containers@lists.linux-foundation.org>;
+ Sat, 28 Nov 2020 21:52:22 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by hemlock.osuosl.org (Postfix) with ESMTPS id 7728B87800
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id 5DD50870A5
  for <containers@lists.linux-foundation.org>;
- Sat, 28 Nov 2020 21:52:02 +0000 (UTC)
+ Sat, 28 Nov 2020 21:52:22 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kj83X-0002aM-3g; Sat, 28 Nov 2020 21:46:59 +0000
+ id 1kj83B-0002aM-L3; Sat, 28 Nov 2020 21:46:37 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v3 32/38] fat: handle idmapped mounts
-Date: Sat, 28 Nov 2020 22:35:21 +0100
-Message-Id: <20201128213527.2669807-33-christian.brauner@ubuntu.com>
+Subject: [PATCH v3 23/38] fcntl: handle idmapped mounts
+Date: Sat, 28 Nov 2020 22:35:12 +0100
+Message-Id: <20201128213527.2669807-24-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
 References: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
@@ -101,38 +101,9 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Let fat handle idmapped mounts. This allows to have the same fat mount appear
-in multiple locations with different id mappings. This allows to expose a vfat
-formatted USB stick to multiple user with different ids on the host or in user
-namespaces allowing for dac permissions:
-
-mount -o uid=1000,gid=1000 /dev/sdb /mnt
-
-u1001@f2-vm:/lower1$ ls -ln /mnt/
-total 4
--rwxr-xr-x 1 1000 1000 4 Oct 28 03:44 aaa
--rwxr-xr-x 1 1000 1000 0 Oct 28 01:09 bbb
--rwxr-xr-x 1 1000 1000 0 Oct 28 01:10 ccc
--rwxr-xr-x 1 1000 1000 0 Oct 28 03:46 ddd
--rwxr-xr-x 1 1000 1000 0 Oct 28 04:01 eee
-
-mount2 --idmap both:1000:1001:1
-
-u1001@f2-vm:/lower1$ ls -ln /lower1/
-total 4
--rwxr-xr-x 1 1001 1001 4 Oct 28 03:44 aaa
--rwxr-xr-x 1 1001 1001 0 Oct 28 01:09 bbb
--rwxr-xr-x 1 1001 1001 0 Oct 28 01:10 ccc
--rwxr-xr-x 1 1001 1001 0 Oct 28 03:46 ddd
--rwxr-xr-x 1 1001 1001 0 Oct 28 04:01 eee
-
-u1001@f2-vm:/lower1$ touch /lower1/fff
-
-u1001@f2-vm:/lower1$ ls -ln /lower1/fff
--rwxr-xr-x 1 1001 1001 0 Oct 28 04:03 /lower1/fff
-
-u1001@f2-vm:/lower1$ ls -ln /mnt/fff
--rwxr-xr-x 1 1000 1000 0 Oct 28 04:03 /mnt/fff
+Enable the setfl() helper to handle idmapped mounts by passing down the
+mount's user namespace. If the initial user namespace is passed nothing changes
+so non-idmapped mounts will see identical behavior as before.
 
 Cc: Christoph Hellwig <hch@lst.de>
 Cc: David Howells <dhowells@redhat.com>
@@ -141,95 +112,35 @@ Cc: linux-fsdevel@vger.kernel.org
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
 /* v2 */
-unchanged
+patch introduced
 
 /* v3 */
 unchanged
 ---
- fs/fat/file.c        | 15 ++++++++-------
- fs/fat/namei_msdos.c |  2 +-
- fs/fat/namei_vfat.c  |  2 +-
- 3 files changed, 10 insertions(+), 9 deletions(-)
+ fs/fcntl.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/fs/fat/file.c b/fs/fat/file.c
-index 5b12cf209801..15dc8d27aa72 100644
---- a/fs/fat/file.c
-+++ b/fs/fat/file.c
-@@ -398,7 +398,7 @@ int fat_getattr(const struct path *path, struct kstat *stat,
- 		u32 request_mask, unsigned int flags)
- {
- 	struct inode *inode = d_inode(path->dentry);
--	generic_fillattr(&init_user_ns, inode, stat);
-+	generic_fillattr(mnt_user_ns(path->mnt), inode, stat);
- 	stat->blksize = MSDOS_SB(inode->i_sb)->cluster_size;
+diff --git a/fs/fcntl.c b/fs/fcntl.c
+index df091d435603..ed330fa91438 100644
+--- a/fs/fcntl.c
++++ b/fs/fcntl.c
+@@ -25,6 +25,7 @@
+ #include <linux/user_namespace.h>
+ #include <linux/memfd.h>
+ #include <linux/compat.h>
++#include <linux/mount.h>
  
- 	if (MSDOS_SB(inode->i_sb)->options.nfs == FAT_NFS_NOSTALE_RO) {
-@@ -447,12 +447,13 @@ static int fat_sanitize_mode(const struct msdos_sb_info *sbi,
- 	return 0;
- }
+ #include <linux/poll.h>
+ #include <asm/siginfo.h>
+@@ -46,7 +47,7 @@ static int setfl(int fd, struct file * filp, unsigned long arg)
  
--static int fat_allow_set_time(struct msdos_sb_info *sbi, struct inode *inode)
-+static int fat_allow_set_time(struct user_namespace *user_ns,
-+			      struct msdos_sb_info *sbi, struct inode *inode)
- {
- 	umode_t allow_utime = sbi->options.allow_utime;
+ 	/* O_NOATIME can only be set by the owner or superuser */
+ 	if ((arg & O_NOATIME) && !(filp->f_flags & O_NOATIME))
+-		if (!inode_owner_or_capable(&init_user_ns, inode))
++		if (!inode_owner_or_capable(mnt_user_ns(filp->f_path.mnt), inode))
+ 			return -EPERM;
  
--	if (!uid_eq(current_fsuid(), inode->i_uid)) {
--		if (in_group_p(inode->i_gid))
-+	if (!uid_eq(current_fsuid(), i_uid_into_mnt(user_ns, inode))) {
-+		if (in_group_p(i_gid_into_mnt(user_ns, inode)))
- 			allow_utime >>= 3;
- 		if (allow_utime & MAY_WRITE)
- 			return 1;
-@@ -477,11 +478,11 @@ int fat_setattr(struct user_namespace *user_ns, struct dentry *dentry,
- 	/* Check for setting the inode time. */
- 	ia_valid = attr->ia_valid;
- 	if (ia_valid & TIMES_SET_FLAGS) {
--		if (fat_allow_set_time(sbi, inode))
-+		if (fat_allow_set_time(user_ns, sbi, inode))
- 			attr->ia_valid &= ~TIMES_SET_FLAGS;
- 	}
- 
--	error = setattr_prepare(&init_user_ns, dentry, attr);
-+	error = setattr_prepare(user_ns, dentry, attr);
- 	attr->ia_valid = ia_valid;
- 	if (error) {
- 		if (sbi->options.quiet)
-@@ -551,7 +552,7 @@ int fat_setattr(struct user_namespace *user_ns, struct dentry *dentry,
- 		fat_truncate_time(inode, &attr->ia_mtime, S_MTIME);
- 	attr->ia_valid &= ~(ATTR_ATIME|ATTR_CTIME|ATTR_MTIME);
- 
--	setattr_copy(&init_user_ns, inode, attr);
-+	setattr_copy(user_ns, inode, attr);
- 	mark_inode_dirty(inode);
- out:
- 	return error;
-diff --git a/fs/fat/namei_msdos.c b/fs/fat/namei_msdos.c
-index 608b0606f3ca..0f871a1b6620 100644
---- a/fs/fat/namei_msdos.c
-+++ b/fs/fat/namei_msdos.c
-@@ -666,7 +666,7 @@ static struct file_system_type msdos_fs_type = {
- 	.name		= "msdos",
- 	.mount		= msdos_mount,
- 	.kill_sb	= kill_block_super,
--	.fs_flags	= FS_REQUIRES_DEV,
-+	.fs_flags	= FS_REQUIRES_DEV | FS_ALLOW_IDMAP,
- };
- MODULE_ALIAS_FS("msdos");
- 
-diff --git a/fs/fat/namei_vfat.c b/fs/fat/namei_vfat.c
-index 34903d14d6a6..177d939b95da 100644
---- a/fs/fat/namei_vfat.c
-+++ b/fs/fat/namei_vfat.c
-@@ -1063,7 +1063,7 @@ static struct file_system_type vfat_fs_type = {
- 	.name		= "vfat",
- 	.mount		= vfat_mount,
- 	.kill_sb	= kill_block_super,
--	.fs_flags	= FS_REQUIRES_DEV,
-+	.fs_flags	= FS_REQUIRES_DEV | FS_ALLOW_IDMAP,
- };
- MODULE_ALIAS_FS("vfat");
- 
+ 	/* required for strict SunOS emulation */
 -- 
 2.29.2
 
