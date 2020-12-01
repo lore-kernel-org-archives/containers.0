@@ -2,130 +2,84 @@ Return-Path: <SRS0=NWjS=FF=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 12B74C64E7A
-	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 13:26:15 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5841FC64E8A
+	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 17:54:24 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 42902206B6
-	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 13:26:13 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 42902206B6
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=tycho.pizza
+	by mail.kernel.org (Postfix) with ESMTPS id 8D59421741
+	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 17:54:23 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8D59421741
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=xmission.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id AC4652041F;
-	Tue,  1 Dec 2020 13:26:13 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id A173385755;
+	Tue,  1 Dec 2020 17:54:22 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id ccdIWgWcwJOG; Tue,  1 Dec 2020 13:26:12 +0000 (UTC)
+	with ESMTP id ol0g8i2HOxMb; Tue,  1 Dec 2020 17:54:21 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id D85DE203D7;
-	Tue,  1 Dec 2020 13:26:12 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id B40898560E;
+	Tue,  1 Dec 2020 17:54:21 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id C86F1C163C;
-	Tue,  1 Dec 2020 13:26:12 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 9ED86C0859;
+	Tue,  1 Dec 2020 17:54:21 +0000 (UTC)
 Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id F0412C0052
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 83643C0052
  for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 13:26:11 +0000 (UTC)
+ Tue,  1 Dec 2020 17:54:20 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id EB5788698F
+ by fraxinus.osuosl.org (Postfix) with ESMTP id 6656E85625
  for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 13:26:11 +0000 (UTC)
+ Tue,  1 Dec 2020 17:54:20 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id eDRxgCaPorCi
+ with ESMTP id onvVeKKiHnyM
  for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 13:26:11 +0000 (UTC)
+ Tue,  1 Dec 2020 17:54:19 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from new4-smtp.messagingengine.com (new4-smtp.messagingengine.com
- [66.111.4.230])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id 2EA878698D
+Received: from out03.mta.xmission.com (out03.mta.xmission.com [166.70.13.233])
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id AAD5C8560E
  for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 13:26:11 +0000 (UTC)
-Received: from compute6.internal (compute6.nyi.internal [10.202.2.46])
- by mailnew.nyi.internal (Postfix) with ESMTP id 0FAC65804FE;
- Tue,  1 Dec 2020 08:26:10 -0500 (EST)
-Received: from mailfrontend1 ([10.202.2.162])
- by compute6.internal (MEProxy); Tue, 01 Dec 2020 08:26:10 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tycho.pizza; h=
- date:from:to:cc:subject:message-id:references:mime-version
- :content-type:in-reply-to; s=fm1; bh=1ZjibMafBhi5wreHWpqyE5n4OJZ
- RTh26ucXByqksgjc=; b=YGvdN742MswMjFFMm/nVhATPfG25MN3g8NDEhq46bSv
- 7LXrAhU6GGnySSKTS+nutqhRkW96v0W05mNjCzdA1iunVOLgtCO7ajC6Mz8LB3u2
- 5lnL64w4bFnzTvhjZEdQ4cbHNiB1RBznGNAlnAnNqk3UyQlEM6ETUJWnfZLt5Qg+
- T/eqHabfIeLU2JN+i3IjB4v4i6qzmkRLIZJbVTesFO9VwftF9+xJogYimU2W93rY
- /mndsKNjwtvuxWa4etSPsEAJd7vhdUaPBcy0Xh25FF7lbp/ZE9fA/h1S+KTmYHYb
- AwgwS4zJ5xYzQnVHOZdCVJPhST7hEIk4wyUW9UR4oEw==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
- messagingengine.com; h=cc:content-type:date:from:in-reply-to
- :message-id:mime-version:references:subject:to:x-me-proxy
- :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; bh=1ZjibM
- afBhi5wreHWpqyE5n4OJZRTh26ucXByqksgjc=; b=ralXkkm/Ttr5dNKX1KdXyE
- NyUpN8X1tWhN5hv6cKVaH3Fh1yAQkTWbxIXHlmQimcia77Ck3NJxEywB4C6llwlq
- KYr79SBCuyD3+CGe/lOFvqLppWQ/qJLY5+X1C4uM1eGZq4pMt1/y5ELRl+sg6z7q
- 1SB0jehI669qSfkTJaF2PMR6wQ2TKyRTJaaPp1sgXdRFPFsIqXvSkFXhWs2p8GNK
- IT5R/AjjNb3Ul8X1o8PA97XTaEOyjBBdnYY5ZY02uHCVFCRHlSsoULBB2U/fD90Y
- xHH17x2yc0diRyv8G/4f3qfU6HvrFm51qA3YXcZRMIo1abiGeBraPBZEs2GUOSdQ
- ==
-X-ME-Sender: <xms:b0TGX1QtZp99ufXf40j1YmqeWuwPzFStbU854K9q9zsAwrIVZa4AAA>
- <xme:b0TGX-zgoJRocphuNxw6tUPjgEV3pJeQrXPD6ApV6X_omYXz6uCwX8BKkyK8N-SJv
- _qzX9W7ns057PEY9uo>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedujedrudeivddgheegucetufdoteggodetrfdotf
- fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
- uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
- cujfgurhepfffhvffukfhfgggtuggjsehttdertddttddvnecuhfhrohhmpefvhigthhho
- ucetnhguvghrshgvnhcuoehthigthhhosehthigthhhordhpihiiiigrqeenucggtffrrg
- htthgvrhhnpeegkeefjeegkedtjefgfeduleekueetjeeghffhuefgffefleehgeeifedv
- gfethfenucfkphepuddvkedruddtjedrvdeguddrudektdenucevlhhushhtvghrufhiii
- gvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpehthigthhhosehthigthhhordhpihii
- iigr
-X-ME-Proxy: <xmx:b0TGX60khMu7LzGd7Yn3aL7UjilWQHaWM61HxQVYHDyS-_xY28R6Zg>
- <xmx:b0TGX9B3lnqfdWmGNRFc_HxXwZfb28_nQ1Vf02IqXYseMVIQ6jvF8w>
- <xmx:b0TGX-inuXGa4Vvr-SNyGJpIv-GfZKcep4apN-VsGGzfbu_D1MfZQg>
- <xmx:ckTGX3AJxVIy7LI81lMLNHF1N1bnSjcw78XxLmR0kT7zBUg_ll9Ypg>
-Received: from cisco (unknown [128.107.241.180])
- by mail.messagingengine.com (Postfix) with ESMTPA id 4F6533280065;
- Tue,  1 Dec 2020 08:25:59 -0500 (EST)
-Date: Tue, 1 Dec 2020 08:25:56 -0500
-From: Tycho Andersen <tycho@tycho.pizza>
-To: Christoph Hellwig <hch@lst.de>
-Subject: Re: [PATCH v3 07/38] mount: attach mappings to mounts
-Message-ID: <20201201132556.GD103125@cisco>
-References: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
- <20201128213527.2669807-8-christian.brauner@ubuntu.com>
- <20201201105025.GF27730@lst.de>
+ Tue,  1 Dec 2020 17:54:19 +0000 (UTC)
+Received: from in02.mta.xmission.com ([166.70.13.52])
+ by out03.mta.xmission.com with esmtps (TLS1.3) tls
+ TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 (Exim 4.93)
+ (envelope-from <ebiederm@xmission.com>)
+ id 1kk9qz-006d9m-5Z; Tue, 01 Dec 2020 10:54:17 -0700
+Received: from ip68-227-160-95.om.om.cox.net ([68.227.160.95]
+ helo=x220.xmission.com)
+ by in02.mta.xmission.com with esmtpsa (TLS1.3) tls
+ TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 (Exim 4.93)
+ (envelope-from <ebiederm@xmission.com>)
+ id 1kk9qy-004hnJ-3X; Tue, 01 Dec 2020 10:54:16 -0700
+From: ebiederm@xmission.com (Eric W. Biederman)
+To: Giuseppe Scrivano <gscrivan@redhat.com>
+References: <20201126100839.381415-1-gscrivan@redhat.com>
+Date: Tue, 01 Dec 2020 11:53:45 -0600
+In-Reply-To: <20201126100839.381415-1-gscrivan@redhat.com> (Giuseppe
+ Scrivano's message of "Thu, 26 Nov 2020 11:08:39 +0100")
+Message-ID: <87ft4pe7km.fsf@x220.int.ebiederm.org>
+User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/26.1 (gnu/linux)
 MIME-Version: 1.0
-Content-Disposition: inline
-In-Reply-To: <20201201105025.GF27730@lst.de>
-Cc: Andy Lutomirski <luto@kernel.org>, linux-fsdevel@vger.kernel.org,
- Mimi Zohar <zohar@linux.ibm.com>, David Howells <dhowells@redhat.com>,
- Andreas Dilger <adilger.kernel@dilger.ca>, Paul Moore <paul@paul-moore.com>,
- Jonathan Corbet <corbet@lwn.net>, smbarber@chromium.org,
- Christoph Hellwig <hch@infradead.org>, linux-ext4@vger.kernel.org,
- Mrunal Patel <mpatel@redhat.com>, Kees Cook <keescook@chromium.org>,
- Arnd Bergmann <arnd@arndb.de>, selinux@vger.kernel.org,
- Josh Triplett <josh@joshtriplett.org>,
- Seth Forshee <seth.forshee@canonical.com>, Aleksa Sarai <cyphar@cyphar.com>,
- Alexander Viro <viro@zeniv.linux.org.uk>,
- Lennart Poettering <lennart@poettering.net>,
- OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
- Geoffrey Thomas <geofft@ldpreload.com>,
- James Bottomley <James.Bottomley@hansenpartnership.com>,
- John Johansen <john.johansen@canonical.com>, Theodore Tso <tytso@mit.edu>,
- Dmitry Kasatkin <dmitry.kasatkin@gmail.com>,
- containers@lists.linux-foundation.org, fstests@vger.kernel.org,
- linux-security-module@vger.kernel.org,
- "Eric W. Biederman" <ebiederm@xmission.com>, linux-api@vger.kernel.org,
- Casey Schaufler <casey@schaufler-ca.com>, Alban Crequy <alban@kinvolk.io>,
- linux-integrity@vger.kernel.org,
- Stephen Smalley <stephen.smalley.work@gmail.com>, Todd Kjos <tkjos@google.com>
+X-XM-SPF: eid=1kk9qy-004hnJ-3X; ; ; mid=<87ft4pe7km.fsf@x220.int.ebiederm.org>;
+ ; ; hst=in02.mta.xmission.com; ; ; ip=68.227.160.95; ; ;
+ frm=ebiederm@xmission.com; ; ; spf=neutral
+X-XM-AID: U2FsdGVkX1+Fu0dFA+bYSGa77HVml2uWF1UtEkv3LNk=
+X-SA-Exim-Connect-IP: 68.227.160.95
+X-SA-Exim-Mail-From: ebiederm@xmission.com
+Subject: Re: [PATCH] kernel: automatically split user namespace extent
+X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
+X-SA-Exim-Scanned: Yes (on in02.mta.xmission.com)
+Cc: Linux Containers <containers@lists.linux-foundation.org>,
+ linux-kernel@vger.kernel.org
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -142,17 +96,157 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Tue, Dec 01, 2020 at 11:50:25AM +0100, Christoph Hellwig wrote:
-> The READ_ONCE still looks suspect as it generally needs to be paired
-> with a WRITE_ONCE.  The rest looks sane to me.
 
-Yeah, the comment from the other location is,
+Nit: The tag should have been "userns:" rather than kernel.
 
-/* Pairs with smp_load_acquire() in mnt_user_ns(). */
+Giuseppe Scrivano <gscrivan@redhat.com> writes:
 
-So I think it's just a typo that needs to be fixed.
+> writing to the id map fails when an extent overlaps multiple mappings
+> in the parent user namespace, e.g.:
+>
+> $ cat /proc/self/uid_map
+>          0       1000          1
+>          1     100000      65536
+> $ unshare -U sleep 100 &
+> [1] 1029703
+> $ printf "0 0 100\n" | tee /proc/$!/uid_map
+> 0 0 100
+> tee: /proc/1029703/uid_map: Operation not permitted
+>
+> To prevent it from happening, automatically split an extent so that
+> each portion fits in one extent in the parent user namespace.
 
-Tycho
+I don't see anything fundamentally wrong with relaxing this
+restriction, but more code does have more room for bugs to hide.
+
+What is the advantage of relaxing this restriction?
+
+> $ cat /proc/self/uid_map
+>          0       1000          1
+>          1     110000      65536
+> $ unshare -U sleep 100 &
+> [1] 1552
+> $ printf "0 0 100\n" | tee /proc/$!/uid_map
+> 0 0 100
+> $ cat /proc/$!/uid_map
+>          0          0          1
+>          1          1         99
+>
+> Signed-off-by: Giuseppe Scrivano <gscrivan@redhat.com>
+> ---
+>  kernel/user_namespace.c | 62 ++++++++++++++++++++++++++++++++++-------
+>  1 file changed, 52 insertions(+), 10 deletions(-)
+>
+> diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+> index 87804e0371fe..b5542be2bd0a 100644
+> --- a/kernel/user_namespace.c
+> +++ b/kernel/user_namespace.c
+> @@ -706,6 +706,41 @@ const struct seq_operations proc_projid_seq_operations = {
+>  	.show = projid_m_show,
+>  };
+>  
+> +static void split_overlapping_mappings(struct uid_gid_map *parent_map,
+> +				       struct uid_gid_extent *extent,
+> +				       struct uid_gid_extent *overflow_extent)
+> +{
+> +	unsigned int idx;
+> +
+> +	overflow_extent->first = (u32) -1;
+> +
+> +	/* Split extent if it not fully contained in an extent from parent_map.  */
+> +	for (idx = 0; idx < parent_map->nr_extents; idx++) {
+
+Ouch!
+
+For the larger tree we perform binary searches typically and
+here you are walking every entry unconditionally.
+
+It looks like this makes the write O(N^2) from O(NlogN)
+which for a user facing function is not desirable.
+
+I think something like insert_and_split_extent may be ok.
+Incorporating your loop and the part that inserts an element.
+
+As written this almost doubles the complexity of the code,
+as well as making it perform much worse.  Which is a problem.
+
+
+> +		struct uid_gid_extent *prev;
+> +		u32 first, last, prev_last, size;
+> +
+> +		if (parent_map->nr_extents <= UID_GID_MAP_MAX_BASE_EXTENTS)
+> +			prev = &parent_map->extent[idx];
+> +		else
+> +			prev = &parent_map->forward[idx];
+> +
+> +		first = extent->lower_first;
+> +		last = extent->lower_first + extent->count - 1;
+> +		prev_last = prev->first + prev->count - 1;
+> +
+> +		if ((first <= prev_last) && (last > prev_last)) {
+> +			size = prev_last - first + 1;
+> +
+> +			overflow_extent->first = extent->first + size;
+> +			overflow_extent->lower_first = extent->lower_first + size;
+> +			overflow_extent->count = extent->count - size;
+> +
+> +			extent->count = size;
+> +			return;
+> +		}
+> +	}
+> +}
+> +
+>  static bool mappings_overlap(struct uid_gid_map *new_map,
+>  			     struct uid_gid_extent *extent)
+>  {
+> @@ -852,6 +887,7 @@ static ssize_t map_write(struct file *file, const char __user *buf,
+>  	struct uid_gid_map new_map;
+>  	unsigned idx;
+>  	struct uid_gid_extent extent;
+> +	struct uid_gid_extent overflow_extent;
+>  	char *kbuf = NULL, *pos, *next_line;
+>  	ssize_t ret;
+>  
+> @@ -946,18 +982,24 @@ static ssize_t map_write(struct file *file, const char __user *buf,
+>  		     extent.lower_first)
+>  			goto out;
+>  
+> -		/* Do the ranges in extent overlap any previous extents? */
+> -		if (mappings_overlap(&new_map, &extent))
+> -			goto out;
+> +		do {
+> +			/* Do the ranges in extent overlap any previous extents? */
+> +			if (mappings_overlap(&new_map, &extent))
+> +				goto out;
+
+Why should mappings_overlap be called in the loop?   Will splitting an
+extent create the possibility for creating overlapping mappings?
+
+> -		if ((new_map.nr_extents + 1) == UID_GID_MAP_MAX_EXTENTS &&
+> -		    (next_line != NULL))
+> -			goto out;
+> +			if ((new_map.nr_extents + 1) == UID_GID_MAP_MAX_EXTENTS &&
+> +			    (next_line != NULL))
+> +				goto out;
+>  
+> -		ret = insert_extent(&new_map, &extent);
+> -		if (ret < 0)
+> -			goto out;
+> -		ret = -EINVAL;
+> +			split_overlapping_mappings(parent_map, &extent, &overflow_extent);
+> +
+> +			ret = insert_extent(&new_map, &extent);
+> +			if (ret < 0)
+> +				goto out;
+> +			ret = -EINVAL;
+> +
+> +			extent = overflow_extent;
+> +		} while (overflow_extent.first != (u32) -1);
+>  	}
+>  	/* Be very certaint the new map actually exists */
+>  	if (new_map.nr_extents == 0)
+
+Eric
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
