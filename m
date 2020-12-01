@@ -6,66 +6,65 @@ X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 12D34C71155
-	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 10:59:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E6F9AC64E7A
+	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 11:03:23 +0000 (UTC)
 Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 849E6206CB
-	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 10:59:43 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 849E6206CB
+	by mail.kernel.org (Postfix) with ESMTPS id 4E38A206CB
+	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 11:03:20 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4E38A206CB
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id E488987462;
-	Tue,  1 Dec 2020 10:59:42 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id AF7A787511;
+	Tue,  1 Dec 2020 11:03:19 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id yKWpxn1jJhID; Tue,  1 Dec 2020 10:59:42 +0000 (UTC)
+	with ESMTP id 1GdI4P9GvL79; Tue,  1 Dec 2020 11:03:18 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 7520087456;
-	Tue,  1 Dec 2020 10:59:42 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id D44C2874FF;
+	Tue,  1 Dec 2020 11:03:18 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 6FAB1C163C;
-	Tue,  1 Dec 2020 10:59:42 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 31F6AC0052
+	by lists.linuxfoundation.org (Postfix) with ESMTP id B8B50C163C;
+	Tue,  1 Dec 2020 11:03:18 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 0743EC0052
  for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 10:59:41 +0000 (UTC)
+ Tue,  1 Dec 2020 11:03:18 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 20679877EA
+ by hemlock.osuosl.org (Postfix) with ESMTP id E2DB387511
  for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 10:59:41 +0000 (UTC)
+ Tue,  1 Dec 2020 11:03:17 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id Hspx6yVAVNxE
+ with ESMTP id e6dOqIu+lB1j
  for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 10:59:40 +0000 (UTC)
+ Tue,  1 Dec 2020 11:03:17 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by whitealder.osuosl.org (Postfix) with ESMTPS id 98EE287709
+ by hemlock.osuosl.org (Postfix) with ESMTPS id C9CF5874FF
  for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 10:59:40 +0000 (UTC)
+ Tue,  1 Dec 2020 11:03:15 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kk3Mw-0001eP-Ih; Tue, 01 Dec 2020 10:58:50 +0000
-Date: Tue, 1 Dec 2020 11:58:46 +0100
+ id 1kk3QM-0002Rp-N8; Tue, 01 Dec 2020 11:02:22 +0000
+Date: Tue, 1 Dec 2020 12:02:19 +0100
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Christoph Hellwig <hch@lst.de>
-Subject: Re: [PATCH v3 09/38] namei: add idmapped mount aware permission
- helpers
-Message-ID: <20201201105846.gzopnwxynz7xnfed@wittgenstein>
+Subject: Re: [PATCH v3 33/38] ext4: support idmapped mounts
+Message-ID: <20201201110219.7gykwbsij6ld45wb@wittgenstein>
 References: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
- <20201128213527.2669807-10-christian.brauner@ubuntu.com>
- <20201201105122.GG27730@lst.de>
+ <20201128213527.2669807-34-christian.brauner@ubuntu.com>
+ <20201201105445.GJ27730@lst.de>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <20201201105122.GG27730@lst.de>
+In-Reply-To: <20201201105445.GJ27730@lst.de>
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>, David Howells <dhowells@redhat.com>,
  Andreas Dilger <adilger.kernel@dilger.ca>,
@@ -104,11 +103,13 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Tue, Dec 01, 2020 at 11:51:22AM +0100, Christoph Hellwig wrote:
-> The subject is wrong now that there are no new helpers, just new
-> arguments.
+On Tue, Dec 01, 2020 at 11:54:45AM +0100, Christoph Hellwig wrote:
+> What is the reason for the config option?  The only thing that it
+> controls is setting of a single flag.
 
-Thanks for spotting this, adjusting this now!
+I wanted to be conservative and give users the option to disable this on
+their kernel. Would you prefer if I drop it?
+
 Christian
 _______________________________________________
 Containers mailing list
