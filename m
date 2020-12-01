@@ -2,99 +2,109 @@ Return-Path: <SRS0=NWjS=FF=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.0 required=3.0 tests=BAYES_00,DKIM_INVALID,
+X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 02B97C64E7B
-	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 13:08:34 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 51E4AC64E7A
+	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 13:13:48 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 184BA2076C
-	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 13:08:32 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=sargun.me header.i=@sargun.me header.b="gTV19U7L"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 184BA2076C
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=sargun.me
+	by mail.kernel.org (Postfix) with ESMTPS id 653FE20637
+	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 13:13:46 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 653FE20637
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=tycho.pizza
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 89BE586C7A;
-	Tue,  1 Dec 2020 13:08:32 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id CB51F871BC;
+	Tue,  1 Dec 2020 13:13:45 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 2M9cz27vnuJ6; Tue,  1 Dec 2020 13:08:31 +0000 (UTC)
+	with ESMTP id ILEP7mBQqOJ5; Tue,  1 Dec 2020 13:13:45 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 8756986C71;
-	Tue,  1 Dec 2020 13:08:31 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 358EB8716C;
+	Tue,  1 Dec 2020 13:13:45 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 6B44AC1833;
-	Tue,  1 Dec 2020 13:08:31 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 38081C0859
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 1A451C163C;
+	Tue,  1 Dec 2020 13:13:45 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 07E99C0052
  for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 13:08:30 +0000 (UTC)
+ Tue,  1 Dec 2020 13:13:43 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 0072E2DE2A
+ by whitealder.osuosl.org (Postfix) with ESMTP id EAA1E86B0A
  for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 13:08:30 +0000 (UTC)
+ Tue,  1 Dec 2020 13:13:42 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id MGD0dKsXa-Na
+ with ESMTP id IFu-fVwhZNYk
  for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 13:08:28 +0000 (UTC)
+ Tue,  1 Dec 2020 13:13:41 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from mail-io1-f42.google.com (mail-io1-f42.google.com
- [209.85.166.42])
- by silver.osuosl.org (Postfix) with ESMTPS id 41FD220022
+Received: from wout4-smtp.messagingengine.com (wout4-smtp.messagingengine.com
+ [64.147.123.20])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id B0282869EF
  for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 13:08:28 +0000 (UTC)
-Received: by mail-io1-f42.google.com with SMTP id o8so1525153ioh.0
- for <containers@lists.linux-foundation.org>;
- Tue, 01 Dec 2020 05:08:28 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sargun.me; s=google;
- h=date:from:to:cc:subject:message-id:references:mime-version
- :content-disposition:content-transfer-encoding:in-reply-to
- :user-agent; bh=ZGcFuRI/bJF+HhBMzLDe2qGtoT/j0joOqdDzilS2qpo=;
- b=gTV19U7L/PRLjHjLVMBT9mj1qEMnpXhJ4DrO/+phoB5vlcweQ4DDm5pyPwcF/OJKeD
- p1IFSmdvJmxj7FFSzHjtbqBJTkDHtdP2dna0fFX6/moLUXI0ng4cU7iAIkXFEav/LiQL
- g791l9yDscEX979Y+yY4E+S1SLs3YXrE861Bk=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=1e100.net; s=20161025;
- h=x-gm-message-state:date:from:to:cc:subject:message-id:references
- :mime-version:content-disposition:content-transfer-encoding
- :in-reply-to:user-agent;
- bh=ZGcFuRI/bJF+HhBMzLDe2qGtoT/j0joOqdDzilS2qpo=;
- b=uREW5qCnwfOFaVSR+LJF01x4RuI7QC8jUJx9XVh0GLwOwJmD/iXV/XnZ7mlOPMpZ/a
- QeGdnZ6YINq3hxXuJfr1nuziLtZsE09s2k4P1AVxSJIttXluBszGOLXuYYfV0oNIvK9/
- 8eRSximjKDY28R8ytulYNtpxNAoWAlTsmiuJ0RQOyARLe2SwAKoMICOMwEblJrv0xyPR
- XqUK4RVjtejEHmpUkXniAqLlwONZHDc1znncMoK+4VJPtjEaA3/cZ6wA7yLL2kxtlZXS
- upGblykbtQ64GBaQFDuSiRUwruqgSoLDF+5XwTI9LVZxZBZs4IiwPfhVE1FInLk2j+gT
- do/w==
-X-Gm-Message-State: AOAM5326YIE/uvDpqgvxMdd34RBw0XmU9yXAi93iaMdmaKvFf1jVgl43
- LLfU5VMnE/VUXAsB0AVYSyl6eQ==
-X-Google-Smtp-Source: ABdhPJxwlwKDoOdC8evZD54rtRTBt2PosvC3O4D1AZaVXoFjuWZXLX6+JWQ51f7bO1ilExJucdfw1A==
-X-Received: by 2002:a02:3e86:: with SMTP id s128mr2383118jas.131.1606828107257; 
- Tue, 01 Dec 2020 05:08:27 -0800 (PST)
-Received: from ircssh-2.c.rugged-nimbus-611.internal
- (80.60.198.104.bc.googleusercontent.com. [104.198.60.80])
- by smtp.gmail.com with ESMTPSA id u18sm765171iob.53.2020.12.01.05.08.26
- (version=TLS1_2 cipher=ECDHE-ECDSA-CHACHA20-POLY1305 bits=256/256);
- Tue, 01 Dec 2020 05:08:26 -0800 (PST)
-Date: Tue, 1 Dec 2020 13:08:25 +0000
-From: Sargun Dhillon <sargun@sargun.me>
-To: Tycho Andersen <tycho@tycho.pizza>
+ Tue,  1 Dec 2020 13:13:41 +0000 (UTC)
+Received: from compute6.internal (compute6.nyi.internal [10.202.2.46])
+ by mailout.west.internal (Postfix) with ESMTP id 8C1F4466;
+ Tue,  1 Dec 2020 08:13:40 -0500 (EST)
+Received: from mailfrontend2 ([10.202.2.163])
+ by compute6.internal (MEProxy); Tue, 01 Dec 2020 08:13:40 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tycho.pizza; h=
+ date:from:to:cc:subject:message-id:references:mime-version
+ :content-type:content-transfer-encoding:in-reply-to; s=fm1; bh=5
+ wevszoWbraFHBZPlr9a9uI0gzKRk5nxLinjk7RXHx4=; b=F2J0aIU7XVYAwiTzG
+ GP5lE7bmcRVrsDTJFm9QJzuLpStllydLzycotPMocXjO6fLnuR0STLT52meZAoe9
+ S71So2GS4vPppVfjRrWPWn2U9ypUWyF69qYkMwX+CLkXKEGAvvp1J7AB7LehDgMx
+ oEJv1P/bTFjLmdNK6kGuuant4PqKostrDe7ZgosOnSx/HFfd9MQsiCvUcayvZS7b
+ GBcDF0SMF4Ojv8mz64PJ4+aleM0LYwDl+tI7PlqJ3vbhGO5SGHvynsN4ayY3M+Bf
+ twczPstzT53MozpidFvLfkGOMz+Dx+RuwFzKrQW9d2Kl9Tq/bWh1YqbVoMK8WA8Y
+ 56AKw==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+ messagingengine.com; h=cc:content-transfer-encoding:content-type
+ :date:from:in-reply-to:message-id:mime-version:references
+ :subject:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender
+ :x-sasl-enc; s=fm1; bh=5wevszoWbraFHBZPlr9a9uI0gzKRk5nxLinjk7RXH
+ x4=; b=j9Z/gH7afMxzhh0sAmF7HUw1GI+M8YznzxJ7sn19aCNlGH16pZPwRVhVN
+ dJbXfv9wf+I23YdcZBm+QcafwpFm4ZgBrSbAuyDqoXn5+kHSh8xApbPAFmLzpQnD
+ 9V597u27q/xT46KO6dRiMiaIMaZFnYiLVQMrOeWgV9ywZ2UPZU2Dy5+xYCWluyfF
+ Cmw8uP46OT0dgnqIe21BVaiOZm+wr9DOY9IoW0CLQ+K+t3JsHdAETczVbpNY53Bk
+ EhYWn7O7uPqJIgau0qfF2HMLCoEud4N9iCvbz/8SDbCmXzLIMj3IFZhojx8gkEOy
+ y7VDOWpV4STNGn/D7xqxb56YcWEiA==
+X-ME-Sender: <xms:g0HGX2xGgpp-wAX_WyGdz8mzNzdAKtz-0q8TarSSvHdYcBHC3aHQ-w>
+ <xme:g0HGXyQgQ7DHvBN2Chy_JzJGGK_bofOhnMZnwBJZdVSRHrgMoigHzQvoyFokCFmlx
+ yI1wiZy8YZtBOFqak0>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedujedrudeivddgheduucetufdoteggodetrfdotf
+ fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
+ uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
+ cujfgurhepfffhvffukfhfgggtugfgjgesthekredttddtudenucfhrhhomhepvfihtghh
+ ohcutehnuggvrhhsvghnuceothihtghhohesthihtghhohdrphhiiiiirgeqnecuggftrf
+ grthhtvghrnhepieefuddtueegudehleetfeefieefhfdvudejgeekieetudefheetffev
+ vdduudetnecuffhomhgrihhnpehlihhnuhigfhhouhhnuggrthhiohhnrdhorhhgnecukf
+ hppeduvdekrddutdejrddvgedurddukedtnecuvehluhhsthgvrhfuihiivgeptdenucfr
+ rghrrghmpehmrghilhhfrhhomhepthihtghhohesthihtghhohdrphhiiiiirg
+X-ME-Proxy: <xmx:g0HGX4VfBSxR7YZrGuMO12ItNqNa-n-4421mZ8hoIAmlpKotd5CyAA>
+ <xmx:g0HGX8iVmjs-mlcmvSqduIjlmjWX-YzBjccnbnpB4-npGB6lWd0BdA>
+ <xmx:g0HGX4A6BwRnTs0aXsfvFHfN9jjlyL7ZP1Xl5B8C2pDjH1yaNv-e3g>
+ <xmx:hEHGX7PyOiUMvWS1FV_eT23MSVVj32Flz68CQN5NuuHHvIA2aw_h7w>
+Received: from cisco (unknown [128.107.241.180])
+ by mail.messagingengine.com (Postfix) with ESMTPA id 5B51F1080057;
+ Tue,  1 Dec 2020 08:13:37 -0500 (EST)
+Date: Tue, 1 Dec 2020 08:13:34 -0500
+From: Tycho Andersen <tycho@tycho.pizza>
+To: Sargun Dhillon <sargun@sargun.me>
 Subject: Re: SECCOMP_IOCTL_NOTIF_ADDFD race condition
-Message-ID: <20201201130824.GA27822@ircssh-2.c.rugged-nimbus-611.internal>
+Message-ID: <20201201131334.GC103125@cisco>
 References: <CADZs7q4sw71iNHmV8EOOXhUKJMORPzF7thraxZYddTZsxta-KQ@mail.gmail.com>
  <20201130232009.GC38675@cisco> <20201201124105.GB103125@cisco>
+ <20201201130824.GA27822@ircssh-2.c.rugged-nimbus-611.internal>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <20201201124105.GB103125@cisco>
-User-Agent: Mutt/1.9.4 (2018-02-28)
+In-Reply-To: <20201201130824.GA27822@ircssh-2.c.rugged-nimbus-611.internal>
 Cc: Giuseppe Scrivano <gscrivan@redhat.com>,
  Linux Containers <containers@lists.linux-foundation.org>,
  Alban Crequy <alban@kinvolk.io>, Kees Cook <keescook@chromium.org>,
@@ -115,50 +125,54 @@ Content-Transfer-Encoding: quoted-printable
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Tue, Dec 01, 2020 at 07:41:05AM -0500, Tycho Andersen wrote:
-> On Mon, Nov 30, 2020 at 06:20:09PM -0500, Tycho Andersen wrote:
-> > Idea 1 sounds best to me, but maybe that's because it's the way I
-> > originally did the fd support that never landed :)
+On Tue, Dec 01, 2020 at 01:08:25PM +0000, Sargun Dhillon wrote:
+> On Tue, Dec 01, 2020 at 07:41:05AM -0500, Tycho Andersen wrote:
+> > On Mon, Nov 30, 2020 at 06:20:09PM -0500, Tycho Andersen wrote:
+> > > Idea 1 sounds best to me, but maybe that's because it's the way I
+> > > originally did the fd support that never landed :)
+> > > =
+
+> > > But here's an Idea 4: we add a way to remotely close an fd (I don't
+> > > see that the current infra can do this, but perhaps I didn't look hard
+> > > enough), and then when you get ENOENT you have to close the fd. Of
+> > > course, this can't be via seccomp, so maybe it's even more racy.
 > > =
 
-> > But here's an Idea 4: we add a way to remotely close an fd (I don't
-> > see that the current infra can do this, but perhaps I didn't look hard
-> > enough), and then when you get ENOENT you have to close the fd. Of
-> > course, this can't be via seccomp, so maybe it's even more racy.
+> > Or better yet: what if the kernel closed everything it had added via
+> > ADDFD if it didn't get a valid response from the supervisor? Then
+> > everyone gets this bug fixed for free.
+> > =
+
+> > Tycho
+> > _______________________________________________
+> > Containers mailing list
+> > Containers@lists.linux-foundation.org
+> > https://lists.linuxfoundation.org/mailman/listinfo/containers
 > =
 
-> Or better yet: what if the kernel closed everything it had added via
-> ADDFD if it didn't get a valid response from the supervisor? Then
-> everyone gets this bug fixed for free.
-> =
+> This doesn't solve=A0the problem universally because of the (Go) preempti=
+on =
 
-> Tycho
-> _______________________________________________
-> Containers mailing list
-> Containers@lists.linux-foundation.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+> problem. Unless we can guarantee that the supervisor can always handle th=
+e =
 
-This doesn't solve=A0the problem universally because of the (Go) preemption =
+> request in fewer than 10ms, or if it implements resumption behaviour. I k=
+now =
 
-problem. Unless we can guarantee that the supervisor can always handle the =
+> that resumption behaviour is a requirement no matter what, but the easier=
+ we can =
 
-request in fewer than 10ms, or if it implements resumption behaviour. I kno=
-w =
+> make it to implement resumption, the better chance we are giving users to=
+ get =
 
-that resumption behaviour is a requirement no matter what, but the easier w=
-e can =
+> this right.
 
-make it to implement resumption, the better chance we are giving users to g=
-et =
+Doesn't automatic cleanup of fds make things easier? I'm not sure I
+understand the argument.
 
-this right.
+I agree it doesn't fix the problem of uncooperative userspace.
 
-I think that the easiest solution is to add to the SECCOMP_IOCTL_NOTIF_RECV
-ioctl. Either we have a flag like "block all blockable signals" or pass a
-sigset_t directly of which signals to allow (and return an einval if they
-try to block non-blockable signals).
-
-
+Tycho
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
