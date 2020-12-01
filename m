@@ -7,61 +7,60 @@ X-Spam-Status: No, score=-10.2 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 02A52C64E7B
-	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 10:31:34 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C593CC64E7A
+	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 10:32:13 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 4CE842087C
-	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 10:31:32 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4CE842087C
+	by mail.kernel.org (Postfix) with ESMTPS id B560D2080A
+	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 10:32:12 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B560D2080A
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lst.de
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 911E5874B2;
-	Tue,  1 Dec 2020 10:31:31 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id GdJ46N47Wmm1; Tue,  1 Dec 2020 10:31:29 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id C27C187236;
-	Tue,  1 Dec 2020 10:31:29 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id ADF91C163C;
-	Tue,  1 Dec 2020 10:31:29 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id B16D1C0052
- for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 10:31:28 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 506AB2E112
- for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 10:31:28 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 0C7782E112;
+	Tue,  1 Dec 2020 10:32:12 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
- by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id s5FQmBmTCADf
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id Wka9C4-2GOpu; Tue,  1 Dec 2020 10:32:11 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by silver.osuosl.org (Postfix) with ESMTP id 0A6F32E0EC;
+	Tue,  1 Dec 2020 10:32:11 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id E4027C163C;
+	Tue,  1 Dec 2020 10:32:10 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 1FD73C0052
  for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 10:31:26 +0000 (UTC)
+ Tue,  1 Dec 2020 10:32:10 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by whitealder.osuosl.org (Postfix) with ESMTP id 0890888069
+ for <containers@lists.linux-foundation.org>;
+ Tue,  1 Dec 2020 10:32:10 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from whitealder.osuosl.org ([127.0.0.1])
+ by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id 5d9W8rZWki8U
+ for <containers@lists.linux-foundation.org>;
+ Tue,  1 Dec 2020 10:32:08 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
 Received: from verein.lst.de (verein.lst.de [213.95.11.211])
- by silver.osuosl.org (Postfix) with ESMTPS id 609AA2E0EC
+ by whitealder.osuosl.org (Postfix) with ESMTPS id A1A2B88064
  for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 10:31:26 +0000 (UTC)
+ Tue,  1 Dec 2020 10:32:08 +0000 (UTC)
 Received: by verein.lst.de (Postfix, from userid 2407)
- id B5F606736F; Tue,  1 Dec 2020 11:31:19 +0100 (CET)
-Date: Tue, 1 Dec 2020 11:31:19 +0100
+ id 63DC868B05; Tue,  1 Dec 2020 11:32:04 +0100 (CET)
+Date: Tue, 1 Dec 2020 11:32:03 +0100
 From: Christoph Hellwig <hch@lst.de>
 To: Christian Brauner <christian.brauner@ubuntu.com>
-Subject: Re: [PATCH v3 01/38] namespace: take lock_mount_hash() directly
- when changing flags
-Message-ID: <20201201103119.GA27730@lst.de>
+Subject: Re: [PATCH v3 02/38] mount: make {lock,unlock}_mount_hash() static
+Message-ID: <20201201103203.GB27730@lst.de>
 References: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
- <20201128213527.2669807-2-christian.brauner@ubuntu.com>
+ <20201128213527.2669807-3-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <20201128213527.2669807-2-christian.brauner@ubuntu.com>
+In-Reply-To: <20201128213527.2669807-3-christian.brauner@ubuntu.com>
 User-Agent: Mutt/1.5.17 (2007-11-01)
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>, David Howells <dhowells@redhat.com>,
@@ -101,7 +100,16 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Looks good,
+On Sat, Nov 28, 2020 at 10:34:51PM +0100, Christian Brauner wrote:
+> The lock_mount_hash() and unlock_mount_hash() helpers are never called outside a
+> single file. Remove them from the header and make them static to reflect this
+> fact. There's no need to have them callable from other places right now, as
+> Christoph observed.
+
+You are spilling over the usual 73 chars for commit logs, so please check
+this and the other patches.
+
+Otherwise looks good:
 
 Reviewed-by: Christoph Hellwig <hch@lst.de>
 _______________________________________________
