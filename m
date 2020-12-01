@@ -6,61 +6,60 @@ X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 770DAC64E7A
-	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 10:51:52 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 376E9C64E7B
+	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 10:53:44 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 9EFAB20674
-	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 10:51:51 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9EFAB20674
+	by mail.kernel.org (Postfix) with ESMTPS id 95BB320674
+	for <containers@archiver.kernel.org>; Tue,  1 Dec 2020 10:53:43 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 95BB320674
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lst.de
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 5C52E870FE;
-	Tue,  1 Dec 2020 10:51:51 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 187D3228EA;
+	Tue,  1 Dec 2020 10:53:43 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id nphvphz2G77d; Tue,  1 Dec 2020 10:51:50 +0000 (UTC)
+	with ESMTP id liCEVPuY3Bh1; Tue,  1 Dec 2020 10:53:42 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id DDB6D870E4;
-	Tue,  1 Dec 2020 10:51:50 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 5758920033;
+	Tue,  1 Dec 2020 10:53:42 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id C90B0C163C;
-	Tue,  1 Dec 2020 10:51:50 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 5115DC163C;
+	Tue,  1 Dec 2020 10:53:42 +0000 (UTC)
 Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id DC0FBC0052
+ by lists.linuxfoundation.org (Postfix) with ESMTP id E1BC6C0052
  for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 10:51:49 +0000 (UTC)
+ Tue,  1 Dec 2020 10:53:40 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id CA1E5880E0
+ by whitealder.osuosl.org (Postfix) with ESMTP id DD86B86CAF
  for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 10:51:49 +0000 (UTC)
+ Tue,  1 Dec 2020 10:53:40 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id 1dg2r2y6qtDF
+ with ESMTP id dNXxYUNOzRVT
  for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 10:51:49 +0000 (UTC)
+ Tue,  1 Dec 2020 10:53:40 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
 Received: from verein.lst.de (verein.lst.de [213.95.11.211])
- by whitealder.osuosl.org (Postfix) with ESMTPS id 5E140880DD
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 47A5C86CD4
  for <containers@lists.linux-foundation.org>;
- Tue,  1 Dec 2020 10:51:49 +0000 (UTC)
+ Tue,  1 Dec 2020 10:53:40 +0000 (UTC)
 Received: by verein.lst.de (Postfix, from userid 2407)
- id 2AED968AFE; Tue,  1 Dec 2020 11:51:47 +0100 (CET)
-Date: Tue, 1 Dec 2020 11:51:46 +0100
+ id E835F67373; Tue,  1 Dec 2020 11:53:36 +0100 (CET)
+Date: Tue, 1 Dec 2020 11:53:36 +0100
 From: Christoph Hellwig <hch@lst.de>
 To: Christian Brauner <christian.brauner@ubuntu.com>
-Subject: Re: [PATCH v3 10/38] inode: add idmapped mount aware init and
- permission helpers
-Message-ID: <20201201105146.GH27730@lst.de>
+Subject: Re: [PATCH v3 17/38] namei: introduce struct renamedata
+Message-ID: <20201201105336.GI27730@lst.de>
 References: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
- <20201128213527.2669807-11-christian.brauner@ubuntu.com>
+ <20201128213527.2669807-18-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <20201128213527.2669807-11-christian.brauner@ubuntu.com>
+In-Reply-To: <20201128213527.2669807-18-christian.brauner@ubuntu.com>
 User-Agent: Mutt/1.5.17 (2007-11-01)
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>, David Howells <dhowells@redhat.com>,
@@ -100,7 +99,18 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Same issue with the subject as for the previous patch.
+> +int vfs_rename(struct renamedata *rd)
+>  {
+>  	int error;
+>  	struct user_namespace *user_ns = &init_user_ns;
+> +	struct inode *old_dir = rd->old_dir, *new_dir = rd->new_dir;
+> +	struct dentry *old_dentry = rd->old_dentry,
+> +		      *new_dentry = rd->new_dentry;
+
+This looks weird.  I'd just write the obvious:
+
+	struct dentry *old_dentry = rd->old_dentry;
+	struct dentry *new_dentry = rd->new_dentry;
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
