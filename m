@@ -7,66 +7,65 @@ X-Spam-Status: No, score=-8.7 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2BF00C64E7C
-	for <containers@archiver.kernel.org>; Wed,  2 Dec 2020 09:10:59 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BC9D3C64E7C
+	for <containers@archiver.kernel.org>; Wed,  2 Dec 2020 09:12:33 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 67F5D22242
-	for <containers@archiver.kernel.org>; Wed,  2 Dec 2020 09:10:56 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 67F5D22242
+	by mail.kernel.org (Postfix) with ESMTPS id C176420709
+	for <containers@archiver.kernel.org>; Wed,  2 Dec 2020 09:12:32 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C176420709
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 7648188223;
-	Wed,  2 Dec 2020 09:10:55 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 3061987083;
+	Wed,  2 Dec 2020 09:12:32 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from fraxinus.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id rRyPPer56yyj; Wed,  2 Dec 2020 09:12:31 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by fraxinus.osuosl.org (Postfix) with ESMTP id A270986F9C;
+	Wed,  2 Dec 2020 09:12:31 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 98BD6C163C;
+	Wed,  2 Dec 2020 09:12:31 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 86D36C0052
+ for <containers@lists.linux-foundation.org>;
+ Wed,  2 Dec 2020 09:12:30 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by whitealder.osuosl.org (Postfix) with ESMTP id 75E0888276
+ for <containers@lists.linux-foundation.org>;
+ Wed,  2 Dec 2020 09:12:30 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id S6fTkg3S3kbq; Wed,  2 Dec 2020 09:10:54 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 6CC4388207;
-	Wed,  2 Dec 2020 09:10:54 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 4A0DCC163C;
-	Wed,  2 Dec 2020 09:10:54 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 14E90C0052
- for <containers@lists.linux-foundation.org>;
- Wed,  2 Dec 2020 09:10:53 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id C0AB92E20D
- for <containers@lists.linux-foundation.org>;
- Wed,  2 Dec 2020 09:10:52 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id IRdxHMXJau+P
+ with ESMTP id 60SR8kCIlkSo
  for <containers@lists.linux-foundation.org>;
- Wed,  2 Dec 2020 09:10:51 +0000 (UTC)
+ Wed,  2 Dec 2020 09:12:29 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by silver.osuosl.org (Postfix) with ESMTPS id C79D62E202
+ by whitealder.osuosl.org (Postfix) with ESMTPS id AFA4C88223
  for <containers@lists.linux-foundation.org>;
- Wed,  2 Dec 2020 09:10:51 +0000 (UTC)
+ Wed,  2 Dec 2020 09:12:29 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kkO92-0000oc-SX; Wed, 02 Dec 2020 09:09:53 +0000
-Date: Wed, 2 Dec 2020 10:09:48 +0100
+ id 1kkOAl-00019g-FX; Wed, 02 Dec 2020 09:11:39 +0000
+Date: Wed, 2 Dec 2020 10:11:36 +0100
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Christoph Hellwig <hch@lst.de>
-Subject: Re: [PATCH v3 01/38] namespace: take lock_mount_hash() directly when
- changing flags
-Message-ID: <20201202090948.lezq2p33gnq56vc2@wittgenstein>
+Subject: Re: [PATCH v3 02/38] mount: make {lock,unlock}_mount_hash() static
+Message-ID: <20201202091136.skx4v2ltkoiibl25@wittgenstein>
 References: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
- <20201128213527.2669807-2-christian.brauner@ubuntu.com>
- <20201201103119.GA27730@lst.de>
+ <20201128213527.2669807-3-christian.brauner@ubuntu.com>
+ <20201201103203.GB27730@lst.de>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <20201201103119.GA27730@lst.de>
+In-Reply-To: <20201201103203.GB27730@lst.de>
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>, David Howells <dhowells@redhat.com>,
  Andreas Dilger <adilger.kernel@dilger.ca>,
@@ -105,8 +104,20 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Tue, Dec 01, 2020 at 11:31:19AM +0100, Christoph Hellwig wrote:
-> Looks good,
+On Tue, Dec 01, 2020 at 11:32:03AM +0100, Christoph Hellwig wrote:
+> On Sat, Nov 28, 2020 at 10:34:51PM +0100, Christian Brauner wrote:
+> > The lock_mount_hash() and unlock_mount_hash() helpers are never called outside a
+> > single file. Remove them from the header and make them static to reflect this
+> > fact. There's no need to have them callable from other places right now, as
+> > Christoph observed.
+> 
+> You are spilling over the usual 73 chars for commit logs, so please check
+> this and the other patches.
+
+I've changed all commit messages to adhere to a 73 character limit.
+
+> 
+> Otherwise looks good:
 > 
 > Reviewed-by: Christoph Hellwig <hch@lst.de>
 
