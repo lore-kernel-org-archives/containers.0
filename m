@@ -6,66 +6,65 @@ X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7B4C0C64E8A
-	for <containers@archiver.kernel.org>; Wed,  2 Dec 2020 09:18:02 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 59374C64E8A
+	for <containers@archiver.kernel.org>; Wed,  2 Dec 2020 09:19:18 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id CA1AD2086A
-	for <containers@archiver.kernel.org>; Wed,  2 Dec 2020 09:18:01 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org CA1AD2086A
+	by mail.kernel.org (Postfix) with ESMTPS id A43F620872
+	for <containers@archiver.kernel.org>; Wed,  2 Dec 2020 09:19:17 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A43F620872
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 3D3802E225;
-	Wed,  2 Dec 2020 09:18:01 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id E991D86B68;
+	Wed,  2 Dec 2020 09:19:16 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from fraxinus.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id UsM6jZzc2oHJ; Wed,  2 Dec 2020 09:19:15 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 591E986999;
+	Wed,  2 Dec 2020 09:19:15 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 41AC5C0859;
+	Wed,  2 Dec 2020 09:19:15 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 01381C0052
+ for <containers@lists.linux-foundation.org>;
+ Wed,  2 Dec 2020 09:19:14 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by silver.osuosl.org (Postfix) with ESMTP id CA9052E225
+ for <containers@lists.linux-foundation.org>;
+ Wed,  2 Dec 2020 09:19:13 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id IM0pYvAgAev2; Wed,  2 Dec 2020 09:18:00 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 094912E202;
-	Wed,  2 Dec 2020 09:18:00 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 03FAFC0859;
-	Wed,  2 Dec 2020 09:18:00 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 8F408C0052
- for <containers@lists.linux-foundation.org>;
- Wed,  2 Dec 2020 09:17:59 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 89BA387904
- for <containers@lists.linux-foundation.org>;
- Wed,  2 Dec 2020 09:17:59 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id vG1fffIPvmDH
+ with ESMTP id 4Bjbwg+j68xn
  for <containers@lists.linux-foundation.org>;
- Wed,  2 Dec 2020 09:17:58 +0000 (UTC)
+ Wed,  2 Dec 2020 09:19:12 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by hemlock.osuosl.org (Postfix) with ESMTPS id C40C9878AE
+ by silver.osuosl.org (Postfix) with ESMTPS id 9DDFC2E20F
  for <containers@lists.linux-foundation.org>;
- Wed,  2 Dec 2020 09:17:58 +0000 (UTC)
+ Wed,  2 Dec 2020 09:19:12 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kkOG4-0001g2-GW; Wed, 02 Dec 2020 09:17:08 +0000
-Date: Wed, 2 Dec 2020 10:17:05 +0100
+ id 1kkOHG-0001lk-A5; Wed, 02 Dec 2020 09:18:22 +0000
+Date: Wed, 2 Dec 2020 10:18:19 +0100
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Christoph Hellwig <hch@lst.de>
-Subject: Re: [PATCH v3 10/38] inode: add idmapped mount aware init and
- permission helpers
-Message-ID: <20201202091705.3s6ynmfyzs6fuwrk@wittgenstein>
+Subject: Re: [PATCH v3 17/38] namei: introduce struct renamedata
+Message-ID: <20201202091819.xirbewmjovasoqqv@wittgenstein>
 References: <20201128213527.2669807-1-christian.brauner@ubuntu.com>
- <20201128213527.2669807-11-christian.brauner@ubuntu.com>
- <20201201105146.GH27730@lst.de>
+ <20201128213527.2669807-18-christian.brauner@ubuntu.com>
+ <20201201105336.GI27730@lst.de>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <20201201105146.GH27730@lst.de>
+In-Reply-To: <20201201105336.GI27730@lst.de>
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>, David Howells <dhowells@redhat.com>,
  Andreas Dilger <adilger.kernel@dilger.ca>,
@@ -104,11 +103,21 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Tue, Dec 01, 2020 at 11:51:46AM +0100, Christoph Hellwig wrote:
-> Same issue with the subject as for the previous patch.
+On Tue, Dec 01, 2020 at 11:53:36AM +0100, Christoph Hellwig wrote:
+> > +int vfs_rename(struct renamedata *rd)
+> >  {
+> >  	int error;
+> >  	struct user_namespace *user_ns = &init_user_ns;
+> > +	struct inode *old_dir = rd->old_dir, *new_dir = rd->new_dir;
+> > +	struct dentry *old_dentry = rd->old_dentry,
+> > +		      *new_dentry = rd->new_dentry;
+> 
+> This looks weird.  I'd just write the obvious:
+> 
+> 	struct dentry *old_dentry = rd->old_dentry;
+> 	struct dentry *new_dentry = rd->new_dentry;
 
-All commit messages should now have been fixed. I've gone through all of
-them once more yesterday.
+Fixed.
 
 Thanks!
 Christian
