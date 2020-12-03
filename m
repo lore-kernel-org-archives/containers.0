@@ -7,61 +7,60 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BDA35C4361A
-	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:02:27 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A4DE2C3526D
+	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:02:31 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 1E9512250F
-	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:02:26 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1E9512250F
+	by mail.kernel.org (Postfix) with ESMTPS id 4BCFD224DE
+	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:02:31 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4BCFD224DE
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 7E41B877AE;
-	Fri,  4 Dec 2020 00:02:26 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id BA1CE87C24;
+	Fri,  4 Dec 2020 00:02:30 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id ilBNK0zztByZ; Fri,  4 Dec 2020 00:02:25 +0000 (UTC)
+	with ESMTP id hVKSAknW3vj2; Fri,  4 Dec 2020 00:02:30 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id E10FA87795;
-	Fri,  4 Dec 2020 00:02:25 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id F0BDC87C1E;
+	Fri,  4 Dec 2020 00:02:29 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id C5085C1834;
-	Fri,  4 Dec 2020 00:02:25 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id E65B4C163C;
+	Fri,  4 Dec 2020 00:02:29 +0000 (UTC)
 Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 6118CC0FA7
+ by lists.linuxfoundation.org (Postfix) with ESMTP id AB0E5C0FA7
  for <containers@lists.linux-foundation.org>;
- Fri,  4 Dec 2020 00:02:24 +0000 (UTC)
+ Fri,  4 Dec 2020 00:02:25 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id 47EC1877B7
+ by fraxinus.osuosl.org (Postfix) with ESMTP id A76F1877B7
  for <containers@lists.linux-foundation.org>;
- Fri,  4 Dec 2020 00:02:24 +0000 (UTC)
+ Fri,  4 Dec 2020 00:02:25 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id 7Iuc1Vzsl0om
+ with ESMTP id xymRW35lcuyI
  for <containers@lists.linux-foundation.org>;
  Fri,  4 Dec 2020 00:02:23 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id 3317C877AE
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id 31F0F87795
  for <containers@lists.linux-foundation.org>;
  Fri,  4 Dec 2020 00:02:23 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kkyXE-0007ka-37; Fri, 04 Dec 2020 00:01:16 +0000
+ id 1kkyXL-0007ka-79; Fri, 04 Dec 2020 00:01:23 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v4 01/40] namespace: take lock_mount_hash() directly when
- changing flags
-Date: Fri,  4 Dec 2020 00:56:57 +0100
-Message-Id: <20201203235736.3528991-2-christian.brauner@ubuntu.com>
+Subject: [PATCH v4 05/40] fs: add attr_flags_to_mnt_flags helper
+Date: Fri,  4 Dec 2020 00:57:01 +0100
+Message-Id: <20201203235736.3528991-6-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201203235736.3528991-1-christian.brauner@ubuntu.com>
 References: <20201203235736.3528991-1-christian.brauner@ubuntu.com>
@@ -102,114 +101,87 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Changing mount options always ends up taking lock_mount_hash() but when
-MNT_READONLY is requested and neither the mount nor the superblock are
-MNT_READONLY we end up taking the lock, dropping it, and retaking it to
-change the other mount attributes. Instead, let's acquire the lock once
-when changing the mount attributes. This simplifies the locking in these
-codepath, makes them easier to reason about and avoids having to
-reacquire the lock right after dropping it.
+Add a simple helper to translate uapi MOUNT_ATTR_* flags to MNT_* flags
+which we will use in follow-up patches too.
 
+Suggested-by: Christoph Hellwig <hch@lst.de>
 Cc: David Howells <dhowells@redhat.com>
 Cc: Al Viro <viro@zeniv.linux.org.uk>
 Cc: linux-fsdevel@vger.kernel.org
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
-Reviewed-by: Christoph Hellwig <hch@lst.de>
 ---
 /* v2 */
-- Christoph Hellwig <hch@lst.de>:
-  - Remove pointless __mnt_unmake_readonly() helper.
-  - Even though Christoph suggested to lockdep_assert_held() into places that
-    require {lock,unlock}_mount_hash() it seems that seqlock's don't support
-    it.
+patch not present
 
 /* v3 */
-unchanged
+patch not present
 
 /* v4 */
-unchanged
+patch introduced
 ---
- fs/namespace.c | 22 ++++++++--------------
- 1 file changed, 8 insertions(+), 14 deletions(-)
+ fs/namespace.c | 40 ++++++++++++++++++++++++----------------
+ 1 file changed, 24 insertions(+), 16 deletions(-)
 
 diff --git a/fs/namespace.c b/fs/namespace.c
-index cebaa3e81794..f183161833ad 100644
+index 1a756d33c91a..b2a9eb7b43d3 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -463,7 +463,6 @@ static int mnt_make_readonly(struct mount *mnt)
- {
- 	int ret = 0;
- 
--	lock_mount_hash();
- 	mnt->mnt.mnt_flags |= MNT_WRITE_HOLD;
- 	/*
- 	 * After storing MNT_WRITE_HOLD, we'll read the counters. This store
-@@ -497,18 +496,9 @@ static int mnt_make_readonly(struct mount *mnt)
- 	 */
- 	smp_wmb();
- 	mnt->mnt.mnt_flags &= ~MNT_WRITE_HOLD;
--	unlock_mount_hash();
+@@ -3450,6 +3450,28 @@ SYSCALL_DEFINE5(mount, char __user *, dev_name, char __user *, dir_name,
  	return ret;
  }
  
--static int __mnt_unmake_readonly(struct mount *mnt)
--{
--	lock_mount_hash();
--	mnt->mnt.mnt_flags &= ~MNT_READONLY;
--	unlock_mount_hash();
--	return 0;
--}
--
- int sb_prepare_remount_readonly(struct super_block *sb)
- {
- 	struct mount *mnt;
-@@ -2508,7 +2498,8 @@ static int change_mount_ro_state(struct mount *mnt, unsigned int mnt_flags)
- 	if (readonly_request)
- 		return mnt_make_readonly(mnt);
- 
--	return __mnt_unmake_readonly(mnt);
-+	mnt->mnt.mnt_flags &= ~MNT_READONLY;
-+	return 0;
- }
- 
++#define FSMOUNT_VALID_FLAGS                                                    \
++	(MOUNT_ATTR_RDONLY | MOUNT_ATTR_NOSUID | MOUNT_ATTR_NODEV |            \
++	 MOUNT_ATTR_NOEXEC | MOUNT_ATTR__ATIME | MOUNT_ATTR_NODIRATIME)
++
++static unsigned int attr_flags_to_mnt_flags(u64 attr_flags)
++{
++	unsigned int mnt_flags = 0;
++
++	if (attr_flags & MOUNT_ATTR_RDONLY)
++		mnt_flags |= MNT_READONLY;
++	if (attr_flags & MOUNT_ATTR_NOSUID)
++		mnt_flags |= MNT_NOSUID;
++	if (attr_flags & MOUNT_ATTR_NODEV)
++		mnt_flags |= MNT_NODEV;
++	if (attr_flags & MOUNT_ATTR_NOEXEC)
++		mnt_flags |= MNT_NOEXEC;
++	if (attr_flags & MOUNT_ATTR_NODIRATIME)
++		mnt_flags |= MNT_NODIRATIME;
++
++	return mnt_flags;
++}
++
  /*
-@@ -2517,11 +2508,9 @@ static int change_mount_ro_state(struct mount *mnt, unsigned int mnt_flags)
-  */
- static void set_mount_attributes(struct mount *mnt, unsigned int mnt_flags)
- {
--	lock_mount_hash();
- 	mnt_flags |= mnt->mnt.mnt_flags & ~MNT_USER_SETTABLE_MASK;
- 	mnt->mnt.mnt_flags = mnt_flags;
- 	touch_mnt_namespace(mnt->mnt_ns);
--	unlock_mount_hash();
- }
+  * Create a kernel mount representation for a new, prepared superblock
+  * (specified by fs_fd) and attach to an open_tree-like file descriptor.
+@@ -3472,24 +3494,10 @@ SYSCALL_DEFINE3(fsmount, int, fs_fd, unsigned int, flags,
+ 	if ((flags & ~(FSMOUNT_CLOEXEC)) != 0)
+ 		return -EINVAL;
  
- static void mnt_warn_timestamp_expiry(struct path *mountpoint, struct vfsmount *mnt)
-@@ -2567,9 +2556,11 @@ static int do_reconfigure_mnt(struct path *path, unsigned int mnt_flags)
- 		return -EPERM;
+-	if (attr_flags & ~(MOUNT_ATTR_RDONLY |
+-			   MOUNT_ATTR_NOSUID |
+-			   MOUNT_ATTR_NODEV |
+-			   MOUNT_ATTR_NOEXEC |
+-			   MOUNT_ATTR__ATIME |
+-			   MOUNT_ATTR_NODIRATIME))
++	if (attr_flags & ~FSMOUNT_VALID_FLAGS)
+ 		return -EINVAL;
  
- 	down_write(&sb->s_umount);
-+	lock_mount_hash();
- 	ret = change_mount_ro_state(mnt, mnt_flags);
- 	if (ret == 0)
- 		set_mount_attributes(mnt, mnt_flags);
-+	unlock_mount_hash();
- 	up_write(&sb->s_umount);
+-	if (attr_flags & MOUNT_ATTR_RDONLY)
+-		mnt_flags |= MNT_READONLY;
+-	if (attr_flags & MOUNT_ATTR_NOSUID)
+-		mnt_flags |= MNT_NOSUID;
+-	if (attr_flags & MOUNT_ATTR_NODEV)
+-		mnt_flags |= MNT_NODEV;
+-	if (attr_flags & MOUNT_ATTR_NOEXEC)
+-		mnt_flags |= MNT_NOEXEC;
+-	if (attr_flags & MOUNT_ATTR_NODIRATIME)
+-		mnt_flags |= MNT_NODIRATIME;
++	mnt_flags = attr_flags_to_mnt_flags(attr_flags);
  
- 	mnt_warn_timestamp_expiry(path, &mnt->mnt);
-@@ -2610,8 +2601,11 @@ static int do_remount(struct path *path, int ms_flags, int sb_flags,
- 		err = -EPERM;
- 		if (ns_capable(sb->s_user_ns, CAP_SYS_ADMIN)) {
- 			err = reconfigure_super(fc);
--			if (!err)
-+			if (!err) {
-+				lock_mount_hash();
- 				set_mount_attributes(mnt, mnt_flags);
-+				unlock_mount_hash();
-+			}
- 		}
- 		up_write(&sb->s_umount);
- 	}
+ 	switch (attr_flags & MOUNT_ATTR__ATIME) {
+ 	case MOUNT_ATTR_STRICTATIME:
 -- 
 2.29.2
 
