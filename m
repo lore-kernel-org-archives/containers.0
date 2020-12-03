@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D555BC433FE
-	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:11:36 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 64FBCC433FE
+	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:12:24 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 55B1D22224
-	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:11:36 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 55B1D22224
+	by mail.kernel.org (Postfix) with ESMTPS id DA55522224
+	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:12:23 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DA55522224
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id BD56087FCD;
-	Fri,  4 Dec 2020 00:11:35 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 55126878A7;
+	Fri,  4 Dec 2020 00:12:23 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 9hLxxxu-2qyT; Fri,  4 Dec 2020 00:11:33 +0000 (UTC)
+	with ESMTP id g8UzTprq-vRc; Fri,  4 Dec 2020 00:12:22 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id A61E087FD7;
-	Fri,  4 Dec 2020 00:11:33 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id C6FC5878A3;
+	Fri,  4 Dec 2020 00:12:22 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 8FD6CC163C;
-	Fri,  4 Dec 2020 00:11:33 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 4B484C0FA7
+	by lists.linuxfoundation.org (Postfix) with ESMTP id BCCC4C163C;
+	Fri,  4 Dec 2020 00:12:22 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 0FFAFC0FA7
  for <containers@lists.linux-foundation.org>;
- Fri,  4 Dec 2020 00:11:32 +0000 (UTC)
+ Fri,  4 Dec 2020 00:12:21 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 1A3512E40C
+ by hemlock.osuosl.org (Postfix) with ESMTP id F236887C21
  for <containers@lists.linux-foundation.org>;
- Fri,  4 Dec 2020 00:11:32 +0000 (UTC)
+ Fri,  4 Dec 2020 00:12:20 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id 9h-J1VFiX2fp
+ with ESMTP id 2OyPSBQy1Fb1
  for <containers@lists.linux-foundation.org>;
- Fri,  4 Dec 2020 00:11:31 +0000 (UTC)
+ Fri,  4 Dec 2020 00:12:20 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by silver.osuosl.org (Postfix) with ESMTPS id 05C292E408
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 6777887C1D
  for <containers@lists.linux-foundation.org>;
- Fri,  4 Dec 2020 00:11:30 +0000 (UTC)
+ Fri,  4 Dec 2020 00:12:20 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kkyXw-0007ka-BC; Fri, 04 Dec 2020 00:02:00 +0000
+ id 1kkyXy-0007ka-9G; Fri, 04 Dec 2020 00:02:02 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v4 25/40] fcntl: handle idmapped mounts
-Date: Fri,  4 Dec 2020 00:57:21 +0100
-Message-Id: <20201203235736.3528991-26-christian.brauner@ubuntu.com>
+Subject: [PATCH v4 26/40] notify: handle idmapped mounts
+Date: Fri,  4 Dec 2020 00:57:22 +0100
+Message-Id: <20201203235736.3528991-27-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201203235736.3528991-1-christian.brauner@ubuntu.com>
 References: <20201203235736.3528991-1-christian.brauner@ubuntu.com>
@@ -101,9 +101,10 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Enable the setfl() helper to handle idmapped mounts by passing down the
-mount's user namespace. If the initial user namespace is passed nothing
-changes so non-idmapped mounts will see identical behavior as before.
+Enable notify implementations to handle idmapped mounts by passing down
+the mount's user namespace. If the initial user namespace is passed
+nothing changes so non-idmapped mounts will see identical behavior as
+before.
 
 Cc: Christoph Hellwig <hch@lst.de>
 Cc: David Howells <dhowells@redhat.com>
@@ -120,30 +121,44 @@ unchanged
 /* v4 */
 unchanged
 ---
- fs/fcntl.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/notify/fanotify/fanotify_user.c | 2 +-
+ fs/notify/inotify/inotify_user.c   | 3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/fs/fcntl.c b/fs/fcntl.c
-index df091d435603..ed330fa91438 100644
---- a/fs/fcntl.c
-+++ b/fs/fcntl.c
-@@ -25,6 +25,7 @@
- #include <linux/user_namespace.h>
- #include <linux/memfd.h>
- #include <linux/compat.h>
+diff --git a/fs/notify/fanotify/fanotify_user.c b/fs/notify/fanotify/fanotify_user.c
+index de4d01bb1d8d..e3b2cb6a9d81 100644
+--- a/fs/notify/fanotify/fanotify_user.c
++++ b/fs/notify/fanotify/fanotify_user.c
+@@ -702,7 +702,7 @@ static int fanotify_find_path(int dfd, const char __user *filename,
+ 	}
+ 
+ 	/* you can only watch an inode if you have read permissions on it */
+-	ret = inode_permission(&init_user_ns, path->dentry->d_inode, MAY_READ);
++	ret = inode_permission(mnt_user_ns(path->mnt), path->dentry->d_inode, MAY_READ);
+ 	if (ret) {
+ 		path_put(path);
+ 		goto out;
+diff --git a/fs/notify/inotify/inotify_user.c b/fs/notify/inotify/inotify_user.c
+index e995fd4e4e53..f39f5b81f2b3 100644
+--- a/fs/notify/inotify/inotify_user.c
++++ b/fs/notify/inotify/inotify_user.c
+@@ -31,6 +31,7 @@
+ #include <linux/wait.h>
+ #include <linux/memcontrol.h>
+ #include <linux/security.h>
 +#include <linux/mount.h>
  
- #include <linux/poll.h>
- #include <asm/siginfo.h>
-@@ -46,7 +47,7 @@ static int setfl(int fd, struct file * filp, unsigned long arg)
- 
- 	/* O_NOATIME can only be set by the owner or superuser */
- 	if ((arg & O_NOATIME) && !(filp->f_flags & O_NOATIME))
--		if (!inode_owner_or_capable(&init_user_ns, inode))
-+		if (!inode_owner_or_capable(mnt_user_ns(filp->f_path.mnt), inode))
- 			return -EPERM;
- 
- 	/* required for strict SunOS emulation */
+ #include "inotify.h"
+ #include "../fdinfo.h"
+@@ -343,7 +344,7 @@ static int inotify_find_inode(const char __user *dirname, struct path *path,
+ 	if (error)
+ 		return error;
+ 	/* you can only watch an inode if you have read permissions on it */
+-	error = inode_permission(&init_user_ns, path->dentry->d_inode, MAY_READ);
++	error = inode_permission(mnt_user_ns(path->mnt), path->dentry->d_inode, MAY_READ);
+ 	if (error) {
+ 		path_put(path);
+ 		return error;
 -- 
 2.29.2
 
