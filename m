@@ -1,91 +1,91 @@
-Return-Path: <SRS0=YKjC=FG=lists.linux-foundation.org=containers-bounces@kernel.org>
+Return-Path: <SRS0=uLXG=FI=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E294C64E7B
-	for <containers@archiver.kernel.org>; Wed,  2 Dec 2020 16:12:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BDA35C4361A
+	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:02:27 +0000 (UTC)
 Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 7E01A205CA
-	for <containers@archiver.kernel.org>; Wed,  2 Dec 2020 16:12:39 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7E01A205CA
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
+	by mail.kernel.org (Postfix) with ESMTPS id 1E9512250F
+	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:02:26 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1E9512250F
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id A0A1E87165;
-	Wed,  2 Dec 2020 16:12:38 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 7E41B877AE;
+	Fri,  4 Dec 2020 00:02:26 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id asEzCEIXDLi4; Wed,  2 Dec 2020 16:12:37 +0000 (UTC)
+	with ESMTP id ilBNK0zztByZ; Fri,  4 Dec 2020 00:02:25 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 85F2E8715A;
-	Wed,  2 Dec 2020 16:12:37 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id E10FA87795;
+	Fri,  4 Dec 2020 00:02:25 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 77C5FC163C;
-	Wed,  2 Dec 2020 16:12:37 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id F0A57C0052
+	by lists.linuxfoundation.org (Postfix) with ESMTP id C5085C1834;
+	Fri,  4 Dec 2020 00:02:25 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 6118CC0FA7
  for <containers@lists.linux-foundation.org>;
- Wed,  2 Dec 2020 16:12:35 +0000 (UTC)
+ Fri,  4 Dec 2020 00:02:24 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id DC4062E260
+ by fraxinus.osuosl.org (Postfix) with ESMTP id 47EC1877B7
  for <containers@lists.linux-foundation.org>;
- Wed,  2 Dec 2020 16:12:35 +0000 (UTC)
+ Fri,  4 Dec 2020 00:02:24 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id EU3csIdiQWWe
+ with ESMTP id 7Iuc1Vzsl0om
  for <containers@lists.linux-foundation.org>;
- Wed,  2 Dec 2020 16:12:35 +0000 (UTC)
+ Fri,  4 Dec 2020 00:02:23 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from us-smtp-delivery-124.mimecast.com
- (us-smtp-delivery-124.mimecast.com [63.128.21.124])
- by silver.osuosl.org (Postfix) with ESMTPS id C03A7203C7
+Received: from youngberry.canonical.com (youngberry.canonical.com
+ [91.189.89.112])
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id 3317C877AE
  for <containers@lists.linux-foundation.org>;
- Wed,  2 Dec 2020 16:12:34 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
- s=mimecast20190719; t=1606925553;
- h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
- to:to:cc:cc:mime-version:mime-version:content-type:content-type:
- in-reply-to:in-reply-to:references:references;
- bh=bAQZJi/RrInzz1owaoShDGjHWxcR9Hen4gXOOVnOH+Q=;
- b=fyg2aF0zHBvWcig+kH9LgHml2Yz1wFaS9Tb00dEFtFCb1TlYZf+NXb5ln2xk21+uSYNA6f
- dGhi/8sZv7YCXy/e5WcNR65RhfYYVO6ASFmfJXyj+5LVlgU0UnkVmCoXpYry5mN2pubc3U
- HlRGWITTgy8e7aOeGSss2SyIK/0QsRs=
-Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
- [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-496-svKMnCgTPhmkOFkTAuKO0w-1; Wed, 02 Dec 2020 11:12:31 -0500
-X-MC-Unique: svKMnCgTPhmkOFkTAuKO0w-1
-Received: from smtp.corp.redhat.com (int-mx05.intmail.prod.int.phx2.redhat.com
- [10.5.11.15])
- (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
- (No client certificate requested)
- by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 48622185E48B;
- Wed,  2 Dec 2020 16:12:30 +0000 (UTC)
-Received: from localhost (ovpn-114-104.ams2.redhat.com [10.36.114.104])
- by smtp.corp.redhat.com (Postfix) with ESMTPS id AB5D15D6AC;
- Wed,  2 Dec 2020 16:12:29 +0000 (UTC)
-From: Giuseppe Scrivano <gscrivan@redhat.com>
-To: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH] kernel: automatically split user namespace extent
-References: <20201126100839.381415-1-gscrivan@redhat.com>
- <87ft4pe7km.fsf@x220.int.ebiederm.org>
-Date: Wed, 02 Dec 2020 17:12:27 +0100
-In-Reply-To: <87ft4pe7km.fsf@x220.int.ebiederm.org> (Eric W. Biederman's
- message of "Tue, 01 Dec 2020 11:53:45 -0600")
-Message-ID: <87pn3schlg.fsf@redhat.com>
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.1 (gnu/linux)
+ Fri,  4 Dec 2020 00:02:23 +0000 (UTC)
+Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
+ helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
+ (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
+ (envelope-from <christian.brauner@ubuntu.com>)
+ id 1kkyXE-0007ka-37; Fri, 04 Dec 2020 00:01:16 +0000
+From: Christian Brauner <christian.brauner@ubuntu.com>
+To: Alexander Viro <viro@zeniv.linux.org.uk>,
+ Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
+Subject: [PATCH v4 01/40] namespace: take lock_mount_hash() directly when
+ changing flags
+Date: Fri,  4 Dec 2020 00:56:57 +0100
+Message-Id: <20201203235736.3528991-2-christian.brauner@ubuntu.com>
+X-Mailer: git-send-email 2.29.2
+In-Reply-To: <20201203235736.3528991-1-christian.brauner@ubuntu.com>
+References: <20201203235736.3528991-1-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.15
-Cc: Linux Containers <containers@lists.linux-foundation.org>,
- linux-kernel@vger.kernel.org
+Cc: Andy Lutomirski <luto@kernel.org>, Mimi Zohar <zohar@linux.ibm.com>,
+ James Bottomley <James.Bottomley@hansenpartnership.com>,
+ Andreas Dilger <adilger.kernel@dilger.ca>,
+ containers@lists.linux-foundation.org, Christoph Hellwig <hch@lst.de>,
+ Tycho Andersen <tycho@tycho.ws>, Paul Moore <paul@paul-moore.com>,
+ Jonathan Corbet <corbet@lwn.net>, smbarber@chromium.org,
+ linux-ext4@vger.kernel.org, Mrunal Patel <mpatel@redhat.com>,
+ Kees Cook <keescook@chromium.org>, Arnd Bergmann <arnd@arndb.de>,
+ selinux@vger.kernel.org, Josh Triplett <josh@joshtriplett.org>,
+ Seth Forshee <seth.forshee@canonical.com>, Aleksa Sarai <cyphar@cyphar.com>,
+ Lennart Poettering <lennart@poettering.net>,
+ OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
+ Geoffrey Thomas <geofft@ldpreload.com>, David Howells <dhowells@redhat.com>,
+ John Johansen <john.johansen@canonical.com>, Theodore Tso <tytso@mit.edu>,
+ Dmitry Kasatkin <dmitry.kasatkin@gmail.com>,
+ Stephen Smalley <stephen.smalley.work@gmail.com>,
+ linux-security-module@vger.kernel.org,
+ "Eric W. Biederman" <ebiederm@xmission.com>, linux-api@vger.kernel.org,
+ Casey Schaufler <casey@schaufler-ca.com>, Alban Crequy <alban@kinvolk.io>,
+ linux-integrity@vger.kernel.org, Todd Kjos <tkjos@google.com>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -102,113 +102,116 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Hi Eric,
+Changing mount options always ends up taking lock_mount_hash() but when
+MNT_READONLY is requested and neither the mount nor the superblock are
+MNT_READONLY we end up taking the lock, dropping it, and retaking it to
+change the other mount attributes. Instead, let's acquire the lock once
+when changing the mount attributes. This simplifies the locking in these
+codepath, makes them easier to reason about and avoids having to
+reacquire the lock right after dropping it.
 
-ebiederm@xmission.com (Eric W. Biederman) writes:
+Cc: David Howells <dhowells@redhat.com>
+Cc: Al Viro <viro@zeniv.linux.org.uk>
+Cc: linux-fsdevel@vger.kernel.org
+Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+---
+/* v2 */
+- Christoph Hellwig <hch@lst.de>:
+  - Remove pointless __mnt_unmake_readonly() helper.
+  - Even though Christoph suggested to lockdep_assert_held() into places that
+    require {lock,unlock}_mount_hash() it seems that seqlock's don't support
+    it.
 
-> Nit: The tag should have been "userns:" rather than kernel.
->
-> Giuseppe Scrivano <gscrivan@redhat.com> writes:
->
->> writing to the id map fails when an extent overlaps multiple mappings
->> in the parent user namespace, e.g.:
->>
->> $ cat /proc/self/uid_map
->>          0       1000          1
->>          1     100000      65536
->> $ unshare -U sleep 100 &
->> [1] 1029703
->> $ printf "0 0 100\n" | tee /proc/$!/uid_map
->> 0 0 100
->> tee: /proc/1029703/uid_map: Operation not permitted
->>
->> To prevent it from happening, automatically split an extent so that
->> each portion fits in one extent in the parent user namespace.
->
-> I don't see anything fundamentally wrong with relaxing this
-> restriction, but more code does have more room for bugs to hide.
->
-> What is the advantage of relaxing this restriction?
+/* v3 */
+unchanged
 
-we are running rootless containers in a namespace created with
-newuidmap/newgidmap where the mappings look like:
+/* v4 */
+unchanged
+---
+ fs/namespace.c | 22 ++++++++--------------
+ 1 file changed, 8 insertions(+), 14 deletions(-)
 
-$ cat /proc/self/uid_map
-0       1000          1
-1     110000      65536
-
-users are allowed to create child user namespaces and specify the
-mappings to use.  Doing so, they often hit the issue that the mappings
-cannot overlap multiple extents in the parent user namespace.
-
-The issue could be completely addressed in user space, but to me it
-looks like an implementation detail that user space should not know
-about.
-In addition, it would also be slower (additional read of the current
-uid_map and gid_map files) and must be implemented separately in each
-container runtime.
-
->> $ cat /proc/self/uid_map
->>          0       1000          1
->>          1     110000      65536
->> $ unshare -U sleep 100 &
->> [1] 1552
->> $ printf "0 0 100\n" | tee /proc/$!/uid_map
->> 0 0 100
->> $ cat /proc/$!/uid_map
->>          0          0          1
->>          1          1         99
->>
->> Signed-off-by: Giuseppe Scrivano <gscrivan@redhat.com>
->> ---
->>  kernel/user_namespace.c | 62 ++++++++++++++++++++++++++++++++++-------
->>  1 file changed, 52 insertions(+), 10 deletions(-)
->>
->> diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
->> index 87804e0371fe..b5542be2bd0a 100644
->> --- a/kernel/user_namespace.c
->> +++ b/kernel/user_namespace.c
->> @@ -706,6 +706,41 @@ const struct seq_operations proc_projid_seq_operations = {
->>  	.show = projid_m_show,
->>  };
->>  
->> +static void split_overlapping_mappings(struct uid_gid_map *parent_map,
->> +				       struct uid_gid_extent *extent,
->> +				       struct uid_gid_extent *overflow_extent)
->> +{
->> +	unsigned int idx;
->> +
->> +	overflow_extent->first = (u32) -1;
->> +
->> +	/* Split extent if it not fully contained in an extent from parent_map.  */
->> +	for (idx = 0; idx < parent_map->nr_extents; idx++) {
->
-> Ouch!
->
-> For the larger tree we perform binary searches typically and
-> here you are walking every entry unconditionally.
->
-> It looks like this makes the write O(N^2) from O(NlogN)
-> which for a user facing function is not desirable.
->
-> I think something like insert_and_split_extent may be ok.
-> Incorporating your loop and the part that inserts an element.
->
-> As written this almost doubles the complexity of the code,
-> as well as making it perform much worse.  Which is a problem.
-
-I've attempted to implement the new functionality at input validation
-time to not touch the existing security checks.
-
-I've thought the pattern for iterating the extents was fine as I've
-taken it from mappings_overlap (even if it is used differently on an
-unsorted array).
-
-Thanks for the hint, I'll move the new logic when map_id_range_down() is
-used and I'll send a v2.
-
-Thanks,
-Giuseppe
+diff --git a/fs/namespace.c b/fs/namespace.c
+index cebaa3e81794..f183161833ad 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -463,7 +463,6 @@ static int mnt_make_readonly(struct mount *mnt)
+ {
+ 	int ret = 0;
+ 
+-	lock_mount_hash();
+ 	mnt->mnt.mnt_flags |= MNT_WRITE_HOLD;
+ 	/*
+ 	 * After storing MNT_WRITE_HOLD, we'll read the counters. This store
+@@ -497,18 +496,9 @@ static int mnt_make_readonly(struct mount *mnt)
+ 	 */
+ 	smp_wmb();
+ 	mnt->mnt.mnt_flags &= ~MNT_WRITE_HOLD;
+-	unlock_mount_hash();
+ 	return ret;
+ }
+ 
+-static int __mnt_unmake_readonly(struct mount *mnt)
+-{
+-	lock_mount_hash();
+-	mnt->mnt.mnt_flags &= ~MNT_READONLY;
+-	unlock_mount_hash();
+-	return 0;
+-}
+-
+ int sb_prepare_remount_readonly(struct super_block *sb)
+ {
+ 	struct mount *mnt;
+@@ -2508,7 +2498,8 @@ static int change_mount_ro_state(struct mount *mnt, unsigned int mnt_flags)
+ 	if (readonly_request)
+ 		return mnt_make_readonly(mnt);
+ 
+-	return __mnt_unmake_readonly(mnt);
++	mnt->mnt.mnt_flags &= ~MNT_READONLY;
++	return 0;
+ }
+ 
+ /*
+@@ -2517,11 +2508,9 @@ static int change_mount_ro_state(struct mount *mnt, unsigned int mnt_flags)
+  */
+ static void set_mount_attributes(struct mount *mnt, unsigned int mnt_flags)
+ {
+-	lock_mount_hash();
+ 	mnt_flags |= mnt->mnt.mnt_flags & ~MNT_USER_SETTABLE_MASK;
+ 	mnt->mnt.mnt_flags = mnt_flags;
+ 	touch_mnt_namespace(mnt->mnt_ns);
+-	unlock_mount_hash();
+ }
+ 
+ static void mnt_warn_timestamp_expiry(struct path *mountpoint, struct vfsmount *mnt)
+@@ -2567,9 +2556,11 @@ static int do_reconfigure_mnt(struct path *path, unsigned int mnt_flags)
+ 		return -EPERM;
+ 
+ 	down_write(&sb->s_umount);
++	lock_mount_hash();
+ 	ret = change_mount_ro_state(mnt, mnt_flags);
+ 	if (ret == 0)
+ 		set_mount_attributes(mnt, mnt_flags);
++	unlock_mount_hash();
+ 	up_write(&sb->s_umount);
+ 
+ 	mnt_warn_timestamp_expiry(path, &mnt->mnt);
+@@ -2610,8 +2601,11 @@ static int do_remount(struct path *path, int ms_flags, int sb_flags,
+ 		err = -EPERM;
+ 		if (ns_capable(sb->s_user_ns, CAP_SYS_ADMIN)) {
+ 			err = reconfigure_super(fc);
+-			if (!err)
++			if (!err) {
++				lock_mount_hash();
+ 				set_mount_attributes(mnt, mnt_flags);
++				unlock_mount_hash();
++			}
+ 		}
+ 		up_write(&sb->s_umount);
+ 	}
+-- 
+2.29.2
 
 _______________________________________________
 Containers mailing list
