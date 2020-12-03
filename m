@@ -3,78 +3,75 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F028C4167B
-	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:02:48 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 27C42C193FE
+	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:02:49 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id B9C6022224
-	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:02:47 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B9C6022224
+	by mail.kernel.org (Postfix) with ESMTPS id D1CEE22224
+	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:02:48 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D1CEE22224
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 4BFA38784E;
-	Fri,  4 Dec 2020 00:02:47 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id B863587F61;
+	Fri,  4 Dec 2020 00:02:48 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from whitealder.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id aNmapCqDPuH7; Fri,  4 Dec 2020 00:02:37 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by whitealder.osuosl.org (Postfix) with ESMTP id 2FDCC87F6E;
+	Fri,  4 Dec 2020 00:02:35 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 1E2E6C1DA2;
+	Fri,  4 Dec 2020 00:02:35 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 7AA9DC0FA7
+ for <containers@lists.linux-foundation.org>;
+ Fri,  4 Dec 2020 00:02:33 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by fraxinus.osuosl.org (Postfix) with ESMTP id 699E387845
+ for <containers@lists.linux-foundation.org>;
+ Fri,  4 Dec 2020 00:02:33 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 8fi9KQpws6UN; Fri,  4 Dec 2020 00:02:41 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 4E0FE8780C;
-	Fri,  4 Dec 2020 00:02:41 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 488E7C163C;
-	Fri,  4 Dec 2020 00:02:41 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 75ABFC0FA7
- for <containers@lists.linux-foundation.org>;
- Fri,  4 Dec 2020 00:02:39 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 63DA987C2F
- for <containers@lists.linux-foundation.org>;
- Fri,  4 Dec 2020 00:02:39 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id xHqC2m+zZApa
+ with ESMTP id M1JBqC-sMjAD
  for <containers@lists.linux-foundation.org>;
- Fri,  4 Dec 2020 00:02:35 +0000 (UTC)
+ Fri,  4 Dec 2020 00:02:31 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by hemlock.osuosl.org (Postfix) with ESMTPS id 1601787C2A
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id 13264877C4
  for <containers@lists.linux-foundation.org>;
- Fri,  4 Dec 2020 00:02:35 +0000 (UTC)
+ Fri,  4 Dec 2020 00:02:30 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kkyXY-0007ka-9A; Fri, 04 Dec 2020 00:01:36 +0000
+ id 1kkyXC-0007ka-01; Fri, 04 Dec 2020 00:01:14 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v4 12/40] inode: make init and permission helpers idmapped
- mount aware
-Date: Fri,  4 Dec 2020 00:57:08 +0100
-Message-Id: <20201203235736.3528991-13-christian.brauner@ubuntu.com>
+Subject: [PATCH v4 00/40] idmapped mounts
+Date: Fri,  4 Dec 2020 00:56:56 +0100
+Message-Id: <20201203235736.3528991-1-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.2
-In-Reply-To: <20201203235736.3528991-1-christian.brauner@ubuntu.com>
-References: <20201203235736.3528991-1-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
 Cc: Andy Lutomirski <luto@kernel.org>, Mimi Zohar <zohar@linux.ibm.com>,
  James Bottomley <James.Bottomley@hansenpartnership.com>,
  Andreas Dilger <adilger.kernel@dilger.ca>,
- containers@lists.linux-foundation.org, Christoph Hellwig <hch@lst.de>,
- Tycho Andersen <tycho@tycho.ws>, Paul Moore <paul@paul-moore.com>,
- Jonathan Corbet <corbet@lwn.net>, smbarber@chromium.org,
- linux-ext4@vger.kernel.org, Mrunal Patel <mpatel@redhat.com>,
- Kees Cook <keescook@chromium.org>, Arnd Bergmann <arnd@arndb.de>,
- selinux@vger.kernel.org, Josh Triplett <josh@joshtriplett.org>,
+ containers@lists.linux-foundation.org, Tycho Andersen <tycho@tycho.ws>,
+ Paul Moore <paul@paul-moore.com>, Jonathan Corbet <corbet@lwn.net>,
+ smbarber@chromium.org, linux-ext4@vger.kernel.org,
+ Mrunal Patel <mpatel@redhat.com>, Kees Cook <keescook@chromium.org>,
+ Arnd Bergmann <arnd@arndb.de>, selinux@vger.kernel.org,
+ Josh Triplett <josh@joshtriplett.org>,
  Seth Forshee <seth.forshee@canonical.com>, Aleksa Sarai <cyphar@cyphar.com>,
  Lennart Poettering <lennart@poettering.net>,
  OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
@@ -97,1125 +94,708 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-The inode_owner_or_capable() helper determines whether the caller is the
-owner of the inode or is capable with respect to that inode. Allow it to
-handle idmapped mounts. If the inode is accessed through an idmapped
-mount we first need to map it according to the mount's user namespace.
-Afterwards the checks are identical to non-idmapped mounts. If the
-initial user namespace is passed nothing changes so non-idmapped mounts
-will see identical behavior as before.
-
-Similarly, we allow the inode_init_owner() helper to handle idmapped
-mounts. It initializes a new inode on idmapped mounts by mapping the
-fsuid and fsgid of the caller from the mount's user namespace. If the
-initial user namespace is passed nothing changes so non-idmapped mounts
-will see identical behavior as before.
-
-Cc: Christoph Hellwig <hch@lst.de>
-Cc: David Howells <dhowells@redhat.com>
-Cc: Al Viro <viro@zeniv.linux.org.uk>
-Cc: linux-fsdevel@vger.kernel.org
-Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
----
-/* v2 */
-- Christoph Hellwig <hch@lst.de>:
-  - Don't pollute the vfs with additional helpers simply extend the existing
-    helpers with an additional argument and switch all callers.
-
-/* v3 */
-unchanged
-
-/* v4 */
-- Christoph Hellwig <hch@lst.de>:
-  - Change commit message to reflect the fact that no new permission helpers are
-    introduced but only the existing ones changed.
-
-- Serge Hallyn <serge@hallyn.com>:
-  - Use "mnt_userns" to refer to a vfsmount's userns everywhere to make
-    terminology consistent.
-  - Note that inode_owner_or_capable() contains a comparison of the
-    caller's fsuid to the inode's i_uid to determine whether the caller
-    is the owner of the inode. Serge asked whether it is possible that
-    the caller's fsuid is INVALID_UID. If so and i_uid_into_mnt() makes
-    the inode's i_uid INVALID_UID too then the caller could potentially
-    gain privilege over an inode it doesn't own. But this is not
-    feasible since the callers fsuid should never be INVALID_UID unless
-    we have a severe bug how we manage set*id() calls or cred
-    management. Also, if it is possible that the caller's fsuid were to
-    be INVALID_UID we might already have an issue in case a filesystem
-    was mounted with an s_user_ns that doesn't contain a mapping for a
-    inode that was created when the filesystem was mounted with a
-    different user namespace.
----
- fs/9p/acl.c                  |  2 +-
- fs/9p/vfs_inode.c            |  2 +-
- fs/attr.c                    |  6 +++---
- fs/bfs/dir.c                 |  2 +-
- fs/btrfs/inode.c             |  2 +-
- fs/btrfs/ioctl.c             | 10 +++++-----
- fs/btrfs/tests/btrfs-tests.c |  2 +-
- fs/crypto/policy.c           |  2 +-
- fs/efivarfs/file.c           |  2 +-
- fs/ext2/ialloc.c             |  2 +-
- fs/ext2/ioctl.c              |  6 +++---
- fs/ext4/ialloc.c             |  2 +-
- fs/ext4/ioctl.c              | 14 +++++++-------
- fs/f2fs/file.c               | 14 +++++++-------
- fs/f2fs/namei.c              |  2 +-
- fs/f2fs/xattr.c              |  2 +-
- fs/fcntl.c                   |  2 +-
- fs/gfs2/file.c               |  2 +-
- fs/hfsplus/inode.c           |  2 +-
- fs/hfsplus/ioctl.c           |  2 +-
- fs/hugetlbfs/inode.c         |  2 +-
- fs/inode.c                   | 35 ++++++++++++++++++++++++++---------
- fs/jfs/ioctl.c               |  2 +-
- fs/jfs/jfs_inode.c           |  2 +-
- fs/minix/bitmap.c            |  2 +-
- fs/namei.c                   |  4 ++--
- fs/nilfs2/inode.c            |  2 +-
- fs/nilfs2/ioctl.c            |  2 +-
- fs/ocfs2/dlmfs/dlmfs.c       |  4 ++--
- fs/ocfs2/ioctl.c             |  2 +-
- fs/ocfs2/namei.c             |  2 +-
- fs/omfs/inode.c              |  2 +-
- fs/overlayfs/dir.c           |  2 +-
- fs/overlayfs/file.c          |  4 ++--
- fs/overlayfs/super.c         |  2 +-
- fs/overlayfs/util.c          |  2 +-
- fs/posix_acl.c               |  2 +-
- fs/ramfs/inode.c             |  2 +-
- fs/reiserfs/ioctl.c          |  4 ++--
- fs/reiserfs/namei.c          |  2 +-
- fs/sysv/ialloc.c             |  2 +-
- fs/ubifs/dir.c               |  2 +-
- fs/ubifs/ioctl.c             |  2 +-
- fs/udf/ialloc.c              |  2 +-
- fs/ufs/ialloc.c              |  2 +-
- fs/xattr.c                   |  2 +-
- fs/xfs/xfs_ioctl.c           |  2 +-
- fs/zonefs/super.c            |  2 +-
- include/linux/fs.h           |  9 +++++----
- kernel/bpf/inode.c           |  2 +-
- mm/madvise.c                 |  2 +-
- mm/mincore.c                 |  2 +-
- mm/shmem.c                   |  2 +-
- security/selinux/hooks.c     |  4 ++--
- 54 files changed, 108 insertions(+), 90 deletions(-)
-
-diff --git a/fs/9p/acl.c b/fs/9p/acl.c
-index 6261719f6f2a..d77b28e8d57a 100644
---- a/fs/9p/acl.c
-+++ b/fs/9p/acl.c
-@@ -258,7 +258,7 @@ static int v9fs_xattr_set_acl(const struct xattr_handler *handler,
- 
- 	if (S_ISLNK(inode->i_mode))
- 		return -EOPNOTSUPP;
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		return -EPERM;
- 	if (value) {
- 		/* update the cached acl value */
-diff --git a/fs/9p/vfs_inode.c b/fs/9p/vfs_inode.c
-index ae0c38ad1fcb..a3eb4f345f2c 100644
---- a/fs/9p/vfs_inode.c
-+++ b/fs/9p/vfs_inode.c
-@@ -251,7 +251,7 @@ int v9fs_init_inode(struct v9fs_session_info *v9ses,
- {
- 	int err = 0;
- 
--	inode_init_owner(inode, NULL, mode);
-+	inode_init_owner(&init_user_ns,inode,  NULL, mode);
- 	inode->i_blocks = 0;
- 	inode->i_rdev = rdev;
- 	inode->i_atime = inode->i_mtime = inode->i_ctime = current_time(inode);
-diff --git a/fs/attr.c b/fs/attr.c
-index c9e29e589cec..00ae0b000146 100644
---- a/fs/attr.c
-+++ b/fs/attr.c
-@@ -87,7 +87,7 @@ int setattr_prepare(struct dentry *dentry, struct iattr *attr)
- 
- 	/* Make sure a caller can chmod. */
- 	if (ia_valid & ATTR_MODE) {
--		if (!inode_owner_or_capable(inode))
-+		if (!inode_owner_or_capable(&init_user_ns, inode))
- 			return -EPERM;
- 		/* Also check the setgid bit! */
- 		if (!in_group_p((ia_valid & ATTR_GID) ? attr->ia_gid :
-@@ -98,7 +98,7 @@ int setattr_prepare(struct dentry *dentry, struct iattr *attr)
- 
- 	/* Check for setting the inode time. */
- 	if (ia_valid & (ATTR_MTIME_SET | ATTR_ATIME_SET | ATTR_TIMES_SET)) {
--		if (!inode_owner_or_capable(inode))
-+		if (!inode_owner_or_capable(&init_user_ns, inode))
- 			return -EPERM;
- 	}
- 
-@@ -243,7 +243,7 @@ int notify_change(struct dentry * dentry, struct iattr * attr, struct inode **de
- 		if (IS_IMMUTABLE(inode))
- 			return -EPERM;
- 
--		if (!inode_owner_or_capable(inode)) {
-+		if (!inode_owner_or_capable(&init_user_ns, inode)) {
- 			error = inode_permission(&init_user_ns, inode,
- 						 MAY_WRITE);
- 			if (error)
-diff --git a/fs/bfs/dir.c b/fs/bfs/dir.c
-index d8dfe3a0cb39..be1335a8d25b 100644
---- a/fs/bfs/dir.c
-+++ b/fs/bfs/dir.c
-@@ -96,7 +96,7 @@ static int bfs_create(struct inode *dir, struct dentry *dentry, umode_t mode,
- 	}
- 	set_bit(ino, info->si_imap);
- 	info->si_freei--;
--	inode_init_owner(inode, dir, mode);
-+	inode_init_owner(&init_user_ns, inode, dir, mode);
- 	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
- 	inode->i_blocks = 0;
- 	inode->i_op = &bfs_file_inops;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index ea4a70850f5e..4a67533c72fb 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6073,7 +6073,7 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 	if (ret != 0)
- 		goto fail_unlock;
- 
--	inode_init_owner(inode, dir, mode);
-+	inode_init_owner(&init_user_ns, inode, dir, mode);
- 	inode_set_bytes(inode, 0);
- 
- 	inode->i_mtime = current_time(inode);
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 74500c15bdc1..f5d3ebca4c5f 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -205,7 +205,7 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 	const char *comp = NULL;
- 	u32 binode_flags;
- 
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		return -EPERM;
- 
- 	if (btrfs_root_readonly(root))
-@@ -417,7 +417,7 @@ static int btrfs_ioctl_fssetxattr(struct file *file, void __user *arg)
- 	unsigned old_i_flags;
- 	int ret = 0;
- 
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		return -EPERM;
- 
- 	if (btrfs_root_readonly(root))
-@@ -1811,7 +1811,7 @@ static noinline int __btrfs_ioctl_snap_create(struct file *file,
- 			btrfs_info(BTRFS_I(file_inode(file))->root->fs_info,
- 				   "Snapshot src from another FS");
- 			ret = -EXDEV;
--		} else if (!inode_owner_or_capable(src_inode)) {
-+		} else if (!inode_owner_or_capable(&init_user_ns, src_inode)) {
- 			/*
- 			 * Subvolume creation is not restricted, but snapshots
- 			 * are limited to own subvolumes only
-@@ -1931,7 +1931,7 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
- 	u64 flags;
- 	int ret = 0;
- 
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		return -EPERM;
- 
- 	ret = mnt_want_write_file(file);
-@@ -4401,7 +4401,7 @@ static long _btrfs_ioctl_set_received_subvol(struct file *file,
- 	int ret = 0;
- 	int received_uuid_changed;
- 
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		return -EPERM;
- 
- 	ret = mnt_want_write_file(file);
-diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
-index 999c14e5d0bd..a4ac32f15c33 100644
---- a/fs/btrfs/tests/btrfs-tests.c
-+++ b/fs/btrfs/tests/btrfs-tests.c
-@@ -56,7 +56,7 @@ struct inode *btrfs_new_test_inode(void)
- 
- 	inode = new_inode(test_mnt->mnt_sb);
- 	if (inode)
--		inode_init_owner(inode, NULL, S_IFREG);
-+		inode_init_owner(&init_user_ns, inode, NULL, S_IFREG);
- 
- 	return inode;
- }
-diff --git a/fs/crypto/policy.c b/fs/crypto/policy.c
-index 4441d9944b9e..6ddd9f0d8b36 100644
---- a/fs/crypto/policy.c
-+++ b/fs/crypto/policy.c
-@@ -462,7 +462,7 @@ int fscrypt_ioctl_set_policy(struct file *filp, const void __user *arg)
- 		return -EFAULT;
- 	policy.version = version;
- 
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		return -EACCES;
- 
- 	ret = mnt_want_write_file(filp);
-diff --git a/fs/efivarfs/file.c b/fs/efivarfs/file.c
-index feaa5e182b7b..e6bc0302643b 100644
---- a/fs/efivarfs/file.c
-+++ b/fs/efivarfs/file.c
-@@ -137,7 +137,7 @@ efivarfs_ioc_setxflags(struct file *file, void __user *arg)
- 	unsigned int oldflags = efivarfs_getflags(inode);
- 	int error;
- 
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		return -EACCES;
- 
- 	if (copy_from_user(&flags, arg, sizeof(flags)))
-diff --git a/fs/ext2/ialloc.c b/fs/ext2/ialloc.c
-index 432c3febea6d..df14e750e9fe 100644
---- a/fs/ext2/ialloc.c
-+++ b/fs/ext2/ialloc.c
-@@ -551,7 +551,7 @@ struct inode *ext2_new_inode(struct inode *dir, umode_t mode,
- 		inode->i_uid = current_fsuid();
- 		inode->i_gid = dir->i_gid;
- 	} else
--		inode_init_owner(inode, dir, mode);
-+		inode_init_owner(&init_user_ns, inode, dir, mode);
- 
- 	inode->i_ino = ino;
- 	inode->i_blocks = 0;
-diff --git a/fs/ext2/ioctl.c b/fs/ext2/ioctl.c
-index 32a8d10b579d..b399cbb7022d 100644
---- a/fs/ext2/ioctl.c
-+++ b/fs/ext2/ioctl.c
-@@ -39,7 +39,7 @@ long ext2_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 		if (ret)
- 			return ret;
- 
--		if (!inode_owner_or_capable(inode)) {
-+		if (!inode_owner_or_capable(&init_user_ns, inode)) {
- 			ret = -EACCES;
- 			goto setflags_out;
- 		}
-@@ -84,7 +84,7 @@ long ext2_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 	case EXT2_IOC_SETVERSION: {
- 		__u32 generation;
- 
--		if (!inode_owner_or_capable(inode))
-+		if (!inode_owner_or_capable(&init_user_ns, inode))
- 			return -EPERM;
- 		ret = mnt_want_write_file(filp);
- 		if (ret)
-@@ -117,7 +117,7 @@ long ext2_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 		if (!test_opt(inode->i_sb, RESERVATION) ||!S_ISREG(inode->i_mode))
- 			return -ENOTTY;
- 
--		if (!inode_owner_or_capable(inode))
-+		if (!inode_owner_or_capable(&init_user_ns, inode))
- 			return -EACCES;
- 
- 		if (get_user(rsv_window_size, (int __user *)arg))
-diff --git a/fs/ext4/ialloc.c b/fs/ext4/ialloc.c
-index b215c564bc31..00c1ec6eee16 100644
---- a/fs/ext4/ialloc.c
-+++ b/fs/ext4/ialloc.c
-@@ -972,7 +972,7 @@ struct inode *__ext4_new_inode(handle_t *handle, struct inode *dir,
- 		inode->i_uid = current_fsuid();
- 		inode->i_gid = dir->i_gid;
- 	} else
--		inode_init_owner(inode, dir, mode);
-+		inode_init_owner(&init_user_ns, inode, dir, mode);
- 
- 	if (ext4_has_feature_project(sb) &&
- 	    ext4_test_inode_flag(dir, EXT4_INODE_PROJINHERIT))
-diff --git a/fs/ext4/ioctl.c b/fs/ext4/ioctl.c
-index f0381876a7e5..e35aba820254 100644
---- a/fs/ext4/ioctl.c
-+++ b/fs/ext4/ioctl.c
-@@ -139,7 +139,7 @@ static long swap_inode_boot_loader(struct super_block *sb,
- 	}
- 
- 	if (IS_RDONLY(inode) || IS_APPEND(inode) || IS_IMMUTABLE(inode) ||
--	    !inode_owner_or_capable(inode) || !capable(CAP_SYS_ADMIN)) {
-+	    !inode_owner_or_capable(&init_user_ns, inode) || !capable(CAP_SYS_ADMIN)) {
- 		err = -EPERM;
- 		goto journal_err_out;
- 	}
-@@ -829,7 +829,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 	case FS_IOC_SETFLAGS: {
- 		int err;
- 
--		if (!inode_owner_or_capable(inode))
-+		if (!inode_owner_or_capable(&init_user_ns, inode))
- 			return -EACCES;
- 
- 		if (get_user(flags, (int __user *) arg))
-@@ -871,7 +871,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 		__u32 generation;
- 		int err;
- 
--		if (!inode_owner_or_capable(inode))
-+		if (!inode_owner_or_capable(&init_user_ns, inode))
- 			return -EPERM;
- 
- 		if (ext4_has_metadata_csum(inode->i_sb)) {
-@@ -1010,7 +1010,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 	case EXT4_IOC_MIGRATE:
- 	{
- 		int err;
--		if (!inode_owner_or_capable(inode))
-+		if (!inode_owner_or_capable(&init_user_ns, inode))
- 			return -EACCES;
- 
- 		err = mnt_want_write_file(filp);
-@@ -1032,7 +1032,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 	case EXT4_IOC_ALLOC_DA_BLKS:
- 	{
- 		int err;
--		if (!inode_owner_or_capable(inode))
-+		if (!inode_owner_or_capable(&init_user_ns, inode))
- 			return -EACCES;
- 
- 		err = mnt_want_write_file(filp);
-@@ -1214,7 +1214,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 
- 	case EXT4_IOC_CLEAR_ES_CACHE:
- 	{
--		if (!inode_owner_or_capable(inode))
-+		if (!inode_owner_or_capable(&init_user_ns, inode))
- 			return -EACCES;
- 		ext4_clear_inode_es(inode);
- 		return 0;
-@@ -1260,7 +1260,7 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 			return -EFAULT;
- 
- 		/* Make sure caller has proper permission */
--		if (!inode_owner_or_capable(inode))
-+		if (!inode_owner_or_capable(&init_user_ns, inode))
- 			return -EACCES;
- 
- 		if (fa.fsx_xflags & ~EXT4_SUPPORTED_FS_XFLAGS)
-diff --git a/fs/f2fs/file.c b/fs/f2fs/file.c
-index ee861c6d9ff0..333442e96cc4 100644
---- a/fs/f2fs/file.c
-+++ b/fs/f2fs/file.c
-@@ -1955,7 +1955,7 @@ static int f2fs_ioc_setflags(struct file *filp, unsigned long arg)
- 	u32 iflags;
- 	int ret;
- 
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		return -EACCES;
- 
- 	if (get_user(fsflags, (int __user *)arg))
-@@ -2002,7 +2002,7 @@ static int f2fs_ioc_start_atomic_write(struct file *filp)
- 	struct f2fs_sb_info *sbi = F2FS_I_SB(inode);
- 	int ret;
- 
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		return -EACCES;
- 
- 	if (!S_ISREG(inode->i_mode))
-@@ -2069,7 +2069,7 @@ static int f2fs_ioc_commit_atomic_write(struct file *filp)
- 	struct inode *inode = file_inode(filp);
- 	int ret;
- 
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		return -EACCES;
- 
- 	ret = mnt_want_write_file(filp);
-@@ -2111,7 +2111,7 @@ static int f2fs_ioc_start_volatile_write(struct file *filp)
- 	struct inode *inode = file_inode(filp);
- 	int ret;
- 
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		return -EACCES;
- 
- 	if (!S_ISREG(inode->i_mode))
-@@ -2146,7 +2146,7 @@ static int f2fs_ioc_release_volatile_write(struct file *filp)
- 	struct inode *inode = file_inode(filp);
- 	int ret;
- 
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		return -EACCES;
- 
- 	ret = mnt_want_write_file(filp);
-@@ -2175,7 +2175,7 @@ static int f2fs_ioc_abort_volatile_write(struct file *filp)
- 	struct inode *inode = file_inode(filp);
- 	int ret;
- 
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		return -EACCES;
- 
- 	ret = mnt_want_write_file(filp);
-@@ -3153,7 +3153,7 @@ static int f2fs_ioc_fssetxattr(struct file *filp, unsigned long arg)
- 		return -EFAULT;
- 
- 	/* Make sure caller has proper permission */
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		return -EACCES;
- 
- 	if (fa.fsx_xflags & ~F2FS_SUPPORTED_XFLAGS)
-diff --git a/fs/f2fs/namei.c b/fs/f2fs/namei.c
-index 8fa37d1434de..8a69cf3e3b15 100644
---- a/fs/f2fs/namei.c
-+++ b/fs/f2fs/namei.c
-@@ -46,7 +46,7 @@ static struct inode *f2fs_new_inode(struct inode *dir, umode_t mode)
- 
- 	nid_free = true;
- 
--	inode_init_owner(inode, dir, mode);
-+	inode_init_owner(&init_user_ns, inode, dir, mode);
- 
- 	inode->i_ino = ino;
- 	inode->i_blocks = 0;
-diff --git a/fs/f2fs/xattr.c b/fs/f2fs/xattr.c
-index 65afcc3cc68a..d772bf13a814 100644
---- a/fs/f2fs/xattr.c
-+++ b/fs/f2fs/xattr.c
-@@ -114,7 +114,7 @@ static int f2fs_xattr_advise_set(const struct xattr_handler *handler,
- 	unsigned char old_advise = F2FS_I(inode)->i_advise;
- 	unsigned char new_advise;
- 
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		return -EPERM;
- 	if (value == NULL)
- 		return -EINVAL;
-diff --git a/fs/fcntl.c b/fs/fcntl.c
-index 19ac5baad50f..df091d435603 100644
---- a/fs/fcntl.c
-+++ b/fs/fcntl.c
-@@ -46,7 +46,7 @@ static int setfl(int fd, struct file * filp, unsigned long arg)
- 
- 	/* O_NOATIME can only be set by the owner or superuser */
- 	if ((arg & O_NOATIME) && !(filp->f_flags & O_NOATIME))
--		if (!inode_owner_or_capable(inode))
-+		if (!inode_owner_or_capable(&init_user_ns, inode))
- 			return -EPERM;
- 
- 	/* required for strict SunOS emulation */
-diff --git a/fs/gfs2/file.c b/fs/gfs2/file.c
-index b39b339feddc..1d994bdfffaa 100644
---- a/fs/gfs2/file.c
-+++ b/fs/gfs2/file.c
-@@ -238,7 +238,7 @@ static int do_gfs2_set_flags(struct file *filp, u32 reqflags, u32 mask,
- 		goto out;
- 
- 	error = -EACCES;
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		goto out;
- 
- 	error = 0;
-diff --git a/fs/hfsplus/inode.c b/fs/hfsplus/inode.c
-index e3da9e96b835..21357046b039 100644
---- a/fs/hfsplus/inode.c
-+++ b/fs/hfsplus/inode.c
-@@ -376,7 +376,7 @@ struct inode *hfsplus_new_inode(struct super_block *sb, struct inode *dir,
- 		return NULL;
- 
- 	inode->i_ino = sbi->next_cnid++;
--	inode_init_owner(inode, dir, mode);
-+	inode_init_owner(&init_user_ns, inode, dir, mode);
- 	set_nlink(inode, 1);
- 	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
- 
-diff --git a/fs/hfsplus/ioctl.c b/fs/hfsplus/ioctl.c
-index ce15b9496b77..3edb1926d127 100644
---- a/fs/hfsplus/ioctl.c
-+++ b/fs/hfsplus/ioctl.c
-@@ -91,7 +91,7 @@ static int hfsplus_ioctl_setflags(struct file *file, int __user *user_flags)
- 	if (err)
- 		goto out;
- 
--	if (!inode_owner_or_capable(inode)) {
-+	if (!inode_owner_or_capable(&init_user_ns, inode)) {
- 		err = -EACCES;
- 		goto out_drop_write;
- 	}
-diff --git a/fs/hugetlbfs/inode.c b/fs/hugetlbfs/inode.c
-index b5c109703daa..6737929e443c 100644
---- a/fs/hugetlbfs/inode.c
-+++ b/fs/hugetlbfs/inode.c
-@@ -836,7 +836,7 @@ static struct inode *hugetlbfs_get_inode(struct super_block *sb,
- 		struct hugetlbfs_inode_info *info = HUGETLBFS_I(inode);
- 
- 		inode->i_ino = get_next_ino();
--		inode_init_owner(inode, dir, mode);
-+		inode_init_owner(&init_user_ns, inode, dir, mode);
- 		lockdep_set_class(&inode->i_mapping->i_mmap_rwsem,
- 				&hugetlbfs_i_mmap_rwsem_key);
- 		inode->i_mapping->a_ops = &hugetlbfs_aops;
-diff --git a/fs/inode.c b/fs/inode.c
-index 7a15372d9c2d..b402e45b3ada 100644
---- a/fs/inode.c
-+++ b/fs/inode.c
-@@ -2131,14 +2131,21 @@ EXPORT_SYMBOL(init_special_inode);
- 
- /**
-  * inode_init_owner - Init uid,gid,mode for new inode according to posix standards
-+ * @mnt_userns:	User namespace of the mount the inode was created from
-  * @inode: New inode
-  * @dir: Directory inode
-  * @mode: mode of the new inode
-+ *
-+ * If the inode has been created through an idmapped mount the user namespace of
-+ * the vfsmount must be passed through @mnt_userns. This function will then take
-+ * care to map the inode according to @mnt_userns before checking permissions
-+ * and initializing i_uid and i_gid. On non-idmapped mounts or if permission
-+ * checking is to be performed on the raw inode simply passs init_user_ns.
-  */
--void inode_init_owner(struct inode *inode, const struct inode *dir,
--			umode_t mode)
-+void inode_init_owner(struct user_namespace *mnt_userns, struct inode *inode,
-+		      const struct inode *dir, umode_t mode)
- {
--	inode->i_uid = current_fsuid();
-+	inode->i_uid = fsuid_into_mnt(mnt_userns);
- 	if (dir && dir->i_mode & S_ISGID) {
- 		inode->i_gid = dir->i_gid;
- 
-@@ -2146,31 +2153,41 @@ void inode_init_owner(struct inode *inode, const struct inode *dir,
- 		if (S_ISDIR(mode))
- 			mode |= S_ISGID;
- 		else if ((mode & (S_ISGID | S_IXGRP)) == (S_ISGID | S_IXGRP) &&
--			 !in_group_p(inode->i_gid) &&
--			 !capable_wrt_inode_uidgid(&init_user_ns, dir, CAP_FSETID))
-+			 !in_group_p(i_gid_into_mnt(mnt_userns, dir)) &&
-+			 !capable_wrt_inode_uidgid(mnt_userns, dir, CAP_FSETID))
- 			mode &= ~S_ISGID;
- 	} else
--		inode->i_gid = current_fsgid();
-+		inode->i_gid = fsgid_into_mnt(mnt_userns);
- 	inode->i_mode = mode;
- }
- EXPORT_SYMBOL(inode_init_owner);
- 
- /**
-  * inode_owner_or_capable - check current task permissions to inode
-+ * @mnt_userns:	user namespace of the mount the inode was found from
-  * @inode: inode being checked
-  *
-  * Return true if current either has CAP_FOWNER in a namespace with the
-  * inode owner uid mapped, or owns the file.
-+ *
-+ * If the inode has been found through an idmapped mount the user namespace of
-+ * the vfsmount must be passed through @mnt_userns. This function will then take
-+ * care to map the inode according to @mnt_userns before checking permissions.
-+ * On non-idmapped mounts or if permission checking is to be performed on the
-+ * raw inode simply passs init_user_ns.
-  */
--bool inode_owner_or_capable(const struct inode *inode)
-+bool inode_owner_or_capable(struct user_namespace *mnt_userns,
-+			    const struct inode *inode)
- {
-+	kuid_t i_uid;
- 	struct user_namespace *ns;
- 
--	if (uid_eq(current_fsuid(), inode->i_uid))
-+	i_uid = i_uid_into_mnt(mnt_userns, inode);
-+	if (uid_eq(current_fsuid(), i_uid))
- 		return true;
- 
- 	ns = current_user_ns();
--	if (kuid_has_mapping(ns, inode->i_uid) && ns_capable(ns, CAP_FOWNER))
-+	if (kuid_has_mapping(ns, i_uid) && ns_capable(ns, CAP_FOWNER))
- 		return true;
- 	return false;
- }
-diff --git a/fs/jfs/ioctl.c b/fs/jfs/ioctl.c
-index 10ee0ecca1a8..2581d4db58ff 100644
---- a/fs/jfs/ioctl.c
-+++ b/fs/jfs/ioctl.c
-@@ -76,7 +76,7 @@ long jfs_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 		if (err)
- 			return err;
- 
--		if (!inode_owner_or_capable(inode)) {
-+		if (!inode_owner_or_capable(&init_user_ns, inode)) {
- 			err = -EACCES;
- 			goto setflags_out;
- 		}
-diff --git a/fs/jfs/jfs_inode.c b/fs/jfs/jfs_inode.c
-index 4cef170630db..59379089e939 100644
---- a/fs/jfs/jfs_inode.c
-+++ b/fs/jfs/jfs_inode.c
-@@ -64,7 +64,7 @@ struct inode *ialloc(struct inode *parent, umode_t mode)
- 		goto fail_put;
- 	}
- 
--	inode_init_owner(inode, parent, mode);
-+	inode_init_owner(&init_user_ns, inode, parent, mode);
- 	/*
- 	 * New inodes need to save sane values on disk when
- 	 * uid & gid mount options are used
-diff --git a/fs/minix/bitmap.c b/fs/minix/bitmap.c
-index f4e5e5181a14..9115948c624e 100644
---- a/fs/minix/bitmap.c
-+++ b/fs/minix/bitmap.c
-@@ -252,7 +252,7 @@ struct inode *minix_new_inode(const struct inode *dir, umode_t mode, int *error)
- 		iput(inode);
- 		return NULL;
- 	}
--	inode_init_owner(inode, dir, mode);
-+	inode_init_owner(&init_user_ns, inode, dir, mode);
- 	inode->i_ino = j;
- 	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
- 	inode->i_blocks = 0;
-diff --git a/fs/namei.c b/fs/namei.c
-index 79814dbbfc82..aed328571a6b 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -1086,7 +1086,7 @@ int may_linkat(struct path *link)
- 	/* Source inode owner (or CAP_FOWNER) can hardlink all they like,
- 	 * otherwise, it must be a safe source.
- 	 */
--	if (safe_hardlink_source(inode) || inode_owner_or_capable(inode))
-+	if (safe_hardlink_source(inode) || inode_owner_or_capable(&init_user_ns, inode))
- 		return 0;
- 
- 	audit_log_path_denied(AUDIT_ANOM_LINK, "linkat");
-@@ -2936,7 +2936,7 @@ static int may_open(const struct path *path, int acc_mode, int flag)
- 	}
- 
- 	/* O_NOATIME can only be set by the owner or superuser */
--	if (flag & O_NOATIME && !inode_owner_or_capable(inode))
-+	if (flag & O_NOATIME && !inode_owner_or_capable(&init_user_ns, inode))
- 		return -EPERM;
- 
- 	return 0;
-diff --git a/fs/nilfs2/inode.c b/fs/nilfs2/inode.c
-index b6517220cad5..11225a659736 100644
---- a/fs/nilfs2/inode.c
-+++ b/fs/nilfs2/inode.c
-@@ -348,7 +348,7 @@ struct inode *nilfs_new_inode(struct inode *dir, umode_t mode)
- 	/* reference count of i_bh inherits from nilfs_mdt_read_block() */
- 
- 	atomic64_inc(&root->inodes_count);
--	inode_init_owner(inode, dir, mode);
-+	inode_init_owner(&init_user_ns, inode, dir, mode);
- 	inode->i_ino = ino;
- 	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
- 
-diff --git a/fs/nilfs2/ioctl.c b/fs/nilfs2/ioctl.c
-index 07d26f61f22a..b053b40315bf 100644
---- a/fs/nilfs2/ioctl.c
-+++ b/fs/nilfs2/ioctl.c
-@@ -132,7 +132,7 @@ static int nilfs_ioctl_setflags(struct inode *inode, struct file *filp,
- 	unsigned int flags, oldflags;
- 	int ret;
- 
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		return -EACCES;
- 
- 	if (get_user(flags, (int __user *)argp))
-diff --git a/fs/ocfs2/dlmfs/dlmfs.c b/fs/ocfs2/dlmfs/dlmfs.c
-index 583820ec63e2..37c7d03a6284 100644
---- a/fs/ocfs2/dlmfs/dlmfs.c
-+++ b/fs/ocfs2/dlmfs/dlmfs.c
-@@ -329,7 +329,7 @@ static struct inode *dlmfs_get_root_inode(struct super_block *sb)
- 
- 	if (inode) {
- 		inode->i_ino = get_next_ino();
--		inode_init_owner(inode, NULL, mode);
-+		inode_init_owner(&init_user_ns, inode, NULL, mode);
- 		inode->i_atime = inode->i_mtime = inode->i_ctime = current_time(inode);
- 		inc_nlink(inode);
- 
-@@ -352,7 +352,7 @@ static struct inode *dlmfs_get_inode(struct inode *parent,
- 		return NULL;
- 
- 	inode->i_ino = get_next_ino();
--	inode_init_owner(inode, parent, mode);
-+	inode_init_owner(&init_user_ns, inode, parent, mode);
- 	inode->i_atime = inode->i_mtime = inode->i_ctime = current_time(inode);
- 
- 	ip = DLMFS_I(inode);
-diff --git a/fs/ocfs2/ioctl.c b/fs/ocfs2/ioctl.c
-index 89984172fc4a..50c9b30ee9f6 100644
---- a/fs/ocfs2/ioctl.c
-+++ b/fs/ocfs2/ioctl.c
-@@ -96,7 +96,7 @@ static int ocfs2_set_inode_attr(struct inode *inode, unsigned flags,
- 	}
- 
- 	status = -EACCES;
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		goto bail_unlock;
- 
- 	if (!S_ISDIR(inode->i_mode))
-diff --git a/fs/ocfs2/namei.c b/fs/ocfs2/namei.c
-index c46bf7f581a1..a4965133bd5e 100644
---- a/fs/ocfs2/namei.c
-+++ b/fs/ocfs2/namei.c
-@@ -198,7 +198,7 @@ static struct inode *ocfs2_get_init_inode(struct inode *dir, umode_t mode)
- 	 * callers. */
- 	if (S_ISDIR(mode))
- 		set_nlink(inode, 2);
--	inode_init_owner(inode, dir, mode);
-+	inode_init_owner(&init_user_ns, inode, dir, mode);
- 	status = dquot_initialize(inode);
- 	if (status)
- 		return ERR_PTR(status);
-diff --git a/fs/omfs/inode.c b/fs/omfs/inode.c
-index ce93ccca8639..2a0e83236c01 100644
---- a/fs/omfs/inode.c
-+++ b/fs/omfs/inode.c
-@@ -48,7 +48,7 @@ struct inode *omfs_new_inode(struct inode *dir, umode_t mode)
- 		goto fail;
- 
- 	inode->i_ino = new_block;
--	inode_init_owner(inode, NULL, mode);
-+	inode_init_owner(&init_user_ns, inode, NULL, mode);
- 	inode->i_mapping->a_ops = &omfs_aops;
- 
- 	inode->i_atime = inode->i_mtime = inode->i_ctime = current_time(inode);
-diff --git a/fs/overlayfs/dir.c b/fs/overlayfs/dir.c
-index 28a075b5f5b2..98a23353b19a 100644
---- a/fs/overlayfs/dir.c
-+++ b/fs/overlayfs/dir.c
-@@ -636,7 +636,7 @@ static int ovl_create_object(struct dentry *dentry, int mode, dev_t rdev,
- 	inode->i_state |= I_CREATING;
- 	spin_unlock(&inode->i_lock);
- 
--	inode_init_owner(inode, dentry->d_parent->d_inode, mode);
-+	inode_init_owner(&init_user_ns, inode, dentry->d_parent->d_inode, mode);
- 	attr.mode = inode->i_mode;
- 
- 	err = ovl_create_or_link(dentry, inode, &attr, false);
-diff --git a/fs/overlayfs/file.c b/fs/overlayfs/file.c
-index f966b5108358..d58b49a1ea3b 100644
---- a/fs/overlayfs/file.c
-+++ b/fs/overlayfs/file.c
-@@ -53,7 +53,7 @@ static struct file *ovl_open_realfile(const struct file *file,
- 	err = inode_permission(&init_user_ns, realinode, MAY_OPEN | acc_mode);
- 	if (err) {
- 		realfile = ERR_PTR(err);
--	} else if (!inode_owner_or_capable(realinode)) {
-+	} else if (!inode_owner_or_capable(&init_user_ns, realinode)) {
- 		realfile = ERR_PTR(-EPERM);
- 	} else {
- 		realfile = open_with_fake_path(&file->f_path, flags, realinode,
-@@ -582,7 +582,7 @@ static long ovl_ioctl_set_flags(struct file *file, unsigned int cmd,
- 	struct inode *inode = file_inode(file);
- 	unsigned int oldflags;
- 
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		return -EACCES;
- 
- 	ret = mnt_want_write_file(file);
-diff --git a/fs/overlayfs/super.c b/fs/overlayfs/super.c
-index 196fe3e3f02b..82f2c35894e4 100644
---- a/fs/overlayfs/super.c
-+++ b/fs/overlayfs/super.c
-@@ -960,7 +960,7 @@ ovl_posix_acl_xattr_set(const struct xattr_handler *handler,
- 		goto out_acl_release;
- 	}
- 	err = -EPERM;
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		goto out_acl_release;
- 
- 	posix_acl_release(acl);
-diff --git a/fs/overlayfs/util.c b/fs/overlayfs/util.c
-index ff67da201303..0a1f4bccb5da 100644
---- a/fs/overlayfs/util.c
-+++ b/fs/overlayfs/util.c
-@@ -481,7 +481,7 @@ struct file *ovl_path_open(struct path *path, int flags)
- 		return ERR_PTR(err);
- 
- 	/* O_NOATIME is an optimization, don't fail if not permitted */
--	if (inode_owner_or_capable(inode))
-+	if (inode_owner_or_capable(&init_user_ns, inode))
- 		flags |= O_NOATIME;
- 
- 	return dentry_open(path, flags, current_cred());
-diff --git a/fs/posix_acl.c b/fs/posix_acl.c
-index 5d9fe2fb2953..9ce8214bfdac 100644
---- a/fs/posix_acl.c
-+++ b/fs/posix_acl.c
-@@ -874,7 +874,7 @@ set_posix_acl(struct inode *inode, int type, struct posix_acl *acl)
- 
- 	if (type == ACL_TYPE_DEFAULT && !S_ISDIR(inode->i_mode))
- 		return acl ? -EACCES : 0;
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		return -EPERM;
- 
- 	if (acl) {
-diff --git a/fs/ramfs/inode.c b/fs/ramfs/inode.c
-index ee179a81b3da..3fd4326f36b5 100644
---- a/fs/ramfs/inode.c
-+++ b/fs/ramfs/inode.c
-@@ -67,7 +67,7 @@ struct inode *ramfs_get_inode(struct super_block *sb,
- 
- 	if (inode) {
- 		inode->i_ino = get_next_ino();
--		inode_init_owner(inode, dir, mode);
-+		inode_init_owner(&init_user_ns, inode, dir, mode);
- 		inode->i_mapping->a_ops = &ramfs_aops;
- 		mapping_set_gfp_mask(inode->i_mapping, GFP_HIGHUSER);
- 		mapping_set_unevictable(inode->i_mapping);
-diff --git a/fs/reiserfs/ioctl.c b/fs/reiserfs/ioctl.c
-index adb21bea3d60..4f1cbd930179 100644
---- a/fs/reiserfs/ioctl.c
-+++ b/fs/reiserfs/ioctl.c
-@@ -59,7 +59,7 @@ long reiserfs_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 			if (err)
- 				break;
- 
--			if (!inode_owner_or_capable(inode)) {
-+			if (!inode_owner_or_capable(&init_user_ns, inode)) {
- 				err = -EPERM;
- 				goto setflags_out;
- 			}
-@@ -101,7 +101,7 @@ long reiserfs_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 		err = put_user(inode->i_generation, (int __user *)arg);
- 		break;
- 	case REISERFS_IOC_SETVERSION:
--		if (!inode_owner_or_capable(inode)) {
-+		if (!inode_owner_or_capable(&init_user_ns, inode)) {
- 			err = -EPERM;
- 			break;
- 		}
-diff --git a/fs/reiserfs/namei.c b/fs/reiserfs/namei.c
-index 1594687582f0..a67a7d371725 100644
---- a/fs/reiserfs/namei.c
-+++ b/fs/reiserfs/namei.c
-@@ -615,7 +615,7 @@ static int new_inode_init(struct inode *inode, struct inode *dir, umode_t mode)
- 	 * the quota init calls have to know who to charge the quota to, so
- 	 * we have to set uid and gid here
- 	 */
--	inode_init_owner(inode, dir, mode);
-+	inode_init_owner(&init_user_ns, inode, dir, mode);
- 	return dquot_initialize(inode);
- }
- 
-diff --git a/fs/sysv/ialloc.c b/fs/sysv/ialloc.c
-index 6c9801986af6..50df794a3c1f 100644
---- a/fs/sysv/ialloc.c
-+++ b/fs/sysv/ialloc.c
-@@ -163,7 +163,7 @@ struct inode * sysv_new_inode(const struct inode * dir, umode_t mode)
- 	*sbi->s_sb_fic_count = cpu_to_fs16(sbi, count);
- 	fs16_add(sbi, sbi->s_sb_total_free_inodes, -1);
- 	dirty_sb(sb);
--	inode_init_owner(inode, dir, mode);
-+	inode_init_owner(&init_user_ns, inode, dir, mode);
- 	inode->i_ino = fs16_to_cpu(sbi, ino);
- 	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
- 	inode->i_blocks = 0;
-diff --git a/fs/ubifs/dir.c b/fs/ubifs/dir.c
-index 155521e51ac5..a2bbd7ed39e9 100644
---- a/fs/ubifs/dir.c
-+++ b/fs/ubifs/dir.c
-@@ -94,7 +94,7 @@ struct inode *ubifs_new_inode(struct ubifs_info *c, struct inode *dir,
- 	 */
- 	inode->i_flags |= S_NOCMTIME;
- 
--	inode_init_owner(inode, dir, mode);
-+	inode_init_owner(&init_user_ns, inode, dir, mode);
- 	inode->i_mtime = inode->i_atime = inode->i_ctime =
- 			 current_time(inode);
- 	inode->i_mapping->nrpages = 0;
-diff --git a/fs/ubifs/ioctl.c b/fs/ubifs/ioctl.c
-index 4363d85a3fd4..2326d5122beb 100644
---- a/fs/ubifs/ioctl.c
-+++ b/fs/ubifs/ioctl.c
-@@ -155,7 +155,7 @@ long ubifs_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
- 		if (IS_RDONLY(inode))
- 			return -EROFS;
- 
--		if (!inode_owner_or_capable(inode))
-+		if (!inode_owner_or_capable(&init_user_ns, inode))
- 			return -EACCES;
- 
- 		if (get_user(flags, (int __user *) arg))
-diff --git a/fs/udf/ialloc.c b/fs/udf/ialloc.c
-index 84ed23edebfd..2ecf0e87660e 100644
---- a/fs/udf/ialloc.c
-+++ b/fs/udf/ialloc.c
-@@ -103,7 +103,7 @@ struct inode *udf_new_inode(struct inode *dir, umode_t mode)
- 		mutex_unlock(&sbi->s_alloc_mutex);
- 	}
- 
--	inode_init_owner(inode, dir, mode);
-+	inode_init_owner(&init_user_ns, inode, dir, mode);
- 	if (UDF_QUERY_FLAG(sb, UDF_FLAG_UID_SET))
- 		inode->i_uid = sbi->s_uid;
- 	if (UDF_QUERY_FLAG(sb, UDF_FLAG_GID_SET))
-diff --git a/fs/ufs/ialloc.c b/fs/ufs/ialloc.c
-index 969fd60436d3..7e3e08c0166f 100644
---- a/fs/ufs/ialloc.c
-+++ b/fs/ufs/ialloc.c
-@@ -289,7 +289,7 @@ struct inode *ufs_new_inode(struct inode *dir, umode_t mode)
- 	ufs_mark_sb_dirty(sb);
- 
- 	inode->i_ino = cg * uspi->s_ipg + bit;
--	inode_init_owner(inode, dir, mode);
-+	inode_init_owner(&init_user_ns, inode, dir, mode);
- 	inode->i_blocks = 0;
- 	inode->i_generation = 0;
- 	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
-diff --git a/fs/xattr.c b/fs/xattr.c
-index 61a9947f62f4..fcc79c2a1ea1 100644
---- a/fs/xattr.c
-+++ b/fs/xattr.c
-@@ -127,7 +127,7 @@ xattr_permission(struct inode *inode, const char *name, int mask)
- 		if (!S_ISREG(inode->i_mode) && !S_ISDIR(inode->i_mode))
- 			return (mask & MAY_WRITE) ? -EPERM : -ENODATA;
- 		if (S_ISDIR(inode->i_mode) && (inode->i_mode & S_ISVTX) &&
--		    (mask & MAY_WRITE) && !inode_owner_or_capable(inode))
-+		    (mask & MAY_WRITE) && !inode_owner_or_capable(&init_user_ns, inode))
- 			return -EPERM;
- 	}
- 
-diff --git a/fs/xfs/xfs_ioctl.c b/fs/xfs/xfs_ioctl.c
-index 97bd29fc8c43..218e80afc859 100644
---- a/fs/xfs/xfs_ioctl.c
-+++ b/fs/xfs/xfs_ioctl.c
-@@ -1300,7 +1300,7 @@ xfs_ioctl_setattr_get_trans(
- 	 * The user ID of the calling process must be equal to the file owner
- 	 * ID, except in cases where the CAP_FSETID capability is applicable.
- 	 */
--	if (!inode_owner_or_capable(VFS_I(ip))) {
-+	if (!inode_owner_or_capable(&init_user_ns, VFS_I(ip))) {
- 		error = -EPERM;
- 		goto out_cancel;
- 	}
-diff --git a/fs/zonefs/super.c b/fs/zonefs/super.c
-index ff5930be096c..e301a131bf1e 100644
---- a/fs/zonefs/super.c
-+++ b/fs/zonefs/super.c
-@@ -1221,7 +1221,7 @@ static void zonefs_init_dir_inode(struct inode *parent, struct inode *inode,
- 	struct super_block *sb = parent->i_sb;
- 
- 	inode->i_ino = blkdev_nr_zones(sb->s_bdev->bd_disk) + type + 1;
--	inode_init_owner(inode, parent, S_IFDIR | 0555);
-+	inode_init_owner(&init_user_ns, inode, parent, S_IFDIR | 0555);
- 	inode->i_op = &zonefs_dir_inode_operations;
- 	inode->i_fop = &simple_dir_operations;
- 	set_nlink(inode, 2);
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 8fb288dd9185..e77a270bd195 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1763,8 +1763,8 @@ static inline bool sb_start_intwrite_trylock(struct super_block *sb)
- 	return __sb_start_write_trylock(sb, SB_FREEZE_FS);
- }
- 
--
--extern bool inode_owner_or_capable(const struct inode *inode);
-+extern bool inode_owner_or_capable(struct user_namespace *mnt_userns,
-+				   const struct inode *inode);
- 
- /*
-  * VFS helper functions..
-@@ -1806,8 +1806,9 @@ extern long compat_ptr_ioctl(struct file *file, unsigned int cmd,
- /*
-  * VFS file helper functions.
-  */
--extern void inode_init_owner(struct inode *inode, const struct inode *dir,
--			umode_t mode);
-+extern void inode_init_owner(struct user_namespace *mnt_userns,
-+			     struct inode *inode, const struct inode *dir,
-+			     umode_t mode);
- extern bool may_open_dev(const struct path *path);
- 
- /*
-diff --git a/kernel/bpf/inode.c b/kernel/bpf/inode.c
-index f1c393e5d47d..dd6f124c12c7 100644
---- a/kernel/bpf/inode.c
-+++ b/kernel/bpf/inode.c
-@@ -122,7 +122,7 @@ static struct inode *bpf_get_inode(struct super_block *sb,
- 	inode->i_mtime = inode->i_atime;
- 	inode->i_ctime = inode->i_atime;
- 
--	inode_init_owner(inode, dir, mode);
-+	inode_init_owner(&init_user_ns, inode, dir, mode);
- 
- 	return inode;
- }
-diff --git a/mm/madvise.c b/mm/madvise.c
-index bd87d0019266..5b2ec08e1484 100644
---- a/mm/madvise.c
-+++ b/mm/madvise.c
-@@ -539,7 +539,7 @@ static inline bool can_do_pageout(struct vm_area_struct *vma)
- 	 * otherwise we'd be including shared non-exclusive mappings, which
- 	 * opens a side channel.
- 	 */
--	return inode_owner_or_capable(file_inode(vma->vm_file)) ||
-+	return inode_owner_or_capable(&init_user_ns, file_inode(vma->vm_file)) ||
- 		inode_permission(&init_user_ns, file_inode(vma->vm_file), MAY_WRITE) == 0;
- }
- 
-diff --git a/mm/mincore.c b/mm/mincore.c
-index d5a58e61eac6..ad2dfb7a4500 100644
---- a/mm/mincore.c
-+++ b/mm/mincore.c
-@@ -166,7 +166,7 @@ static inline bool can_do_mincore(struct vm_area_struct *vma)
- 	 * for writing; otherwise we'd be including shared non-exclusive
- 	 * mappings, which opens a side channel.
- 	 */
--	return inode_owner_or_capable(file_inode(vma->vm_file)) ||
-+	return inode_owner_or_capable(&init_user_ns, file_inode(vma->vm_file)) ||
- 		inode_permission(&init_user_ns, file_inode(vma->vm_file), MAY_WRITE) == 0;
- }
- 
-diff --git a/mm/shmem.c b/mm/shmem.c
-index 537c137698f8..90dfdc8b7423 100644
---- a/mm/shmem.c
-+++ b/mm/shmem.c
-@@ -2303,7 +2303,7 @@ static struct inode *shmem_get_inode(struct super_block *sb, const struct inode
- 	inode = new_inode(sb);
- 	if (inode) {
- 		inode->i_ino = ino;
--		inode_init_owner(inode, dir, mode);
-+		inode_init_owner(&init_user_ns, inode, dir, mode);
- 		inode->i_blocks = 0;
- 		inode->i_atime = inode->i_mtime = inode->i_ctime = current_time(inode);
- 		inode->i_generation = prandom_u32();
-diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
-index 6b1826fc3658..14a195fa55eb 100644
---- a/security/selinux/hooks.c
-+++ b/security/selinux/hooks.c
-@@ -3133,13 +3133,13 @@ static int selinux_inode_setxattr(struct dentry *dentry, const char *name,
- 	}
- 
- 	if (!selinux_initialized(&selinux_state))
--		return (inode_owner_or_capable(inode) ? 0 : -EPERM);
-+		return (inode_owner_or_capable(&init_user_ns, inode) ? 0 : -EPERM);
- 
- 	sbsec = inode->i_sb->s_security;
- 	if (!(sbsec->flags & SBLABEL_MNT))
- 		return -EOPNOTSUPP;
- 
--	if (!inode_owner_or_capable(inode))
-+	if (!inode_owner_or_capable(&init_user_ns, inode))
- 		return -EPERM;
- 
- 	ad.type = LSM_AUDIT_DATA_DENTRY;
--- 
-2.29.2
-
-_______________________________________________
-Containers mailing list
-Containers@lists.linux-foundation.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
-
+SGV5IGV2ZXJ5b25lLAoKLyogdjQgKi8KLSBTcGxpdCBvdXQgc2V2ZXJhbCBwcmVwYXJhdG9yeSBw
+YXRjaGVzIGZyb20gdGhlIGluaXRpYWwgbW91bnRfc2V0YXR0cgogIHBhdGNoIGFzIHJlcXVlc3Rl
+ZCBieSBDaHJpc3RvcGguCi0gQWRkIG5ldyB0ZXN0cyBmb3IgZmlsZS9kaXJlY3RvcnkgY3JlYXRp
+b24gaW4gZGlyZWN0b3JpZXMgd2l0aCB0aGUKICBzZXRnaWQgYml0IHNldC4gU3BlY2lmaWNhbGx5
+LCB2ZXJpZnkgdGhhdCB0aGUgc2V0Z2lkIGJpdCBpcyBjb3JyZWN0bHkKICBpZ25vcmVkIHdoZW4g
+Y3JlYXRpbmcgYSBmaWxlIHdpdGggdGhlIHNldGdpZCBiaXQgYW5kIHRoZSBwYXJlbnQKICBkaXJl
+Y3RvcnkncyBpX2dpZCBpc24ndCBpbl9ncm91cF9wKCkgYW5kIHRoZSBjYWxsZXIgaXNuJ3QKICBj
+YXBhYmxlX3dydF9pbm9kZV91aWRnaWQoKSBvdmVyIHRoZSBwYXJlbnQgZGlyZWN0b3J5J3MgaW5v
+ZGUgd2hlbgogIGlub2RlX2luaXRfb3duZXIoKSBpcyBjYWxsZWQuCiAgQ29udmVyc2VseSwgdmVy
+aWZ5IHRoYXQgdGhlIHNldGdpZCBiaXQgaXMgc2V0IHdoZW4gY3JlYXRpbmcgYSBmaWxlCiAgd2l0
+aCB0aGUgc2V0Z2lkIGJpdCBhbmQgdGhlIHBhcmVudCdzIGlfZ2lkIGlzIGVpdGhlciBpbl9ncm91
+cF9wKCkgb3IKICB0aGUgY2FsbGVyIGlzIGNhcGFibGVfd3J0X2lub2RlX3VpZGdpZCgpIG92ZXIg
+dGhlIHBhcmVudCBkaXJlY3RvcnkncwogIGlub2RlLiBJbiBhZGRpdGlvbmEsIHZlcmlmeSB0aGF0
+IHRoZSBzZXRnaWQgYml0IGlzIGFsd2F5cyBpbmhlcml0ZWQKICB3aGVuIGNyZWF0aW5nIGRpcmVj
+dG9yaWVzLgogIFRlc3QgYWxsIG9mIHRoaXMgb24gcmVndWxhciBtb3VudHMsIGlkbWFwcGVkIG1v
+dW50cywgYW5kIG9uIGlkbWFwcGVkCiAgbW91bnRzIGluIHVzZXIgbmFtZXNwYWNlcy4KLSBBZGQg
+bmV3IHRlc3RzIHRvIHZlcmlmeSB0aGF0IHRoZSBpX2dpZCBvZiBuZXdseSBjcmVhdGVkIGZpbGVz
+IG9yCiAgZGlyZWN0b3JpZXMgaXMgY29ycmVjdGx5IHNldCB0byB0aGUgcGFyZW50IGRpcmVjdG9y
+eSdzIGlfZ2lkIHdoZW4gdGhlCiAgcGFyZW50IGRpcmVjdG9yeSBoYXMgdGhlIHNldGdpZCBiaXQg
+c2V0LgotIFVzZSAibW50X3VzZXJucyIgYXMgdGhlIGRlIGZhY3RvIG5hbWUgZm9yIGEgdmZzbW91
+bnQncyB1c2VyIG5hbWVzcGFjZQogIGV2ZXJ5d2hlcmUgYXMgc3VnZ2VzdGVkIGJ5IFNlcmdlLgot
+IFJldXNlIGV4aXN0aW5nIHByb3BhZ2F0aW9uIGZsYWdzIGluc3RlYWQgb2YgaW50cm9kdWNpbmcg
+bmV3IG9uZXMgYXMKICBzdWdnZXN0ZWQgYnkgQ2hyaXN0b3BoLiAoVGhpcyBpcyBpbiBsaW5lIHdp
+dGggTGludXMgcmVxdWVzdCB0byBub3QKICBpbnRyb2R1Y2UgdG9vIG1hbnkgbmV3IGZsYWdzIGFz
+IGV2aWRlbmNlZCBieSBwcmlvciBkaXNjdXNzaW9ucyBvbgogIG90aGVyIHBhdGNoc2V0cyBzdWNo
+IGFzIG9wZW5hdDIoKS4pCi0gQWRkIGZpcnN0IHNldCBvZiBBY2tlZC1ieXMgZnJvbSBTZXJnZSBh
+bmQgUmV2aWV3ZWQtYnlzIGZyb20gQ2hyaXN0b3BoLgotIEZpeCBjb21taXQgbWVzc2FnZXMgdG8g
+cmVmbGVjdCB0aGUgZmFjdCB0aGF0IHdlIG1vZGlmeSBleGlzdGluZwogIHZmcyBoZWxwZXJzIGJ1
+dCBkbyBub3QgaW50cm9kdWNlIG5ldyBvbmVzIGxpa2Ugd2UgZGlkIGluIHRoZSBmaXJzdAogIHZl
+cnNpb24uIFNvbWUgY29tbWl0IG1lc3NhZ2VzIHN0aWxsIGltcGxpZWQgd2Ugd2VyZSBhZGRpbmcg
+bmV3CiAgaGVscGVycy4KLSBSZWZvcm1hdCBhbGwgY29tbWl0IG1lc3NhZ2VzIHRvIGFkaGVyZSB0
+byA3MyBjaGFyIGxlbmd0aCBsaW1pdCBhbmQKICB3cmFwIGFsbCBsaW5lcyBpbiBjb21taXRzIGF0
+IDgwIGNoYXJzIHdoZW5ldmVyIHRoaXMgZG9lc24ndCBoaW5kZXIKICBsZWdpYmlsaXR5LgotIFNp
+bXBsaWZ5IHZhcmlvdXMgY29kZXBhdGhzIHdpdGggQ2hyaXN0b3BoJ3Mgc3VnZ2VzdGlvbnMuCgov
+KiB2MyAqLwotIFRoZSBtYWpvciBjaGFuZ2UgaXMgdGhlIHBvcnQgb2YgdGhlIHRlc3Qtc3VpdGUg
+ZnJvbSB0aGUKICBrZXJuZWwtaW50ZXJuYWwgc2VsZnRlc3RzIGZyYW1ld29yayB0byB4ZnN0ZXN0
+cyBhcyByZXF1ZXN0ZWQgYnkKICBEYXJyaWNrIGFuZCBDaHJpc3RvcGguIFRoZSB0ZXN0LXN1aXRl
+IGZvciB4ZnN0ZXN0cyBpcyBwYXRjaCAzOCBpbiB0aGlzCiAgc2VyaWVzLiBJdCBoYXMgYmVlbiBr
+ZXB0IGFzIHBhcnQgb2YgdGhpcyBzZXJpZXMgZXZlbiB0aG91Z2ggaXQgYmVsb25ncwogIHRvIHhm
+c3Rlc3RzIHNvIGl0J3MgZWFzaWVyIHRvIHNlZSB3aGF0IGlzIHRlc3RlZCBhbmQgdG8ga2VlcCBp
+dAogIGluLXN5bmMuCi0gTm90ZSwgdGhlIHRlc3Qtc3VpdGUgbm93IGhhcyBiZWVuIGV4dGVuZGVk
+IHRvIGNvdmVyIGlvX3VyaW5nIGFuZAogIGlkbWFwcGVkIG1vdW50cy4gVGhlIElPUklOR19SRUdJ
+U1RFUl9QRVJTT05BTElUWSBmZWF0dXJlIGFsbG93cyB0bwogIHJlZ2lzdGVyIHRoZSBjYWxsZXIn
+cyBjcmVkZW50aWFscyB3aXRoIGlvX3VyaW5nIGFuZCByZXR1cm5zIGFuIGlkCiAgYXNzb2NpYXRl
+ZCB3aXRoIHRoZXNlIGNyZWRlbnRpYWxzLiBUaGlzIGlzIHVzZWZ1bCBmb3IgYXBwbGljYXRpb25z
+CiAgdGhhdCB3aXNoIHRvIHNoYXJlIGEgcmluZyBiZXR3ZWVuIHNlcGFyYXRlIHVzZXJzL3Byb2Nl
+c3Nlcy4gQ2FsbGVycwogIGNhbiBwYXNzIGluIHRoZSBjcmVkZW50aWFsIGlkIGluIHRoZSBzcWUg
+cGVyc29uYWxpdHkgZmllbGQuIElmIHNldCwKICB0aGF0IHBhcnRpY3VsYXIgc3FlIHdpbGwgYmUg
+aXNzdWVkIHdpdGggdGhlc2UgY3JlZGVudGlhbHMuCiAgVGhlIHRlc3Qtc3VpdGUgbm93IHRlc3Rz
+IHRoYXQgdGhlIG9wZW5hdCogb3BlcmF0aW9ucyB3aXRoIGRpZmZlcmVudAogIHJlZ2lzdGVyZWQg
+Y3JlZGVudGlhbHMgd29yayBjb3JyZWN0bHkgYW5kIHNhZmVseSBvbiByZWd1bGFyIG1vdW50cywg
+b24KICByZWd1bGFyIG1vdW50cyBpbnNpZGUgdXNlciBuYW1lc3BhY2VzLCBvbiBpZG1hcHBlZCBt
+b3VudHMsIGFuZCBvbgogIGlkbWFwcGVkIG1vdW50cyBpbnNpZGUgdXNlciBuYW1lc3BhY2VzLgoK
+LyogdjIgKi8KLSBUaGUgbWFqb3IgY2hhbmdlIGlzIHRoZSByZXdvcmsgcmVxdWVzdGVkIGJ5IENo
+cmlzdG9waCBhbmQgb3RoZXJzIHRvCiAgYWRhcHQgYWxsIHJlbGV2YW50IGhlbHBlcnMgYW5kIGlu
+b2RlX29wZXJhdGlvbnMgbWV0aG9kcyB0byBhY2NvdW50IGZvcgogIGlkbWFwcGVkIG1vdW50cyBp
+bnN0ZWFkIG9mIGludHJvZHVjaW5nIG5ldyBoZWxwZXJzIGFuZCBtZXRob2RzCiAgc3BlY2lmaWMg
+dG8gaWRtYXBwZWQgbW91bnRzIGxpa2Ugd2UgZGlkIGJlZm9yZS4gV2UndmUgYWxzbyBtb3ZlZCB0
+aGUKICBvdmVybGF5ZnMgY29udmVyc2lvbiB0byBoYW5kbGUgaWRtYXBwZWQgbW91bnRzIGludG8g
+YSBzZXBhcmF0ZQogIHBhdGNoc2V0IHRoYXQgd2lsbCBiZSBzZW50IG91dCBzZXBhcmF0ZWx5IGFm
+dGVyIHRoZSBjb3JlIGNoYW5nZXMKICBsYW5kZWQuIFRoZSBjb252ZXJ0ZWQgZmlsZXN5dGVtcyBp
+biB0aGlzIHNlcmllcyBpbmNsdWRlIGZhdCBhbmQgZXh0NC4KICBBcyBwZXIgQ2hyaXN0b3BoJ3Mg
+cmVxdWVzdCB0aGUgdmZzLXdpZGUgY29uZmlnIG9wdGlvbiB0byBkaXNhYmxlCiAgaWRtYXBwZWQg
+bW91bnRzIGhhcyBiZWVuIHJlbW92ZWQuIEluc3RlYWQgdGhlIGZpbGVzeXN0ZW1zIGNhbiBkZWNp
+ZGUKICB3aGV0aGVyIG9yIG5vdCB0aGV5IHdhbnQgdG8gYWxsb3cgaWRtYXAgbW91bnRzIHRocm91
+Z2ggYSBjb25maWcKICBvcHRpb24uIFRoZXNlIGNvbmZpZyBvcHRpb25zIGRlZmF1bHQgdG8gb2Zm
+LiBIYXZpbmcgYSBjb25maWcgb3B0aW9uCiAgYWxsb3dzIHVzIHRvIGdhaW4gc29tZSBjb25maWRl
+bmNlIGluIHRoZSBwYXRjaHNldCBvdmVyIG11bHRpcGxlIGtlcm5lbAogIHJlbGVhc2VzLgotIFRo
+aXMgdmVyc2lvbiBpbnRyb2R1Y2VzIGEgbGFyZ2UgdGVzdC1zdWl0ZSB0byB0ZXN0IGN1cnJlbnQg
+dmZzCiAgYmVoYXZpb3IgYW5kIGlkbWFwcGVkIG1vdW50cyBiZWhhdmlvci4gVGhpcyB0ZXN0LXN1
+aXRlIGlzIGludGVuZGVkIHRvCiAgZ3JvdyBvdmVyIHRpbWUuCi0gV2hpbGUgd2hpbGUgd29ya2lu
+ZyBvbiBhZGFwdGluZyB0aGlzIHBhdGNoc2V0IHRvIHRoZSByZXF1ZXN0ZWQKICBjaGFuZ2VzLCB0
+aGUgcnVuQyBhbmQgY29udGFpbmVyZCBjcm93ZCB3YXMgbmljZSBlbm91Z2ggdG8gYWRhcHQKICBj
+b250YWluZXJkIHRvIHRoaXMgcGF0Y2hzZXQgdG8gbWFrZSB1c2Ugb2YgaWRtYXBwZWQgbW91bnRz
+IGluIG9uZSBvZgogIHRoZSBtb3N0IHdpZGVseSB1c2VkIGNvbnRhaW5lciBydW50aW1lczoKICBo
+dHRwczovL2dpdGh1Yi5jb20vY29udGFpbmVyZC9jb250YWluZXJkL3B1bGwvNDczNAoKV2l0aCB0
+aGlzIHBhdGNoc2V0IHdlIG1ha2UgaXQgcG9zc2libGUgdG8gYXR0YWNoIGlkbWFwcGluZ3MgdG8g
+bW91bnRzLgpUaGlzIGhhbmRsZXMgc2V2ZXJhbCBjb21tb24gdXNlLWNhc2VzLiBIZXJlIGFyZSBq
+dXN0IGEgZmV3OgotIFNoaWZ0aW5nIG9mIGEgY29udGFpbmVyIHJvb3RmcyBvciBiYXNlIGltYWdl
+IHdpdGhvdXQgaGF2aW5nIHRvIG1hbmdsZQogIGV2ZXJ5IGZpbGUgKHJ1bmMsIERvY2tlciwgY29u
+dGFpbmVyZCwgazhzLCBMWEQsIHN5c3RlbWQgLi4uKQotIFNoYXJpbmcgb2YgZGF0YSBiZXR3ZWVu
+IGhvc3Qgb3IgcHJpdmlsZWdlZCBjb250YWluZXJzIHdpdGgKICB1bmRlcnByaXZpbGVnZWQgY29u
+dGFpbmVycyAocnVuYywgRG9ja2VyLCBjb250YWluZXJkLCBrOHMsIExYRCwgLi4uKQotIFNoaWZ0
+aW5nIG9mIHN1YnNldCBvZiBvd25lcnNoaXAtbGVzcyBmaWxlc3lzdGVtcyAodmZhdCkgZm9yIHVz
+ZSBieQogIG11bHRpcGxlIHVzZXJzLCBlZmZlY3RpdmVseSBhbGxvd2luZyBmb3IgREFDIG9uIHN1
+Y2ggZGV2aWNlcyAoc3lzdGVtZCwKICBBbmRyb2lkLCAuLi4pCi0gRGF0YSBzaGFyaW5nIGJldHdl
+ZW4gbXVsdGlwbGUgdXNlciBuYW1lc3BhY2VzIHdpdGggaW5jb21wYXRpYmxlIG1hcHMKICAoTFhE
+LCBrOHMsIC4uLikKTWFraW5nIGl0IHBvc3NpYmxlIHRvIHNoYXJlIGRpcmVjdG9yaWVzIGFuZCBt
+b3VudHMgYmV0d2VlbiB1c2VycyB3aXRoCmRpZmZlcmVudCB1aWRzIGFuZCBnaWRzIGlzIGl0c2Vs
+ZiBxdWl0ZSBhbiBpbXBvcnRhbnQgdXNlLWNhc2UgaW4KZGlzdHJpYnV0ZWQgc3lzdGVtcyBlbnZp
+cm9ubWVudHMuIEl0J3Mgb2YgY291cnNlIGVzcGVjaWFsbHkgdXNlZnVsIGluCmdlbmVyYWwgZm9y
+IHBvcnRhYmxlIHVzYiBzdGlja3MsIHNoYXJpbmcgZGF0YSBiZXR3ZWVuIG11bHRpcGxlIHVzZXJz
+IGluCmdlbmVyYWwsIGFuZCBzaGFyaW5nIGhvbWUgZGlyZWN0b3JpZXMgYmV0d2VlbiBtdWx0aXBs
+ZSB1c2Vycy4gVGhlIGxhc3QKZXhhbXBsZSBpcyBub3cgZWxlZ2FudGx5IGV4cHJlc3NlZCBpbiBz
+eXN0ZW1kJ3MgaG9tZWQgY29uY2VwdCBmb3IKcG9ydGFibGUgaG9tZSBkaXJlY3Rvcmllcy4gQXMg
+bWVudGlvbmVkIGFib3ZlLCBpZG1hcHBlZCBtb3VudHMgYWxzbwphbGxvdyBkYXRhIGZyb20gdGhl
+IGhvc3QgdG8gYmUgc2hhcmVkIHdpdGggdW5wcml2aWxlZ2VkIGNvbnRhaW5lcnMsCmJldHdlZW4g
+cHJpdmlsZWdlZCBhbmQgdW5wcml2aWxlZ2VkIGNvbnRhaW5lcnMgc2ltdWx0YW5lb3VzbHkgYW5k
+IGluCmFkZGl0aW9uIGFsc28gYmV0d2VlbiB1bnByaXZpbGVnZWQgY29udGFpbmVycyB3aXRoIGRp
+ZmZlcmVudCBpZG1hcHBpbmdzCndoZW5ldmVyIHRoZXkgYXJlIHVzZWQgdG8gaXNvbGF0ZSBvbmUg
+Y29udGFpbmVyIGNvbXBsZXRlbHkgZnJvbSBhbm90aGVyCmNvbnRhaW5lci4KQXMgY2FuIGJlIHNl
+ZW4gZnJvbSBhbnN3ZXJzIHRvIGVhcmxpZXIgdGhyZWFkcyBvZiB0aGlzIHBhdGNoc2V0IGFuZCBm
+cm9tCnRoZSBsaXN0IG9mIHBvdGVudGlhbCB1c2VycyBpbnRlcmVzdCBpbiB0aGlzIHBhdGNoc2V0
+IGlzIHdpZGVzcHJlYWQuCgpXZSBoYXZlIGltcGxlbWVudGVkIGFuZCBwcm9wb3NlZCBtdWx0aXBs
+ZSBzb2x1dGlvbnMgdG8gdGhpcyBiZWZvcmUuIFRoaXMKaW5jbHVkZWQgdGhlIGludHJvZHVjdGlv
+biBvZiBmc2lkIG1hcHBpbmdzLCBhIHRpbnkgZmlsZXN5c3RlbSB0aGF0IGlzCmN1cnJlbnRseSBj
+YXJyaWVkIGluIFVidW50dSB0aGF0IGhhcyBzaG93biBpdCdzIGxpbWl0YXRpb25zLCBhbmQgYW4K
+YXBwcm9hY2ggdG8gY2FsbCBvdmVycmlkZSBjcmVkcyBpbiB0aGUgdmZzLiBOb25lIG9mIHRoZXNl
+IHNvbHV0aW9ucyBoYXZlCmNvdmVyZWQgYWxsIG9mIHRoZSBhYm92ZSB1c2UtY2FzZXMuIFNvbWUg
+b2YgdGhlbSBoYXZlIGJlZW4gZmFpcmx5IGhhY2t5CnRvbyBieSBlLmcuIHZpb2xhdGluZyBob3cg
+dGhpbmdzIHNob3VsZCBiZSBwYXNzZWQgZG93biB0byB0aGUgaW5kaXZpZHVhbApmaWxlc3lzdGVt
+cy4KVGhlIHNvbHV0aW9uIHByb3Bvc2VkIGhlcmUgaGFzIGl0J3Mgb3JpZ2lucyBpbiBtdWx0aXBs
+ZSBkaXNjdXNzaW9ucwpkdXJpbmcgTGludXggUGx1bWJlcnMgMjAxNyBkdXJpbmcgYW5kIGFmdGVy
+IHRoZSBlbmQgb2YgdGhlIGNvbnRhaW5lcnMKbWljcm9jb25mZXJlbmNlLgpUbyB0aGUgYmVzdCBv
+ZiBteSBrbm93bGVkZ2UgdGhpcyBpbnZvbHZlZCBBbGVrc2EsIFN0w6lwaGFuZSwgRXJpYywgRGF2
+aWQsCkphbWVzLCBhbmQgbXlzZWxmLiBUaGUgb3JpZ2luYWwgaWRlYSBvciBhIHZhcmlhbnQgdGhl
+cmVvZiBoYXMgYmVlbgpkaXNjdXNzZWQsIGFnYWluIHRvIHRoZSBiZXN0IG9mIG15IGtub3dsZWRn
+ZSwgYWZ0ZXIgYSBMaW51eCBjb25mZXJlbmNlCmluIFN0LiBQZXRlcnNidXJnIGluIFJ1c3NpYSBp
+biAyMDE3IGJldHdlZW4gQ2hyaXN0b3BoLCBUeWNobywgYW5kCm15c2VsZi4KV2UndmUgdGFrZW4g
+dGhlIHRpbWUgdG8gaW1wbGVtZW50IGEgd29ya2luZyB2ZXJzaW9uIG9mIHRoaXMgc29sdXRpb24K
+b3ZlciB0aGUgbGFzdCB3ZWVrcyB0byB0aGUgYmVzdCBvZiBteSBhYmlsaXRpZXMuIFR5Y2hvIGhh
+cyBzaWduZWQgdXAKZm9yIHRoaXMgc2xpZ3RobHkgY3JhenkgZW5kZWF2b3VyIGFzIHdlbGwgYW5k
+IGhlIGhhcyBoZWxwZWQgd2l0aCB0aGUKY29udmVyc2lvbiBvZiB0aGUgeGF0dHIgY29kZXBhdGhz
+IGFuZCB3aWxsIGJlIGludm9sdmVkIHdpdGggb3RoZXJzIGluCmNvbnZlcnRpbmcgYWRkaXRpb25h
+bCBmaWxlc3lzdGVtcy4KCklkbWFwcGluZ3MgYmVjb21lIGEgcHJvcGVydHkgb2Ygc3RydWN0IHZm
+c21vdW50IGluc3RlYWQgb2YgdHlpbmcgaXQgdG8gYQpwcm9jZXNzIGJlaW5nIGluc2lkZSBvZiBh
+IHVzZXIgbmFtZXNwYWNlIHdoaWNoIGhhcyBiZWVuIHRoZSBjYXNlIGZvciBhbGwKb3RoZXIgcHJv
+cG9zZWQgYXBwcm9hY2hlcy4gSXQgYWxzbyBhbGxvd3MgdG8gcGFzcyBkb3duIHRoZSB1c2VyCm5h
+bWVzcGFjZSBpbnRvIHRoZSBmaWxlc3lzdGVtcyB3aGljaCBpcyBhIGNsZWFuIHdheSBpbnN0ZWFk
+IG9mIHZpb2xhdGluZwpjYWxsaW5nIGNvbnZlbnRpb25zIGJ5IHN0cmFwcGluZyB0aGUgdXNlciBu
+YW1lc3BhY2UgaW5mb3JtYXRpb24gdGhhdCBpcwphIHByb3BlcnR5IG9mIHRoZSBtb3VudCB0byB0
+aGUgY2FsbGVyJ3MgY3JlZGVudGlhbHMgb3Igc2ltaWxhciBoYWNrcy4KRWFjaCBtb3VudCBjYW4g
+aGF2ZSBhIHNlcGFyYXRlIGlkbWFwcGluZyBhbmQgaWRtYXBwZWQgbW91bnRzIGNhbiBldmVuIGJl
+CmNyZWF0ZWQgaW4gdGhlIGluaXRpYWwgdXNlciBuYW1lc3BhY2UgdW5ibG9ja2luZyBhIHJhbmdl
+IG9mIHVzZS1jYXNlcy4KClRvIHRoaXMgZW5kIHRoZSB2ZnNtb3VudCBzdHJ1Y3QgZ2FpbnMgYSBu
+ZXcgc3RydWN0IHVzZXJfbmFtZXNwYWNlCm1lbWJlci4gVGhlIGlkbWFwcGluZyBvZiB0aGUgdXNl
+ciBuYW1lc3BhY2UgYmVjb21lcyB0aGUgaWRtYXBwaW5nIG9mIHRoZQptb3VudC4gQSBjYWxsZXIg
+dGhhdCBpcyBwcml2aWxlZ2VkIHdpdGggcmVzcGVjdCB0byB0aGUgdXNlciBuYW1lc3BhY2Ugb2YK
+dGhlIHN1cGVyYmxvY2sgb2YgdGhlIHVuZGVybHlpbmcgZmlsZXN5c3RlbSBjYW4gY3JlYXRlIGFu
+IGlkbWFwcGVkCm1vdW50LiBJbiB0aGUgZnV0dXJlLCB3ZSBjYW4gZW5hYmxlIHVucHJpdmlsZWdl
+ZCB1c2UtY2FzZXMgYnkgY2hlY2tpbmcKd2hldGhlciB0aGUgY2FsbGVyIGlzIHByaXZpbGVnZWQg
+d3J0IHRvIHRoZSB1c2VyIG5hbWVzcGFjZSB0aGFuIGFuCmFscmVhZHkgaWRtYXBwZWQgbW91bnQg
+aGFzIGJlZW4gbWFya2VkIHdpdGgsIGFsbG93aW5nIHRoZW0gdG8gY2hhbmdlIHRoZQppZG1hcHBp
+bmcuIEZvciBub3csIGtlZXAgdGhpbmdzIHNpbXBsZSB1bnRpbCB3ZSBmZWVsIHN1cmUgZW5vdWdo
+LgpOb3RlLCB0aGF0IHdpdGggc3lzY2FsbCBpbnRlcmNlcHRpb24gaXQgaXMgYWxyZWFkeSBwb3Nz
+aWJsZSB0byBpbnRlcmNlcHQKaWRtYXBwZWQgbW91bnQgcmVxdWVzdHMgZnJvbSB1bnByaXZpbGVn
+ZWQgY29udGFpbmVycyBhbmQgaGFuZGxlIHRoZW0gaW4KYSBzdWZmaWNpZW50bHkgcHJpdmlsZWdl
+ZCBjb250YWluZXIgbWFuYWdlci4gU3VwcG9ydCBmb3IgdGhpcyBpcyBhbHJlYWR5CmF2YWlsYWJs
+ZSBpbiBMWEQgYW5kIHdpbGwgYmUgYXZhaWxhYmxlIGluIHJ1bkMgd2VyZSBzeXNjYWxsIGludGVy
+Y2VwdGlvbgppcyBjdXJyZW50bHkgaW4gdGhlIHByb2Nlc3Mgb2YgYmVjb21pbmcgcGFydCBvZiB0
+aGUgcnVudGltZSBzcGVjOgpodHRwczovL2dpdGh1Yi5jb20vb3BlbmNvbnRhaW5lcnMvcnVudGlt
+ZS1zcGVjL3B1bGwvMTA3NC4KClRoZSB1c2VyIG5hbWVzcGFjZSB0aGUgbW91bnQgd2lsbCBiZSBt
+YXJrZWQgd2l0aCBjYW4gYmUgc3BlY2lmaWVkIGJ5CnBhc3NpbmcgYSBmaWxlIGRlc2NyaXB0b3Ig
+cmVmZXJpbmcgdG8gdGhlIHVzZXIgbmFtZXNwYWNlIGFzIGFuIGFyZ3VtZW50CnRvIHRoZSBuZXcg
+bW91bnRfc2V0YXR0cigpIHN5c2NhbGwgdG9nZXRoZXIgd2l0aCB0aGUgbmV3Ck1PVU5UX0FUVFJf
+SURNQVAgZmxhZy4gQnkgZGVmYXVsdCB2ZnNtb3VudHMgYXJlIG1hcmtlZCB3aXRoIHRoZSBpbml0
+aWFsCnVzZXIgbmFtZXNwYWNlIGFuZCBubyBiZWhhdmlvcmFsIG9yIHBlcmZvcm1hbmNlIGNoYW5n
+ZXMgc2hvdWxkIGJlCm9ic2VydmVkLiBBbGwgbWFwcGluZyBvcGVyYXRpb25zIGFyZSBub3BzIGZv
+ciB0aGUgaW5pdGlhbCB1c2VyCm5hbWVzcGFjZS4gV2hlbiBhIGZpbGUvaW5vZGUgaXMgYWNjZXNz
+ZWQgdGhyb3VnaCBhbiBpZG1hcHBlZCBtb3VudCB0aGUKaV91aWQgYW5kIGlfZ2lkIG9mIHRoZSBp
+bm9kZSB3aWxsIGJlIHJlbWFwcGVkIGFjY29yZGluZyB0byB0aGUgdXNlcgpuYW1lc3BhY2UgdGhl
+IG1vdW50IGhhcyBiZWVuIG1hcmtlZCB3aXRoLgoKSW4gb3JkZXIgdG8gc3VwcG9ydCBpZG1hcHBl
+ZCBtb3VudHMsIGZpbGVzeXN0ZW1zIG5lZWQgdG8gYmUgY2hhbmdlZCBhbmQKbWFyayB0aGVtc2Vs
+dmVzIHdpdGggdGhlIEZTX0FMTE9XX0lETUFQIGZsYWcgaW4gZnNfZmxhZ3MuIFRoZSBpbml0aWFs
+CnZlcnNpb24gY29udGFpbnMgZmF0IGFuZCBleHQ0IGluY2x1ZGluZyBhIGxpc3Qgb2YgZXhhbXBs
+ZXMuIEJ1dCBwYXRjaGVzCmZvciBvdGhlciBmaWxlc3lzdGVtcyBhcmUgYWN0aXZlbHkgd29ya2Vk
+IG9uIGJ1dCB3aWxsIGJlIHNlbnQgb3V0CnNlcGFyYXRlbHkuIFdlIGFyZSBoZXJlIHRvIHNlZSB0
+aGlzIHRocm91Z2ggYW5kIHRoZXJlIGFyZSBtdWx0aXBsZQpwZW9wbGUgaW52b2x2ZWQgaW4gY29u
+dmVydGluZyBmaWxlc3lzdGVtcy4gU28gZmlsZXN5c3RlbSBkZXZlbG9wZXJzIGFyZQpub3QgbGVm
+dCBhbG9uZSB3aXRoIHRoaXMuCgpUaGVyZSBpcyBhIHNpbXBsZSB0b29sIGF2YWlsYWJsZSBhdApo
+dHRwczovL2dpdGh1Yi5jb20vYnJhdW5lci9tb3VudC1pZG1hcHBlZCB0aGF0IGFsbG93cyB0byBj
+cmVhdGUgaWRtYXBwZWQKbW91bnRzIHNvIHBlb3BsZSBjYW4gcGxheSB3aXRoIHRoaXMgcGF0Y2gg
+c2VyaWVzLiBIZXJlIGFyZSBhIGZldwppbGx1c3RyYXRpb25zOgoKMS4gQ3JlYXRlIGEgc2ltcGxl
+IGlkbWFwcGVkIG1vdW50IG9mIGFub3RoZXIgdXNlcidzIGhvbWUgZGlyZWN0b3J5Cgp1MTAwMUBm
+Mi12bTovJCBzdWRvIC4vbW91bnQtaWRtYXBwZWQgLS1tYXAtbW91bnQgYjoxMDAwOjEwMDE6MSAv
+aG9tZS91YnVudHUvIC9tbnQKdTEwMDFAZjItdm06LyQgbHMgLWFsIC9ob21lL3VidW50dS8KdG90
+YWwgMjgKZHJ3eHIteHIteCAyIHVidW50dSB1YnVudHUgNDA5NiBPY3QgMjggMjI6MDcgLgpkcnd4
+ci14ci14IDQgcm9vdCAgIHJvb3QgICA0MDk2IE9jdCAyOCAwNDowMCAuLgotcnctLS0tLS0tIDEg
+dWJ1bnR1IHVidW50dSAzMTU0IE9jdCAyOCAyMjoxMiAuYmFzaF9oaXN0b3J5Ci1ydy1yLS1yLS0g
+MSB1YnVudHUgdWJ1bnR1ICAyMjAgRmViIDI1ICAyMDIwIC5iYXNoX2xvZ291dAotcnctci0tci0t
+IDEgdWJ1bnR1IHVidW50dSAzNzcxIEZlYiAyNSAgMjAyMCAuYmFzaHJjCi1ydy1yLS1yLS0gMSB1
+YnVudHUgdWJ1bnR1ICA4MDcgRmViIDI1ICAyMDIwIC5wcm9maWxlCi1ydy1yLS1yLS0gMSB1YnVu
+dHUgdWJ1bnR1ICAgIDAgT2N0IDE2IDE2OjExIC5zdWRvX2FzX2FkbWluX3N1Y2Nlc3NmdWwKLXJ3
+LS0tLS0tLSAxIHVidW50dSB1YnVudHUgMTE0NCBPY3QgMjggMDA6NDMgLnZpbWluZm8KdTEwMDFA
+ZjItdm06LyQgbHMgLWFsIC9tbnQvCnRvdGFsIDI4CmRyd3hyLXhyLXggIDIgdTEwMDEgdTEwMDEg
+NDA5NiBPY3QgMjggMjI6MDcgLgpkcnd4ci14ci14IDI5IHJvb3QgIHJvb3QgIDQwOTYgT2N0IDI4
+IDIyOjAxIC4uCi1ydy0tLS0tLS0gIDEgdTEwMDEgdTEwMDEgMzE1NCBPY3QgMjggMjI6MTIgLmJh
+c2hfaGlzdG9yeQotcnctci0tci0tICAxIHUxMDAxIHUxMDAxICAyMjAgRmViIDI1ICAyMDIwIC5i
+YXNoX2xvZ291dAotcnctci0tci0tICAxIHUxMDAxIHUxMDAxIDM3NzEgRmViIDI1ICAyMDIwIC5i
+YXNocmMKLXJ3LXItLXItLSAgMSB1MTAwMSB1MTAwMSAgODA3IEZlYiAyNSAgMjAyMCAucHJvZmls
+ZQotcnctci0tci0tICAxIHUxMDAxIHUxMDAxICAgIDAgT2N0IDE2IDE2OjExIC5zdWRvX2FzX2Fk
+bWluX3N1Y2Nlc3NmdWwKLXJ3LS0tLS0tLSAgMSB1MTAwMSB1MTAwMSAxMTQ0IE9jdCAyOCAwMDo0
+MyAudmltaW5mbwp1MTAwMUBmMi12bTovJCB0b3VjaCAvbW50L215LWZpbGUKdTEwMDFAZjItdm06
+LyQgc2V0ZmFjbCAtbSB1OjEwMDE6cnd4IC9tbnQvbXktZmlsZQp1MTAwMUBmMi12bTovJCBzdWRv
+IHNldGNhcCAtbiAxMDAxIGNhcF9uZXRfcmF3K2VwIC9tbnQvbXktZmlsZQp1MTAwMUBmMi12bTov
+JCBscyAtYWwgL21udC9teS1maWxlCi1ydy1yd3hyLS0rIDEgdTEwMDEgdTEwMDEgMCBPY3QgMjgg
+MjI6MTQgL21udC9teS1maWxlCnUxMDAxQGYyLXZtOi8kIGxzIC1hbCAvaG9tZS91YnVudHUvbXkt
+ZmlsZQotcnctcnd4ci0tKyAxIHVidW50dSB1YnVudHUgMCBPY3QgMjggMjI6MTQgL2hvbWUvdWJ1
+bnR1L215LWZpbGUKdTEwMDFAZjItdm06LyQgZ2V0ZmFjbCAvbW50L215LWZpbGUKZ2V0ZmFjbDog
+UmVtb3ZpbmcgbGVhZGluZyAnLycgZnJvbSBhYnNvbHV0ZSBwYXRoIG5hbWVzCiMgZmlsZTogbW50
+L215LWZpbGUKIyBvd25lcjogdTEwMDEKIyBncm91cDogdTEwMDEKdXNlcjo6cnctCnVzZXI6dTEw
+MDE6cnd4Cmdyb3VwOjpydy0KbWFzazo6cnd4Cm90aGVyOjpyLS0KdTEwMDFAZjItdm06LyQgZ2V0
+ZmFjbCAvaG9tZS91YnVudHUvbXktZmlsZQpnZXRmYWNsOiBSZW1vdmluZyBsZWFkaW5nICcvJyBm
+cm9tIGFic29sdXRlIHBhdGggbmFtZXMKIyBmaWxlOiBob21lL3VidW50dS9teS1maWxlCiMgb3du
+ZXI6IHVidW50dQojIGdyb3VwOiB1YnVudHUKdXNlcjo6cnctCnVzZXI6dWJ1bnR1OnJ3eApncm91
+cDo6cnctCm1hc2s6OnJ3eApvdGhlcjo6ci0tCgoyLiBDcmVhdGUgbWFwcGluZyBvZiB0aGUgd2hv
+bGUgZXh0NCByb290ZnMgd2l0aG91dCBhIG1hcHBpbmcgZm9yIHVpZCBhbmQgZ2lkIDAKCnVidW50
+dUBmMi12bTp+JCBzdWRvIC9tb3VudC1pZG1hcHBlZCAtLW1hcC1tb3VudCBiOjE6MTo2NTUzNiAv
+IC9tbnQvCnVidW50dUBmMi12bTp+JCBmaW5kbW50IHwgZ3JlcCBtbnQK4pSU4pSAL21udCAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgL2Rldi9zZGEyICBleHQ0ICAgICAgIHJ3LHJlbGF0
+aW1lCiAg4pSU4pSAL21udC9tbnQgICAgICAgICAgICAgICAgICAgICAgICAgIC9kZXYvc2RhMiAg
+ZXh0NCAgICAgICBydyxyZWxhdGltZQp1YnVudHVAZjItdm06fiQgc3VkbyBta2RpciAvQVMtUk9P
+VC1DQU4tQ1JFQVRFCnVidW50dUBmMi12bTp+JCBzdWRvIG1rZGlyIC9tbnQvQVMtUk9PVC1DQU5U
+LUNSRUFURQpta2RpcjogY2Fubm90IGNyZWF0ZSBkaXJlY3Rvcnkg4oCYL21udC9BUy1ST09ULUNB
+TlQtQ1JFQVRF4oCZOiBWYWx1ZSB0b28gbGFyZ2UgZm9yIGRlZmluZWQgZGF0YSB0eXBlCnVidW50
+dUBmMi12bTp+JCBta2RpciAvbW50L2hvbWUvdWJ1bnR1L0FTLVVTRVItMTAwMC1DQU4tQ1JFQVRF
+CgozLiBDcmVhdGUgYSB2ZmF0IHVzYiBtb3VudCBhbmQgZXhwb3NlIHRvIHVzZXIgMTAwMSBhbmQg
+NTAwMAoKdWJ1bnR1QGYyLXZtOi8kIHN1ZG8gbW91bnQgL2Rldi9zZGIgL21udAp1YnVudHVAZjIt
+dm06LyQgZmluZG1udCAgfCBncmVwIG1udArilJTilIAvbW50ICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAvZGV2L3NkYiB2ZmF0ICAgICAgIHJ3LHJlbGF0aW1lLGZtYXNrPTAwMjIsZG1h
+c2s9MDAyMixjb2RlcGFnZT00MzcsaW9jaGFyc2V0PWlzbzg4NTktMSxzaG9ydG5hbWU9bWl4ZWQs
+ZXJyb3JzPXJlbW91bnQtcm8KdWJ1bnR1QGYyLXZtOi8kIGxzIC1hbCAvbW50CnRvdGFsIDEyCmRy
+d3hyLXhyLXggIDIgcm9vdCByb290IDQwOTYgSmFuICAxICAxOTcwIC4KZHJ3eHIteHIteCAzNCBy
+b290IHJvb3QgNDA5NiBPY3QgMjggMjI6MjQgLi4KLXJ3eHIteHIteCAgMSByb290IHJvb3QgICAg
+NCBPY3QgMjggMDM6NDQgYWFhCi1yd3hyLXhyLXggIDEgcm9vdCByb290ICAgIDAgT2N0IDI4IDAx
+OjA5IGJiYgp1YnVudHVAZjItdm06LyQgc3VkbyAvbW91bnQtaWRtYXBwZWQgLS1tYXAtbW91bnQg
+YjowOjEwMDE6MSAvbW50IC9tbnQtMTAwMS8KdWJ1bnR1QGYyLXZtOi8kIGxzIC1hbCAvbW50LTEw
+MDEvCnRvdGFsIDEyCmRyd3hyLXhyLXggIDIgdTEwMDEgdTEwMDEgNDA5NiBKYW4gIDEgIDE5NzAg
+Lgpkcnd4ci14ci14IDM0IHJvb3QgIHJvb3QgIDQwOTYgT2N0IDI4IDIyOjI0IC4uCi1yd3hyLXhy
+LXggIDEgdTEwMDEgdTEwMDEgICAgNCBPY3QgMjggMDM6NDQgYWFhCi1yd3hyLXhyLXggIDEgdTEw
+MDEgdTEwMDEgICAgMCBPY3QgMjggMDE6MDkgYmJiCnVidW50dUBmMi12bTovJCBzdWRvIC9tb3Vu
+dC1pZG1hcHBlZCAtLW1hcC1tb3VudCBiOjA6NTAwMDoxIC9tbnQgL21udC01MDAwLwp1YnVudHVA
+ZjItdm06LyQgbHMgLWFsIC9tbnQtNTAwMC8KdG90YWwgMTIKZHJ3eHIteHIteCAgMiA1MDAwIDUw
+MDAgNDA5NiBKYW4gIDEgIDE5NzAgLgpkcnd4ci14ci14IDM0IHJvb3Qgcm9vdCA0MDk2IE9jdCAy
+OCAyMjoyNCAuLgotcnd4ci14ci14ICAxIDUwMDAgNTAwMCAgICA0IE9jdCAyOCAwMzo0NCBhYWEK
+LXJ3eHIteHIteCAgMSA1MDAwIDUwMDAgICAgMCBPY3QgMjggMDE6MDkgYmJiCgo0LiBDcmVhdGUg
+YW4gaWRtYXBwZWQgcm9vdGZzIG1vdW50IGZvciBhIGNvbnRhaW5lcgoKcm9vdEBmMi12bTp+IyBs
+cyAtYWwgL3Zhci9saWIvbHhjL2YyL3Jvb3Rmcy8KdG90YWwgNjgKZHJ3eHIteHIteCAxNyAyMDAw
+MCAyMDAwMCA0MDk2IFNlcCAyNCAwNzo0OCAuCmRyd3hyd3gtLS0gIDMgMjAwMDAgMjAwMDAgNDA5
+NiBPY3QgMTYgMTk6MjYgLi4KbHJ3eHJ3eHJ3eCAgMSAyMDAwMCAyMDAwMCAgICA3IFNlcCAyNCAw
+Nzo0MyBiaW4gLT4gdXNyL2Jpbgpkcnd4ci14ci14ICAyIDIwMDAwIDIwMDAwIDQwOTYgQXByIDE1
+ICAyMDIwIGJvb3QKZHJ3eHIteHIteCAgMyAyMDAwMCAyMDAwMCA0MDk2IE9jdCAxNiAxOToyNiBk
+ZXYKZHJ3eHIteHIteCA2MSAyMDAwMCAyMDAwMCA0MDk2IE9jdCAxNiAxOToyNiBldGMKZHJ3eHIt
+eHIteCAgMyAyMDAwMCAyMDAwMCA0MDk2IFNlcCAyNCAwNzo0NSBob21lCmxyd3hyd3hyd3ggIDEg
+MjAwMDAgMjAwMDAgICAgNyBTZXAgMjQgMDc6NDMgbGliIC0+IHVzci9saWIKbHJ3eHJ3eHJ3eCAg
+MSAyMDAwMCAyMDAwMCAgICA5IFNlcCAyNCAwNzo0MyBsaWIzMiAtPiB1c3IvbGliMzIKbHJ3eHJ3
+eHJ3eCAgMSAyMDAwMCAyMDAwMCAgICA5IFNlcCAyNCAwNzo0MyBsaWI2NCAtPiB1c3IvbGliNjQK
+bHJ3eHJ3eHJ3eCAgMSAyMDAwMCAyMDAwMCAgIDEwIFNlcCAyNCAwNzo0MyBsaWJ4MzIgLT4gdXNy
+L2xpYngzMgpkcnd4ci14ci14ICAyIDIwMDAwIDIwMDAwIDQwOTYgU2VwIDI0IDA3OjQzIG1lZGlh
+CmRyd3hyLXhyLXggIDIgMjAwMDAgMjAwMDAgNDA5NiBTZXAgMjQgMDc6NDMgbW50CmRyd3hyLXhy
+LXggIDIgMjAwMDAgMjAwMDAgNDA5NiBTZXAgMjQgMDc6NDMgb3B0CmRyd3hyLXhyLXggIDIgMjAw
+MDAgMjAwMDAgNDA5NiBBcHIgMTUgIDIwMjAgcHJvYwpkcnd4LS0tLS0tICAyIDIwMDAwIDIwMDAw
+IDQwOTYgU2VwIDI0IDA3OjQzIHJvb3QKZHJ3eHIteHIteCAgMiAyMDAwMCAyMDAwMCA0MDk2IFNl
+cCAyNCAwNzo0NSBydW4KbHJ3eHJ3eHJ3eCAgMSAyMDAwMCAyMDAwMCAgICA4IFNlcCAyNCAwNzo0
+MyBzYmluIC0+IHVzci9zYmluCmRyd3hyLXhyLXggIDIgMjAwMDAgMjAwMDAgNDA5NiBTZXAgMjQg
+MDc6NDMgc3J2CmRyd3hyLXhyLXggIDIgMjAwMDAgMjAwMDAgNDA5NiBBcHIgMTUgIDIwMjAgc3lz
+CmRyd3hyd3hyd3QgIDIgMjAwMDAgMjAwMDAgNDA5NiBTZXAgMjQgMDc6NDQgdG1wCmRyd3hyLXhy
+LXggMTMgMjAwMDAgMjAwMDAgNDA5NiBTZXAgMjQgMDc6NDMgdXNyCmRyd3hyLXhyLXggMTIgMjAw
+MDAgMjAwMDAgNDA5NiBTZXAgMjQgMDc6NDQgdmFyCnJvb3RAZjItdm06fiMgL21vdW50LWlkbWFw
+cGVkIC0tbWFwLW1vdW50IGI6MjAwMDA6MTAwMDA6MTAwMDAwIC92YXIvbGliL2x4Yy9mMi9yb290
+ZnMvIC9tbnQKcm9vdEBmMi12bTp+IyBscyAtYWwgL21udAp0b3RhbCA2OApkcnd4ci14ci14IDE3
+IDEwMDAwIDEwMDAwIDQwOTYgU2VwIDI0IDA3OjQ4IC4KZHJ3eHIteHIteCAzNCByb290ICByb290
+ICA0MDk2IE9jdCAyOCAyMjoyNCAuLgpscnd4cnd4cnd4ICAxIDEwMDAwIDEwMDAwICAgIDcgU2Vw
+IDI0IDA3OjQzIGJpbiAtPiB1c3IvYmluCmRyd3hyLXhyLXggIDIgMTAwMDAgMTAwMDAgNDA5NiBB
+cHIgMTUgIDIwMjAgYm9vdApkcnd4ci14ci14ICAzIDEwMDAwIDEwMDAwIDQwOTYgT2N0IDE2IDE5
+OjI2IGRldgpkcnd4ci14ci14IDYxIDEwMDAwIDEwMDAwIDQwOTYgT2N0IDE2IDE5OjI2IGV0Ywpk
+cnd4ci14ci14ICAzIDEwMDAwIDEwMDAwIDQwOTYgU2VwIDI0IDA3OjQ1IGhvbWUKbHJ3eHJ3eHJ3
+eCAgMSAxMDAwMCAxMDAwMCAgICA3IFNlcCAyNCAwNzo0MyBsaWIgLT4gdXNyL2xpYgpscnd4cnd4
+cnd4ICAxIDEwMDAwIDEwMDAwICAgIDkgU2VwIDI0IDA3OjQzIGxpYjMyIC0+IHVzci9saWIzMgps
+cnd4cnd4cnd4ICAxIDEwMDAwIDEwMDAwICAgIDkgU2VwIDI0IDA3OjQzIGxpYjY0IC0+IHVzci9s
+aWI2NApscnd4cnd4cnd4ICAxIDEwMDAwIDEwMDAwICAgMTAgU2VwIDI0IDA3OjQzIGxpYngzMiAt
+PiB1c3IvbGlieDMyCmRyd3hyLXhyLXggIDIgMTAwMDAgMTAwMDAgNDA5NiBTZXAgMjQgMDc6NDMg
+bWVkaWEKZHJ3eHIteHIteCAgMiAxMDAwMCAxMDAwMCA0MDk2IFNlcCAyNCAwNzo0MyBtbnQKZHJ3
+eHIteHIteCAgMiAxMDAwMCAxMDAwMCA0MDk2IFNlcCAyNCAwNzo0MyBvcHQKZHJ3eHIteHIteCAg
+MiAxMDAwMCAxMDAwMCA0MDk2IEFwciAxNSAgMjAyMCBwcm9jCmRyd3gtLS0tLS0gIDIgMTAwMDAg
+MTAwMDAgNDA5NiBTZXAgMjQgMDc6NDMgcm9vdApkcnd4ci14ci14ICAyIDEwMDAwIDEwMDAwIDQw
+OTYgU2VwIDI0IDA3OjQ1IHJ1bgpscnd4cnd4cnd4ICAxIDEwMDAwIDEwMDAwICAgIDggU2VwIDI0
+IDA3OjQzIHNiaW4gLT4gdXNyL3NiaW4KZHJ3eHIteHIteCAgMiAxMDAwMCAxMDAwMCA0MDk2IFNl
+cCAyNCAwNzo0MyBzcnYKZHJ3eHIteHIteCAgMiAxMDAwMCAxMDAwMCA0MDk2IEFwciAxNSAgMjAy
+MCBzeXMKZHJ3eHJ3eHJ3dCAgMiAxMDAwMCAxMDAwMCA0MDk2IFNlcCAyNCAwNzo0NCB0bXAKZHJ3
+eHIteHIteCAxMyAxMDAwMCAxMDAwMCA0MDk2IFNlcCAyNCAwNzo0MyB1c3IKZHJ3eHIteHIteCAx
+MiAxMDAwMCAxMDAwMCA0MDk2IFNlcCAyNCAwNzo0NCB2YXIKcm9vdEBmMi12bTp+IyBseGMtc3Rh
+cnQgZjIgIyB1c2VzIC9tbnQgYXMgcm9vdGZzCnJvb3RAZjItdm06fiMgbHhjLWF0dGFjaCBmMiAt
+LSBjYXQgL3Byb2MvMS91aWRfbWFwCiAgICAgICAgIDAgICAgICAxMDAwMCAgICAgIDEwMDAwCnJv
+b3RAZjItdm06fiMgbHhjLWF0dGFjaCBmMiAtLSBjYXQgL3Byb2MvMS9naWRfbWFwCiAgICAgICAg
+IDAgICAgICAxMDAwMCAgICAgIDEwMDAwCnJvb3RAZjItdm06fiMgbHhjLWF0dGFjaCBmMiAtLSBs
+cyAtYWwgLwp0b3RhbCA1Mgpkcnd4ci14ci14ICAxNyByb290ICAgcm9vdCAgICA0MDk2IFNlcCAy
+NCAwNzo0OCAuCmRyd3hyLXhyLXggIDE3IHJvb3QgICByb290ICAgIDQwOTYgU2VwIDI0IDA3OjQ4
+IC4uCmxyd3hyd3hyd3ggICAxIHJvb3QgICByb290ICAgICAgIDcgU2VwIDI0IDA3OjQzIGJpbiAt
+PiB1c3IvYmluCmRyd3hyLXhyLXggICAyIHJvb3QgICByb290ICAgIDQwOTYgQXByIDE1ICAyMDIw
+IGJvb3QKZHJ3eHIteHIteCAgIDUgcm9vdCAgIHJvb3QgICAgIDUwMCBPY3QgMjggMjM6MzkgZGV2
+CmRyd3hyLXhyLXggIDYxIHJvb3QgICByb290ICAgIDQwOTYgT2N0IDI4IDIzOjM5IGV0Ywpkcnd4
+ci14ci14ICAgMyByb290ICAgcm9vdCAgICA0MDk2IFNlcCAyNCAwNzo0NSBob21lCmxyd3hyd3hy
+d3ggICAxIHJvb3QgICByb290ICAgICAgIDcgU2VwIDI0IDA3OjQzIGxpYiAtPiB1c3IvbGliCmxy
+d3hyd3hyd3ggICAxIHJvb3QgICByb290ICAgICAgIDkgU2VwIDI0IDA3OjQzIGxpYjMyIC0+IHVz
+ci9saWIzMgpscnd4cnd4cnd4ICAgMSByb290ICAgcm9vdCAgICAgICA5IFNlcCAyNCAwNzo0MyBs
+aWI2NCAtPiB1c3IvbGliNjQKbHJ3eHJ3eHJ3eCAgIDEgcm9vdCAgIHJvb3QgICAgICAxMCBTZXAg
+MjQgMDc6NDMgbGlieDMyIC0+IHVzci9saWJ4MzIKZHJ3eHIteHIteCAgIDIgcm9vdCAgIHJvb3Qg
+ICAgNDA5NiBTZXAgMjQgMDc6NDMgbWVkaWEKZHJ3eHIteHIteCAgIDIgcm9vdCAgIHJvb3QgICAg
+NDA5NiBTZXAgMjQgMDc6NDMgbW50CmRyd3hyLXhyLXggICAyIHJvb3QgICByb290ICAgIDQwOTYg
+U2VwIDI0IDA3OjQzIG9wdApkci14ci14ci14IDIzMiBub2JvZHkgbm9ncm91cCAgICAwIE9jdCAy
+OCAyMzozOSBwcm9jCmRyd3gtLS0tLS0gICAyIHJvb3QgICByb290ICAgIDQwOTYgT2N0IDI4IDIz
+OjQxIHJvb3QKZHJ3eHIteHIteCAgMTIgcm9vdCAgIHJvb3QgICAgIDM2MCBPY3QgMjggMjM6Mzkg
+cnVuCmxyd3hyd3hyd3ggICAxIHJvb3QgICByb290ICAgICAgIDggU2VwIDI0IDA3OjQzIHNiaW4g
+LT4gdXNyL3NiaW4KZHJ3eHIteHIteCAgIDIgcm9vdCAgIHJvb3QgICAgNDA5NiBTZXAgMjQgMDc6
+NDMgc3J2CmRyLXhyLXhyLXggIDEzIG5vYm9keSBub2dyb3VwICAgIDAgT2N0IDI4IDIzOjM5IHN5
+cwpkcnd4cnd4cnd0ICAxMSByb290ICAgcm9vdCAgICA0MDk2IE9jdCAyOCAyMzo0MCB0bXAKZHJ3
+eHIteHIteCAgMTMgcm9vdCAgIHJvb3QgICAgNDA5NiBTZXAgMjQgMDc6NDMgdXNyCmRyd3hyLXhy
+LXggIDEyIHJvb3QgICByb290ICAgIDQwOTYgU2VwIDI0IDA3OjQ0IHZhcgpyb290QGYyLXZtOn4j
+IGx4Yy1hdHRhY2ggZjIgLS0gbHMgLWFsIC9teS1maWxlCi1ydy1yLS1yLS0gMSByb290IHJvb3Qg
+MCBPY3QgMjggMjM6NDMgL215LWZpbGUKcm9vdEBmMi12bTp+IyBscyAtYWwgL3Zhci9saWIvbHhj
+L2YyL3Jvb3Rmcy9teS1maWxlCi1ydy1yLS1yLS0gMSAyMDAwMCAyMDAwMCAwIE9jdCAyOCAyMzo0
+MyAvdmFyL2xpYi9seGMvZjIvcm9vdGZzL215LWZpbGUKCkknZCBsaWtlIHRvIHNheSB0aGFua3Mg
+dG86CkFsIGZvciBwb2ludGluZyBtZSBpbnRvIHRoZSBkaXJlY3Rpb24gdG8gYXZvaWQgaW5vZGUg
+YWxpYXMgaXNzdWVzIGR1cmluZwpsb29rdXAuIERhdmlkIGZvciB2YXJpb3VzIGRpc2N1c3Npb25z
+IGFyb3VuZCB0aGlzLiBDaHJpc3RvcGggZm9yIHByb3ZpbmcKYSBmaXJzdCBwcm9wZXIgcmV2aWV3
+IGFuZCBmb3IgYmVpbmcgaW52b2x2ZWQgaW4gdGhlIG9yaWdpbmFsIGlkZWEuIFR5Y2hvCmZvciBo
+ZWxwaW5nIHdpdGggdGhpcyBzZXJpZXMgYW5kIG9uIGZ1dHVyZSBwYXRjaGVzIHRvIGNvbnZlcnQK
+ZmlsZXN5c3RlbXMuIEFsYmFuIENyZXF1eSBhbmQgdGhlIEtpbnZvbGsgcGVlcHMgbG9jYXRlZCBq
+dXN0IGEgZmV3CnN0cmVldHMgYXdheSBmcm9tIG1lIGluIEJlcmxpbiBmb3IgcHJvdmlkaW5nIHVz
+ZS1jYXNlIGRpc2N1c3Npb25zIGFuZAp3cml0aW5nIHBhdGNoZXMgZm9yIGNvbnRhaW5lcmQuIFN0
+w6lwaGFuZSBmb3IgaGlzIGludmFsdWFibGUgaW5wdXQgb24KbWFueSB0aGluZ3MgYW5kIGxldmVs
+IGhlYWQgYW5kIGVuYWJsaW5nIG1lIHRvIHdvcmsgb24gdGhpcy4gQW1pciBmb3IKZXhwbGFpbmlu
+ZyBhbmQgZGlzY3Vzc2luZyBhc3BlY3RzIG9mIG92ZXJsYXlmcyB3aXRoIG1lLiBJJ2QgbGlrZSB0
+bwplc3BlY2lhbGx5IHRoYW5rIFNldGggRm9yc2hlZS4gSGUgcHJvdmlkZWQgYSBsb3Qgb2YgZ29v
+ZCBhbmFseXNpcywKc3VnZ2VzdGlvbnMsIGFuZCBwYXJ0aWNpcGF0ZWQgaW4gc2hvcnQtbm90aWNl
+IGRpc2N1c3Npb25zIGluIGJvdGggY2hhdAphbmQgdmlkZW8gZm9yIHNvbWUgbml0dHktZ3JpdHR5
+IHRlY2huaWNhbCBkZXRhaWxzLgoKVGhpcyBzZXJpZXMgY2FuIGJlIGZvdW5kIGFuZCBwdWxsZWQg
+ZnJvbSB0aGUgdGhyZWUgdXN1YWwgbG9jYXRpb25zOgpodHRwczovL2dpdC5rZXJuZWwub3JnL3B1
+Yi9zY20vbGludXgva2VybmVsL2dpdC9icmF1bmVyL2xpbnV4LmdpdC9sb2cvP2g9aWRtYXBwZWRf
+bW91bnRzCmh0dHBzOi8vZ2l0aHViLmNvbS9icmF1bmVyL2xpbnV4L3RyZWUvaWRtYXBwZWRfbW91
+bnRzCmh0dHBzOi8vZ2l0bGFiLmNvbS9icmF1bmVyL2xpbnV4Ly0vY29tbWl0cy9pZG1hcHBlZF9t
+b3VudHMKClRoYW5rcyEKQ2hyaXN0aWFuCgpDaHJpc3RpYW4gQnJhdW5lciAoMzgpOgogIG5hbWVz
+cGFjZTogdGFrZSBsb2NrX21vdW50X2hhc2goKSBkaXJlY3RseSB3aGVuIGNoYW5naW5nIGZsYWdz
+CiAgbW91bnQ6IG1ha2Uge2xvY2ssdW5sb2NrfV9tb3VudF9oYXNoKCkgc3RhdGljCiAgbmFtZXNw
+YWNlOiBvbmx5IHRha2UgcmVhZCBsb2NrIGluIGRvX3JlY29uZmlndXJlX21udCgpCiAgZnM6IHNw
+bGl0IG91dCBmdW5jdGlvbnMgdG8gaG9sZCB3cml0ZXJzCiAgZnM6IGFkZCBhdHRyX2ZsYWdzX3Rv
+X21udF9mbGFncyBoZWxwZXIKICBmczogYWRkIG1vdW50X3NldGF0dHIoKQogIHRlc3RzOiBhZGQg
+bW91bnRfc2V0YXR0cigpIHNlbGZ0ZXN0cwogIGZzOiBhZGQgaWQgdHJhbnNsYXRpb24gaGVscGVy
+cwogIG1vdW50OiBhdHRhY2ggbWFwcGluZ3MgdG8gbW91bnRzCiAgY2FwYWJpbGl0eTogaGFuZGxl
+IGlkbWFwcGVkIG1vdW50cwogIG5hbWVpOiBtYWtlIHBlcm1pc3Npb24gaGVscGVycyBpZG1hcHBl
+ZCBtb3VudCBhd2FyZQogIGlub2RlOiBtYWtlIGluaXQgYW5kIHBlcm1pc3Npb24gaGVscGVycyBp
+ZG1hcHBlZCBtb3VudCBhd2FyZQogIGF0dHI6IGhhbmRsZSBpZG1hcHBlZCBtb3VudHMKICBhY2w6
+IGhhbmRsZSBpZG1hcHBlZCBtb3VudHMKICBjb21tb25jYXA6IGhhbmRsZSBpZG1hcHBlZCBtb3Vu
+dHMKICBzdGF0OiBoYW5kbGUgaWRtYXBwZWQgbW91bnRzCiAgbmFtZWk6IGhhbmRsZSBpZG1hcHBl
+ZCBtb3VudHMgaW4gbWF5XyooKSBoZWxwZXJzCiAgbmFtZWk6IGludHJvZHVjZSBzdHJ1Y3QgcmVu
+YW1lZGF0YQogIG5hbWVpOiBwcmVwYXJlIGZvciBpZG1hcHBlZCBtb3VudHMKICBvcGVuOiBoYW5k
+bGUgaWRtYXBwZWQgbW91bnRzIGluIGRvX3RydW5jYXRlKCkKICBvcGVuOiBoYW5kbGUgaWRtYXBw
+ZWQgbW91bnRzCiAgYWZfdW5peDogaGFuZGxlIGlkbWFwcGVkIG1vdW50cwogIHV0aW1lczogaGFu
+ZGxlIGlkbWFwcGVkIG1vdW50cwogIGZjbnRsOiBoYW5kbGUgaWRtYXBwZWQgbW91bnRzCiAgbm90
+aWZ5OiBoYW5kbGUgaWRtYXBwZWQgbW91bnRzCiAgaW5pdDogaGFuZGxlIGlkbWFwcGVkIG1vdW50
+cwogIGlvY3RsOiBoYW5kbGUgaWRtYXBwZWQgbW91bnRzCiAgd291bGRfZHVtcDogaGFuZGxlIGlk
+bWFwcGVkIG1vdW50cwogIGV4ZWM6IGhhbmRsZSBpZG1hcHBlZCBtb3VudHMKICBmczogbWFrZSBo
+ZWxwZXJzIGlkbWFwIG1vdW50IGF3YXJlCiAgYXBwYXJtb3I6IGhhbmRsZSBpZG1hcHBlZCBtb3Vu
+dHMKICBpbWE6IGhhbmRsZSBpZG1hcHBlZCBtb3VudHMKICBmYXQ6IGhhbmRsZSBpZG1hcHBlZCBt
+b3VudHMKICBleHQ0OiBzdXBwb3J0IGlkbWFwcGVkIG1vdW50cwogIGVjcnlwdGZzOiBkbyBub3Qg
+bW91bnQgb24gdG9wIG9mIGlkbWFwcGVkIG1vdW50cwogIG92ZXJsYXlmczogZG8gbm90IG1vdW50
+IG9uIHRvcCBvZiBpZG1hcHBlZCBtb3VudHMKICBmczogaW50cm9kdWNlIE1PVU5UX0FUVFJfSURN
+QVAKICB0ZXN0czogZXh0ZW5kIG1vdW50X3NldGF0dHIgdGVzdHMKClR5Y2hvIEFuZGVyc2VuICgx
+KToKICB4YXR0cjogaGFuZGxlIGlkbWFwcGVkIG1vdW50cwoKIERvY3VtZW50YXRpb24vZmlsZXN5
+c3RlbXMvbG9ja2luZy5yc3QgICAgICAgICB8ICAgIDYgKy0KIERvY3VtZW50YXRpb24vZmlsZXN5
+c3RlbXMvcG9ydGluZy5yc3QgICAgICAgICB8ICAgIDIgKwogRG9jdW1lbnRhdGlvbi9maWxlc3lz
+dGVtcy92ZnMucnN0ICAgICAgICAgICAgIHwgICAxOSArLQogYXJjaC9hbHBoYS9rZXJuZWwvc3lz
+Y2FsbHMvc3lzY2FsbC50YmwgICAgICAgIHwgICAgMSArCiBhcmNoL2FybS90b29scy9zeXNjYWxs
+LnRibCAgICAgICAgICAgICAgICAgICAgfCAgICAxICsKIGFyY2gvYXJtNjQvaW5jbHVkZS9hc20v
+dW5pc3RkMzIuaCAgICAgICAgICAgICB8ICAgIDIgKwogYXJjaC9pYTY0L2tlcm5lbC9zeXNjYWxs
+cy9zeXNjYWxsLnRibCAgICAgICAgIHwgICAgMSArCiBhcmNoL202OGsva2VybmVsL3N5c2NhbGxz
+L3N5c2NhbGwudGJsICAgICAgICAgfCAgICAxICsKIGFyY2gvbWljcm9ibGF6ZS9rZXJuZWwvc3lz
+Y2FsbHMvc3lzY2FsbC50YmwgICB8ICAgIDEgKwogYXJjaC9taXBzL2tlcm5lbC9zeXNjYWxscy9z
+eXNjYWxsX24zMi50YmwgICAgIHwgICAgMSArCiBhcmNoL21pcHMva2VybmVsL3N5c2NhbGxzL3N5
+c2NhbGxfbjY0LnRibCAgICAgfCAgICAxICsKIGFyY2gvbWlwcy9rZXJuZWwvc3lzY2FsbHMvc3lz
+Y2FsbF9vMzIudGJsICAgICB8ICAgIDEgKwogYXJjaC9wYXJpc2Mva2VybmVsL3N5c2NhbGxzL3N5
+c2NhbGwudGJsICAgICAgIHwgICAgMSArCiBhcmNoL3Bvd2VycGMva2VybmVsL3N5c2NhbGxzL3N5
+c2NhbGwudGJsICAgICAgfCAgICAxICsKIGFyY2gvcG93ZXJwYy9wbGF0Zm9ybXMvY2VsbC9zcHVm
+cy9pbm9kZS5jICAgICB8ICAgIDUgKy0KIGFyY2gvczM5MC9rZXJuZWwvc3lzY2FsbHMvc3lzY2Fs
+bC50YmwgICAgICAgICB8ICAgIDEgKwogYXJjaC9zaC9rZXJuZWwvc3lzY2FsbHMvc3lzY2FsbC50
+YmwgICAgICAgICAgIHwgICAgMSArCiBhcmNoL3NwYXJjL2tlcm5lbC9zeXNjYWxscy9zeXNjYWxs
+LnRibCAgICAgICAgfCAgICAxICsKIGFyY2gveDg2L2VudHJ5L3N5c2NhbGxzL3N5c2NhbGxfMzIu
+dGJsICAgICAgICB8ICAgIDEgKwogYXJjaC94ODYvZW50cnkvc3lzY2FsbHMvc3lzY2FsbF82NC50
+YmwgICAgICAgIHwgICAgMSArCiBhcmNoL3h0ZW5zYS9rZXJuZWwvc3lzY2FsbHMvc3lzY2FsbC50
+YmwgICAgICAgfCAgICAxICsKIGRyaXZlcnMvYW5kcm9pZC9iaW5kZXJmcy5jICAgICAgICAgICAg
+ICAgICAgICB8ICAgIDYgKy0KIGRyaXZlcnMvYmFzZS9kZXZ0bXBmcy5jICAgICAgICAgICAgICAg
+ICAgICAgICB8ICAgMTIgKy0KIGZzLzlwL2FjbC5jICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICB8ICAgIDggKy0KIGZzLzlwL3Y5ZnMuaCAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICB8ICAgIDMgKy0KIGZzLzlwL3Y5ZnNfdmZzLmggICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICB8ICAgIDIgKy0KIGZzLzlwL3Zmc19pbm9kZS5jICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICB8ICAgMzYgKy0KIGZzLzlwL3Zmc19pbm9kZV9kb3RsLmMgICAgICAgICAgICAgICAg
+ICAgICAgICB8ICAgMzkgKy0KIGZzLzlwL3hhdHRyLmMgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICB8ICAgIDEgKwogZnMvYWRmcy9hZGZzLmggICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgIHwgICAgMyArLQogZnMvYWRmcy9pbm9kZS5jICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgIHwgICAgNSArLQogZnMvYWZmcy9hZmZzLmggICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgIHwgICAxMCArLQogZnMvYWZmcy9pbm9kZS5jICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgIHwgICAgNyArLQogZnMvYWZmcy9uYW1laS5jICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgIHwgICAxNSArLQogZnMvYWZzL2Rpci5jICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgIHwgICAzNCArLQogZnMvYWZzL2lub2RlLmMgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgIHwgICAgOSArLQogZnMvYWZzL2ludGVybmFsLmggICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgIHwgICAgNyArLQogZnMvYWZzL3NlY3VyaXR5LmMgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgIHwgICAgMiArLQogZnMvYWZzL3hhdHRyLmMgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgIHwgICAgMiArCiBmcy9hdHRyLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgfCAgMTI0ICstCiBmcy9hdXRvZnMvcm9vdC5jICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgfCAgIDEzICstCiBmcy9iYWRfaW5vZGUuYyAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgfCAgIDM2ICstCiBmcy9iZnMvZGlyLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgfCAgIDEyICstCiBmcy9idHJmcy9hY2wuYyAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgfCAgICA1ICstCiBmcy9idHJmcy9jdHJlZS5oICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgfCAgICAzICstCiBmcy9idHJmcy9pbm9kZS5jICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgfCAgIDQ1ICstCiBmcy9idHJmcy9pb2N0bC5jICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgfCAgIDI1ICstCiBmcy9idHJmcy90ZXN0cy9idHJmcy10ZXN0cy5jICAgICAgICAgICAg
+ICAgICAgfCAgICAyICstCiBmcy9idHJmcy94YXR0ci5jICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgfCAgICAyICsKIGZzL2NhY2hlZmlsZXMvaW50ZXJmYWNlLmMgICAgICAgICAgICAgICAg
+ICAgICB8ICAgIDQgKy0KIGZzL2NhY2hlZmlsZXMvbmFtZWkuYyAgICAgICAgICAgICAgICAgICAg
+ICAgICB8ICAgMTkgKy0KIGZzL2NhY2hlZmlsZXMveGF0dHIuYyAgICAgICAgICAgICAgICAgICAg
+ICAgICB8ICAgMTYgKy0KIGZzL2NlcGgvYWNsLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICB8ICAgIDUgKy0KIGZzL2NlcGgvZGlyLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICB8ICAgMjMgKy0KIGZzL2NlcGgvaW5vZGUuYyAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICB8ICAgMTcgKy0KIGZzL2NlcGgvc3VwZXIuaCAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICB8ICAgMTIgKy0KIGZzL2NlcGgveGF0dHIuYyAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICB8ICAgIDEgKwogZnMvY2lmcy9jaWZzZnMuYyAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgIHwgICAgNCArLQogZnMvY2lmcy9jaWZzZnMuaCAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgIHwgICAyMSArLQogZnMvY2lmcy9kaXIuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgIHwgICAgOCArLQogZnMvY2lmcy9pbm9kZS5jICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgIHwgICAyNiArLQogZnMvY2lmcy9saW5rLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgIHwgICAgMyArLQogZnMvY2lmcy94YXR0ci5jICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgIHwgICAgMSArCiBmcy9jb2RhL2NvZGFfbGludXguaCAgICAgICAgICAgICAgICAgICAgICAg
+ICAgfCAgICA2ICstCiBmcy9jb2RhL2Rpci5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgfCAgIDE3ICstCiBmcy9jb2RhL2lub2RlLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgfCAgICA5ICstCiBmcy9jb2RhL3Bpb2N0bC5jICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgfCAgICA2ICstCiBmcy9jb25maWdmcy9jb25maWdmc19pbnRlcm5hbC5oICAgICAgICAgICAg
+ICAgfCAgICA3ICstCiBmcy9jb25maWdmcy9kaXIuYyAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgfCAgICAzICstCiBmcy9jb25maWdmcy9pbm9kZS5jICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgfCAgICA1ICstCiBmcy9jb25maWdmcy9zeW1saW5rLmMgICAgICAgICAgICAgICAgICAgICAg
+ICAgfCAgICA1ICstCiBmcy9jb3JlZHVtcC5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgfCAgIDE0ICstCiBmcy9jcnlwdG8vcG9saWN5LmMgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgfCAgICAyICstCiBmcy9kZWJ1Z2ZzL2lub2RlLmMgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgfCAgICA5ICstCiBmcy9lY3J5cHRmcy9jcnlwdG8uYyAgICAgICAgICAgICAgICAgICAgICAg
+ICAgfCAgICA0ICstCiBmcy9lY3J5cHRmcy9pbm9kZS5jICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgfCAgIDgwICstCiBmcy9lY3J5cHRmcy9tYWluLmMgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgfCAgICA2ICsKIGZzL2VjcnlwdGZzL21tYXAuYyAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICB8ICAgIDQgKy0KIGZzL2VmaXZhcmZzL2ZpbGUuYyAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICB8ICAgIDIgKy0KIGZzL2VmaXZhcmZzL2lub2RlLmMgICAgICAgICAgICAgICAgICAgICAgICAg
+ICB8ICAgIDQgKy0KIGZzL2Vyb2ZzL2lub2RlLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICB8ICAgIDcgKy0KIGZzL2Vyb2ZzL2ludGVybmFsLmggICAgICAgICAgICAgICAgICAgICAgICAg
+ICB8ICAgIDUgKy0KIGZzL2V4ZWMuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICB8ICAgMTIgKy0KIGZzL2V4ZmF0L2V4ZmF0X2ZzLmggICAgICAgICAgICAgICAgICAgICAgICAg
+ICB8ICAgIDggKy0KIGZzL2V4ZmF0L2ZpbGUuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICB8ICAgMTQgKy0KIGZzL2V4ZmF0L25hbWVpLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICB8ICAgMTQgKy0KIGZzL2V4dDIvYWNsLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICB8ICAgIDUgKy0KIGZzL2V4dDIvYWNsLmggICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICB8ICAgIDMgKy0KIGZzL2V4dDIvZXh0Mi5oICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICB8ICAgIDUgKy0KIGZzL2V4dDIvaWFsbG9jLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICB8ICAgIDIgKy0KIGZzL2V4dDIvaW5vZGUuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICB8ICAgMTUgKy0KIGZzL2V4dDIvaW9jdGwuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICB8ICAgIDYgKy0KIGZzL2V4dDIvbmFtZWkuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICB8ICAgMjIgKy0KIGZzL2V4dDIveGF0dHJfc2VjdXJpdHkuYyAgICAgICAgICAgICAgICAgICAg
+ICB8ICAgIDEgKwogZnMvZXh0Mi94YXR0cl90cnVzdGVkLmMgICAgICAgICAgICAgICAgICAgICAg
+IHwgICAgMSArCiBmcy9leHQyL3hhdHRyX3VzZXIuYyAgICAgICAgICAgICAgICAgICAgICAgICAg
+fCAgICAxICsKIGZzL2V4dDQvYWNsLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8
+ICAgIDUgKy0KIGZzL2V4dDQvYWNsLmggICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8
+ICAgIDMgKy0KIGZzL2V4dDQvZXh0NC5oICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8
+ICAgMjEgKy0KIGZzL2V4dDQvaWFsbG9jLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8
+ICAgIDcgKy0KIGZzL2V4dDQvaW5vZGUuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8
+ICAgMjEgKy0KIGZzL2V4dDQvaW9jdGwuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8
+ICAgMTkgKy0KIGZzL2V4dDQvbmFtZWkuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8
+ICAgNDkgKy0KIGZzL2V4dDQvc3VwZXIuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8
+ICAgIDIgKy0KIGZzL2V4dDQveGF0dHJfaHVyZC5jICAgICAgICAgICAgICAgICAgICAgICAgICB8
+ICAgIDEgKwogZnMvZXh0NC94YXR0cl9zZWN1cml0eS5jICAgICAgICAgICAgICAgICAgICAgIHwg
+ICAgMSArCiBmcy9leHQ0L3hhdHRyX3RydXN0ZWQuYyAgICAgICAgICAgICAgICAgICAgICAgfCAg
+ICAxICsKIGZzL2V4dDQveGF0dHJfdXNlci5jICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAg
+IDEgKwogZnMvZjJmcy9hY2wuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAg
+NSArLQogZnMvZjJmcy9hY2wuaCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAg
+MyArLQogZnMvZjJmcy9mMmZzLmggICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAg
+NyArLQogZnMvZjJmcy9maWxlLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAz
+NSArLQogZnMvZjJmcy9uYW1laS5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAy
+MyArLQogZnMvZjJmcy94YXR0ci5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAg
+NCArLQogZnMvZmF0L2ZhdC5oICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAg
+NiArLQogZnMvZmF0L2ZpbGUuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAy
+NCArLQogZnMvZmF0L25hbWVpX21zZG9zLmMgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAx
+MiArLQogZnMvZmF0L25hbWVpX3ZmYXQuYyAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAx
+NSArLQogZnMvZmNudGwuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAg
+MyArLQogZnMvZnVzZS9hY2wuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAg
+MyArLQogZnMvZnVzZS9kaXIuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICA0
+NSArLQogZnMvZnVzZS9mdXNlX2kuaCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAg
+NCArLQogZnMvZnVzZS94YXR0ci5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAg
+MiArCiBmcy9nZnMyL2FjbC5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA1
+ICstCiBmcy9nZnMyL2FjbC5oICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAz
+ICstCiBmcy9nZnMyL2ZpbGUuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA0
+ICstCiBmcy9nZnMyL2lub2RlLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDU5
+ICstCiBmcy9nZnMyL2lub2RlLmggICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAz
+ICstCiBmcy9nZnMyL3hhdHRyLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAx
+ICsKIGZzL2hmcy9hdHRyLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDEg
+KwogZnMvaGZzL2Rpci5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAxMyAr
+LQogZnMvaGZzL2hmc19mcy5oICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgMiAr
+LQogZnMvaGZzL2lub2RlLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgNyAr
+LQogZnMvaGZzcGx1cy9kaXIuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAyNSAr
+LQogZnMvaGZzcGx1cy9oZnNwbHVzX2ZzLmggICAgICAgICAgICAgICAgICAgICAgIHwgICAgNSAr
+LQogZnMvaGZzcGx1cy9pbm9kZS5jICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAxNiAr
+LQogZnMvaGZzcGx1cy9pb2N0bC5jICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgMiAr
+LQogZnMvaGZzcGx1cy94YXR0ci5jICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgMSAr
+CiBmcy9oZnNwbHVzL3hhdHRyX3NlY3VyaXR5LmMgICAgICAgICAgICAgICAgICAgfCAgICAxICsK
+IGZzL2hmc3BsdXMveGF0dHJfdHJ1c3RlZC5jICAgICAgICAgICAgICAgICAgICB8ICAgIDEgKwog
+ZnMvaGZzcGx1cy94YXR0cl91c2VyLmMgICAgICAgICAgICAgICAgICAgICAgIHwgICAgMSArCiBm
+cy9ob3N0ZnMvaG9zdGZzX2tlcm4uYyAgICAgICAgICAgICAgICAgICAgICAgfCAgIDI5ICstCiBm
+cy9ocGZzL2hwZnNfZm4uaCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAyICstCiBm
+cy9ocGZzL2lub2RlLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA3ICstCiBm
+cy9ocGZzL25hbWVpLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDIwICstCiBm
+cy9odWdldGxiZnMvaW5vZGUuYyAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDMxICstCiBm
+cy9pbml0LmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDI3ICstCiBm
+cy9pbm9kZS5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDUwICstCiBm
+cy9pbnRlcm5hbC5oICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAyICstCiBm
+cy9qZmZzMi9hY2wuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA1ICstCiBm
+cy9qZmZzMi9hY2wuaCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAzICstCiBm
+cy9qZmZzMi9kaXIuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDMyICstCiBm
+cy9qZmZzMi9mcy5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA3ICstCiBm
+cy9qZmZzMi9vcy1saW51eC5oICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAyICstCiBm
+cy9qZmZzMi9zZWN1cml0eS5jICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAxICsKIGZz
+L2pmZnMyL3hhdHRyX3RydXN0ZWQuYyAgICAgICAgICAgICAgICAgICAgICB8ICAgIDEgKwogZnMv
+amZmczIveGF0dHJfdXNlci5jICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgMSArCiBmcy9q
+ZnMvYWNsLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA1ICstCiBmcy9q
+ZnMvZmlsZS5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA5ICstCiBmcy9q
+ZnMvaW9jdGwuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAyICstCiBmcy9q
+ZnMvamZzX2FjbC5oICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAzICstCiBmcy9q
+ZnMvamZzX2lub2RlLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAyICstCiBmcy9q
+ZnMvamZzX2lub2RlLmggICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAyICstCiBmcy9q
+ZnMvbmFtZWkuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDIxICstCiBmcy9q
+ZnMveGF0dHIuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAyICsKIGZzL2tl
+cm5mcy9kaXIuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDcgKy0KIGZzL2tl
+cm5mcy9pbm9kZS5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgMTkgKy0KIGZzL2tl
+cm5mcy9rZXJuZnMtaW50ZXJuYWwuaCAgICAgICAgICAgICAgICAgICB8ICAgIDkgKy0KIGZzL2xp
+YmZzLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgMjggKy0KIGZzL21p
+bml4L2JpdG1hcC5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDIgKy0KIGZzL21p
+bml4L2ZpbGUuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDcgKy0KIGZzL21p
+bml4L2lub2RlLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDYgKy0KIGZzL21p
+bml4L21pbml4LmggICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDMgKy0KIGZzL21p
+bml4L25hbWVpLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgMjQgKy0KIGZzL21v
+dW50LmggICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgMTAgLQogZnMvbmFt
+ZWkuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgIDUwNyArKysrLS0KIGZz
+L25hbWVzcGFjZS5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICA0OTUgKysrKyst
+CiBmcy9uZnMvZGlyLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDI1ICst
+CiBmcy9uZnMvaW5vZGUuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA5ICst
+CiBmcy9uZnMvaW50ZXJuYWwuaCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDEwICst
+CiBmcy9uZnMvbmFtZXNwYWNlLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDE0ICst
+CiBmcy9uZnMvbmZzM19mcy5oICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAzICst
+CiBmcy9uZnMvbmZzM2FjbC5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAzICst
+CiBmcy9uZnMvbmZzNHByb2MuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAzICsK
+IGZzL25mc2QvbmZzMmFjbC5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDQgKy0K
+IGZzL25mc2QvbmZzM2FjbC5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDQgKy0K
+IGZzL25mc2QvbmZzNGFjbC5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDQgKy0K
+IGZzL25mc2QvbmZzNHJlY292ZXIuYyAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDYgKy0K
+IGZzL25mc2QvbmZzZmguYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDIgKy0K
+IGZzL25mc2QvbmZzcHJvYy5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDIgKy0K
+IGZzL25mc2QvdmZzLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgNDcgKy0K
+IGZzL25pbGZzMi9pbm9kZS5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgMTMgKy0K
+IGZzL25pbGZzMi9pb2N0bC5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDIgKy0K
+IGZzL25pbGZzMi9uYW1laS5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgMTkgKy0K
+IGZzL25pbGZzMi9uaWxmcy5oICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDQgKy0K
+IGZzL25vdGlmeS9mYW5vdGlmeS9mYW5vdGlmeV91c2VyLmMgICAgICAgICAgICB8ICAgIDIgKy0K
+IGZzL25vdGlmeS9pbm90aWZ5L2lub3RpZnlfdXNlci5jICAgICAgICAgICAgICB8ICAgIDMgKy0K
+IGZzL250ZnMvaW5vZGUuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDYgKy0K
+IGZzL250ZnMvaW5vZGUuaCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDMgKy0K
+IGZzL29jZnMyL2FjbC5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDUgKy0K
+IGZzL29jZnMyL2FjbC5oICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDMgKy0K
+IGZzL29jZnMyL2RsbWZzL2RsbWZzLmMgICAgICAgICAgICAgICAgICAgICAgICB8ICAgMTcgKy0K
+IGZzL29jZnMyL2ZpbGUuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgMTcgKy0K
+IGZzL29jZnMyL2ZpbGUuaCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgMTEgKy0K
+IGZzL29jZnMyL2lvY3RsLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDIgKy0K
+IGZzL29jZnMyL25hbWVpLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgMjEgKy0K
+IGZzL29jZnMyL3JlZmNvdW50dHJlZS5jICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDQgKy0K
+IGZzL29jZnMyL3hhdHRyLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDMgKwog
+ZnMvb21mcy9kaXIuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAxMyArLQog
+ZnMvb21mcy9maWxlLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgNyArLQog
+ZnMvb21mcy9pbm9kZS5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgMiArLQog
+ZnMvb3Blbi5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICA1MCArLQog
+ZnMvb3JhbmdlZnMvYWNsLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgNSArLQog
+ZnMvb3JhbmdlZnMvaW5vZGUuYyAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAyMCArLQog
+ZnMvb3JhbmdlZnMvbmFtZWkuYyAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAxMiArLQog
+ZnMvb3JhbmdlZnMvb3JhbmdlZnMta2VybmVsLmggICAgICAgICAgICAgICAgIHwgICAxMyArLQog
+ZnMvb3JhbmdlZnMveGF0dHIuYyAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgMSArCiBm
+cy9vdmVybGF5ZnMvY29weV91cC5jICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDIwICstCiBm
+cy9vdmVybGF5ZnMvZGlyLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDMxICstCiBm
+cy9vdmVybGF5ZnMvZmlsZS5jICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA2ICstCiBm
+cy9vdmVybGF5ZnMvaW5vZGUuYyAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDI2ICstCiBm
+cy9vdmVybGF5ZnMvb3ZlcmxheWZzLmggICAgICAgICAgICAgICAgICAgICAgfCAgIDQ0ICstCiBm
+cy9vdmVybGF5ZnMvc3VwZXIuYyAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDE5ICstCiBm
+cy9vdmVybGF5ZnMvdXRpbC5jICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA0ICstCiBm
+cy9wb3NpeF9hY2wuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgMTAxICstCiBm
+cy9wcm9jL2Jhc2UuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDI4ICstCiBm
+cy9wcm9jL2ZkLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA1ICstCiBm
+cy9wcm9jL2ZkLmggICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAzICstCiBm
+cy9wcm9jL2dlbmVyaWMuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDEyICstCiBm
+cy9wcm9jL2ludGVybmFsLmggICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA1ICstCiBm
+cy9wcm9jL3Byb2NfbmV0LmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA1ICstCiBm
+cy9wcm9jL3Byb2Nfc3lzY3RsLmMgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDE1ICstCiBm
+cy9wcm9jL3Jvb3QuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA1ICstCiBm
+cy9wcm9jX25hbWVzcGFjZS5jICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAzICsKIGZz
+L3JhbWZzL2ZpbGUtbm9tbXUuYyAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDkgKy0KIGZz
+L3JhbWZzL2lub2RlLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgMTggKy0KIGZz
+L3JlaXNlcmZzL2FjbC5oICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDMgKy0KIGZz
+L3JlaXNlcmZzL2lub2RlLmMgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDcgKy0KIGZz
+L3JlaXNlcmZzL2lvY3RsLmMgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDQgKy0KIGZz
+L3JlaXNlcmZzL25hbWVpLmMgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgMjEgKy0KIGZz
+L3JlaXNlcmZzL3JlaXNlcmZzLmggICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDMgKy0KIGZz
+L3JlaXNlcmZzL3hhdHRyLmMgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgMTIgKy0KIGZz
+L3JlaXNlcmZzL3hhdHRyLmggICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDMgKy0KIGZz
+L3JlaXNlcmZzL3hhdHRyX2FjbC5jICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDcgKy0KIGZz
+L3JlaXNlcmZzL3hhdHRyX3NlY3VyaXR5LmMgICAgICAgICAgICAgICAgICB8ICAgIDMgKy0KIGZz
+L3JlaXNlcmZzL3hhdHRyX3RydXN0ZWQuYyAgICAgICAgICAgICAgICAgICB8ICAgIDMgKy0KIGZz
+L3JlaXNlcmZzL3hhdHRyX3VzZXIuYyAgICAgICAgICAgICAgICAgICAgICB8ICAgIDMgKy0KIGZz
+L3JlbWFwX3JhbmdlLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDcgKy0KIGZz
+L3N0YXQuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgMjYgKy0KIGZz
+L3N5c3YvZmlsZS5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDcgKy0KIGZz
+L3N5c3YvaWFsbG9jLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDIgKy0KIGZz
+L3N5c3YvaXRyZWUuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDYgKy0KIGZz
+L3N5c3YvbmFtZWkuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgMjEgKy0KIGZz
+L3N5c3Yvc3lzdi5oICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDMgKy0KIGZz
+L3RyYWNlZnMvaW5vZGUuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDQgKy0KIGZz
+L3ViaWZzL2Rpci5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgMzAgKy0KIGZz
+L3ViaWZzL2ZpbGUuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDUgKy0KIGZz
+L3ViaWZzL2lvY3RsLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDIgKy0KIGZz
+L3ViaWZzL3ViaWZzLmggICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDUgKy0KIGZz
+L3ViaWZzL3hhdHRyLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDEgKwogZnMv
+dWRmL2ZpbGUuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgOSArLQogZnMv
+dWRmL2lhbGxvYy5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgMiArLQogZnMv
+dWRmL25hbWVpLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAyNCArLQogZnMv
+dWRmL3N5bWxpbmsuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgNyArLQogZnMv
+dWZzL2lhbGxvYy5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgMiArLQogZnMv
+dWZzL2lub2RlLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgNyArLQogZnMv
+dWZzL25hbWVpLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAxOSArLQogZnMv
+dWZzL3Vmcy5oICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgMyArLQogZnMv
+dXRpbWVzLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgNCArLQogZnMv
+dmJveHNmL2Rpci5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAxMiArLQogZnMv
+dmJveHNmL3V0aWxzLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgOSArLQogZnMv
+dmJveHNmL3Zmc21vZC5oICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgOCArLQogZnMv
+dmVyaXR5L2VuYWJsZS5jICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgMiArLQogZnMv
+eGF0dHIuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgIDEzNiArLQogZnMv
+eGZzL3hmc19hY2wuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgNSArLQogZnMv
+eGZzL3hmc19hY2wuaCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgMyArLQogZnMv
+eGZzL3hmc19pb2N0bC5jICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgNCArLQogZnMv
+eGZzL3hmc19pb3BzLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICA1NiArLQogZnMv
+eGZzL3hmc194YXR0ci5jICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgMyArLQogZnMv
+em9uZWZzL3N1cGVyLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAgOSArLQogaW5j
+bHVkZS9saW51eC9jYXBhYmlsaXR5LmggICAgICAgICAgICAgICAgICAgIHwgICAxNCArLQogaW5j
+bHVkZS9saW51eC9mcy5oICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgIDE1NyArLQogaW5j
+bHVkZS9saW51eC9pbWEuaCAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAxNyArLQogaW5j
+bHVkZS9saW51eC9sc21faG9va19kZWZzLmggICAgICAgICAgICAgICAgIHwgICAxNSArLQogaW5j
+bHVkZS9saW51eC9sc21faG9va3MuaCAgICAgICAgICAgICAgICAgICAgIHwgICAgMSArCiBpbmNs
+dWRlL2xpbnV4L21vdW50LmggICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA3ICsKIGluY2x1
+ZGUvbGludXgvbmZzX2ZzLmggICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDcgKy0KIGluY2x1
+ZGUvbGludXgvcG9zaXhfYWNsLmggICAgICAgICAgICAgICAgICAgICB8ICAgMTUgKy0KIGluY2x1
+ZGUvbGludXgvcG9zaXhfYWNsX3hhdHRyLmggICAgICAgICAgICAgICB8ICAgMTIgKy0KIGluY2x1
+ZGUvbGludXgvc2VjdXJpdHkuaCAgICAgICAgICAgICAgICAgICAgICB8ICAgNDQgKy0KIGluY2x1
+ZGUvbGludXgvc3lzY2FsbHMuaCAgICAgICAgICAgICAgICAgICAgICB8ICAgIDMgKwogaW5jbHVk
+ZS9saW51eC94YXR0ci5oICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAzMCArLQogaW5jbHVk
+ZS91YXBpL2FzbS1nZW5lcmljL3VuaXN0ZC5oICAgICAgICAgICAgIHwgICAgNCArLQogaW5jbHVk
+ZS91YXBpL2xpbnV4L21vdW50LmggICAgICAgICAgICAgICAgICAgIHwgICAxNyArCiBpcGMvbXF1
+ZXVlLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA4ICstCiBrZXJuZWwv
+YXVkaXRzYy5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA1ICstCiBrZXJuZWwv
+YnBmL2lub2RlLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDEzICstCiBrZXJuZWwv
+Y2FwYWJpbGl0eS5jICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDE0ICstCiBrZXJuZWwv
+Y2dyb3VwL2Nncm91cC5jICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAyICstCiBrZXJuZWwv
+c3lzLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAyICstCiBtbS9tYWR2
+aXNlLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA0ICstCiBtbS9tZW1j
+b250cm9sLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICAyICstCiBtbS9taW5j
+b3JlLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA0ICstCiBtbS9zaG1l
+bS5jICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDQ4ICstCiBuZXQvc29j
+a2V0LmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA2ICstCiBuZXQvdW5p
+eC9hZl91bml4LmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICA0ICstCiBzZWN1cml0
+eS9hcHBhcm1vci9hcHBhcm1vcmZzLmMgICAgICAgICAgICAgICAgfCAgICAzICstCiBzZWN1cml0
+eS9hcHBhcm1vci9kb21haW4uYyAgICAgICAgICAgICAgICAgICAgfCAgIDEzICstCiBzZWN1cml0
+eS9hcHBhcm1vci9maWxlLmMgICAgICAgICAgICAgICAgICAgICAgfCAgICA1ICstCiBzZWN1cml0
+eS9hcHBhcm1vci9sc20uYyAgICAgICAgICAgICAgICAgICAgICAgfCAgIDEyICstCiBzZWN1cml0
+eS9jb21tb25jYXAuYyAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgMTA5ICstCiBzZWN1cml0
+eS9pbnRlZ3JpdHkvZXZtL2V2bV9jcnlwdG8uYyAgICAgICAgICAgfCAgIDExICstCiBzZWN1cml0
+eS9pbnRlZ3JpdHkvZXZtL2V2bV9tYWluLmMgICAgICAgICAgICAgfCAgICA0ICstCiBzZWN1cml0
+eS9pbnRlZ3JpdHkvZXZtL2V2bV9zZWNmcy5jICAgICAgICAgICAgfCAgICAyICstCiBzZWN1cml0
+eS9pbnRlZ3JpdHkvaW1hL2ltYS5oICAgICAgICAgICAgICAgICAgfCAgIDE5ICstCiBzZWN1cml0
+eS9pbnRlZ3JpdHkvaW1hL2ltYV9hcGkuYyAgICAgICAgICAgICAgfCAgIDEwICstCiBzZWN1cml0
+eS9pbnRlZ3JpdHkvaW1hL2ltYV9hcHByYWlzZS5jICAgICAgICAgfCAgIDIyICstCiBzZWN1cml0
+eS9pbnRlZ3JpdHkvaW1hL2ltYV9hc3ltbWV0cmljX2tleXMuYyAgfCAgICAyICstCiBzZWN1cml0
+eS9pbnRlZ3JpdHkvaW1hL2ltYV9tYWluLmMgICAgICAgICAgICAgfCAgIDI5ICstCiBzZWN1cml0
+eS9pbnRlZ3JpdHkvaW1hL2ltYV9wb2xpY3kuYyAgICAgICAgICAgfCAgIDE5ICstCiBzZWN1cml0
+eS9pbnRlZ3JpdHkvaW1hL2ltYV9xdWV1ZV9rZXlzLmMgICAgICAgfCAgICAyICstCiBzZWN1cml0
+eS9zZWN1cml0eS5jICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDI1ICstCiBzZWN1cml0
+eS9zZWxpbnV4L2hvb2tzLmMgICAgICAgICAgICAgICAgICAgICAgfCAgIDIyICstCiBzZWN1cml0
+eS9zbWFjay9zbWFja19sc20uYyAgICAgICAgICAgICAgICAgICAgfCAgIDE4ICstCiB0b29scy9p
+bmNsdWRlL3VhcGkvYXNtLWdlbmVyaWMvdW5pc3RkLmggICAgICAgfCAgICA0ICstCiB0b29scy90
+ZXN0aW5nL3NlbGZ0ZXN0cy9NYWtlZmlsZSAgICAgICAgICAgICAgfCAgICAxICsKIC4uLi9zZWxm
+dGVzdHMvbW91bnRfc2V0YXR0ci8uZ2l0aWdub3JlICAgICAgICB8ICAgIDEgKwogLi4uL3Rlc3Rp
+bmcvc2VsZnRlc3RzL21vdW50X3NldGF0dHIvTWFrZWZpbGUgIHwgICAgNyArCiB0b29scy90ZXN0
+aW5nL3NlbGZ0ZXN0cy9tb3VudF9zZXRhdHRyL2NvbmZpZyAgfCAgICAxICsKIC4uLi9tb3VudF9z
+ZXRhdHRyL21vdW50X3NldGF0dHJfdGVzdC5jICAgICAgICB8IDE0MjQgKysrKysrKysrKysrKysr
+KysKIDMzMCBmaWxlcyBjaGFuZ2VkLCA0NjQxIGluc2VydGlvbnMoKyksIDE2ODEgZGVsZXRpb25z
+KC0pCiBjcmVhdGUgbW9kZSAxMDA2NDQgdG9vbHMvdGVzdGluZy9zZWxmdGVzdHMvbW91bnRfc2V0
+YXR0ci8uZ2l0aWdub3JlCiBjcmVhdGUgbW9kZSAxMDA2NDQgdG9vbHMvdGVzdGluZy9zZWxmdGVz
+dHMvbW91bnRfc2V0YXR0ci9NYWtlZmlsZQogY3JlYXRlIG1vZGUgMTAwNjQ0IHRvb2xzL3Rlc3Rp
+bmcvc2VsZnRlc3RzL21vdW50X3NldGF0dHIvY29uZmlnCiBjcmVhdGUgbW9kZSAxMDA2NDQgdG9v
+bHMvdGVzdGluZy9zZWxmdGVzdHMvbW91bnRfc2V0YXR0ci9tb3VudF9zZXRhdHRyX3Rlc3QuYwoK
+CmJhc2UtY29tbWl0OiBiNjUwNTQ1OTc4NzJjZTNhZWZiYzZhNjY2Mzg1ZWFiZGY5ZTI4OGRhCi0t
+IAoyLjI5LjIKCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+XwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRp
+b24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZv
+L2NvbnRhaW5lcnM=
