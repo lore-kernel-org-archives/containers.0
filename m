@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D2829C4361A
-	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:08:06 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 86AF5C433FE
+	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:08:41 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 4FE19207D1
-	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:08:06 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4FE19207D1
+	by mail.kernel.org (Postfix) with ESMTPS id 05556207D1
+	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:08:40 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 05556207D1
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id E8EB720501;
-	Fri,  4 Dec 2020 00:08:05 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 8A33887BF0;
+	Fri,  4 Dec 2020 00:08:40 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id Ol20gEvgL-Es; Fri,  4 Dec 2020 00:08:02 +0000 (UTC)
+	with ESMTP id Yp7gDZedDGkr; Fri,  4 Dec 2020 00:08:40 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id C8F322E405;
-	Fri,  4 Dec 2020 00:08:02 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 0CC1287B72;
+	Fri,  4 Dec 2020 00:08:40 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id B6EB4C163C;
-	Fri,  4 Dec 2020 00:08:02 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id DAFE7C0FA7
+	by lists.linuxfoundation.org (Postfix) with ESMTP id E1479C163C;
+	Fri,  4 Dec 2020 00:08:39 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 72CFDC0FA7
  for <containers@lists.linux-foundation.org>;
- Fri,  4 Dec 2020 00:08:01 +0000 (UTC)
+ Fri,  4 Dec 2020 00:08:39 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id BDBA02E405
+ by whitealder.osuosl.org (Postfix) with ESMTP id 602C287670
  for <containers@lists.linux-foundation.org>;
- Fri,  4 Dec 2020 00:08:01 +0000 (UTC)
+ Fri,  4 Dec 2020 00:08:39 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id HlFU492Lui2w
+ with ESMTP id b8rHqktQRFY5
  for <containers@lists.linux-foundation.org>;
- Fri,  4 Dec 2020 00:08:00 +0000 (UTC)
+ Fri,  4 Dec 2020 00:08:38 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by silver.osuosl.org (Postfix) with ESMTPS id 9FF4C20501
+ by whitealder.osuosl.org (Postfix) with ESMTPS id CB363873E0
  for <containers@lists.linux-foundation.org>;
- Fri,  4 Dec 2020 00:08:00 +0000 (UTC)
+ Fri,  4 Dec 2020 00:08:38 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kkyYI-0007ka-DY; Fri, 04 Dec 2020 00:02:22 +0000
+ id 1kkyYG-0007ka-IY; Fri, 04 Dec 2020 00:02:20 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v4 37/40] overlayfs: do not mount on top of idmapped mounts
-Date: Fri,  4 Dec 2020 00:57:33 +0100
-Message-Id: <20201203235736.3528991-38-christian.brauner@ubuntu.com>
+Subject: [PATCH v4 36/40] ecryptfs: do not mount on top of idmapped mounts
+Date: Fri,  4 Dec 2020 00:57:32 +0100
+Message-Id: <20201203235736.3528991-37-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201203235736.3528991-1-christian.brauner@ubuntu.com>
 References: <20201203235736.3528991-1-christian.brauner@ubuntu.com>
@@ -101,7 +101,7 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Prevent overlayfs from being mounted on top of idmapped mounts until we
+Prevent ecryptfs from being mounted on top of idmapped mounts until we
 have ported it to handle this case and added proper testing for it.
 
 Cc: Christoph Hellwig <hch@lst.de>
@@ -114,32 +114,32 @@ Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 patch introduced
 
 /* v3 */
-- Amir Goldstein <amir73il@gmail.com>:
-  - Move check for idmapped lower layers into ovl_mount_dir_noesc().
 - David Howells <dhowells@redhat.com>:
   - Adapt check after removing mnt_idmapped() helper.
 
 /* v4 */
 unchanged
 ---
- fs/overlayfs/super.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ fs/ecryptfs/main.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/fs/overlayfs/super.c b/fs/overlayfs/super.c
-index aed21e569390..2be17c769322 100644
---- a/fs/overlayfs/super.c
-+++ b/fs/overlayfs/super.c
-@@ -811,6 +811,10 @@ static int ovl_mount_dir_noesc(const char *name, struct path *path)
- 		pr_err("filesystem on '%s' not supported\n", name);
- 		goto out_put;
+diff --git a/fs/ecryptfs/main.c b/fs/ecryptfs/main.c
+index e63259fdef28..cdf40a54a35d 100644
+--- a/fs/ecryptfs/main.c
++++ b/fs/ecryptfs/main.c
+@@ -531,6 +531,12 @@ static struct dentry *ecryptfs_mount(struct file_system_type *fs_type, int flags
+ 		goto out_free;
  	}
-+	if (mnt_user_ns(path->mnt) != &init_user_ns) {
-+		pr_err("idmapped layers are currently not supported\n");
-+		goto out_put;
+ 
++	if (mnt_user_ns(path.mnt) != &init_user_ns) {
++		rc = -EINVAL;
++		printk(KERN_ERR "Mounting on idmapped mounts currently disallowed\n");
++		goto out_free;
 +	}
- 	if (!d_is_dir(path->dentry)) {
- 		pr_err("'%s' not a directory\n", name);
- 		goto out_put;
++
+ 	if (check_ruid && !uid_eq(d_inode(path.dentry)->i_uid, current_uid())) {
+ 		rc = -EPERM;
+ 		printk(KERN_ERR "Mount of device (uid: %d) not owned by "
 -- 
 2.29.2
 
