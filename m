@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 45ABEC433FE
-	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:10:55 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3799FC433FE
+	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:11:27 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id D01DF224B1
-	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:10:54 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D01DF224B1
+	by mail.kernel.org (Postfix) with ESMTPS id B41CB22224
+	for <containers@archiver.kernel.org>; Fri,  4 Dec 2020 00:11:26 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B41CB22224
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 156902E409;
-	Fri,  4 Dec 2020 00:10:53 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id ZG27fxpYUMq2; Fri,  4 Dec 2020 00:10:50 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id ED42E2E405;
-	Fri,  4 Dec 2020 00:10:49 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id E737EC163C;
-	Fri,  4 Dec 2020 00:10:49 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 4E683C0FA7
- for <containers@lists.linux-foundation.org>;
- Fri,  4 Dec 2020 00:10:48 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 3824987C35
- for <containers@lists.linux-foundation.org>;
- Fri,  4 Dec 2020 00:10:48 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 74E5887BF1;
+	Fri,  4 Dec 2020 00:11:26 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
- by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id TD-vOL9-cat5
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id xxhTFTlZPJGC; Fri,  4 Dec 2020 00:11:26 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by hemlock.osuosl.org (Postfix) with ESMTP id 4B27287BF8;
+	Fri,  4 Dec 2020 00:11:26 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 87847C163C;
+	Fri,  4 Dec 2020 00:11:25 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 7E398C0FA7
  for <containers@lists.linux-foundation.org>;
- Fri,  4 Dec 2020 00:10:47 +0000 (UTC)
+ Fri,  4 Dec 2020 00:11:22 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by whitealder.osuosl.org (Postfix) with ESMTP id 76B9587FCD
+ for <containers@lists.linux-foundation.org>;
+ Fri,  4 Dec 2020 00:11:22 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from whitealder.osuosl.org ([127.0.0.1])
+ by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id F7ymCblwQyFd
+ for <containers@lists.linux-foundation.org>;
+ Fri,  4 Dec 2020 00:11:21 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by hemlock.osuosl.org (Postfix) with ESMTPS id 79BA687BF8
+ by whitealder.osuosl.org (Postfix) with ESMTPS id B043787E3C
  for <containers@lists.linux-foundation.org>;
- Fri,  4 Dec 2020 00:10:47 +0000 (UTC)
+ Fri,  4 Dec 2020 00:11:21 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kkyY0-0007ka-3F; Fri, 04 Dec 2020 00:02:04 +0000
+ id 1kkyY9-0007ka-Bg; Fri, 04 Dec 2020 00:02:13 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v4 27/40] init: handle idmapped mounts
-Date: Fri,  4 Dec 2020 00:57:23 +0100
-Message-Id: <20201203235736.3528991-28-christian.brauner@ubuntu.com>
+Subject: [PATCH v4 32/40] apparmor: handle idmapped mounts
+Date: Fri,  4 Dec 2020 00:57:28 +0100
+Message-Id: <20201203235736.3528991-33-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201203235736.3528991-1-christian.brauner@ubuntu.com>
 References: <20201203235736.3528991-1-christian.brauner@ubuntu.com>
@@ -68,12 +68,12 @@ MIME-Version: 1.0
 Cc: Andy Lutomirski <luto@kernel.org>, Mimi Zohar <zohar@linux.ibm.com>,
  James Bottomley <James.Bottomley@hansenpartnership.com>,
  Andreas Dilger <adilger.kernel@dilger.ca>,
- containers@lists.linux-foundation.org, Christoph Hellwig <hch@lst.de>,
- Tycho Andersen <tycho@tycho.ws>, Paul Moore <paul@paul-moore.com>,
- Jonathan Corbet <corbet@lwn.net>, smbarber@chromium.org,
- linux-ext4@vger.kernel.org, Mrunal Patel <mpatel@redhat.com>,
- Kees Cook <keescook@chromium.org>, Arnd Bergmann <arnd@arndb.de>,
- selinux@vger.kernel.org, Josh Triplett <josh@joshtriplett.org>,
+ containers@lists.linux-foundation.org, Tycho Andersen <tycho@tycho.ws>,
+ Paul Moore <paul@paul-moore.com>, Jonathan Corbet <corbet@lwn.net>,
+ smbarber@chromium.org, linux-ext4@vger.kernel.org,
+ Mrunal Patel <mpatel@redhat.com>, Kees Cook <keescook@chromium.org>,
+ Arnd Bergmann <arnd@arndb.de>, selinux@vger.kernel.org,
+ Josh Triplett <josh@joshtriplett.org>,
  Seth Forshee <seth.forshee@canonical.com>, Aleksa Sarai <cyphar@cyphar.com>,
  Lennart Poettering <lennart@poettering.net>,
  OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
@@ -101,117 +101,150 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Enable the init helpers to handle idmapped mounts by passing down the
-mount's user namespace. If the initial user namespace is passed nothing
-changes so non-idmapped mounts will see identical behavior as before.
+The i_uid and i_gid are only ever used when logging for AppArmor. This
+is already broken in a bunch of places where the global root id is
+reported instead of the i_uid or i_gid of the file. Nonetheless, be kind
+and log the mapped inode if we're coming from an idmapped mount. If the
+initial user namespace is passed nothing changes so non-idmapped mounts
+will see identical behavior as before.
 
-Cc: Christoph Hellwig <hch@lst.de>
-Cc: David Howells <dhowells@redhat.com>
-Cc: Al Viro <viro@zeniv.linux.org.uk>
-Cc: linux-fsdevel@vger.kernel.org
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
 /* v2 */
-patch introduced
+unchanged
 
 /* v3 */
 unchanged
 
 /* v4 */
-unchanged
+- Serge Hallyn <serge@hallyn.com>:
+  - Use "mnt_userns" to refer to a vfsmount's userns everywhere to make
+    terminology consistent.
 ---
- fs/init.c | 24 ++++++++++++++----------
- 1 file changed, 14 insertions(+), 10 deletions(-)
+ security/apparmor/domain.c |  9 ++++++---
+ security/apparmor/file.c   |  5 ++++-
+ security/apparmor/lsm.c    | 12 ++++++++----
+ 3 files changed, 18 insertions(+), 8 deletions(-)
 
-diff --git a/fs/init.c b/fs/init.c
-index 06d8e52ce18e..1db2b392e4e6 100644
---- a/fs/init.c
-+++ b/fs/init.c
-@@ -49,7 +49,7 @@ int __init init_chdir(const char *filename)
- 	error = kern_path(filename, LOOKUP_FOLLOW | LOOKUP_DIRECTORY, &path);
- 	if (error)
- 		return error;
--	error = inode_permission(&init_user_ns, path.dentry->d_inode,
-+	error = inode_permission(mnt_user_ns(path.mnt), path.dentry->d_inode,
- 				 MAY_EXEC | MAY_CHDIR);
- 	if (!error)
- 		set_fs_pwd(current->fs, &path);
-@@ -65,7 +65,7 @@ int __init init_chroot(const char *filename)
- 	error = kern_path(filename, LOOKUP_FOLLOW | LOOKUP_DIRECTORY, &path);
- 	if (error)
- 		return error;
--	error = inode_permission(&init_user_ns, path.dentry->d_inode,
-+	error = inode_permission(mnt_user_ns(path.mnt), path.dentry->d_inode,
- 				 MAY_EXEC | MAY_CHDIR);
- 	if (error)
- 		goto dput_and_out;
-@@ -120,7 +120,7 @@ int __init init_eaccess(const char *filename)
- 	error = kern_path(filename, LOOKUP_FOLLOW, &path);
- 	if (error)
- 		return error;
--	error = inode_permission(&init_user_ns, d_inode(path.dentry),
-+	error = inode_permission(mnt_user_ns(path.mnt), d_inode(path.dentry),
- 				 MAY_ACCESS);
- 	path_put(&path);
- 	return error;
-@@ -160,8 +160,8 @@ int __init init_mknod(const char *filename, umode_t mode, unsigned int dev)
- 		mode &= ~current_umask();
- 	error = security_path_mknod(&path, dentry, mode, dev);
- 	if (!error)
--		error = vfs_mknod(&init_user_ns, path.dentry->d_inode, dentry,
--				  mode, new_decode_dev(dev));
-+		error = vfs_mknod(mnt_user_ns(path.mnt), path.dentry->d_inode,
-+				  dentry, mode, new_decode_dev(dev));
- 	done_path_create(&path, dentry);
- 	return error;
- }
-@@ -170,6 +170,7 @@ int __init init_link(const char *oldname, const char *newname)
- {
- 	struct dentry *new_dentry;
- 	struct path old_path, new_path;
-+	struct user_namespace *mnt_userns;
- 	int error;
+diff --git a/security/apparmor/domain.c b/security/apparmor/domain.c
+index 16f184bc48de..890aa0b43bab 100644
+--- a/security/apparmor/domain.c
++++ b/security/apparmor/domain.c
+@@ -10,12 +10,14 @@
  
- 	error = kern_path(oldname, 0, &old_path);
-@@ -184,14 +185,15 @@ int __init init_link(const char *oldname, const char *newname)
- 	error = -EXDEV;
- 	if (old_path.mnt != new_path.mnt)
- 		goto out_dput;
--	error = may_linkat(&init_user_ns, &old_path);
-+	mnt_userns = mnt_user_ns(new_path.mnt);
-+	error = may_linkat(mnt_userns, &old_path);
- 	if (unlikely(error))
- 		goto out_dput;
- 	error = security_path_link(old_path.dentry, &new_path, new_dentry);
- 	if (error)
- 		goto out_dput;
--	error = vfs_link(old_path.dentry, &init_user_ns,
--			 new_path.dentry->d_inode, new_dentry, NULL);
-+	error = vfs_link(old_path.dentry, mnt_userns, new_path.dentry->d_inode,
-+			 new_dentry, NULL);
- out_dput:
- 	done_path_create(&new_path, new_dentry);
- out:
-@@ -210,7 +212,8 @@ int __init init_symlink(const char *oldname, const char *newname)
- 		return PTR_ERR(dentry);
- 	error = security_path_symlink(&path, dentry, oldname);
- 	if (!error)
--		error = vfs_symlink(&init_user_ns, path.dentry->d_inode, dentry, oldname);
-+		error = vfs_symlink(mnt_user_ns(path.mnt), path.dentry->d_inode,
-+				    dentry, oldname);
- 	done_path_create(&path, dentry);
- 	return error;
+ #include <linux/errno.h>
+ #include <linux/fdtable.h>
++#include <linux/fs.h>
+ #include <linux/file.h>
+ #include <linux/mount.h>
+ #include <linux/syscalls.h>
+ #include <linux/tracehook.h>
+ #include <linux/personality.h>
+ #include <linux/xattr.h>
++#include <linux/user_namespace.h>
+ 
+ #include "include/audit.h"
+ #include "include/apparmorfs.h"
+@@ -858,8 +860,10 @@ int apparmor_bprm_creds_for_exec(struct linux_binprm *bprm)
+ 	const char *info = NULL;
+ 	int error = 0;
+ 	bool unsafe = false;
++	struct user_namespace *mnt_userns = mnt_user_ns(bprm->file->f_path.mnt);
++	kuid_t i_uid = i_uid_into_mnt(mnt_userns, file_inode(bprm->file));
+ 	struct path_cond cond = {
+-		file_inode(bprm->file)->i_uid,
++		i_uid,
+ 		file_inode(bprm->file)->i_mode
+ 	};
+ 
+@@ -967,8 +971,7 @@ int apparmor_bprm_creds_for_exec(struct linux_binprm *bprm)
+ 	error = fn_for_each(label, profile,
+ 			aa_audit_file(profile, &nullperms, OP_EXEC, MAY_EXEC,
+ 				      bprm->filename, NULL, new,
+-				      file_inode(bprm->file)->i_uid, info,
+-				      error));
++				      i_uid, info, error));
+ 	aa_put_label(new);
+ 	goto done;
  }
-@@ -233,7 +236,8 @@ int __init init_mkdir(const char *pathname, umode_t mode)
- 		mode &= ~current_umask();
- 	error = security_path_mkdir(&path, dentry, mode);
- 	if (!error)
--		error = vfs_mkdir(&init_user_ns, path.dentry->d_inode, dentry, mode);
-+		error = vfs_mkdir(mnt_user_ns(path.mnt), path.dentry->d_inode,
-+				  dentry, mode);
- 	done_path_create(&path, dentry);
- 	return error;
- }
+diff --git a/security/apparmor/file.c b/security/apparmor/file.c
+index 92acf9a49405..d70d09a5ce7d 100644
+--- a/security/apparmor/file.c
++++ b/security/apparmor/file.c
+@@ -11,6 +11,8 @@
+ #include <linux/tty.h>
+ #include <linux/fdtable.h>
+ #include <linux/file.h>
++#include <linux/fs.h>
++#include <linux/mount.h>
+ 
+ #include "include/apparmor.h"
+ #include "include/audit.h"
+@@ -508,8 +510,9 @@ static int __file_path_perm(const char *op, struct aa_label *label,
+ {
+ 	struct aa_profile *profile;
+ 	struct aa_perms perms = {};
++	struct user_namespace *mnt_userns = mnt_user_ns(file->f_path.mnt);
+ 	struct path_cond cond = {
+-		.uid = file_inode(file)->i_uid,
++		.uid = i_uid_into_mnt(mnt_userns, file_inode(file)),
+ 		.mode = file_inode(file)->i_mode
+ 	};
+ 	char *buffer;
+diff --git a/security/apparmor/lsm.c b/security/apparmor/lsm.c
+index ffeaee5ed968..03260983b471 100644
+--- a/security/apparmor/lsm.c
++++ b/security/apparmor/lsm.c
+@@ -224,7 +224,8 @@ static int common_perm(const char *op, const struct path *path, u32 mask,
+  */
+ static int common_perm_cond(const char *op, const struct path *path, u32 mask)
+ {
+-	struct path_cond cond = { d_backing_inode(path->dentry)->i_uid,
++	struct user_namespace *mnt_userns = mnt_user_ns(path->mnt);
++	struct path_cond cond = { i_uid_into_mnt(mnt_userns, d_backing_inode(path->dentry)),
+ 				  d_backing_inode(path->dentry)->i_mode
+ 	};
+ 
+@@ -266,12 +267,13 @@ static int common_perm_rm(const char *op, const struct path *dir,
+ 			  struct dentry *dentry, u32 mask)
+ {
+ 	struct inode *inode = d_backing_inode(dentry);
++	struct user_namespace *mnt_userns = mnt_user_ns(dir->mnt);
+ 	struct path_cond cond = { };
+ 
+ 	if (!inode || !path_mediated_fs(dentry))
+ 		return 0;
+ 
+-	cond.uid = inode->i_uid;
++	cond.uid = i_uid_into_mnt(mnt_userns, inode);
+ 	cond.mode = inode->i_mode;
+ 
+ 	return common_perm_dir_dentry(op, dir, dentry, mask, &cond);
+@@ -361,11 +363,12 @@ static int apparmor_path_rename(const struct path *old_dir, struct dentry *old_d
+ 
+ 	label = begin_current_label_crit_section();
+ 	if (!unconfined(label)) {
++		struct user_namespace *mnt_userns = mnt_user_ns(old_dir->mnt);
+ 		struct path old_path = { .mnt = old_dir->mnt,
+ 					 .dentry = old_dentry };
+ 		struct path new_path = { .mnt = new_dir->mnt,
+ 					 .dentry = new_dentry };
+-		struct path_cond cond = { d_backing_inode(old_dentry)->i_uid,
++		struct path_cond cond = { i_uid_into_mnt(mnt_userns, d_backing_inode(old_dentry)),
+ 					  d_backing_inode(old_dentry)->i_mode
+ 		};
+ 
+@@ -420,8 +423,9 @@ static int apparmor_file_open(struct file *file)
+ 
+ 	label = aa_get_newest_cred_label(file->f_cred);
+ 	if (!unconfined(label)) {
++		struct user_namespace *mnt_userns = mnt_user_ns(file->f_path.mnt);
+ 		struct inode *inode = file_inode(file);
+-		struct path_cond cond = { inode->i_uid, inode->i_mode };
++		struct path_cond cond = { i_uid_into_mnt(mnt_userns, inode), inode->i_mode };
+ 
+ 		error = aa_path_perm(OP_OPEN, label, &file->f_path, 0,
+ 				     aa_map_file_to_perms(file), &cond);
 -- 
 2.29.2
 
