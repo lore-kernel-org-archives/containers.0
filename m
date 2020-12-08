@@ -6,67 +6,68 @@ X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7E611C4361B
-	for <containers@archiver.kernel.org>; Tue,  8 Dec 2020 15:23:45 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 50ACAC433FE
+	for <containers@archiver.kernel.org>; Tue,  8 Dec 2020 15:27:35 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 1B79323A7B
-	for <containers@archiver.kernel.org>; Tue,  8 Dec 2020 15:23:44 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1B79323A7B
+	by mail.kernel.org (Postfix) with ESMTPS id D777123A79
+	for <containers@archiver.kernel.org>; Tue,  8 Dec 2020 15:27:34 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D777123A79
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id B0ECE86DBD;
-	Tue,  8 Dec 2020 15:23:44 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 50630203C7;
+	Tue,  8 Dec 2020 15:27:34 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id hzLjAZn095R9; Tue,  8 Dec 2020 15:23:40 +0000 (UTC)
+	with ESMTP id E3LCOLOEc565; Tue,  8 Dec 2020 15:27:33 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id EC85B86D98;
-	Tue,  8 Dec 2020 15:23:40 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 758D32033B;
+	Tue,  8 Dec 2020 15:27:33 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id CEE69C0FA7;
-	Tue,  8 Dec 2020 15:23:40 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 653B8C0FA7;
+	Tue,  8 Dec 2020 15:27:33 +0000 (UTC)
 Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 2628EC013B
+ by lists.linuxfoundation.org (Postfix) with ESMTP id A7EA1C013B
  for <containers@lists.linux-foundation.org>;
- Tue,  8 Dec 2020 15:23:39 +0000 (UTC)
+ Tue,  8 Dec 2020 15:27:31 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 0B9A8875CF
+ by hemlock.osuosl.org (Postfix) with ESMTP id 9FC1A875D2
  for <containers@lists.linux-foundation.org>;
- Tue,  8 Dec 2020 15:23:39 +0000 (UTC)
+ Tue,  8 Dec 2020 15:27:31 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id s6SwOWMp9d+N
+ with ESMTP id RQxY4SPOTsUh
  for <containers@lists.linux-foundation.org>;
- Tue,  8 Dec 2020 15:23:37 +0000 (UTC)
+ Tue,  8 Dec 2020 15:27:31 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by hemlock.osuosl.org (Postfix) with ESMTPS id E4E29875D2
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 2A1B8875CF
  for <containers@lists.linux-foundation.org>;
- Tue,  8 Dec 2020 15:23:36 +0000 (UTC)
+ Tue,  8 Dec 2020 15:27:31 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kmeoz-0002VB-M8; Tue, 08 Dec 2020 15:22:34 +0000
-Date: Tue, 8 Dec 2020 16:22:22 +0100
+ id 1kmesx-0002oa-PS; Tue, 08 Dec 2020 15:26:40 +0000
+Date: Tue, 8 Dec 2020 16:26:29 +0100
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Christoph Hellwig <hch@lst.de>
 Subject: Re: [PATCH v4 06/40] fs: add mount_setattr()
-Message-ID: <20201208152222.uuyj4odgawupuxcl@wittgenstein>
+Message-ID: <20201208152629.h6sjklfvopd4qbnk@wittgenstein>
 References: <20201203235736.3528991-1-christian.brauner@ubuntu.com>
  <20201203235736.3528991-7-christian.brauner@ubuntu.com>
  <20201207171456.GC13614@lst.de>
  <20201208103707.px6buexwuusn6d3f@wittgenstein>
  <20201208150520.GA8252@lst.de>
+ <20201208152222.uuyj4odgawupuxcl@wittgenstein>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <20201208150520.GA8252@lst.de>
+In-Reply-To: <20201208152222.uuyj4odgawupuxcl@wittgenstein>
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>, David Howells <dhowells@redhat.com>,
  Andreas Dilger <adilger.kernel@dilger.ca>,
@@ -105,22 +106,25 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Tue, Dec 08, 2020 at 04:05:20PM +0100, Christoph Hellwig wrote:
-> On Tue, Dec 08, 2020 at 11:37:07AM +0100, Christian Brauner wrote:
-> > You want a v5 with the changes you requested before you continue
-> > reviewing? Otherwise I'll just let you go through v4.
+On Tue, Dec 08, 2020 at 04:22:34PM +0100, Christian Brauner wrote:
+> On Tue, Dec 08, 2020 at 04:05:20PM +0100, Christoph Hellwig wrote:
+> > On Tue, Dec 08, 2020 at 11:37:07AM +0100, Christian Brauner wrote:
+> > > You want a v5 with the changes you requested before you continue
+> > > reviewing? Otherwise I'll just let you go through v4.
+> > 
+> > I don't think it is worth resending so quickly.  We're not going to
+> > make 5.11 for this series anyway.
 > 
-> I don't think it is worth resending so quickly.  We're not going to
-> make 5.11 for this series anyway.
-
-Yeah, I didn't target 5.11.
-
+> Yeah, I didn't target 5.11.
 > 
-> I plan to add XFS support as a learning exercise, but I'll probably need
-> a little more time to get to that.
+> > 
+> > I plan to add XFS support as a learning exercise, but I'll probably need
+> > a little more time to get to that.
+> 
+> Oh, excellent. I was thinking about doing xfs next. In any case, I'm
+> happy to help with the port if you want.
 
-Oh, excellent. I was thinking about doing xfs next. In any case, I'm
-happy to help with the port if you want.
+Fwiw, I'm also happy to give you write access to the tree.
 
 Christian
 _______________________________________________
