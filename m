@@ -2,75 +2,75 @@ Return-Path: <SRS0=sUbK=FZ=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+X-Spam-Status: No, score=-13.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8044DC433E0
-	for <containers@archiver.kernel.org>; Mon, 21 Dec 2020 16:57:19 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3EF7EC433E6
+	for <containers@archiver.kernel.org>; Mon, 21 Dec 2020 16:57:33 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 042BC22525
-	for <containers@archiver.kernel.org>; Mon, 21 Dec 2020 16:57:18 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 042BC22525
+	by mail.kernel.org (Postfix) with ESMTPS id D6AC022525
+	for <containers@archiver.kernel.org>; Mon, 21 Dec 2020 16:57:32 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D6AC022525
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id BD37286CA7;
-	Mon, 21 Dec 2020 16:57:18 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 921D986FBD;
+	Mon, 21 Dec 2020 16:57:32 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 3mC3OwjKuPZV; Mon, 21 Dec 2020 16:57:17 +0000 (UTC)
+	with ESMTP id PpdM99vF-NG7; Mon, 21 Dec 2020 16:57:32 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id C73BA86C9E;
-	Mon, 21 Dec 2020 16:57:17 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id E4E4D86FBC;
+	Mon, 21 Dec 2020 16:57:31 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id AFA93C1D9F;
-	Mon, 21 Dec 2020 16:57:17 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id DF244C1787;
+	Mon, 21 Dec 2020 16:57:31 +0000 (UTC)
 Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id B8970C0893
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 34C44C0893
  for <containers@lists.linux-foundation.org>;
- Mon, 21 Dec 2020 16:57:16 +0000 (UTC)
+ Mon, 21 Dec 2020 16:57:30 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id A576B86FC4
+ by hemlock.osuosl.org (Postfix) with ESMTP id 239D186FBD
  for <containers@lists.linux-foundation.org>;
- Mon, 21 Dec 2020 16:57:16 +0000 (UTC)
+ Mon, 21 Dec 2020 16:57:30 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id ZqzhqS5NXBqy
+ with ESMTP id ZGZSbQwJ8Kyx
  for <containers@lists.linux-foundation.org>;
- Mon, 21 Dec 2020 16:57:15 +0000 (UTC)
+ Mon, 21 Dec 2020 16:57:29 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from us-smtp-delivery-124.mimecast.com
  (us-smtp-delivery-124.mimecast.com [216.205.24.124])
- by hemlock.osuosl.org (Postfix) with ESMTPS id EA6DF86FC1
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 54CB086FBC
  for <containers@lists.linux-foundation.org>;
- Mon, 21 Dec 2020 16:57:14 +0000 (UTC)
+ Mon, 21 Dec 2020 16:57:29 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
- s=mimecast20190719; t=1608569833;
+ s=mimecast20190719; t=1608569848;
  h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
  to:to:cc:cc:in-reply-to:in-reply-to:references:references;
- bh=Q6jcd7PLCd/s4EdGNXX9P7B8ndQMo8DzY8cUdrP/sCU=;
- b=Ka7FTE61sRaR1dRrGdxPgUcsgVVR5c+x0IWAYwSOBjSfxsU/EXGBwfD3WqTVKo14JgsLuf
- L9OYF3JSJNzEHolWQoxPHaeDAWpLyJJplHqGwVSGJt8t2HAPU0O5o+MgY++tsFoThhiZJe
- oX+FCP8yKqfQJmLCzT/2Icng/ZRKpFA=
+ bh=7tVw7A/wy5RMR226GkU3lOIczYAEPwjFZmoIZv6CVc0=;
+ b=fLylPw4zAwXsXvwp08SVdTcfbYSnOpNB9em8vlcGydtikTqdXfjoAS3vsuLYKowT+1o5jZ
+ dVeoucfsSWzh2qXDN1OT79z5L+lUpkRW18PMIDMXc85Og29VIifRXCpBzourRRo+1lwg33
+ gOM5ZHuKaahAA0ZdV9mxCL8o17fJ37U=
 Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
  [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-283-Q9fThZq8OKKBEZ7q75p_Ag-1; Mon, 21 Dec 2020 11:57:07 -0500
-X-MC-Unique: Q9fThZq8OKKBEZ7q75p_Ag-1
+ us-mta-251-iEQgwG9_M1-B0voMyRpePQ-1; Mon, 21 Dec 2020 11:57:26 -0500
+X-MC-Unique: iEQgwG9_M1-B0voMyRpePQ-1
 Received: from smtp.corp.redhat.com (int-mx02.intmail.prod.int.phx2.redhat.com
  [10.5.11.12])
  (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
  (No client certificate requested)
- by mimecast-mx01.redhat.com (Postfix) with ESMTPS id CB008802B48;
- Mon, 21 Dec 2020 16:57:04 +0000 (UTC)
+ by mimecast-mx01.redhat.com (Postfix) with ESMTPS id CCB7C100C600;
+ Mon, 21 Dec 2020 16:57:23 +0000 (UTC)
 Received: from madcap2.tricolour.ca (unknown [10.10.110.9])
- by smtp.corp.redhat.com (Postfix) with ESMTP id 0524060C0F;
- Mon, 21 Dec 2020 16:57:00 +0000 (UTC)
+ by smtp.corp.redhat.com (Postfix) with ESMTP id 0F28660C0F;
+ Mon, 21 Dec 2020 16:57:09 +0000 (UTC)
 From: Richard Guy Briggs <rgb@redhat.com>
 To: Linux Containers List <containers@lists.linux-foundation.org>,
  Linux API <linux-api@vger.kernel.org>,
@@ -79,9 +79,10 @@ To: Linux Containers List <containers@lists.linux-foundation.org>,
  LKML <linux-kernel@vger.kernel.org>,
  Linux NetDev Upstream Mailing List <netdev@vger.kernel.org>,
  Netfilter Devel List <netfilter-devel@vger.kernel.org>
-Subject: [PATCH ghak90 v10 03/11] audit: log container info of syscalls
-Date: Mon, 21 Dec 2020 11:55:37 -0500
-Message-Id: <9d59760c2fceff4aec8f7ab5b208da775d3e9fdd.1608225886.git.rgb@redhat.com>
+Subject: [PATCH ghak90 v10 05/11] audit: add support for non-syscall auxiliary
+ records
+Date: Mon, 21 Dec 2020 11:55:39 -0500
+Message-Id: <95024db7dc025fd9b804dd66a18e1264f981e25f.1608225886.git.rgb@redhat.com>
 In-Reply-To: <cover.1608225886.git.rgb@redhat.com>
 References: <cover.1608225886.git.rgb@redhat.com>
 X-Scanned-By: MIMEDefang 2.79 on 10.5.11.12
@@ -107,331 +108,140 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Create a new audit record AUDIT_CONTAINER_ID to document the audit
-container identifier of a process if it is present.
+Standalone audit records have the timestamp and serial number generated
+on the fly and as such are unique, making them standalone.  This new
+function audit_alloc_local() generates a local audit context that will
+be used only for a standalone record and its auxiliary record(s).  The
+context is discarded immediately after the local associated records are
+produced.
 
-Called from audit_log_exit(), syscalls are covered.
+A new flag, "local" was used rather than "in_syscall" since it would be
+overloading the original purpose and meaning.  Events using this
+function may not be triggered by a syscall but still need records
+linked by timestamp and serial.
 
-Include target_cid references from ptrace and signal.
-
-A sample raw event:
-time->Thu Nov 26 10:24:40 2020
-type=PROCTITLE msg=audit(1606404280.226:174542): proctitle=2F7573722F62696E2F7065726C002D7700636F6E7461696E657269642F74657374
-type=PATH msg=audit(1606404280.226:174542): item=1 name="/tmp/audit-testsuite-dir-8riQ/testsuite-1606404267-WNldVJCr" inode=428 dev=00:1f mode=0100644 ouid=0 ogid=0 rdev=00:00 obj=unconfined_u:object_r:user_tmp_t:s0 nametype=CREATE cap_fp=0 cap_fi=0 cap_fe=0 cap_fver=0 cap_frootid=0
-type=PATH msg=audit(1606404280.226:174542): item=0 name="/tmp/audit-testsuite-dir-8riQ/" inode=427 dev=00:1f mode=040700 ouid=0 ogid=0 rdev=00:00 obj=unconfined_u:object_r:user_tmp_t:s0 nametype=PARENT cap_fp=0 cap_fi=0 cap_fe=0 cap_fver=0 cap_frootid=0
-type=CWD msg=audit(1606404280.226:174542): cwd="/root/rgb/git/audit-testsuite/tests"
-type=SYSCALL msg=audit(1606404280.226:174542): arch=c000003e syscall=257 success=yes exit=6 a0=ffffff9c a1=557446bd5f10 a2=80241 a3=1b6 items=2 ppid=8724 pid=8758 auid=0 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=ttyS0 ses=1 comm="perl" exe="/usr/bin/perl" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key="testsuite-1606404267-WNldVJCr" record=1
-type=CONTAINER_ID msg=audit(1606404280.226:174542): record=1 contid=527940429489930240
-
-Please see the github audit kernel issue for the main feature:
-  https://github.com/linux-audit/audit-kernel/issues/90
-Please see the github audit userspace issue for supporting additions:
-  https://github.com/linux-audit/audit-userspace/issues/51
-Please see the github audit testsuiite issue for the test case:
-  https://github.com/linux-audit/audit-testsuite/issues/64
-Please see the github audit wiki for the feature overview:
-  https://github.com/linux-audit/audit-kernel/wiki/RFE-Audit-Container-ID
 Signed-off-by: Richard Guy Briggs <rgb@redhat.com>
 Acked-by: Serge Hallyn <serge@hallyn.com>
-Acked-by: Steve Grubb <sgrubb@redhat.com>
 Acked-by: Neil Horman <nhorman@tuxdriver.com>
 Reviewed-by: Ondrej Mosnacek <omosnace@redhat.com>
 ---
- include/uapi/linux/audit.h |  1 +
- kernel/audit.c             | 69 ++++++++++++++++++++++++++++++++++++++
- kernel/audit.h             |  6 ++++
- kernel/auditsc.c           | 49 ++++++++++++++++++++++-----
- 4 files changed, 117 insertions(+), 8 deletions(-)
+ include/linux/audit.h |  8 ++++++++
+ kernel/audit.h        |  1 +
+ kernel/auditsc.c      | 31 ++++++++++++++++++++++++++-----
+ 3 files changed, 35 insertions(+), 5 deletions(-)
 
-diff --git a/include/uapi/linux/audit.h b/include/uapi/linux/audit.h
-index 26d65d0882e2..c56335e828dc 100644
---- a/include/uapi/linux/audit.h
-+++ b/include/uapi/linux/audit.h
-@@ -119,6 +119,7 @@
- #define AUDIT_TIME_ADJNTPVAL	1333	/* NTP value adjustment */
- #define AUDIT_BPF		1334	/* BPF subsystem */
- #define AUDIT_EVENT_LISTENER	1335	/* Task joined multicast read socket */
-+#define AUDIT_CONTAINER_ID	1336	/* Container ID */
+diff --git a/include/linux/audit.h b/include/linux/audit.h
+index 7c1928e75cfe..9f0238f7960f 100644
+--- a/include/linux/audit.h
++++ b/include/linux/audit.h
+@@ -304,6 +304,8 @@ static inline int audit_signal_info(int sig, struct task_struct *t)
  
- #define AUDIT_AVC		1400	/* SE Linux avc denial or grant */
- #define AUDIT_SELINUX_ERR	1401	/* Internal SE Linux Errors */
-diff --git a/kernel/audit.c b/kernel/audit.c
-index a5f7d1d6945e..0f97fc24a76a 100644
---- a/kernel/audit.c
-+++ b/kernel/audit.c
-@@ -319,6 +319,11 @@ static struct audit_contobj *_audit_contobj_get_bytask(struct task_struct *tsk)
- 	return _audit_contobj_get(info->cont);
- }
- 
-+void *audit_contobj_get_bytask(struct task_struct *tsk)
+ /* These are defined in auditsc.c */
+ 				/* Public API */
++extern struct audit_context *audit_alloc_local(gfp_t gfpflags);
++extern void audit_free_context(struct audit_context *context);
+ extern void __audit_syscall_entry(int major, unsigned long a0, unsigned long a1,
+ 				  unsigned long a2, unsigned long a3);
+ extern void __audit_syscall_exit(int ret_success, long ret_value);
+@@ -555,6 +557,12 @@ static inline void audit_log_nfcfg(const char *name, u8 af,
+ extern int audit_n_rules;
+ extern int audit_signals;
+ #else /* CONFIG_AUDITSYSCALL */
++static inline struct audit_context *audit_alloc_local(gfp_t gfpflags)
 +{
-+	return (void *)_audit_contobj_get_bytask(tsk);
++	return NULL;
 +}
-+
- /* _audit_contobj_list_lock must be held by caller */
- static void _audit_contobj_put(struct audit_contobj *cont)
- {
-@@ -331,6 +336,17 @@ static void _audit_contobj_put(struct audit_contobj *cont)
- 	}
- }
- 
-+void audit_contobj_put(void **cont, int count)
-+{
-+	int i;
-+	struct audit_contobj **contobj = (struct audit_contobj **)cont;
-+
-+	spin_lock(&_audit_contobj_list_lock);
-+	for (i = 0; i < count; i++)
-+		_audit_contobj_put(contobj[i]);
-+	spin_unlock(&_audit_contobj_list_lock);
-+}
-+
- static inline int audit_hash_contid(u64 contid)
- {
- 	return (contid & (AUDIT_CONTID_BUCKETS-1));
-@@ -2327,6 +2343,59 @@ void audit_log_session_info(struct audit_buffer *ab)
- 	audit_log_format(ab, "auid=%u ses=%u", auid, sessionid);
- }
- 
-+/*
-+ * _audit_log_container_id - report container info
-+ * @context: task or local context for record
-+ * @cont: container object to report
-+ *
-+ * Returns 0 on record absence, positive integer on valid record id.
-+ */
-+static int _audit_log_container_id(struct audit_context *context,
-+				    struct audit_contobj *contobj)
-+{
-+	struct audit_buffer *ab;
-+	int record;
-+
-+	if (!contobj)
-+		return 0;
-+	/* Generate AUDIT_CONTAINER_ID record with container ID */
-+	ab = audit_log_start(context, GFP_KERNEL, AUDIT_CONTAINER_ID);
-+	if (!ab)
-+		return 0;
-+	audit_log_format(ab, "record=%d contid=%llu",
-+			 record = ++context->contid_records, contobj->id);
-+	audit_log_end(ab);
-+	return record;
-+}
-+
-+int audit_log_container_id(struct audit_context *context, void *cont)
-+{
-+	return _audit_log_container_id(context, (struct audit_contobj *)cont);
-+}
-+
-+/*
-+ * audit_log_container_id_ctx - report container info
-+ * @context: task or local context for record
-+ *
-+ * Returns 0 on record absence, positive integer on valid record id.
-+ */
-+int audit_log_container_id_ctx(struct audit_context *context)
-+{
-+	struct audit_contobj *contobj;
-+	int record;
-+
-+	rcu_read_lock();
-+	contobj = _audit_contobj_get_bytask(current);
-+	rcu_read_unlock();
-+	if (!contobj)
-+		return 0;
-+	record = _audit_log_container_id(context, contobj);
-+	spin_lock(&_audit_contobj_list_lock);
-+	_audit_contobj_put(contobj);
-+	spin_unlock(&_audit_contobj_list_lock);
-+	return record;
-+}
-+
- void audit_log_key(struct audit_buffer *ab, char *key)
- {
- 	audit_log_format(ab, " key=");
++static inline void audit_free_context(struct audit_context *context)
++{ }
+ static inline void audit_syscall_entry(int major, unsigned long a0,
+ 				       unsigned long a1, unsigned long a2,
+ 				       unsigned long a3)
 diff --git a/kernel/audit.h b/kernel/audit.h
-index c4a3d7e03fbe..de79f59d623f 100644
+index de79f59d623f..40e609787a0c 100644
 --- a/kernel/audit.h
 +++ b/kernel/audit.h
-@@ -135,6 +135,8 @@ struct audit_context {
- 	kuid_t		    target_uid;
- 	unsigned int	    target_sessionid;
- 	u32		    target_sid;
-+	void		    *target_cid;
-+	int		    contid_records;
- 	char		    target_comm[TASK_COMM_LEN];
- 
- 	struct audit_tree_refs *trees, *first_trees;
-@@ -211,6 +213,10 @@ static inline int audit_hash_ino(u32 ino)
- }
- 
- extern void audit_log_container_drop(void);
-+extern void *audit_contobj_get_bytask(struct task_struct *tsk);
-+extern void audit_contobj_put(void **cont, int count);
-+extern int audit_log_container_id(struct audit_context *context, void *cont);
-+extern int audit_log_container_id_ctx(struct audit_context *context);
- 
- /* Indicates that audit should log the full pathname. */
- #define AUDIT_NAME_FULL -1
+@@ -98,6 +98,7 @@ struct audit_proctitle {
+ struct audit_context {
+ 	int		    dummy;	/* must be the first element */
+ 	int		    in_syscall;	/* 1 if task is in a syscall */
++	bool		    local;	/* local context needed */
+ 	enum audit_state    state, current_state;
+ 	unsigned int	    serial;     /* serial number for record */
+ 	int		    major;      /* syscall number */
 diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-index 928dce5bb88e..eecc7b2e29a7 100644
+index eecc7b2e29a7..df26d0aa5e6d 100644
 --- a/kernel/auditsc.c
 +++ b/kernel/auditsc.c
-@@ -112,6 +112,7 @@ struct audit_aux_data_pids {
- 	kuid_t			target_uid[AUDIT_AUX_PIDS];
- 	unsigned int		target_sessionid[AUDIT_AUX_PIDS];
- 	u32			target_sid[AUDIT_AUX_PIDS];
-+	void			*target_cid[AUDIT_AUX_PIDS];
- 	char 			target_comm[AUDIT_AUX_PIDS][TASK_COMM_LEN];
- 	int			pid_count;
- };
-@@ -905,6 +906,7 @@ static inline void audit_free_names(struct audit_context *context)
- static inline void audit_free_aux(struct audit_context *context)
- {
- 	struct audit_aux_data *aux;
-+	struct audit_aux_data_pids *axp;
- 
- 	while ((aux = context->aux)) {
- 		context->aux = aux->next;
-@@ -912,6 +914,8 @@ static inline void audit_free_aux(struct audit_context *context)
- 	}
- 	while ((aux = context->aux_pids)) {
- 		context->aux_pids = aux->next;
-+		axp = (struct audit_aux_data_pids *)aux;
-+		audit_contobj_put(axp->target_cid, axp->pid_count);
- 		kfree(aux);
+@@ -920,11 +920,12 @@ static inline void audit_free_aux(struct audit_context *context)
  	}
  }
-@@ -985,7 +989,7 @@ static inline void audit_free_context(struct audit_context *context)
+ 
+-static inline struct audit_context *audit_alloc_context(enum audit_state state)
++static inline struct audit_context *audit_alloc_context(enum audit_state state,
++							gfp_t gfpflags)
+ {
+ 	struct audit_context *context;
+ 
+-	context = kzalloc(sizeof(*context), GFP_KERNEL);
++	context = kzalloc(sizeof(*context), gfpflags);
+ 	if (!context)
+ 		return NULL;
+ 	context->state = state;
+@@ -962,7 +963,8 @@ int audit_alloc_syscall(struct task_struct *tsk)
+ 		return 0;
+ 	}
+ 
+-	if (!(context = audit_alloc_context(state))) {
++	context = audit_alloc_context(state, GFP_KERNEL);
++	if (!context) {
+ 		kfree(key);
+ 		audit_log_lost("out of memory in audit_alloc_syscall");
+ 		return -ENOMEM;
+@@ -974,8 +976,26 @@ int audit_alloc_syscall(struct task_struct *tsk)
+ 	return 0;
+ }
+ 
+-static inline void audit_free_context(struct audit_context *context)
++struct audit_context *audit_alloc_local(gfp_t gfpflags)
+ {
++	struct audit_context *context;
++
++	context = audit_alloc_context(AUDIT_RECORD_CONTEXT, gfpflags);
++	if (!context) {
++		audit_log_lost("out of memory in audit_alloc_local");
++		return NULL;
++	}
++	context->serial = audit_serial();
++	ktime_get_coarse_real_ts64(&context->ctime);
++	context->local = true;
++	return context;
++}
++EXPORT_SYMBOL(audit_alloc_local);
++
++void audit_free_context(struct audit_context *context)
++{
++	if (!context)
++		return;
+ 	audit_free_module(context);
+ 	audit_free_names(context);
+ 	unroll_tree_refs(context, NULL, 0);
+@@ -986,6 +1006,7 @@ static inline void audit_free_context(struct audit_context *context)
+ 	audit_proctitle_free(context);
+ 	kfree(context);
+ }
++EXPORT_SYMBOL(audit_free_context);
  
  static int audit_log_pid_context(struct audit_context *context, pid_t pid,
  				 kuid_t auid, kuid_t uid, unsigned int sessionid,
--				 u32 sid, char *comm)
-+				 u32 sid, char *comm, int record)
+@@ -2223,7 +2244,7 @@ EXPORT_SYMBOL_GPL(__audit_inode_child);
+ int auditsc_get_stamp(struct audit_context *ctx,
+ 		       struct timespec64 *t, unsigned int *serial)
  {
- 	struct audit_buffer *ab;
- 	char *ctx = NULL;
-@@ -1010,6 +1014,8 @@ static int audit_log_pid_context(struct audit_context *context, pid_t pid,
- 	}
- 	audit_log_format(ab, " ocomm=");
- 	audit_log_untrustedstring(ab, comm);
-+	if (record)
-+		audit_log_format(ab, " record=%d", record);
- 	audit_log_end(ab);
- 
- 	return rc;
-@@ -1479,9 +1485,12 @@ static void audit_log_exit(void)
- 	struct audit_buffer *ab;
- 	struct audit_aux_data *aux;
- 	struct audit_names *n;
-+	int record;
- 
- 	context->personality = current->personality;
- 
-+	record = audit_log_container_id_ctx(context);
-+
- 	ab = audit_log_start(context, GFP_KERNEL, AUDIT_SYSCALL);
- 	if (!ab)
- 		return;		/* audit_panic has been called */
-@@ -1504,6 +1513,8 @@ static void audit_log_exit(void)
- 
- 	audit_log_task_info(ab);
- 	audit_log_key(ab, context->filterkey);
-+	if (record)
-+		audit_log_format(ab, " record=%d", record);
- 	audit_log_end(ab);
- 
- 	for (aux = context->aux; aux; aux = aux->next) {
-@@ -1562,22 +1573,28 @@ static void audit_log_exit(void)
- 	for (aux = context->aux_pids; aux; aux = aux->next) {
- 		struct audit_aux_data_pids *axs = (void *)aux;
- 
--		for (i = 0; i < axs->pid_count; i++)
-+		for (i = 0; i < axs->pid_count; i++) {
-+			record = audit_log_container_id(context, axs->target_cid[i]);
- 			if (audit_log_pid_context(context, axs->target_pid[i],
- 						  axs->target_auid[i],
- 						  axs->target_uid[i],
- 						  axs->target_sessionid[i],
- 						  axs->target_sid[i],
--						  axs->target_comm[i]))
-+						  axs->target_comm[i], record))
- 				call_panic = 1;
-+		}
- 	}
- 
--	if (context->target_pid &&
--	    audit_log_pid_context(context, context->target_pid,
--				  context->target_auid, context->target_uid,
--				  context->target_sessionid,
--				  context->target_sid, context->target_comm))
-+	if (context->target_pid) {
-+		record = audit_log_container_id(context, context->target_cid);
-+		if (audit_log_pid_context(context, context->target_pid,
-+					  context->target_auid,
-+					  context->target_uid,
-+					  context->target_sessionid,
-+					  context->target_sid,
-+					  context->target_comm, record))
- 			call_panic = 1;
-+	}
- 
- 	if (context->pwd.dentry && context->pwd.mnt) {
- 		ab = audit_log_start(context, GFP_KERNEL, AUDIT_CWD);
-@@ -1755,11 +1772,16 @@ void __audit_syscall_exit(int success, long return_code)
- 	audit_free_aux(context);
- 	context->aux = NULL;
- 	context->aux_pids = NULL;
-+	if (context->target_pid) {
-+		audit_contobj_put(&context->target_cid, 1);
-+		context->target_cid = NULL;
-+	}
- 	context->target_pid = 0;
- 	context->target_sid = 0;
- 	context->sockaddr_len = 0;
- 	context->type = 0;
- 	context->fds[0] = -1;
-+	context->contid_records = 0;
- 	if (context->state != AUDIT_RECORD_CONTEXT) {
- 		kfree(context->filterkey);
- 		context->filterkey = NULL;
-@@ -2400,11 +2422,16 @@ void __audit_ptrace(struct task_struct *t)
- {
- 	struct audit_context *context = audit_context();
- 
-+	if (context->target_pid)
-+		audit_contobj_put(&context->target_cid, 1);
- 	context->target_pid = task_tgid_nr(t);
- 	context->target_auid = audit_get_loginuid(t);
- 	context->target_uid = task_uid(t);
- 	context->target_sessionid = audit_get_sessionid(t);
- 	security_task_getsecid(t, &context->target_sid);
-+	rcu_read_lock();
-+	context->target_cid = audit_contobj_get_bytask(t);
-+	rcu_read_unlock();
- 	memcpy(context->target_comm, t->comm, TASK_COMM_LEN);
- }
- 
-@@ -2432,6 +2459,9 @@ int audit_signal_info_syscall(struct task_struct *t)
- 		ctx->target_uid = t_uid;
- 		ctx->target_sessionid = audit_get_sessionid(t);
- 		security_task_getsecid(t, &ctx->target_sid);
-+		rcu_read_lock();
-+		ctx->target_cid = audit_contobj_get_bytask(t);
-+		rcu_read_unlock();
- 		memcpy(ctx->target_comm, t->comm, TASK_COMM_LEN);
+-	if (!ctx->in_syscall)
++	if (!ctx->in_syscall && !ctx->local)
  		return 0;
- 	}
-@@ -2453,6 +2483,9 @@ int audit_signal_info_syscall(struct task_struct *t)
- 	axp->target_uid[axp->pid_count] = t_uid;
- 	axp->target_sessionid[axp->pid_count] = audit_get_sessionid(t);
- 	security_task_getsecid(t, &axp->target_sid[axp->pid_count]);
-+	rcu_read_lock();
-+	axp->target_cid[axp->pid_count] = audit_contobj_get_bytask(t);
-+	rcu_read_unlock();
- 	memcpy(axp->target_comm[axp->pid_count], t->comm, TASK_COMM_LEN);
- 	axp->pid_count++;
- 
+ 	if (!ctx->serial)
+ 		ctx->serial = audit_serial();
 -- 
 2.18.4
 
