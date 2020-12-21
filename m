@@ -7,70 +7,70 @@ X-Spam-Status: No, score=-13.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 44474C433E0
-	for <containers@archiver.kernel.org>; Mon, 21 Dec 2020 16:58:25 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9F07AC433E0
+	for <containers@archiver.kernel.org>; Mon, 21 Dec 2020 16:58:42 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 0369922525
-	for <containers@archiver.kernel.org>; Mon, 21 Dec 2020 16:58:24 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0369922525
+	by mail.kernel.org (Postfix) with ESMTPS id 4C4B122525
+	for <containers@archiver.kernel.org>; Mon, 21 Dec 2020 16:58:42 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4C4B122525
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id B8872200ED;
-	Mon, 21 Dec 2020 16:58:24 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 1TOiV8r-bUp0; Mon, 21 Dec 2020 16:58:23 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 84431200E5;
-	Mon, 21 Dec 2020 16:58:23 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 7EA1BC1787;
-	Mon, 21 Dec 2020 16:58:23 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id B43C8C0893
- for <containers@lists.linux-foundation.org>;
- Mon, 21 Dec 2020 16:58:21 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 9ED6387680
- for <containers@lists.linux-foundation.org>;
- Mon, 21 Dec 2020 16:58:21 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id EBA6486FC4;
+	Mon, 21 Dec 2020 16:58:41 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
- by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id m3ZrnNigU2tf
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id 3gmZELPAkyZf; Mon, 21 Dec 2020 16:58:40 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by hemlock.osuosl.org (Postfix) with ESMTP id A68C786FBD;
+	Mon, 21 Dec 2020 16:58:40 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id A1080C1787;
+	Mon, 21 Dec 2020 16:58:40 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id DAA5FC0893
  for <containers@lists.linux-foundation.org>;
- Mon, 21 Dec 2020 16:58:20 +0000 (UTC)
+ Mon, 21 Dec 2020 16:58:39 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by silver.osuosl.org (Postfix) with ESMTP id C524E20101
+ for <containers@lists.linux-foundation.org>;
+ Mon, 21 Dec 2020 16:58:39 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from silver.osuosl.org ([127.0.0.1])
+ by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id GB9RjwkpHQlZ
+ for <containers@lists.linux-foundation.org>;
+ Mon, 21 Dec 2020 16:58:37 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from us-smtp-delivery-124.mimecast.com
  (us-smtp-delivery-124.mimecast.com [216.205.24.124])
- by hemlock.osuosl.org (Postfix) with ESMTPS id AD9588767B
+ by silver.osuosl.org (Postfix) with ESMTPS id 8DAE4200ED
  for <containers@lists.linux-foundation.org>;
- Mon, 21 Dec 2020 16:58:20 +0000 (UTC)
+ Mon, 21 Dec 2020 16:58:37 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
- s=mimecast20190719; t=1608569899;
+ s=mimecast20190719; t=1608569916;
  h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
  to:to:cc:cc:in-reply-to:in-reply-to:references:references;
- bh=+i+JMKsqD72QK+018fcFda5qjUfGEpd+pjGX+hHsyHA=;
- b=hwKUAK+CVgG4pEEeYlKS9eI/Z95lCGvsxeXR1USvyc+siwNqwXlxTysdaMFym5rcU7jDWU
- F/fQzW5YBrq7aIDEXlnfmCtTBZTek1LE1qXbrPtgIfJkbxqKQOv5ztyajimPBwY7ZUzDOK
- anYeSmkg9yqZaa4dNQeTfRUjpdLQBJE=
+ bh=yPgYcoP9VP6fa7Mr7AH/bm+8Wq47T8v4BZfABnwLLcw=;
+ b=CpyR9m7coZo9oRH2dQ0m7rz1NXeCi4cdAKGsHmvRHojGHoYN9mldcGahQyrzAOaFuIysbv
+ hWybS1hcq6yZamP7AEv39KaEEBJ/pisMCPWiUKPizTEw6N+IziC3mKBjsY05tHi/JIHzCY
+ CT7aM82yGJCsgEOf9nAMyUh+UUb4ghI=
 Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
  [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-355-eyDwlp3XOU-p3EIRn1Fa9A-1; Mon, 21 Dec 2020 11:58:17 -0500
-X-MC-Unique: eyDwlp3XOU-p3EIRn1Fa9A-1
+ us-mta-173-XfR89AuENdmL3ZH03qxN6A-1; Mon, 21 Dec 2020 11:58:34 -0500
+X-MC-Unique: XfR89AuENdmL3ZH03qxN6A-1
 Received: from smtp.corp.redhat.com (int-mx02.intmail.prod.int.phx2.redhat.com
  [10.5.11.12])
  (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
  (No client certificate requested)
- by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 74A06801A9D;
- Mon, 21 Dec 2020 16:58:15 +0000 (UTC)
+ by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 91CEF801817;
+ Mon, 21 Dec 2020 16:58:32 +0000 (UTC)
 Received: from madcap2.tricolour.ca (unknown [10.10.110.9])
- by smtp.corp.redhat.com (Postfix) with ESMTP id AFF2560C0F;
- Mon, 21 Dec 2020 16:58:02 +0000 (UTC)
+ by smtp.corp.redhat.com (Postfix) with ESMTP id D514860C61;
+ Mon, 21 Dec 2020 16:58:15 +0000 (UTC)
 From: Richard Guy Briggs <rgb@redhat.com>
 To: Linux Containers List <containers@lists.linux-foundation.org>,
  Linux API <linux-api@vger.kernel.org>,
@@ -79,9 +79,9 @@ To: Linux Containers List <containers@lists.linux-foundation.org>,
  LKML <linux-kernel@vger.kernel.org>,
  Linux NetDev Upstream Mailing List <netdev@vger.kernel.org>,
  Netfilter Devel List <netfilter-devel@vger.kernel.org>
-Subject: [PATCH ghak90 v10 09/11] audit: contid check descendancy and nesting
-Date: Mon, 21 Dec 2020 11:55:43 -0500
-Message-Id: <c089f67baff5abb060b0c1ba47273b2aa8cc6c41.1608225886.git.rgb@redhat.com>
+Subject: [PATCH ghak90 v10 10/11] audit: track container nesting
+Date: Mon, 21 Dec 2020 11:55:44 -0500
+Message-Id: <ceca0192c35bde32f1adb5148eca08375edbc116.1608225886.git.rgb@redhat.com>
 In-Reply-To: <cover.1608225886.git.rgb@redhat.com>
 References: <cover.1608225886.git.rgb@redhat.com>
 X-Scanned-By: MIMEDefang 2.79 on 10.5.11.12
@@ -107,182 +107,204 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Require the target task to be a descendant of the container
-orchestrator/engine.
+Track the parent container of a container to be able to filter and
+report nesting.
 
-You would only change the audit container ID from one set or inherited
-value to another if you were nesting containers.
+Now that we have a way to track and check the parent container of a
+container, modify the contid field format to be able to report that
+nesting using a carrat ("^") modifier to indicate nesting.  The
+original field format was "contid=<contid>" for task-associated records
+and "contid=<contid>[,<contid>[...]]" for network-namespace-associated
+records.  The new field format is
+"contid=<contid>[,^<contid>[...]][,<contid>[...]]".
 
-If changing the contid, the container orchestrator/engine must be a
-descendant and not same orchestrator as the one that set it so it is not
-possible to change the contid of another orchestrator's container.
+For task event example, an orchestrator in contid 1 spawns tasks in contid
+2 and contid 3, then the task in contid 2 spawns a task in contid 4.  An
+event happens in the task in contid 4:
+    type=SYSCALL ...
+    type=CONTAINER_ID msg=audit(<date.time>:<serno>): contid=4,^2,^1
 
-Since the task_is_descendant() function is used in YAMA and in audit,
-remove the duplication and pull the function into kernel/core/sched.c
+For a network namespace event example, an orchestrator in contid 1 in
+network namespace A spawns peer tasks 2 and 3 in network namespace B.  An
+event happens in network namespace B:
+    type=NETFILTER_PKT ...
+    type=CONTAINER_ID msg=audit(<date.time>:<serno>): contid=2,^1,3,^1
 
 Signed-off-by: Richard Guy Briggs <rgb@redhat.com>
 ---
- include/linux/sched.h    |  3 +++
- kernel/audit.c           | 26 +++++++++++++++++++++++---
- kernel/sched/core.c      | 33 +++++++++++++++++++++++++++++++++
- security/yama/yama_lsm.c | 33 ---------------------------------
- 4 files changed, 59 insertions(+), 36 deletions(-)
+ kernel/audit.c | 75 +++++++++++++++++++++++++++++++++++++++++---------
+ 1 file changed, 62 insertions(+), 13 deletions(-)
 
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index b28348868b27..9e658e724543 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -2055,4 +2055,7 @@ int sched_trace_rq_nr_running(struct rq *rq);
- 
- const struct cpumask *sched_trace_rd_span(struct root_domain *rd);
- 
-+extern int task_is_descendant(struct task_struct *parent,
-+			      struct task_struct *child);
-+
- #endif
 diff --git a/kernel/audit.c b/kernel/audit.c
-index 8d03f07e7128..6eed8ed0cc8e 100644
+index 6eed8ed0cc8e..46ddf49f731f 100644
 --- a/kernel/audit.c
 +++ b/kernel/audit.c
-@@ -475,11 +475,13 @@ void audit_free(struct task_struct *tsk)
- 	rcu_read_lock();
- 	cont = _audit_contobj_get_bytask(tsk);
- 	rcu_read_unlock();
--	spin_lock_irqsave(&_audit_contobj_list_lock, flags);
- 	if (ns) {
- 		audit_netns_contid_del(ns->net_ns, cont);
-+		spin_lock_irqsave(&_audit_contobj_list_lock, flags);
- 		_audit_contobj_put(cont);
-+		spin_unlock_irqrestore(&_audit_contobj_list_lock, flags);
+@@ -231,6 +231,7 @@ struct audit_contobj {
+ 	refcount_t		refcount;
+ 	refcount_t		sigflag;
+ 	struct rcu_head         rcu;
++	struct audit_contobj	*parent;
+ };
+ 
+ struct audit_task_info {
+@@ -253,6 +254,7 @@ struct audit_contobj_netns {
+ 
+ static void audit_netns_contid_add(struct net *net, struct audit_contobj *cont);
+ static void audit_netns_contid_del(struct net *net, struct audit_contobj *cont);
++static void audit_log_contid(struct audit_buffer *ab, struct audit_contobj *cont);
+ 
+ void __init audit_task_init(void)
+ {
+@@ -378,6 +380,7 @@ static void _audit_contobj_put_sig(struct audit_contobj *cont)
+ 	refcount_set(&cont->sigflag, 0);
+ 	if (!refcount_read(&cont->refcount)) {
+ 		put_task_struct(cont->owner);
++		_audit_contobj_put(cont->parent);
+ 		list_del_rcu(&cont->list);
+ 		kfree_rcu(cont, rcu);
  	}
-+	spin_lock_irqsave(&_audit_contobj_list_lock, flags);
- 	_audit_contobj_put(cont);
- 	spin_unlock_irqrestore(&_audit_contobj_list_lock, flags);
- 	audit_free_syscall(tsk);
-@@ -2923,6 +2925,21 @@ int audit_signal_info(int sig, struct task_struct *t)
- 	return audit_signal_info_syscall(t);
+@@ -721,11 +724,11 @@ int audit_log_netns_contid_list(struct net *net, struct audit_context *context)
+ 				audit_log_lost("out of memory in audit_log_netns_contid_list");
+ 				goto out;
+ 			}
+-			audit_log_format(ab, "record=1 contid=%llu",
+-					 cont->obj->id);
++			audit_log_format(ab, "record=1 contid=");
+ 		} else {
+-			audit_log_format(ab, ",%llu", cont->obj->id);
++			audit_log_format(ab, ",");
+ 		}
++		audit_log_contid(ab, cont->obj);
+ 	}
+ 	audit_log_end(ab);
+ out:
+@@ -1905,6 +1908,7 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 	case AUDIT_SIGNAL_INFO2: {
+ 		char *contidstr = NULL;
+ 		unsigned int contidstrlen = 0;
++		struct audit_contobj *cont = audit_sig_cid;
+ 
+ 		len = 0;
+ 		if (audit_sig_sid) {
+@@ -1914,13 +1918,27 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 				return err;
+ 		}
+ 		if (audit_sig_cid) {
+-			contidstr = kmalloc(21, GFP_KERNEL);
++			contidstr = kmalloc(AUDIT_MESSAGE_TEXT_MAX, GFP_KERNEL);
+ 			if (!contidstr) {
+ 				if (audit_sig_sid)
+ 					security_release_secctx(ctx, len);
+ 				return -ENOMEM;
+ 			}
+-			contidstrlen = scnprintf(contidstr, 20, "%llu", audit_sig_cid->id);
++			rcu_read_lock();
++			while (cont) {
++				if (cont->parent)
++					contidstrlen += scnprintf(contidstr,
++								  AUDIT_MESSAGE_TEXT_MAX -
++								  contidstrlen,
++								  "%llu,^", cont->id);
++				else
++					contidstrlen += scnprintf(contidstr,
++								  AUDIT_MESSAGE_TEXT_MAX -
++								  contidstrlen,
++								  "%llu", cont->id);
++				cont = cont->parent;
++			}
++			rcu_read_unlock();
+ 		}
+ 		sig_data2 = kmalloc(sizeof(*sig_data2) + contidstrlen + len, GFP_KERNEL);
+ 		if (!sig_data2) {
+@@ -2607,6 +2625,23 @@ void audit_log_session_info(struct audit_buffer *ab)
+ 	audit_log_format(ab, "auid=%u ses=%u", auid, sessionid);
  }
  
-+static bool audit_contid_isnesting(struct task_struct *tsk)
++static void audit_log_contid(struct audit_buffer *ab, struct audit_contobj *cont)
 +{
-+	bool isowner = false;
-+	bool ownerisparent = false;
-+	struct audit_task_info *info = tsk->audit;
-+
++	if (!cont) {
++		audit_log_format(ab, "-1");
++		return;
++	}
 +	rcu_read_lock();
-+	if (info && info->cont) {
-+		isowner = current == info->cont->owner;
-+		ownerisparent = task_is_descendant(info->cont->owner, current);
++	while (cont) {
++		if (cont->parent)
++			audit_log_format(ab, "%llu,^", cont->id);
++		else
++			audit_log_format(ab, "%llu", cont->id);
++		cont = cont->parent;
 +	}
 +	rcu_read_unlock();
-+	return !isowner && ownerisparent;
 +}
 +
  /*
-  * audit_set_contid - set current task's audit contid
-  * @tsk: target task
-@@ -2963,8 +2980,11 @@ int audit_set_contid(struct task_struct *tsk, u64 contid)
- 		   !(thread_group_leader(tsk) && thread_group_empty(tsk))) {
- 		/* if task has children or is not single-threaded, deny */
- 		rc = -EBUSY;
--	} else if (info->cont) {
--		/* if contid is already set, deny */
-+	} else if (tsk == current || !task_is_descendant(current, tsk)) {
-+		/* if task is not descendant, block */
-+		rc = -EXDEV;
-+	} else if (info->cont && !audit_contid_isnesting(tsk)) {
-+		/* only allow contid setting again if nesting */
- 		rc = -EEXIST;
- 	}
- 	rcu_read_lock();
-diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index d2003a7d5ab5..6af7e6ee2498 100644
---- a/kernel/sched/core.c
-+++ b/kernel/sched/core.c
-@@ -8436,6 +8436,39 @@ void dump_cpu_task(int cpu)
- 	sched_show_task(cpu_curr(cpu));
+  * _audit_log_container_id - report container info
+  * @context: task or local context for record
+@@ -2626,8 +2661,9 @@ static int _audit_log_container_id(struct audit_context *context,
+ 	ab = audit_log_start(context, GFP_KERNEL, AUDIT_CONTAINER_ID);
+ 	if (!ab)
+ 		return 0;
+-	audit_log_format(ab, "record=%d contid=%llu",
+-			 record = ++context->contid_records, contobj->id);
++	audit_log_format(ab, "record=%d contid=",
++			 record = ++context->contid_records);
++	audit_log_contid(ab, contobj);
+ 	audit_log_end(ab);
+ 	return record;
  }
+@@ -2663,7 +2699,18 @@ int audit_log_container_id_ctx(struct audit_context *context)
  
-+/*
-+ * task_is_descendant - walk up a process family tree looking for a match
-+ * @parent: the process to compare against while walking up from child
-+ * @child: the process to start from while looking upwards for parent
-+ *
-+ * Returns 1 if child is a descendant of parent, 0 if not.
-+ */
-+int task_is_descendant(struct task_struct *parent,
-+			      struct task_struct *child)
-+{
-+	int rc = 0;
-+	struct task_struct *walker = child;
+ int audit_contid_comparator(struct task_struct *tsk, u32 op, u64 right)
+ {
+-	return audit_comparator64(audit_get_contid(tsk), op, right);
++	struct audit_contobj *cont = NULL;
++	int h;
++	int result = 0;
++	u64 left = audit_get_contid(tsk);
 +
-+	if (!parent || !child)
-+		return 0;
-+
-+	rcu_read_lock();
-+	if (!thread_group_leader(parent))
-+		parent = rcu_dereference(parent->group_leader);
-+	while (walker->pid > 0) {
-+		if (!thread_group_leader(walker))
-+			walker = rcu_dereference(walker->group_leader);
-+		if (walker == parent) {
-+			rc = 1;
++	h = audit_hash_contid(left);
++	list_for_each_entry_rcu(cont, &audit_contid_hash[h], list) {
++		result = audit_comparator64(cont->id, op, right);
++		if (result)
 +			break;
-+		}
-+		walker = rcu_dereference(walker->real_parent);
 +	}
-+	rcu_read_unlock();
-+
-+	return rc;
-+}
-+
- /*
-  * Nice levels are multiplicative, with a gentle 10% change for every
-  * nice level changed. I.e. when a CPU-bound task goes from nice 0 to
-diff --git a/security/yama/yama_lsm.c b/security/yama/yama_lsm.c
-index 06e226166aab..2930e42eafc2 100644
---- a/security/yama/yama_lsm.c
-+++ b/security/yama/yama_lsm.c
-@@ -262,39 +262,6 @@ static int yama_task_prctl(int option, unsigned long arg2, unsigned long arg3,
- 	return rc;
++	return result;
  }
  
--/**
-- * task_is_descendant - walk up a process family tree looking for a match
-- * @parent: the process to compare against while walking up from child
-- * @child: the process to start from while looking upwards for parent
-- *
-- * Returns 1 if child is a descendant of parent, 0 if not.
-- */
--static int task_is_descendant(struct task_struct *parent,
--			      struct task_struct *child)
--{
--	int rc = 0;
--	struct task_struct *walker = child;
--
--	if (!parent || !child)
--		return 0;
--
--	rcu_read_lock();
--	if (!thread_group_leader(parent))
--		parent = rcu_dereference(parent->group_leader);
--	while (walker->pid > 0) {
--		if (!thread_group_leader(walker))
--			walker = rcu_dereference(walker->group_leader);
--		if (walker == parent) {
--			rc = 1;
--			break;
--		}
--		walker = rcu_dereference(walker->real_parent);
--	}
--	rcu_read_unlock();
--
--	return rc;
--}
--
- /**
-  * ptracer_exception_found - tracer registered as exception for this tracee
-  * @tracer: the task_struct of the process attempting ptrace
+ void audit_log_key(struct audit_buffer *ab, char *key)
+@@ -3018,6 +3065,7 @@ int audit_set_contid(struct task_struct *tsk, u64 contid)
+ 			INIT_LIST_HEAD(&newcont->list);
+ 			newcont->id = contid;
+ 			newcont->owner = get_task_struct(current);
++			newcont->parent = _audit_contobj_get_bytask(newcont->owner);
+ 			refcount_set(&newcont->refcount, 1);
+ 			list_add_rcu(&newcont->list,
+ 				     &audit_contid_hash[h]);
+@@ -3046,9 +3094,9 @@ int audit_set_contid(struct task_struct *tsk, u64 contid)
+ 	if (!ab)
+ 		return rc;
+ 
+-	audit_log_format(ab,
+-			 "op=set opid=%d contid=%llu old-contid=%llu",
+-			 task_tgid_nr(tsk), contid, oldcont ? oldcont->id : -1);
++	audit_log_format(ab, "op=set opid=%d contid=%llu old-contid=",
++			 task_tgid_nr(tsk), contid);
++	audit_log_contid(ab, oldcont);
+ 	spin_lock_irqsave(&_audit_contobj_list_lock, flags);
+ 	_audit_contobj_put(oldcont);
+ 	spin_unlock_irqrestore(&_audit_contobj_list_lock, flags);
+@@ -3087,8 +3135,9 @@ void audit_log_container_drop(void)
+ 	ab = audit_log_start(audit_context(), GFP_KERNEL, AUDIT_CONTAINER_OP);
+ 	if (!ab)
+ 		goto out;
+-	audit_log_format(ab, "op=drop opid=%d contid=-1 old-contid=%llu",
+-			 task_tgid_nr(current), cont->id);
++	audit_log_format(ab, "op=drop opid=%d contid=-1 old-contid=",
++			 task_tgid_nr(current));
++	audit_log_contid(ab, cont);
+ 	audit_log_end(ab);
+ out:
+ 	spin_lock_irqsave(&_audit_contobj_list_lock, flags);
 -- 
 2.18.4
 
