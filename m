@@ -4,81 +4,81 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-13.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F853C433E0
-	for <containers@archiver.kernel.org>; Mon, 21 Dec 2020 17:14:26 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2B0C4C433E6
+	for <containers@archiver.kernel.org>; Mon, 21 Dec 2020 17:14:27 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 4835B22BF3
+	by mail.kernel.org (Postfix) with ESMTPS id C969A22CA1
 	for <containers@archiver.kernel.org>; Mon, 21 Dec 2020 17:14:26 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4835B22BF3
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C969A22CA1
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id F265587270;
-	Mon, 21 Dec 2020 17:14:25 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 8430E2035D;
+	Mon, 21 Dec 2020 17:14:26 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id H+XdOW+mR+Dz; Mon, 21 Dec 2020 17:14:24 +0000 (UTC)
+	with ESMTP id ZDSF5YFHbDqz; Mon, 21 Dec 2020 17:14:25 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id B41D486968;
-	Mon, 21 Dec 2020 17:14:24 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id D766F226EA;
+	Mon, 21 Dec 2020 17:14:25 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id ABC20C1825;
-	Mon, 21 Dec 2020 17:14:24 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 3EEA0C0893
+	by lists.linuxfoundation.org (Postfix) with ESMTP id C575FC1825;
+	Mon, 21 Dec 2020 17:14:25 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id AD619C1D9C
  for <containers@lists.linux-foundation.org>;
- Mon, 21 Dec 2020 17:14:22 +0000 (UTC)
+ Mon, 21 Dec 2020 17:14:24 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 2C308875A1
+ by silver.osuosl.org (Postfix) with ESMTP id 9F0F922817
  for <containers@lists.linux-foundation.org>;
- Mon, 21 Dec 2020 17:14:22 +0000 (UTC)
+ Mon, 21 Dec 2020 17:14:24 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id j5rTw3IPdTC3
+ with ESMTP id HbsDK00K0VGZ
  for <containers@lists.linux-foundation.org>;
- Mon, 21 Dec 2020 17:14:20 +0000 (UTC)
+ Mon, 21 Dec 2020 17:14:24 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from us-smtp-delivery-124.mimecast.com
- (us-smtp-delivery-124.mimecast.com [216.205.24.124])
- by hemlock.osuosl.org (Postfix) with ESMTPS id B5EE48768C
+ (us-smtp-delivery-124.mimecast.com [63.128.21.124])
+ by silver.osuosl.org (Postfix) with ESMTPS id BF47322794
  for <containers@lists.linux-foundation.org>;
- Mon, 21 Dec 2020 17:14:20 +0000 (UTC)
+ Mon, 21 Dec 2020 17:14:23 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
- s=mimecast20190719; t=1608570859;
+ s=mimecast20190719; t=1608570862;
  h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
  to:to:cc:cc:in-reply-to:in-reply-to:references:references;
- bh=BrlwuJ7Wsdax0BBfkanmGMtk6GKetW4Dz1RxeSTSf6U=;
- b=UNuS+nbSJ3TNPmTYGVKgLzi/i7WVhq5GXxNE2hEvDFNp83xAWqQxgRyVQ2m9BmMlxiw4tX
- ahgQJmE7AmAtwZhbFGHZldka/DzTst4K4VLa8P+bYd0sdUJgdQnsOepMhmP/bxuy7jWnfx
- TSnZyQUybQH3hETeGZsJXA7AitDPeaE=
+ bh=wfN0o0JokmbNz9DafEtBUD4PMjxJrKYE3OGEsWN7KpM=;
+ b=EeUVgbMXAoaj/NvdCoZq0dSQC4ZvSzSkkYcHtyiF6ZevQYSu87XP95JCY3qnlxcPOU2q0x
+ iT+tVGFV2BApyLJRDhQEfjiZFqZ52ugN8VE8a0UVqg711pL6G6Wnw8YgSRE7I2Hmp+/46U
+ ceLw0S173bBI+69vye8zVexKYfqoRbQ=
 Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
  [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-101-ozhqscUFOcChKRkRG-yYlA-1; Mon, 21 Dec 2020 12:14:15 -0500
-X-MC-Unique: ozhqscUFOcChKRkRG-yYlA-1
+ us-mta-30-tWC4IxGdNQ-Ac7YKD7fj0g-1; Mon, 21 Dec 2020 12:14:18 -0500
+X-MC-Unique: tWC4IxGdNQ-Ac7YKD7fj0g-1
 Received: from smtp.corp.redhat.com (int-mx04.intmail.prod.int.phx2.redhat.com
  [10.5.11.14])
  (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
  (No client certificate requested)
- by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 1C391107B46E;
- Mon, 21 Dec 2020 17:14:13 +0000 (UTC)
+ by mimecast-mx01.redhat.com (Postfix) with ESMTPS id DACDB1934108;
+ Mon, 21 Dec 2020 17:14:16 +0000 (UTC)
 Received: from madcap2.tricolour.ca (unknown [10.10.110.9])
- by smtp.corp.redhat.com (Postfix) with ESMTP id A9DC45D9CA;
- Mon, 21 Dec 2020 17:14:02 +0000 (UTC)
+ by smtp.corp.redhat.com (Postfix) with ESMTP id 523865D9CA;
+ Mon, 21 Dec 2020 17:14:15 +0000 (UTC)
 From: Richard Guy Briggs <rgb@redhat.com>
 To: Linux Containers List <containers@lists.linux-foundation.org>,
  Linux-Audit Mailing List <linux-audit@redhat.com>,
  LKML <linux-kernel@vger.kernel.org>
-Subject: [PATCH ghau51/ghau40 v10 07/11] signal_info: only print context if it
- is available.
-Date: Mon, 21 Dec 2020 12:12:47 -0500
-Message-Id: <20201221171251.2610890-8-rgb@redhat.com>
+Subject: [PATCH ghau51/ghau40 v10 09/11] contid: interpret correctly
+ CONTAINER_ID contid field csv
+Date: Mon, 21 Dec 2020 12:12:49 -0500
+Message-Id: <20201221171251.2610890-10-rgb@redhat.com>
 In-Reply-To: <20201221171251.2610890-1-rgb@redhat.com>
 References: <20201221171251.2610890-1-rgb@redhat.com>
 X-Scanned-By: MIMEDefang 2.79 on 10.5.11.14
@@ -101,67 +101,46 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
+The CONTAINER_ID record contid field can contain comma-separated values
+when accompanying a NETFILTER_PKT record.  Records appeared interpreted
+as such:
+
+Wrong:
+	CONTAINER_ID msg=audit(2019-04-10 13:20:18.746:1690) : contid=777 666,333
+Right:
+	CONTAINER_ID msg=audit(2019-04-10 13:20:18.746:1690) : contid=777,666,333
+
 Signed-off-by: Richard Guy Briggs <rgb@redhat.com>
 ---
- src/auditd-event.c    | 20 +++++++++++++++-----
- src/auditd-reconfig.c |  2 --
- 2 files changed, 15 insertions(+), 7 deletions(-)
+ src/ausearch-report.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/src/auditd-event.c b/src/auditd-event.c
-index e6b2a961f02b..800f4d83bc83 100644
---- a/src/auditd-event.c
-+++ b/src/auditd-event.c
-@@ -1323,13 +1323,16 @@ static void reconfigure(struct auditd_event *e)
- 	const char *ctx = nconf->sender_ctx;
- 	struct timeval tv;
- 	char txt[MAX_AUDIT_MESSAGE_LENGTH];
-+	int txt_len;
- 	char date[40];
- 	unsigned int seq_num;
- 	int need_size_check = 0, need_reopen = 0, need_space_check = 0;
- 
--	snprintf(txt, sizeof(txt),
--		"config change requested by pid=%d auid=%u subj=%s",
--		pid, uid, ctx);
-+	txt_len = snprintf(txt, sizeof(txt),
-+		"config change requested by pid=%d auid=%u", pid, uid);
-+	if (ctx)
-+		snprintf(txt + txt_len, sizeof(txt) - txt_len,
-+			 " subj=%s", ctx);
- 	audit_msg(LOG_NOTICE, "%s", txt);
- 
- 	/* Do the reconfiguring. These are done in a specific
-@@ -1578,8 +1581,15 @@ static void reconfigure(struct auditd_event *e)
- 
- 	e->reply.type = AUDIT_DAEMON_CONFIG;
- 	e->reply.len = snprintf(e->reply.msg.data, MAX_AUDIT_MESSAGE_LENGTH-2, 
--	"%s: op=reconfigure state=changed auid=%u pid=%d subj=%s res=success",
--		date, uid, pid, ctx );
-+				"%s: op=reconfigure state=changed auid=%u pid=%d",
-+				date, uid, pid);
-+	if (ctx)
-+		e->reply.len += snprintf(e->reply.msg.data + e->reply.len,
-+					 MAX_AUDIT_MESSAGE_LENGTH-2 - e->reply.len,
-+					 " subj=%s", ctx);
-+	e->reply.len += snprintf(e->reply.msg.data + e->reply.len,
-+				 MAX_AUDIT_MESSAGE_LENGTH-2 - e->reply.len,
-+				 " res=success");
- 	e->reply.message = e->reply.msg.data;
- 	free((char *)ctx);
- }
-diff --git a/src/auditd-reconfig.c b/src/auditd-reconfig.c
-index f5b00e6d1dc7..1af402526c4e 100644
---- a/src/auditd-reconfig.c
-+++ b/src/auditd-reconfig.c
-@@ -106,8 +106,6 @@ static void *config_thread_main(void *arg)
- 		if (e->reply.len > 24)
- 			new_config.sender_ctx = 
- 				strdup(e->reply.signal_info->ctx);
--		else
--			new_config.sender_ctx = strdup("?"); 
- 		memcpy(e->reply.msg.data, &new_config, sizeof(new_config));
- 		e->reply.conf = (struct daemon_conf *)e->reply.msg.data;
- 		e->reply.type = AUDIT_DAEMON_RECONFIG;
+diff --git a/src/ausearch-report.c b/src/ausearch-report.c
+index 416c2b13fa6a..754b28af2cb6 100644
+--- a/src/ausearch-report.c
++++ b/src/ausearch-report.c
+@@ -279,7 +279,7 @@ no_print:
+ 			if (str && val && (str < val)) {
+ 			// Value side  has commas and another field exists
+ 			// Known: LABEL_LEVEL_CHANGE banners=none,none
+-			// Known: ROLL_ASSIGN new-role=r,r
++			// Known: ROLE_ASSIGN new-role=r,r
+ 			// Known: any MAC LABEL can potentially have commas
+ 				int ftype = auparse_interp_adjust_type(n->type,
+ 								name, val);
+@@ -293,9 +293,11 @@ no_print:
+ 			} else if (str && (val == NULL)) {
+ 			// Goes all the way to the end. Done parsing
+ 			// Known: MCS context in PATH rec obj=u:r:t:s0:c2,c7
++			// Known: CONTAINER_ID/OP old-/contid can be a comma-separated list
+ 				int ftype = auparse_interp_adjust_type(n->type,
+ 								name, ptr);
+-				if (ftype == AUPARSE_TYPE_MAC_LABEL)
++				if (ftype == AUPARSE_TYPE_MAC_LABEL
++				    || ftype == AUPARSE_TYPE_CONTID)
+ 					str = NULL;
+ 				else {
+ 					*str++ = 0;
 -- 
 2.18.4
 
