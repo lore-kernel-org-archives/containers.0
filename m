@@ -2,95 +2,88 @@ Return-Path: <SRS0=sUbK=FZ=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+X-Spam-Status: No, score=-18.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 62A23C433E0
-	for <containers@archiver.kernel.org>; Mon, 21 Dec 2020 16:59:07 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8E443C433DB
+	for <containers@archiver.kernel.org>; Mon, 21 Dec 2020 17:13:37 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 1673122512
-	for <containers@archiver.kernel.org>; Mon, 21 Dec 2020 16:59:06 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1673122512
+	by mail.kernel.org (Postfix) with ESMTPS id 2DC7122BF3
+	for <containers@archiver.kernel.org>; Mon, 21 Dec 2020 17:13:36 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2DC7122BF3
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id AF07486B76;
-	Mon, 21 Dec 2020 16:59:06 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id WNsp8E9-fmMH; Mon, 21 Dec 2020 16:59:05 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id DFF7F86B42;
-	Mon, 21 Dec 2020 16:59:05 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id CB9EDC1787;
-	Mon, 21 Dec 2020 16:59:05 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 4391CC0893
- for <containers@lists.linux-foundation.org>;
- Mon, 21 Dec 2020 16:59:05 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 3D491226D4
- for <containers@lists.linux-foundation.org>;
- Mon, 21 Dec 2020 16:59:05 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id B0BA8226FC;
+	Mon, 21 Dec 2020 17:13:36 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
- by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id YH-WGltZWBL5
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id worHyql-yAuv; Mon, 21 Dec 2020 17:13:36 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by silver.osuosl.org (Postfix) with ESMTP id BEB59226EA;
+	Mon, 21 Dec 2020 17:13:35 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id AAFD9C1825;
+	Mon, 21 Dec 2020 17:13:35 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 46E48C0893
  for <containers@lists.linux-foundation.org>;
- Mon, 21 Dec 2020 16:59:04 +0000 (UTC)
+ Mon, 21 Dec 2020 17:13:34 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by whitealder.osuosl.org (Postfix) with ESMTP id 437E887205
+ for <containers@lists.linux-foundation.org>;
+ Mon, 21 Dec 2020 17:13:34 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from whitealder.osuosl.org ([127.0.0.1])
+ by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id enpN677inMTw
+ for <containers@lists.linux-foundation.org>;
+ Mon, 21 Dec 2020 17:13:33 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from us-smtp-delivery-124.mimecast.com
- (us-smtp-delivery-124.mimecast.com [216.205.24.124])
- by silver.osuosl.org (Postfix) with ESMTPS id E7CED200ED
+ (us-smtp-delivery-124.mimecast.com [63.128.21.124])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 912D186687
  for <containers@lists.linux-foundation.org>;
- Mon, 21 Dec 2020 16:59:03 +0000 (UTC)
+ Mon, 21 Dec 2020 17:13:33 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
- s=mimecast20190719; t=1608569942;
+ s=mimecast20190719; t=1608570812;
  h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
  to:to:cc:cc:in-reply-to:in-reply-to:references:references;
- bh=/w27q3uq/46j4Yla+TCEVh6pfj7ioYxSkQclPsbhvks=;
- b=MB1uttkEm05NR4cIhEptDNFjypg0C+DgVeT4Ohph6YY/XZoDnzthe3AlGpfA+f1+5/7Zlw
- pz9jjReQbjqzvsUycWA+TZvdZ2vA3y+tcEX+Bo0RzVGsaU5F22oNW/fm7j8BdqoONg/C8A
- FgxP+cNS6jH6kicUC1CRq8oumwWsiWI=
+ bh=Pen0iXiYwfSzOz/8kWP8vcu8HMjokSkoBzgkXv/pINU=;
+ b=HL1Y89wX6mghuxlKL6ab9EnMcpRRB2wTTZ++avq3h5amLrh/9vZ/xMP/5k7qbj7zcQYp++
+ 4fd4hB0XdvOHi8DVfGm+cH5+HfRMxQfTcOYCMBkaTVscQ3yNxVfGs9VnT4aVrxZG1e/sqA
+ 9p/27pUhodBRtwxRXjZhjsDqrzKe6tY=
 Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
  [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-285-9Qx_H8m7OjGsxYbigrBxZg-1; Mon, 21 Dec 2020 11:59:00 -0500
-X-MC-Unique: 9Qx_H8m7OjGsxYbigrBxZg-1
-Received: from smtp.corp.redhat.com (int-mx02.intmail.prod.int.phx2.redhat.com
- [10.5.11.12])
+ us-mta-508-An2lO8PVPb-aOei3vOxi0w-1; Mon, 21 Dec 2020 12:13:30 -0500
+X-MC-Unique: An2lO8PVPb-aOei3vOxi0w-1
+Received: from smtp.corp.redhat.com (int-mx04.intmail.prod.int.phx2.redhat.com
+ [10.5.11.14])
  (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
  (No client certificate requested)
- by mimecast-mx01.redhat.com (Postfix) with ESMTPS id D29F3107ACE6;
- Mon, 21 Dec 2020 16:58:58 +0000 (UTC)
+ by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 74B818144E0;
+ Mon, 21 Dec 2020 17:13:29 +0000 (UTC)
 Received: from madcap2.tricolour.ca (unknown [10.10.110.9])
- by smtp.corp.redhat.com (Postfix) with ESMTP id F3B2F60C61;
- Mon, 21 Dec 2020 16:58:32 +0000 (UTC)
+ by smtp.corp.redhat.com (Postfix) with ESMTP id 010065D9CA;
+ Mon, 21 Dec 2020 17:13:25 +0000 (UTC)
 From: Richard Guy Briggs <rgb@redhat.com>
 To: Linux Containers List <containers@lists.linux-foundation.org>,
- Linux API <linux-api@vger.kernel.org>,
  Linux-Audit Mailing List <linux-audit@redhat.com>,
- Linux FSdevel <linux-fsdevel@vger.kernel.org>,
- LKML <linux-kernel@vger.kernel.org>,
- Linux NetDev Upstream Mailing List <netdev@vger.kernel.org>,
- Netfilter Devel List <netfilter-devel@vger.kernel.org>
-Subject: [PATCH ghak90 v10 11/11] audit: add capcontid to set contid outside
- init_user_ns
-Date: Mon, 21 Dec 2020 11:55:45 -0500
-Message-Id: <e835a30a14b5bd26dfaa3adc000431797b5ea02b.1608225886.git.rgb@redhat.com>
-In-Reply-To: <cover.1608225886.git.rgb@redhat.com>
-References: <cover.1608225886.git.rgb@redhat.com>
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.12
-Cc: Jens Axboe <axboe@kernel.dk>, Kees Cook <keescook@chromium.org>,
- Neil Horman <nhorman@tuxdriver.com>, Richard Guy Briggs <rgb@redhat.com>,
- David Howells <dhowells@redhat.com>,
- "Eric W. Biederman" <ebiederm@xmission.com>, Simo Sorce <simo@redhat.com>,
- Eric Paris <eparis@parisplace.org>, mpatel@redhat.com
+ LKML <linux-kernel@vger.kernel.org>
+Subject: [PATCH ghau51/ghau40 v10 01/11] AUDIT_CONTAINER_OP message type basic
+ support
+Date: Mon, 21 Dec 2020 12:12:41 -0500
+Message-Id: <20201221171251.2610890-2-rgb@redhat.com>
+In-Reply-To: <20201221171251.2610890-1-rgb@redhat.com>
+References: <20201221171251.2610890-1-rgb@redhat.com>
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.14
+Cc: Richard Guy Briggs <rgb@redhat.com>, Eric Paris <eparis@parisplace.org>,
+ mpatel@redhat.com, Neil Horman <nhorman@tuxdriver.com>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -108,279 +101,75 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Provide a mechanism similar to CAP_AUDIT_CONTROL to explicitly give a
-process in a non-init user namespace the capability to set audit
-container identifiers of individual children.
+This defines the message number for the audit container identifier
+registration record should the kernel headers not be up to date, gives
+the record number a name for printing and allows the record to be
+interpreted since it is in the 1000 range like AUDIT_LOGIN.
 
-Provide the /proc/$PID/audit_capcontid interface to capcontid.
-Valid values are: 1==enabled, 0==disabled
-
-Writing a "1" to this special file for the target process $PID will
-enable the target process to set audit container identifiers of its
-descendants.
-
-A process must already have CAP_AUDIT_CONTROL in the initial user
-namespace or have had audit_capcontid enabled by a previous use of this
-feature by its parent on this process in order to be able to enable it
-for another process.  The target process must be a descendant of the
-calling process.
-
-Report this action in new message type AUDIT_SET_CAPCONTID 1022 with
-fields opid= capcontid= old-capcontid=
-
-Add an entry to Documentation/ABI.
-
+See: https://github.com/linux-audit/audit-userspace/issues/51
+See: https://github.com/linux-audit/audit-kernel/issues/90
+See: https://github.com/linux-audit/audit-testsuite/issues/64
+See: https://github.com/linux-audit/audit-kernel/wiki/RFE-Audit-Container-ID
 Signed-off-by: Richard Guy Briggs <rgb@redhat.com>
 ---
- .../ABI/testing/procfs-audit_containerid      | 16 +++++
- fs/proc/base.c                                | 54 +++++++++++++++
- include/linux/audit.h                         |  4 +-
- include/uapi/linux/audit.h                    |  1 +
- kernel/audit.c                                | 65 ++++++++++++++++++-
- 5 files changed, 137 insertions(+), 3 deletions(-)
+ lib/libaudit.h     | 4 ++++
+ lib/msg_typetab.h  | 1 +
+ lib/netlink.c      | 1 +
+ src/ausearch-lol.c | 2 ++
+ 4 files changed, 8 insertions(+)
 
-diff --git a/Documentation/ABI/testing/procfs-audit_containerid b/Documentation/ABI/testing/procfs-audit_containerid
-index 30ea64790473..c697d7da0ad1 100644
---- a/Documentation/ABI/testing/procfs-audit_containerid
-+++ b/Documentation/ABI/testing/procfs-audit_containerid
-@@ -11,3 +11,19 @@ Description:
- 		or have its own /proc/$pid/capcontainerid set to write
- 		or read.
- 
-+
-+What:		Capability to set or get the Audit Container Identifier
-+Date:		2020-??
-+KernelVersion:	5.10?
-+Contact:	linux-audit@redhat.com
-+Format:		u32
-+Users:		auditd, libaudit, audit-testsuite, podman(?), container orchestrators
-+Description:
-+		The /proc/$pid/audit_capcontainerid pseudofile is
-+		written to set and is read to get the capability of
-+		process $pid to write or to read the /proc/$pid/containerid
-+		audit container identifier of any of its descendants.
-+		"1" allows and "0" denies that capability.  This
-+		property is an extension to CAP_AUDIT_CONTROL outside of
-+		the initial user namespace.
-+
-diff --git a/fs/proc/base.c b/fs/proc/base.c
-index 94895a5750ca..3fedb8711fcb 100644
---- a/fs/proc/base.c
-+++ b/fs/proc/base.c
-@@ -1381,6 +1381,58 @@ static const struct file_operations proc_contid_operations = {
- 	.write		= proc_contid_write,
- 	.llseek		= generic_file_llseek,
- };
-+
-+static ssize_t proc_capcontid_read(struct file *file, char __user *buf,
-+				  size_t count, loff_t *ppos)
-+{
-+	struct inode *inode = file_inode(file);
-+	struct task_struct *task = get_proc_task(inode);
-+	ssize_t length;
-+	char tmpbuf[TMPBUFLEN];
-+
-+	if (!task)
-+		return -ESRCH;
-+	length = audit_get_capcontid_proc(tmpbuf, TMPBUFLEN, task);
-+	put_task_struct(task);
-+	if (length < 0)
-+		return length;
-+	return simple_read_from_buffer(buf, count, ppos, tmpbuf, length);
-+}
-+
-+static ssize_t proc_capcontid_write(struct file *file, const char __user *buf,
-+				   size_t count, loff_t *ppos)
-+{
-+	struct inode *inode = file_inode(file);
-+	u32 capcontid;
-+	int rv;
-+	struct task_struct *task = get_proc_task(inode);
-+
-+	if (!task)
-+		return -ESRCH;
-+	if (*ppos != 0) {
-+		/* No partial writes. */
-+		put_task_struct(task);
-+		return -EINVAL;
-+	}
-+
-+	rv = kstrtou32_from_user(buf, count, 10, &capcontid);
-+	if (rv < 0) {
-+		put_task_struct(task);
-+		return rv;
-+	}
-+
-+	rv = audit_set_capcontid(task, capcontid);
-+	put_task_struct(task);
-+	if (rv < 0)
-+		return rv;
-+	return count;
-+}
-+
-+static const struct file_operations proc_capcontid_operations = {
-+	.read		= proc_capcontid_read,
-+	.write		= proc_capcontid_write,
-+	.llseek		= generic_file_llseek,
-+};
+diff --git a/lib/libaudit.h b/lib/libaudit.h
+index 3a8e8c854fed..7fe56f4c8b22 100644
+--- a/lib/libaudit.h
++++ b/lib/libaudit.h
+@@ -247,6 +247,10 @@ extern "C" {
+ #define AUDIT_GET_FEATURE       1019    /* Get which features are enabled */
  #endif
  
- #ifdef CONFIG_FAULT_INJECTION
-@@ -3284,6 +3336,7 @@ static const struct pid_entry tgid_base_stuff[] = {
- 	REG("loginuid",   S_IWUSR|S_IRUGO, proc_loginuid_operations),
- 	REG("sessionid",  S_IRUGO, proc_sessionid_operations),
- 	REG("audit_containerid", S_IWUSR|S_IRUSR, proc_contid_operations),
-+	REG("audit_capcontainerid", S_IWUSR|S_IRUSR, proc_capcontid_operations),
++#ifndef AUDIT_CONTAINER_OP
++#define AUDIT_CONTAINER_OP	1020    /* Container creation notice */
++#endif
++
+ #ifndef AUDIT_MMAP
+ #define AUDIT_MMAP		1323 /* Descriptor and flags in mmap */
  #endif
- #ifdef CONFIG_FAULT_INJECTION
- 	REG("make-it-fail", S_IRUGO|S_IWUSR, proc_fault_inject_operations),
-@@ -3624,6 +3677,7 @@ static const struct pid_entry tid_base_stuff[] = {
- 	REG("loginuid",  S_IWUSR|S_IRUGO, proc_loginuid_operations),
- 	REG("sessionid",  S_IRUGO, proc_sessionid_operations),
- 	REG("audit_containerid", S_IWUSR|S_IRUSR, proc_contid_operations),
-+	REG("audit_capcontainerid", S_IWUSR|S_IRUSR, proc_capcontid_operations),
- #endif
- #ifdef CONFIG_FAULT_INJECTION
- 	REG("make-it-fail", S_IRUGO|S_IWUSR, proc_fault_inject_operations),
-diff --git a/include/linux/audit.h b/include/linux/audit.h
-index 014f73296fec..3f5444393618 100644
---- a/include/linux/audit.h
-+++ b/include/linux/audit.h
-@@ -214,8 +214,10 @@ extern void audit_set_sessionid_iouring(unsigned int sessionid);
- 
- extern int audit_get_contid_proc(char *tmpbuf, int TMPBUFLEN,
- 				 struct task_struct *task);
--
-+extern int audit_get_capcontid_proc(char *tmpbuf, int TMPBUFLEN,
-+				 struct task_struct *task);
- extern int audit_set_contid(struct task_struct *tsk, u64 contid);
-+extern int audit_set_capcontid(struct task_struct *tsk, u32 enable);
- 
- extern void audit_copy_namespaces(struct net *net, struct task_struct *tsk);
- extern void audit_switch_task_namespaces(struct nsproxy *ns,
-diff --git a/include/uapi/linux/audit.h b/include/uapi/linux/audit.h
-index 66350e572e41..b7c7ab2e6a1d 100644
---- a/include/uapi/linux/audit.h
-+++ b/include/uapi/linux/audit.h
-@@ -73,6 +73,7 @@
- #define AUDIT_GET_FEATURE	1019	/* Get which features are enabled */
- #define AUDIT_CONTAINER_OP	1020	/* Define the container id and info */
- #define AUDIT_SIGNAL_INFO2	1021	/* Get info auditd signal sender */
-+#define AUDIT_SET_CAPCONTID	1022	/* Set cap_contid of a task */
- 
- #define AUDIT_FIRST_USER_MSG	1100	/* Userspace messages mostly uninteresting to kernel */
- #define AUDIT_USER_AVC		1107	/* We filter this differently */
-diff --git a/kernel/audit.c b/kernel/audit.c
-index 46ddf49f731f..d67515aa6fc1 100644
---- a/kernel/audit.c
-+++ b/kernel/audit.c
-@@ -238,6 +238,7 @@ struct audit_task_info {
- 	kuid_t			loginuid;
- 	unsigned int		sessionid;
- 	struct audit_contobj	*cont;
-+	u32			capcontid;
- #ifdef CONFIG_AUDITSYSCALL
- 	struct audit_context	*ctx;
- #endif
-@@ -308,6 +309,15 @@ static inline u64 audit_get_contid(struct task_struct *tsk)
- 	return info->cont->id;
- }
- 
-+static inline u32 audit_get_capcontid(struct task_struct *tsk)
-+{
-+	struct audit_task_info *info = tsk->audit;
-+
-+	if (!info)
-+		return 0;
-+	return info->capcontid;
-+}
-+
- inline struct audit_context *_audit_context(struct task_struct *tsk)
- {
- 	struct audit_task_info *info = tsk->audit;
-@@ -419,6 +429,7 @@ static void audit_alloc_task(struct task_struct *tsk)
- 	rcu_read_lock();
- 	info->cont = _audit_contobj_get_bytask(current);
- 	rcu_read_unlock();
-+	info->capcontid = 0;
- 	tsk->audit = info;
- }
- 
-@@ -2987,6 +2998,56 @@ static bool audit_contid_isnesting(struct task_struct *tsk)
- 	return !isowner && ownerisparent;
- }
- 
-+int audit_set_capcontid(struct task_struct *tsk, u32 enable)
-+{
-+	u32 oldcapcontid;
-+	int rc = 0;
-+	struct audit_buffer *ab;
-+	struct audit_task_info *info = tsk->audit;
-+
-+	if (!info)
-+		return -ENOPROTOOPT;
-+	oldcapcontid = audit_get_capcontid(tsk);
-+	/* if task is not descendant, block */
-+	if (tsk == current || !task_is_descendant(current, tsk))
-+		rc = -EXDEV;
-+	else if (current_user_ns() == &init_user_ns) {
-+		if (!capable(CAP_AUDIT_CONTROL) &&
-+		    !audit_get_capcontid(current))
-+			rc = -EPERM;
-+	}
-+	if (!rc)
-+		info->capcontid = enable;
-+
-+	if (!audit_enabled)
-+		return rc;
-+
-+	ab = audit_log_start(audit_context(), GFP_KERNEL, AUDIT_SET_CAPCONTID);
-+	if (!ab)
-+		return rc;
-+
-+	audit_log_format(ab,
-+			 "opid=%d capcontid=%u old-capcontid=%u",
-+			 task_tgid_nr(tsk), enable, oldcapcontid);
-+	audit_log_end(ab);
-+	return rc;
-+}
-+
-+int audit_get_capcontid_proc(char *tmpbuf, int TMPBUFLEN,
-+			  struct task_struct *tsk)
-+{
-+	int length;
-+
-+	/* if we don't have caps, reject */
-+	if (!capable(CAP_AUDIT_CONTROL) && !audit_get_capcontid(current)) {
-+		length = -EPERM;
-+		goto out;
-+	}
-+	length = scnprintf(tmpbuf, TMPBUFLEN, "%u", audit_get_capcontid(tsk));
-+out:
-+	return length;
-+}
-+
- /*
-  * audit_set_contid - set current task's audit contid
-  * @tsk: target task
-@@ -3020,7 +3081,7 @@ int audit_set_contid(struct task_struct *tsk, u64 contid)
- 	if (contid == AUDIT_CID_UNSET) {
- 		/* Don't allow the contid to be unset */
- 		rc = -EINVAL;
--	} else if (!capable(CAP_AUDIT_CONTROL)) {
-+	} else if (!capable(CAP_AUDIT_CONTROL) && !audit_get_capcontid(current)) {
- 		/* if we don't have caps, reject */
- 		rc = -EPERM;
- 	} else if (!list_empty(&tsk->children) ||
-@@ -3110,7 +3171,7 @@ int audit_get_contid_proc(char *tmpbuf, int TMPBUFLEN,
- 	int length;
- 
- 	/* if we don't have caps, reject */
--	if (!capable(CAP_AUDIT_CONTROL)) {
-+	if (!capable(CAP_AUDIT_CONTROL) && !audit_get_capcontid(current)) {
- 		length = -EPERM;
- 		goto out;
- 	}
+diff --git a/lib/msg_typetab.h b/lib/msg_typetab.h
+index 4dff2e9c4d40..376e121e1278 100644
+--- a/lib/msg_typetab.h
++++ b/lib/msg_typetab.h
+@@ -44,6 +44,7 @@ _S(AUDIT_LOGIN,                      "LOGIN"                         )
+ //_S(AUDIT_TTY_SET,                    "TTY_SET"                       )
+ //_S(AUDIT_SET_FEATURE,                "SET_FEATURE"                   )
+ //_S(AUDIT_GET_FEATURE,                "GET_FEATURE"                   )
++_S(AUDIT_CONTAINER_OP,               "CONTAINER_OP"                  )
+ _S(AUDIT_USER_AUTH,                  "USER_AUTH"                     )
+ _S(AUDIT_USER_ACCT,                  "USER_ACCT"                     )
+ _S(AUDIT_USER_MGMT,                  "USER_MGMT"                     )
+diff --git a/lib/netlink.c b/lib/netlink.c
+index 9525b8d833c0..d660b8f37c79 100644
+--- a/lib/netlink.c
++++ b/lib/netlink.c
+@@ -182,6 +182,7 @@ static int adjust_reply(struct audit_reply *rep, int len)
+ 			break;
+ 		case AUDIT_USER:
+ 		case AUDIT_LOGIN:
++		case AUDIT_CONTAINER_OP:
+ 		case AUDIT_KERNEL:
+ 		case AUDIT_FIRST_USER_MSG...AUDIT_LAST_USER_MSG:
+ 		case AUDIT_FIRST_USER_MSG2...AUDIT_LAST_USER_MSG2:
+diff --git a/src/ausearch-lol.c b/src/ausearch-lol.c
+index f0f36e04dd93..05fe80fe3ad6 100644
+--- a/src/ausearch-lol.c
++++ b/src/ausearch-lol.c
+@@ -248,6 +248,8 @@ static void check_events(lol *lo, time_t sec)
+ 				ready++;
+ 			} else if ( cur->l->e.type <  AUDIT_LOGIN            ||
+ 				   (cur->l->e.type >  AUDIT_LOGIN           &&
++				    cur->l->e.type <  AUDIT_CONTAINER_OP   ) ||
++				   (cur->l->e.type >  AUDIT_CONTAINER_OP    &&
+ 				    cur->l->e.type <  AUDIT_FIRST_EVENT    ) ||
+ 				    cur->l->e.type == AUDIT_PROCTITLE        ||
+ 				   (cur->l->e.type >= AUDIT_MAC_UNLBL_ALLOW &&
 -- 
 2.18.4
 
