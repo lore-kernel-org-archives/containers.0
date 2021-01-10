@@ -2,77 +2,105 @@ Return-Path: <SRS0=9Mj4=GN=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
-	DKIM_ADSP_CUSTOM_MED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 37A5DC433E0
-	for <containers@archiver.kernel.org>; Sun, 10 Jan 2021 17:43:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 94D47C433E0
+	for <containers@archiver.kernel.org>; Sun, 10 Jan 2021 18:46:31 +0000 (UTC)
 Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id E95CE2242A
-	for <containers@archiver.kernel.org>; Sun, 10 Jan 2021 17:43:00 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E95CE2242A
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	by mail.kernel.org (Postfix) with ESMTPS id 1BD2C227BF
+	for <containers@archiver.kernel.org>; Sun, 10 Jan 2021 18:46:30 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1BD2C227BF
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 8E938867EB;
-	Sun, 10 Jan 2021 17:43:00 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 3C593866A9;
+	Sun, 10 Jan 2021 18:46:30 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id EZFPnrhFJxOR; Sun, 10 Jan 2021 17:42:53 +0000 (UTC)
+	with ESMTP id L-Y9ZFARLjhO; Sun, 10 Jan 2021 18:46:29 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 2386586735;
-	Sun, 10 Jan 2021 17:42:53 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 5F8BE86693;
+	Sun, 10 Jan 2021 18:46:29 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 1E9E5C013A;
-	Sun, 10 Jan 2021 17:42:53 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 458E4C0893;
+	Sun, 10 Jan 2021 18:46:29 +0000 (UTC)
 Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 0CC8CC088B
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 1B6DEC013A
  for <containers@lists.linux-foundation.org>;
- Sun, 10 Jan 2021 17:42:49 +0000 (UTC)
+ Sun, 10 Jan 2021 18:46:28 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 0408F203C2
+ by silver.osuosl.org (Postfix) with ESMTP id F191220384
  for <containers@lists.linux-foundation.org>;
- Sun, 10 Jan 2021 17:42:49 +0000 (UTC)
+ Sun, 10 Jan 2021 18:46:27 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id z3RQTrzAuNP7
+ with ESMTP id MMb+avZooLay
  for <containers@lists.linux-foundation.org>;
- Sun, 10 Jan 2021 17:42:47 +0000 (UTC)
-X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from raptor.unsafe.ru (raptor.unsafe.ru [5.9.43.93])
- by silver.osuosl.org (Postfix) with ESMTP id 8BEE320395
+ Sun, 10 Jan 2021 18:46:27 +0000 (UTC)
+X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
+Received: from mail-lf1-f52.google.com (mail-lf1-f52.google.com
+ [209.85.167.52])
+ by silver.osuosl.org (Postfix) with ESMTPS id DEAA620362
  for <containers@lists.linux-foundation.org>;
- Sun, 10 Jan 2021 17:42:45 +0000 (UTC)
-Received: from comp-core-i7-2640m-0182e6.redhat.com
- (ip-89-103-122-167.net.upcbroadband.cz [89.103.122.167])
- (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
- (No client certificate requested)
- by raptor.unsafe.ru (Postfix) with ESMTPSA id B522F20A1C;
- Sun, 10 Jan 2021 17:34:52 +0000 (UTC)
-From: Alexey Gladkov <gladkov.alexey@gmail.com>
-To: LKML <linux-kernel@vger.kernel.org>,
- Linux Containers <containers@lists.linux-foundation.org>,
- Kernel Hardening <kernel-hardening@lists.openwall.com>
-Subject: [RFC PATCH v2 5/8] Move RLIMIT_MSGQUEUE counter to ucounts
-Date: Sun, 10 Jan 2021 18:33:44 +0100
-Message-Id: <7e2f9debd5e84a137874ffa8e5e042fa1b93ebfa.1610299857.git.gladkov.alexey@gmail.com>
-X-Mailer: git-send-email 2.29.2
-In-Reply-To: <cover.1610299857.git.gladkov.alexey@gmail.com>
-References: <cover.1610299857.git.gladkov.alexey@gmail.com>
+ Sun, 10 Jan 2021 18:46:26 +0000 (UTC)
+Received: by mail-lf1-f52.google.com with SMTP id h205so34689758lfd.5
+ for <containers@lists.linux-foundation.org>;
+ Sun, 10 Jan 2021 10:46:26 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=linux-foundation.org; s=google;
+ h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+ :cc; bh=eQXV1o093eVpYrQ6SjYKMkYU2gxMAjF5N9e9XTlzNEE=;
+ b=ZeHp/DLnTCjx/1ndzrrdXLbs+ofveQ60Mwd9VBFVezBZLlHfmdd3j2voOnqpw8488y
+ HaLlr1rUwDJNnpcMRpAOAtKBNTqrWuGc2WNSPVEBGtVTzQC0Vzx8mbTatpAO5uM8+7wD
+ /TrltXUH7SyNTMyWDX+1SlvDZZeSfzqrCwLlo=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=1e100.net; s=20161025;
+ h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+ :message-id:subject:to:cc;
+ bh=eQXV1o093eVpYrQ6SjYKMkYU2gxMAjF5N9e9XTlzNEE=;
+ b=pONU50XDx9ZUkRTpoCiaWXkVrcc5n8b9KzZEu+Y+Ecwas70fVclG6HSRJgptFksh8a
+ f3z/wtpcQ4BNRZ+HKalNMOLmW0tiDWfZ2EVMKgTF6lsJWUQnDQWZ6KftnY+2Vlmq+h7Q
+ c208I3IlkKUc/DcNomwTwLV6C76JEmSlXEhtmGSydz215usD4erQ+TuDESg8bTif7CCi
+ RiIlJDVAl8hgEqizLRYTNB5QJBxPjvRbZa3Jnn3Mynuxywk5Ecj9uKBsNO6rDlE5+qJZ
+ LFfKDN9sK3roE0N4+oB0ZnTsdDv0FrHro1Omj9xNiCtf8cKutrJpiwhKOP/XMNg0qG0G
+ TvRA==
+X-Gm-Message-State: AOAM533I12FdY57NGcZm+2tD9c0BejHavVvBxjCP7p+EE8K8jRzkS4cK
+ TiOEvCks9JXRU6lC43oA6HinRdpXdMteWRsm
+X-Google-Smtp-Source: ABdhPJxi4OywPcFqV2ijXCUpCBSSa06pezsMwS7G1tit6UEEKZSlLB218Aab8uZPUXDvRwyp0+QwHQ==
+X-Received: by 2002:ac2:5333:: with SMTP id f19mr6182242lfh.344.1610304384291; 
+ Sun, 10 Jan 2021 10:46:24 -0800 (PST)
+Received: from mail-lj1-f172.google.com (mail-lj1-f172.google.com.
+ [209.85.208.172])
+ by smtp.gmail.com with ESMTPSA id e6sm2799796lfc.23.2021.01.10.10.46.23
+ for <containers@lists.linux-foundation.org>
+ (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+ Sun, 10 Jan 2021 10:46:23 -0800 (PST)
+Received: by mail-lj1-f172.google.com with SMTP id u11so1152223ljo.13
+ for <containers@lists.linux-foundation.org>;
+ Sun, 10 Jan 2021 10:46:23 -0800 (PST)
+X-Received: by 2002:a2e:9b13:: with SMTP id u19mr5614023lji.48.1610304382840; 
+ Sun, 10 Jan 2021 10:46:22 -0800 (PST)
 MIME-Version: 1.0
-X-Greylist: Sender succeeded SMTP AUTH, not delayed by milter-greylist-4.6.1
- (raptor.unsafe.ru [5.9.43.93]); Sun, 10 Jan 2021 17:34:52 +0000 (UTC)
-Cc: Linus Torvalds <torvalds@linux-foundation.org>,
- Alexey Gladkov <legion@kernel.org>,
+References: <cover.1610299857.git.gladkov.alexey@gmail.com>
+In-Reply-To: <cover.1610299857.git.gladkov.alexey@gmail.com>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Sun, 10 Jan 2021 10:46:05 -0800
+X-Gmail-Original-Message-ID: <CAHk-=wgXZmRu762bjSeK80+T_LTo+UP9y5rP-uvym1vquSxmBw@mail.gmail.com>
+Message-ID: <CAHk-=wgXZmRu762bjSeK80+T_LTo+UP9y5rP-uvym1vquSxmBw@mail.gmail.com>
+Subject: Re: [RFC PATCH v2 0/8] Count rlimits in each user namespace
+To: Alexey Gladkov <gladkov.alexey@gmail.com>
+Cc: Kees Cook <keescook@chromium.org>,
+ Kernel Hardening <kernel-hardening@lists.openwall.com>,
+ Linux Containers <containers@lists.linux-foundation.org>,
+ LKML <linux-kernel@vger.kernel.org>,
  "Eric W . Biederman" <ebiederm@xmission.com>,
- Christian Brauner <christian@brauner.io>, Kees Cook <keescook@chromium.org>
+ Alexey Gladkov <legion@kernel.org>, Christian Brauner <christian@brauner.io>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -89,199 +117,50 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Signed-off-by: Alexey Gladkov <gladkov.alexey@gmail.com>
----
- include/linux/sched/user.h     |  4 ----
- include/linux/user_namespace.h |  8 ++++++++
- ipc/mqueue.c                   | 29 +++++++++++++++--------------
- kernel/fork.c                  |  1 +
- kernel/ucount.c                |  1 +
- kernel/user_namespace.c        |  1 +
- 6 files changed, 26 insertions(+), 18 deletions(-)
+On Sun, Jan 10, 2021 at 9:34 AM Alexey Gladkov <gladkov.alexey@gmail.com> wrote:
+>
+> To address the problem, we bind rlimit counters to each user namespace. The
+> result is a tree of rlimit counters with the biggest value at the root (aka
+> init_user_ns). The rlimit counter increment/decrement occurs in the current and
+> all parent user namespaces.
 
-diff --git a/include/linux/sched/user.h b/include/linux/sched/user.h
-index d33d867ad6c1..8a34446681aa 100644
---- a/include/linux/sched/user.h
-+++ b/include/linux/sched/user.h
-@@ -18,10 +18,6 @@ struct user_struct {
- #endif
- #ifdef CONFIG_EPOLL
- 	atomic_long_t epoll_watches; /* The number of file descriptors currently watched */
--#endif
--#ifdef CONFIG_POSIX_MQUEUE
--	/* protected by mq_lock	*/
--	unsigned long mq_bytes;	/* How many bytes can be allocated to mqueue? */
- #endif
- 	unsigned long locked_shm; /* How many pages of mlocked shm ? */
- 	unsigned long unix_inflight;	/* How many files in flight in unix sockets */
-diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index 43c83ed2fc61..2980afed6fb7 100644
---- a/include/linux/user_namespace.h
-+++ b/include/linux/user_namespace.h
-@@ -51,6 +51,7 @@ enum ucount_type {
- 	UCOUNT_INOTIFY_WATCHES,
- #endif
- 	UCOUNT_RLIMIT_NPROC,
-+	UCOUNT_RLIMIT_MSGQUEUE,
- 	UCOUNT_COUNTS,
- };
- 
-@@ -113,6 +114,13 @@ static inline long get_ucounts_value(struct ucounts *ucounts, enum ucount_type t
- 	return atomic_long_read(&ucounts->ucount[type]);
- }
- 
-+static inline struct ucounts *get_ucount(struct ucounts *ucounts)
-+{
-+	if (ucounts)
-+		atomic_inc(&ucounts->count);
-+	return ucounts;
-+}
-+
- bool inc_rlimit_ucounts(struct ucounts *ucounts, enum ucount_type type, long v);
- bool inc_rlimit_ucounts_and_test(struct ucounts *ucounts, enum ucount_type type, long v, long max);
- void dec_rlimit_ucounts(struct ucounts *ucounts, enum ucount_type type, long v);
-diff --git a/ipc/mqueue.c b/ipc/mqueue.c
-index beff0cfcd1e8..67088f1aa6b0 100644
---- a/ipc/mqueue.c
-+++ b/ipc/mqueue.c
-@@ -144,7 +144,7 @@ struct mqueue_inode_info {
- 	struct pid *notify_owner;
- 	u32 notify_self_exec_id;
- 	struct user_namespace *notify_user_ns;
--	struct user_struct *user;	/* user who created, for accounting */
-+	struct ucounts *ucounts;	/* user who created, for accounting */
- 	struct sock *notify_sock;
- 	struct sk_buff *notify_cookie;
- 
-@@ -292,7 +292,6 @@ static struct inode *mqueue_get_inode(struct super_block *sb,
- 		struct ipc_namespace *ipc_ns, umode_t mode,
- 		struct mq_attr *attr)
- {
--	struct user_struct *u = current_user();
- 	struct inode *inode;
- 	int ret = -ENOMEM;
- 
-@@ -309,6 +308,8 @@ static struct inode *mqueue_get_inode(struct super_block *sb,
- 	if (S_ISREG(mode)) {
- 		struct mqueue_inode_info *info;
- 		unsigned long mq_bytes, mq_treesize;
-+		struct ucounts *ucounts;
-+		bool overlimit;
- 
- 		inode->i_fop = &mqueue_file_operations;
- 		inode->i_size = FILENT_SIZE;
-@@ -321,7 +322,7 @@ static struct inode *mqueue_get_inode(struct super_block *sb,
- 		info->notify_owner = NULL;
- 		info->notify_user_ns = NULL;
- 		info->qsize = 0;
--		info->user = NULL;	/* set when all is ok */
-+		info->ucounts = NULL;	/* set when all is ok */
- 		info->msg_tree = RB_ROOT;
- 		info->msg_tree_rightmost = NULL;
- 		info->node_cache = NULL;
-@@ -371,19 +372,19 @@ static struct inode *mqueue_get_inode(struct super_block *sb,
- 		if (mq_bytes + mq_treesize < mq_bytes)
- 			goto out_inode;
- 		mq_bytes += mq_treesize;
-+		ucounts = current_ucounts();
- 		spin_lock(&mq_lock);
--		if (u->mq_bytes + mq_bytes < u->mq_bytes ||
--		    u->mq_bytes + mq_bytes > rlimit(RLIMIT_MSGQUEUE)) {
-+		overlimit = inc_rlimit_ucounts_and_test(ucounts, UCOUNT_RLIMIT_MSGQUEUE,
-+				mq_bytes, rlimit(RLIMIT_MSGQUEUE));
-+		if (overlimit) {
-+			dec_rlimit_ucounts(ucounts, UCOUNT_RLIMIT_MSGQUEUE, mq_bytes);
- 			spin_unlock(&mq_lock);
- 			/* mqueue_evict_inode() releases info->messages */
- 			ret = -EMFILE;
- 			goto out_inode;
- 		}
--		u->mq_bytes += mq_bytes;
- 		spin_unlock(&mq_lock);
--
--		/* all is ok */
--		info->user = get_uid(u);
-+		info->ucounts = get_ucount(ucounts);
- 	} else if (S_ISDIR(mode)) {
- 		inc_nlink(inode);
- 		/* Some things misbehave if size == 0 on a directory */
-@@ -497,7 +498,7 @@ static void mqueue_free_inode(struct inode *inode)
- static void mqueue_evict_inode(struct inode *inode)
- {
- 	struct mqueue_inode_info *info;
--	struct user_struct *user;
-+	struct ucounts *ucounts;
- 	struct ipc_namespace *ipc_ns;
- 	struct msg_msg *msg, *nmsg;
- 	LIST_HEAD(tmp_msg);
-@@ -520,8 +521,8 @@ static void mqueue_evict_inode(struct inode *inode)
- 		free_msg(msg);
- 	}
- 
--	user = info->user;
--	if (user) {
-+	ucounts = info->ucounts;
-+	if (ucounts) {
- 		unsigned long mq_bytes, mq_treesize;
- 
- 		/* Total amount of bytes accounted for the mqueue */
-@@ -533,7 +534,7 @@ static void mqueue_evict_inode(struct inode *inode)
- 					  info->attr.mq_msgsize);
- 
- 		spin_lock(&mq_lock);
--		user->mq_bytes -= mq_bytes;
-+		dec_rlimit_ucounts(ucounts, UCOUNT_RLIMIT_MSGQUEUE, mq_bytes);
- 		/*
- 		 * get_ns_from_inode() ensures that the
- 		 * (ipc_ns = sb->s_fs_info) is either a valid ipc_ns
-@@ -543,7 +544,7 @@ static void mqueue_evict_inode(struct inode *inode)
- 		if (ipc_ns)
- 			ipc_ns->mq_queues_count--;
- 		spin_unlock(&mq_lock);
--		free_uid(user);
-+		put_ucounts(ucounts);
- 	}
- 	if (ipc_ns)
- 		put_ipc_ns(ipc_ns);
-diff --git a/kernel/fork.c b/kernel/fork.c
-index ef7936daeeda..f61a5a3dc02f 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -824,6 +824,7 @@ void __init fork_init(void)
- 	}
- 
- 	init_user_ns.ucount_max[UCOUNT_RLIMIT_NPROC] = task_rlimit(&init_task, RLIMIT_NPROC);
-+	init_user_ns.ucount_max[UCOUNT_RLIMIT_MSGQUEUE] = task_rlimit(&init_task, RLIMIT_MSGQUEUE);
- 
- #ifdef CONFIG_VMAP_STACK
- 	cpuhp_setup_state(CPUHP_BP_PREPARE_DYN, "fork:vm_stack_cache",
-diff --git a/kernel/ucount.c b/kernel/ucount.c
-index 4222470ca0d1..865fd66c48c4 100644
---- a/kernel/ucount.c
-+++ b/kernel/ucount.c
-@@ -75,6 +75,7 @@ static struct ctl_table user_table[] = {
- 	UCOUNT_ENTRY("max_inotify_instances"),
- 	UCOUNT_ENTRY("max_inotify_watches"),
- #endif
-+	{ },
- 	{ },
- 	{ }
- };
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 974f10da072c..9ace2a45a25d 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -122,6 +122,7 @@ int create_user_ns(struct cred *new)
- 		ns->ucount_max[i] = INT_MAX;
- 	}
- 	ns->ucount_max[UCOUNT_RLIMIT_NPROC] = rlimit(RLIMIT_NPROC);
-+	ns->ucount_max[UCOUNT_RLIMIT_MSGQUEUE] = rlimit(RLIMIT_MSGQUEUE);
- 	ns->ucounts = ucounts;
- 
- 	/* Inherit USERNS_SETGROUPS_ALLOWED from our parent */
--- 
-2.29.2
+I'm not seeing why this is necessary.
 
+Maybe it's the right approach, but none of the patches (or this cover
+letter email) really explain it to me.
+
+I understand why you might want the _limits_ themselves would form a
+tree like this - with the "master limit" limiting the limits in the
+user namespaces under it.
+
+But I don't understand why the _counts_ should do that. The 'struct
+user_struct' should be shared across even user namespaces for the same
+user.
+
+IOW, the very example of the problem you quote seems to argue against this:
+
+> For example, there are two containers (A and B) created by one user. The
+> container A sets RLIMIT_NPROC=1 and starts one process. Everything is fine, but
+> when container B tries to do the same it will fail because the number of
+> processes is counted globally for each user and user has one process already.
+
+Note how the problem was _not_ that the _count_ was global. That part
+was fine and all good.
+
+No, the problem was that the _limit_ in container A also ended up
+affecting container B.
+
+So to me, that says that it would make sense to continue to use the
+resource counts in 'struct user_struct' (because if user A has a hard
+limit of X, then creating a new namespace shouldn't expand that
+limit), but then have the ability to make per-container changes to the
+resource limits (as long as they are within the bounds of the parent
+user namespace resource limit).
+
+Maybe there is some reason for this ucounts approach, but if so, I
+feel it was not explained at all.
+
+             Linus
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
