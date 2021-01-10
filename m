@@ -1,81 +1,78 @@
-Return-Path: <SRS0=bGjE=GL=lists.linux-foundation.org=containers-bounces@kernel.org>
+Return-Path: <SRS0=9Mj4=GN=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.5 required=3.0 tests=BAYES_00,
+X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
+	DKIM_ADSP_CUSTOM_MED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 593BCC433E0
-	for <containers@archiver.kernel.org>; Fri,  8 Jan 2021 08:41:33 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F101DC433E0
+	for <containers@archiver.kernel.org>; Sun, 10 Jan 2021 17:42:49 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id F2BA823403
-	for <containers@archiver.kernel.org>; Fri,  8 Jan 2021 08:41:32 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F2BA823403
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=siemens.com
+	by mail.kernel.org (Postfix) with ESMTPS id 6DAD32242A
+	for <containers@archiver.kernel.org>; Sun, 10 Jan 2021 17:42:49 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6DAD32242A
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 7E9418727B;
-	Fri,  8 Jan 2021 08:41:32 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 2233585EAA;
+	Sun, 10 Jan 2021 17:42:49 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from fraxinus.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id BVwnK-bQN9rH; Sun, 10 Jan 2021 17:42:48 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 897A285F9D;
+	Sun, 10 Jan 2021 17:42:48 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 75FE1C013A;
+	Sun, 10 Jan 2021 17:42:48 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 4C48AC013A
+ for <containers@lists.linux-foundation.org>;
+ Sun, 10 Jan 2021 17:42:47 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by whitealder.osuosl.org (Postfix) with ESMTP id 47F4886723
+ for <containers@lists.linux-foundation.org>;
+ Sun, 10 Jan 2021 17:42:47 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id WEypjih+hrd6; Fri,  8 Jan 2021 08:41:31 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 1D103872BA;
-	Fri,  8 Jan 2021 08:41:31 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id F3E30C0891;
-	Fri,  8 Jan 2021 08:41:30 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 43C01C013A
- for <containers@lists.linux-foundation.org>;
- Fri,  8 Jan 2021 08:41:29 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 2093620417
- for <containers@lists.linux-foundation.org>;
- Fri,  8 Jan 2021 08:41:29 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id DK7Mlc4s4A14
+ with ESMTP id Cd74kVL8m1ce
  for <containers@lists.linux-foundation.org>;
- Fri,  8 Jan 2021 08:41:27 +0000 (UTC)
-X-Greylist: delayed 00:18:26 by SQLgrey-1.7.6
-Received: from david.siemens.de (david.siemens.de [192.35.17.14])
- by silver.osuosl.org (Postfix) with ESMTPS id EA949203C7
+ Sun, 10 Jan 2021 17:42:46 +0000 (UTC)
+X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
+Received: from raptor.unsafe.ru (raptor.unsafe.ru [5.9.43.93])
+ by whitealder.osuosl.org (Postfix) with ESMTP id 98BF88672A
  for <containers@lists.linux-foundation.org>;
- Fri,  8 Jan 2021 08:41:26 +0000 (UTC)
-Received: from mail2.sbs.de (mail2.sbs.de [192.129.41.66])
- by david.siemens.de (8.15.2/8.15.2) with ESMTPS id 1088McHL004359
- (version=TLSv1.2 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
- Fri, 8 Jan 2021 09:22:49 +0100
-Received: from [167.87.32.120] ([167.87.32.120])
- by mail2.sbs.de (8.15.2/8.15.2) with ESMTP id 1088MZZK003752;
- Fri, 8 Jan 2021 09:22:35 +0100
-Subject: Re: [PATCH v8 1/1] ns: add binfmt_misc to the user namespace
-To: Laurent Vivier <laurent@vivier.eu>, linux-kernel@vger.kernel.org
-References: <20191216091220.465626-1-laurent@vivier.eu>
- <20191216091220.465626-2-laurent@vivier.eu>
-From: Jan Kiszka <jan.kiszka@siemens.com>
-Message-ID: <4fabc6a4-0e8d-11ad-5757-467f15dc96ee@siemens.com>
-Date: Fri, 8 Jan 2021 09:22:35 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.6.0
+ Sun, 10 Jan 2021 17:42:46 +0000 (UTC)
+Received: from comp-core-i7-2640m-0182e6.redhat.com
+ (ip-89-103-122-167.net.upcbroadband.cz [89.103.122.167])
+ (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
+ (No client certificate requested)
+ by raptor.unsafe.ru (Postfix) with ESMTPSA id 0BE5520A16;
+ Sun, 10 Jan 2021 17:34:52 +0000 (UTC)
+From: Alexey Gladkov <gladkov.alexey@gmail.com>
+To: LKML <linux-kernel@vger.kernel.org>,
+ Linux Containers <containers@lists.linux-foundation.org>,
+ Kernel Hardening <kernel-hardening@lists.openwall.com>
+Subject: [RFC PATCH v2 3/8] Increase size of ucounts to atomic_long_t
+Date: Sun, 10 Jan 2021 18:33:42 +0100
+Message-Id: <2868ed8e8f196ae6ff4de60934668483680df14d.1610299857.git.gladkov.alexey@gmail.com>
+X-Mailer: git-send-email 2.29.2
+In-Reply-To: <cover.1610299857.git.gladkov.alexey@gmail.com>
+References: <cover.1610299857.git.gladkov.alexey@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20191216091220.465626-2-laurent@vivier.eu>
-Content-Language: en-US
-Cc: Henning Schild <henning.schild@siemens.com>,
- Dmitry Safonov <dima@arista.com>, linux-api@vger.kernel.org,
- containers@lists.linux-foundation.org, Jann Horn <jannh@google.com>,
- Greg Kurz <groug@kaod.org>,
- James Bottomley <James.Bottomley@HansenPartnership.com>,
- =?UTF-8?Q?C=c3=a9dric_Le_Goate?= =?UTF-8?Q?r?= <clg@kaod.org>,
- Alexander Viro <viro@zeniv.linux.org.uk>, linux-fsdevel@vger.kernel.org,
- Eric Biederman <ebiederm@xmission.com>
+X-Greylist: Sender succeeded SMTP AUTH, not delayed by milter-greylist-4.6.1
+ (raptor.unsafe.ru [5.9.43.93]); Sun, 10 Jan 2021 17:34:52 +0000 (UTC)
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
+ Alexey Gladkov <legion@kernel.org>,
+ "Eric W . Biederman" <ebiederm@xmission.com>,
+ Christian Brauner <christian@brauner.io>, Kees Cook <keescook@chromium.org>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -92,409 +89,88 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On 16.12.19 10:12, Laurent Vivier wrote:
-> This patch allows to have a different binfmt_misc configuration
-> for each new user namespace. By default, the binfmt_misc configuration
-> is the one of the previous level, but if the binfmt_misc filesystem is
-> mounted in the new namespace a new empty binfmt instance is created and
-> used in this namespace.
-> 
-> For instance, using "unshare" we can start a chroot of another
-> architecture and configure the binfmt_misc interpreter without being root
-> to run the binaries in this chroot.
-> 
-> Signed-off-by: Laurent Vivier <laurent@vivier.eu>
-> Acked-by: Andrei Vagin <avagin@gmail.com>
-> Tested-by: Henning Schild <henning.schild@siemens.com>
-> ---
->  fs/binfmt_misc.c               | 115 +++++++++++++++++++++++++--------
->  include/linux/user_namespace.h |  15 +++++
->  kernel/user.c                  |  14 ++++
->  kernel/user_namespace.c        |   3 +
->  4 files changed, 119 insertions(+), 28 deletions(-)
-> 
-> diff --git a/fs/binfmt_misc.c b/fs/binfmt_misc.c
-> index cdb45829354d..17fa1f56ca2e 100644
-> --- a/fs/binfmt_misc.c
-> +++ b/fs/binfmt_misc.c
-> @@ -40,9 +40,6 @@ enum {
->  	VERBOSE_STATUS = 1 /* make it zero to save 400 bytes kernel memory */
->  };
->  
-> -static LIST_HEAD(entries);
-> -static int enabled = 1;
-> -
->  enum {Enabled, Magic};
->  #define MISC_FMT_PRESERVE_ARGV0 (1 << 31)
->  #define MISC_FMT_OPEN_BINARY (1 << 30)
-> @@ -62,10 +59,7 @@ typedef struct {
->  	struct file *interp_file;
->  } Node;
->  
-> -static DEFINE_RWLOCK(entries_lock);
->  static struct file_system_type bm_fs_type;
-> -static struct vfsmount *bm_mnt;
-> -static int entry_count;
->  
->  /*
->   * Max length of the register string.  Determined by:
-> @@ -82,18 +76,37 @@ static int entry_count;
->   */
->  #define MAX_REGISTER_LENGTH 1920
->  
-> +static struct binfmt_namespace *binfmt_ns(struct user_namespace *ns)
-> +{
-> +	struct binfmt_namespace *b_ns;
-> +
-> +	while (ns) {
-> +		b_ns = READ_ONCE(ns->binfmt_ns);
-> +		if (b_ns)
-> +			return b_ns;
-> +		ns = ns->parent;
-> +	}
-> +	/* as the first user namespace is initialized with
-> +	 * &init_binfmt_ns we should never come here
-> +	 * but we try to stay safe by logging a warning
-> +	 * and returning a sane value
-> +	 */
-> +	WARN_ON_ONCE(1);
-> +	return &init_binfmt_ns;
-> +}
-> +
->  /*
->   * Check if we support the binfmt
->   * if we do, return the node, else NULL
->   * locking is done in load_misc_binary
->   */
-> -static Node *check_file(struct linux_binprm *bprm)
-> +static Node *check_file(struct binfmt_namespace *ns, struct linux_binprm *bprm)
->  {
->  	char *p = strrchr(bprm->interp, '.');
->  	struct list_head *l;
->  
->  	/* Walk all the registered handlers. */
-> -	list_for_each(l, &entries) {
-> +	list_for_each(l, &ns->entries) {
->  		Node *e = list_entry(l, Node, list);
->  		char *s;
->  		int j;
-> @@ -135,17 +148,18 @@ static int load_misc_binary(struct linux_binprm *bprm)
->  	struct file *interp_file = NULL;
->  	int retval;
->  	int fd_binary = -1;
-> +	struct binfmt_namespace *ns = binfmt_ns(current_user_ns());
->  
->  	retval = -ENOEXEC;
-> -	if (!enabled)
-> +	if (!ns->enabled)
->  		return retval;
->  
->  	/* to keep locking time low, we copy the interpreter string */
-> -	read_lock(&entries_lock);
-> -	fmt = check_file(bprm);
-> +	read_lock(&ns->entries_lock);
-> +	fmt = check_file(ns, bprm);
->  	if (fmt)
->  		dget(fmt->dentry);
-> -	read_unlock(&entries_lock);
-> +	read_unlock(&ns->entries_lock);
->  	if (!fmt)
->  		return retval;
->  
-> @@ -611,19 +625,19 @@ static void bm_evict_inode(struct inode *inode)
->  	kfree(e);
->  }
->  
-> -static void kill_node(Node *e)
-> +static void kill_node(struct binfmt_namespace *ns, Node *e)
->  {
->  	struct dentry *dentry;
->  
-> -	write_lock(&entries_lock);
-> +	write_lock(&ns->entries_lock);
->  	list_del_init(&e->list);
-> -	write_unlock(&entries_lock);
-> +	write_unlock(&ns->entries_lock);
->  
->  	dentry = e->dentry;
->  	drop_nlink(d_inode(dentry));
->  	d_drop(dentry);
->  	dput(dentry);
-> -	simple_release_fs(&bm_mnt, &entry_count);
-> +	simple_release_fs(&ns->bm_mnt, &ns->entry_count);
->  }
->  
->  /* /<entry> */
-> @@ -653,6 +667,9 @@ static ssize_t bm_entry_write(struct file *file, const char __user *buffer,
->  	struct dentry *root;
->  	Node *e = file_inode(file)->i_private;
->  	int res = parse_command(buffer, count);
-> +	struct binfmt_namespace *ns;
-> +
-> +	ns = binfmt_ns(file_dentry(file)->d_sb->s_user_ns);
->  
->  	switch (res) {
->  	case 1:
-> @@ -669,7 +686,7 @@ static ssize_t bm_entry_write(struct file *file, const char __user *buffer,
->  		inode_lock(d_inode(root));
->  
->  		if (!list_empty(&e->list))
-> -			kill_node(e);
-> +			kill_node(ns, e);
->  
->  		inode_unlock(d_inode(root));
->  		break;
-> @@ -695,6 +712,7 @@ static ssize_t bm_register_write(struct file *file, const char __user *buffer,
->  	struct inode *inode;
->  	struct super_block *sb = file_inode(file)->i_sb;
->  	struct dentry *root = sb->s_root, *dentry;
-> +	struct binfmt_namespace *ns;
->  	int err = 0;
->  
->  	e = create_entry(buffer, count);
-> @@ -718,7 +736,9 @@ static ssize_t bm_register_write(struct file *file, const char __user *buffer,
->  	if (!inode)
->  		goto out2;
->  
-> -	err = simple_pin_fs(&bm_fs_type, &bm_mnt, &entry_count);
-> +	ns = binfmt_ns(file_dentry(file)->d_sb->s_user_ns);
-> +	err = simple_pin_fs(&bm_fs_type, &ns->bm_mnt,
-> +			    &ns->entry_count);
->  	if (err) {
->  		iput(inode);
->  		inode = NULL;
-> @@ -727,12 +747,16 @@ static ssize_t bm_register_write(struct file *file, const char __user *buffer,
->  
->  	if (e->flags & MISC_FMT_OPEN_FILE) {
->  		struct file *f;
-> +		const struct cred *old_cred;
->  
-> +		old_cred = override_creds(file->f_cred);
->  		f = open_exec(e->interpreter);
-> +		revert_creds(old_cred);
->  		if (IS_ERR(f)) {
->  			err = PTR_ERR(f);
->  			pr_notice("register: failed to install interpreter file %s\n", e->interpreter);
-> -			simple_release_fs(&bm_mnt, &entry_count);
-> +			simple_release_fs(&ns->bm_mnt,
-> +					  &ns->entry_count);
->  			iput(inode);
->  			inode = NULL;
->  			goto out2;
-> @@ -745,9 +769,9 @@ static ssize_t bm_register_write(struct file *file, const char __user *buffer,
->  	inode->i_fop = &bm_entry_operations;
->  
->  	d_instantiate(dentry, inode);
-> -	write_lock(&entries_lock);
-> -	list_add(&e->list, &entries);
-> -	write_unlock(&entries_lock);
-> +	write_lock(&ns->entries_lock);
-> +	list_add(&e->list, &ns->entries);
-> +	write_unlock(&ns->entries_lock);
->  
->  	err = 0;
->  out2:
-> @@ -772,7 +796,9 @@ static const struct file_operations bm_register_operations = {
->  static ssize_t
->  bm_status_read(struct file *file, char __user *buf, size_t nbytes, loff_t *ppos)
->  {
-> -	char *s = enabled ? "enabled\n" : "disabled\n";
-> +	struct binfmt_namespace *ns =
-> +				binfmt_ns(file_dentry(file)->d_sb->s_user_ns);
-> +	char *s = ns->enabled ? "enabled\n" : "disabled\n";
->  
->  	return simple_read_from_buffer(buf, nbytes, ppos, s, strlen(s));
->  }
-> @@ -780,25 +806,28 @@ bm_status_read(struct file *file, char __user *buf, size_t nbytes, loff_t *ppos)
->  static ssize_t bm_status_write(struct file *file, const char __user *buffer,
->  		size_t count, loff_t *ppos)
->  {
-> +	struct binfmt_namespace *ns;
->  	int res = parse_command(buffer, count);
->  	struct dentry *root;
->  
-> +	ns = binfmt_ns(file_dentry(file)->d_sb->s_user_ns);
->  	switch (res) {
->  	case 1:
->  		/* Disable all handlers. */
-> -		enabled = 0;
-> +		ns->enabled = 0;
->  		break;
->  	case 2:
->  		/* Enable all handlers. */
-> -		enabled = 1;
-> +		ns->enabled = 1;
->  		break;
->  	case 3:
->  		/* Delete all handlers. */
->  		root = file_inode(file)->i_sb->s_root;
->  		inode_lock(d_inode(root));
->  
-> -		while (!list_empty(&entries))
-> -			kill_node(list_first_entry(&entries, Node, list));
-> +		while (!list_empty(&ns->entries))
-> +			kill_node(ns, list_first_entry(&ns->entries,
-> +						       Node, list));
->  
->  		inode_unlock(d_inode(root));
->  		break;
-> @@ -825,24 +854,53 @@ static const struct super_operations s_ops = {
->  static int bm_fill_super(struct super_block *sb, struct fs_context *fc)
->  {
->  	int err;
-> +	struct user_namespace *ns = sb->s_user_ns;
->  	static const struct tree_descr bm_files[] = {
->  		[2] = {"status", &bm_status_operations, S_IWUSR|S_IRUGO},
->  		[3] = {"register", &bm_register_operations, S_IWUSR},
->  		/* last one */ {""}
->  	};
->  
-> +	/* create a new binfmt namespace
-> +	 * if we are not in the first user namespace
-> +	 * but the binfmt namespace is the first one
-> +	 */
-> +	if (READ_ONCE(ns->binfmt_ns) == NULL) {
-> +		struct binfmt_namespace *new_ns;
-> +
-> +		new_ns = kmalloc(sizeof(struct binfmt_namespace),
-> +				 GFP_KERNEL);
-> +		if (new_ns == NULL)
-> +			return -ENOMEM;
-> +		INIT_LIST_HEAD(&new_ns->entries);
-> +		new_ns->enabled = 1;
-> +		rwlock_init(&new_ns->entries_lock);
-> +		new_ns->bm_mnt = NULL;
-> +		new_ns->entry_count = 0;
-> +		/* ensure new_ns is completely initialized before sharing it */
-> +		smp_wmb();
-> +		WRITE_ONCE(ns->binfmt_ns, new_ns);
-> +	}
-> +
->  	err = simple_fill_super(sb, BINFMTFS_MAGIC, bm_files);
->  	if (!err)
->  		sb->s_op = &s_ops;
->  	return err;
->  }
->  
-> +static void bm_free(struct fs_context *fc)
-> +{
-> +	if (fc->s_fs_info)
-> +		put_user_ns(fc->s_fs_info);
-> +}
-> +
->  static int bm_get_tree(struct fs_context *fc)
->  {
-> -	return get_tree_single(fc, bm_fill_super);
-> +	return get_tree_keyed(fc, bm_fill_super, get_user_ns(fc->user_ns));
->  }
->  
->  static const struct fs_context_operations bm_context_ops = {
-> +	.free		= bm_free,
->  	.get_tree	= bm_get_tree,
->  };
->  
-> @@ -861,6 +919,7 @@ static struct file_system_type bm_fs_type = {
->  	.owner		= THIS_MODULE,
->  	.name		= "binfmt_misc",
->  	.init_fs_context = bm_init_fs_context,
-> +	.fs_flags	= FS_USERNS_MOUNT,
->  	.kill_sb	= kill_litter_super,
->  };
->  MODULE_ALIAS_FS("binfmt_misc");
-> diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-> index fb9f4f799554..16e6f3a97a01 100644
-> --- a/include/linux/user_namespace.h
-> +++ b/include/linux/user_namespace.h
-> @@ -52,6 +52,18 @@ enum ucount_type {
->  	UCOUNT_COUNTS,
->  };
->  
-> +#if IS_ENABLED(CONFIG_BINFMT_MISC)
-> +struct binfmt_namespace {
-> +	struct list_head entries;
-> +	rwlock_t entries_lock;
-> +	int enabled;
-> +	struct vfsmount *bm_mnt;
-> +	int entry_count;
-> +} __randomize_layout;
-> +
-> +extern struct binfmt_namespace init_binfmt_ns;
-> +#endif
-> +
->  struct user_namespace {
->  	struct uid_gid_map	uid_map;
->  	struct uid_gid_map	gid_map;
-> @@ -86,6 +98,9 @@ struct user_namespace {
->  #endif
->  	struct ucounts		*ucounts;
->  	int ucount_max[UCOUNT_COUNTS];
-> +#if IS_ENABLED(CONFIG_BINFMT_MISC)
-> +	struct binfmt_namespace *binfmt_ns;
-> +#endif
->  } __randomize_layout;
->  
->  struct ucounts {
-> diff --git a/kernel/user.c b/kernel/user.c
-> index 5235d7f49982..092b2b4d47a6 100644
-> --- a/kernel/user.c
-> +++ b/kernel/user.c
-> @@ -20,6 +20,17 @@
->  #include <linux/user_namespace.h>
->  #include <linux/proc_ns.h>
->  
-> +#if IS_ENABLED(CONFIG_BINFMT_MISC)
-> +struct binfmt_namespace init_binfmt_ns = {
-> +	.entries = LIST_HEAD_INIT(init_binfmt_ns.entries),
-> +	.enabled = 1,
-> +	.entries_lock = __RW_LOCK_UNLOCKED(init_binfmt_ns.entries_lock),
-> +	.bm_mnt = NULL,
-> +	.entry_count = 0,
-> +};
-> +EXPORT_SYMBOL_GPL(init_binfmt_ns);
-> +#endif
-> +
->  /*
->   * userns count is 1 for root user, 1 for init_uts_ns,
->   * and 1 for... ?
-> @@ -67,6 +78,9 @@ struct user_namespace init_user_ns = {
->  	.keyring_name_list = LIST_HEAD_INIT(init_user_ns.keyring_name_list),
->  	.keyring_sem = __RWSEM_INITIALIZER(init_user_ns.keyring_sem),
->  #endif
-> +#if IS_ENABLED(CONFIG_BINFMT_MISC)
-> +	.binfmt_ns = &init_binfmt_ns,
-> +#endif
->  };
->  EXPORT_SYMBOL_GPL(init_user_ns);
->  
-> diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-> index 8eadadc478f9..f42c32269e20 100644
-> --- a/kernel/user_namespace.c
-> +++ b/kernel/user_namespace.c
-> @@ -191,6 +191,9 @@ static void free_user_ns(struct work_struct *work)
->  			kfree(ns->projid_map.forward);
->  			kfree(ns->projid_map.reverse);
->  		}
-> +#if IS_ENABLED(CONFIG_BINFMT_MISC)
-> +		kfree(ns->binfmt_ns);
-> +#endif
->  		retire_userns_sysctls(ns);
->  		key_free_user_ns(ns);
->  		ns_free_inum(&ns->ns);
-> 
+This commit is preparation for migrating rlimits counters to ucounts.
 
-What happened with this proposal since then?
+Signed-off-by: Alexey Gladkov <gladkov.alexey@gmail.com>
+---
+ include/linux/user_namespace.h |  4 ++--
+ kernel/ucount.c                | 14 +++++++-------
+ 2 files changed, 9 insertions(+), 9 deletions(-)
 
-As there is quite some delay between the feature finally hitting
-upstream and a random distro-based containter host providing it to
-unprivileged users, the longer we wait, the longer the pain persists
-(e.g. when building cross-arch containers or when dealing with different
-qemu-user-static versions...). Is there anything we can do to help with it?
-
-Jan
-
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index 483568a56f7f..24b850c7b70e 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -85,7 +85,7 @@ struct user_namespace {
+ 	struct ctl_table_header *sysctls;
+ #endif
+ 	struct ucounts		*ucounts;
+-	int ucount_max[UCOUNT_COUNTS];
++	long ucount_max[UCOUNT_COUNTS];
+ } __randomize_layout;
+ 
+ struct ucounts {
+@@ -93,7 +93,7 @@ struct ucounts {
+ 	struct user_namespace *ns;
+ 	kuid_t uid;
+ 	atomic_t count;
+-	atomic_t ucount[UCOUNT_COUNTS];
++	atomic_long_t ucount[UCOUNT_COUNTS];
+ };
+ 
+ extern struct user_namespace init_user_ns;
+diff --git a/kernel/ucount.c b/kernel/ucount.c
+index 80a39073bcef..4c5825ffd2e9 100644
+--- a/kernel/ucount.c
++++ b/kernel/ucount.c
+@@ -185,14 +185,14 @@ void set_cred_ucounts(const struct cred *cred, struct user_namespace *ns, kuid_t
+ 	((struct cred *) cred)->ucounts = get_ucounts(ns, uid);
+ }
+ 
+-static inline bool atomic_inc_below(atomic_t *v, int u)
++static inline bool atomic_long_inc_below(atomic_long_t *v, int u)
+ {
+-	int c, old;
+-	c = atomic_read(v);
++	long c, old;
++	c = atomic_long_read(v);
+ 	for (;;) {
+ 		if (unlikely(c >= u))
+ 			return false;
+-		old = atomic_cmpxchg(v, c, c+1);
++		old = atomic_long_cmpxchg(v, c, c+1);
+ 		if (likely(old == c))
+ 			return true;
+ 		c = old;
+@@ -209,14 +209,14 @@ struct ucounts *inc_ucount(struct user_namespace *ns, kuid_t uid,
+ 		int max;
+ 		tns = iter->ns;
+ 		max = READ_ONCE(tns->ucount_max[type]);
+-		if (!atomic_inc_below(&iter->ucount[type], max))
++		if (!atomic_long_inc_below(&iter->ucount[type], max))
+ 			goto fail;
+ 	}
+ 	return ucounts;
+ fail:
+ 	bad = iter;
+ 	for (iter = ucounts; iter != bad; iter = iter->ns->ucounts)
+-		atomic_dec(&iter->ucount[type]);
++		atomic_long_dec(&iter->ucount[type]);
+ 
+ 	put_ucounts(ucounts);
+ 	return NULL;
+@@ -226,7 +226,7 @@ void dec_ucount(struct ucounts *ucounts, enum ucount_type type)
+ {
+ 	struct ucounts *iter;
+ 	for (iter = ucounts; iter; iter = iter->ns->ucounts) {
+-		int dec = atomic_dec_if_positive(&iter->ucount[type]);
++		int dec = atomic_long_dec_if_positive(&iter->ucount[type]);
+ 		WARN_ON_ONCE(dec < 0);
+ 	}
+ 	put_ucounts(ucounts);
 -- 
-Siemens AG, T RDA IOT
-Corporate Competence Center Embedded Linux
+2.29.2
+
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
