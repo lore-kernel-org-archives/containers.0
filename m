@@ -1,88 +1,92 @@
-Return-Path: <SRS0=6a6i=GO=lists.linux-foundation.org=containers-bounces@kernel.org>
+Return-Path: <SRS0=YWEV=GP=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-13.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A523AC433E0
-	for <containers@archiver.kernel.org>; Mon, 11 Jan 2021 20:18:31 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 56CF6C433E6
+	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 15:10:41 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 1DAF1222B3
-	for <containers@archiver.kernel.org>; Mon, 11 Jan 2021 20:18:30 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1DAF1222B3
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=xmission.com
+	by mail.kernel.org (Postfix) with ESMTPS id C6A142310A
+	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 15:10:40 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C6A142310A
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id BA07485B80;
-	Mon, 11 Jan 2021 20:18:30 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 5D1DD87021;
+	Tue, 12 Jan 2021 15:10:40 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id bCbdeBAZjJ0S; Mon, 11 Jan 2021 20:18:28 +0000 (UTC)
+	with ESMTP id AOXb7T1LWmg4; Tue, 12 Jan 2021 15:10:38 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 0499185143;
-	Mon, 11 Jan 2021 20:18:27 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id D167C86FB5;
+	Tue, 12 Jan 2021 15:10:38 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id DE7A8C088B;
-	Mon, 11 Jan 2021 20:18:27 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id BE7BCC088B;
+	Tue, 12 Jan 2021 15:10:38 +0000 (UTC)
 Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id CDBA3C013A
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 04B5BC013A
  for <containers@lists.linux-foundation.org>;
- Mon, 11 Jan 2021 20:18:25 +0000 (UTC)
+ Tue, 12 Jan 2021 15:10:37 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 8BB0D204A9
+ by silver.osuosl.org (Postfix) with ESMTP id C858520017
  for <containers@lists.linux-foundation.org>;
- Mon, 11 Jan 2021 20:18:25 +0000 (UTC)
+ Tue, 12 Jan 2021 15:10:36 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id 30hh-cOdjsAB
+ with ESMTP id Z0+HVR01Fjnw
  for <containers@lists.linux-foundation.org>;
- Mon, 11 Jan 2021 20:18:24 +0000 (UTC)
-X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from out01.mta.xmission.com (out01.mta.xmission.com [166.70.13.231])
- by silver.osuosl.org (Postfix) with ESMTPS id 3755620030
+ Tue, 12 Jan 2021 15:10:33 +0000 (UTC)
+X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
+Received: from us-smtp-delivery-124.mimecast.com
+ (us-smtp-delivery-124.mimecast.com [216.205.24.124])
+ by silver.osuosl.org (Postfix) with ESMTPS id C0A4B20013
  for <containers@lists.linux-foundation.org>;
- Mon, 11 Jan 2021 20:18:24 +0000 (UTC)
-Received: from in02.mta.xmission.com ([166.70.13.52])
- by out01.mta.xmission.com with esmtps (TLS1.3) tls
- TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 (Exim 4.93)
- (envelope-from <ebiederm@xmission.com>)
- id 1kz3du-0092Lm-23; Mon, 11 Jan 2021 13:18:22 -0700
-Received: from ip68-227-160-95.om.om.cox.net ([68.227.160.95]
- helo=x220.xmission.com)
- by in02.mta.xmission.com with esmtpsa (TLS1.3) tls
- TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 (Exim 4.93)
- (envelope-from <ebiederm@xmission.com>)
- id 1kz3ds-00GF4a-SO; Mon, 11 Jan 2021 13:18:21 -0700
-From: ebiederm@xmission.com (Eric W. Biederman)
-To: Linus Torvalds <torvalds@linux-foundation.org>
-References: <cover.1610299857.git.gladkov.alexey@gmail.com>
- <CAHk-=wgXZmRu762bjSeK80+T_LTo+UP9y5rP-uvym1vquSxmBw@mail.gmail.com>
-Date: Mon, 11 Jan 2021 14:17:19 -0600
-In-Reply-To: <CAHk-=wgXZmRu762bjSeK80+T_LTo+UP9y5rP-uvym1vquSxmBw@mail.gmail.com>
- (Linus Torvalds's message of "Sun, 10 Jan 2021 10:46:05 -0800")
-Message-ID: <87a6tfp6sw.fsf@x220.int.ebiederm.org>
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/26.1 (gnu/linux)
-MIME-Version: 1.0
-X-XM-SPF: eid=1kz3ds-00GF4a-SO; ; ; mid=<87a6tfp6sw.fsf@x220.int.ebiederm.org>;
- ; ; hst=in02.mta.xmission.com; ; ; ip=68.227.160.95; ; ;
- frm=ebiederm@xmission.com; ; ; spf=neutral
-X-XM-AID: U2FsdGVkX1/Yf/U+HHFa2llriv5GGUzjHmbH00nuzd4=
-X-SA-Exim-Connect-IP: 68.227.160.95
-X-SA-Exim-Mail-From: ebiederm@xmission.com
-Subject: Re: [RFC PATCH v2 0/8] Count rlimits in each user namespace
-X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
-X-SA-Exim-Scanned: Yes (on in02.mta.xmission.com)
-Cc: Kees Cook <keescook@chromium.org>,
- Kernel Hardening <kernel-hardening@lists.openwall.com>,
- Linux Containers <containers@lists.linux-foundation.org>,
- LKML <linux-kernel@vger.kernel.org>, Alexey Gladkov <legion@kernel.org>,
- Christian Brauner <christian@brauner.io>
+ Tue, 12 Jan 2021 15:10:32 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+ s=mimecast20190719; t=1610464231;
+ h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+ to:to:cc:cc; bh=y/KWgZ4Myc+GvVyt9KKTcl/FN+OPHrXT8Arzf3AE/2U=;
+ b=No17UQ+UDGMDaB52nKzUD8hQbRT54j3K49xrt1eSg+BVaiOIjFolvqqmwYL41Ae65EgImD
+ /QfVpN9Zfw6E89eMT+lpGoWqY1toBEfSPyqUKjYAgEjDzyEYPuTE4zGV5IFqzzmD7WqT/A
+ 2eC+7Lb8X/caRQ5m97FgcvErXov63sI=
+Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
+ [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
+ us-mta-365-3k2QGns2MKmEgLXpiLrlRQ-1; Tue, 12 Jan 2021 10:10:24 -0500
+X-MC-Unique: 3k2QGns2MKmEgLXpiLrlRQ-1
+Received: from smtp.corp.redhat.com (int-mx04.intmail.prod.int.phx2.redhat.com
+ [10.5.11.14])
+ (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+ (No client certificate requested)
+ by mimecast-mx01.redhat.com (Postfix) with ESMTPS id D67E68015A8;
+ Tue, 12 Jan 2021 15:10:20 +0000 (UTC)
+Received: from madcap2.tricolour.ca (unknown [10.10.110.8])
+ by smtp.corp.redhat.com (Postfix) with ESMTP id B919D5D9CD;
+ Tue, 12 Jan 2021 15:10:05 +0000 (UTC)
+From: Richard Guy Briggs <rgb@redhat.com>
+To: Linux Containers List <containers@lists.linux-foundation.org>,
+ Linux API <linux-api@vger.kernel.org>,
+ Linux-Audit Mailing List <linux-audit@redhat.com>,
+ Linux FSdevel <linux-fsdevel@vger.kernel.org>,
+ LKML <linux-kernel@vger.kernel.org>,
+ Linux NetDev Upstream Mailing List <netdev@vger.kernel.org>,
+ Netfilter Devel List <netfilter-devel@vger.kernel.org>
+Subject: [PATCH ghak90 v11 00/11] audit: implement container identifier
+Date: Tue, 12 Jan 2021 10:09:28 -0500
+Message-Id: <cover.1610399347.git.rgb@redhat.com>
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.14
+Cc: Jens Axboe <axboe@kernel.dk>, Kees Cook <keescook@chromium.org>,
+ Neil Horman <nhorman@tuxdriver.com>, Richard Guy Briggs <rgb@redhat.com>,
+ David Howells <dhowells@redhat.com>,
+ "Eric W. Biederman" <ebiederm@xmission.com>, Simo Sorce <simo@redhat.com>,
+ Eric Paris <eparis@parisplace.org>, mpatel@redhat.com
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -94,112 +98,407 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Linus Torvalds <torvalds@linux-foundation.org> writes:
+Implement kernel audit container identifier.
 
-> On Sun, Jan 10, 2021 at 9:34 AM Alexey Gladkov <gladkov.alexey@gmail.com> wrote:
->>
->> To address the problem, we bind rlimit counters to each user namespace. The
->> result is a tree of rlimit counters with the biggest value at the root (aka
->> init_user_ns). The rlimit counter increment/decrement occurs in the current and
->> all parent user namespaces.
->
-> I'm not seeing why this is necessary.
->
-> Maybe it's the right approach, but none of the patches (or this cover
-> letter email) really explain it to me.
->
-> I understand why you might want the _limits_ themselves would form a
-> tree like this - with the "master limit" limiting the limits in the
-> user namespaces under it.
->
-> But I don't understand why the _counts_ should do that. The 'struct
-> user_struct' should be shared across even user namespaces for the same
-> user.
->
-> IOW, the very example of the problem you quote seems to argue against this:
->
->> For example, there are two containers (A and B) created by one user. The
->> container A sets RLIMIT_NPROC=1 and starts one process. Everything is fine, but
->> when container B tries to do the same it will fail because the number of
->> processes is counted globally for each user and user has one process already.
->
-> Note how the problem was _not_ that the _count_ was global. That part
-> was fine and all good.
+This patchset is an eighth based on the proposal document (V4) posted:
+	https://www.redhat.com/archives/linux-audit/2019-September/msg00052.html
 
-The problem is fundamentally that the per process RLIMIT_NPROC was
-compared against the user_struct->processes.
+The first patch was the last patch from ghak81 that was absorbed into
+this patchset since its primary justification is the rest of this
+patchset.  It abstracts the audit kernel internal api to be able to better
+regulate audit operations.
 
-I have only heard the problem described but I believe it is either the
-RLIMIT_NPROC test in fork or at the beginning of do_execveat_common that
-is failing.
+The second patch implements the proc fs write to set the audit container
+identifier of a process, emitting an AUDIT_CONTAINER_OP record to
+announce the registration of that audit container identifier on that
+process.  The ID can be read from the same file.  This patch requires
+userspace support for record acceptance and proper type display.  The ID is
+stored as an object that includes owner information to check for
+descendancy, allow process injection into a container and prevent id reuse
+by other orchestrators.  The same record type is emitted once all tasks
+using that audit container identifier have exited.
 
-From fs/exec.c line 1866:
-> 	/*
-> 	 * We move the actual failure in case of RLIMIT_NPROC excess from
-> 	 * set*uid() to execve() because too many poorly written programs
-> 	 * don't check setuid() return code.  Here we additionally recheck
-> 	 * whether NPROC limit is still exceeded.
-> 	 */
-> 	if ((current->flags & PF_NPROC_EXCEEDED) &&
-> 	    atomic_read(&current_user()->processes) > rlimit(RLIMIT_NPROC)) {
-> 		retval = -EAGAIN;
-> 		goto out_ret;
-> 	}
+The 3rd implements the auxiliary record AUDIT_CONTAINER_ID if an audit
+container identifier is associated with an event.  This patch requires
+userspace support for proper type display.
 
-From fs/fork.c line 1966:
-> 	retval = -EAGAIN;
-> 	if (atomic_read(&p->real_cred->user->processes) >=
-> 			task_rlimit(p, RLIMIT_NPROC)) {
-> 		if (p->real_cred->user != INIT_USER &&
-> 		    !capable(CAP_SYS_RESOURCE) && !capable(CAP_SYS_ADMIN))
-> 			goto bad_fork_free;
-> 	}
-> 	current->flags &= ~PF_NPROC_EXCEEDED;
+The 4th adds audit daemon signalling provenance through audit_sig_info2.
 
-In both the cases the RLIMIT_NPROC value comes from
-task->signal->rlim[RLIMIT_NPROC] and the count of processes
-comes from task->cred->user->processes.
+The 5th creates a local audit context to be able to bind a standalone
+record with a locally created auxiliary record.
 
-> No, the problem was that the _limit_ in container A also ended up
-> affecting container B.
+The 6th patch adds audit container identifier records to the user
+standalone records.
 
-The description I have is that both containers run the same service
-that set it's RLIMIT_NPROC to 1 in both containers.
+The 7th adds audit container identifier filtering to the exit,
+exclude and user lists.  This patch adds the AUDIT_CONTID field and
+requires auditctl userspace support for the --contid option.
 
-> So to me, that says that it would make sense to continue to use the
-> resource counts in 'struct user_struct' (because if user A has a hard
-> limit of X, then creating a new namespace shouldn't expand that
-> limit), but then have the ability to make per-container changes to the
-> resource limits (as long as they are within the bounds of the parent
-> user namespace resource limit).
+The 8th adds network namespace audit container identifier labelling
+based on member tasks' audit container identifier labels which supports
+standalone netfilter records that don't have a task context and lists
+each container to which that net namespace belongs.
 
-I agree that needs to work as well.
+The 9th checks that the target is a descendant for nesting and
+refactors to avoid a duplicate of the copied function.
 
-> Maybe there is some reason for this ucounts approach, but if so, I
-> feel it was not explained at all.
+The 10th adds tracking and reporting for container nesting.  
+This enables kernel filtering and userspace searches of nested audit
+container identifiers.
 
-Let me see if I can starte the example a litle more clearly.
+The 11th adds a mechanism to allow a process to be designated as a
+container orchestrator/engine in non-init user namespaces.
 
-Suppose there is a service never_fork that sets RLIMIT_NPROC runs as
-never_fork_user and sets RLIMIT_NPROC to 1 in it's systemd service file.
 
-Further suppose there is a user bob who has two containers he wants to
-run: container1 and container2.  Both containers start the never_fork
-service.
+Example: Set an audit container identifier of 123456 to the "sleep" task:
 
-Bob first starts container1 and inside it the never_fork service starts.
-Bob starts container2 and the never_fork service fails to start.
+  sleep 2&
+  child=$!
+  echo 123456 > /proc/$child/audit_containerid; echo $?
+  ausearch -ts recent -i -m container_op
+  echo child:$child contid:$( cat /proc/$child/audit_containerid)
 
-Does that make it clear that it is the count of the processes that would
-exceed 1 if both instances of the never_fork service starts that would
-be the problem?
+This should produce an event such as:
 
-Eric
+  type=PROCTITLE msg=audit(2020-11-26 11:03:36.566:174604) : proctitle=-bash
+  type=SYSCALL msg=audit(2020-11-26 11:03:36.566:174604) : arch=x86_64 syscall=write success=no exit=ENOTUNIQ(Name not unique on network) a0=0x1 a1=0x55cf347b27c0a2=0x7 a3=0x55cf3480ded0 items=0 ppid=483 pid=507 auid=root uid=root gid=root euid=root suid=root fsuid=root egid=root sgid=root fsgid=root tty=ttyS0 ses=1 comm=bash exe=/usr/bin/bash subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key=(null)
+  type=CONTAINER_OP msg=audit(2020-11-26 11:03:36.566:174604) : op=set opid=9069 contid=123456 old-contid=unset
+
+Example: Set a filter on an audit container identifier 123459 on /tmp/tmpcontainerid:
+
+  contid=123459
+  key=tmpcontainerid
+  auditctl -a exit,always -F dir=/tmp -F perm=wa -F contid=$contid -F key=$key
+  perl -e "sleep 1; open(my \$tmpfile, '>', \"/tmp/$key\"); close(\$tmpfile);" &
+  child=$!
+  echo $contid > /proc/$child/audit_containerid
+  sleep 2
+  ausearch -i -ts recent -k $key
+  auditctl -d exit,always -F dir=/tmp -F perm=wa -F contid=$contid -F key=$key
+  rm -f /tmp/$key
+
+This should produce an event such as:
+
+  type=CONTAINER_ID msg=audit(2020-11-26 12:46:31.707:26953) : record=1 contid=123459
+  type=PROCTITLE msg=audit(2020-11-26 12:46:31.707:26953) : proctitle=perl -e sleep 1; open(my $tmpfile, '>', "/tmp/tmpcontainerid"); close($tmpfile);
+  type=PATH msg=audit(2020-11-26 12:46:31.707:26953) : item=1 name=/tmp/tmpcontainerid inode=25656 dev=00:26 mode=file,644 ouid=root ogid=root rdev=00:00 obj=unconfined_u:object_r:user_tmp_t:s0 nametype=CREATE cap_fp=none cap_fi=none cap_fe=0 cap_fver=0
+  type=PATH msg=audit(2020-11-26 12:46:31.707:26953) : item=0 name=/tmp/ inode=8985 dev=00:26 mode=dir,sticky,777 ouid=root ogid=root rdev=00:00 obj=system_u:object_r:tmp_t:s0 nametype=PARENT cap_fp=none cap_fi=none cap_fe=0 cap_fver=0
+  type=CWD msg=audit(2020-11-26 12:46:31.707:26953) : cwd=/root
+  type=SYSCALL msg=audit(2020-11-26 12:46:31.707:26953) : arch=x86_64 syscall=openat success=yes exit=3 a0=0xffffffffffffff9c a1=0x5621f2b81900 a2=O_WRONLY|O_CREAT|O_TRUNC a3=0x1b6 items=2 ppid=628 pid=2232 auid=root uid=root gid=root euid=root suid=root fsuid=root egid=root sgid=root fsgid=root tty=ttyS0 ses=1 comm=perl exe=/usr/bin/perl subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key=tmpcontainerid record=1
+
+Example: Test multiple containers on one netns:
+
+  sleep 5 &
+  child1=$!
+  containerid1=123451
+  echo $containerid1 > /proc/$child1/audit_containerid
+  sleep 5 &
+  child2=$!
+  containerid2=123452
+  echo $containerid2 > /proc/$child2/audit_containerid
+  iptables -I INPUT -i lo -p icmp --icmp-type echo-request -j AUDIT --type accept
+  iptables -I INPUT  -t mangle -i lo -p icmp --icmp-type echo-request -j MARK --set-mark 0x12345555
+  sleep 1;
+  bash -c "ping -q -c 1 127.0.0.1 >/dev/null 2>&1"
+  sleep 1;
+  ausearch -i -m NETFILTER_PKT -ts boot|grep mark=0x12345555
+  ausearch -i -m NETFILTER_PKT -ts boot|grep contid=|grep $containerid1|grep $containerid2
+
+This would produce an event such as:
+
+  type=NETFILTER_PKT msg=audit(2020-11-26 14:16:13.369:244) : mark=0x12345555 saddr=127.0.0.1 daddr=127.0.0.1 proto=icmp record=1
+  type=CONTAINER_ID msg=audit(2020-11-26 14:16:13.369:244) : record=1 contid=123452,123451
+
+
+Includes the last patch of https://github.com/linux-audit/audit-kernel/issues/81
+Please see the github audit kernel issue for the main feature:
+  https://github.com/linux-audit/audit-kernel/issues/90
+and the kernel filter code:
+  https://github.com/linux-audit/audit-kernel/issues/91
+and the network support:
+  https://github.com/linux-audit/audit-kernel/issues/92
+Please see the github audit userspace issue for supporting record types:
+  https://github.com/linux-audit/audit-userspace/issues/51
+and filter code:
+  https://github.com/linux-audit/audit-userspace/issues/40
+Please see the github audit testsuiite issue for the test case:
+  https://github.com/linux-audit/audit-testsuite/issues/64
+  https://github.com/rgbriggs/audit-testsuite/tree/ghat64-contid
+  https://githu.com/linux-audit/audit-testsuite/pull/91
+Please see the github audit wiki for the feature overview:
+  https://github.com/linux-audit/audit-kernel/wiki/RFE-Audit-Container-ID
+
+The code is also posted at:
+  git://toccata2.tricolour.ca/linux-2.6-rgb.git ghak90-contid.v11
+
+Changelog:
+v11
+- rebase on audit/next 5.11-rc2
+- drop ack nhorman/omosnace: hide audit task struct in sched (01/11)
+- drop ack serge/nhorman/omosnace: log drop (02/11)
+- drop ack sgrubb: added "record=" field (03/11)
+- drop ack nhorman/omosnace: track container of signalled process (03/11)
+- drop ack nhorman/omosnace: restructure audit_sig_info2 for nesting; reap adtsk (04/11)
+- drop ack nhorman/omosnace: redo rcu/spin locking, added "record=" field (08/11)
+- update event sample (02/11)
+- update event sample (03/11)
+- update event sample (08/11)
+- rename sigflag to sigcount (04/11)
+- move contid dup check in audit_set_contid from 04/11 (03/11)
+
+v10
+- rebase on ghak124, ghak96, ghak84, actual wait, 5.9-rc1, ghak120, 5.10-rc1, io_uring
+- localize struct audit_task_info to audit.c, move related functions from proc/base.c, audit.h, auditsc.c to audit.c
+- add Documentation/ABI for /proc/PID/audit_*containerid
+- convert from rcu to spin lock around contid put and optimize other spinlock use
+- swap task_lock and tasklist_lock in audit_set_contid (deadlock with sys_prlimit64)
+- restructure audit_set_contid intro (elsif ladder)
+- open code audit_contid_valid and audit_contid_set
+- rename contobj_get to contobj_get_bytask, contobj_hold to contobj_get
+- squash in audit contid drop, change new contid to -1
+- squash in proc audit contid read
+- add count param to audit_contobj_put to reduce locking, free target_cid keyed on target_pid
+- add record= field to CONTAINER_ID record to link to OBJ_PID, SYSCALL, NETFILTER_PKT
+- add helper function audit_log_container_id_ctx
+- rename audit_sig_atsk to audit_sig_adtsk
+- add missing contobj_put in audit_log_exit and of audit_sig_cid in AUDIT_SIGNAL_INFO
+- switch from -ESHUTDOWN to -ENOTUNIQ for as yet unreaped contid
+- add helper audit_contid_comparator in audit.c (part of hide)
+- move audit_contobj_netns to audit.c (part of hide)
+- fix spin_lock with irq option for network interrupt support
+- add missing check for audit_get_capcontid in audit_set_contid
+- check individual patch complilation
+- patch description cleanups (in_syscall vs local, contid nesting examples)
+- remove unnecessary audit_log_format() calls
+- remove unnecessary rcu locking around net_generic call()
+
+v9
+- rebase on v5.8-rc1
+- fix whitespace and oversize lines where practicable
+- remove harmless duplicate S_IRUSR in capcontid
+- return -EBUSY for both threading and children (drop -EALREADY)
+- return -EEXIST if already set and not nesting (drop -ECHILD)
+- fix unbalanced brace and remove elseif ladder
+- drop check for same contid set again as redundant (drop -EADDRINUSE)
+- get reference to contobj's parent taskstruct
+- protect all contid list updates with audit_contobj_list_lock
+- protect refcounts with rcu read lock
+- convert _audit_contobj to _audit_contobj_get, which calls _audit_contobj_hold
+- convert audit_log_container_id() and audit_log_contid() from u64 to contobj, simplifying
+- issue death certificate on contid after exit of last task
+- keep contobj ref to block reuse with -ESHUTDOWN until auditd exit or signal info
+- report all contids nested
+- rework sig_info2 format to accommodate contid list
+- fix zero-length array in include/linux/audit.h struct audit_sig_info2 data[]
+- found bug in audit_alloc_local, don't check audit_ever_enabled, since all callers check audit_enabled
+- remove warning at declaration of audit_sig_cid of reuse since reuse is now blocked
+- report descendancy checking errcodes under -EXDEV (drop -EBADSLT)
+- add missed check, replace audit_contid_isowner with audit_contid_isnesting
+- limit calls to audit_log_format() with if(iter->parent) ...
+- list only one contid in contid, nested in old-contid to avoid duplication
+- switch to comma delimiter, carrat modifier in nested contid list
+- special case -1 for AUDIT_CID_UNSET printing
+- drop contid depth limit and netns contid limit patches
+- enforce capcontid policy on contid write and read
+- squash conversion to contobj into contid intro patch
+
+v8
+- rebase on v5.5-rc1 audit/next
+- remove subject attrs in CONTAINER_OP record
+- group audit_contid_list_lock with audit_contid_hash
+- in audit_{set,log}_contid(), break out of loop after finding target
+- use target var to size kmalloc
+- rework audit_cont_owner() to bool audit_contid_isowner() and move to where used
+- create static void audit_cont_hold(struct audit_contobj *cont) { refcount_inc(&cont->refcount); }
+- rename audit_cont{,_*} refs to audit_contobj{,_*}
+- prefix special local functions with _ [audit_contobj*()]
+- protect contid list traversals with rcu_read_lock() and updates with audit_contid_list_lock
+- protect real_parent in audit_contid_depth() with rcu_dereference
+- give new contid field nesting format in patch description
+- squash task_is_descendant()
+- squash support for NETFILTER_PKT into network namespaces
+- limit nesting depth based on record length overflow, bandwidth and storage
+- implent control for audit container identifier nesting depth limit
+- make room for audit_bpf patches (bump CONTAINER_ID to 1335)
+- squash proc interface into capcontid
+- remove netlink access to loginuid/sessionid/contid/capcontid
+- delete 32k contid limit patch
+- document potential overlap between signal delivery and contid reuse
+- document audit_contobj_list_lock coverage
+- document disappearing orch task injection limitation
+- limit the number of containers that can be associated with a network namespace
+- implent control for audit container identifier netns count limit 
+
+v7
+- remove BUG() in audit_comparator64()
+- rebase on v5.2-rc1 audit/next
+- resolve merge conflict with ghak111 (signal_info regardless syscall)
+- resolve merge conflict with ghak73 (audit_field_valid)
+- resolve merge conflict with ghak64 (saddr_fam filter)
+- resolve merge conflict with ghak10 (ntp audit) change AUDIT_CONTAINER_ID from 1332 to 1334
+- rebase on v5.3-rc1 audit/next
+- track container owner
+- only permit setting contid of descendants for nesting
+- track drop of contid and permit reuse
+- track and report container nesting
+- permit filtering on any nested contid
+- set/get contid and loginuid/sessionid via netlink
+- implement capcontid to enable orchestrators in non-init user
+  namespaces
+- limit number of containers
+- limit depth of container nesting
+
+v6
+- change TMPBUFLEN from 11 to 21 to cover the decimal value of contid
+  u64 (nhorman)
+- fix bug overwriting ctx in struct audit_sig_info, move cid above
+  ctx[0] (nhorman)
+- fix bug skipping remaining fields and not advancing bufp when copying
+  out contid in audit_krule_to_data (omosnacec)
+- add acks, tidy commit descriptions, other formatting fixes (checkpatch
+  wrong on audit_log_lost)
+- cast ull for u64 prints
+- target_cid tracking was moved from the ptrace/signal patch to
+  container_op
+- target ptrace and signal records were moved from the ptrace/signal
+  patch to container_id
+- auditd signaller tracking was moved to a new AUDIT_SIGNAL_INFO2
+  request and record
+- ditch unnecessary list_empty() checks
+- check for null net and aunet in audit_netns_contid_add()
+- swap CONTAINER_OP contid/old-contid order to ease parsing
+
+v5
+- address loginuid and sessionid syscall scope in ghak104
+- address audit_context in CONFIG_AUDIT vs CONFIG_AUDITSYSCALL in ghak105
+- remove tty patch, addressed in ghak106
+- rebase on audit/next v5.0-rc1
+  w/ghak59/ghak104/ghak103/ghak100/ghak107/ghak105/ghak106/ghak105sup
+- update CONTAINER_ID to CONTAINER_OP in patch description
+- move audit_context in audit_task_info to CONFIG_AUDITSYSCALL
+- move audit_alloc() and audit_free() out of CONFIG_AUDITSYSCALL and into
+  CONFIG_AUDIT and create audit_{alloc,free}_syscall
+- use plain kmem_cache_alloc() rather than kmem_cache_zalloc() in audit_alloc()
+- fix audit_get_contid() declaration type error
+- move audit_set_contid() from auditsc.c to audit.c
+- audit_log_contid() returns void
+- audit_log_contid() handed contid rather than tsk
+- switch from AUDIT_CONTAINER to AUDIT_CONTAINER_ID for aux record
+- move audit_log_contid(tsk/contid) & audit_contid_set(tsk)/audit_contid_valid(contid)
+- switch from tsk to current
+- audit_alloc_local() calls audit_log_lost() on failure to allocate a context
+- add AUDIT_USER* non-syscall contid record
+- cosmetic cleanup double parens, goto out on err
+- ditch audit_get_ns_contid_list_lock(), fix aunet lock race
+- switch from all-cpu read spinlock to rcu, keep spinlock for write
+- update audit_alloc_local() to use ktime_get_coarse_real_ts64()
+- add nft_log support
+- add call from do_exit() in audit_free() to remove contid from netns
+- relegate AUDIT_CONTAINER ref= field (was op=) to debug patch
+
+v4
+- preface set with ghak81:"collect audit task parameters"
+- add shallyn and sgrubb acks
+- rename feature bitmap macro
+- rename cid_valid() to audit_contid_valid()
+- rename AUDIT_CONTAINER_ID to AUDIT_CONTAINER_OP
+- delete audit_get_contid_list() from headers
+- move work into inner if, delete "found"
+- change netns contid list function names
+- move exports for audit_log_contid audit_alloc_local audit_free_context to non-syscall patch
+- list contids CSV
+- pass in gfp flags to audit_alloc_local() (fix audit_alloc_context callers)
+- use "local" in lieu of abusing in_syscall for auditsc_get_stamp()
+- read_lock(&tasklist_lock) around children and thread check
+- task_lock(tsk) should be taken before first check of tsk->audit
+- add spin lock to contid list in aunet
+- restrict /proc read to CAP_AUDIT_CONTROL
+- remove set again prohibition and inherited flag
+- delete contidion spelling fix from patchset, send to netdev/linux-wireless
+
+v3
+- switched from containerid in task_struct to audit_task_info (depends on ghak81)
+- drop INVALID_CID in favour of only AUDIT_CID_UNSET
+- check for !audit_task_info, throw -ENOPROTOOPT on set
+- changed -EPERM to -EEXIST for parent check
+- return AUDIT_CID_UNSET if !audit_enabled
+- squash child/thread check patch into AUDIT_CONTAINER_ID patch
+- changed -EPERM to -EBUSY for child check
+- separate child and thread checks, use -EALREADY for latter
+- move addition of op= from ptrace/signal patch to AUDIT_CONTAINER patch
+- fix && to || bashism in ptrace/signal patch
+- uninline and export function for audit_free_context()
+- drop CONFIG_CHANGE, FEATURE_CHANGE, ANOM_ABEND, ANOM_SECCOMP patches
+- move audit_enabled check (xt_AUDIT)
+- switched from containerid list in struct net to net_generic's struct audit_net
+- move containerid list iteration into audit (xt_AUDIT)
+- create function to move namespace switch into audit
+- switched /proc/PID/ entry from containerid to audit_containerid
+- call kzalloc with GFP_ATOMIC on in_atomic() in audit_alloc_context()
+- call kzalloc with GFP_ATOMIC on in_atomic() in audit_log_container_info()
+- use xt_net(par) instead of sock_net(skb->sk) to get net
+- switched record and field names: initial CONTAINER_ID, aux CONTAINER, field CONTID
+- allow to set own contid
+- open code audit_set_containerid
+- add contid inherited flag
+- ccontainerid and pcontainerid eliminated due to inherited flag
+- change name of container list funcitons
+- rename containerid to contid
+- convert initial container record to syscall aux
+- fix spelling mistake of contidion in net/rfkill/core.c to avoid contid name collision
+
+v2
+- add check for children and threads
+- add network namespace container identifier list
+- add NETFILTER_PKT audit container identifier logging
+- patch description and documentation clean-up and example
+- reap unused ppid
+
+Richard Guy Briggs (11):
+  audit: collect audit task parameters
+  audit: add container id
+  audit: log container info of syscalls
+  audit: add contid support for signalling the audit daemon
+  audit: add support for non-syscall auxiliary records
+  audit: add containerid support for user records
+  audit: add containerid filtering
+  audit: add support for containerid to network namespaces
+  audit: contid check descendancy and nesting
+  audit: track container nesting
+  audit: add capcontid to set contid outside init_user_ns
+
+ .../ABI/testing/procfs-audit_containerid      |  29 +
+ fs/io-wq.c                                    |   8 +-
+ fs/io_uring.c                                 |  16 +-
+ fs/proc/base.c                                | 110 ++-
+ include/linux/audit.h                         |  83 +-
+ include/linux/sched.h                         |  10 +-
+ include/uapi/linux/audit.h                    |  10 +-
+ init/init_task.c                              |   3 +-
+ init/main.c                                   |   2 +
+ kernel/audit.c                                | 878 +++++++++++++++++-
+ kernel/audit.h                                |  19 +
+ kernel/auditfilter.c                          |  46 +
+ kernel/auditsc.c                              | 109 ++-
+ kernel/fork.c                                 |   1 -
+ kernel/nsproxy.c                              |   4 +
+ kernel/sched/core.c                           |  33 +
+ net/netfilter/nft_log.c                       |  14 +-
+ net/netfilter/xt_AUDIT.c                      |  14 +-
+ security/selinux/nlmsgtab.c                   |   1 +
+ security/yama/yama_lsm.c                      |  33 -
+ 20 files changed, 1295 insertions(+), 128 deletions(-)
+ create mode 100644 Documentation/ABI/testing/procfs-audit_containerid
+
+-- 
+2.18.4
+
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
