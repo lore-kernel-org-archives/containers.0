@@ -7,72 +7,72 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DAE7FC43381
-	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 22:04:07 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ADFA5C433E0
+	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 22:04:10 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 89D12221F5
-	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 22:04:07 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 89D12221F5
+	by mail.kernel.org (Postfix) with ESMTPS id 45545221F5
+	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 22:04:10 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 45545221F5
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 4B5AB8691E;
-	Tue, 12 Jan 2021 22:04:07 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id C615920469;
+	Tue, 12 Jan 2021 22:04:09 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id KydoLPkJSy7O; Tue, 12 Jan 2021 22:04:05 +0000 (UTC)
+	with ESMTP id lVBjWAPAD7dQ; Tue, 12 Jan 2021 22:04:05 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id BE45886727;
-	Tue, 12 Jan 2021 22:04:05 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 99BB7204A1;
+	Tue, 12 Jan 2021 22:04:04 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id A64C4C0FA8;
-	Tue, 12 Jan 2021 22:04:05 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 47529C013A
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 83825C0FA8;
+	Tue, 12 Jan 2021 22:04:04 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 87EDAC013A
  for <containers@lists.linux-foundation.org>;
- Tue, 12 Jan 2021 22:04:04 +0000 (UTC)
+ Tue, 12 Jan 2021 22:04:03 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id 42A3886044
+ by whitealder.osuosl.org (Postfix) with ESMTP id 74DB28475D
  for <containers@lists.linux-foundation.org>;
- Tue, 12 Jan 2021 22:04:04 +0000 (UTC)
+ Tue, 12 Jan 2021 22:04:03 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id oQt-eP3LPe_z
+ with ESMTP id z-O170x1bevp
  for <containers@lists.linux-foundation.org>;
- Tue, 12 Jan 2021 22:04:00 +0000 (UTC)
+ Tue, 12 Jan 2021 22:04:02 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id AD62985F8E
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 2E9E684AF1
  for <containers@lists.linux-foundation.org>;
- Tue, 12 Jan 2021 22:04:00 +0000 (UTC)
+ Tue, 12 Jan 2021 22:04:02 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kzRkk-0003bd-Vx; Tue, 12 Jan 2021 22:03:03 +0000
+ id 1kzRkr-0003bd-1U; Tue, 12 Jan 2021 22:03:09 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v5 08/42] fs: add id translation helpers
-Date: Tue, 12 Jan 2021 23:00:50 +0100
-Message-Id: <20210112220124.837960-9-christian.brauner@ubuntu.com>
+Subject: [PATCH v5 10/42] capability: handle idmapped mounts
+Date: Tue, 12 Jan 2021 23:00:52 +0100
+Message-Id: <20210112220124.837960-11-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.30.0
 In-Reply-To: <20210112220124.837960-1-christian.brauner@ubuntu.com>
 References: <20210112220124.837960-1-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
-X-Patch-Hashes: v=1; h=sha256; i=DPHLY9J1WgTtTJIZfW+M0ys29DrUndhBq8NbMQ4LhTc=;
- m=f8Rp5sG3By3IoZf9oxFawhK5ciuhIUWlpZXQnI5KhyM=;
- p=FdjzGfRkpgFbW6faYox4tn7jKSccYWBah7wp94uJi2M=;
- g=d24687f3801a2d5b9a8c966b0220bebc4a38950b
+X-Patch-Hashes: v=1; h=sha256; i=ePMljlU6SgOW2CsGAJQU42bgWmfl/2527kQxnJ4/OsA=;
+ m=efv2UFIDaTrhx8SG47YhLtyLwtZdBnDSSL1cVa91zwY=;
+ p=djlRz3R9Iq7dqV36jODXR4hNCSITNxswu1cCcVpz7WI=;
+ g=fc6ca870625aa1404a534f965c79fb14763522a9
 X-Patch-Sig: m=pgp; i=christian.brauner@ubuntu.com; s=0x0x91C61BC06578DCA2;
- b=iHUEABYKAB0WIQRAhzRXHqcMeLMyaSiRxhvAZXjcogUCX/4YtQAKCRCRxhvAZXjcoms5AP9UD8K
- jKRQgl1LwNzDLENvBEn2KJkcp0Z2leCRTfRmUMgD/ZWnrxZqJq8G8S8UIcj5YGta0jcX3KaWk4MJ4
- XSta0wo=
+ b=iHUEABYKAB0WIQRAhzRXHqcMeLMyaSiRxhvAZXjcogUCX/4YtQAKCRCRxhvAZXjcotVQAP0W8mk
+ H297sNFTskeeekr76ur+E0LvO263vx1A1rsGIBQD+JaW4hGmrJUobS4Eif8LSkJblc+4c+W9aGbs3
+ wwkikgI=
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>,
  James Bottomley <James.Bottomley@hansenpartnership.com>,
@@ -111,25 +111,29 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Add simple helpers to make it easy to map kuids into and from idmapped
-mounts. We provide simple wrappers that filesystems can use to e.g.
-initialize inodes similar to i_{uid,gid}_read() and i_{uid,gid}_write().
-Accessing an inode through an idmapped mount will require the inode to
-be mapped according to the mount's user namespace. If the fsids are used
-to compare against inodes or to initialize inodes they are required to
-be shifted from the mount's user namespace. Passing the initial user
-namespace to these helpers makes them a nop and so any non-idmapped
-paths will not be impacted.
+In order to determine whether a caller holds privilege over a given
+inode the capability framework exposes the two helpers
+privileged_wrt_inode_uidgid() and capable_wrt_inode_uidgid(). The former
+verifies that the inode has a mapping in the caller's user namespace and
+the latter additionally verifies that the caller has the requested
+capability in their current user namespace.
+If the inode is accessed through an idmapped mount we simply need to map
+it according to the mount's user namespace. Afterwards the checks are
+identical to non-idmapped inodes. If the initial user namespace is
+passed all operations are a nop so non-idmapped mounts will not see a
+change in behavior and will also not see any performance impact.
 
+Cc: Christoph Hellwig <hch@lst.de>
 Cc: David Howells <dhowells@redhat.com>
 Cc: Al Viro <viro@zeniv.linux.org.uk>
 Cc: linux-fsdevel@vger.kernel.org
-Reviewed-by: Christoph Hellwig <hch@lst.de>
+Acked-by: Serge Hallyn <serge@hallyn.com>
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
 /* v2 */
 - Christoph Hellwig <hch@lst.de>:
-  - Get rid of the ifdefs and the config option that hid idmapped mounts.
+  - Don't pollute the vfs with additional helpers simply extend the existing
+    helpers with an additional argument and switch all callers.
 
 /* v3 */
 unchanged
@@ -142,74 +146,247 @@ unchanged
 /* v5 */
 base-commit: 7c53f6b671f4aba70ff15e1b05148b10d58c2837
 ---
- include/linux/fs.h | 47 ++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 47 insertions(+)
+ fs/attr.c                  |  8 ++++----
+ fs/exec.c                  |  2 +-
+ fs/inode.c                 |  2 +-
+ fs/namei.c                 | 13 ++++++++-----
+ fs/overlayfs/super.c       |  2 +-
+ fs/posix_acl.c             |  2 +-
+ fs/xfs/xfs_ioctl.c         |  2 +-
+ include/linux/capability.h |  7 +++++--
+ kernel/capability.c        | 14 +++++++++-----
+ security/commoncap.c       |  5 +++--
+ 10 files changed, 34 insertions(+), 23 deletions(-)
 
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index fd47deea7c17..1da4c21fb588 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -39,6 +39,7 @@
- #include <linux/fs_types.h>
- #include <linux/build_bug.h>
- #include <linux/stddef.h>
-+#include <linux/cred.h>
+diff --git a/fs/attr.c b/fs/attr.c
+index b4bbdbd4c8ca..d270f640a192 100644
+--- a/fs/attr.c
++++ b/fs/attr.c
+@@ -23,7 +23,7 @@ static bool chown_ok(const struct inode *inode, kuid_t uid)
+ 	if (uid_eq(current_fsuid(), inode->i_uid) &&
+ 	    uid_eq(uid, inode->i_uid))
+ 		return true;
+-	if (capable_wrt_inode_uidgid(inode, CAP_CHOWN))
++	if (capable_wrt_inode_uidgid(&init_user_ns, inode, CAP_CHOWN))
+ 		return true;
+ 	if (uid_eq(inode->i_uid, INVALID_UID) &&
+ 	    ns_capable(inode->i_sb->s_user_ns, CAP_CHOWN))
+@@ -36,7 +36,7 @@ static bool chgrp_ok(const struct inode *inode, kgid_t gid)
+ 	if (uid_eq(current_fsuid(), inode->i_uid) &&
+ 	    (in_group_p(gid) || gid_eq(gid, inode->i_gid)))
+ 		return true;
+-	if (capable_wrt_inode_uidgid(inode, CAP_CHOWN))
++	if (capable_wrt_inode_uidgid(&init_user_ns, inode, CAP_CHOWN))
+ 		return true;
+ 	if (gid_eq(inode->i_gid, INVALID_GID) &&
+ 	    ns_capable(inode->i_sb->s_user_ns, CAP_CHOWN))
+@@ -92,7 +92,7 @@ int setattr_prepare(struct dentry *dentry, struct iattr *attr)
+ 		/* Also check the setgid bit! */
+ 		if (!in_group_p((ia_valid & ATTR_GID) ? attr->ia_gid :
+ 				inode->i_gid) &&
+-		    !capable_wrt_inode_uidgid(inode, CAP_FSETID))
++		    !capable_wrt_inode_uidgid(&init_user_ns, inode, CAP_FSETID))
+ 			attr->ia_mode &= ~S_ISGID;
+ 	}
  
- #include <asm/byteorder.h>
- #include <uapi/linux/fs.h>
-@@ -1572,6 +1573,52 @@ static inline void i_gid_write(struct inode *inode, gid_t gid)
- 	inode->i_gid = make_kgid(inode->i_sb->s_user_ns, gid);
+@@ -193,7 +193,7 @@ void setattr_copy(struct inode *inode, const struct iattr *attr)
+ 		umode_t mode = attr->ia_mode;
+ 
+ 		if (!in_group_p(inode->i_gid) &&
+-		    !capable_wrt_inode_uidgid(inode, CAP_FSETID))
++		    !capable_wrt_inode_uidgid(&init_user_ns, inode, CAP_FSETID))
+ 			mode &= ~S_ISGID;
+ 		inode->i_mode = mode;
+ 	}
+diff --git a/fs/exec.c b/fs/exec.c
+index 5d4d52039105..cea064a2c473 100644
+--- a/fs/exec.c
++++ b/fs/exec.c
+@@ -1411,7 +1411,7 @@ void would_dump(struct linux_binprm *bprm, struct file *file)
+ 		/* Ensure mm->user_ns contains the executable */
+ 		user_ns = old = bprm->mm->user_ns;
+ 		while ((user_ns != &init_user_ns) &&
+-		       !privileged_wrt_inode_uidgid(user_ns, inode))
++		       !privileged_wrt_inode_uidgid(user_ns, &init_user_ns, inode))
+ 			user_ns = user_ns->parent;
+ 
+ 		if (old != user_ns) {
+diff --git a/fs/inode.c b/fs/inode.c
+index 6442d97d9a4a..e1a58950f5e6 100644
+--- a/fs/inode.c
++++ b/fs/inode.c
+@@ -2146,7 +2146,7 @@ void inode_init_owner(struct inode *inode, const struct inode *dir,
+ 			mode |= S_ISGID;
+ 		else if ((mode & (S_ISGID | S_IXGRP)) == (S_ISGID | S_IXGRP) &&
+ 			 !in_group_p(inode->i_gid) &&
+-			 !capable_wrt_inode_uidgid(dir, CAP_FSETID))
++			 !capable_wrt_inode_uidgid(&init_user_ns, dir, CAP_FSETID))
+ 			mode &= ~S_ISGID;
+ 	} else
+ 		inode->i_gid = current_fsgid();
+diff --git a/fs/namei.c b/fs/namei.c
+index 78443a85480a..fd4724bce4f5 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -357,10 +357,11 @@ int generic_permission(struct inode *inode, int mask)
+ 	if (S_ISDIR(inode->i_mode)) {
+ 		/* DACs are overridable for directories */
+ 		if (!(mask & MAY_WRITE))
+-			if (capable_wrt_inode_uidgid(inode,
++			if (capable_wrt_inode_uidgid(&init_user_ns, inode,
+ 						     CAP_DAC_READ_SEARCH))
+ 				return 0;
+-		if (capable_wrt_inode_uidgid(inode, CAP_DAC_OVERRIDE))
++		if (capable_wrt_inode_uidgid(&init_user_ns, inode,
++					     CAP_DAC_OVERRIDE))
+ 			return 0;
+ 		return -EACCES;
+ 	}
+@@ -370,7 +371,8 @@ int generic_permission(struct inode *inode, int mask)
+ 	 */
+ 	mask &= MAY_READ | MAY_WRITE | MAY_EXEC;
+ 	if (mask == MAY_READ)
+-		if (capable_wrt_inode_uidgid(inode, CAP_DAC_READ_SEARCH))
++		if (capable_wrt_inode_uidgid(&init_user_ns, inode,
++					     CAP_DAC_READ_SEARCH))
+ 			return 0;
+ 	/*
+ 	 * Read/write DACs are always overridable.
+@@ -378,7 +380,8 @@ int generic_permission(struct inode *inode, int mask)
+ 	 * at least one exec bit set.
+ 	 */
+ 	if (!(mask & MAY_EXEC) || (inode->i_mode & S_IXUGO))
+-		if (capable_wrt_inode_uidgid(inode, CAP_DAC_OVERRIDE))
++		if (capable_wrt_inode_uidgid(&init_user_ns, inode,
++					     CAP_DAC_OVERRIDE))
+ 			return 0;
+ 
+ 	return -EACCES;
+@@ -2659,7 +2662,7 @@ int __check_sticky(struct inode *dir, struct inode *inode)
+ 		return 0;
+ 	if (uid_eq(dir->i_uid, fsuid))
+ 		return 0;
+-	return !capable_wrt_inode_uidgid(inode, CAP_FOWNER);
++	return !capable_wrt_inode_uidgid(&init_user_ns, inode, CAP_FOWNER);
+ }
+ EXPORT_SYMBOL(__check_sticky);
+ 
+diff --git a/fs/overlayfs/super.c b/fs/overlayfs/super.c
+index 2bd570cbe8a4..88d877787770 100644
+--- a/fs/overlayfs/super.c
++++ b/fs/overlayfs/super.c
+@@ -1017,7 +1017,7 @@ ovl_posix_acl_xattr_set(const struct xattr_handler *handler,
+ 	if (unlikely(inode->i_mode & S_ISGID) &&
+ 	    handler->flags == ACL_TYPE_ACCESS &&
+ 	    !in_group_p(inode->i_gid) &&
+-	    !capable_wrt_inode_uidgid(inode, CAP_FSETID)) {
++	    !capable_wrt_inode_uidgid(&init_user_ns, inode, CAP_FSETID)) {
+ 		struct iattr iattr = { .ia_valid = ATTR_KILL_SGID };
+ 
+ 		err = ovl_setattr(dentry, &iattr);
+diff --git a/fs/posix_acl.c b/fs/posix_acl.c
+index 95882b3f5f62..4ca6d53c6f0a 100644
+--- a/fs/posix_acl.c
++++ b/fs/posix_acl.c
+@@ -656,7 +656,7 @@ int posix_acl_update_mode(struct inode *inode, umode_t *mode_p,
+ 	if (error == 0)
+ 		*acl = NULL;
+ 	if (!in_group_p(inode->i_gid) &&
+-	    !capable_wrt_inode_uidgid(inode, CAP_FSETID))
++	    !capable_wrt_inode_uidgid(&init_user_ns, inode, CAP_FSETID))
+ 		mode &= ~S_ISGID;
+ 	*mode_p = mode;
+ 	return 0;
+diff --git a/fs/xfs/xfs_ioctl.c b/fs/xfs/xfs_ioctl.c
+index 3fbd98f61ea5..97bd29fc8c43 100644
+--- a/fs/xfs/xfs_ioctl.c
++++ b/fs/xfs/xfs_ioctl.c
+@@ -1502,7 +1502,7 @@ xfs_ioctl_setattr(
+ 	 */
+ 
+ 	if ((VFS_I(ip)->i_mode & (S_ISUID|S_ISGID)) &&
+-	    !capable_wrt_inode_uidgid(VFS_I(ip), CAP_FSETID))
++	    !capable_wrt_inode_uidgid(&init_user_ns, VFS_I(ip), CAP_FSETID))
+ 		VFS_I(ip)->i_mode &= ~(S_ISUID|S_ISGID);
+ 
+ 	/* Change the ownerships and register project quota modifications */
+diff --git a/include/linux/capability.h b/include/linux/capability.h
+index b2f698915c0f..53d5acfd23c4 100644
+--- a/include/linux/capability.h
++++ b/include/linux/capability.h
+@@ -247,8 +247,11 @@ static inline bool ns_capable_setid(struct user_namespace *ns, int cap)
+ 	return true;
+ }
+ #endif /* CONFIG_MULTIUSER */
+-extern bool privileged_wrt_inode_uidgid(struct user_namespace *ns, const struct inode *inode);
+-extern bool capable_wrt_inode_uidgid(const struct inode *inode, int cap);
++extern bool privileged_wrt_inode_uidgid(struct user_namespace *ns,
++					struct user_namespace *mnt_userns,
++					const struct inode *inode);
++extern bool capable_wrt_inode_uidgid(struct user_namespace *mnt_userns,
++				     const struct inode *inode, int cap);
+ extern bool file_ns_capable(const struct file *file, struct user_namespace *ns, int cap);
+ extern bool ptracer_capable(struct task_struct *tsk, struct user_namespace *ns);
+ static inline bool perfmon_capable(void)
+diff --git a/kernel/capability.c b/kernel/capability.c
+index de7eac903a2a..46a361dde042 100644
+--- a/kernel/capability.c
++++ b/kernel/capability.c
+@@ -484,10 +484,12 @@ EXPORT_SYMBOL(file_ns_capable);
+  *
+  * Return true if the inode uid and gid are within the namespace.
+  */
+-bool privileged_wrt_inode_uidgid(struct user_namespace *ns, const struct inode *inode)
++bool privileged_wrt_inode_uidgid(struct user_namespace *ns,
++				 struct user_namespace *mnt_userns,
++				 const struct inode *inode)
+ {
+-	return kuid_has_mapping(ns, inode->i_uid) &&
+-		kgid_has_mapping(ns, inode->i_gid);
++	return kuid_has_mapping(ns, i_uid_into_mnt(mnt_userns, inode)) &&
++	       kgid_has_mapping(ns, i_gid_into_mnt(mnt_userns, inode));
  }
  
-+static inline kuid_t kuid_into_mnt(struct user_namespace *mnt_userns,
-+				   kuid_t kuid)
-+{
-+	return make_kuid(mnt_userns, __kuid_val(kuid));
-+}
-+
-+static inline kgid_t kgid_into_mnt(struct user_namespace *mnt_userns,
-+				   kgid_t kgid)
-+{
-+	return make_kgid(mnt_userns, __kgid_val(kgid));
-+}
-+
-+static inline kuid_t i_uid_into_mnt(struct user_namespace *mnt_userns,
-+				    const struct inode *inode)
-+{
-+	return kuid_into_mnt(mnt_userns, inode->i_uid);
-+}
-+
-+static inline kgid_t i_gid_into_mnt(struct user_namespace *mnt_userns,
-+				    const struct inode *inode)
-+{
-+	return kgid_into_mnt(mnt_userns, inode->i_gid);
-+}
-+
-+static inline kuid_t kuid_from_mnt(struct user_namespace *mnt_userns,
-+				   kuid_t kuid)
-+{
-+	return KUIDT_INIT(from_kuid(mnt_userns, kuid));
-+}
-+
-+static inline kgid_t kgid_from_mnt(struct user_namespace *mnt_userns,
-+				   kgid_t kgid)
-+{
-+	return KGIDT_INIT(from_kgid(mnt_userns, kgid));
-+}
-+
-+static inline kuid_t fsuid_into_mnt(struct user_namespace *mnt_userns)
-+{
-+	return kuid_from_mnt(mnt_userns, current_fsuid());
-+}
-+
-+static inline kgid_t fsgid_into_mnt(struct user_namespace *mnt_userns)
-+{
-+	return kgid_from_mnt(mnt_userns, current_fsgid());
-+}
-+
- extern struct timespec64 current_time(struct inode *inode);
+ /**
+@@ -499,11 +501,13 @@ bool privileged_wrt_inode_uidgid(struct user_namespace *ns, const struct inode *
+  * its own user namespace and that the given inode's uid and gid are
+  * mapped into the current user namespace.
+  */
+-bool capable_wrt_inode_uidgid(const struct inode *inode, int cap)
++bool capable_wrt_inode_uidgid(struct user_namespace *mnt_userns,
++			      const struct inode *inode, int cap)
+ {
+ 	struct user_namespace *ns = current_user_ns();
  
- /*
+-	return ns_capable(ns, cap) && privileged_wrt_inode_uidgid(ns, inode);
++	return ns_capable(ns, cap) &&
++	       privileged_wrt_inode_uidgid(ns, mnt_userns, inode);
+ }
+ EXPORT_SYMBOL(capable_wrt_inode_uidgid);
+ 
+diff --git a/security/commoncap.c b/security/commoncap.c
+index bacc1111d871..88ee345f7bfa 100644
+--- a/security/commoncap.c
++++ b/security/commoncap.c
+@@ -489,7 +489,7 @@ int cap_convert_nscap(struct dentry *dentry, const void **ivalue, size_t size)
+ 		return -EINVAL;
+ 	if (!validheader(size, cap))
+ 		return -EINVAL;
+-	if (!capable_wrt_inode_uidgid(inode, CAP_SETFCAP))
++	if (!capable_wrt_inode_uidgid(&init_user_ns, inode, CAP_SETFCAP))
+ 		return -EPERM;
+ 	if (size == XATTR_CAPS_SZ_2)
+ 		if (ns_capable(inode->i_sb->s_user_ns, CAP_SETFCAP))
+@@ -956,7 +956,8 @@ int cap_inode_removexattr(struct dentry *dentry, const char *name)
+ 		struct inode *inode = d_backing_inode(dentry);
+ 		if (!inode)
+ 			return -EINVAL;
+-		if (!capable_wrt_inode_uidgid(inode, CAP_SETFCAP))
++		if (!capable_wrt_inode_uidgid(&init_user_ns, inode,
++					      CAP_SETFCAP))
+ 			return -EPERM;
+ 		return 0;
+ 	}
 -- 
 2.30.0
 
