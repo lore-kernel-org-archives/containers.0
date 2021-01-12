@@ -5,74 +5,75 @@ X-Spam-Level:
 X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 441FEC43603
-	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 22:03:55 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4519FC433DB
+	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 22:03:56 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id CF86F221F5
-	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 22:03:54 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org CF86F221F5
+	by mail.kernel.org (Postfix) with ESMTPS id CAD55221F5
+	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 22:03:55 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org CAD55221F5
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 5DCE320494;
-	Tue, 12 Jan 2021 22:03:54 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 7716F84AC4;
+	Tue, 12 Jan 2021 22:03:55 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id GH+qjucLLNte; Tue, 12 Jan 2021 22:03:53 +0000 (UTC)
+	with ESMTP id FFB0s51GG1tI; Tue, 12 Jan 2021 22:03:53 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 24C5E20469;
+	by whitealder.osuosl.org (Postfix) with ESMTP id 392E2847AB;
 	Tue, 12 Jan 2021 22:03:53 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 0D9A3C013A;
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 2610BC1E6F;
 	Tue, 12 Jan 2021 22:03:53 +0000 (UTC)
 Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id DE181C013A
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 6D9D2C013A
  for <containers@lists.linux-foundation.org>;
- Tue, 12 Jan 2021 22:03:51 +0000 (UTC)
+ Tue, 12 Jan 2021 22:03:52 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id B173386727
+ by hemlock.osuosl.org (Postfix) with ESMTP id 4622986727
  for <containers@lists.linux-foundation.org>;
- Tue, 12 Jan 2021 22:03:51 +0000 (UTC)
+ Tue, 12 Jan 2021 22:03:52 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id b4TVxkNrHxOC
+ with ESMTP id EshdD02-+qHz
  for <containers@lists.linux-foundation.org>;
- Tue, 12 Jan 2021 22:03:50 +0000 (UTC)
+ Tue, 12 Jan 2021 22:03:49 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by hemlock.osuosl.org (Postfix) with ESMTPS id DB51486758
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 350BB86747
  for <containers@lists.linux-foundation.org>;
  Tue, 12 Jan 2021 22:03:49 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kzRka-0003bd-SB; Tue, 12 Jan 2021 22:02:52 +0000
+ id 1kzRkX-0003bd-At; Tue, 12 Jan 2021 22:02:49 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v5 04/42] fs: split out functions to hold writers
-Date: Tue, 12 Jan 2021 23:00:46 +0100
-Message-Id: <20210112220124.837960-5-christian.brauner@ubuntu.com>
+Subject: [PATCH v5 03/42] namespace: only take read lock in
+ do_reconfigure_mnt()
+Date: Tue, 12 Jan 2021 23:00:45 +0100
+Message-Id: <20210112220124.837960-4-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.30.0
 In-Reply-To: <20210112220124.837960-1-christian.brauner@ubuntu.com>
 References: <20210112220124.837960-1-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
-X-Patch-Hashes: v=1; h=sha256; i=tA4kasRGHqyT9lXmq5D7y93eprXCx71LRmCCdBBaY00=;
- m=nI7OMzVl1+0j2kjIaa7/usg9c4r2VoQ64Pjs5BnWA4U=;
- p=veHrsX8JHuzzEFPnrDDzG6jRQQ6VJXMdTLmV/Ias+FE=;
- g=4b5ff4be4775a50ca22b9c4a0244a22bea618b32
+X-Patch-Hashes: v=1; h=sha256; i=I7aJzwt0DpkJRJifO843fvdrR3C7hhJVdcz6GAHs5To=;
+ m=pFvA/sIxPovFOvL9em8QbU7FxiEiTevq05Ka5h3gk34=;
+ p=Jyijtz8vgV/Zoj912N+XZeHMn+BdnPGuVK4wO+FYPXU=;
+ g=4b867e119349e7998894974d9276cd68c2183406
 X-Patch-Sig: m=pgp; i=christian.brauner@ubuntu.com; s=0x0x91C61BC06578DCA2;
- b=iHUEABYKAB0WIQRAhzRXHqcMeLMyaSiRxhvAZXjcogUCX/4YtQAKCRCRxhvAZXjcok/NAQDZl7g
- IMc+hu3azYgiyrffuzboK1p/OvP+06fVleHk9qQD9H3HRtaTr8Y5KdnnZgV9UsILzObq0ONhA0f3m
- 5I6ZBQw=
+ b=iHUEABYKAB0WIQRAhzRXHqcMeLMyaSiRxhvAZXjcogUCX/4YtQAKCRCRxhvAZXjcouTiAQCeFtb
+ d2bqimNQm810IlOVm6iJKI9bI8AWk3/b4Y2T1owD/b5lYIXjCBtWOwj9pOhdfES1jFk0/YBKnP+Ap
+ kaoLxgM=
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>,
  James Bottomley <James.Bottomley@hansenpartnership.com>,
@@ -111,11 +112,36 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-When a mount is marked read-only we set MNT_WRITE_HOLD on it if there
-aren't currently any active writers. Split this logic out into simple
-helpers that we can use in follow-up patches.
+do_reconfigure_mnt() used to take the down_write(&sb->s_umount) lock
+which seems unnecessary since we're not changing the superblock. We're
+only checking whether it is already read-only. Setting other mount
+attributes is protected by lock_mount_hash() afaict and not by s_umount.
 
-Suggested-by: Christoph Hellwig <hch@lst.de>
+So I think the history of down_write(&sb->s_umount) lock being taken
+when setting mount attributes dates back to the introduction of
+MNT_READONLY in [2]. Afaict, this introduced the concept of having
+read-only mounts in contrast to just having a read-only superblock. When
+it got introduced it was simply plumbed into do_remount() which already
+took down_write(&sb->s_umount) because it was only used to actually
+change the superblock before [2]. Afaict, it would've already been
+possible back then to only use down_read(&sb->s_umount) for MS_BIND |
+MS_REMOUNT since actual mount options were protected by the vfsmount
+lock already. But that would've meant special casing the locking for
+MS_BIND | MS_REMOUNT in do_remount() which people might not have
+considered worth it.
+Then in [1] MS_BIND | MS_REMOUNT mount option changes were split out of
+do_remount() into do_reconfigure_mnt() but the down_write(&sb->s_umount)
+lock was simply copied over.
+Now that we have this be a separate helper only take the
+down_read(&sb->s_umount) lock since we're only interested in checking
+whether the super block is currently read-only and blocking any writers
+from changing it. Essentially, checking that the super block is
+read-only has the advantage that we can avoid having to go into the
+slowpath and through MNT_WRITE_HOLD and can simply set the read-only
+flag on the mount in set_mount_attributes().
+
+[1]: commit 43f5e655eff7 ("vfs: Separate changing mount flags full remount")
+[2]: commit 2e4b7fcd9260 ("[PATCH] r/o bind mounts: honor mount writer counts at remount")
 Cc: David Howells <dhowells@redhat.com>
 Cc: Al Viro <viro@zeniv.linux.org.uk>
 Cc: linux-fsdevel@vger.kernel.org
@@ -123,68 +149,54 @@ Reviewed-by: Christoph Hellwig <hch@lst.de>
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
 /* v2 */
-patch not present
+unchanged
 
 /* v3 */
-patch not present
+unchanged
 
 /* v4 */
-patch introduced
+unchanged
 
 /* v5 */
 base-commit: 7c53f6b671f4aba70ff15e1b05148b10d58c2837
 ---
- fs/namespace.c | 24 ++++++++++++++++++------
- 1 file changed, 18 insertions(+), 6 deletions(-)
+ fs/namespace.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/fs/namespace.c b/fs/namespace.c
-index 5177bf6d810e..4aab396e5f21 100644
+index 8cb2c132525a..5177bf6d810e 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -469,10 +469,8 @@ void mnt_drop_write_file(struct file *file)
+@@ -2515,10 +2515,6 @@ static int change_mount_ro_state(struct mount *mnt, unsigned int mnt_flags)
+ 	return 0;
  }
- EXPORT_SYMBOL(mnt_drop_write_file);
  
--static int mnt_make_readonly(struct mount *mnt)
-+static inline int mnt_hold_writers(struct mount *mnt)
+-/*
+- * Update the user-settable attributes on a mount.  The caller must hold
+- * sb->s_umount for writing.
+- */
+ static void set_mount_attributes(struct mount *mnt, unsigned int mnt_flags)
  {
--	int ret = 0;
--
- 	mnt->mnt.mnt_flags |= MNT_WRITE_HOLD;
- 	/*
- 	 * After storing MNT_WRITE_HOLD, we'll read the counters. This store
-@@ -497,15 +495,29 @@ static int mnt_make_readonly(struct mount *mnt)
- 	 * we're counting up here.
- 	 */
- 	if (mnt_get_writers(mnt) > 0)
--		ret = -EBUSY;
--	else
--		mnt->mnt.mnt_flags |= MNT_READONLY;
-+		return -EBUSY;
-+
-+	return 0;
-+}
-+
-+static inline void mnt_unhold_writers(struct mount *mnt)
-+{
- 	/*
- 	 * MNT_READONLY must become visible before ~MNT_WRITE_HOLD, so writers
- 	 * that become unheld will see MNT_READONLY.
- 	 */
- 	smp_wmb();
- 	mnt->mnt.mnt_flags &= ~MNT_WRITE_HOLD;
-+}
-+
-+static int mnt_make_readonly(struct mount *mnt)
-+{
-+	int ret;
-+
-+	ret = mnt_hold_writers(mnt);
-+	if (!ret)
-+		mnt->mnt.mnt_flags |= MNT_READONLY;
-+	mnt_unhold_writers(mnt);
- 	return ret;
- }
+ 	mnt_flags |= mnt->mnt.mnt_flags & ~MNT_USER_SETTABLE_MASK;
+@@ -2568,13 +2564,17 @@ static int do_reconfigure_mnt(struct path *path, unsigned int mnt_flags)
+ 	if (!can_change_locked_flags(mnt, mnt_flags))
+ 		return -EPERM;
+ 
+-	down_write(&sb->s_umount);
++	/*
++	 * We're only checking whether the superblock is read-only not changing
++	 * it, so only take down_read(&sb->s_umount).
++	 */
++	down_read(&sb->s_umount);
+ 	lock_mount_hash();
+ 	ret = change_mount_ro_state(mnt, mnt_flags);
+ 	if (ret == 0)
+ 		set_mount_attributes(mnt, mnt_flags);
+ 	unlock_mount_hash();
+-	up_write(&sb->s_umount);
++	up_read(&sb->s_umount);
+ 
+ 	mnt_warn_timestamp_expiry(path, &mnt->mnt);
  
 -- 
 2.30.0
