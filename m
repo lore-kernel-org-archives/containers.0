@@ -5,74 +5,74 @@ X-Spam-Level:
 X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 09DD8C433DB
-	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 22:16:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 74FB4C433DB
+	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 22:16:43 +0000 (UTC)
 Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id AC02923122
-	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 22:16:25 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AC02923122
+	by mail.kernel.org (Postfix) with ESMTPS id 166EF23122
+	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 22:16:43 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 166EF23122
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 8A08D8560F;
-	Tue, 12 Jan 2021 22:16:25 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id E689885620;
+	Tue, 12 Jan 2021 22:16:42 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id yCHza6uVDakQ; Tue, 12 Jan 2021 22:16:24 +0000 (UTC)
+	with ESMTP id 03mpl8CbuKTP; Tue, 12 Jan 2021 22:16:42 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 3431E85620;
-	Tue, 12 Jan 2021 22:16:24 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 52B458560F;
+	Tue, 12 Jan 2021 22:16:42 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 22B17C0893;
-	Tue, 12 Jan 2021 22:16:24 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 48859C0893;
+	Tue, 12 Jan 2021 22:16:42 +0000 (UTC)
 Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 43865C013A
+ by lists.linuxfoundation.org (Postfix) with ESMTP id E9F37C013A
  for <containers@lists.linux-foundation.org>;
- Tue, 12 Jan 2021 22:16:23 +0000 (UTC)
+ Tue, 12 Jan 2021 22:16:41 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id 31DCE860EF
+ by fraxinus.osuosl.org (Postfix) with ESMTP id E5B7B847C4
  for <containers@lists.linux-foundation.org>;
- Tue, 12 Jan 2021 22:16:23 +0000 (UTC)
+ Tue, 12 Jan 2021 22:16:41 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id MlJzgu-4B9aF
+ with ESMTP id gIN-8ceC7OG6
  for <containers@lists.linux-foundation.org>;
- Tue, 12 Jan 2021 22:16:22 +0000 (UTC)
+ Tue, 12 Jan 2021 22:16:41 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id 610E9847C4
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id 569C9845C1
  for <containers@lists.linux-foundation.org>;
- Tue, 12 Jan 2021 22:16:22 +0000 (UTC)
+ Tue, 12 Jan 2021 22:16:41 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kzRlg-0003bd-7c; Tue, 12 Jan 2021 22:04:00 +0000
+ id 1kzRlY-0003bd-G1; Tue, 12 Jan 2021 22:03:52 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v5 28/42] init: handle idmapped mounts
-Date: Tue, 12 Jan 2021 23:01:10 +0100
-Message-Id: <20210112220124.837960-29-christian.brauner@ubuntu.com>
+Subject: [PATCH v5 25/42] utimes: handle idmapped mounts
+Date: Tue, 12 Jan 2021 23:01:07 +0100
+Message-Id: <20210112220124.837960-26-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.30.0
 In-Reply-To: <20210112220124.837960-1-christian.brauner@ubuntu.com>
 References: <20210112220124.837960-1-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
-X-Patch-Hashes: v=1; h=sha256; i=K1Mmb+2iBnpojBmIU4SJaafXPX8O2CFx1CDw+utpuOU=;
- m=xvNrFhQ1y2dLwavhTa/L5ycYJlSyn9UahBsh8fnhzMg=;
- p=T84ylcJgm7jErZy8A3A4JEJzeX2Sy/VPnkeSnFEr7Mg=;
- g=463fa33c5c532e8c7af638fb27b57db52004da88
+X-Patch-Hashes: v=1; h=sha256; i=44kXqCfVtOQgFKzT2JXoGuiPGIT5dbn7iuHoFJrc8vE=;
+ m=LQM4RPnFwSvNIhIHrHd9GN8FM7jR9LNFsdtd0ODUvQ8=;
+ p=A0P/zt6uEDr1w25jXa/ofIfpcRMsG1sIVfCazVcwo4k=;
+ g=2aba886660d69ecff7d291cf9012d148b5aa24f8
 X-Patch-Sig: m=pgp; i=christian.brauner@ubuntu.com; s=0x0x91C61BC06578DCA2;
- b=iHUEABYKAB0WIQRAhzRXHqcMeLMyaSiRxhvAZXjcogUCX/4YuAAKCRCRxhvAZXjcop8AAQCXD3D
- 4M62CMgvA6omdkdSEWaz7FL2OLzNdBtMvfUobNgEA/4AMHFZRBaM4sgnQsdBwRx8Ot748zQ6VHemO
- ok8YmwI=
+ b=iHUEABYKAB0WIQRAhzRXHqcMeLMyaSiRxhvAZXjcogUCX/4YtwAKCRCRxhvAZXjcokeYAP41/hz
+ Zdc7sN+BOsTPZ8oQWCdYygCC6EH0EZzAextqIPgEApiED2cvRTrFjO+PfAcWe2SMhJM+bAsJDjwot
+ Iac47gg=
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>,
  James Bottomley <James.Bottomley@hansenpartnership.com>,
@@ -111,9 +111,10 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Enable the init helpers to handle idmapped mounts by passing down the
-mount's user namespace. If the initial user namespace is passed nothing
-changes so non-idmapped mounts will see identical behavior as before.
+Enable the vfs_utimes() helper to handle idmapped mounts by passing down
+the mount's user namespace. If the initial user namespace is passed
+nothing changes so non-idmapped mounts will see identical behavior as
+before.
 
 Cc: Christoph Hellwig <hch@lst.de>
 Cc: David Howells <dhowells@redhat.com>
@@ -122,109 +123,45 @@ Cc: linux-fsdevel@vger.kernel.org
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
 /* v2 */
-patch introduced
+unchanged
 
 /* v3 */
 unchanged
 
 /* v4 */
-unchanged
+- Serge Hallyn <serge@hallyn.com>:
+  - Use "mnt_userns" to refer to a vfsmount's userns everywhere to make
+    terminology consistent.
 
 /* v5 */
 base-commit: 7c53f6b671f4aba70ff15e1b05148b10d58c2837
 ---
- fs/init.c | 24 ++++++++++++++----------
- 1 file changed, 14 insertions(+), 10 deletions(-)
+ fs/utimes.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/fs/init.c b/fs/init.c
-index 06d8e52ce18e..1db2b392e4e6 100644
---- a/fs/init.c
-+++ b/fs/init.c
-@@ -49,7 +49,7 @@ int __init init_chdir(const char *filename)
- 	error = kern_path(filename, LOOKUP_FOLLOW | LOOKUP_DIRECTORY, &path);
- 	if (error)
- 		return error;
--	error = inode_permission(&init_user_ns, path.dentry->d_inode,
-+	error = inode_permission(mnt_user_ns(path.mnt), path.dentry->d_inode,
- 				 MAY_EXEC | MAY_CHDIR);
- 	if (!error)
- 		set_fs_pwd(current->fs, &path);
-@@ -65,7 +65,7 @@ int __init init_chroot(const char *filename)
- 	error = kern_path(filename, LOOKUP_FOLLOW | LOOKUP_DIRECTORY, &path);
- 	if (error)
- 		return error;
--	error = inode_permission(&init_user_ns, path.dentry->d_inode,
-+	error = inode_permission(mnt_user_ns(path.mnt), path.dentry->d_inode,
- 				 MAY_EXEC | MAY_CHDIR);
- 	if (error)
- 		goto dput_and_out;
-@@ -120,7 +120,7 @@ int __init init_eaccess(const char *filename)
- 	error = kern_path(filename, LOOKUP_FOLLOW, &path);
- 	if (error)
- 		return error;
--	error = inode_permission(&init_user_ns, d_inode(path.dentry),
-+	error = inode_permission(mnt_user_ns(path.mnt), d_inode(path.dentry),
- 				 MAY_ACCESS);
- 	path_put(&path);
- 	return error;
-@@ -160,8 +160,8 @@ int __init init_mknod(const char *filename, umode_t mode, unsigned int dev)
- 		mode &= ~current_umask();
- 	error = security_path_mknod(&path, dentry, mode, dev);
- 	if (!error)
--		error = vfs_mknod(&init_user_ns, path.dentry->d_inode, dentry,
--				  mode, new_decode_dev(dev));
-+		error = vfs_mknod(mnt_user_ns(path.mnt), path.dentry->d_inode,
-+				  dentry, mode, new_decode_dev(dev));
- 	done_path_create(&path, dentry);
- 	return error;
- }
-@@ -170,6 +170,7 @@ int __init init_link(const char *oldname, const char *newname)
- {
- 	struct dentry *new_dentry;
- 	struct path old_path, new_path;
+diff --git a/fs/utimes.c b/fs/utimes.c
+index 1a4130bee157..33fa753bab3a 100644
+--- a/fs/utimes.c
++++ b/fs/utimes.c
+@@ -22,6 +22,7 @@ int vfs_utimes(const struct path *path, struct timespec64 *times)
+ 	struct iattr newattrs;
+ 	struct inode *inode = path->dentry->d_inode;
+ 	struct inode *delegated_inode = NULL;
 +	struct user_namespace *mnt_userns;
- 	int error;
  
- 	error = kern_path(oldname, 0, &old_path);
-@@ -184,14 +185,15 @@ int __init init_link(const char *oldname, const char *newname)
- 	error = -EXDEV;
- 	if (old_path.mnt != new_path.mnt)
- 		goto out_dput;
--	error = may_linkat(&init_user_ns, &old_path);
-+	mnt_userns = mnt_user_ns(new_path.mnt);
-+	error = may_linkat(mnt_userns, &old_path);
- 	if (unlikely(error))
- 		goto out_dput;
- 	error = security_path_link(old_path.dentry, &new_path, new_dentry);
- 	if (error)
- 		goto out_dput;
--	error = vfs_link(old_path.dentry, &init_user_ns,
--			 new_path.dentry->d_inode, new_dentry, NULL);
-+	error = vfs_link(old_path.dentry, mnt_userns, new_path.dentry->d_inode,
-+			 new_dentry, NULL);
- out_dput:
- 	done_path_create(&new_path, new_dentry);
- out:
-@@ -210,7 +212,8 @@ int __init init_symlink(const char *oldname, const char *newname)
- 		return PTR_ERR(dentry);
- 	error = security_path_symlink(&path, dentry, oldname);
- 	if (!error)
--		error = vfs_symlink(&init_user_ns, path.dentry->d_inode, dentry, oldname);
-+		error = vfs_symlink(mnt_user_ns(path.mnt), path.dentry->d_inode,
-+				    dentry, oldname);
- 	done_path_create(&path, dentry);
- 	return error;
- }
-@@ -233,7 +236,8 @@ int __init init_mkdir(const char *pathname, umode_t mode)
- 		mode &= ~current_umask();
- 	error = security_path_mkdir(&path, dentry, mode);
- 	if (!error)
--		error = vfs_mkdir(&init_user_ns, path.dentry->d_inode, dentry, mode);
-+		error = vfs_mkdir(mnt_user_ns(path.mnt), path.dentry->d_inode,
-+				  dentry, mode);
- 	done_path_create(&path, dentry);
- 	return error;
- }
+ 	if (times) {
+ 		if (!nsec_valid(times[0].tv_nsec) ||
+@@ -61,8 +62,9 @@ int vfs_utimes(const struct path *path, struct timespec64 *times)
+ 		newattrs.ia_valid |= ATTR_TOUCH;
+ 	}
+ retry_deleg:
++	mnt_userns = mnt_user_ns(path->mnt);
+ 	inode_lock(inode);
+-	error = notify_change(&init_user_ns, path->dentry, &newattrs, &delegated_inode);
++	error = notify_change(mnt_userns, path->dentry, &newattrs, &delegated_inode);
+ 	inode_unlock(inode);
+ 	if (delegated_inode) {
+ 		error = break_deleg_wait(&delegated_inode);
 -- 
 2.30.0
 
