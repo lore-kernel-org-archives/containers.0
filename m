@@ -7,72 +7,72 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1053EC4160E
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 32FD7C0755A
 	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 22:04:57 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id BC7A42310A
+	by mail.kernel.org (Postfix) with ESMTPS id BF8E523127
 	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 22:04:56 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BC7A42310A
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BF8E523127
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 316DE8517C;
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 68DAA8614E;
 	Tue, 12 Jan 2021 22:04:56 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id t90XKnYscxCz; Tue, 12 Jan 2021 22:04:52 +0000 (UTC)
+	with ESMTP id U5JuhYs4dobl; Tue, 12 Jan 2021 22:04:54 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 5F74B84FB1;
-	Tue, 12 Jan 2021 22:04:52 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 98E4485F8E;
+	Tue, 12 Jan 2021 22:04:54 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 49CE8C0893;
-	Tue, 12 Jan 2021 22:04:52 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id E5541C013A
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 82BA6C0FA8;
+	Tue, 12 Jan 2021 22:04:54 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 7F737C013A
+ for <containers@lists.linux-foundation.org>;
+ Tue, 12 Jan 2021 22:04:53 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by whitealder.osuosl.org (Postfix) with ESMTP id 6982E85218
+ for <containers@lists.linux-foundation.org>;
+ Tue, 12 Jan 2021 22:04:53 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from whitealder.osuosl.org ([127.0.0.1])
+ by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id vqhE-4pAKWBv
  for <containers@lists.linux-foundation.org>;
  Tue, 12 Jan 2021 22:04:50 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id DB9192049E
- for <containers@lists.linux-foundation.org>;
- Tue, 12 Jan 2021 22:04:49 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
- by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id xbY8j7bUdzni
- for <containers@lists.linux-foundation.org>;
- Tue, 12 Jan 2021 22:04:43 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by silver.osuosl.org (Postfix) with ESMTPS id 4E44C20493
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 15E4185230
  for <containers@lists.linux-foundation.org>;
- Tue, 12 Jan 2021 22:04:43 +0000 (UTC)
+ Tue, 12 Jan 2021 22:04:50 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1kzRlF-0003bd-6s; Tue, 12 Jan 2021 22:03:33 +0000
+ id 1kzRkf-0003bd-Jk; Tue, 12 Jan 2021 22:02:57 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
  Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
-Subject: [PATCH v5 18/42] stat: handle idmapped mounts
-Date: Tue, 12 Jan 2021 23:01:00 +0100
-Message-Id: <20210112220124.837960-19-christian.brauner@ubuntu.com>
+Subject: [PATCH v5 06/42] fs: add mount_setattr()
+Date: Tue, 12 Jan 2021 23:00:48 +0100
+Message-Id: <20210112220124.837960-7-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.30.0
 In-Reply-To: <20210112220124.837960-1-christian.brauner@ubuntu.com>
 References: <20210112220124.837960-1-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
-X-Patch-Hashes: v=1; h=sha256; i=vGMOMdphqJGOw3v8kzO0vhWTe1dmzIo91EWuV9yn2Jo=;
- m=MJabVmVl+H92f3H8+lvbTsa8/CUtmnjsmQvPnR8UzSE=;
- p=pwWopKlw6jZxxlFNGkwQTsWRosKgE9IOYE/I98KCZtU=;
- g=cf117978e07b9cbf4d455e0264359ef7a9c3971d
+X-Patch-Hashes: v=1; h=sha256; i=W+eEJHNrlkV/b8gMOjwmCnJaxH/2Jd0g2RrCW3G+aTQ=;
+ m=QcgL0cjyvfcZKIrxSMNhdjdTnW09uylRO383w6MgQlU=;
+ p=rflNSi8KbXDs975d5YeoJSwOhSr850AR5uEfCK3Tvlg=;
+ g=5d732841496a08de53bce1e1adfbb590e89bff9c
 X-Patch-Sig: m=pgp; i=christian.brauner@ubuntu.com; s=0x0x91C61BC06578DCA2;
- b=iHUEABYKAB0WIQRAhzRXHqcMeLMyaSiRxhvAZXjcogUCX/4YtgAKCRCRxhvAZXjcosR7AQDqhtZ
- IThWFLYGNpH94GbU9WImkmT5qYQFUmoMpcVrbxQEAj8MJeehY+aCzUYln+eU3Pb6oDG4vOu7998np
- fRDy4AA=
+ b=iHUEABYKAB0WIQRAhzRXHqcMeLMyaSiRxhvAZXjcogUCX/4YtQAKCRCRxhvAZXjcotz9AQDx8YG
+ iWatQjz46otACqmQQDc/+1yojdOoYx68RtxCSHAEAnlAeisLQCvKCYItrE4BpjT557n68NgdT74Ly
+ +RhgBww=
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>,
  James Bottomley <James.Bottomley@hansenpartnership.com>,
@@ -111,619 +111,665 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-The generic_fillattr() helper fills in the basic attributes associated
-with an inode. Enable it to handle idmapped mounts. If the inode is
-accessed through an idmapped mount we need to map it according to the
-mount's user namespace before we store the uid and gid.
-If the initial user namespace is passed nothing changes so non-idmapped
-mounts will see identical behavior as before.
+This implements the missing mount_setattr() syscall. While the new mount
+api allows to change the properties of a superblock there is currently
+no way to change the properties of a mount or a mount tree using file
+descriptors which the new mount api is based on. In addition the old
+mount api has the restriction that mount options cannot be applied
+recursively. This hasn't changed since changing mount options on a
+per-mount basis was implemented in [1] and has been a frequent request
+not just for convenience but also for security reasons. The legacy
+mount syscall is unable to accommodate this behavior without introducing
+a whole new set of flags because MS_REC | MS_REMOUNT | MS_BIND |
+MS_RDONLY | MS_NOEXEC | [...] only apply the mount option to the topmost
+mount. Changing MS_REC to apply to the whole mount tree would mean
+introducing a significant uapi change and would likely cause significant
+regressions.
 
-Cc: Christoph Hellwig <hch@lst.de>
+The new mount_setattr() syscall allows to recursively clear and set
+mount options in one shot. Multiple calls to change mount options
+requesting the same changes are idempotent:
+
+int mount_setattr(int dfd, const char *path, unsigned flags,
+                  struct mount_attr *uattr, size_t usize);
+
+Flags to modify path resolution behavior are specified in the @flags
+argument. Currently, AT_EMPTY_PATH, AT_RECURSIVE, AT_SYMLINK_NOFOLLOW,
+and AT_NO_AUTOMOUNT are supported. If useful, additional lookup flags to
+restrict path resolution as introduced with openat2() might be supported
+in the future.
+
+The mount_setattr() syscall can be expected to grow over time and is
+designed with extensibility in mind. It follows the extensible syscall
+pattern we have used with other syscalls such as openat2(), clone3(),
+sched_{set,get}attr(), and others.
+The set of mount options is passed in the uapi struct mount_attr which
+currently has the following layout:
+
+struct mount_attr {
+	__u64 attr_set;
+	__u64 attr_clr;
+	__u64 propagation;
+};
+
+The @attr_set and @attr_clr members are used to clear and set mount
+options. This way a user can e.g. request that a set of flags is to be
+raised such as turning mounts readonly by raising MOUNT_ATTR_RDONLY in
+@attr_set while at the same time requesting that another set of flags is
+to be lowered such as removing noexec from a mount tree by specifying
+MOUNT_ATTR_NOEXEC in @attr_clr.
+
+Note, since the MOUNT_ATTR_<atime> values are an enum starting from 0,
+not a bitmap, users wanting to transition to a different atime setting
+cannot simply specify the atime setting in @attr_set, but must also
+specify MOUNT_ATTR__ATIME in the @attr_clr field. So we ensure that
+MOUNT_ATTR__ATIME can't be partially set in @attr_clr and that @attr_set
+can't have any atime bits set if MOUNT_ATTR__ATIME isn't set in
+@attr_clr.
+
+The @propagation field lets callers specify the propagation type of a
+mount tree. Propagation is a single property that has four different
+settings and as such is not really a flag argument but an enum.
+Specifically, it would be unclear what setting and clearing propagation
+settings in combination would amount to. The legacy mount() syscall thus
+forbids the combination of multiple propagation settings too. The goal
+is to keep the semantics of mount propagation somewhat simple as they
+are overly complex as it is.
+
+[1]: commit 2e4b7fcd9260 ("[PATCH] r/o bind mounts: honor mount writer counts at remount")
 Cc: David Howells <dhowells@redhat.com>
+Cc: Aleksa Sarai <cyphar@cyphar.com>
 Cc: Al Viro <viro@zeniv.linux.org.uk>
 Cc: linux-fsdevel@vger.kernel.org
+Cc: linux-api@vger.kernel.org
+Reviewed-by: Christoph Hellwig <hch@lst.de>
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
 /* v2 */
 - Christoph Hellwig <hch@lst.de>:
-  - Don't pollute the vfs with additional helpers simply extend the existing
-    helpers with an additional argument and switch all callers.
+  - Split into multiple helpers.
 
 /* v3 */
-unchanged
+- kernel test robot <lkp@intel.com>:
+  - Fix unknown __u64 type by including linux/types.h in linux/mount.h.
 
 /* v4 */
-unchanged
+- Christoph Hellwig <hch@lst.de>:
+  - Make sure lines wrap at 80 chars.
+  - Move struct mount_kattr out of the internal.h header and completely
+    into fs/namespace.c as it's not used outside of that file.
+  - Add missing space between ( and { when initializing mount_kattr.
+  - Split flag validation and calculation into separate preparatory
+    patch.
+  - Simplify flag validation in build_mount_kattr() to avoid
+    upper_32_bits() and lower_32_bits() calls. This will also lead to
+    better code generation.
+  - Remove new propagation enums and simply use the old flags.
+  - Strictly adhere to 80 char limit.
+  - Restructure the time setting code in build_mount_kattr().
 
 /* v5 */
 base-commit: 7c53f6b671f4aba70ff15e1b05148b10d58c2837
----
- fs/9p/vfs_inode.c      |  4 ++--
- fs/9p/vfs_inode_dotl.c |  4 ++--
- fs/afs/inode.c         |  2 +-
- fs/btrfs/inode.c       |  2 +-
- fs/ceph/inode.c        |  2 +-
- fs/cifs/inode.c        |  2 +-
- fs/coda/inode.c        |  2 +-
- fs/ecryptfs/inode.c    |  4 ++--
- fs/erofs/inode.c       |  2 +-
- fs/exfat/file.c        |  2 +-
- fs/ext2/inode.c        |  2 +-
- fs/ext4/inode.c        |  2 +-
- fs/f2fs/file.c         |  2 +-
- fs/fat/file.c          |  2 +-
- fs/fuse/dir.c          |  2 +-
- fs/gfs2/inode.c        |  2 +-
- fs/hfsplus/inode.c     |  2 +-
- fs/kernfs/inode.c      |  2 +-
- fs/libfs.c             |  4 ++--
- fs/minix/inode.c       |  2 +-
- fs/nfs/inode.c         |  2 +-
- fs/nfs/namespace.c     |  2 +-
- fs/ocfs2/file.c        |  2 +-
- fs/orangefs/inode.c    |  2 +-
- fs/proc/base.c         |  4 ++--
- fs/proc/generic.c      |  2 +-
- fs/proc/proc_net.c     |  2 +-
- fs/proc/proc_sysctl.c  |  2 +-
- fs/proc/root.c         |  2 +-
- fs/stat.c              | 20 ++++++++++++++------
- fs/sysv/itree.c        |  2 +-
- fs/ubifs/dir.c         |  2 +-
- fs/udf/symlink.c       |  2 +-
- fs/vboxsf/utils.c      |  2 +-
- include/linux/fs.h     |  2 +-
- mm/shmem.c             |  2 +-
- 36 files changed, 54 insertions(+), 46 deletions(-)
 
-diff --git a/fs/9p/vfs_inode.c b/fs/9p/vfs_inode.c
-index 9c3ff6e9ab82..c21b146c8d91 100644
---- a/fs/9p/vfs_inode.c
-+++ b/fs/9p/vfs_inode.c
-@@ -1027,7 +1027,7 @@ v9fs_vfs_getattr(const struct path *path, struct kstat *stat,
- 	p9_debug(P9_DEBUG_VFS, "dentry: %p\n", dentry);
- 	v9ses = v9fs_dentry2v9ses(dentry);
- 	if (v9ses->cache == CACHE_LOOSE || v9ses->cache == CACHE_FSCACHE) {
--		generic_fillattr(d_inode(dentry), stat);
-+		generic_fillattr(&init_user_ns, d_inode(dentry), stat);
- 		return 0;
- 	}
- 	fid = v9fs_fid_lookup(dentry);
-@@ -1040,7 +1040,7 @@ v9fs_vfs_getattr(const struct path *path, struct kstat *stat,
- 		return PTR_ERR(st);
+- Christoph Hellwig <hch@lst.de>:
+  - Simplify mount propagation flag checking.
+  - Wrap overly long line.
+---
+ arch/alpha/kernel/syscalls/syscall.tbl      |   1 +
+ arch/arm/tools/syscall.tbl                  |   1 +
+ arch/arm64/include/asm/unistd32.h           |   2 +
+ arch/ia64/kernel/syscalls/syscall.tbl       |   1 +
+ arch/m68k/kernel/syscalls/syscall.tbl       |   1 +
+ arch/microblaze/kernel/syscalls/syscall.tbl |   1 +
+ arch/mips/kernel/syscalls/syscall_n32.tbl   |   1 +
+ arch/mips/kernel/syscalls/syscall_n64.tbl   |   1 +
+ arch/mips/kernel/syscalls/syscall_o32.tbl   |   1 +
+ arch/parisc/kernel/syscalls/syscall.tbl     |   1 +
+ arch/powerpc/kernel/syscalls/syscall.tbl    |   1 +
+ arch/s390/kernel/syscalls/syscall.tbl       |   1 +
+ arch/sh/kernel/syscalls/syscall.tbl         |   1 +
+ arch/sparc/kernel/syscalls/syscall.tbl      |   1 +
+ arch/x86/entry/syscalls/syscall_32.tbl      |   1 +
+ arch/x86/entry/syscalls/syscall_64.tbl      |   1 +
+ arch/xtensa/kernel/syscalls/syscall.tbl     |   1 +
+ fs/namespace.c                              | 260 ++++++++++++++++++++
+ include/linux/syscalls.h                    |   4 +
+ include/uapi/asm-generic/unistd.h           |   4 +-
+ include/uapi/linux/mount.h                  |  14 ++
+ tools/include/uapi/asm-generic/unistd.h     |   4 +-
+ 22 files changed, 302 insertions(+), 2 deletions(-)
+
+diff --git a/arch/alpha/kernel/syscalls/syscall.tbl b/arch/alpha/kernel/syscalls/syscall.tbl
+index a6617067dbe6..02f0244e005c 100644
+--- a/arch/alpha/kernel/syscalls/syscall.tbl
++++ b/arch/alpha/kernel/syscalls/syscall.tbl
+@@ -481,3 +481,4 @@
+ 549	common	faccessat2			sys_faccessat2
+ 550	common	process_madvise			sys_process_madvise
+ 551	common	epoll_pwait2			sys_epoll_pwait2
++552	common	mount_setattr			sys_mount_setattr
+diff --git a/arch/arm/tools/syscall.tbl b/arch/arm/tools/syscall.tbl
+index 20e1170e2e0a..dcc1191291a2 100644
+--- a/arch/arm/tools/syscall.tbl
++++ b/arch/arm/tools/syscall.tbl
+@@ -455,3 +455,4 @@
+ 439	common	faccessat2			sys_faccessat2
+ 440	common	process_madvise			sys_process_madvise
+ 441	common	epoll_pwait2			sys_epoll_pwait2
++442	common	mount_setattr			sys_mount_setattr
+diff --git a/arch/arm64/include/asm/unistd32.h b/arch/arm64/include/asm/unistd32.h
+index cccfbbefbf95..3d874f624056 100644
+--- a/arch/arm64/include/asm/unistd32.h
++++ b/arch/arm64/include/asm/unistd32.h
+@@ -891,6 +891,8 @@ __SYSCALL(__NR_faccessat2, sys_faccessat2)
+ __SYSCALL(__NR_process_madvise, sys_process_madvise)
+ #define __NR_epoll_pwait2 441
+ __SYSCALL(__NR_epoll_pwait2, compat_sys_epoll_pwait2)
++#define __NR_mount_setattr 442
++__SYSCALL(__NR_mount_setattr, sys_mount_setattr)
  
- 	v9fs_stat2inode(st, d_inode(dentry), dentry->d_sb, 0);
--	generic_fillattr(d_inode(dentry), stat);
-+	generic_fillattr(&init_user_ns, d_inode(dentry), stat);
+ /*
+  * Please add new compat syscalls above this comment and update
+diff --git a/arch/ia64/kernel/syscalls/syscall.tbl b/arch/ia64/kernel/syscalls/syscall.tbl
+index bfc00f2bd437..d89231166e19 100644
+--- a/arch/ia64/kernel/syscalls/syscall.tbl
++++ b/arch/ia64/kernel/syscalls/syscall.tbl
+@@ -362,3 +362,4 @@
+ 439	common	faccessat2			sys_faccessat2
+ 440	common	process_madvise			sys_process_madvise
+ 441	common	epoll_pwait2			sys_epoll_pwait2
++442	common	mount_setattr			sys_mount_setattr
+diff --git a/arch/m68k/kernel/syscalls/syscall.tbl b/arch/m68k/kernel/syscalls/syscall.tbl
+index 7fe4e45c864c..72bde6707dd3 100644
+--- a/arch/m68k/kernel/syscalls/syscall.tbl
++++ b/arch/m68k/kernel/syscalls/syscall.tbl
+@@ -441,3 +441,4 @@
+ 439	common	faccessat2			sys_faccessat2
+ 440	common	process_madvise			sys_process_madvise
+ 441	common	epoll_pwait2			sys_epoll_pwait2
++442	common	mount_setattr			sys_mount_setattr
+diff --git a/arch/microblaze/kernel/syscalls/syscall.tbl b/arch/microblaze/kernel/syscalls/syscall.tbl
+index a522adf194ab..d603a5ec9338 100644
+--- a/arch/microblaze/kernel/syscalls/syscall.tbl
++++ b/arch/microblaze/kernel/syscalls/syscall.tbl
+@@ -447,3 +447,4 @@
+ 439	common	faccessat2			sys_faccessat2
+ 440	common	process_madvise			sys_process_madvise
+ 441	common	epoll_pwait2			sys_epoll_pwait2
++442	common	mount_setattr			sys_mount_setattr
+diff --git a/arch/mips/kernel/syscalls/syscall_n32.tbl b/arch/mips/kernel/syscalls/syscall_n32.tbl
+index 0f03ad223f33..8fd8c1790941 100644
+--- a/arch/mips/kernel/syscalls/syscall_n32.tbl
++++ b/arch/mips/kernel/syscalls/syscall_n32.tbl
+@@ -380,3 +380,4 @@
+ 439	n32	faccessat2			sys_faccessat2
+ 440	n32	process_madvise			sys_process_madvise
+ 441	n32	epoll_pwait2			compat_sys_epoll_pwait2
++442	n32	mount_setattr			sys_mount_setattr
+diff --git a/arch/mips/kernel/syscalls/syscall_n64.tbl b/arch/mips/kernel/syscalls/syscall_n64.tbl
+index 91649690b52f..169f21438065 100644
+--- a/arch/mips/kernel/syscalls/syscall_n64.tbl
++++ b/arch/mips/kernel/syscalls/syscall_n64.tbl
+@@ -356,3 +356,4 @@
+ 439	n64	faccessat2			sys_faccessat2
+ 440	n64	process_madvise			sys_process_madvise
+ 441	n64	epoll_pwait2			sys_epoll_pwait2
++442	n64	mount_setattr			sys_mount_setattr
+diff --git a/arch/mips/kernel/syscalls/syscall_o32.tbl b/arch/mips/kernel/syscalls/syscall_o32.tbl
+index 4bad0c40aed6..090d29ca80ff 100644
+--- a/arch/mips/kernel/syscalls/syscall_o32.tbl
++++ b/arch/mips/kernel/syscalls/syscall_o32.tbl
+@@ -429,3 +429,4 @@
+ 439	o32	faccessat2			sys_faccessat2
+ 440	o32	process_madvise			sys_process_madvise
+ 441	o32	epoll_pwait2			sys_epoll_pwait2		compat_sys_epoll_pwait2
++442	o32	mount_setattr			sys_mount_setattr
+diff --git a/arch/parisc/kernel/syscalls/syscall.tbl b/arch/parisc/kernel/syscalls/syscall.tbl
+index 6bcc31966b44..271a92519683 100644
+--- a/arch/parisc/kernel/syscalls/syscall.tbl
++++ b/arch/parisc/kernel/syscalls/syscall.tbl
+@@ -439,3 +439,4 @@
+ 439	common	faccessat2			sys_faccessat2
+ 440	common	process_madvise			sys_process_madvise
+ 441	common	epoll_pwait2			sys_epoll_pwait2		compat_sys_epoll_pwait2
++442	common	mount_setattr			sys_mount_setattr
+diff --git a/arch/powerpc/kernel/syscalls/syscall.tbl b/arch/powerpc/kernel/syscalls/syscall.tbl
+index f744eb5cba88..72e5aa67ab8a 100644
+--- a/arch/powerpc/kernel/syscalls/syscall.tbl
++++ b/arch/powerpc/kernel/syscalls/syscall.tbl
+@@ -531,3 +531,4 @@
+ 439	common	faccessat2			sys_faccessat2
+ 440	common	process_madvise			sys_process_madvise
+ 441	common	epoll_pwait2			sys_epoll_pwait2		compat_sys_epoll_pwait2
++442	common	mount_setattr			sys_mount_setattr
+diff --git a/arch/s390/kernel/syscalls/syscall.tbl b/arch/s390/kernel/syscalls/syscall.tbl
+index d443423495e5..3abef2144dac 100644
+--- a/arch/s390/kernel/syscalls/syscall.tbl
++++ b/arch/s390/kernel/syscalls/syscall.tbl
+@@ -444,3 +444,4 @@
+ 439  common	faccessat2		sys_faccessat2			sys_faccessat2
+ 440  common	process_madvise		sys_process_madvise		sys_process_madvise
+ 441  common	epoll_pwait2		sys_epoll_pwait2		compat_sys_epoll_pwait2
++442  common	mount_setattr		sys_mount_setattr		sys_mount_setattr
+diff --git a/arch/sh/kernel/syscalls/syscall.tbl b/arch/sh/kernel/syscalls/syscall.tbl
+index 9df40ac0ebc0..d08eebad6b7f 100644
+--- a/arch/sh/kernel/syscalls/syscall.tbl
++++ b/arch/sh/kernel/syscalls/syscall.tbl
+@@ -444,3 +444,4 @@
+ 439	common	faccessat2			sys_faccessat2
+ 440	common	process_madvise			sys_process_madvise
+ 441	common	epoll_pwait2			sys_epoll_pwait2
++442	common	mount_setattr			sys_mount_setattr
+diff --git a/arch/sparc/kernel/syscalls/syscall.tbl b/arch/sparc/kernel/syscalls/syscall.tbl
+index 40d8c7cd8298..84403a99039c 100644
+--- a/arch/sparc/kernel/syscalls/syscall.tbl
++++ b/arch/sparc/kernel/syscalls/syscall.tbl
+@@ -487,3 +487,4 @@
+ 439	common	faccessat2			sys_faccessat2
+ 440	common	process_madvise			sys_process_madvise
+ 441	common	epoll_pwait2			sys_epoll_pwait2		compat_sys_epoll_pwait2
++442	common	mount_setattr			sys_mount_setattr
+diff --git a/arch/x86/entry/syscalls/syscall_32.tbl b/arch/x86/entry/syscalls/syscall_32.tbl
+index 874aeacde2dd..a1c9f496fca6 100644
+--- a/arch/x86/entry/syscalls/syscall_32.tbl
++++ b/arch/x86/entry/syscalls/syscall_32.tbl
+@@ -446,3 +446,4 @@
+ 439	i386	faccessat2		sys_faccessat2
+ 440	i386	process_madvise		sys_process_madvise
+ 441	i386	epoll_pwait2		sys_epoll_pwait2		compat_sys_epoll_pwait2
++442	i386	mount_setattr		sys_mount_setattr
+diff --git a/arch/x86/entry/syscalls/syscall_64.tbl b/arch/x86/entry/syscalls/syscall_64.tbl
+index 78672124d28b..7bf01cbe582f 100644
+--- a/arch/x86/entry/syscalls/syscall_64.tbl
++++ b/arch/x86/entry/syscalls/syscall_64.tbl
+@@ -363,6 +363,7 @@
+ 439	common	faccessat2		sys_faccessat2
+ 440	common	process_madvise		sys_process_madvise
+ 441	common	epoll_pwait2		sys_epoll_pwait2
++442	common	mount_setattr		sys_mount_setattr
  
- 	p9stat_free(st);
- 	kfree(st);
-diff --git a/fs/9p/vfs_inode_dotl.c b/fs/9p/vfs_inode_dotl.c
-index 302553101fcb..984f28315d2a 100644
---- a/fs/9p/vfs_inode_dotl.c
-+++ b/fs/9p/vfs_inode_dotl.c
-@@ -468,7 +468,7 @@ v9fs_vfs_getattr_dotl(const struct path *path, struct kstat *stat,
- 	p9_debug(P9_DEBUG_VFS, "dentry: %p\n", dentry);
- 	v9ses = v9fs_dentry2v9ses(dentry);
- 	if (v9ses->cache == CACHE_LOOSE || v9ses->cache == CACHE_FSCACHE) {
--		generic_fillattr(d_inode(dentry), stat);
-+		generic_fillattr(&init_user_ns, d_inode(dentry), stat);
- 		return 0;
- 	}
- 	fid = v9fs_fid_lookup(dentry);
-@@ -485,7 +485,7 @@ v9fs_vfs_getattr_dotl(const struct path *path, struct kstat *stat,
- 		return PTR_ERR(st);
+ #
+ # Due to a historical design error, certain syscalls are numbered differently
+diff --git a/arch/xtensa/kernel/syscalls/syscall.tbl b/arch/xtensa/kernel/syscalls/syscall.tbl
+index 46116a28eeed..365a9b849224 100644
+--- a/arch/xtensa/kernel/syscalls/syscall.tbl
++++ b/arch/xtensa/kernel/syscalls/syscall.tbl
+@@ -412,3 +412,4 @@
+ 439	common	faccessat2			sys_faccessat2
+ 440	common	process_madvise			sys_process_madvise
+ 441	common	epoll_pwait2			sys_epoll_pwait2
++442	common	mount_setattr			sys_mount_setattr
+diff --git a/fs/namespace.c b/fs/namespace.c
+index a1cfcab217e1..6efae2681bcd 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -73,6 +73,14 @@ static DECLARE_RWSEM(namespace_sem);
+ static HLIST_HEAD(unmounted);	/* protected by namespace_sem */
+ static LIST_HEAD(ex_mountpoints); /* protected by namespace_sem */
  
- 	v9fs_stat2inode_dotl(st, d_inode(dentry), 0);
--	generic_fillattr(d_inode(dentry), stat);
-+	generic_fillattr(&init_user_ns, d_inode(dentry), stat);
- 	/* Change block size to what the server returned */
- 	stat->blksize = st->st_blksize;
++struct mount_kattr {
++	unsigned int attr_set;
++	unsigned int attr_clr;
++	unsigned int propagation;
++	unsigned int lookup_flags;
++	bool recurse;
++};
++
+ /* /sys/fs */
+ struct kobject *fs_kobj;
+ EXPORT_SYMBOL_GPL(fs_kobj);
+@@ -3457,6 +3465,11 @@ SYSCALL_DEFINE5(mount, char __user *, dev_name, char __user *, dir_name,
+ 	(MOUNT_ATTR_RDONLY | MOUNT_ATTR_NOSUID | MOUNT_ATTR_NODEV | \
+ 	 MOUNT_ATTR_NOEXEC | MOUNT_ATTR__ATIME | MOUNT_ATTR_NODIRATIME)
  
-diff --git a/fs/afs/inode.c b/fs/afs/inode.c
-index b0d7b892090d..795ee5cb3817 100644
---- a/fs/afs/inode.c
-+++ b/fs/afs/inode.c
-@@ -745,7 +745,7 @@ int afs_getattr(const struct path *path, struct kstat *stat,
- 
- 	do {
- 		read_seqbegin_or_lock(&vnode->cb_lock, &seq);
--		generic_fillattr(inode, stat);
-+		generic_fillattr(&init_user_ns, inode, stat);
- 		if (test_bit(AFS_VNODE_SILLY_DELETED, &vnode->flags) &&
- 		    stat->nlink > 0)
- 			stat->nlink -= 1;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 97bbf80ee12d..c8045c9d51d9 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8841,7 +8841,7 @@ static int btrfs_getattr(const struct path *path, struct kstat *stat,
- 				  STATX_ATTR_IMMUTABLE |
- 				  STATX_ATTR_NODUMP);
- 
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 	stat->dev = BTRFS_I(inode)->root->anon_dev;
- 
- 	spin_lock(&BTRFS_I(inode)->lock);
-diff --git a/fs/ceph/inode.c b/fs/ceph/inode.c
-index 145e26a4ddbb..179a2bb88538 100644
---- a/fs/ceph/inode.c
-+++ b/fs/ceph/inode.c
-@@ -2385,7 +2385,7 @@ int ceph_getattr(const struct path *path, struct kstat *stat,
- 			return err;
- 	}
- 
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 	stat->ino = ceph_present_inode(inode);
- 
- 	/*
-diff --git a/fs/cifs/inode.c b/fs/cifs/inode.c
-index 27554f71f744..374abce7efaf 100644
---- a/fs/cifs/inode.c
-+++ b/fs/cifs/inode.c
-@@ -2408,7 +2408,7 @@ int cifs_getattr(const struct path *path, struct kstat *stat,
- 			return rc;
- 	}
- 
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 	stat->blksize = cifs_sb->ctx->bsize;
- 	stat->ino = CIFS_I(inode)->uniqueid;
- 
-diff --git a/fs/coda/inode.c b/fs/coda/inode.c
-index b1c70e2b9b1e..4d113e191cb8 100644
---- a/fs/coda/inode.c
-+++ b/fs/coda/inode.c
-@@ -256,7 +256,7 @@ int coda_getattr(const struct path *path, struct kstat *stat,
++#define MOUNT_SETATTR_VALID_FLAGS FSMOUNT_VALID_FLAGS
++
++#define MOUNT_SETATTR_PROPAGATION_FLAGS \
++	(MS_UNBINDABLE | MS_PRIVATE | MS_SLAVE | MS_SHARED)
++
+ static unsigned int attr_flags_to_mnt_flags(u64 attr_flags)
  {
- 	int err = coda_revalidate_inode(d_inode(path->dentry));
- 	if (!err)
--		generic_fillattr(d_inode(path->dentry), stat);
-+		generic_fillattr(&init_user_ns, d_inode(path->dentry), stat);
- 	return err;
+ 	unsigned int mnt_flags = 0;
+@@ -3808,6 +3821,253 @@ SYSCALL_DEFINE2(pivot_root, const char __user *, new_root,
+ 	return error;
  }
  
-diff --git a/fs/ecryptfs/inode.c b/fs/ecryptfs/inode.c
-index 7de9fda25dad..0a218d7c3023 100644
---- a/fs/ecryptfs/inode.c
-+++ b/fs/ecryptfs/inode.c
-@@ -975,7 +975,7 @@ static int ecryptfs_getattr_link(const struct path *path, struct kstat *stat,
- 
- 	mount_crypt_stat = &ecryptfs_superblock_to_private(
- 						dentry->d_sb)->mount_crypt_stat;
--	generic_fillattr(d_inode(dentry), stat);
-+	generic_fillattr(&init_user_ns, d_inode(dentry), stat);
- 	if (mount_crypt_stat->flags & ECRYPTFS_GLOBAL_ENCRYPT_FILENAMES) {
- 		char *target;
- 		size_t targetsiz;
-@@ -1003,7 +1003,7 @@ static int ecryptfs_getattr(const struct path *path, struct kstat *stat,
- 	if (!rc) {
- 		fsstack_copy_attr_all(d_inode(dentry),
- 				      ecryptfs_inode_to_lower(d_inode(dentry)));
--		generic_fillattr(d_inode(dentry), stat);
-+		generic_fillattr(&init_user_ns, d_inode(dentry), stat);
- 		stat->blocks = lower_stat.blocks;
- 	}
- 	return rc;
-diff --git a/fs/erofs/inode.c b/fs/erofs/inode.c
-index 3e21c0e8adae..083818063ac6 100644
---- a/fs/erofs/inode.c
-+++ b/fs/erofs/inode.c
-@@ -343,7 +343,7 @@ int erofs_getattr(const struct path *path, struct kstat *stat,
- 	stat->attributes_mask |= (STATX_ATTR_COMPRESSED |
- 				  STATX_ATTR_IMMUTABLE);
- 
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 	return 0;
- }
- 
-diff --git a/fs/exfat/file.c b/fs/exfat/file.c
-index ace35aa8e64b..e9705b3295d3 100644
---- a/fs/exfat/file.c
-+++ b/fs/exfat/file.c
-@@ -273,7 +273,7 @@ int exfat_getattr(const struct path *path, struct kstat *stat,
- 	struct inode *inode = d_backing_inode(path->dentry);
- 	struct exfat_inode_info *ei = EXFAT_I(inode);
- 
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 	exfat_truncate_atime(&stat->atime);
- 	stat->result_mask |= STATX_BTIME;
- 	stat->btime.tv_sec = ei->i_crtime.tv_sec;
-diff --git a/fs/ext2/inode.c b/fs/ext2/inode.c
-index 9de813635d8d..3d8acafca8ce 100644
---- a/fs/ext2/inode.c
-+++ b/fs/ext2/inode.c
-@@ -1660,7 +1660,7 @@ int ext2_getattr(const struct path *path, struct kstat *stat,
- 			STATX_ATTR_IMMUTABLE |
- 			STATX_ATTR_NODUMP);
- 
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 	return 0;
- }
- 
-diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
-index 55990b74b9e4..69caa7b939d3 100644
---- a/fs/ext4/inode.c
-+++ b/fs/ext4/inode.c
-@@ -5567,7 +5567,7 @@ int ext4_getattr(const struct path *path, struct kstat *stat,
- 				  STATX_ATTR_NODUMP |
- 				  STATX_ATTR_VERITY);
- 
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 	return 0;
- }
- 
-diff --git a/fs/f2fs/file.c b/fs/f2fs/file.c
-index ba18b7e28d51..5020c740f068 100644
---- a/fs/f2fs/file.c
-+++ b/fs/f2fs/file.c
-@@ -820,7 +820,7 @@ int f2fs_getattr(const struct path *path, struct kstat *stat,
- 				  STATX_ATTR_NODUMP |
- 				  STATX_ATTR_VERITY);
- 
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 
- 	/* we need to show initial sectors used for inline_data/dentries */
- 	if ((S_ISREG(inode->i_mode) && f2fs_has_inline_data(inode)) ||
-diff --git a/fs/fat/file.c b/fs/fat/file.c
-index 805b501467e9..f7e04f533d31 100644
---- a/fs/fat/file.c
-+++ b/fs/fat/file.c
-@@ -398,7 +398,7 @@ int fat_getattr(const struct path *path, struct kstat *stat,
- 		u32 request_mask, unsigned int flags)
++static unsigned int recalc_flags(struct mount_kattr *kattr, struct mount *mnt)
++{
++	unsigned int flags = mnt->mnt.mnt_flags;
++
++	/*  flags to clear */
++	flags &= ~kattr->attr_clr;
++	/* flags to raise */
++	flags |= kattr->attr_set;
++
++	return flags;
++}
++
++static struct mount *mount_setattr_prepare(struct mount_kattr *kattr,
++					   struct mount *mnt, int *err)
++{
++	struct mount *m = mnt, *last = NULL;
++
++	if (!is_mounted(&m->mnt)) {
++		*err = -EINVAL;
++		goto out;
++	}
++
++	if (!(mnt_has_parent(m) ? check_mnt(m) : is_anon_ns(m->mnt_ns))) {
++		*err = -EINVAL;
++		goto out;
++	}
++
++	do {
++		unsigned int flags;
++
++		flags = recalc_flags(kattr, m);
++		if (!can_change_locked_flags(m, flags)) {
++			*err = -EPERM;
++			goto out;
++		}
++
++		last = m;
++
++		if ((kattr->attr_set & MNT_READONLY) &&
++		    !(m->mnt.mnt_flags & MNT_READONLY)) {
++			*err = mnt_hold_writers(m);
++			if (*err)
++				goto out;
++		}
++	} while (kattr->recurse && (m = next_mnt(m, mnt)));
++
++out:
++	return last;
++}
++
++static void mount_setattr_commit(struct mount_kattr *kattr,
++				 struct mount *mnt, struct mount *last,
++				 int err)
++{
++	struct mount *m = mnt;
++
++	do {
++		if (!err) {
++			unsigned int flags;
++
++			flags = recalc_flags(kattr, m);
++			WRITE_ONCE(m->mnt.mnt_flags, flags);
++		}
++
++		/*
++		 * We either set MNT_READONLY above so make it visible
++		 * before ~MNT_WRITE_HOLD or we failed to recursively
++		 * apply mount options.
++		 */
++		if ((kattr->attr_set & MNT_READONLY) &&
++		    (m->mnt.mnt_flags & MNT_WRITE_HOLD))
++			mnt_unhold_writers(m);
++
++		if (!err && kattr->propagation)
++			change_mnt_propagation(m, kattr->propagation);
++
++		/*
++		 * On failure, only cleanup until we found the first mount
++		 * we failed to handle.
++		 */
++		if (err && m == last)
++			break;
++	} while (kattr->recurse && (m = next_mnt(m, mnt)));
++
++	if (!err)
++		touch_mnt_namespace(mnt->mnt_ns);
++}
++
++static int do_mount_setattr(struct path *path, struct mount_kattr *kattr)
++{
++	struct mount *mnt = real_mount(path->mnt), *last = NULL;
++	int err = 0;
++
++	if (path->dentry != mnt->mnt.mnt_root)
++		return -EINVAL;
++
++	if (kattr->propagation) {
++		/*
++		 * Only take namespace_lock() if we're actually changing
++		 * propagation.
++		 */
++		namespace_lock();
++		if (kattr->propagation == MS_SHARED) {
++			err = invent_group_ids(mnt, kattr->recurse);
++			if (err) {
++				namespace_unlock();
++				return err;
++			}
++		}
++	}
++
++	lock_mount_hash();
++
++	/*
++	 * Get the mount tree in a shape where we can change mount
++	 * properties without failure.
++	 */
++	last = mount_setattr_prepare(kattr, mnt, &err);
++	if (last) /* Commit all changes or revert to the old state. */
++		mount_setattr_commit(kattr, mnt, last, err);
++
++	unlock_mount_hash();
++
++	if (kattr->propagation) {
++		namespace_unlock();
++		if (err)
++			cleanup_group_ids(mnt, NULL);
++	}
++
++	return err;
++}
++
++static int build_mount_kattr(const struct mount_attr *attr,
++			     struct mount_kattr *kattr, unsigned int flags)
++{
++	unsigned int lookup_flags = LOOKUP_AUTOMOUNT | LOOKUP_FOLLOW;
++
++	if (flags & AT_NO_AUTOMOUNT)
++		lookup_flags &= ~LOOKUP_AUTOMOUNT;
++	if (flags & AT_SYMLINK_NOFOLLOW)
++		lookup_flags &= ~LOOKUP_FOLLOW;
++	if (flags & AT_EMPTY_PATH)
++		lookup_flags |= LOOKUP_EMPTY;
++
++	*kattr = (struct mount_kattr) {
++		.lookup_flags	= lookup_flags,
++		.recurse	= !!(flags & AT_RECURSIVE),
++	};
++
++	if (attr->propagation & ~MOUNT_SETATTR_PROPAGATION_FLAGS)
++		return -EINVAL;
++	if (hweight32(attr->propagation & MOUNT_SETATTR_PROPAGATION_FLAGS) > 1)
++		return -EINVAL;
++	kattr->propagation = attr->propagation;
++
++	if ((attr->attr_set | attr->attr_clr) & ~MOUNT_SETATTR_VALID_FLAGS)
++		return -EINVAL;
++
++	kattr->attr_set = attr_flags_to_mnt_flags(attr->attr_set);
++	kattr->attr_clr = attr_flags_to_mnt_flags(attr->attr_clr);
++
++	/*
++	 * Since the MOUNT_ATTR_<atime> values are an enum, not a bitmap,
++	 * users wanting to transition to a different atime setting cannot
++	 * simply specify the atime setting in @attr_set, but must also
++	 * specify MOUNT_ATTR__ATIME in the @attr_clr field.
++	 * So ensure that MOUNT_ATTR__ATIME can't be partially set in
++	 * @attr_clr and that @attr_set can't have any atime bits set if
++	 * MOUNT_ATTR__ATIME isn't set in @attr_clr.
++	 */
++	if (attr->attr_clr & MOUNT_ATTR__ATIME) {
++		if ((attr->attr_clr & MOUNT_ATTR__ATIME) != MOUNT_ATTR__ATIME)
++			return -EINVAL;
++
++		/*
++		 * Clear all previous time settings as they are mutually
++		 * exclusive.
++		 */
++		kattr->attr_clr |= MNT_RELATIME | MNT_NOATIME;
++		switch (attr->attr_set & MOUNT_ATTR__ATIME) {
++		case MOUNT_ATTR_RELATIME:
++			kattr->attr_set |= MNT_RELATIME;
++			break;
++		case MOUNT_ATTR_NOATIME:
++			kattr->attr_set |= MNT_NOATIME;
++			break;
++		case MOUNT_ATTR_STRICTATIME:
++			break;
++		default:
++			return -EINVAL;
++		}
++	} else {
++		if (attr->attr_set & MOUNT_ATTR__ATIME)
++			return -EINVAL;
++	}
++
++	return 0;
++}
++
++SYSCALL_DEFINE5(mount_setattr, int, dfd, const char __user *, path,
++		unsigned int, flags, struct mount_attr __user *, uattr,
++		size_t, usize)
++{
++	int err;
++	struct path target;
++	struct mount_attr attr;
++	struct mount_kattr kattr;
++
++	BUILD_BUG_ON(sizeof(struct mount_attr) != MOUNT_ATTR_SIZE_VER0);
++
++	if (flags & ~(AT_EMPTY_PATH |
++		      AT_RECURSIVE |
++		      AT_SYMLINK_NOFOLLOW |
++		      AT_NO_AUTOMOUNT))
++		return -EINVAL;
++
++	if (unlikely(usize > PAGE_SIZE))
++		return -E2BIG;
++	if (unlikely(usize < MOUNT_ATTR_SIZE_VER0))
++		return -EINVAL;
++
++	if (!may_mount())
++		return -EPERM;
++
++	err = copy_struct_from_user(&attr, sizeof(attr), uattr, usize);
++	if (err)
++		return err;
++
++	/* Don't bother walking through the mounts if this is a nop. */
++	if (attr.attr_set == 0 &&
++	    attr.attr_clr == 0 &&
++	    attr.propagation == 0)
++		return 0;
++
++	err = build_mount_kattr(&attr, &kattr, flags);
++	if (err)
++		return err;
++
++	err = user_path_at(dfd, path, kattr.lookup_flags, &target);
++	if (err)
++		return err;
++
++	err = do_mount_setattr(&target, &kattr);
++	path_put(&target);
++	return err;
++}
++
+ static void __init init_mount_tree(void)
  {
- 	struct inode *inode = d_inode(path->dentry);
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 	stat->blksize = MSDOS_SB(inode->i_sb)->cluster_size;
+ 	struct vfsmount *mnt;
+diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+index 7688bc983de5..cd7b5c817ba2 100644
+--- a/include/linux/syscalls.h
++++ b/include/linux/syscalls.h
+@@ -68,6 +68,7 @@ union bpf_attr;
+ struct io_uring_params;
+ struct clone_args;
+ struct open_how;
++struct mount_attr;
  
- 	if (MSDOS_SB(inode->i_sb)->options.nfs == FAT_NFS_NOSTALE_RO) {
-diff --git a/fs/fuse/dir.c b/fs/fuse/dir.c
-index eb648ed19312..f2f252e3da7f 100644
---- a/fs/fuse/dir.c
-+++ b/fs/fuse/dir.c
-@@ -1087,7 +1087,7 @@ static int fuse_update_get_attr(struct inode *inode, struct file *file,
- 		forget_all_cached_acls(inode);
- 		err = fuse_do_getattr(inode, stat, file);
- 	} else if (stat) {
--		generic_fillattr(inode, stat);
-+		generic_fillattr(&init_user_ns, inode, stat);
- 		stat->mode = fi->orig_i_mode;
- 		stat->ino = fi->orig_ino;
- 	}
-diff --git a/fs/gfs2/inode.c b/fs/gfs2/inode.c
-index aef2f7587392..9b773b2b9d32 100644
---- a/fs/gfs2/inode.c
-+++ b/fs/gfs2/inode.c
-@@ -2049,7 +2049,7 @@ static int gfs2_getattr(const struct path *path, struct kstat *stat,
- 				  STATX_ATTR_IMMUTABLE |
- 				  STATX_ATTR_NODUMP);
+ #include <linux/types.h>
+ #include <linux/aio_abi.h>
+@@ -1028,6 +1029,9 @@ asmlinkage long sys_open_tree(int dfd, const char __user *path, unsigned flags);
+ asmlinkage long sys_move_mount(int from_dfd, const char __user *from_path,
+ 			       int to_dfd, const char __user *to_path,
+ 			       unsigned int ms_flags);
++asmlinkage long sys_mount_setattr(int dfd, const char __user *path,
++				  unsigned int flags,
++				  struct mount_attr __user *uattr, size_t usize);
+ asmlinkage long sys_fsopen(const char __user *fs_name, unsigned int flags);
+ asmlinkage long sys_fsconfig(int fs_fd, unsigned int cmd, const char __user *key,
+ 			     const void __user *value, int aux);
+diff --git a/include/uapi/asm-generic/unistd.h b/include/uapi/asm-generic/unistd.h
+index 728752917785..ce58cff99b66 100644
+--- a/include/uapi/asm-generic/unistd.h
++++ b/include/uapi/asm-generic/unistd.h
+@@ -861,9 +861,11 @@ __SYSCALL(__NR_faccessat2, sys_faccessat2)
+ __SYSCALL(__NR_process_madvise, sys_process_madvise)
+ #define __NR_epoll_pwait2 441
+ __SC_COMP(__NR_epoll_pwait2, sys_epoll_pwait2, compat_sys_epoll_pwait2)
++#define __NR_mount_setattr 442
++__SYSCALL(__NR_mount_setattr, sys_mount_setattr)
  
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
+ #undef __NR_syscalls
+-#define __NR_syscalls 442
++#define __NR_syscalls 443
  
- 	if (gfs2_holder_initialized(&gh))
- 		gfs2_glock_dq_uninit(&gh);
-diff --git a/fs/hfsplus/inode.c b/fs/hfsplus/inode.c
-index ffa137f8234e..642e067d8fe8 100644
---- a/fs/hfsplus/inode.c
-+++ b/fs/hfsplus/inode.c
-@@ -286,7 +286,7 @@ int hfsplus_getattr(const struct path *path, struct kstat *stat,
- 	stat->attributes_mask |= STATX_ATTR_APPEND | STATX_ATTR_IMMUTABLE |
- 				 STATX_ATTR_NODUMP;
+ /*
+  * 32 bit systems traditionally used different
+diff --git a/include/uapi/linux/mount.h b/include/uapi/linux/mount.h
+index dd8306ea336c..2255624e91c8 100644
+--- a/include/uapi/linux/mount.h
++++ b/include/uapi/linux/mount.h
+@@ -1,6 +1,8 @@
+ #ifndef _UAPI_LINUX_MOUNT_H
+ #define _UAPI_LINUX_MOUNT_H
  
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 	return 0;
- }
- 
-diff --git a/fs/kernfs/inode.c b/fs/kernfs/inode.c
-index 7e44052b42e1..032d3d7546d8 100644
---- a/fs/kernfs/inode.c
-+++ b/fs/kernfs/inode.c
-@@ -193,7 +193,7 @@ int kernfs_iop_getattr(const struct path *path, struct kstat *stat,
- 	kernfs_refresh_inode(kn, inode);
- 	mutex_unlock(&kernfs_mutex);
- 
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 	return 0;
- }
- 
-diff --git a/fs/libfs.c b/fs/libfs.c
-index a73fe109403c..508e9ea8e6f3 100644
---- a/fs/libfs.c
-+++ b/fs/libfs.c
-@@ -31,7 +31,7 @@ int simple_getattr(const struct path *path, struct kstat *stat,
- 		   u32 request_mask, unsigned int query_flags)
- {
- 	struct inode *inode = d_inode(path->dentry);
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 	stat->blocks = inode->i_mapping->nrpages << (PAGE_SHIFT - 9);
- 	return 0;
- }
-@@ -1304,7 +1304,7 @@ static int empty_dir_getattr(const struct path *path, struct kstat *stat,
- 			     u32 request_mask, unsigned int query_flags)
- {
- 	struct inode *inode = d_inode(path->dentry);
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 	return 0;
- }
- 
-diff --git a/fs/minix/inode.c b/fs/minix/inode.c
-index 34f546404aa1..91c81d2fc90d 100644
---- a/fs/minix/inode.c
-+++ b/fs/minix/inode.c
-@@ -658,7 +658,7 @@ int minix_getattr(const struct path *path, struct kstat *stat,
- 	struct super_block *sb = path->dentry->d_sb;
- 	struct inode *inode = d_inode(path->dentry);
- 
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 	if (INODE_VERSION(inode) == MINIX_V1)
- 		stat->blocks = (BLOCK_SIZE / 512) * V1_minix_blocks(stat->size, sb);
- 	else
-diff --git a/fs/nfs/inode.c b/fs/nfs/inode.c
-index 522aa10a1a3e..cab123ec1664 100644
---- a/fs/nfs/inode.c
-+++ b/fs/nfs/inode.c
-@@ -857,7 +857,7 @@ int nfs_getattr(const struct path *path, struct kstat *stat,
- 	/* Only return attributes that were revalidated. */
- 	stat->result_mask &= request_mask;
- out_no_update:
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 	stat->ino = nfs_compat_user_ino64(NFS_FILEID(inode));
- 	if (S_ISDIR(inode->i_mode))
- 		stat->blksize = NFS_SERVER(inode)->dtsize;
-diff --git a/fs/nfs/namespace.c b/fs/nfs/namespace.c
-index 2bcbe38afe2e..55fc711e368b 100644
---- a/fs/nfs/namespace.c
-+++ b/fs/nfs/namespace.c
-@@ -213,7 +213,7 @@ nfs_namespace_getattr(const struct path *path, struct kstat *stat,
- {
- 	if (NFS_FH(d_inode(path->dentry))->size != 0)
- 		return nfs_getattr(path, stat, request_mask, query_flags);
--	generic_fillattr(d_inode(path->dentry), stat);
-+	generic_fillattr(&init_user_ns, d_inode(path->dentry), stat);
- 	return 0;
- }
- 
-diff --git a/fs/ocfs2/file.c b/fs/ocfs2/file.c
-index cabf355b148f..a070d4c9b6ed 100644
---- a/fs/ocfs2/file.c
-+++ b/fs/ocfs2/file.c
-@@ -1313,7 +1313,7 @@ int ocfs2_getattr(const struct path *path, struct kstat *stat,
- 		goto bail;
- 	}
- 
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 	/*
- 	 * If there is inline data in the inode, the inode will normally not
- 	 * have data blocks allocated (it may have an external xattr block).
-diff --git a/fs/orangefs/inode.c b/fs/orangefs/inode.c
-index 563fe9ab8eb2..b94032f77e61 100644
---- a/fs/orangefs/inode.c
-+++ b/fs/orangefs/inode.c
-@@ -903,7 +903,7 @@ int orangefs_getattr(const struct path *path, struct kstat *stat,
- 	ret = orangefs_inode_getattr(inode,
- 	    request_mask & STATX_SIZE ? ORANGEFS_GETATTR_SIZE : 0);
- 	if (ret == 0) {
--		generic_fillattr(inode, stat);
-+		generic_fillattr(&init_user_ns, inode, stat);
- 
- 		/* override block size reported to stat */
- 		if (!(request_mask & STATX_SIZE))
-diff --git a/fs/proc/base.c b/fs/proc/base.c
-index bb4e63a3684f..d45aa68c1f17 100644
---- a/fs/proc/base.c
-+++ b/fs/proc/base.c
-@@ -1934,7 +1934,7 @@ int pid_getattr(const struct path *path, struct kstat *stat,
- 	struct proc_fs_info *fs_info = proc_sb_info(inode->i_sb);
- 	struct task_struct *task;
- 
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 
- 	stat->uid = GLOBAL_ROOT_UID;
- 	stat->gid = GLOBAL_ROOT_GID;
-@@ -3803,7 +3803,7 @@ static int proc_task_getattr(const struct path *path, struct kstat *stat,
- {
- 	struct inode *inode = d_inode(path->dentry);
- 	struct task_struct *p = get_proc_task(inode);
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 
- 	if (p) {
- 		stat->nlink += get_nr_threads(p);
-diff --git a/fs/proc/generic.c b/fs/proc/generic.c
-index 6d4fabab8aa7..0db96a761149 100644
---- a/fs/proc/generic.c
-+++ b/fs/proc/generic.c
-@@ -145,7 +145,7 @@ static int proc_getattr(const struct path *path, struct kstat *stat,
- 		}
- 	}
- 
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 	return 0;
- }
- 
-diff --git a/fs/proc/proc_net.c b/fs/proc/proc_net.c
-index 18601042af99..4aef49ccf571 100644
---- a/fs/proc/proc_net.c
-+++ b/fs/proc/proc_net.c
-@@ -297,7 +297,7 @@ static int proc_tgid_net_getattr(const struct path *path, struct kstat *stat,
- 
- 	net = get_proc_task_net(inode);
- 
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 
- 	if (net != NULL) {
- 		stat->nlink = net->proc_net->nlink;
-diff --git a/fs/proc/proc_sysctl.c b/fs/proc/proc_sysctl.c
-index ec67dbc1f705..87c828348140 100644
---- a/fs/proc/proc_sysctl.c
-+++ b/fs/proc/proc_sysctl.c
-@@ -840,7 +840,7 @@ static int proc_sys_getattr(const struct path *path, struct kstat *stat,
- 	if (IS_ERR(head))
- 		return PTR_ERR(head);
- 
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 	if (table)
- 		stat->mode = (stat->mode & S_IFMT) | table->mode;
- 
-diff --git a/fs/proc/root.c b/fs/proc/root.c
-index 5e444d4f9717..244e4b6f15ef 100644
---- a/fs/proc/root.c
-+++ b/fs/proc/root.c
-@@ -311,7 +311,7 @@ void __init proc_root_init(void)
- static int proc_root_getattr(const struct path *path, struct kstat *stat,
- 			     u32 request_mask, unsigned int query_flags)
- {
--	generic_fillattr(d_inode(path->dentry), stat);
-+	generic_fillattr(&init_user_ns, d_inode(path->dentry), stat);
- 	stat->nlink = proc_root.nlink + nr_processes();
- 	return 0;
- }
-diff --git a/fs/stat.c b/fs/stat.c
-index dacecdda2e79..8c58c37ef1ab 100644
---- a/fs/stat.c
-+++ b/fs/stat.c
-@@ -26,21 +26,29 @@
- 
- /**
-  * generic_fillattr - Fill in the basic attributes from the inode struct
-- * @inode: Inode to use as the source
-- * @stat: Where to fill in the attributes
-+ * @mnt_userns:	user namespace of the mount the inode was found from
-+ * @inode:	Inode to use as the source
-+ * @stat:	Where to fill in the attributes
++#include <linux/types.h>
++
+ /*
+  * These are the fs-independent mount-flags: up to 32 flags are supported
   *
-  * Fill in the basic attributes in the kstat structure from data that's to be
-  * found on the VFS inode structure.  This is the default if no getattr inode
-  * operation is supplied.
-+ *
-+ * If the inode has been found through an idmapped mount the user namespace of
-+ * the vfsmount must be passed through @mnt_userns. This function will then take
-+ * care to map the inode according to @mnt_userns before filling in the uid and
-+ * gid filds. On non-idmapped mounts or if permission checking is to be
-+ * performed on the raw inode simply passs init_user_ns.
-  */
--void generic_fillattr(struct inode *inode, struct kstat *stat)
-+void generic_fillattr(struct user_namespace *mnt_userns, struct inode *inode,
-+		      struct kstat *stat)
- {
- 	stat->dev = inode->i_sb->s_dev;
- 	stat->ino = inode->i_ino;
- 	stat->mode = inode->i_mode;
- 	stat->nlink = inode->i_nlink;
--	stat->uid = inode->i_uid;
--	stat->gid = inode->i_gid;
-+	stat->uid = i_uid_into_mnt(mnt_userns, inode);
-+	stat->gid = i_gid_into_mnt(mnt_userns, inode);
- 	stat->rdev = inode->i_rdev;
- 	stat->size = i_size_read(inode);
- 	stat->atime = inode->i_atime;
-@@ -87,7 +95,7 @@ int vfs_getattr_nosec(const struct path *path, struct kstat *stat,
- 		return inode->i_op->getattr(path, stat, request_mask,
- 					    query_flags);
+@@ -118,4 +120,16 @@ enum fsconfig_command {
+ #define MOUNT_ATTR_STRICTATIME	0x00000020 /* - Always perform atime updates */
+ #define MOUNT_ATTR_NODIRATIME	0x00000080 /* Do not update directory access times */
  
--	generic_fillattr(inode, stat);
-+	generic_fillattr(mnt_user_ns(path->mnt), inode, stat);
- 	return 0;
- }
- EXPORT_SYMBOL(vfs_getattr_nosec);
-diff --git a/fs/sysv/itree.c b/fs/sysv/itree.c
-index bcb67b0cabe7..83cffab6955f 100644
---- a/fs/sysv/itree.c
-+++ b/fs/sysv/itree.c
-@@ -445,7 +445,7 @@ int sysv_getattr(const struct path *path, struct kstat *stat,
- 		 u32 request_mask, unsigned int flags)
- {
- 	struct super_block *s = path->dentry->d_sb;
--	generic_fillattr(d_inode(path->dentry), stat);
-+	generic_fillattr(&init_user_ns, d_inode(path->dentry), stat);
- 	stat->blocks = (s->s_blocksize / 512) * sysv_nblocks(s, stat->size);
- 	stat->blksize = s->s_blocksize;
- 	return 0;
-diff --git a/fs/ubifs/dir.c b/fs/ubifs/dir.c
-index 694e7714545b..a8881ed61620 100644
---- a/fs/ubifs/dir.c
-+++ b/fs/ubifs/dir.c
-@@ -1589,7 +1589,7 @@ int ubifs_getattr(const struct path *path, struct kstat *stat,
- 				STATX_ATTR_ENCRYPTED |
- 				STATX_ATTR_IMMUTABLE);
++/*
++ * mount_setattr()
++ */
++struct mount_attr {
++	__u64 attr_set;
++	__u64 attr_clr;
++	__u64 propagation;
++};
++
++/* List of all mount_attr versions. */
++#define MOUNT_ATTR_SIZE_VER0	24 /* sizeof first published struct */
++
+ #endif /* _UAPI_LINUX_MOUNT_H */
+diff --git a/tools/include/uapi/asm-generic/unistd.h b/tools/include/uapi/asm-generic/unistd.h
+index 728752917785..ce58cff99b66 100644
+--- a/tools/include/uapi/asm-generic/unistd.h
++++ b/tools/include/uapi/asm-generic/unistd.h
+@@ -861,9 +861,11 @@ __SYSCALL(__NR_faccessat2, sys_faccessat2)
+ __SYSCALL(__NR_process_madvise, sys_process_madvise)
+ #define __NR_epoll_pwait2 441
+ __SC_COMP(__NR_epoll_pwait2, sys_epoll_pwait2, compat_sys_epoll_pwait2)
++#define __NR_mount_setattr 442
++__SYSCALL(__NR_mount_setattr, sys_mount_setattr)
  
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 	stat->blksize = UBIFS_BLOCK_SIZE;
- 	stat->size = ui->ui_size;
+ #undef __NR_syscalls
+-#define __NR_syscalls 442
++#define __NR_syscalls 443
  
-diff --git a/fs/udf/symlink.c b/fs/udf/symlink.c
-index c973db239604..54a44d1f023c 100644
---- a/fs/udf/symlink.c
-+++ b/fs/udf/symlink.c
-@@ -159,7 +159,7 @@ static int udf_symlink_getattr(const struct path *path, struct kstat *stat,
- 	struct inode *inode = d_backing_inode(dentry);
- 	struct page *page;
- 
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 	page = read_mapping_page(inode->i_mapping, 0, NULL);
- 	if (IS_ERR(page))
- 		return PTR_ERR(page);
-diff --git a/fs/vboxsf/utils.c b/fs/vboxsf/utils.c
-index 018057546067..d2cd1c99f48e 100644
---- a/fs/vboxsf/utils.c
-+++ b/fs/vboxsf/utils.c
-@@ -233,7 +233,7 @@ int vboxsf_getattr(const struct path *path, struct kstat *kstat,
- 	if (err)
- 		return err;
- 
--	generic_fillattr(d_inode(dentry), kstat);
-+	generic_fillattr(&init_user_ns, d_inode(dentry), kstat);
- 	return 0;
- }
- 
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 89e41a821bad..e4876e373636 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -3141,7 +3141,7 @@ extern int __page_symlink(struct inode *inode, const char *symname, int len,
- extern int page_symlink(struct inode *inode, const char *symname, int len);
- extern const struct inode_operations page_symlink_inode_operations;
- extern void kfree_link(void *);
--extern void generic_fillattr(struct inode *, struct kstat *);
-+extern void generic_fillattr(struct user_namespace *, struct inode *, struct kstat *);
- extern int vfs_getattr_nosec(const struct path *, struct kstat *, u32, unsigned int);
- extern int vfs_getattr(const struct path *, struct kstat *, u32, unsigned int);
- void __inode_add_bytes(struct inode *inode, loff_t bytes);
-diff --git a/mm/shmem.c b/mm/shmem.c
-index 23b8e9c15a42..339d5530d3a9 100644
---- a/mm/shmem.c
-+++ b/mm/shmem.c
-@@ -1072,7 +1072,7 @@ static int shmem_getattr(const struct path *path, struct kstat *stat,
- 		shmem_recalc_inode(inode);
- 		spin_unlock_irq(&info->lock);
- 	}
--	generic_fillattr(inode, stat);
-+	generic_fillattr(&init_user_ns, inode, stat);
- 
- 	if (is_huge_enabled(sb_info))
- 		stat->blksize = HPAGE_PMD_SIZE;
+ /*
+  * 32 bit systems traditionally used different
 -- 
 2.30.0
 
