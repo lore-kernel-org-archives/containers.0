@@ -2,95 +2,99 @@ Return-Path: <SRS0=YWEV=GP=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C7728C43332
-	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 15:12:13 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C5D8C43331
+	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 22:03:51 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 7EB7D2313F
-	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 15:12:13 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7EB7D2313F
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
+	by mail.kernel.org (Postfix) with ESMTPS id B1068221F5
+	for <containers@archiver.kernel.org>; Tue, 12 Jan 2021 22:03:50 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B1068221F5
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 17CF720367;
-	Tue, 12 Jan 2021 15:12:13 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 319CE85FB6;
+	Tue, 12 Jan 2021 22:03:50 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from fraxinus.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id yTlM3ctR_XhB; Tue, 12 Jan 2021 22:03:48 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by fraxinus.osuosl.org (Postfix) with ESMTP id DA7A985F67;
+	Tue, 12 Jan 2021 22:03:48 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id BEF52C0893;
+	Tue, 12 Jan 2021 22:03:48 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id C2020C013A
+ for <containers@lists.linux-foundation.org>;
+ Tue, 12 Jan 2021 22:03:47 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by silver.osuosl.org (Postfix) with ESMTP id 7668A20493
+ for <containers@lists.linux-foundation.org>;
+ Tue, 12 Jan 2021 22:03:47 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 3w7dQX7ci6dw; Tue, 12 Jan 2021 15:12:11 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 5D55420018;
-	Tue, 12 Jan 2021 15:12:11 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 54FF6C088B;
-	Tue, 12 Jan 2021 15:12:11 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 55C8FC013A
- for <containers@lists.linux-foundation.org>;
- Tue, 12 Jan 2021 15:12:10 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 44BFE86365
- for <containers@lists.linux-foundation.org>;
- Tue, 12 Jan 2021 15:12:10 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id js8BeMBe412v
+ with ESMTP id NvFZxupqTV8c
  for <containers@lists.linux-foundation.org>;
- Tue, 12 Jan 2021 15:12:09 +0000 (UTC)
+ Tue, 12 Jan 2021 22:03:45 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
-Received: from us-smtp-delivery-124.mimecast.com
- (us-smtp-delivery-124.mimecast.com [216.205.24.124])
- by whitealder.osuosl.org (Postfix) with ESMTPS id 3EFFD862F4
+Received: from youngberry.canonical.com (youngberry.canonical.com
+ [91.189.89.112])
+ by silver.osuosl.org (Postfix) with ESMTPS id ADBC620469
  for <containers@lists.linux-foundation.org>;
- Tue, 12 Jan 2021 15:12:09 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
- s=mimecast20190719; t=1610464328;
- h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
- to:to:cc:cc:in-reply-to:in-reply-to:references:references;
- bh=eYAwFL1bjtKuxrU7qTxXl+J5KIWZcpoUKayCM4CfTx4=;
- b=Pjd2fVMOZL7sYeEWxIHjT8EXtfa37Ljandr1UgNAufKm9nk28sGSh6c7EcL4XVxXjj6vbm
- wwtj+dFTq3cmOVAzXujySwD3H3frUollXKs/ghKRE6JXlpHqzM0Z6Z8YFAFQgjZNqk0EWv
- /f/92v9qCOqPc56h+XOF55kEDf4fIQ8=
-Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
- [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-585-iK-nb-EHMbicuqqU05FD5Q-1; Tue, 12 Jan 2021 10:12:04 -0500
-X-MC-Unique: iK-nb-EHMbicuqqU05FD5Q-1
-Received: from smtp.corp.redhat.com (int-mx04.intmail.prod.int.phx2.redhat.com
- [10.5.11.14])
- (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
- (No client certificate requested)
- by mimecast-mx01.redhat.com (Postfix) with ESMTPS id CEE4C100C601;
- Tue, 12 Jan 2021 15:12:01 +0000 (UTC)
-Received: from madcap2.tricolour.ca (unknown [10.10.110.8])
- by smtp.corp.redhat.com (Postfix) with ESMTP id BB2325D9CD;
- Tue, 12 Jan 2021 15:11:55 +0000 (UTC)
-From: Richard Guy Briggs <rgb@redhat.com>
-To: Linux Containers List <containers@lists.linux-foundation.org>,
- Linux API <linux-api@vger.kernel.org>,
- Linux-Audit Mailing List <linux-audit@redhat.com>,
- Linux FSdevel <linux-fsdevel@vger.kernel.org>,
- LKML <linux-kernel@vger.kernel.org>,
- Linux NetDev Upstream Mailing List <netdev@vger.kernel.org>,
- Netfilter Devel List <netfilter-devel@vger.kernel.org>
-Subject: [PATCH ghak90 v11 11/11] audit: add capcontid to set contid outside
- init_user_ns
-Date: Tue, 12 Jan 2021 10:09:39 -0500
-Message-Id: <f535d3945bf0fccb3fd6278ec6bb2f0f01317fd3.1610399347.git.rgb@redhat.com>
-In-Reply-To: <cover.1610399347.git.rgb@redhat.com>
-References: <cover.1610399347.git.rgb@redhat.com>
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.14
-Cc: Jens Axboe <axboe@kernel.dk>, Kees Cook <keescook@chromium.org>,
- Neil Horman <nhorman@tuxdriver.com>, Richard Guy Briggs <rgb@redhat.com>,
- David Howells <dhowells@redhat.com>,
- "Eric W. Biederman" <ebiederm@xmission.com>, Simo Sorce <simo@redhat.com>,
- Eric Paris <eparis@parisplace.org>, mpatel@redhat.com
+ Tue, 12 Jan 2021 22:03:45 +0000 (UTC)
+Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
+ helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
+ (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
+ (envelope-from <christian.brauner@ubuntu.com>)
+ id 1kzRkU-0003bd-R2; Tue, 12 Jan 2021 22:02:46 +0000
+From: Christian Brauner <christian.brauner@ubuntu.com>
+To: Alexander Viro <viro@zeniv.linux.org.uk>,
+ Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org
+Subject: [PATCH v5 02/42] mount: make {lock,unlock}_mount_hash() static
+Date: Tue, 12 Jan 2021 23:00:44 +0100
+Message-Id: <20210112220124.837960-3-christian.brauner@ubuntu.com>
+X-Mailer: git-send-email 2.30.0
+In-Reply-To: <20210112220124.837960-1-christian.brauner@ubuntu.com>
+References: <20210112220124.837960-1-christian.brauner@ubuntu.com>
+MIME-Version: 1.0
+X-Patch-Hashes: v=1; h=sha256; i=vO6mqD1pvztvOW1otxIX/33XHCNZr+llU/zGWpmgRcU=;
+ m=urR2rAIlQm7B+Wnhux1HQqMBhK+gzFRqnuakSaYsLEw=;
+ p=FzHd8xIvHJqF6DeGhIkxr3GWqyk+wfjD+OZpRToKI4o=;
+ g=a01f7f9b00b67a1698d6ed6ffbed46e285973451
+X-Patch-Sig: m=pgp; i=christian.brauner@ubuntu.com; s=0x0x91C61BC06578DCA2;
+ b=iHUEABYKAB0WIQRAhzRXHqcMeLMyaSiRxhvAZXjcogUCX/4YtQAKCRCRxhvAZXjcorMkAQDuVqe
+ kjayCqPe3qytw6oZ7nOgpZjngGZBcdjtF8EvVmQD/TTQi6iRuXo2TWtRa3j82P+plXgb3Vj3OCV7l
+ LedXkwo=
+Cc: Lennart Poettering <lennart@poettering.net>,
+ Mimi Zohar <zohar@linux.ibm.com>,
+ James Bottomley <James.Bottomley@hansenpartnership.com>,
+ Andreas Dilger <adilger.kernel@dilger.ca>,
+ containers@lists.linux-foundation.org, Christoph Hellwig <hch@lst.de>,
+ Tycho Andersen <tycho@tycho.ws>, Paul Moore <paul@paul-moore.com>,
+ Jonathan Corbet <corbet@lwn.net>, smbarber@chromium.org,
+ linux-ext4@vger.kernel.org, Mrunal Patel <mpatel@redhat.com>,
+ Kees Cook <keescook@chromium.org>, Arnd Bergmann <arnd@arndb.de>,
+ selinux@vger.kernel.org, Josh Triplett <josh@joshtriplett.org>,
+ Seth Forshee <seth.forshee@canonical.com>, Aleksa Sarai <cyphar@cyphar.com>,
+ Andy Lutomirski <luto@kernel.org>,
+ OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
+ Geoffrey Thomas <geofft@ldpreload.com>, David Howells <dhowells@redhat.com>,
+ John Johansen <john.johansen@canonical.com>, Theodore Tso <tytso@mit.edu>,
+ Dmitry Kasatkin <dmitry.kasatkin@gmail.com>,
+ Stephen Smalley <stephen.smalley.work@gmail.com>, linux-xfs@vger.kernel.org,
+ linux-security-module@vger.kernel.org,
+ "Eric W. Biederman" <ebiederm@xmission.com>, linux-api@vger.kernel.org,
+ Casey Schaufler <casey@schaufler-ca.com>, Alban Crequy <alban@kinvolk.io>,
+ linux-integrity@vger.kernel.org,
+ Linus Torvalds <torvalds@linux-foundation.org>, Todd Kjos <tkjos@google.com>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -102,287 +106,84 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Provide a mechanism similar to CAP_AUDIT_CONTROL to explicitly give a
-process in a non-init user namespace the capability to set audit
-container identifiers of individual children.
+The lock_mount_hash() and unlock_mount_hash() helpers are never called
+outside a single file. Remove them from the header and make them static
+to reflect this fact. There's no need to have them callable from other
+places right now, as Christoph observed.
 
-Provide the /proc/$PID/audit_capcontid interface to capcontid.
-Valid values are: 1==enabled, 0==disabled
-
-Writing a "1" to this special file for the target process $PID will
-enable the target process to set audit container identifiers of its
-descendants.
-
-A process must already have CAP_AUDIT_CONTROL in the initial user
-namespace or have had audit_capcontid enabled by a previous use of this
-feature by its parent on this process in order to be able to enable it
-for another process.  The target process must be a descendant of the
-calling process.
-
-Report this action in new message type AUDIT_SET_CAPCONTID 1022 with
-fields opid= capcontid= old-capcontid=
-
-Add an entry to Documentation/ABI.
-
-Signed-off-by: Richard Guy Briggs <rgb@redhat.com>
+Suggested-by: Christoph Hellwig <hch@lst.de>
+Cc: David Howells <dhowells@redhat.com>
+Cc: Al Viro <viro@zeniv.linux.org.uk>
+Cc: linux-fsdevel@vger.kernel.org
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
- .../ABI/testing/procfs-audit_containerid      | 16 +++++
- fs/proc/base.c                                | 54 +++++++++++++++
- include/linux/audit.h                         |  4 +-
- include/uapi/linux/audit.h                    |  1 +
- kernel/audit.c                                | 65 ++++++++++++++++++-
- 5 files changed, 137 insertions(+), 3 deletions(-)
+/* v2 */
+- Christoph Hellwig <hch@lst.de>:
+  - Add a patch to make {lock,unlock)_mount_hash() static.
 
-diff --git a/Documentation/ABI/testing/procfs-audit_containerid b/Documentation/ABI/testing/procfs-audit_containerid
-index 30ea64790473..c697d7da0ad1 100644
---- a/Documentation/ABI/testing/procfs-audit_containerid
-+++ b/Documentation/ABI/testing/procfs-audit_containerid
-@@ -11,3 +11,19 @@ Description:
- 		or have its own /proc/$pid/capcontainerid set to write
- 		or read.
+/* v3 */
+unchanged
+
+/* v4 */
+unchanged
+
+/* v5 */
+base-commit: 7c53f6b671f4aba70ff15e1b05148b10d58c2837
+---
+ fs/mount.h     | 10 ----------
+ fs/namespace.c | 10 ++++++++++
+ 2 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/fs/mount.h b/fs/mount.h
+index ce6c376e0bc2..0b6e08cf8afb 100644
+--- a/fs/mount.h
++++ b/fs/mount.h
+@@ -124,16 +124,6 @@ static inline void get_mnt_ns(struct mnt_namespace *ns)
  
-+
-+What:		Capability to set or get the Audit Container Identifier
-+Date:		2020-??
-+KernelVersion:	5.10?
-+Contact:	linux-audit@redhat.com
-+Format:		u32
-+Users:		auditd, libaudit, audit-testsuite, podman(?), container orchestrators
-+Description:
-+		The /proc/$pid/audit_capcontainerid pseudofile is
-+		written to set and is read to get the capability of
-+		process $pid to write or to read the /proc/$pid/containerid
-+		audit container identifier of any of its descendants.
-+		"1" allows and "0" denies that capability.  This
-+		property is an extension to CAP_AUDIT_CONTROL outside of
-+		the initial user namespace.
-+
-diff --git a/fs/proc/base.c b/fs/proc/base.c
-index bf447e7932d2..7495eec1c73b 100644
---- a/fs/proc/base.c
-+++ b/fs/proc/base.c
-@@ -1383,6 +1383,58 @@ static const struct file_operations proc_contid_operations = {
- 	.write		= proc_contid_write,
- 	.llseek		= generic_file_llseek,
- };
-+
-+static ssize_t proc_capcontid_read(struct file *file, char __user *buf,
-+				  size_t count, loff_t *ppos)
-+{
-+	struct inode *inode = file_inode(file);
-+	struct task_struct *task = get_proc_task(inode);
-+	ssize_t length;
-+	char tmpbuf[TMPBUFLEN];
-+
-+	if (!task)
-+		return -ESRCH;
-+	length = audit_get_capcontid_proc(tmpbuf, TMPBUFLEN, task);
-+	put_task_struct(task);
-+	if (length < 0)
-+		return length;
-+	return simple_read_from_buffer(buf, count, ppos, tmpbuf, length);
-+}
-+
-+static ssize_t proc_capcontid_write(struct file *file, const char __user *buf,
-+				   size_t count, loff_t *ppos)
-+{
-+	struct inode *inode = file_inode(file);
-+	u32 capcontid;
-+	int rv;
-+	struct task_struct *task = get_proc_task(inode);
-+
-+	if (!task)
-+		return -ESRCH;
-+	if (*ppos != 0) {
-+		/* No partial writes. */
-+		put_task_struct(task);
-+		return -EINVAL;
-+	}
-+
-+	rv = kstrtou32_from_user(buf, count, 10, &capcontid);
-+	if (rv < 0) {
-+		put_task_struct(task);
-+		return rv;
-+	}
-+
-+	rv = audit_set_capcontid(task, capcontid);
-+	put_task_struct(task);
-+	if (rv < 0)
-+		return rv;
-+	return count;
-+}
-+
-+static const struct file_operations proc_capcontid_operations = {
-+	.read		= proc_capcontid_read,
-+	.write		= proc_capcontid_write,
-+	.llseek		= generic_file_llseek,
-+};
- #endif
+ extern seqlock_t mount_lock;
  
- #ifdef CONFIG_FAULT_INJECTION
-@@ -3286,6 +3338,7 @@ static const struct pid_entry tgid_base_stuff[] = {
- 	REG("loginuid",   S_IWUSR|S_IRUGO, proc_loginuid_operations),
- 	REG("sessionid",  S_IRUGO, proc_sessionid_operations),
- 	REG("audit_containerid", S_IWUSR|S_IRUSR, proc_contid_operations),
-+	REG("audit_capcontainerid", S_IWUSR|S_IRUSR, proc_capcontid_operations),
- #endif
- #ifdef CONFIG_FAULT_INJECTION
- 	REG("make-it-fail", S_IRUGO|S_IWUSR, proc_fault_inject_operations),
-@@ -3629,6 +3682,7 @@ static const struct pid_entry tid_base_stuff[] = {
- 	REG("loginuid",  S_IWUSR|S_IRUGO, proc_loginuid_operations),
- 	REG("sessionid",  S_IRUGO, proc_sessionid_operations),
- 	REG("audit_containerid", S_IWUSR|S_IRUSR, proc_contid_operations),
-+	REG("audit_capcontainerid", S_IWUSR|S_IRUSR, proc_capcontid_operations),
- #endif
- #ifdef CONFIG_FAULT_INJECTION
- 	REG("make-it-fail", S_IRUGO|S_IWUSR, proc_fault_inject_operations),
-diff --git a/include/linux/audit.h b/include/linux/audit.h
-index 014f73296fec..3f5444393618 100644
---- a/include/linux/audit.h
-+++ b/include/linux/audit.h
-@@ -214,8 +214,10 @@ extern void audit_set_sessionid_iouring(unsigned int sessionid);
- 
- extern int audit_get_contid_proc(char *tmpbuf, int TMPBUFLEN,
- 				 struct task_struct *task);
+-static inline void lock_mount_hash(void)
+-{
+-	write_seqlock(&mount_lock);
+-}
 -
-+extern int audit_get_capcontid_proc(char *tmpbuf, int TMPBUFLEN,
-+				 struct task_struct *task);
- extern int audit_set_contid(struct task_struct *tsk, u64 contid);
-+extern int audit_set_capcontid(struct task_struct *tsk, u32 enable);
+-static inline void unlock_mount_hash(void)
+-{
+-	write_sequnlock(&mount_lock);
+-}
+-
+ struct proc_mounts {
+ 	struct mnt_namespace *ns;
+ 	struct path root;
+diff --git a/fs/namespace.c b/fs/namespace.c
+index dc782ddf603e..8cb2c132525a 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -87,6 +87,16 @@ EXPORT_SYMBOL_GPL(fs_kobj);
+  */
+ __cacheline_aligned_in_smp DEFINE_SEQLOCK(mount_lock);
  
- extern void audit_copy_namespaces(struct net *net, struct task_struct *tsk);
- extern void audit_switch_task_namespaces(struct nsproxy *ns,
-diff --git a/include/uapi/linux/audit.h b/include/uapi/linux/audit.h
-index 66350e572e41..b7c7ab2e6a1d 100644
---- a/include/uapi/linux/audit.h
-+++ b/include/uapi/linux/audit.h
-@@ -73,6 +73,7 @@
- #define AUDIT_GET_FEATURE	1019	/* Get which features are enabled */
- #define AUDIT_CONTAINER_OP	1020	/* Define the container id and info */
- #define AUDIT_SIGNAL_INFO2	1021	/* Get info auditd signal sender */
-+#define AUDIT_SET_CAPCONTID	1022	/* Set cap_contid of a task */
- 
- #define AUDIT_FIRST_USER_MSG	1100	/* Userspace messages mostly uninteresting to kernel */
- #define AUDIT_USER_AVC		1107	/* We filter this differently */
-diff --git a/kernel/audit.c b/kernel/audit.c
-index d2e9d803e5fd..7e825305b3c2 100644
---- a/kernel/audit.c
-+++ b/kernel/audit.c
-@@ -238,6 +238,7 @@ struct audit_task_info {
- 	kuid_t			loginuid;
- 	unsigned int		sessionid;
- 	struct audit_contobj	*cont;
-+	u32			capcontid;
- #ifdef CONFIG_AUDITSYSCALL
- 	struct audit_context	*ctx;
- #endif
-@@ -308,6 +309,15 @@ static inline u64 audit_get_contid(struct task_struct *tsk)
- 	return info->cont->id;
- }
- 
-+static inline u32 audit_get_capcontid(struct task_struct *tsk)
++static inline void lock_mount_hash(void)
 +{
-+	struct audit_task_info *info = tsk->audit;
-+
-+	if (!info)
-+		return 0;
-+	return info->capcontid;
++	write_seqlock(&mount_lock);
 +}
 +
- inline struct audit_context *_audit_context(struct task_struct *tsk)
++static inline void unlock_mount_hash(void)
++{
++	write_sequnlock(&mount_lock);
++}
++
+ static inline struct hlist_head *m_hash(struct vfsmount *mnt, struct dentry *dentry)
  {
- 	struct audit_task_info *info = tsk->audit;
-@@ -420,6 +430,7 @@ static void audit_alloc_task(struct task_struct *tsk)
- 	rcu_read_lock();
- 	info->cont = _audit_contobj_get_bytask(current);
- 	rcu_read_unlock();
-+	info->capcontid = 0;
- 	tsk->audit = info;
- }
- 
-@@ -2988,6 +2999,56 @@ static bool audit_contid_isnesting(struct task_struct *tsk)
- 	return !isowner && ownerisparent;
- }
- 
-+int audit_set_capcontid(struct task_struct *tsk, u32 enable)
-+{
-+	u32 oldcapcontid;
-+	int rc = 0;
-+	struct audit_buffer *ab;
-+	struct audit_task_info *info = tsk->audit;
-+
-+	if (!info)
-+		return -ENOPROTOOPT;
-+	oldcapcontid = audit_get_capcontid(tsk);
-+	/* if task is not descendant, block */
-+	if (tsk == current || !task_is_descendant(current, tsk))
-+		rc = -EXDEV;
-+	else if (current_user_ns() == &init_user_ns) {
-+		if (!capable(CAP_AUDIT_CONTROL) &&
-+		    !audit_get_capcontid(current))
-+			rc = -EPERM;
-+	}
-+	if (!rc)
-+		info->capcontid = enable;
-+
-+	if (!audit_enabled)
-+		return rc;
-+
-+	ab = audit_log_start(audit_context(), GFP_KERNEL, AUDIT_SET_CAPCONTID);
-+	if (!ab)
-+		return rc;
-+
-+	audit_log_format(ab,
-+			 "opid=%d capcontid=%u old-capcontid=%u",
-+			 task_tgid_nr(tsk), enable, oldcapcontid);
-+	audit_log_end(ab);
-+	return rc;
-+}
-+
-+int audit_get_capcontid_proc(char *tmpbuf, int TMPBUFLEN,
-+			  struct task_struct *tsk)
-+{
-+	int length;
-+
-+	/* if we don't have caps, reject */
-+	if (!capable(CAP_AUDIT_CONTROL) && !audit_get_capcontid(current)) {
-+		length = -EPERM;
-+		goto out;
-+	}
-+	length = scnprintf(tmpbuf, TMPBUFLEN, "%u", audit_get_capcontid(tsk));
-+out:
-+	return length;
-+}
-+
- /*
-  * audit_set_contid - set current task's audit contid
-  * @tsk: target task
-@@ -3021,7 +3082,7 @@ int audit_set_contid(struct task_struct *tsk, u64 contid)
- 	if (contid == AUDIT_CID_UNSET) {
- 		/* Don't allow the contid to be unset */
- 		rc = -EINVAL;
--	} else if (!capable(CAP_AUDIT_CONTROL)) {
-+	} else if (!capable(CAP_AUDIT_CONTROL) && !audit_get_capcontid(current)) {
- 		/* if we don't have caps, reject */
- 		rc = -EPERM;
- 	} else if (!list_empty(&tsk->children) ||
-@@ -3111,7 +3172,7 @@ int audit_get_contid_proc(char *tmpbuf, int TMPBUFLEN,
- 	int length;
- 
- 	/* if we don't have caps, reject */
--	if (!capable(CAP_AUDIT_CONTROL)) {
-+	if (!capable(CAP_AUDIT_CONTROL) && !audit_get_capcontid(current)) {
- 		length = -EPERM;
- 		goto out;
- 	}
+ 	unsigned long tmp = ((unsigned long)mnt / L1_CACHE_BYTES);
 -- 
-2.18.4
+2.30.0
 
 _______________________________________________
 Containers mailing list
