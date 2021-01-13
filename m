@@ -2,89 +2,100 @@ Return-Path: <SRS0=vxAo=GQ=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+X-Spam-Status: No, score=-13.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7447AC433E0
-	for <containers@archiver.kernel.org>; Wed, 13 Jan 2021 16:32:54 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2FFFEC433E0
+	for <containers@archiver.kernel.org>; Wed, 13 Jan 2021 18:02:08 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 981E323442
-	for <containers@archiver.kernel.org>; Wed, 13 Jan 2021 16:32:53 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 981E323442
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=xmission.com
+	by mail.kernel.org (Postfix) with ESMTPS id AC59821534
+	for <containers@archiver.kernel.org>; Wed, 13 Jan 2021 18:02:07 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AC59821534
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=chromium.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id EC4E186538;
-	Wed, 13 Jan 2021 16:32:52 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 48FE286B2D;
+	Wed, 13 Jan 2021 18:02:07 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id MHaza-o2lp-J; Wed, 13 Jan 2021 16:32:51 +0000 (UTC)
+	with ESMTP id 47-zXU4jaInr; Wed, 13 Jan 2021 18:02:06 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id CD88886529;
-	Wed, 13 Jan 2021 16:32:51 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 79F7386B4A;
+	Wed, 13 Jan 2021 18:02:06 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id B0D3BC088B;
-	Wed, 13 Jan 2021 16:32:51 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 83183C013A
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 5C0D4C0893;
+	Wed, 13 Jan 2021 18:02:06 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 88A4AC013A
  for <containers@lists.linux-foundation.org>;
- Wed, 13 Jan 2021 16:32:50 +0000 (UTC)
+ Wed, 13 Jan 2021 18:02:05 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 716C987263
+ by whitealder.osuosl.org (Postfix) with ESMTP id 73F9A86B3F
  for <containers@lists.linux-foundation.org>;
- Wed, 13 Jan 2021 16:32:50 +0000 (UTC)
+ Wed, 13 Jan 2021 18:02:05 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id K28EujxZr2Rq
+ with ESMTP id kKu61DBjpM0L
  for <containers@lists.linux-foundation.org>;
- Wed, 13 Jan 2021 16:32:45 +0000 (UTC)
-X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from out02.mta.xmission.com (out02.mta.xmission.com [166.70.13.232])
- by hemlock.osuosl.org (Postfix) with ESMTPS id D1B4C8725F
+ Wed, 13 Jan 2021 18:02:01 +0000 (UTC)
+X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
+Received: from mail-pf1-f171.google.com (mail-pf1-f171.google.com
+ [209.85.210.171])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 3B2B686B39
  for <containers@lists.linux-foundation.org>;
- Wed, 13 Jan 2021 16:32:45 +0000 (UTC)
-Received: from in02.mta.xmission.com ([166.70.13.52])
- by out02.mta.xmission.com with esmtps (TLS1.3) tls
- TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 (Exim 4.93)
- (envelope-from <ebiederm@xmission.com>)
- id 1kzj4e-006oSo-Ji; Wed, 13 Jan 2021 09:32:44 -0700
-Received: from ip68-227-160-95.om.om.cox.net ([68.227.160.95]
- helo=x220.xmission.com)
- by in02.mta.xmission.com with esmtpsa (TLS1.3) tls
- TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 (Exim 4.93)
- (envelope-from <ebiederm@xmission.com>)
- id 1kzj4d-009Vz0-HQ; Wed, 13 Jan 2021 09:32:44 -0700
-From: ebiederm@xmission.com (Eric W. Biederman)
-To: Alexey Gladkov <gladkov.alexey@gmail.com>
+ Wed, 13 Jan 2021 18:01:57 +0000 (UTC)
+Received: by mail-pf1-f171.google.com with SMTP id q20so1701266pfu.8
+ for <containers@lists.linux-foundation.org>;
+ Wed, 13 Jan 2021 10:01:57 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=chromium.org; s=google;
+ h=date:from:to:cc:subject:message-id:references:mime-version
+ :content-disposition:in-reply-to;
+ bh=2yOASqLXCFmH8rHiDFY5aK5IF9dZ2OI5aQ21Vbh1eP8=;
+ b=gHtUHzUPG5nr4qeM6RqXwHoa31eiMAo2G3XbBdMPhPetpWhM+8FxJcVQrQckAjJOts
+ a+PuAK+iIngRm+Yp1MRDCVK0BKRkRO9ogHvQh8O/VHesI2z8n5+VeisZVKsjgEqjLV5k
+ U3cHR0de4KgfDQBMl4Uj4g9/NyiGrIcwhViN8=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=1e100.net; s=20161025;
+ h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+ :mime-version:content-disposition:in-reply-to;
+ bh=2yOASqLXCFmH8rHiDFY5aK5IF9dZ2OI5aQ21Vbh1eP8=;
+ b=Gx4xpT/lslHUmNUZAYf8j83Fp6gO/meESLFdIKrwUvwAgVABZJ37c0KPkkm9SFgo9u
+ YQ7sCRm0EOayWLj/F5V9mgVZfD9wFOhC53fYGKLxXXJaboLzxRM3EMA2Tmk9be+CCbp3
+ egcBZrNqqUHsOlLAcdO9qN+tUDKdZe1RgOzP7ObDNilV/grAZZf1ldEvNhaMg2bYi67d
+ JHOhXMZScnMaBVukUWTYX+re0suSQdnHLqoOP3EVU4hq7XWFh3LK7fOz0cPamVy4DCrR
+ oFkdQP+Yle4io+BRxjYZLVvclbDix0KYHQuiCOMx37Cj4HLtH5DEAQBmoMrnkWcvwvCG
+ uqKw==
+X-Gm-Message-State: AOAM532s9B6Nj7lDcWl0ORqIdHsamSK9AYTTw4EzAIyVO94axPlamiJ5
+ tOcdJCmUU9ddidBfRnODfVPHKQ==
+X-Google-Smtp-Source: ABdhPJy/l5JCoFPdFR12hWOnKrP/lLjwYszhjP/WNJBh99XAQ0ifkW1xWHqHas6EDvPBSGX8HpJRMQ==
+X-Received: by 2002:a63:8f19:: with SMTP id n25mr3154262pgd.17.1610560917380; 
+ Wed, 13 Jan 2021 10:01:57 -0800 (PST)
+Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
+ by smtp.gmail.com with ESMTPSA id c5sm3574184pjo.4.2021.01.13.10.01.56
+ (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+ Wed, 13 Jan 2021 10:01:56 -0800 (PST)
+Date: Wed, 13 Jan 2021 10:01:55 -0800
+From: Kees Cook <keescook@chromium.org>
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Subject: Re: [RFC PATCH v2 1/8] Use atomic type for ucounts reference counting
+Message-ID: <202101131001.BF1108F90@keescook>
 References: <cover.1610299857.git.gladkov.alexey@gmail.com>
  <447547b12bba1894d3f1f79d6408dfc60b219b0c.1610299857.git.gladkov.alexey@gmail.com>
-Date: Wed, 13 Jan 2021 10:31:40 -0600
-In-Reply-To: <447547b12bba1894d3f1f79d6408dfc60b219b0c.1610299857.git.gladkov.alexey@gmail.com>
- (Alexey Gladkov's message of "Sun, 10 Jan 2021 18:33:40 +0100")
-Message-ID: <878s8wdcib.fsf@x220.int.ebiederm.org>
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/26.1 (gnu/linux)
+ <878s8wdcib.fsf@x220.int.ebiederm.org>
 MIME-Version: 1.0
-X-XM-SPF: eid=1kzj4d-009Vz0-HQ; ; ; mid=<878s8wdcib.fsf@x220.int.ebiederm.org>;
- ; ; hst=in02.mta.xmission.com; ; ; ip=68.227.160.95; ; ;
- frm=ebiederm@xmission.com; ; ; spf=neutral
-X-XM-AID: U2FsdGVkX195fKSBqSZ+lYzEZIXlkNCqt38tQhw2MoY=
-X-SA-Exim-Connect-IP: 68.227.160.95
-X-SA-Exim-Mail-From: ebiederm@xmission.com
-Subject: Re: [RFC PATCH v2 1/8] Use atomic type for ucounts reference counting
-X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
-X-SA-Exim-Scanned: Yes (on in02.mta.xmission.com)
-Cc: Kees Cook <keescook@chromium.org>,
- Kernel Hardening <kernel-hardening@lists.openwall.com>,
- Linus Torvalds <torvalds@linux-foundation.org>,
+Content-Disposition: inline
+In-Reply-To: <878s8wdcib.fsf@x220.int.ebiederm.org>
+Cc: Kernel Hardening <kernel-hardening@lists.openwall.com>,
  Linux Containers <containers@lists.linux-foundation.org>,
- LKML <linux-kernel@vger.kernel.org>, Alexey Gladkov <legion@kernel.org>,
- Christian Brauner <christian@brauner.io>
+ LKML <linux-kernel@vger.kernel.org>,
+ Linus Torvalds <torvalds@linux-foundation.org>,
+ Alexey Gladkov <legion@kernel.org>, Christian Brauner <christian@brauner.io>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -101,81 +112,91 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Alexey Gladkov <gladkov.alexey@gmail.com> writes:
+On Wed, Jan 13, 2021 at 10:31:40AM -0600, Eric W. Biederman wrote:
+> Alexey Gladkov <gladkov.alexey@gmail.com> writes:
+> 
+> We might want to use refcount_t instead of atomic_t.  Not a big deal
+> either way.
 
-We might want to use refcount_t instead of atomic_t.  Not a big deal
-either way.
+Yes, please use refcount_t, and don't use _read() since that introduces
+races.
 
-> Signed-off-by: Alexey Gladkov <gladkov.alexey@gmail.com>
-> ---
->  include/linux/user_namespace.h |  2 +-
->  kernel/ucount.c                | 10 +++++-----
->  2 files changed, 6 insertions(+), 6 deletions(-)
->
-> diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-> index 64cf8ebdc4ec..84fefa9247c4 100644
-> --- a/include/linux/user_namespace.h
-> +++ b/include/linux/user_namespace.h
-> @@ -92,7 +92,7 @@ struct ucounts {
->  	struct hlist_node node;
->  	struct user_namespace *ns;
->  	kuid_t uid;
-> -	int count;
-> +	atomic_t count;
->  	atomic_t ucount[UCOUNT_COUNTS];
->  };
->  
-> diff --git a/kernel/ucount.c b/kernel/ucount.c
-> index 11b1596e2542..0f2c7c11df19 100644
-> --- a/kernel/ucount.c
-> +++ b/kernel/ucount.c
-> @@ -141,7 +141,8 @@ static struct ucounts *get_ucounts(struct user_namespace *ns, kuid_t uid)
->  
->  		new->ns = ns;
->  		new->uid = uid;
-> -		new->count = 0;
-> +
-> +		atomic_set(&new->count, 0);
->  
->  		spin_lock_irq(&ucounts_lock);
->  		ucounts = find_ucounts(ns, uid, hashent);
-> @@ -152,10 +153,10 @@ static struct ucounts *get_ucounts(struct user_namespace *ns, kuid_t uid)
->  			ucounts = new;
->  		}
->  	}
-> -	if (ucounts->count == INT_MAX)
-> +	if (atomic_read(&ucounts->count) == INT_MAX)
->  		ucounts = NULL;
->  	else
-> -		ucounts->count += 1;
-> +		atomic_inc(&ucounts->count);
->  	spin_unlock_irq(&ucounts_lock);
->  	return ucounts;
->  }
-> @@ -165,8 +166,7 @@ static void put_ucounts(struct ucounts *ucounts)
->  	unsigned long flags;
->  
->  	spin_lock_irqsave(&ucounts_lock, flags);
-> -	ucounts->count -= 1;
-> -	if (!ucounts->count)
-> +	if (atomic_dec_and_test(&ucounts->count))
->  		hlist_del_init(&ucounts->node);
->  	else
->  		ucounts = NULL;
+-Kees
 
+> 
+> > Signed-off-by: Alexey Gladkov <gladkov.alexey@gmail.com>
+> > ---
+> >  include/linux/user_namespace.h |  2 +-
+> >  kernel/ucount.c                | 10 +++++-----
+> >  2 files changed, 6 insertions(+), 6 deletions(-)
+> >
+> > diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+> > index 64cf8ebdc4ec..84fefa9247c4 100644
+> > --- a/include/linux/user_namespace.h
+> > +++ b/include/linux/user_namespace.h
+> > @@ -92,7 +92,7 @@ struct ucounts {
+> >  	struct hlist_node node;
+> >  	struct user_namespace *ns;
+> >  	kuid_t uid;
+> > -	int count;
+> > +	atomic_t count;
+> >  	atomic_t ucount[UCOUNT_COUNTS];
+> >  };
+> >  
+> > diff --git a/kernel/ucount.c b/kernel/ucount.c
+> > index 11b1596e2542..0f2c7c11df19 100644
+> > --- a/kernel/ucount.c
+> > +++ b/kernel/ucount.c
+> > @@ -141,7 +141,8 @@ static struct ucounts *get_ucounts(struct user_namespace *ns, kuid_t uid)
+> >  
+> >  		new->ns = ns;
+> >  		new->uid = uid;
+> > -		new->count = 0;
+> > +
+> > +		atomic_set(&new->count, 0);
+> >  
+> >  		spin_lock_irq(&ucounts_lock);
+> >  		ucounts = find_ucounts(ns, uid, hashent);
+> > @@ -152,10 +153,10 @@ static struct ucounts *get_ucounts(struct user_namespace *ns, kuid_t uid)
+> >  			ucounts = new;
+> >  		}
+> >  	}
+> > -	if (ucounts->count == INT_MAX)
+> > +	if (atomic_read(&ucounts->count) == INT_MAX)
+> >  		ucounts = NULL;
+> >  	else
+> > -		ucounts->count += 1;
+> > +		atomic_inc(&ucounts->count);
+> >  	spin_unlock_irq(&ucounts_lock);
+> >  	return ucounts;
+> >  }
+> > @@ -165,8 +166,7 @@ static void put_ucounts(struct ucounts *ucounts)
+> >  	unsigned long flags;
+> >  
+> >  	spin_lock_irqsave(&ucounts_lock, flags);
+> > -	ucounts->count -= 1;
+> > -	if (!ucounts->count)
+> > +	if (atomic_dec_and_test(&ucounts->count))
+> >  		hlist_del_init(&ucounts->node);
+> >  	else
+> >  		ucounts = NULL;
+> 
+> 
+> This can become:
+> static void put_ucounts(struct ucounts *ucounts)
+> {
+> 	unsigned long flags;
+> 
+>         if (atomic_dec_and_lock_irqsave(&ucounts->count, &ucounts_lock, flags)) {
+>         	hlist_del_init(&ucounts->node);
+>                 spin_unlock_irqrestore(&ucounts_lock);
+>                 kfree(ucounts);
+>         }
+> }
+> 
 
-This can become:
-static void put_ucounts(struct ucounts *ucounts)
-{
-	unsigned long flags;
-
-        if (atomic_dec_and_lock_irqsave(&ucounts->count, &ucounts_lock, flags)) {
-        	hlist_del_init(&ucounts->node);
-                spin_unlock_irqrestore(&ucounts_lock);
-                kfree(ucounts);
-        }
-}
-
+-- 
+Kees Cook
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
