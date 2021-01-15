@@ -2,78 +2,102 @@ Return-Path: <SRS0=Gs6x=GS=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
-	DKIM_ADSP_CUSTOM_MED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E142C433DB
-	for <containers@archiver.kernel.org>; Fri, 15 Jan 2021 14:59:24 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A36BC433E0
+	for <containers@archiver.kernel.org>; Fri, 15 Jan 2021 16:26:38 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id B65A623370
-	for <containers@archiver.kernel.org>; Fri, 15 Jan 2021 14:59:23 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B65A623370
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	by mail.kernel.org (Postfix) with ESMTPS id EE4FC23772
+	for <containers@archiver.kernel.org>; Fri, 15 Jan 2021 16:26:37 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EE4FC23772
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 5802486C4A;
-	Fri, 15 Jan 2021 14:59:23 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 7EFD220411;
+	Fri, 15 Jan 2021 16:26:37 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 20agIPTK2LUf; Fri, 15 Jan 2021 14:59:18 +0000 (UTC)
+	with ESMTP id gUTHiXmphBdx; Fri, 15 Jan 2021 16:26:36 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 86CDE86A1D;
-	Fri, 15 Jan 2021 14:59:18 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 62AF72035C;
+	Fri, 15 Jan 2021 16:26:36 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 7F564C0893;
-	Fri, 15 Jan 2021 14:59:18 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 43803C0893;
+	Fri, 15 Jan 2021 16:26:36 +0000 (UTC)
 Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 64059C013A
+ by lists.linuxfoundation.org (Postfix) with ESMTP id A59D3C013A
  for <containers@lists.linux-foundation.org>;
- Fri, 15 Jan 2021 14:59:15 +0000 (UTC)
+ Fri, 15 Jan 2021 16:26:33 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 5292E8688C
+ by whitealder.osuosl.org (Postfix) with ESMTP id 8BA4B86CCF
  for <containers@lists.linux-foundation.org>;
- Fri, 15 Jan 2021 14:59:15 +0000 (UTC)
+ Fri, 15 Jan 2021 16:26:33 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id g96vlVIynKAl
+ with ESMTP id b8TMLVPbyLm2
  for <containers@lists.linux-foundation.org>;
- Fri, 15 Jan 2021 14:59:13 +0000 (UTC)
+ Fri, 15 Jan 2021 16:26:31 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from raptor.unsafe.ru (raptor.unsafe.ru [5.9.43.93])
- by whitealder.osuosl.org (Postfix) with ESMTP id 945D38671E
+Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
+ by whitealder.osuosl.org (Postfix) with ESMTPS id B70D6838B8
  for <containers@lists.linux-foundation.org>;
- Fri, 15 Jan 2021 14:59:13 +0000 (UTC)
-Received: from comp-core-i7-2640m-0182e6.redhat.com
- (ip-89-103-122-167.net.upcbroadband.cz [89.103.122.167])
- (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
- (No client certificate requested)
- by raptor.unsafe.ru (Postfix) with ESMTPSA id 1820120A0F;
- Fri, 15 Jan 2021 14:59:11 +0000 (UTC)
-From: Alexey Gladkov <gladkov.alexey@gmail.com>
-To: LKML <linux-kernel@vger.kernel.org>, io-uring@vger.kernel.org,
- Kernel Hardening <kernel-hardening@lists.openwall.com>,
- Linux Containers <containers@lists.linux-foundation.org>,
- linux-mm@kvack.org
-Subject: [RFC PATCH v3 2/8] Add a reference to ucounts for each cred
-Date: Fri, 15 Jan 2021 15:57:23 +0100
-Message-Id: <bea844285b19c8caf2e656c7ea329a7b2e812c42.1610722474.git.gladkov.alexey@gmail.com>
-X-Mailer: git-send-email 2.29.2
-In-Reply-To: <cover.1610722473.git.gladkov.alexey@gmail.com>
-References: <cover.1610722473.git.gladkov.alexey@gmail.com>
+ Fri, 15 Jan 2021 16:26:31 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+ d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+ References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+ Content-Transfer-Encoding:Content-ID:Content-Description;
+ bh=EUWYO0kUNOPL0+8rq+jqNdckkmjaAICmJuUUQfapnmg=; b=JYVtCComagNhb7hqCp7+K8cypw
+ 3uzb/XWKSiI2wd079jfEh54E6UXbFNCkIXVtdMz85yoJmiYJ9S2w+4QoKhU1MSjyIOqb1p214g57v
+ OYst5auFjT2CF13mk3P4uIRmdte6st+AwYPpwos0v4T/lMifmY9WrdQQJ/mDBdVXp56iuYGKsQtWe
+ O2pK8U4clVUk2Sb9MeZFm3JHZxeH3A33eY9EJJ0tIyij6zOm4YqyFbZOyr+g0qLdX/iyHinGps0g6
+ AsBdYcDqwjotOAlFnNds/nv+o8gK+6xKbVC4xJsqmvstk6kUedtXelBk3y7JipjaWC7Ly0vyoHz+5
+ /kQvaNBw==;
+Received: from hch by casper.infradead.org with local (Exim 4.94 #2 (Red Hat
+ Linux)) id 1l0RsA-0099BH-9Q; Fri, 15 Jan 2021 16:22:55 +0000
+Date: Fri, 15 Jan 2021 16:22:50 +0000
+From: Christoph Hellwig <hch@infradead.org>
+To: Dave Chinner <david@fromorbit.com>
+Subject: Re: [PATCH v5 37/42] xfs: support idmapped mounts
+Message-ID: <20210115162250.GA2179337@infradead.org>
+References: <20210112220124.837960-1-christian.brauner@ubuntu.com>
+ <20210112220124.837960-38-christian.brauner@ubuntu.com>
+ <20210114205154.GL331610@dread.disaster.area>
 MIME-Version: 1.0
-X-Greylist: Sender succeeded SMTP AUTH, not delayed by milter-greylist-4.6.1
- (raptor.unsafe.ru [5.9.43.93]); Fri, 15 Jan 2021 14:59:11 +0000 (UTC)
-Cc: Jens Axboe <axboe@kernel.dk>, Kees Cook <keescook@chromium.org>,
- Jann Horn <jannh@google.com>, Linus Torvalds <torvalds@linux-foundation.org>,
- Oleg Nesterov <oleg@redhat.com>, "Eric W . Biederman" <ebiederm@xmission.com>,
- Andrew Morton <akpm@linux-foundation.org>, Alexey Gladkov <legion@kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20210114205154.GL331610@dread.disaster.area>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by
+ casper.infradead.org. See http://www.infradead.org/rpr.html
+Cc: Lennart Poettering <lennart@poettering.net>,
+ Mimi Zohar <zohar@linux.ibm.com>, David Howells <dhowells@redhat.com>,
+ Andreas Dilger <adilger.kernel@dilger.ca>,
+ containers@lists.linux-foundation.org, Christoph Hellwig <hch@lst.de>,
+ Tycho Andersen <tycho@tycho.ws>, Paul Moore <paul@paul-moore.com>,
+ Jonathan Corbet <corbet@lwn.net>, smbarber@chromium.org,
+ Christoph Hellwig <hch@infradead.org>, linux-ext4@vger.kernel.org,
+ Mrunal Patel <mpatel@redhat.com>, Kees Cook <keescook@chromium.org>,
+ Arnd Bergmann <arnd@arndb.de>, selinux@vger.kernel.org,
+ Josh Triplett <josh@joshtriplett.org>, linux-fsdevel@vger.kernel.org,
+ Aleksa Sarai <cyphar@cyphar.com>, Alexander Viro <viro@zeniv.linux.org.uk>,
+ Andy Lutomirski <luto@kernel.org>,
+ OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
+ Geoffrey Thomas <geofft@ldpreload.com>,
+ James Bottomley <James.Bottomley@hansenpartnership.com>,
+ John Johansen <john.johansen@canonical.com>, Theodore Tso <tytso@mit.edu>,
+ Seth Forshee <seth.forshee@canonical.com>,
+ Dmitry Kasatkin <dmitry.kasatkin@gmail.com>,
+ Stephen Smalley <stephen.smalley.work@gmail.com>, linux-xfs@vger.kernel.org,
+ linux-security-module@vger.kernel.org,
+ "Eric W. Biederman" <ebiederm@xmission.com>, linux-api@vger.kernel.org,
+ Casey Schaufler <casey@schaufler-ca.com>, Alban Crequy <alban@kinvolk.io>,
+ linux-integrity@vger.kernel.org,
+ Linus Torvalds <torvalds@linux-foundation.org>, Todd Kjos <tkjos@google.com>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -90,242 +114,43 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-For RLIMIT_NPROC and some other rlimits the user_struct that holds the
-global limit is kept alive for the lifetime of a process by keeping it
-in struct cred.  Add a ucounts reference to struct cred, so that
-RLIMIT_NPROC can switch from using a per user limit to using a per user
-per user namespace limit.
+On Fri, Jan 15, 2021 at 07:51:54AM +1100, Dave Chinner wrote:
+> > @@ -813,7 +818,7 @@ xfs_setattr_nonsize(
+> >  	 * 	     Posix ACL code seems to care about this issue either.
+> >  	 */
+> >  	if (mask & ATTR_MODE) {
+> > -		error = posix_acl_chmod(&init_user_ns, inode, inode->i_mode);
+> > +		error = posix_acl_chmod(mnt_userns, inode, inode->i_mode);
+> >  		if (error)
+> >  			return error;
+> >  	}
+> > @@ -868,7 +873,7 @@ xfs_setattr_size(
+> >  		 * Use the regular setattr path to update the timestamps.
+> >  		 */
+> >  		iattr->ia_valid &= ~ATTR_SIZE;
+> > -		return xfs_setattr_nonsize(ip, iattr);
+> > +		return xfs_setattr_nonsize(&init_user_ns, ip, iattr);
+> 
+> Shouldn't that be passing mnt_userns?
 
-Signed-off-by: Alexey Gladkov <gladkov.alexey@gmail.com>
----
- include/linux/cred.h           |  1 +
- include/linux/user_namespace.h | 13 +++++++++++--
- kernel/cred.c                  | 20 ++++++++++++++++++--
- kernel/ucount.c                | 30 ++++++++++++++++++++----------
- kernel/user_namespace.c        |  1 +
- 5 files changed, 51 insertions(+), 14 deletions(-)
+As Christian already explained we an't hit this with anything related
+to uids/gids, the only thing that will be updated are the timestamps,
+as also mentioned in the comment that only makes it partially into the
+diff context.
 
-diff --git a/include/linux/cred.h b/include/linux/cred.h
-index 18639c069263..307744fcc387 100644
---- a/include/linux/cred.h
-+++ b/include/linux/cred.h
-@@ -144,6 +144,7 @@ struct cred {
- #endif
- 	struct user_struct *user;	/* real user ID subscription */
- 	struct user_namespace *user_ns; /* user_ns the caps and keyrings are relative to. */
-+	struct ucounts *ucounts;
- 	struct group_info *group_info;	/* supplementary groups for euid/fsgid */
- 	/* RCU deletion */
- 	union {
-diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index f84fc2d9ce20..9a3ba69e9223 100644
---- a/include/linux/user_namespace.h
-+++ b/include/linux/user_namespace.h
-@@ -85,7 +85,7 @@ struct user_namespace {
- 	struct ctl_table_header *sysctls;
- #endif
- 	struct ucounts		*ucounts;
--	int ucount_max[UCOUNT_COUNTS];
-+	long ucount_max[UCOUNT_COUNTS];
- } __randomize_layout;
- 
- struct ucounts {
-@@ -93,7 +93,7 @@ struct ucounts {
- 	struct user_namespace *ns;
- 	kuid_t uid;
- 	refcount_t count;
--	atomic_t ucount[UCOUNT_COUNTS];
-+	atomic_long_t ucount[UCOUNT_COUNTS];
- };
- 
- extern struct user_namespace init_user_ns;
-@@ -102,6 +102,15 @@ bool setup_userns_sysctls(struct user_namespace *ns);
- void retire_userns_sysctls(struct user_namespace *ns);
- struct ucounts *inc_ucount(struct user_namespace *ns, kuid_t uid, enum ucount_type type);
- void dec_ucount(struct ucounts *ucounts, enum ucount_type type);
-+void put_ucounts(struct ucounts *ucounts);
-+void set_cred_ucounts(struct cred *cred, struct user_namespace *ns, kuid_t uid);
-+
-+static inline struct ucounts *get_ucounts(struct ucounts *ucounts)
-+{
-+	if (ucounts)
-+		refcount_inc(&ucounts->count);
-+	return ucounts;
-+}
- 
- #ifdef CONFIG_USER_NS
- 
-diff --git a/kernel/cred.c b/kernel/cred.c
-index 421b1149c651..a27d725c7c79 100644
---- a/kernel/cred.c
-+++ b/kernel/cred.c
-@@ -119,6 +119,8 @@ static void put_cred_rcu(struct rcu_head *rcu)
- 	if (cred->group_info)
- 		put_group_info(cred->group_info);
- 	free_uid(cred->user);
-+	if (cred->ucounts)
-+		put_ucounts(cred->ucounts);
- 	put_user_ns(cred->user_ns);
- 	kmem_cache_free(cred_jar, cred);
- }
-@@ -144,6 +146,9 @@ void __put_cred(struct cred *cred)
- 	BUG_ON(cred == current->cred);
- 	BUG_ON(cred == current->real_cred);
- 
-+	if (cred->ucounts);
-+		BUG_ON(cred->ucounts->ns != cred->user_ns);
-+
- 	if (cred->non_rcu)
- 		put_cred_rcu(&cred->rcu);
- 	else
-@@ -270,6 +275,7 @@ struct cred *prepare_creds(void)
- 	get_group_info(new->group_info);
- 	get_uid(new->user);
- 	get_user_ns(new->user_ns);
-+	get_ucounts(new->ucounts);
- 
- #ifdef CONFIG_KEYS
- 	key_get(new->session_keyring);
-@@ -363,6 +369,7 @@ int copy_creds(struct task_struct *p, unsigned long clone_flags)
- 		ret = create_user_ns(new);
- 		if (ret < 0)
- 			goto error_put;
-+		set_cred_ucounts(new, new->user_ns, new->euid);
- 	}
- 
- #ifdef CONFIG_KEYS
-@@ -485,8 +492,11 @@ int commit_creds(struct cred *new)
- 	 * in set_user().
- 	 */
- 	alter_cred_subscribers(new, 2);
--	if (new->user != old->user)
--		atomic_inc(&new->user->processes);
-+	if (new->user != old->user || new->user_ns != old->user_ns) {
-+		if (new->user != old->user)
-+			atomic_inc(&new->user->processes);
-+		set_cred_ucounts(new, new->user_ns, new->euid);
-+	}
- 	rcu_assign_pointer(task->real_cred, new);
- 	rcu_assign_pointer(task->cred, new);
- 	if (new->user != old->user)
-@@ -661,6 +671,11 @@ void __init cred_init(void)
- 	/* allocate a slab in which we can store credentials */
- 	cred_jar = kmem_cache_create("cred_jar", sizeof(struct cred), 0,
- 			SLAB_HWCACHE_ALIGN|SLAB_PANIC|SLAB_ACCOUNT, NULL);
-+	/*
-+	 * This is needed here because this is the first cred and there is no
-+	 * ucount reference to copy.
-+	 */
-+	set_cred_ucounts(&init_cred, &init_user_ns, GLOBAL_ROOT_UID);
- }
- 
- /**
-@@ -704,6 +719,7 @@ struct cred *prepare_kernel_cred(struct task_struct *daemon)
- 	get_uid(new->user);
- 	get_user_ns(new->user_ns);
- 	get_group_info(new->group_info);
-+	get_ucounts(new->ucounts);
- 
- #ifdef CONFIG_KEYS
- 	new->session_keyring = NULL;
-diff --git a/kernel/ucount.c b/kernel/ucount.c
-index 82acd2226460..0b4e956d87bb 100644
---- a/kernel/ucount.c
-+++ b/kernel/ucount.c
-@@ -125,7 +125,7 @@ static struct ucounts *find_ucounts(struct user_namespace *ns, kuid_t uid, struc
- 	return NULL;
- }
- 
--static struct ucounts *get_ucounts(struct user_namespace *ns, kuid_t uid)
-+static struct ucounts *__get_ucounts(struct user_namespace *ns, kuid_t uid)
- {
- 	struct hlist_head *hashent = ucounts_hashentry(ns, uid);
- 	struct ucounts *ucounts, *new;
-@@ -158,7 +158,7 @@ static struct ucounts *get_ucounts(struct user_namespace *ns, kuid_t uid)
- 	return ucounts;
- }
- 
--static void put_ucounts(struct ucounts *ucounts)
-+void put_ucounts(struct ucounts *ucounts)
- {
- 	unsigned long flags;
- 
-@@ -169,14 +169,24 @@ static void put_ucounts(struct ucounts *ucounts)
- 	}
- }
- 
--static inline bool atomic_inc_below(atomic_t *v, int u)
-+void set_cred_ucounts(struct cred *cred, struct user_namespace *ns, kuid_t uid)
- {
--	int c, old;
--	c = atomic_read(v);
-+	struct ucounts *old = cred->ucounts;
-+	if (old && old->ns == ns && uid_eq(old->uid, uid))
-+		return;
-+	cred->ucounts = __get_ucounts(ns, uid);
-+	if (old)
-+		put_ucounts(old);
-+}
-+
-+static inline bool atomic_long_inc_below(atomic_long_t *v, int u)
-+{
-+	long c, old;
-+	c = atomic_long_read(v);
- 	for (;;) {
- 		if (unlikely(c >= u))
- 			return false;
--		old = atomic_cmpxchg(v, c, c+1);
-+		old = atomic_long_cmpxchg(v, c, c+1);
- 		if (likely(old == c))
- 			return true;
- 		c = old;
-@@ -188,19 +198,19 @@ struct ucounts *inc_ucount(struct user_namespace *ns, kuid_t uid,
- {
- 	struct ucounts *ucounts, *iter, *bad;
- 	struct user_namespace *tns;
--	ucounts = get_ucounts(ns, uid);
-+	ucounts = __get_ucounts(ns, uid);
- 	for (iter = ucounts; iter; iter = tns->ucounts) {
- 		int max;
- 		tns = iter->ns;
- 		max = READ_ONCE(tns->ucount_max[type]);
--		if (!atomic_inc_below(&iter->ucount[type], max))
-+		if (!atomic_long_inc_below(&iter->ucount[type], max))
- 			goto fail;
- 	}
- 	return ucounts;
- fail:
- 	bad = iter;
- 	for (iter = ucounts; iter != bad; iter = iter->ns->ucounts)
--		atomic_dec(&iter->ucount[type]);
-+		atomic_long_dec(&iter->ucount[type]);
- 
- 	put_ucounts(ucounts);
- 	return NULL;
-@@ -210,7 +220,7 @@ void dec_ucount(struct ucounts *ucounts, enum ucount_type type)
- {
- 	struct ucounts *iter;
- 	for (iter = ucounts; iter; iter = iter->ns->ucounts) {
--		int dec = atomic_dec_if_positive(&iter->ucount[type]);
-+		int dec = atomic_long_dec_if_positive(&iter->ucount[type]);
- 		WARN_ON_ONCE(dec < 0);
- 	}
- 	put_ucounts(ucounts);
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index af612945a4d0..4b8a4468d391 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -1280,6 +1280,7 @@ static int userns_install(struct nsset *nsset, struct ns_common *ns)
- 
- 	put_user_ns(cred->user_ns);
- 	set_cred_user_ns(cred, get_user_ns(user_ns));
-+	set_cred_ucounts(cred, user_ns, cred->euid);
- 
- 	return 0;
- }
--- 
-2.29.2
+> >  	trace_xfs_setattr(ip);
+> >  
+> > -	error = xfs_vn_change_ok(dentry, iattr);
+> > +	error = xfs_vn_change_ok(mnt_userns, dentry, iattr);
+> >  	if (error)
+> >  		return error;
+> >  	return xfs_setattr_size(ip, iattr);
+> 
+> And this passing mnt_userns down into xfs_setattr_size()?  Seems
+> like a bit of a landmine...
 
+That being said we could just pass down the argument, even if it doesn't
+make much sense for the size update.
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
