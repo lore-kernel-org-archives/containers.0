@@ -2,78 +2,110 @@ Return-Path: <SRS0=zkWj=GV=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
-	DKIM_ADSP_CUSTOM_MED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E1C3BC433DB
-	for <containers@archiver.kernel.org>; Mon, 18 Jan 2021 08:31:38 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 96773C433DB
+	for <containers@archiver.kernel.org>; Mon, 18 Jan 2021 19:15:20 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 7109F2255F
-	for <containers@archiver.kernel.org>; Mon, 18 Jan 2021 08:31:38 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7109F2255F
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	by mail.kernel.org (Postfix) with ESMTPS id 3431821D42
+	for <containers@archiver.kernel.org>; Mon, 18 Jan 2021 19:15:20 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3431821D42
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id EB7422013C;
-	Mon, 18 Jan 2021 08:31:37 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id Vtzps8U3H65i; Mon, 18 Jan 2021 08:31:34 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id AE8F02001A;
-	Mon, 18 Jan 2021 08:31:34 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 9495FC088B;
-	Mon, 18 Jan 2021 08:31:34 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 9A6D0C013A
- for <containers@lists.linux-foundation.org>;
- Mon, 18 Jan 2021 08:31:33 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 7F01B85ECB
- for <containers@lists.linux-foundation.org>;
- Mon, 18 Jan 2021 08:31:33 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id DA4D086F5F;
+	Mon, 18 Jan 2021 19:15:19 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id EyeljRYaBlAZ; Mon, 18 Jan 2021 19:15:19 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by hemlock.osuosl.org (Postfix) with ESMTP id 51F1386D92;
+	Mon, 18 Jan 2021 19:15:19 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 3D4FFC08A1;
+	Mon, 18 Jan 2021 19:15:19 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 0B2E7C013A
+ for <containers@lists.linux-foundation.org>;
+ Mon, 18 Jan 2021 19:15:18 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by silver.osuosl.org (Postfix) with ESMTP id 03F9020423
+ for <containers@lists.linux-foundation.org>;
+ Mon, 18 Jan 2021 19:15:18 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id 7C536l72-Jkv
+ with ESMTP id 9vfwS+gfYsSF
  for <containers@lists.linux-foundation.org>;
- Mon, 18 Jan 2021 08:31:32 +0000 (UTC)
-X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from raptor.unsafe.ru (raptor.unsafe.ru [5.9.43.93])
- by hemlock.osuosl.org (Postfix) with ESMTP id 0919085DB5
+ Mon, 18 Jan 2021 19:15:09 +0000 (UTC)
+X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
+Received: from mail-lf1-f47.google.com (mail-lf1-f47.google.com
+ [209.85.167.47])
+ by silver.osuosl.org (Postfix) with ESMTPS id 1D55D20424
  for <containers@lists.linux-foundation.org>;
- Mon, 18 Jan 2021 08:31:32 +0000 (UTC)
-Received: from comp-core-i7-2640m-0182e6.redhat.com
- (ip-89-103-122-167.net.upcbroadband.cz [89.103.122.167])
- (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
- (No client certificate requested)
- by raptor.unsafe.ru (Postfix) with ESMTPSA id 5C3EC20479;
- Mon, 18 Jan 2021 08:31:18 +0000 (UTC)
-From: Alexey Gladkov <gladkov.alexey@gmail.com>
-To: LKML <linux-kernel@vger.kernel.org>, io-uring@vger.kernel.org,
+ Mon, 18 Jan 2021 19:15:09 +0000 (UTC)
+Received: by mail-lf1-f47.google.com with SMTP id s26so25567628lfc.8
+ for <containers@lists.linux-foundation.org>;
+ Mon, 18 Jan 2021 11:15:08 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=linux-foundation.org; s=google;
+ h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+ :cc; bh=/nyXt2BwkLcSSRby7WCMrmE+WdBMXZvF9/GDTDgxsVY=;
+ b=FgEuPeyIPamZN1Ti5cyla9+JQiWchG5usHW0nz7RiFfN4ZG12cH4uk+0GptG8B/IWA
+ J+9VHvATxzV0qZoPxsaWt52OJ2WeDAZZ0Ey4l9G4Byauek/KmFoS0wtarV9C1U/vQhcp
+ zDcDF/LIEdOs4AuBkR07AWCI6pKVrt2L/RMZY=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=1e100.net; s=20161025;
+ h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+ :message-id:subject:to:cc;
+ bh=/nyXt2BwkLcSSRby7WCMrmE+WdBMXZvF9/GDTDgxsVY=;
+ b=IM0CsI6HdBRxeiatklUFaRF5B0D8sSSvb0QFUDrCChJs2L0Ip4v8CUkkXu60ivHbVG
+ TkiiSBhhL4LVtBTM3sib5rzHwQMyUgIXRJKe+B8NO8j5DL+ZZaVmG8IX0S6NBcP+xBaa
+ CWSzFlSi3Wipffcs0FD14NLSi6wI9w1rXr963jbMRWOV5TtvmHVjuFW3nMdKecbWIH58
+ GxLu0FWgTuzdKsi5/apIQhWxptqeGNqCDm4R2stMrS/L1wPHyX+PuiqZFUxEqdCEoZ6x
+ aJpRw/dJU6kmkfc+sLPACwZQv+WoOqFwxZ80dp46EL6OOHkkNOL62qp1VYa/2DpfCSJW
+ +S9w==
+X-Gm-Message-State: AOAM531qdqOauLtH0/L1/IX9XZ+bzxXXzgujAVB5cWpy8Uqni0HuCTGA
+ xBqrB3qEJsSSAGbBRdcMrwklbnsXj+QE3yTe
+X-Google-Smtp-Source: ABdhPJwAnaaDmaFtzhQNXW0lPSgB8F5/Nd9KjX/64gWWXDFiAjy0K4ebqc0rU3QluHw6SDTZ6FYg3Q==
+X-Received: by 2002:a19:197:: with SMTP id 145mr248680lfb.352.1610997306458;
+ Mon, 18 Jan 2021 11:15:06 -0800 (PST)
+Received: from mail-lf1-f53.google.com (mail-lf1-f53.google.com.
+ [209.85.167.53])
+ by smtp.gmail.com with ESMTPSA id e20sm1755005lja.123.2021.01.18.11.15.04
+ for <containers@lists.linux-foundation.org>
+ (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+ Mon, 18 Jan 2021 11:15:05 -0800 (PST)
+Received: by mail-lf1-f53.google.com with SMTP id m25so25562002lfc.11
+ for <containers@lists.linux-foundation.org>;
+ Mon, 18 Jan 2021 11:15:04 -0800 (PST)
+X-Received: by 2002:a05:6512:a8c:: with SMTP id
+ m12mr234936lfu.253.1610997304440; 
+ Mon, 18 Jan 2021 11:15:04 -0800 (PST)
+MIME-Version: 1.0
+References: <cover.1610722473.git.gladkov.alexey@gmail.com>
+ <116c7669744404364651e3b380db2d82bb23f983.1610722473.git.gladkov.alexey@gmail.com>
+In-Reply-To: <116c7669744404364651e3b380db2d82bb23f983.1610722473.git.gladkov.alexey@gmail.com>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Mon, 18 Jan 2021 11:14:48 -0800
+X-Gmail-Original-Message-ID: <CAHk-=wjsg0Lgf1Mh2UiJE4sqBDDo0VhFVBUbhed47ot2CQQwfQ@mail.gmail.com>
+Message-ID: <CAHk-=wjsg0Lgf1Mh2UiJE4sqBDDo0VhFVBUbhed47ot2CQQwfQ@mail.gmail.com>
+Subject: Re: [RFC PATCH v3 1/8] Use refcount_t for ucounts reference counting
+To: Alexey Gladkov <gladkov.alexey@gmail.com>
+Cc: Jens Axboe <axboe@kernel.dk>, Kees Cook <keescook@chromium.org>,
  Kernel Hardening <kernel-hardening@lists.openwall.com>,
  Linux Containers <containers@lists.linux-foundation.org>,
- linux-mm@kvack.org
-Subject: [PATCH v4 2/8] Add a reference to ucounts for each cred
-Date: Mon, 18 Jan 2021 09:31:08 +0100
-Message-Id: <9b26dda8be0dc55fc2b030cd53e59c56787050a1.1610958162.git.gladkov.alexey@gmail.com>
-X-Mailer: git-send-email 2.29.2
-In-Reply-To: <bea844285b19c8caf2e656c7ea329a7b2e812c42.1610722474.git.gladkov.alexey@gmail.com>
-References: <bea844285b19c8caf2e656c7ea329a7b2e812c42.1610722474.git.gladkov.alexey@gmail.com>
-MIME-Version: 1.0
-X-Greylist: Sender succeeded SMTP AUTH, not delayed by milter-greylist-4.6.1
- (raptor.unsafe.ru [5.9.43.93]); Mon, 18 Jan 2021 08:31:29 +0000 (UTC)
-Cc: Jens Axboe <axboe@kernel.dk>, Kees Cook <keescook@chromium.org>,
- Jann Horn <jannh@google.com>, Linus Torvalds <torvalds@linux-foundation.org>,
- Oleg Nesterov <oleg@redhat.com>, "Eric W . Biederman" <ebiederm@xmission.com>,
- Andrew Morton <akpm@linux-foundation.org>, Alexey Gladkov <legion@kernel.org>
+ Jann Horn <jannh@google.com>, LKML <linux-kernel@vger.kernel.org>,
+ Oleg Nesterov <oleg@redhat.com>, Linux-MM <linux-mm@kvack.org>,
+ "Eric W . Biederman" <ebiederm@xmission.com>,
+ Andrew Morton <akpm@linux-foundation.org>, Alexey Gladkov <legion@kernel.org>,
+ io-uring <io-uring@vger.kernel.org>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -90,247 +122,34 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-For RLIMIT_NPROC and some other rlimits the user_struct that holds the
-global limit is kept alive for the lifetime of a process by keeping it
-in struct cred.  Add a ucounts reference to struct cred, so that
-RLIMIT_NPROC can switch from using a per user limit to using a per user
-per user namespace limit.
+On Fri, Jan 15, 2021 at 6:59 AM Alexey Gladkov <gladkov.alexey@gmail.com> wrote:
+>
+> @@ -152,10 +153,7 @@ static struct ucounts *get_ucounts(struct user_namespace *ns, kuid_t uid)
+>                         ucounts = new;
+>                 }
+>         }
+> -       if (ucounts->count == INT_MAX)
+> -               ucounts = NULL;
+> -       else
+> -               ucounts->count += 1;
+> +       refcount_inc(&ucounts->count);
+>         spin_unlock_irq(&ucounts_lock);
+>         return ucounts;
+>  }
 
-Changelog
----------
-v4:
-* Fixed typo in the kernel/cred.c
+This is wrong.
 
-Signed-off-by: Alexey Gladkov <gladkov.alexey@gmail.com>
----
- include/linux/cred.h           |  1 +
- include/linux/user_namespace.h | 13 +++++++++++--
- kernel/cred.c                  | 20 ++++++++++++++++++--
- kernel/ucount.c                | 30 ++++++++++++++++++++----------
- kernel/user_namespace.c        |  1 +
- 5 files changed, 51 insertions(+), 14 deletions(-)
+It used to return NULL when the count saturated.
 
-diff --git a/include/linux/cred.h b/include/linux/cred.h
-index 18639c069263..307744fcc387 100644
---- a/include/linux/cred.h
-+++ b/include/linux/cred.h
-@@ -144,6 +144,7 @@ struct cred {
- #endif
- 	struct user_struct *user;	/* real user ID subscription */
- 	struct user_namespace *user_ns; /* user_ns the caps and keyrings are relative to. */
-+	struct ucounts *ucounts;
- 	struct group_info *group_info;	/* supplementary groups for euid/fsgid */
- 	/* RCU deletion */
- 	union {
-diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index f84fc2d9ce20..9a3ba69e9223 100644
---- a/include/linux/user_namespace.h
-+++ b/include/linux/user_namespace.h
-@@ -85,7 +85,7 @@ struct user_namespace {
- 	struct ctl_table_header *sysctls;
- #endif
- 	struct ucounts		*ucounts;
--	int ucount_max[UCOUNT_COUNTS];
-+	long ucount_max[UCOUNT_COUNTS];
- } __randomize_layout;
- 
- struct ucounts {
-@@ -93,7 +93,7 @@ struct ucounts {
- 	struct user_namespace *ns;
- 	kuid_t uid;
- 	refcount_t count;
--	atomic_t ucount[UCOUNT_COUNTS];
-+	atomic_long_t ucount[UCOUNT_COUNTS];
- };
- 
- extern struct user_namespace init_user_ns;
-@@ -102,6 +102,15 @@ bool setup_userns_sysctls(struct user_namespace *ns);
- void retire_userns_sysctls(struct user_namespace *ns);
- struct ucounts *inc_ucount(struct user_namespace *ns, kuid_t uid, enum ucount_type type);
- void dec_ucount(struct ucounts *ucounts, enum ucount_type type);
-+void put_ucounts(struct ucounts *ucounts);
-+void set_cred_ucounts(struct cred *cred, struct user_namespace *ns, kuid_t uid);
-+
-+static inline struct ucounts *get_ucounts(struct ucounts *ucounts)
-+{
-+	if (ucounts)
-+		refcount_inc(&ucounts->count);
-+	return ucounts;
-+}
- 
- #ifdef CONFIG_USER_NS
- 
-diff --git a/kernel/cred.c b/kernel/cred.c
-index 421b1149c651..9473e71e784c 100644
---- a/kernel/cred.c
-+++ b/kernel/cred.c
-@@ -119,6 +119,8 @@ static void put_cred_rcu(struct rcu_head *rcu)
- 	if (cred->group_info)
- 		put_group_info(cred->group_info);
- 	free_uid(cred->user);
-+	if (cred->ucounts)
-+		put_ucounts(cred->ucounts);
- 	put_user_ns(cred->user_ns);
- 	kmem_cache_free(cred_jar, cred);
- }
-@@ -144,6 +146,9 @@ void __put_cred(struct cred *cred)
- 	BUG_ON(cred == current->cred);
- 	BUG_ON(cred == current->real_cred);
- 
-+	if (cred->ucounts)
-+		BUG_ON(cred->ucounts->ns != cred->user_ns);
-+
- 	if (cred->non_rcu)
- 		put_cred_rcu(&cred->rcu);
- 	else
-@@ -270,6 +275,7 @@ struct cred *prepare_creds(void)
- 	get_group_info(new->group_info);
- 	get_uid(new->user);
- 	get_user_ns(new->user_ns);
-+	get_ucounts(new->ucounts);
- 
- #ifdef CONFIG_KEYS
- 	key_get(new->session_keyring);
-@@ -363,6 +369,7 @@ int copy_creds(struct task_struct *p, unsigned long clone_flags)
- 		ret = create_user_ns(new);
- 		if (ret < 0)
- 			goto error_put;
-+		set_cred_ucounts(new, new->user_ns, new->euid);
- 	}
- 
- #ifdef CONFIG_KEYS
-@@ -485,8 +492,11 @@ int commit_creds(struct cred *new)
- 	 * in set_user().
- 	 */
- 	alter_cred_subscribers(new, 2);
--	if (new->user != old->user)
--		atomic_inc(&new->user->processes);
-+	if (new->user != old->user || new->user_ns != old->user_ns) {
-+		if (new->user != old->user)
-+			atomic_inc(&new->user->processes);
-+		set_cred_ucounts(new, new->user_ns, new->euid);
-+	}
- 	rcu_assign_pointer(task->real_cred, new);
- 	rcu_assign_pointer(task->cred, new);
- 	if (new->user != old->user)
-@@ -661,6 +671,11 @@ void __init cred_init(void)
- 	/* allocate a slab in which we can store credentials */
- 	cred_jar = kmem_cache_create("cred_jar", sizeof(struct cred), 0,
- 			SLAB_HWCACHE_ALIGN|SLAB_PANIC|SLAB_ACCOUNT, NULL);
-+	/*
-+	 * This is needed here because this is the first cred and there is no
-+	 * ucount reference to copy.
-+	 */
-+	set_cred_ucounts(&init_cred, &init_user_ns, GLOBAL_ROOT_UID);
- }
- 
- /**
-@@ -704,6 +719,7 @@ struct cred *prepare_kernel_cred(struct task_struct *daemon)
- 	get_uid(new->user);
- 	get_user_ns(new->user_ns);
- 	get_group_info(new->group_info);
-+	get_ucounts(new->ucounts);
- 
- #ifdef CONFIG_KEYS
- 	new->session_keyring = NULL;
-diff --git a/kernel/ucount.c b/kernel/ucount.c
-index 82acd2226460..0b4e956d87bb 100644
---- a/kernel/ucount.c
-+++ b/kernel/ucount.c
-@@ -125,7 +125,7 @@ static struct ucounts *find_ucounts(struct user_namespace *ns, kuid_t uid, struc
- 	return NULL;
- }
- 
--static struct ucounts *get_ucounts(struct user_namespace *ns, kuid_t uid)
-+static struct ucounts *__get_ucounts(struct user_namespace *ns, kuid_t uid)
- {
- 	struct hlist_head *hashent = ucounts_hashentry(ns, uid);
- 	struct ucounts *ucounts, *new;
-@@ -158,7 +158,7 @@ static struct ucounts *get_ucounts(struct user_namespace *ns, kuid_t uid)
- 	return ucounts;
- }
- 
--static void put_ucounts(struct ucounts *ucounts)
-+void put_ucounts(struct ucounts *ucounts)
- {
- 	unsigned long flags;
- 
-@@ -169,14 +169,24 @@ static void put_ucounts(struct ucounts *ucounts)
- 	}
- }
- 
--static inline bool atomic_inc_below(atomic_t *v, int u)
-+void set_cred_ucounts(struct cred *cred, struct user_namespace *ns, kuid_t uid)
- {
--	int c, old;
--	c = atomic_read(v);
-+	struct ucounts *old = cred->ucounts;
-+	if (old && old->ns == ns && uid_eq(old->uid, uid))
-+		return;
-+	cred->ucounts = __get_ucounts(ns, uid);
-+	if (old)
-+		put_ucounts(old);
-+}
-+
-+static inline bool atomic_long_inc_below(atomic_long_t *v, int u)
-+{
-+	long c, old;
-+	c = atomic_long_read(v);
- 	for (;;) {
- 		if (unlikely(c >= u))
- 			return false;
--		old = atomic_cmpxchg(v, c, c+1);
-+		old = atomic_long_cmpxchg(v, c, c+1);
- 		if (likely(old == c))
- 			return true;
- 		c = old;
-@@ -188,19 +198,19 @@ struct ucounts *inc_ucount(struct user_namespace *ns, kuid_t uid,
- {
- 	struct ucounts *ucounts, *iter, *bad;
- 	struct user_namespace *tns;
--	ucounts = get_ucounts(ns, uid);
-+	ucounts = __get_ucounts(ns, uid);
- 	for (iter = ucounts; iter; iter = tns->ucounts) {
- 		int max;
- 		tns = iter->ns;
- 		max = READ_ONCE(tns->ucount_max[type]);
--		if (!atomic_inc_below(&iter->ucount[type], max))
-+		if (!atomic_long_inc_below(&iter->ucount[type], max))
- 			goto fail;
- 	}
- 	return ucounts;
- fail:
- 	bad = iter;
- 	for (iter = ucounts; iter != bad; iter = iter->ns->ucounts)
--		atomic_dec(&iter->ucount[type]);
-+		atomic_long_dec(&iter->ucount[type]);
- 
- 	put_ucounts(ucounts);
- 	return NULL;
-@@ -210,7 +220,7 @@ void dec_ucount(struct ucounts *ucounts, enum ucount_type type)
- {
- 	struct ucounts *iter;
- 	for (iter = ucounts; iter; iter = iter->ns->ucounts) {
--		int dec = atomic_dec_if_positive(&iter->ucount[type]);
-+		int dec = atomic_long_dec_if_positive(&iter->ucount[type]);
- 		WARN_ON_ONCE(dec < 0);
- 	}
- 	put_ucounts(ucounts);
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index af612945a4d0..4b8a4468d391 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -1280,6 +1280,7 @@ static int userns_install(struct nsset *nsset, struct ns_common *ns)
- 
- 	put_user_ns(cred->user_ns);
- 	set_cred_user_ns(cred, get_user_ns(user_ns));
-+	set_cred_ucounts(cred, user_ns, cred->euid);
- 
- 	return 0;
- }
--- 
-2.29.2
+Now it just silently saturates.
 
+I'm not sure how many people care, but that NULL return ends up being
+returned quite widely (through "inc_uncount()" and friends).
+
+The fact that this has no commit message at all to explain what it is
+doing and why is also a grounds for just NAK.
+
+           Linus
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
