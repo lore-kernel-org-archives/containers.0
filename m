@@ -6,65 +6,65 @@ X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D81D5C433DB
-	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 11:49:56 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CB4E7C433DB
+	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 14:58:32 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 35B6323104
-	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 11:49:55 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 35B6323104
+	by mail.kernel.org (Postfix) with ESMTPS id 42EE422DFB
+	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 14:58:31 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 42EE422DFB
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id A1D0586DD6;
-	Tue, 19 Jan 2021 11:49:55 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 97CD685092;
+	Tue, 19 Jan 2021 14:58:31 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id rVvQ8WiU7afw; Tue, 19 Jan 2021 11:49:51 +0000 (UTC)
+	with ESMTP id 3C-YBlQTTBJv; Tue, 19 Jan 2021 14:58:31 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 1379186DC6;
-	Tue, 19 Jan 2021 11:49:51 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 3015485039;
+	Tue, 19 Jan 2021 14:58:31 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id E8C24C088B;
-	Tue, 19 Jan 2021 11:49:50 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 28DA9C013A
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 229CDC08A1;
+	Tue, 19 Jan 2021 14:58:31 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 44684C013A
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 11:49:49 +0000 (UTC)
+ Tue, 19 Jan 2021 14:58:30 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 15F4A86759
+ by silver.osuosl.org (Postfix) with ESMTP id 2720320465
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 11:49:49 +0000 (UTC)
+ Tue, 19 Jan 2021 14:58:30 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id 1uU2IcLBdCte
+ with ESMTP id f8MTfU5TCr3s
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 11:49:44 +0000 (UTC)
+ Tue, 19 Jan 2021 14:58:28 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by whitealder.osuosl.org (Postfix) with ESMTPS id E7F9C862E1
+ by silver.osuosl.org (Postfix) with ESMTPS id CB0CC203E9
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 11:49:43 +0000 (UTC)
+ Tue, 19 Jan 2021 14:58:28 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1l1pQY-0005xg-BD; Tue, 19 Jan 2021 11:44:02 +0000
-Date: Tue, 19 Jan 2021 12:43:57 +0100
+ id 1l1sRR-0006A4-Nk; Tue, 19 Jan 2021 14:57:09 +0000
+Date: Tue, 19 Jan 2021 15:57:05 +0100
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Christoph Hellwig <hch@infradead.org>
-Subject: Re: [PATCH v5 40/42] fs: introduce MOUNT_ATTR_IDMAP
-Message-ID: <20210119114357.w553czxsnelyph6g@wittgenstein>
+Subject: Re: [PATCH v5 23/42] open: handle idmapped mounts
+Message-ID: <20210119145705.g2je6ec3lq42fffd@wittgenstein>
 References: <20210112220124.837960-1-christian.brauner@ubuntu.com>
- <20210112220124.837960-41-christian.brauner@ubuntu.com>
- <20210119094750.GQ3364550@infradead.org>
+ <20210112220124.837960-24-christian.brauner@ubuntu.com>
+ <20210119093848.GH3364550@infradead.org>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <20210119094750.GQ3364550@infradead.org>
+In-Reply-To: <20210119093848.GH3364550@infradead.org>
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>,
  James Bottomley <James.Bottomley@hansenpartnership.com>,
@@ -104,12 +104,11 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Tue, Jan 19, 2021 at 09:47:50AM +0000, Christoph Hellwig wrote:
-> Generally looks good, but wouldn't it make sense to introduce the
-> userns_fd in version 0 of the mount_attr structure instead of having
-> two versions from the start?
+On Tue, Jan 19, 2021 at 09:38:48AM +0000, Christoph Hellwig wrote:
+> I think path_permission() and file_persmission() helpers would reduce
+> the clutter a lot here.
 
-I agree.
+Done.
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
