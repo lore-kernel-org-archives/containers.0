@@ -7,70 +7,70 @@ X-Spam-Status: No, score=-8.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 984B9C433E0
-	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 09:32:13 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AC2F5C433DB
+	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 09:33:14 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id EC8BE221F7
-	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 09:32:12 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EC8BE221F7
+	by mail.kernel.org (Postfix) with ESMTPS id 239DA22227
+	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 09:33:13 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 239DA22227
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 528E6203E3;
-	Tue, 19 Jan 2021 09:32:12 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 11CA18677F;
+	Tue, 19 Jan 2021 09:33:13 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id KE9cy9bkQlfN; Tue, 19 Jan 2021 09:32:12 +0000 (UTC)
+	with ESMTP id DKg2OQun7Nsd; Tue, 19 Jan 2021 09:33:12 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 0199D1FE32;
-	Tue, 19 Jan 2021 09:32:11 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 9074C86785;
+	Tue, 19 Jan 2021 09:33:11 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id B35A0C088B;
-	Tue, 19 Jan 2021 09:32:11 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 14C19C013A
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 714E8C1E6F;
+	Tue, 19 Jan 2021 09:33:11 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 0A736C013A
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 09:32:11 +0000 (UTC)
+ Tue, 19 Jan 2021 09:33:10 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id F2A228444F
+ by hemlock.osuosl.org (Postfix) with ESMTP id 03E7686CB6
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 09:32:10 +0000 (UTC)
+ Tue, 19 Jan 2021 09:33:10 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id knJ3dW9PiVx5
+ with ESMTP id 8wfHhcl+EgTZ
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 09:32:10 +0000 (UTC)
+ Tue, 19 Jan 2021 09:33:07 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
 Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id 63E32843FD
+ by hemlock.osuosl.org (Postfix) with ESMTPS id B63EA86C66
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 09:32:10 +0000 (UTC)
+ Tue, 19 Jan 2021 09:33:07 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
  d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
  References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
  Content-Transfer-Encoding:Content-ID:Content-Description;
- bh=l2WBiCb5duYJRA9nKpihqrJOH1Qjg6utSrFiu8qAdtc=; b=taq5tzVqr3iEBWWti4pQj7DR4l
- 7cZy9j0PIh3fkDa3n8/8qdyCXkj2WGrt83/vIsHGS5WCm7PvXgo7FyDV1m8MZzbLmVT9xpv0whS28
- jJsZ5vAFO7v/uQfzIP1zm1tq2jPDfBwVjhwKxMCZKDsC40DqWrBlGQsdVXuE0H5mW704POSbSuUJu
- nkobKLxB+vf+pRq6div6jATE4CmZwdKLH34k9aFPepI7kb9k2dfFaq9jX4cbgpxkv6eB4L48vd/Ls
- Lf0Gryfd6h4uwKYvclqPdVOo9DQGZ3Czmr6yXkaJOHwtWWZkkH4Opx+gOP8N1t95nf6VkC4hwu3ji
- 8eVK3Xxw==;
+ bh=l2WBiCb5duYJRA9nKpihqrJOH1Qjg6utSrFiu8qAdtc=; b=klmdlbjPa4neptyaD8swknjp/k
+ nbMlLprwFliwRnvcdRaOJYdwGeZbz6Un4IXMUlyocgli46NlrB64Fksx3nkuMgHN6CwkhIZY4Rx9M
+ 84U15Jxy0Qq26tk1ZTx7Lh0cBHOZAEDw/Q3B4nBv1ruy13YViq7iU8qvQR8cu5TUTeI2XcBi2Ijzi
+ VWNUP+j4e9Crd9qOY+GJXvOACm2fuEYn624SOwwZn5CcmjS5vvkVTlk1Qd5R/cF7H27qpC9BEnIaQ
+ ldTjngNW+rNIdglgcRAb9VxfSYAUPbaUxS9GYrqRlkjusQd0OelL0jdDG6UzjAtRX6Zhu1dUP8wUF
+ SVWqfaIQ==;
 Received: from hch by casper.infradead.org with local (Exim 4.94 #2 (Red Hat
- Linux)) id 1l1nLu-00E7PQ-Vs; Tue, 19 Jan 2021 09:31:09 +0000
-Date: Tue, 19 Jan 2021 09:31:06 +0000
+ Linux)) id 1l1nMh-00E7Ri-R3; Tue, 19 Jan 2021 09:31:57 +0000
+Date: Tue, 19 Jan 2021 09:31:55 +0000
 From: Christoph Hellwig <hch@infradead.org>
 To: Christian Brauner <christian.brauner@ubuntu.com>
-Subject: Re: [PATCH v5 16/42] xattr: handle idmapped mounts
-Message-ID: <20210119093106.GA3364550@infradead.org>
+Subject: Re: [PATCH v5 17/42] commoncap: handle idmapped mounts
+Message-ID: <20210119093155.GB3364550@infradead.org>
 References: <20210112220124.837960-1-christian.brauner@ubuntu.com>
- <20210112220124.837960-17-christian.brauner@ubuntu.com>
+ <20210112220124.837960-18-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <20210112220124.837960-17-christian.brauner@ubuntu.com>
+In-Reply-To: <20210112220124.837960-18-christian.brauner@ubuntu.com>
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by
  casper.infradead.org. See http://www.infradead.org/rpr.html
 Cc: Lennart Poettering <lennart@poettering.net>,
