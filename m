@@ -7,70 +7,70 @@ X-Spam-Status: No, score=-8.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B4576C433E0
-	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 09:46:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CFC2AC433DB
+	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 09:47:07 +0000 (UTC)
 Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 1351A2168B
-	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 09:46:35 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1351A2168B
+	by mail.kernel.org (Postfix) with ESMTPS id 5967F2168B
+	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 09:47:07 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5967F2168B
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id BF2828464C;
-	Tue, 19 Jan 2021 09:46:34 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id E87E18495A;
+	Tue, 19 Jan 2021 09:47:06 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id catUgSlqYxwC; Tue, 19 Jan 2021 09:46:34 +0000 (UTC)
+	with ESMTP id OsQdF7ysy_3M; Tue, 19 Jan 2021 09:47:06 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 5AC4484546;
-	Tue, 19 Jan 2021 09:46:34 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 8D29384546;
+	Tue, 19 Jan 2021 09:47:06 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 470DEC088B;
-	Tue, 19 Jan 2021 09:46:34 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 84575C013A
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 75BEDC088B;
+	Tue, 19 Jan 2021 09:47:06 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 92928C013A
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 09:46:33 +0000 (UTC)
+ Tue, 19 Jan 2021 09:47:05 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 6CAB120108
+ by hemlock.osuosl.org (Postfix) with ESMTP id 7E047860DC
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 09:46:33 +0000 (UTC)
+ Tue, 19 Jan 2021 09:47:05 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id DJkycFg9grrb
+ with ESMTP id 8RtV3uUiczE5
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 09:46:32 +0000 (UTC)
+ Tue, 19 Jan 2021 09:47:05 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
 Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
- by silver.osuosl.org (Postfix) with ESMTPS id A9AAC20033
+ by hemlock.osuosl.org (Postfix) with ESMTPS id E9C1E85EE8
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 09:46:32 +0000 (UTC)
+ Tue, 19 Jan 2021 09:47:04 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
  d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
  References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
  Content-Transfer-Encoding:Content-ID:Content-Description;
- bh=UzM7VPbA6ht8reQZldqIccNk0/ZodUfZYpRl6ZxyhOY=; b=HWTfOADjpl0bWqTZOX96sWLbgP
- UZrgWf1YFxsSo3wsTKYWo49DGht0i/v4+sXZM9cx7gDGpWeluUjzibf875E2N3ShAkCj77CzjAYQa
- 0zqYGcG8hBmfcxjNhmWyYYCjM5qHr1VX4JZuoCQrD/5KMfhIpRYxAUsIEvqjEEugNBTja2fgvDgvL
- igj6jF/rTKMg9790fblIsP13l1Sl8ia1axY0o72NtvEJow+YPETBX0x0QZ0wiN/fRaieLTmUsPeEm
- eJ9x0E4nXMEwVyVn4fLPaxoTy8SVKEYCoq9OZwL3cceWUiIBUT62eSirbN703i82eiB1dA07U8Czm
- XbXSYZBA==;
+ bh=l2WBiCb5duYJRA9nKpihqrJOH1Qjg6utSrFiu8qAdtc=; b=NR8j/MWlkQlAYWwyyPe6lVQHJ6
+ XfT8RXMPsqC8HiUId2Y1GeAidCIEcQHEfncYgXLiQOxRWRAlEcFZ6FtUIdqtL/j/dzO4zawfrgGIC
+ lK4D9Z1XIw05z3hikMSe4Ai93vwZp50zj+2irALoFKEE3bqQ6YhQIcUwq24CVI9PWpn1Zfjfs0g9H
+ z/5YMqP9BkrKUrAvSdrW/dVGuwyweDBUbbQhlP0TO7RjtK0B72F34/iv/0489cVtW44S8sLeiY6qp
+ QPDOqCCtXIy77rLnmGjIlf5bA89o5USVB0StJ0/pxLrwnAkZM56pU1yNSqqiJhmyP+n8f7N57gy6Z
+ E4G1wXPg==;
 Received: from hch by casper.infradead.org with local (Exim 4.94 #2 (Red Hat
- Linux)) id 1l1nZP-00E8T5-5L; Tue, 19 Jan 2021 09:45:03 +0000
-Date: Tue, 19 Jan 2021 09:45:03 +0000
+ Linux)) id 1l1na6-00E8VU-Iz; Tue, 19 Jan 2021 09:45:51 +0000
+Date: Tue, 19 Jan 2021 09:45:46 +0000
 From: Christoph Hellwig <hch@infradead.org>
 To: Christian Brauner <christian.brauner@ubuntu.com>
-Subject: Re: [PATCH v5 31/42] exec: handle idmapped mounts
-Message-ID: <20210119094503.GO3364550@infradead.org>
+Subject: Re: [PATCH v5 32/42] fs: make helpers idmap mount aware
+Message-ID: <20210119094546.GP3364550@infradead.org>
 References: <20210112220124.837960-1-christian.brauner@ubuntu.com>
- <20210112220124.837960-32-christian.brauner@ubuntu.com>
+ <20210112220124.837960-33-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <20210112220124.837960-32-christian.brauner@ubuntu.com>
+In-Reply-To: <20210112220124.837960-33-christian.brauner@ubuntu.com>
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by
  casper.infradead.org. See http://www.infradead.org/rpr.html
 Cc: Lennart Poettering <lennart@poettering.net>,
@@ -112,9 +112,7 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-This could use file_user_ns.
-
-Otherwise looks good:
+Looks good,
 
 Reviewed-by: Christoph Hellwig <hch@lst.de>
 _______________________________________________
