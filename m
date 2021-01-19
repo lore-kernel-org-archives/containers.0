@@ -7,70 +7,70 @@ X-Spam-Status: No, score=-8.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AC2F5C433DB
-	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 09:33:14 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 66F93C433DB
+	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 09:33:46 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 239DA22227
-	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 09:33:13 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 239DA22227
+	by mail.kernel.org (Postfix) with ESMTPS id A2211221F7
+	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 09:33:45 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A2211221F7
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 11CA18677F;
-	Tue, 19 Jan 2021 09:33:13 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 3502986CAC;
+	Tue, 19 Jan 2021 09:33:45 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id DKg2OQun7Nsd; Tue, 19 Jan 2021 09:33:12 +0000 (UTC)
+	with ESMTP id GDIJi2BZx9O1; Tue, 19 Jan 2021 09:33:44 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 9074C86785;
-	Tue, 19 Jan 2021 09:33:11 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id B16DC81F85;
+	Tue, 19 Jan 2021 09:33:44 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 714E8C1E6F;
-	Tue, 19 Jan 2021 09:33:11 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id A6F07C088B;
+	Tue, 19 Jan 2021 09:33:44 +0000 (UTC)
 Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 0A736C013A
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 4B93EC013A
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 09:33:10 +0000 (UTC)
+ Tue, 19 Jan 2021 09:33:43 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 03E7686CB6
+ by hemlock.osuosl.org (Postfix) with ESMTP id 2F34681F85
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 09:33:10 +0000 (UTC)
+ Tue, 19 Jan 2021 09:33:43 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id 8wfHhcl+EgTZ
+ with ESMTP id A6OngQB+GisQ
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 09:33:07 +0000 (UTC)
+ Tue, 19 Jan 2021 09:33:41 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
 Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
- by hemlock.osuosl.org (Postfix) with ESMTPS id B63EA86C66
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 7754586CAC
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 09:33:07 +0000 (UTC)
+ Tue, 19 Jan 2021 09:33:41 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
  d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
  References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
  Content-Transfer-Encoding:Content-ID:Content-Description;
- bh=l2WBiCb5duYJRA9nKpihqrJOH1Qjg6utSrFiu8qAdtc=; b=klmdlbjPa4neptyaD8swknjp/k
- nbMlLprwFliwRnvcdRaOJYdwGeZbz6Un4IXMUlyocgli46NlrB64Fksx3nkuMgHN6CwkhIZY4Rx9M
- 84U15Jxy0Qq26tk1ZTx7Lh0cBHOZAEDw/Q3B4nBv1ruy13YViq7iU8qvQR8cu5TUTeI2XcBi2Ijzi
- VWNUP+j4e9Crd9qOY+GJXvOACm2fuEYn624SOwwZn5CcmjS5vvkVTlk1Qd5R/cF7H27qpC9BEnIaQ
- ldTjngNW+rNIdglgcRAb9VxfSYAUPbaUxS9GYrqRlkjusQd0OelL0jdDG6UzjAtRX6Zhu1dUP8wUF
- SVWqfaIQ==;
+ bh=scH8YVE1TB4OFwEW8FVKBzYlkag0wqmCJNKtr/ct77w=; b=PEFEq57x/HI6QbtM+vzQvXCZL3
+ vDLh4pq2ZJOI+5gq/0X3p4r8fc9gCEAIQVWn+RkMEuORq4dJMELH6mM0jNFudmHlNxglJMnSNW5dm
+ WT0MMLf0VraTYVP0uerf/sEF1H6as8KhpMN4z8ik8pqaADaGHf7+GtrShVBumfZrBatu5DefgkuNv
+ +2bv+kKrnNcjry7GfUcHioylfnRmbHyOcAW3vYzFUw496FqnF+I4gW4JHBf5Gzk/WdKhuzxT2WAuG
+ wYFdPz5j2qd7B9uuUr4DN8z+yVmk72n4GvrUYNkjnoinE0bZBGiPkNE1RIlKWbwkphNHFgdP7UkR4
+ JhPKBVRA==;
 Received: from hch by casper.infradead.org with local (Exim 4.94 #2 (Red Hat
- Linux)) id 1l1nMh-00E7Ri-R3; Tue, 19 Jan 2021 09:31:57 +0000
-Date: Tue, 19 Jan 2021 09:31:55 +0000
+ Linux)) id 1l1nN8-00E7Sv-8a; Tue, 19 Jan 2021 09:32:28 +0000
+Date: Tue, 19 Jan 2021 09:32:22 +0000
 From: Christoph Hellwig <hch@infradead.org>
 To: Christian Brauner <christian.brauner@ubuntu.com>
-Subject: Re: [PATCH v5 17/42] commoncap: handle idmapped mounts
-Message-ID: <20210119093155.GB3364550@infradead.org>
+Subject: Re: [PATCH v5 18/42] stat: handle idmapped mounts
+Message-ID: <20210119093222.GC3364550@infradead.org>
 References: <20210112220124.837960-1-christian.brauner@ubuntu.com>
- <20210112220124.837960-18-christian.brauner@ubuntu.com>
+ <20210112220124.837960-19-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <20210112220124.837960-18-christian.brauner@ubuntu.com>
+In-Reply-To: <20210112220124.837960-19-christian.brauner@ubuntu.com>
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by
  casper.infradead.org. See http://www.infradead.org/rpr.html
 Cc: Lennart Poettering <lennart@poettering.net>,
@@ -111,6 +111,14 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
+
+On Tue, Jan 12, 2021 at 11:01:00PM +0100, Christian Brauner wrote:
+> The generic_fillattr() helper fills in the basic attributes associated
+> with an inode. Enable it to handle idmapped mounts. If the inode is
+> accessed through an idmapped mount we need to map it according to the
+> mount's user namespace before we store the uid and gid.
+> If the initial user namespace is passed nothing changes so non-idmapped
+> mounts will see identical behavior as before.
 
 Looks good,
 
