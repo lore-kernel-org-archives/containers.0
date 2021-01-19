@@ -7,70 +7,70 @@ X-Spam-Status: No, score=-8.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 72F00C433E0
-	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 09:34:32 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2AB4CC433E0
+	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 09:35:12 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id EDB2122D2A
-	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 09:34:31 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EDB2122D2A
+	by mail.kernel.org (Postfix) with ESMTPS id 97F2222D6F
+	for <containers@archiver.kernel.org>; Tue, 19 Jan 2021 09:35:11 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 97F2222D6F
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 5B50784ADA;
-	Tue, 19 Jan 2021 09:34:31 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 24E608676F;
+	Tue, 19 Jan 2021 09:35:11 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id ryj40-yB-xbx; Tue, 19 Jan 2021 09:34:31 +0000 (UTC)
+	with ESMTP id zXqpTLYdLyeP; Tue, 19 Jan 2021 09:35:11 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id EF202845DC;
-	Tue, 19 Jan 2021 09:34:30 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 0689486443;
+	Tue, 19 Jan 2021 09:35:11 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id DB283C088B;
-	Tue, 19 Jan 2021 09:34:30 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 57DFFC013A
+	by lists.linuxfoundation.org (Postfix) with ESMTP id E6DE8C088B;
+	Tue, 19 Jan 2021 09:35:10 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id DFF52C013A
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 09:34:29 +0000 (UTC)
+ Tue, 19 Jan 2021 09:35:09 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 479F21FE32
+ by whitealder.osuosl.org (Postfix) with ESMTP id CA2A18676F
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 09:34:29 +0000 (UTC)
+ Tue, 19 Jan 2021 09:35:09 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id 4pGT2-cBt6Na
+ with ESMTP id LKI8n8IBiVAF
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 09:34:27 +0000 (UTC)
+ Tue, 19 Jan 2021 09:35:09 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
 Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
- by silver.osuosl.org (Postfix) with ESMTPS id 8C1D120029
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 36D8E86443
  for <containers@lists.linux-foundation.org>;
- Tue, 19 Jan 2021 09:34:27 +0000 (UTC)
+ Tue, 19 Jan 2021 09:35:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
  d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
  References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
  Content-Transfer-Encoding:Content-ID:Content-Description;
- bh=1acN46MpaPD0Uo/eaBisBkwf/+vpr3p34PmGVNKLyj4=; b=KxUOlItbLKC0Avomi+19Gi2mcV
- gmWIZesVp04Vx271TV9b12XH2uIVL4VVV+bLwXEwvpVa+rJzPrNT0nHJhRYqIYGgwv9CtShnFhybV
- vqjmZOZPQr8XuVGUTKyPw1JBpMikjjY8GUzwj3sGB0H4dPdwLCC70zMRdWdSTED2xkchcQhXyfqPB
- AfcImiORPYISXJfLt8J2JIAdaMcaJK/Qc+dlv3Jnyu6CP+oVkJ3k/6iHn+N4D7s2ryGs0vpixWCDF
- UXeDZ17iiJ8GPw1BHIsY66OMlUpie2S7mvML6r33SJXdD0zMc6Ya/tOubD5xLSxmpKc+Nbx8PUSIK
- ZGweAYaQ==;
+ bh=l2WBiCb5duYJRA9nKpihqrJOH1Qjg6utSrFiu8qAdtc=; b=dEpfJCWBeTDzsQGes9dJr7Z/yQ
+ nJeBreR+8+I5Yd1g3E1upZjaEHLadWZJOOojOGR7mZB0SGRfTL3SaJKle3AqZWTTcPF6DbB5Eb41o
+ STFS5OFCNDSeHPqkXo+MI6x1p2YIfBNT2oYwuNpLKce6jjl5GbCxoB9JShWwjP3z6+khLJX5kxGbv
+ z51UbqtKzmAsUJxssJxlX987FEZHGpL2NXJ5e4grZTXKOdpsbx0rJAgOvJYgUv2KGyRBd0gcl5GCg
+ /FfMPzPVfAfl1RBaOxwWPl8gu3zEDecBPxsyeXJ0YC/nLUMsmO7GlsVCL9y7EXWFJNdQQ7mhSMyrl
+ /eThp4JQ==;
 Received: from hch by casper.infradead.org with local (Exim 4.94 #2 (Red Hat
- Linux)) id 1l1nO8-00E7YL-MF; Tue, 19 Jan 2021 09:33:28 +0000
-Date: Tue, 19 Jan 2021 09:33:24 +0000
+ Linux)) id 1l1nOr-00E7bT-To; Tue, 19 Jan 2021 09:34:10 +0000
+Date: Tue, 19 Jan 2021 09:34:09 +0000
 From: Christoph Hellwig <hch@infradead.org>
 To: Christian Brauner <christian.brauner@ubuntu.com>
-Subject: Re: [PATCH v5 19/42] namei: handle idmapped mounts in may_*() helpers
-Message-ID: <20210119093324.GD3364550@infradead.org>
+Subject: Re: [PATCH v5 20/42] namei: introduce struct renamedata
+Message-ID: <20210119093409.GE3364550@infradead.org>
 References: <20210112220124.837960-1-christian.brauner@ubuntu.com>
- <20210112220124.837960-20-christian.brauner@ubuntu.com>
+ <20210112220124.837960-21-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <20210112220124.837960-20-christian.brauner@ubuntu.com>
+In-Reply-To: <20210112220124.837960-21-christian.brauner@ubuntu.com>
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by
  casper.infradead.org. See http://www.infradead.org/rpr.html
 Cc: Lennart Poettering <lennart@poettering.net>,
@@ -111,19 +111,6 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
-
-On Tue, Jan 12, 2021 at 11:01:01PM +0100, Christian Brauner wrote:
-> The may_follow_link(), may_linkat(), may_lookup(), may_open(),
-> may_o_create(), may_create_in_sticky(), may_delete(), and may_create()
-> helpers determine whether the caller is privileged enough to perform the
-> associated operations. Let them handle idmapped mounts by mapping the
-> inode or fsids according to the mount's user namespace. Afterwards the
-> checks are identical to non-idmapped inodes. The patch takes care to
-> retrieve the mount's user namespace right before performing permission
-> checks and passing it down into the fileystem so the user namespace
-> can't change in between by someone idmapping a mount that is currently
-> not idmapped. If the initial user namespace is passed nothing changes so
-> non-idmapped mounts will see identical behavior as before.
 
 Looks good,
 
