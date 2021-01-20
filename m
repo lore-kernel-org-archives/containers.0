@@ -6,91 +6,91 @@ X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EBA90C433DB
-	for <containers@archiver.kernel.org>; Wed, 20 Jan 2021 02:00:03 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D125C433DB
+	for <containers@archiver.kernel.org>; Wed, 20 Jan 2021 12:05:02 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 6358021D79
-	for <containers@archiver.kernel.org>; Wed, 20 Jan 2021 02:00:03 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6358021D79
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=xmission.com
+	by mail.kernel.org (Postfix) with ESMTPS id C10912313A
+	for <containers@archiver.kernel.org>; Wed, 20 Jan 2021 12:05:01 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C10912313A
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 80C522043D;
-	Wed, 20 Jan 2021 02:00:02 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 7CDF785EAE;
+	Wed, 20 Jan 2021 12:05:01 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id AiAcdmB569iA; Wed, 20 Jan 2021 02:00:00 +0000 (UTC)
+	with ESMTP id 2ktCarbabZmH; Wed, 20 Jan 2021 12:05:01 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 4FF6220425;
-	Wed, 20 Jan 2021 02:00:00 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 03E8585751;
+	Wed, 20 Jan 2021 12:05:01 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 3CB5FC088B;
-	Wed, 20 Jan 2021 02:00:00 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id B0A78C013A
+	by lists.linuxfoundation.org (Postfix) with ESMTP id D1A4EC08A1;
+	Wed, 20 Jan 2021 12:05:00 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 4CC30C013A
  for <containers@lists.linux-foundation.org>;
- Wed, 20 Jan 2021 01:59:58 +0000 (UTC)
+ Wed, 20 Jan 2021 12:04:59 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 9CA4E86489
+ by hemlock.osuosl.org (Postfix) with ESMTP id 3FE5187096
  for <containers@lists.linux-foundation.org>;
- Wed, 20 Jan 2021 01:59:58 +0000 (UTC)
+ Wed, 20 Jan 2021 12:04:59 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id ChhttY3ed4qq
+ with ESMTP id TLa3CyCwrWXw
  for <containers@lists.linux-foundation.org>;
- Wed, 20 Jan 2021 01:59:57 +0000 (UTC)
-X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
-Received: from out01.mta.xmission.com (out01.mta.xmission.com [166.70.13.231])
- by whitealder.osuosl.org (Postfix) with ESMTPS id D9E1C86416
+ Wed, 20 Jan 2021 12:04:57 +0000 (UTC)
+X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
+Received: from youngberry.canonical.com (youngberry.canonical.com
+ [91.189.89.112])
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 270EC87094
  for <containers@lists.linux-foundation.org>;
- Wed, 20 Jan 2021 01:59:57 +0000 (UTC)
-Received: from in02.mta.xmission.com ([166.70.13.52])
- by out01.mta.xmission.com with esmtps (TLS1.3) tls
- TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 (Exim 4.93)
- (envelope-from <ebiederm@xmission.com>)
- id 1l22mp-0092wV-9L; Tue, 19 Jan 2021 18:59:55 -0700
-Received: from ip68-227-160-95.om.om.cox.net ([68.227.160.95]
- helo=x220.xmission.com)
- by in02.mta.xmission.com with esmtpsa (TLS1.3) tls
- TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 (Exim 4.93)
- (envelope-from <ebiederm@xmission.com>)
- id 1l22mo-00B0pL-8x; Tue, 19 Jan 2021 18:59:54 -0700
-From: ebiederm@xmission.com (Eric W. Biederman)
-To: Alexey Gladkov <gladkov.alexey@gmail.com>
-References: <cover.1610722473.git.gladkov.alexey@gmail.com>
- <116c7669744404364651e3b380db2d82bb23f983.1610722473.git.gladkov.alexey@gmail.com>
- <CAHk-=wjsg0Lgf1Mh2UiJE4sqBDDo0VhFVBUbhed47ot2CQQwfQ@mail.gmail.com>
- <20210118194551.h2hrwof7b3q5vgoi@example.org>
- <CAHk-=wiNpc5BS2BfZhdDqofJx1G=uasBa2Q1eY4cr8O59Rev2A@mail.gmail.com>
- <20210118205629.zro2qkd3ut42bpyq@example.org>
- <87eeig74kv.fsf@x220.int.ebiederm.org>
-Date: Tue, 19 Jan 2021 19:58:44 -0600
-In-Reply-To: <87eeig74kv.fsf@x220.int.ebiederm.org> (Eric W. Biederman's
- message of "Tue, 19 Jan 2021 19:57:36 -0600")
-Message-ID: <878s8o74iz.fsf@x220.int.ebiederm.org>
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/26.1 (gnu/linux)
+ Wed, 20 Jan 2021 12:04:57 +0000 (UTC)
+Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
+ helo=wittgenstein) by youngberry.canonical.com with esmtpsa
+ (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
+ (envelope-from <christian.brauner@ubuntu.com>)
+ id 1l2CCh-0006rZ-My; Wed, 20 Jan 2021 12:03:15 +0000
+Date: Wed, 20 Jan 2021 13:03:10 +0100
+From: Christian Brauner <christian.brauner@ubuntu.com>
+To: Jann Horn <jannh@google.com>
+Subject: Re: [PATCH v5 15/42] fs: add file_user_ns() helper
+Message-ID: <20210120120310.6tczonwl3rdtnyu3@wittgenstein>
+References: <20210112220124.837960-1-christian.brauner@ubuntu.com>
+ <20210112220124.837960-16-christian.brauner@ubuntu.com>
+ <CAG48ez3Ccr77+zH56YGimESf9jdy_xnQrebypn1TXEP3Q+xw=w@mail.gmail.com>
 MIME-Version: 1.0
-X-XM-SPF: eid=1l22mo-00B0pL-8x; ; ; mid=<878s8o74iz.fsf@x220.int.ebiederm.org>;
- ; ; hst=in02.mta.xmission.com; ; ; ip=68.227.160.95; ; ;
- frm=ebiederm@xmission.com; ; ; spf=neutral
-X-XM-AID: U2FsdGVkX1/T2B95TMqxtikO/3YyPpBrhK2ILrwugMw=
-X-SA-Exim-Connect-IP: 68.227.160.95
-X-SA-Exim-Mail-From: ebiederm@xmission.com
-Subject: Re: [RFC PATCH v3 1/8] Use refcount_t for ucounts reference counting
-X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
-X-SA-Exim-Scanned: Yes (on in02.mta.xmission.com)
-Cc: Jens Axboe <axboe@kernel.dk>, Kees Cook <keescook@chromium.org>,
- Kernel Hardening <kernel-hardening@lists.openwall.com>,
+Content-Disposition: inline
+In-Reply-To: <CAG48ez3Ccr77+zH56YGimESf9jdy_xnQrebypn1TXEP3Q+xw=w@mail.gmail.com>
+Cc: Lennart Poettering <lennart@poettering.net>,
+ Mimi Zohar <zohar@linux.ibm.com>, David Howells <dhowells@redhat.com>,
+ Andreas Dilger <adilger.kernel@dilger.ca>,
  Linux Containers <containers@lists.linux-foundation.org>,
- Jann Horn <jannh@google.com>, LKML <linux-kernel@vger.kernel.org>,
- Oleg Nesterov <oleg@redhat.com>, Linux-MM <linux-mm@kvack.org>,
- Andrew Morton <akpm@linux-foundation.org>,
- Linus Torvalds <torvalds@linux-foundation.org>,
- io-uring <io-uring@vger.kernel.org>
+ Christoph Hellwig <hch@lst.de>, Tycho Andersen <tycho@tycho.ws>,
+ Paul Moore <paul@paul-moore.com>, Jonathan Corbet <corbet@lwn.net>,
+ Stephen Barber <smbarber@chromium.org>, Christoph Hellwig <hch@infradead.org>,
+ Alban Crequy <alban@kinvolk.io>,
+ Ext4 Developers List <linux-ext4@vger.kernel.org>,
+ Mrunal Patel <mpatel@redhat.com>, Kees Cook <keescook@chromium.org>,
+ Arnd Bergmann <arnd@arndb.de>, SElinux list <selinux@vger.kernel.org>,
+ Josh Triplett <josh@joshtriplett.org>,
+ Seth Forshee <seth.forshee@canonical.com>, Aleksa Sarai <cyphar@cyphar.com>,
+ Alexander Viro <viro@zeniv.linux.org.uk>, Andy Lutomirski <luto@kernel.org>,
+ OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
+ Geoffrey Thomas <geofft@ldpreload.com>,
+ James Bottomley <James.Bottomley@hansenpartnership.com>,
+ John Johansen <john.johansen@canonical.com>, Theodore Tso <tytso@mit.edu>,
+ Dmitry Kasatkin <dmitry.kasatkin@gmail.com>,
+ Stephen Smalley <stephen.smalley.work@gmail.com>, linux-xfs@vger.kernel.org,
+ linux-security-module <linux-security-module@vger.kernel.org>,
+ "Eric W. Biederman" <ebiederm@xmission.com>,
+ Linux API <linux-api@vger.kernel.org>,
+ Casey Schaufler <casey@schaufler-ca.com>,
+ linux-fsdevel <linux-fsdevel@vger.kernel.org>, linux-integrity@vger.kernel.org,
+ Linus Torvalds <torvalds@linux-foundation.org>, Todd Kjos <tkjos@google.com>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -107,67 +107,31 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-ebiederm@xmission.com (Eric W. Biederman) writes:
+On Tue, Jan 19, 2021 at 04:05:00PM +0100, Jann Horn wrote:
+> On Wed, Jan 13, 2021 at 1:52 AM Christian Brauner
+> <christian.brauner@ubuntu.com> wrote:
+> > Add a simple helper to retrieve the user namespace associated with the
+> > vfsmount of a file. Christoph correctly points out that this makes
+> > codepaths (e.g. ioctls) way easier to follow that would otherwise
+> > dereference via mnt_user_ns(file->f_path.mnt).
+> >
+> > In order to make file_user_ns() static inline we'd need to include
+> > mount.h in either file.h or fs.h which seems undesirable so let's simply
+> > not force file_user_ns() to be inline.
+> [...]
+> > +struct user_namespace *file_user_ns(struct file *file)
+> > +{
+> > +       return mnt_user_ns(file->f_path.mnt);
+> > +}
+> 
+> That name is confusing to me, because when I think of "the userns of a
+> file", it's file->f_cred->user_ns. There are a bunch of places that
+> look at that, as you can see from grepping for "f_cred->user_ns".
+> 
+> If you really want this to be a separate helper, can you maybe give it
+> a clearer name? file_mnt_user_ns(), or something like that, idk.
 
-> Alexey Gladkov <gladkov.alexey@gmail.com> writes:
->
->> On Mon, Jan 18, 2021 at 12:34:29PM -0800, Linus Torvalds wrote:
->>> On Mon, Jan 18, 2021 at 11:46 AM Alexey Gladkov
->>> <gladkov.alexey@gmail.com> wrote:
->>> >
->>> > Sorry about that. I thought that this code is not needed when switching
->>> > from int to refcount_t. I was wrong.
->>> 
->>> Well, you _may_ be right. I personally didn't check how the return
->>> value is used.
->>> 
->>> I only reacted to "it certainly _may_ be used, and there is absolutely
->>> no comment anywhere about why it wouldn't matter".
->>
->> I have not found examples where checked the overflow after calling
->> refcount_inc/refcount_add.
->>
->> For example in kernel/fork.c:2298 :
->>
->>    current->signal->nr_threads++;                           
->>    atomic_inc(&current->signal->live);                      
->>    refcount_inc(&current->signal->sigcnt);  
->>
->> $ semind search signal_struct.sigcnt
->> def include/linux/sched/signal.h:83  		refcount_t		sigcnt;
->> m-- kernel/fork.c:723 put_signal_struct 		if (refcount_dec_and_test(&sig->sigcnt))
->> m-- kernel/fork.c:1571 copy_signal 		refcount_set(&sig->sigcnt, 1);
->> m-- kernel/fork.c:2298 copy_process 				refcount_inc(&current->signal->sigcnt);
->>
->> It seems to me that the only way is to use __refcount_inc and then compare
->> the old value with REFCOUNT_MAX
->>
->> Since I have not seen examples of such checks, I thought that this is
->> acceptable. Sorry once again. I have not tried to hide these changes.
->
-> The current ucount code does check for overflow and fails the increment
-> in every case.
->
-> So arguably it will be a regression and inferior error handling behavior
-> if the code switches to the ``better'' refcount_t data structure.
->
-> I originally didn't use refcount_t because silently saturating and not
-> bothering to handle the error makes me uncomfortable.
->
-> Not having to acquire the ucounts_lock every time seems nice.  Perhaps
-> the path forward would be to start with stupid/correct code that always
-> takes the ucounts_lock for every increment of ucounts->count, that is
-> later replaced with something more optimal.
->
-> Not impacting performance in the non-namespace cases and having good
-> performance in the other cases is a fundamental requirement of merging
-> code like this.
-
-So starting with something easy to comprehend and simple, may make it
-easier to figure out how to optimize the code.
-
-Eric
-
+Done.
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
