@@ -5,74 +5,74 @@ X-Spam-Level:
 X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 49985C433DB
-	for <containers@archiver.kernel.org>; Thu, 21 Jan 2021 13:31:01 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 49F92C433E0
+	for <containers@archiver.kernel.org>; Thu, 21 Jan 2021 13:31:13 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id C4CAF206DC
-	for <containers@archiver.kernel.org>; Thu, 21 Jan 2021 13:31:00 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C4CAF206DC
+	by mail.kernel.org (Postfix) with ESMTPS id B4B16206DC
+	for <containers@archiver.kernel.org>; Thu, 21 Jan 2021 13:31:12 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B4B16206DC
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ubuntu.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id ACB3B2026D;
-	Thu, 21 Jan 2021 13:30:59 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 70B0585A81;
+	Thu, 21 Jan 2021 13:31:12 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id AQzkZHFLRp-g; Thu, 21 Jan 2021 13:30:58 +0000 (UTC)
+	with ESMTP id hrDdsNPHxbns; Thu, 21 Jan 2021 13:31:11 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 6B7E120530;
-	Thu, 21 Jan 2021 13:30:58 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 8626685B29;
+	Thu, 21 Jan 2021 13:31:11 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 535D5C088B;
-	Thu, 21 Jan 2021 13:30:58 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 77A37C088B;
+	Thu, 21 Jan 2021 13:31:11 +0000 (UTC)
 Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 7682FC013A
+ by lists.linuxfoundation.org (Postfix) with ESMTP id C3D9CC013A
  for <containers@lists.linux-foundation.org>;
- Thu, 21 Jan 2021 13:30:56 +0000 (UTC)
+ Thu, 21 Jan 2021 13:31:09 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by fraxinus.osuosl.org (Postfix) with ESMTP id 5EF1D86214
+ by fraxinus.osuosl.org (Postfix) with ESMTP id B944C86214
  for <containers@lists.linux-foundation.org>;
- Thu, 21 Jan 2021 13:30:56 +0000 (UTC)
+ Thu, 21 Jan 2021 13:31:09 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from fraxinus.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id Zs98tP6vJfot
+ with ESMTP id MIs8ldVOwlKL
  for <containers@lists.linux-foundation.org>;
- Thu, 21 Jan 2021 13:30:55 +0000 (UTC)
+ Thu, 21 Jan 2021 13:31:08 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
 Received: from youngberry.canonical.com (youngberry.canonical.com
  [91.189.89.112])
- by fraxinus.osuosl.org (Postfix) with ESMTPS id 90051861F1
+ by fraxinus.osuosl.org (Postfix) with ESMTPS id 585DE861F1
  for <containers@lists.linux-foundation.org>;
- Thu, 21 Jan 2021 13:30:55 +0000 (UTC)
+ Thu, 21 Jan 2021 13:31:08 +0000 (UTC)
 Received: from ip5f5af0a0.dynamic.kabel-deutschland.de ([95.90.240.160]
  helo=wittgenstein.fritz.box) by youngberry.canonical.com with esmtpsa
  (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128) (Exim 4.86_2)
  (envelope-from <christian.brauner@ubuntu.com>)
- id 1l2ZuW-0005g7-Be; Thu, 21 Jan 2021 13:22:04 +0000
+ id 1l2ZvO-0005g7-Jw; Thu, 21 Jan 2021 13:22:58 +0000
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>, Christoph Hellwig <hch@lst.de>,
  linux-fsdevel@vger.kernel.org
-Subject: [PATCH v6 25/40] apparmor: handle idmapped mounts
-Date: Thu, 21 Jan 2021 14:19:44 +0100
-Message-Id: <20210121131959.646623-26-christian.brauner@ubuntu.com>
+Subject: [PATCH v6 37/40] fat: handle idmapped mounts
+Date: Thu, 21 Jan 2021 14:19:56 +0100
+Message-Id: <20210121131959.646623-38-christian.brauner@ubuntu.com>
 X-Mailer: git-send-email 2.30.0
 In-Reply-To: <20210121131959.646623-1-christian.brauner@ubuntu.com>
 References: <20210121131959.646623-1-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
-X-Patch-Hashes: v=1; h=sha256; i=GtgWex55B/vr9cqlh7J1mRZi5HqOLuyw4/kbMFcnj44=;
- m=G863wdSzzxhRYEpZlvcjCbMqjfGM+EzHMZj4lH97kdQ=;
- p=v7Dghu+PiQNoHUqBfojnajWdiF8zQ4FI7zes967ESpE=;
- g=fc621525654f36c1288ae9a7dafdb8a10f48567e
+X-Patch-Hashes: v=1; h=sha256; i=wF1t0OLeehpDD/Or8zja7KrHnkwazZpHv9hvAGPb0LU=;
+ m=l68w9z3nuzQbdD8jJ4SY76UNlGeYspBUah720yzK2lY=;
+ p=VYd3jcBHTuujai52oTyGbiEhcHfrnzpws7JejgqOZc8=;
+ g=b83c1538a9fca485d728fb60a703fb616e8fd418
 X-Patch-Sig: m=pgp; i=christian.brauner@ubuntu.com; s=0x0x91C61BC06578DCA2;
- b=iHUEABYKAB0WIQRAhzRXHqcMeLMyaSiRxhvAZXjcogUCYAl9pQAKCRCRxhvAZXjcoqNaAQCNXL8
- 2C3FlJ8IguPio5GOjWPN/I3KwFRh0CZtHysuIBwD+I1uY/vmqPZjOR4pN2LjQHd1zK40rDWSRiq1v
- oA9J2AM=
+ b=iHUEABYKAB0WIQRAhzRXHqcMeLMyaSiRxhvAZXjcogUCYAl9pwAKCRCRxhvAZXjcordaAP4re7G
+ uyqs7DvjvSUzPlp4FEdWyIrcV6EowQ75cbIDBBwD+Plx6FOWeHmvAhm6mDL/bm1+7dhqucxmPqBs/
+ 0J5zLAY=
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>,
  James Bottomley <James.Bottomley@hansenpartnership.com>,
@@ -106,177 +106,96 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-The i_uid and i_gid are mostly used when logging for AppArmor. This is
-broken in a bunch of places where the global root id is reported instead
-of the i_uid or i_gid of the file. Nonetheless, be kind and log the
-mapped inode if we're coming from an idmapped mount. If the initial user
-namespace is passed nothing changes so non-idmapped mounts will see
-identical behavior as before.
-
-Link: https://lore.kernel.org/r/20210112220124.837960-34-christian.brauner@ubuntu.com
-Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
----
-/* v2 */
-unchanged
-
-/* v3 */
-unchanged
-
-/* v4 */
-- Serge Hallyn <serge@hallyn.com>:
-  - Use "mnt_userns" to refer to a vfsmount's userns everywhere to make
-    terminology consistent.
-
-/* v5 */
-base-commit: 7c53f6b671f4aba70ff15e1b05148b10d58c2837
-
-- Christoph Hellwig <hch@lst.de>:
-  - Use new file_mnt_user_ns() helper.
-
-/* v6 */
-unchanged
-base-commit: 19c329f6808995b142b3966301f217c831e7cf31
----
- security/apparmor/domain.c |  9 ++++++---
- security/apparmor/file.c   |  4 +++-
- security/apparmor/lsm.c    | 21 +++++++++++++++------
- 3 files changed, 24 insertions(+), 10 deletions(-)
-
-diff --git a/security/apparmor/domain.c b/security/apparmor/domain.c
-index 16f184bc48de..583680f6cd81 100644
---- a/security/apparmor/domain.c
-+++ b/security/apparmor/domain.c
-@@ -10,12 +10,14 @@
- 
- #include <linux/errno.h>
- #include <linux/fdtable.h>
-+#include <linux/fs.h>
- #include <linux/file.h>
- #include <linux/mount.h>
- #include <linux/syscalls.h>
- #include <linux/tracehook.h>
- #include <linux/personality.h>
- #include <linux/xattr.h>
-+#include <linux/user_namespace.h>
- 
- #include "include/audit.h"
- #include "include/apparmorfs.h"
-@@ -858,8 +860,10 @@ int apparmor_bprm_creds_for_exec(struct linux_binprm *bprm)
- 	const char *info = NULL;
- 	int error = 0;
- 	bool unsafe = false;
-+	kuid_t i_uid = i_uid_into_mnt(file_mnt_user_ns(bprm->file),
-+				      file_inode(bprm->file));
- 	struct path_cond cond = {
--		file_inode(bprm->file)->i_uid,
-+		i_uid,
- 		file_inode(bprm->file)->i_mode
- 	};
- 
-@@ -967,8 +971,7 @@ int apparmor_bprm_creds_for_exec(struct linux_binprm *bprm)
- 	error = fn_for_each(label, profile,
- 			aa_audit_file(profile, &nullperms, OP_EXEC, MAY_EXEC,
- 				      bprm->filename, NULL, new,
--				      file_inode(bprm->file)->i_uid, info,
--				      error));
-+				      i_uid, info, error));
- 	aa_put_label(new);
- 	goto done;
- }
-diff --git a/security/apparmor/file.c b/security/apparmor/file.c
-index 92acf9a49405..e1b7e93602e4 100644
---- a/security/apparmor/file.c
-+++ b/security/apparmor/file.c
-@@ -11,6 +11,8 @@
- #include <linux/tty.h>
- #include <linux/fdtable.h>
- #include <linux/file.h>
-+#include <linux/fs.h>
-+#include <linux/mount.h>
- 
- #include "include/apparmor.h"
- #include "include/audit.h"
-@@ -509,7 +511,7 @@ static int __file_path_perm(const char *op, struct aa_label *label,
- 	struct aa_profile *profile;
- 	struct aa_perms perms = {};
- 	struct path_cond cond = {
--		.uid = file_inode(file)->i_uid,
-+		.uid = i_uid_into_mnt(file_mnt_user_ns(file), file_inode(file)),
- 		.mode = file_inode(file)->i_mode
- 	};
- 	char *buffer;
-diff --git a/security/apparmor/lsm.c b/security/apparmor/lsm.c
-index 1b0aba8eb723..240a53387e6b 100644
---- a/security/apparmor/lsm.c
-+++ b/security/apparmor/lsm.c
-@@ -224,8 +224,10 @@ static int common_perm(const char *op, const struct path *path, u32 mask,
-  */
- static int common_perm_cond(const char *op, const struct path *path, u32 mask)
- {
--	struct path_cond cond = { d_backing_inode(path->dentry)->i_uid,
--				  d_backing_inode(path->dentry)->i_mode
-+	struct user_namespace *mnt_userns = mnt_user_ns(path->mnt);
-+	struct path_cond cond = {
-+		i_uid_into_mnt(mnt_userns, d_backing_inode(path->dentry)),
-+		d_backing_inode(path->dentry)->i_mode
- 	};
- 
- 	if (!path_mediated_fs(path->dentry))
-@@ -266,12 +268,13 @@ static int common_perm_rm(const char *op, const struct path *dir,
- 			  struct dentry *dentry, u32 mask)
- {
- 	struct inode *inode = d_backing_inode(dentry);
-+	struct user_namespace *mnt_userns = mnt_user_ns(dir->mnt);
- 	struct path_cond cond = { };
- 
- 	if (!inode || !path_mediated_fs(dentry))
- 		return 0;
- 
--	cond.uid = inode->i_uid;
-+	cond.uid = i_uid_into_mnt(mnt_userns, inode);
- 	cond.mode = inode->i_mode;
- 
- 	return common_perm_dir_dentry(op, dir, dentry, mask, &cond);
-@@ -361,12 +364,14 @@ static int apparmor_path_rename(const struct path *old_dir, struct dentry *old_d
- 
- 	label = begin_current_label_crit_section();
- 	if (!unconfined(label)) {
-+		struct user_namespace *mnt_userns = mnt_user_ns(old_dir->mnt);
- 		struct path old_path = { .mnt = old_dir->mnt,
- 					 .dentry = old_dentry };
- 		struct path new_path = { .mnt = new_dir->mnt,
- 					 .dentry = new_dentry };
--		struct path_cond cond = { d_backing_inode(old_dentry)->i_uid,
--					  d_backing_inode(old_dentry)->i_mode
-+		struct path_cond cond = {
-+			i_uid_into_mnt(mnt_userns, d_backing_inode(old_dentry)),
-+			d_backing_inode(old_dentry)->i_mode
- 		};
- 
- 		error = aa_path_perm(OP_RENAME_SRC, label, &old_path, 0,
-@@ -420,8 +425,12 @@ static int apparmor_file_open(struct file *file)
- 
- 	label = aa_get_newest_cred_label(file->f_cred);
- 	if (!unconfined(label)) {
-+		struct user_namespace *mnt_userns = file_mnt_user_ns(file);
- 		struct inode *inode = file_inode(file);
--		struct path_cond cond = { inode->i_uid, inode->i_mode };
-+		struct path_cond cond = {
-+			i_uid_into_mnt(mnt_userns, inode),
-+			inode->i_mode
-+		};
- 
- 		error = aa_path_perm(OP_OPEN, label, &file->f_path, 0,
- 				     aa_map_file_to_perms(file), &cond);
--- 
-2.30.0
-
-_______________________________________________
-Containers mailing list
-Containers@lists.linux-foundation.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
+TGV0IGZhdCBoYW5kbGUgaWRtYXBwZWQgbW91bnRzLiBUaGlzIGFsbG93cyB0byBoYXZlIHRoZSBz
+YW1lIGZhdCBtb3VudAphcHBlYXIgaW4gbXVsdGlwbGUgbG9jYXRpb25zIHdpdGggZGlmZmVyZW50
+IGlkIG1hcHBpbmdzLiBUaGlzIGFsbG93cyB0bwpleHBvc2UgYSB2ZmF0IGZvcm1hdHRlZCBVU0Ig
+c3RpY2sgdG8gbXVsdGlwbGUgdXNlciB3aXRoIGRpZmZlcmVudCBpZHMgb24KdGhlIGhvc3Qgb3Ig
+aW4gdXNlciBuYW1lc3BhY2VzIGFsbG93aW5nIGZvciBkYWMgcGVybWlzc2lvbnM6Cgptb3VudCAt
+byB1aWQ9MTAwMCxnaWQ9MTAwMCAvZGV2L3NkYiAvbW50Cgp1MTAwMUBmMi12bTovbG93ZXIxJCBs
+cyAtbG4gL21udC8KdG90YWwgNAotcnd4ci14ci14IDEgMTAwMCAxMDAwIDQgT2N0IDI4IDAzOjQ0
+IGFhYQotcnd4ci14ci14IDEgMTAwMCAxMDAwIDAgT2N0IDI4IDAxOjA5IGJiYgotcnd4ci14ci14
+IDEgMTAwMCAxMDAwIDAgT2N0IDI4IDAxOjEwIGNjYwotcnd4ci14ci14IDEgMTAwMCAxMDAwIDAg
+T2N0IDI4IDAzOjQ2IGRkZAotcnd4ci14ci14IDEgMTAwMCAxMDAwIDAgT2N0IDI4IDA0OjAxIGVl
+ZQoKbW91bnQtaWRtYXBwZWQgLS1tYXAtbW91bnQgYjoxMDAwOjEwMDE6MQoKdTEwMDFAZjItdm06
+L2xvd2VyMSQgbHMgLWxuIC9sb3dlcjEvCnRvdGFsIDQKLXJ3eHIteHIteCAxIDEwMDEgMTAwMSA0
+IE9jdCAyOCAwMzo0NCBhYWEKLXJ3eHIteHIteCAxIDEwMDEgMTAwMSAwIE9jdCAyOCAwMTowOSBi
+YmIKLXJ3eHIteHIteCAxIDEwMDEgMTAwMSAwIE9jdCAyOCAwMToxMCBjY2MKLXJ3eHIteHIteCAx
+IDEwMDEgMTAwMSAwIE9jdCAyOCAwMzo0NiBkZGQKLXJ3eHIteHIteCAxIDEwMDEgMTAwMSAwIE9j
+dCAyOCAwNDowMSBlZWUKCnUxMDAxQGYyLXZtOi9sb3dlcjEkIHRvdWNoIC9sb3dlcjEvZmZmCgp1
+MTAwMUBmMi12bTovbG93ZXIxJCBscyAtbG4gL2xvd2VyMS9mZmYKLXJ3eHIteHIteCAxIDEwMDEg
+MTAwMSAwIE9jdCAyOCAwNDowMyAvbG93ZXIxL2ZmZgoKdTEwMDFAZjItdm06L2xvd2VyMSQgbHMg
+LWxuIC9tbnQvZmZmCi1yd3hyLXhyLXggMSAxMDAwIDEwMDAgMCBPY3QgMjggMDQ6MDMgL21udC9m
+ZmYKCkxpbms6IGh0dHBzOi8vbG9yZS5rZXJuZWwub3JnL3IvMjAyMTAxMTIyMjAxMjQuODM3OTYw
+LTM2LWNocmlzdGlhbi5icmF1bmVyQHVidW50dS5jb20KQ2M6IENocmlzdG9waCBIZWxsd2lnIDxo
+Y2hAbHN0LmRlPgpDYzogRGF2aWQgSG93ZWxscyA8ZGhvd2VsbHNAcmVkaGF0LmNvbT4KQ2M6IEFs
+IFZpcm8gPHZpcm9AemVuaXYubGludXgub3JnLnVrPgpDYzogbGludXgtZnNkZXZlbEB2Z2VyLmtl
+cm5lbC5vcmcKU2lnbmVkLW9mZi1ieTogQ2hyaXN0aWFuIEJyYXVuZXIgPGNocmlzdGlhbi5icmF1
+bmVyQHVidW50dS5jb20+Ci0tLQovKiB2MiAqLwp1bmNoYW5nZWQKCi8qIHYzICovCnVuY2hhbmdl
+ZAoKLyogdjQgKi8KLSBNYXVyaWNpbyBWw6FzcXVleiBCZXJuYWwgPG1hdXJpY2lvQGtpbnZvbGsu
+aW8+OgogIC0gRml4IG1vdW50IGV4YW1wbGUgaW4gY29tbWl0IG1lc3NhZ2UuCgotIFNlcmdlIEhh
+bGx5biA8c2VyZ2VAaGFsbHluLmNvbT46CiAgLSBVc2UgIm1udF91c2VybnMiIHRvIHJlZmVyIHRv
+IGEgdmZzbW91bnQncyB1c2VybnMgZXZlcnl3aGVyZSB0byBtYWtlCiAgICB0ZXJtaW5vbG9neSBj
+b25zaXN0ZW50LgoKLyogdjUgKi8KdW5jaGFuZ2VkCmJhc2UtY29tbWl0OiA3YzUzZjZiNjcxZjRh
+YmE3MGZmMTVlMWIwNTE0OGIxMGQ1OGMyODM3CgovKiB2NiAqLwp1bmNoYW5nZWQKYmFzZS1jb21t
+aXQ6IDE5YzMyOWY2ODA4OTk1YjE0MmIzOTY2MzAxZjIxN2M4MzFlN2NmMzEKLS0tCiBmcy9mYXQv
+ZmlsZS5jICAgICAgICB8IDE1ICsrKysrKysrLS0tLS0tLQogZnMvZmF0L25hbWVpX21zZG9zLmMg
+fCAgMiArLQogZnMvZmF0L25hbWVpX3ZmYXQuYyAgfCAgMiArLQogMyBmaWxlcyBjaGFuZ2VkLCAx
+MCBpbnNlcnRpb25zKCspLCA5IGRlbGV0aW9ucygtKQoKZGlmZiAtLWdpdCBhL2ZzL2ZhdC9maWxl
+LmMgYi9mcy9mYXQvZmlsZS5jCmluZGV4IGRkNzNkMWI3MGM1NS4uZGE3YzU2MjM0MTg5IDEwMDY0
+NAotLS0gYS9mcy9mYXQvZmlsZS5jCisrKyBiL2ZzL2ZhdC9maWxlLmMKQEAgLTM5OCw3ICszOTgs
+NyBAQCBpbnQgZmF0X2dldGF0dHIoc3RydWN0IHVzZXJfbmFtZXNwYWNlICptbnRfdXNlcm5zLCBj
+b25zdCBzdHJ1Y3QgcGF0aCAqcGF0aCwKIAkJc3RydWN0IGtzdGF0ICpzdGF0LCB1MzIgcmVxdWVz
+dF9tYXNrLCB1bnNpZ25lZCBpbnQgZmxhZ3MpCiB7CiAJc3RydWN0IGlub2RlICppbm9kZSA9IGRf
+aW5vZGUocGF0aC0+ZGVudHJ5KTsKLQlnZW5lcmljX2ZpbGxhdHRyKCZpbml0X3VzZXJfbnMsIGlu
+b2RlLCBzdGF0KTsKKwlnZW5lcmljX2ZpbGxhdHRyKG1udF91c2VybnMsIGlub2RlLCBzdGF0KTsK
+IAlzdGF0LT5ibGtzaXplID0gTVNET1NfU0IoaW5vZGUtPmlfc2IpLT5jbHVzdGVyX3NpemU7CiAK
+IAlpZiAoTVNET1NfU0IoaW5vZGUtPmlfc2IpLT5vcHRpb25zLm5mcyA9PSBGQVRfTkZTX05PU1RB
+TEVfUk8pIHsKQEAgLTQ0NywxMiArNDQ3LDEzIEBAIHN0YXRpYyBpbnQgZmF0X3Nhbml0aXplX21v
+ZGUoY29uc3Qgc3RydWN0IG1zZG9zX3NiX2luZm8gKnNiaSwKIAlyZXR1cm4gMDsKIH0KIAotc3Rh
+dGljIGludCBmYXRfYWxsb3dfc2V0X3RpbWUoc3RydWN0IG1zZG9zX3NiX2luZm8gKnNiaSwgc3Ry
+dWN0IGlub2RlICppbm9kZSkKK3N0YXRpYyBpbnQgZmF0X2FsbG93X3NldF90aW1lKHN0cnVjdCB1
+c2VyX25hbWVzcGFjZSAqbW50X3VzZXJucywKKwkJCSAgICAgIHN0cnVjdCBtc2Rvc19zYl9pbmZv
+ICpzYmksIHN0cnVjdCBpbm9kZSAqaW5vZGUpCiB7CiAJdW1vZGVfdCBhbGxvd191dGltZSA9IHNi
+aS0+b3B0aW9ucy5hbGxvd191dGltZTsKIAotCWlmICghdWlkX2VxKGN1cnJlbnRfZnN1aWQoKSwg
+aW5vZGUtPmlfdWlkKSkgewotCQlpZiAoaW5fZ3JvdXBfcChpbm9kZS0+aV9naWQpKQorCWlmICgh
+dWlkX2VxKGN1cnJlbnRfZnN1aWQoKSwgaV91aWRfaW50b19tbnQobW50X3VzZXJucywgaW5vZGUp
+KSkgeworCQlpZiAoaW5fZ3JvdXBfcChpX2dpZF9pbnRvX21udChtbnRfdXNlcm5zLCBpbm9kZSkp
+KQogCQkJYWxsb3dfdXRpbWUgPj49IDM7CiAJCWlmIChhbGxvd191dGltZSAmIE1BWV9XUklURSkK
+IAkJCXJldHVybiAxOwpAQCAtNDc3LDExICs0NzgsMTEgQEAgaW50IGZhdF9zZXRhdHRyKHN0cnVj
+dCB1c2VyX25hbWVzcGFjZSAqbW50X3VzZXJucywgc3RydWN0IGRlbnRyeSAqZGVudHJ5LAogCS8q
+IENoZWNrIGZvciBzZXR0aW5nIHRoZSBpbm9kZSB0aW1lLiAqLwogCWlhX3ZhbGlkID0gYXR0ci0+
+aWFfdmFsaWQ7CiAJaWYgKGlhX3ZhbGlkICYgVElNRVNfU0VUX0ZMQUdTKSB7Ci0JCWlmIChmYXRf
+YWxsb3dfc2V0X3RpbWUoc2JpLCBpbm9kZSkpCisJCWlmIChmYXRfYWxsb3dfc2V0X3RpbWUobW50
+X3VzZXJucywgc2JpLCBpbm9kZSkpCiAJCQlhdHRyLT5pYV92YWxpZCAmPSB+VElNRVNfU0VUX0ZM
+QUdTOwogCX0KIAotCWVycm9yID0gc2V0YXR0cl9wcmVwYXJlKCZpbml0X3VzZXJfbnMsIGRlbnRy
+eSwgYXR0cik7CisJZXJyb3IgPSBzZXRhdHRyX3ByZXBhcmUobW50X3VzZXJucywgZGVudHJ5LCBh
+dHRyKTsKIAlhdHRyLT5pYV92YWxpZCA9IGlhX3ZhbGlkOwogCWlmIChlcnJvcikgewogCQlpZiAo
+c2JpLT5vcHRpb25zLnF1aWV0KQpAQCAtNTUxLDcgKzU1Miw3IEBAIGludCBmYXRfc2V0YXR0cihz
+dHJ1Y3QgdXNlcl9uYW1lc3BhY2UgKm1udF91c2VybnMsIHN0cnVjdCBkZW50cnkgKmRlbnRyeSwK
+IAkJZmF0X3RydW5jYXRlX3RpbWUoaW5vZGUsICZhdHRyLT5pYV9tdGltZSwgU19NVElNRSk7CiAJ
+YXR0ci0+aWFfdmFsaWQgJj0gfihBVFRSX0FUSU1FfEFUVFJfQ1RJTUV8QVRUUl9NVElNRSk7CiAK
+LQlzZXRhdHRyX2NvcHkoJmluaXRfdXNlcl9ucywgaW5vZGUsIGF0dHIpOworCXNldGF0dHJfY29w
+eShtbnRfdXNlcm5zLCBpbm9kZSwgYXR0cik7CiAJbWFya19pbm9kZV9kaXJ0eShpbm9kZSk7CiBv
+dXQ6CiAJcmV0dXJuIGVycm9yOwpkaWZmIC0tZ2l0IGEvZnMvZmF0L25hbWVpX21zZG9zLmMgYi9m
+cy9mYXQvbmFtZWlfbXNkb3MuYwppbmRleCBhOGYzMzc1ZDlkMTAuLmVmYmEzMDFkNjhhZSAxMDA2
+NDQKLS0tIGEvZnMvZmF0L25hbWVpX21zZG9zLmMKKysrIGIvZnMvZmF0L25hbWVpX21zZG9zLmMK
+QEAgLTY2Nyw3ICs2NjcsNyBAQCBzdGF0aWMgc3RydWN0IGZpbGVfc3lzdGVtX3R5cGUgbXNkb3Nf
+ZnNfdHlwZSA9IHsKIAkubmFtZQkJPSAibXNkb3MiLAogCS5tb3VudAkJPSBtc2Rvc19tb3VudCwK
+IAkua2lsbF9zYgk9IGtpbGxfYmxvY2tfc3VwZXIsCi0JLmZzX2ZsYWdzCT0gRlNfUkVRVUlSRVNf
+REVWLAorCS5mc19mbGFncwk9IEZTX1JFUVVJUkVTX0RFViB8IEZTX0FMTE9XX0lETUFQLAogfTsK
+IE1PRFVMRV9BTElBU19GUygibXNkb3MiKTsKIApkaWZmIC0tZ2l0IGEvZnMvZmF0L25hbWVpX3Zm
+YXQuYyBiL2ZzL2ZhdC9uYW1laV92ZmF0LmMKaW5kZXggMjM5MzZlY2Y3OWE1Li41MzY5ZDgyZTBi
+ZmIgMTAwNjQ0Ci0tLSBhL2ZzL2ZhdC9uYW1laV92ZmF0LmMKKysrIGIvZnMvZmF0L25hbWVpX3Zm
+YXQuYwpAQCAtMTA2Myw3ICsxMDYzLDcgQEAgc3RhdGljIHN0cnVjdCBmaWxlX3N5c3RlbV90eXBl
+IHZmYXRfZnNfdHlwZSA9IHsKIAkubmFtZQkJPSAidmZhdCIsCiAJLm1vdW50CQk9IHZmYXRfbW91
+bnQsCiAJLmtpbGxfc2IJPSBraWxsX2Jsb2NrX3N1cGVyLAotCS5mc19mbGFncwk9IEZTX1JFUVVJ
+UkVTX0RFViwKKwkuZnNfZmxhZ3MJPSBGU19SRVFVSVJFU19ERVYgfCBGU19BTExPV19JRE1BUCwK
+IH07CiBNT0RVTEVfQUxJQVNfRlMoInZmYXQiKTsKIAotLSAKMi4zMC4wCgpfX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlz
+dApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGlu
+dXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
