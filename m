@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F048DC433E0
-	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 03:28:27 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D416AC433DB
+	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 03:29:42 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 5E3E223884
-	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 03:28:26 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5E3E223884
+	by mail.kernel.org (Postfix) with ESMTPS id 4427523884
+	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 03:29:41 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4427523884
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=namei.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id B025A848F4;
-	Fri, 22 Jan 2021 03:28:26 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id B17EB87291;
+	Fri, 22 Jan 2021 03:29:41 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id IsDjFXrcgsl1; Fri, 22 Jan 2021 03:28:26 +0000 (UTC)
+	with ESMTP id X9tgJiYUAPOE; Fri, 22 Jan 2021 03:29:41 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 030AC848A9;
-	Fri, 22 Jan 2021 03:28:26 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id 346E38728C;
+	Fri, 22 Jan 2021 03:29:41 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id DBC76C088B;
-	Fri, 22 Jan 2021 03:28:25 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 2E4ECC088B;
+	Fri, 22 Jan 2021 03:29:41 +0000 (UTC)
 Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 08CFBC013A
+ by lists.linuxfoundation.org (Postfix) with ESMTP id C6ECFC013A
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 03:28:25 +0000 (UTC)
+ Fri, 22 Jan 2021 03:29:39 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id E3AD520358
+ by silver.osuosl.org (Postfix) with ESMTP id AE2D120358
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 03:28:24 +0000 (UTC)
+ Fri, 22 Jan 2021 03:29:39 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id Vddgbz426mwd
+ with ESMTP id e7IIZs6Gh8vt
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 03:28:24 +0000 (UTC)
+ Fri, 22 Jan 2021 03:29:38 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
 Received: from mail.namei.org (namei.org [65.99.196.166])
- by silver.osuosl.org (Postfix) with ESMTPS id 0F24120030
+ by silver.osuosl.org (Postfix) with ESMTPS id ABDEB20030
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 03:28:24 +0000 (UTC)
+ Fri, 22 Jan 2021 03:29:38 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by mail.namei.org (Postfix) with ESMTPS id 39EC949C;
- Fri, 22 Jan 2021 03:27:31 +0000 (UTC)
-Date: Fri, 22 Jan 2021 14:27:31 +1100 (AEDT)
+ by mail.namei.org (Postfix) with ESMTPS id 3328849C;
+ Fri, 22 Jan 2021 03:28:46 +0000 (UTC)
+Date: Fri, 22 Jan 2021 14:28:46 +1100 (AEDT)
 From: James Morris <jmorris@namei.org>
 To: Christian Brauner <christian.brauner@ubuntu.com>
-Subject: Re: [PATCH v6 10/40] commoncap: handle idmapped mounts
-In-Reply-To: <20210121131959.646623-11-christian.brauner@ubuntu.com>
-Message-ID: <9ce6066-6162-2398-342b-d18f99c3970@namei.org>
+Subject: Re: [PATCH v6 11/40] stat: handle idmapped mounts
+In-Reply-To: <20210121131959.646623-12-christian.brauner@ubuntu.com>
+Message-ID: <841ffb88-b1a6-2497-a68a-f89ad903dd8@namei.org>
 References: <20210121131959.646623-1-christian.brauner@ubuntu.com>
- <20210121131959.646623-11-christian.brauner@ubuntu.com>
+ <20210121131959.646623-12-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>,
@@ -102,7 +102,14 @@ Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
 On Thu, 21 Jan 2021, Christian Brauner wrote:
 
-> Link: https://lore.kernel.org/r/20210112220124.837960-18-christian.brauner@ubuntu.com
+> The generic_fillattr() helper fills in the basic attributes associated
+> with an inode. Enable it to handle idmapped mounts. If the inode is
+> accessed through an idmapped mount map it into the mount's user
+> namespace before we store the uid and gid. If the initial user namespace
+> is passed nothing changes so non-idmapped mounts will see identical
+> behavior as before.
+> 
+> Link: https://lore.kernel.org/r/20210112220124.837960-19-christian.brauner@ubuntu.com
 > Cc: Christoph Hellwig <hch@lst.de>
 > Cc: David Howells <dhowells@redhat.com>
 > Cc: Al Viro <viro@zeniv.linux.org.uk>
@@ -110,8 +117,7 @@ On Thu, 21 Jan 2021, Christian Brauner wrote:
 > Reviewed-by: Christoph Hellwig <hch@lst.de>
 > Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 
-
-Acked-by: James Morris <jamorris@linux.microsoft.com>
+Reviewed-by: James Morris <jamorris@linux.microsoft.com>
 
 
 -- 
