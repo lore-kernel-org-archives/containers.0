@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1A9C3C433E0
-	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 04:15:40 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AECB1C433E0
+	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 04:16:02 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 9A6DC22D57
-	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 04:15:39 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9A6DC22D57
+	by mail.kernel.org (Postfix) with ESMTPS id 3231422D57
+	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 04:16:02 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3231422D57
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=namei.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 4E82A8629B;
-	Fri, 22 Jan 2021 04:15:39 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id D59D886E44;
+	Fri, 22 Jan 2021 04:16:01 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id YNW0tZvfmVKg; Fri, 22 Jan 2021 04:15:37 +0000 (UTC)
+	with ESMTP id r+nBhCiUD41V; Fri, 22 Jan 2021 04:15:59 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id CF49186250;
-	Fri, 22 Jan 2021 04:15:37 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id E450086E2D;
+	Fri, 22 Jan 2021 04:15:59 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id B447EC08A1;
-	Fri, 22 Jan 2021 04:15:37 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 3C2DAC013A
+	by lists.linuxfoundation.org (Postfix) with ESMTP id DC91CC08A1;
+	Fri, 22 Jan 2021 04:15:59 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 5F613C013A
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 04:15:36 +0000 (UTC)
+ Fri, 22 Jan 2021 04:15:59 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 312ED22708
+ by hemlock.osuosl.org (Postfix) with ESMTP id 4A0D5872EE
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 04:15:36 +0000 (UTC)
+ Fri, 22 Jan 2021 04:15:59 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id leiPrVeV56xg
+ with ESMTP id fXuaOMgGulcT
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 04:15:35 +0000 (UTC)
+ Fri, 22 Jan 2021 04:15:58 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
 Received: from mail.namei.org (namei.org [65.99.196.166])
- by silver.osuosl.org (Postfix) with ESMTPS id 6E39921537
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 254D5872EA
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 04:15:35 +0000 (UTC)
+ Fri, 22 Jan 2021 04:15:58 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by mail.namei.org (Postfix) with ESMTPS id E799DC92;
- Fri, 22 Jan 2021 04:14:42 +0000 (UTC)
-Date: Fri, 22 Jan 2021 15:14:42 +1100 (AEDT)
+ by mail.namei.org (Postfix) with ESMTPS id A31BC49C;
+ Fri, 22 Jan 2021 04:15:05 +0000 (UTC)
+Date: Fri, 22 Jan 2021 15:15:05 +1100 (AEDT)
 From: James Morris <jmorris@namei.org>
 To: Christian Brauner <christian.brauner@ubuntu.com>
-Subject: Re: [PATCH v6 17/40] af_unix: handle idmapped mounts
-In-Reply-To: <20210121131959.646623-18-christian.brauner@ubuntu.com>
-Message-ID: <3e79875e-a32b-2974-b922-a2ed116305b@namei.org>
+Subject: Re: [PATCH v6 18/40] utimes: handle idmapped mounts
+In-Reply-To: <20210121131959.646623-19-christian.brauner@ubuntu.com>
+Message-ID: <5165ca90-df52-ee82-7d17-f63639065b@namei.org>
 References: <20210121131959.646623-1-christian.brauner@ubuntu.com>
- <20210121131959.646623-18-christian.brauner@ubuntu.com>
+ <20210121131959.646623-19-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>,
@@ -102,13 +102,12 @@ Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
 On Thu, 21 Jan 2021, Christian Brauner wrote:
 
-> When binding a non-abstract AF_UNIX socket it will gain a representation
-> in the filesystem. Enable the socket infrastructure to handle idmapped
-> mounts by passing down the user namespace of the mount the socket will
-> be created from. If the initial user namespace is passed nothing changes
-> so non-idmapped mounts will see identical behavior as before.
+> Enable the vfs_utimes() helper to handle idmapped mounts by passing down
+> the mount's user namespace. If the initial user namespace is passed
+> nothing changes so non-idmapped mounts will see identical behavior as
+> before.
 > 
-> Link: https://lore.kernel.org/r/20210112220124.837960-25-christian.brauner@ubuntu.com
+> Link: https://lore.kernel.org/r/20210112220124.837960-26-christian.brauner@ubuntu.com
 > Cc: Christoph Hellwig <hch@lst.de>
 > Cc: David Howells <dhowells@redhat.com>
 > Cc: Al Viro <viro@zeniv.linux.org.uk>
