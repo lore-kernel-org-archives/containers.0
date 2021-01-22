@@ -8,69 +8,69 @@ X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 20EB0C433E6
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7CDA1C43381
 	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 13:01:01 +0000 (UTC)
 Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id A90F9235F7
-	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 13:01:00 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A90F9235F7
+	by mail.kernel.org (Postfix) with ESMTPS id 3D62D230FC
+	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 13:01:01 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3D62D230FC
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 42B71870AC;
+	by whitealder.osuosl.org (Postfix) with ESMTP id F3DB6870AF;
 	Fri, 22 Jan 2021 13:01:00 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 3Rv4PFlZupRm; Fri, 22 Jan 2021 13:00:58 +0000 (UTC)
+	with ESMTP id bddRSVrhNle9; Fri, 22 Jan 2021 13:00:58 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id B2DC187092;
+	by whitealder.osuosl.org (Postfix) with ESMTP id DFF0587094;
 	Fri, 22 Jan 2021 13:00:58 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 980D6C1DA7;
+	by lists.linuxfoundation.org (Postfix) with ESMTP id CDC50C1DA7;
 	Fri, 22 Jan 2021 13:00:58 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 3D7B4C088B
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 840E4C013A
  for <containers@lists.linux-foundation.org>;
  Fri, 22 Jan 2021 13:00:56 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 170B12E0F4
+ by whitealder.osuosl.org (Postfix) with ESMTP id 72D8387098
  for <containers@lists.linux-foundation.org>;
  Fri, 22 Jan 2021 13:00:56 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id hgR8gU6fiKzB
+ with ESMTP id IlQxO0iH7jdN
  for <containers@lists.linux-foundation.org>;
  Fri, 22 Jan 2021 13:00:55 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
 Received: from raptor.unsafe.ru (raptor.unsafe.ru [5.9.43.93])
- by silver.osuosl.org (Postfix) with ESMTP id 464DE2E0F2
+ by whitealder.osuosl.org (Postfix) with ESMTP id 7284A87091
  for <containers@lists.linux-foundation.org>;
  Fri, 22 Jan 2021 13:00:55 +0000 (UTC)
 Received: from comp-core-i7-2640m-0182e6.redhat.com
  (ip-94-112-41-137.net.upcbroadband.cz [94.112.41.137])
  (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
  (No client certificate requested)
- by raptor.unsafe.ru (Postfix) with ESMTPSA id 3500920A1D;
+ by raptor.unsafe.ru (Postfix) with ESMTPSA id B16AC20A1E;
  Fri, 22 Jan 2021 13:00:54 +0000 (UTC)
 From: Alexey Gladkov <gladkov.alexey@gmail.com>
 To: LKML <linux-kernel@vger.kernel.org>, io-uring@vger.kernel.org,
  Kernel Hardening <kernel-hardening@lists.openwall.com>,
  Linux Containers <containers@lists.linux-foundation.org>,
  linux-mm@kvack.org
-Subject: [PATCH v4 6/7] Move RLIMIT_NPROC check to the place where we
- increment the counter
-Date: Fri, 22 Jan 2021 14:00:15 +0100
-Message-Id: <f3d4035b4aee52ece0e90606bcb8243a1646c03b.1611320161.git.gladkov.alexey@gmail.com>
+Subject: [PATCH v4 7/7] kselftests: Add test to check for rlimit changes in
+ different user namespaces
+Date: Fri, 22 Jan 2021 14:00:16 +0100
+Message-Id: <50be4be55c030a02ac5244a07d6ef3ea8f1cd15a.1611320161.git.gladkov.alexey@gmail.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <cover.1611320161.git.gladkov.alexey@gmail.com>
 References: <cover.1611320161.git.gladkov.alexey@gmail.com>
 MIME-Version: 1.0
 X-Greylist: Sender succeeded SMTP AUTH, not delayed by milter-greylist-4.6.1
- (raptor.unsafe.ru [5.9.43.93]); Fri, 22 Jan 2021 13:00:54 +0000 (UTC)
+ (raptor.unsafe.ru [5.9.43.93]); Fri, 22 Jan 2021 13:00:55 +0000 (UTC)
 Cc: Jens Axboe <axboe@kernel.dk>, Kees Cook <keescook@chromium.org>,
  Jann Horn <jannh@google.com>, Linus Torvalds <torvalds@linux-foundation.org>,
  Oleg Nesterov <oleg@redhat.com>, "Eric W . Biederman" <ebiederm@xmission.com>,
@@ -91,76 +91,228 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-After calling set_user(), we always have to call commit_creds() to apply
-new credentials upon the current task. There is no need to separate
-limit check and counter incrementing.
+The testcase runs few instances of the program with RLIMIT_NPROC=1 from
+user uid=60000, in different user namespaces.
 
 Signed-off-by: Alexey Gladkov <gladkov.alexey@gmail.com>
 ---
- kernel/cred.c | 22 +++++++++++++++++-----
- kernel/sys.c  | 13 -------------
- 2 files changed, 17 insertions(+), 18 deletions(-)
+ tools/testing/selftests/Makefile              |   1 +
+ tools/testing/selftests/rlimits/.gitignore    |   2 +
+ tools/testing/selftests/rlimits/Makefile      |   6 +
+ tools/testing/selftests/rlimits/config        |   1 +
+ .../selftests/rlimits/rlimits-per-userns.c    | 161 ++++++++++++++++++
+ 5 files changed, 171 insertions(+)
+ create mode 100644 tools/testing/selftests/rlimits/.gitignore
+ create mode 100644 tools/testing/selftests/rlimits/Makefile
+ create mode 100644 tools/testing/selftests/rlimits/config
+ create mode 100644 tools/testing/selftests/rlimits/rlimits-per-userns.c
 
-diff --git a/kernel/cred.c b/kernel/cred.c
-index fdb40adc2ebd..334d2c9ae519 100644
---- a/kernel/cred.c
-+++ b/kernel/cred.c
-@@ -487,14 +487,26 @@ int commit_creds(struct cred *new)
- 	if (!gid_eq(new->fsgid, old->fsgid))
- 		key_fsgid_changed(new);
- 
--	/* do it
--	 * RLIMIT_NPROC limits on user->processes have already been checked
--	 * in set_user().
--	 */
- 	alter_cred_subscribers(new, 2);
- 	if (new->user != old->user || new->user_ns != old->user_ns) {
-+		bool overlimit;
+diff --git a/tools/testing/selftests/Makefile b/tools/testing/selftests/Makefile
+index afbab4aeef3c..4dbeb5686f7b 100644
+--- a/tools/testing/selftests/Makefile
++++ b/tools/testing/selftests/Makefile
+@@ -46,6 +46,7 @@ TARGETS += proc
+ TARGETS += pstore
+ TARGETS += ptrace
+ TARGETS += openat2
++TARGETS += rlimits
+ TARGETS += rseq
+ TARGETS += rtc
+ TARGETS += seccomp
+diff --git a/tools/testing/selftests/rlimits/.gitignore b/tools/testing/selftests/rlimits/.gitignore
+new file mode 100644
+index 000000000000..091021f255b3
+--- /dev/null
++++ b/tools/testing/selftests/rlimits/.gitignore
+@@ -0,0 +1,2 @@
++# SPDX-License-Identifier: GPL-2.0-only
++rlimits-per-userns
+diff --git a/tools/testing/selftests/rlimits/Makefile b/tools/testing/selftests/rlimits/Makefile
+new file mode 100644
+index 000000000000..03aadb406212
+--- /dev/null
++++ b/tools/testing/selftests/rlimits/Makefile
+@@ -0,0 +1,6 @@
++# SPDX-License-Identifier: GPL-2.0-or-later
 +
- 		set_cred_ucounts(new, new->user_ns, new->euid);
--		inc_rlimit_ucounts(new->ucounts, UCOUNT_RLIMIT_NPROC, 1);
++CFLAGS += -Wall -O2 -g
++TEST_GEN_PROGS := rlimits-per-userns
 +
-+		overlimit = inc_rlimit_ucounts_and_test(new->ucounts, UCOUNT_RLIMIT_NPROC,
-+				1, rlimit(RLIMIT_NPROC));
++include ../lib.mk
+diff --git a/tools/testing/selftests/rlimits/config b/tools/testing/selftests/rlimits/config
+new file mode 100644
+index 000000000000..416bd53ce982
+--- /dev/null
++++ b/tools/testing/selftests/rlimits/config
+@@ -0,0 +1 @@
++CONFIG_USER_NS=y
+diff --git a/tools/testing/selftests/rlimits/rlimits-per-userns.c b/tools/testing/selftests/rlimits/rlimits-per-userns.c
+new file mode 100644
+index 000000000000..26dc949e93ea
+--- /dev/null
++++ b/tools/testing/selftests/rlimits/rlimits-per-userns.c
+@@ -0,0 +1,161 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++/*
++ * Author: Alexey Gladkov <gladkov.alexey@gmail.com>
++ */
++#define _GNU_SOURCE
++#include <sys/types.h>
++#include <sys/wait.h>
++#include <sys/time.h>
++#include <sys/resource.h>
++#include <sys/prctl.h>
++#include <sys/stat.h>
 +
-+		/*
-+		 * We don't fail in case of NPROC limit excess here because too many
-+		 * poorly written programs don't check set*uid() return code, assuming
-+		 * it never fails if called by root.  We may still enforce NPROC limit
-+		 * for programs doing set*uid()+execve() by harmlessly deferring the
-+		 * failure to the execve() stage.
-+		 */
-+		if (overlimit && new->user != INIT_USER)
-+			current->flags |= PF_NPROC_EXCEEDED;
-+		else
-+			current->flags &= ~PF_NPROC_EXCEEDED;
- 	}
- 	rcu_assign_pointer(task->real_cred, new);
- 	rcu_assign_pointer(task->cred, new);
-diff --git a/kernel/sys.c b/kernel/sys.c
-index c2734ab9474e..180c4e06064f 100644
---- a/kernel/sys.c
-+++ b/kernel/sys.c
-@@ -467,19 +467,6 @@ static int set_user(struct cred *new)
- 	if (!new_user)
- 		return -EAGAIN;
- 
--	/*
--	 * We don't fail in case of NPROC limit excess here because too many
--	 * poorly written programs don't check set*uid() return code, assuming
--	 * it never fails if called by root.  We may still enforce NPROC limit
--	 * for programs doing set*uid()+execve() by harmlessly deferring the
--	 * failure to the execve() stage.
--	 */
--	if (is_ucounts_overlimit(new->ucounts, UCOUNT_RLIMIT_NPROC, rlimit(RLIMIT_NPROC)) &&
--			new_user != INIT_USER)
--		current->flags |= PF_NPROC_EXCEEDED;
--	else
--		current->flags &= ~PF_NPROC_EXCEEDED;
--
- 	free_uid(new->user);
- 	new->user = new_user;
- 	return 0;
++#include <unistd.h>
++#include <stdlib.h>
++#include <stdio.h>
++#include <string.h>
++#include <sched.h>
++#include <signal.h>
++#include <limits.h>
++#include <fcntl.h>
++#include <errno.h>
++#include <err.h>
++
++#define NR_CHILDS 2
++
++static char *service_prog;
++static uid_t user   = 60000;
++static uid_t group  = 60000;
++
++static void setrlimit_nproc(rlim_t n)
++{
++	pid_t pid = getpid();
++	struct rlimit limit = {
++		.rlim_cur = n,
++		.rlim_max = n
++	};
++
++	warnx("(pid=%d): Setting RLIMIT_NPROC=%ld", pid, n);
++
++	if (setrlimit(RLIMIT_NPROC, &limit) < 0)
++		err(EXIT_FAILURE, "(pid=%d): setrlimit(RLIMIT_NPROC)", pid);
++}
++
++static pid_t fork_child(void)
++{
++	pid_t pid = fork();
++
++	if (pid < 0)
++		err(EXIT_FAILURE, "fork");
++
++	if (pid > 0)
++		return pid;
++
++	pid = getpid();
++
++	warnx("(pid=%d): New process starting ...", pid);
++
++	if (prctl(PR_SET_PDEATHSIG, SIGKILL) < 0)
++		err(EXIT_FAILURE, "(pid=%d): prctl(PR_SET_PDEATHSIG)", pid);
++
++	signal(SIGUSR1, SIG_DFL);
++
++	warnx("(pid=%d): Changing to uid=%d, gid=%d", pid, user, group);
++
++	if (setgid(group) < 0)
++		err(EXIT_FAILURE, "(pid=%d): setgid(%d)", pid, group);
++	if (setuid(user) < 0)
++		err(EXIT_FAILURE, "(pid=%d): setuid(%d)", pid, user);
++
++	warnx("(pid=%d): Service running ...", pid);
++
++	warnx("(pid=%d): Unshare user namespace", pid);
++	if (unshare(CLONE_NEWUSER) < 0)
++		err(EXIT_FAILURE, "unshare(CLONE_NEWUSER)");
++
++	char *const argv[] = { "service", NULL };
++	char *const envp[] = { "I_AM_SERVICE=1", NULL };
++
++	warnx("(pid=%d): Executing real service ...", pid);
++
++	execve(service_prog, argv, envp);
++	err(EXIT_FAILURE, "(pid=%d): execve", pid);
++}
++
++int main(int argc, char **argv)
++{
++	size_t i;
++	pid_t child[NR_CHILDS];
++	int wstatus[NR_CHILDS];
++	int childs = NR_CHILDS;
++	pid_t pid;
++
++	if (getenv("I_AM_SERVICE")) {
++		pause();
++		exit(EXIT_SUCCESS);
++	}
++
++	service_prog = argv[0];
++	pid = getpid();
++
++	warnx("(pid=%d) Starting testcase", pid);
++
++	/*
++	 * This rlimit is not a problem for root because it can be exceeded.
++	 */
++	setrlimit_nproc(1);
++
++	for (i = 0; i < NR_CHILDS; i++) {
++		child[i] = fork_child();
++		wstatus[i] = 0;
++		usleep(250000);
++	}
++
++	while (1) {
++		for (i = 0; i < NR_CHILDS; i++) {
++			if (child[i] <= 0)
++				continue;
++
++			errno = 0;
++			pid_t ret = waitpid(child[i], &wstatus[i], WNOHANG);
++
++			if (!ret || (!WIFEXITED(wstatus[i]) && !WIFSIGNALED(wstatus[i])))
++				continue;
++
++			if (ret < 0 && errno != ECHILD)
++				warn("(pid=%d): waitpid(%d)", pid, child[i]);
++
++			child[i] *= -1;
++			childs -= 1;
++		}
++
++		if (!childs)
++			break;
++
++		usleep(250000);
++
++		for (i = 0; i < NR_CHILDS; i++) {
++			if (child[i] <= 0)
++				continue;
++			kill(child[i], SIGUSR1);
++		}
++	}
++
++	for (i = 0; i < NR_CHILDS; i++) {
++		if (WIFEXITED(wstatus[i]))
++			warnx("(pid=%d): pid %d exited, status=%d",
++				pid, -child[i], WEXITSTATUS(wstatus[i]));
++		else if (WIFSIGNALED(wstatus[i]))
++			warnx("(pid=%d): pid %d killed by signal %d",
++				pid, -child[i], WTERMSIG(wstatus[i]));
++
++		if (WIFSIGNALED(wstatus[i]) && WTERMSIG(wstatus[i]) == SIGUSR1)
++			continue;
++
++		warnx("(pid=%d): Test failed", pid);
++		exit(EXIT_FAILURE);
++	}
++
++	warnx("(pid=%d): Test passed", pid);
++	exit(EXIT_SUCCESS);
++}
 -- 
 2.29.2
 
