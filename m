@@ -8,68 +8,68 @@ X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E1B54C433E6
-	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 13:01:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0CB80C433E6
+	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 13:01:09 +0000 (UTC)
 Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 6BD79230FC
-	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 13:01:07 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6BD79230FC
+	by mail.kernel.org (Postfix) with ESMTPS id B2D4223437
+	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 13:01:08 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B2D4223437
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id F0E132D941;
-	Fri, 22 Jan 2021 13:01:06 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 4DC732E0F7;
+	Fri, 22 Jan 2021 13:01:07 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id aOLWmSvX-8LH; Fri, 22 Jan 2021 13:00:56 +0000 (UTC)
+	with ESMTP id WM0veQbADH3i; Fri, 22 Jan 2021 13:00:58 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 26DD42E0F7;
-	Fri, 22 Jan 2021 13:00:56 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 578D02E0F4;
+	Fri, 22 Jan 2021 13:00:58 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 13267C1DA7;
-	Fri, 22 Jan 2021 13:00:56 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 65302C088B
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 3AC3DC088B;
+	Fri, 22 Jan 2021 13:00:58 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 91AACC013A
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 13:00:54 +0000 (UTC)
+ Fri, 22 Jan 2021 13:00:55 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 56F4487350
+ by whitealder.osuosl.org (Postfix) with ESMTP id 886E587094
+ for <containers@lists.linux-foundation.org>;
+ Fri, 22 Jan 2021 13:00:55 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from whitealder.osuosl.org ([127.0.0.1])
+ by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id SeN8Md4Z7FCR
  for <containers@lists.linux-foundation.org>;
  Fri, 22 Jan 2021 13:00:54 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
- by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id bRzMkuFRaSFa
- for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 13:00:53 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
 Received: from raptor.unsafe.ru (raptor.unsafe.ru [5.9.43.93])
- by hemlock.osuosl.org (Postfix) with ESMTP id CF54E872A6
+ by whitealder.osuosl.org (Postfix) with ESMTP id 4308E8708A
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 13:00:52 +0000 (UTC)
+ Fri, 22 Jan 2021 13:00:54 +0000 (UTC)
 Received: from comp-core-i7-2640m-0182e6.redhat.com
  (ip-94-112-41-137.net.upcbroadband.cz [94.112.41.137])
  (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
  (No client certificate requested)
- by raptor.unsafe.ru (Postfix) with ESMTPSA id 90B81209D4;
- Fri, 22 Jan 2021 13:00:51 +0000 (UTC)
+ by raptor.unsafe.ru (Postfix) with ESMTPSA id 9815220A18;
+ Fri, 22 Jan 2021 13:00:52 +0000 (UTC)
 From: Alexey Gladkov <gladkov.alexey@gmail.com>
 To: LKML <linux-kernel@vger.kernel.org>, io-uring@vger.kernel.org,
  Kernel Hardening <kernel-hardening@lists.openwall.com>,
  Linux Containers <containers@lists.linux-foundation.org>,
  linux-mm@kvack.org
-Subject: [PATCH v4 1/7] Add a reference to ucounts for each cred
-Date: Fri, 22 Jan 2021 14:00:10 +0100
-Message-Id: <f9f3f666119296d000c6d112398ccb63f69bcf79.1611320161.git.gladkov.alexey@gmail.com>
+Subject: [PATCH v4 3/7] Move RLIMIT_MSGQUEUE counter to ucounts
+Date: Fri, 22 Jan 2021 14:00:12 +0100
+Message-Id: <55ee88db6a059ffa23382390e5d38a12ad34cfc7.1611320161.git.gladkov.alexey@gmail.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <cover.1611320161.git.gladkov.alexey@gmail.com>
 References: <cover.1611320161.git.gladkov.alexey@gmail.com>
 MIME-Version: 1.0
 X-Greylist: Sender succeeded SMTP AUTH, not delayed by milter-greylist-4.6.1
- (raptor.unsafe.ru [5.9.43.93]); Fri, 22 Jan 2021 13:00:51 +0000 (UTC)
+ (raptor.unsafe.ru [5.9.43.93]); Fri, 22 Jan 2021 13:00:52 +0000 (UTC)
 Cc: Jens Axboe <axboe@kernel.dk>, Kees Cook <keescook@chromium.org>,
  Jann Horn <jannh@google.com>, Linus Torvalds <torvalds@linux-foundation.org>,
  Oleg Nesterov <oleg@redhat.com>, "Eric W . Biederman" <ebiederm@xmission.com>,
@@ -90,249 +90,182 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-For RLIMIT_NPROC and some other rlimits the user_struct that holds the
-global limit is kept alive for the lifetime of a process by keeping it
-in struct cred.  Add a ucounts reference to struct cred, so that
-RLIMIT_NPROC can switch from using a per user limit to using a per user
-per user namespace limit.
-
 Signed-off-by: Alexey Gladkov <gladkov.alexey@gmail.com>
 ---
- include/linux/cred.h           |  1 +
- include/linux/user_namespace.h |  7 ++++--
- kernel/cred.c                  | 20 +++++++++++++--
- kernel/ucount.c                | 46 ++++++++++++++++++++++++++--------
+ include/linux/sched/user.h     |  4 ----
+ include/linux/user_namespace.h |  1 +
+ ipc/mqueue.c                   | 29 +++++++++++++++--------------
+ kernel/fork.c                  |  1 +
+ kernel/ucount.c                |  1 +
  kernel/user_namespace.c        |  1 +
- 5 files changed, 61 insertions(+), 14 deletions(-)
+ 6 files changed, 19 insertions(+), 18 deletions(-)
 
-diff --git a/include/linux/cred.h b/include/linux/cred.h
-index 18639c069263..307744fcc387 100644
---- a/include/linux/cred.h
-+++ b/include/linux/cred.h
-@@ -144,6 +144,7 @@ struct cred {
+diff --git a/include/linux/sched/user.h b/include/linux/sched/user.h
+index d33d867ad6c1..8a34446681aa 100644
+--- a/include/linux/sched/user.h
++++ b/include/linux/sched/user.h
+@@ -18,10 +18,6 @@ struct user_struct {
  #endif
- 	struct user_struct *user;	/* real user ID subscription */
- 	struct user_namespace *user_ns; /* user_ns the caps and keyrings are relative to. */
-+	struct ucounts *ucounts;
- 	struct group_info *group_info;	/* supplementary groups for euid/fsgid */
- 	/* RCU deletion */
- 	union {
+ #ifdef CONFIG_EPOLL
+ 	atomic_long_t epoll_watches; /* The number of file descriptors currently watched */
+-#endif
+-#ifdef CONFIG_POSIX_MQUEUE
+-	/* protected by mq_lock	*/
+-	unsigned long mq_bytes;	/* How many bytes can be allocated to mqueue? */
+ #endif
+ 	unsigned long locked_shm; /* How many pages of mlocked shm ? */
+ 	unsigned long unix_inflight;	/* How many files in flight in unix sockets */
 diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index 64cf8ebdc4ec..4cf93f9f93a6 100644
+index 68a87d05d8d5..1766cf503d1b 100644
 --- a/include/linux/user_namespace.h
 +++ b/include/linux/user_namespace.h
-@@ -85,7 +85,7 @@ struct user_namespace {
- 	struct ctl_table_header *sysctls;
+@@ -51,6 +51,7 @@ enum ucount_type {
+ 	UCOUNT_INOTIFY_WATCHES,
  #endif
- 	struct ucounts		*ucounts;
--	int ucount_max[UCOUNT_COUNTS];
-+	long ucount_max[UCOUNT_COUNTS];
- } __randomize_layout;
- 
- struct ucounts {
-@@ -93,7 +93,7 @@ struct ucounts {
- 	struct user_namespace *ns;
- 	kuid_t uid;
- 	int count;
--	atomic_t ucount[UCOUNT_COUNTS];
-+	atomic_long_t ucount[UCOUNT_COUNTS];
+ 	UCOUNT_RLIMIT_NPROC,
++	UCOUNT_RLIMIT_MSGQUEUE,
+ 	UCOUNT_COUNTS,
  };
  
- extern struct user_namespace init_user_ns;
-@@ -102,6 +102,9 @@ bool setup_userns_sysctls(struct user_namespace *ns);
- void retire_userns_sysctls(struct user_namespace *ns);
- struct ucounts *inc_ucount(struct user_namespace *ns, kuid_t uid, enum ucount_type type);
- void dec_ucount(struct ucounts *ucounts, enum ucount_type type);
-+struct ucounts *get_ucounts(struct ucounts *ucounts);
-+void put_ucounts(struct ucounts *ucounts);
-+void set_cred_ucounts(struct cred *cred, struct user_namespace *ns, kuid_t uid);
+diff --git a/ipc/mqueue.c b/ipc/mqueue.c
+index beff0cfcd1e8..05fcf067131f 100644
+--- a/ipc/mqueue.c
++++ b/ipc/mqueue.c
+@@ -144,7 +144,7 @@ struct mqueue_inode_info {
+ 	struct pid *notify_owner;
+ 	u32 notify_self_exec_id;
+ 	struct user_namespace *notify_user_ns;
+-	struct user_struct *user;	/* user who created, for accounting */
++	struct ucounts *ucounts;	/* user who created, for accounting */
+ 	struct sock *notify_sock;
+ 	struct sk_buff *notify_cookie;
  
- #ifdef CONFIG_USER_NS
+@@ -292,7 +292,6 @@ static struct inode *mqueue_get_inode(struct super_block *sb,
+ 		struct ipc_namespace *ipc_ns, umode_t mode,
+ 		struct mq_attr *attr)
+ {
+-	struct user_struct *u = current_user();
+ 	struct inode *inode;
+ 	int ret = -ENOMEM;
  
-diff --git a/kernel/cred.c b/kernel/cred.c
-index 421b1149c651..9473e71e784c 100644
---- a/kernel/cred.c
-+++ b/kernel/cred.c
-@@ -119,6 +119,8 @@ static void put_cred_rcu(struct rcu_head *rcu)
- 	if (cred->group_info)
- 		put_group_info(cred->group_info);
- 	free_uid(cred->user);
-+	if (cred->ucounts)
-+		put_ucounts(cred->ucounts);
- 	put_user_ns(cred->user_ns);
- 	kmem_cache_free(cred_jar, cred);
- }
-@@ -144,6 +146,9 @@ void __put_cred(struct cred *cred)
- 	BUG_ON(cred == current->cred);
- 	BUG_ON(cred == current->real_cred);
+@@ -309,6 +308,8 @@ static struct inode *mqueue_get_inode(struct super_block *sb,
+ 	if (S_ISREG(mode)) {
+ 		struct mqueue_inode_info *info;
+ 		unsigned long mq_bytes, mq_treesize;
++		struct ucounts *ucounts;
++		bool overlimit;
  
-+	if (cred->ucounts)
-+		BUG_ON(cred->ucounts->ns != cred->user_ns);
-+
- 	if (cred->non_rcu)
- 		put_cred_rcu(&cred->rcu);
- 	else
-@@ -270,6 +275,7 @@ struct cred *prepare_creds(void)
- 	get_group_info(new->group_info);
- 	get_uid(new->user);
- 	get_user_ns(new->user_ns);
-+	get_ucounts(new->ucounts);
- 
- #ifdef CONFIG_KEYS
- 	key_get(new->session_keyring);
-@@ -363,6 +369,7 @@ int copy_creds(struct task_struct *p, unsigned long clone_flags)
- 		ret = create_user_ns(new);
- 		if (ret < 0)
- 			goto error_put;
-+		set_cred_ucounts(new, new->user_ns, new->euid);
+ 		inode->i_fop = &mqueue_file_operations;
+ 		inode->i_size = FILENT_SIZE;
+@@ -321,7 +322,7 @@ static struct inode *mqueue_get_inode(struct super_block *sb,
+ 		info->notify_owner = NULL;
+ 		info->notify_user_ns = NULL;
+ 		info->qsize = 0;
+-		info->user = NULL;	/* set when all is ok */
++		info->ucounts = NULL;	/* set when all is ok */
+ 		info->msg_tree = RB_ROOT;
+ 		info->msg_tree_rightmost = NULL;
+ 		info->node_cache = NULL;
+@@ -371,19 +372,19 @@ static struct inode *mqueue_get_inode(struct super_block *sb,
+ 		if (mq_bytes + mq_treesize < mq_bytes)
+ 			goto out_inode;
+ 		mq_bytes += mq_treesize;
++		ucounts = current_ucounts();
+ 		spin_lock(&mq_lock);
+-		if (u->mq_bytes + mq_bytes < u->mq_bytes ||
+-		    u->mq_bytes + mq_bytes > rlimit(RLIMIT_MSGQUEUE)) {
++		overlimit = inc_rlimit_ucounts_and_test(ucounts, UCOUNT_RLIMIT_MSGQUEUE,
++				mq_bytes, rlimit(RLIMIT_MSGQUEUE));
++		if (overlimit) {
++			dec_rlimit_ucounts(ucounts, UCOUNT_RLIMIT_MSGQUEUE, mq_bytes);
+ 			spin_unlock(&mq_lock);
+ 			/* mqueue_evict_inode() releases info->messages */
+ 			ret = -EMFILE;
+ 			goto out_inode;
+ 		}
+-		u->mq_bytes += mq_bytes;
+ 		spin_unlock(&mq_lock);
+-
+-		/* all is ok */
+-		info->user = get_uid(u);
++		info->ucounts = get_ucounts(ucounts);
+ 	} else if (S_ISDIR(mode)) {
+ 		inc_nlink(inode);
+ 		/* Some things misbehave if size == 0 on a directory */
+@@ -497,7 +498,7 @@ static void mqueue_free_inode(struct inode *inode)
+ static void mqueue_evict_inode(struct inode *inode)
+ {
+ 	struct mqueue_inode_info *info;
+-	struct user_struct *user;
++	struct ucounts *ucounts;
+ 	struct ipc_namespace *ipc_ns;
+ 	struct msg_msg *msg, *nmsg;
+ 	LIST_HEAD(tmp_msg);
+@@ -520,8 +521,8 @@ static void mqueue_evict_inode(struct inode *inode)
+ 		free_msg(msg);
  	}
  
- #ifdef CONFIG_KEYS
-@@ -485,8 +492,11 @@ int commit_creds(struct cred *new)
- 	 * in set_user().
- 	 */
- 	alter_cred_subscribers(new, 2);
--	if (new->user != old->user)
--		atomic_inc(&new->user->processes);
-+	if (new->user != old->user || new->user_ns != old->user_ns) {
-+		if (new->user != old->user)
-+			atomic_inc(&new->user->processes);
-+		set_cred_ucounts(new, new->user_ns, new->euid);
-+	}
- 	rcu_assign_pointer(task->real_cred, new);
- 	rcu_assign_pointer(task->cred, new);
- 	if (new->user != old->user)
-@@ -661,6 +671,11 @@ void __init cred_init(void)
- 	/* allocate a slab in which we can store credentials */
- 	cred_jar = kmem_cache_create("cred_jar", sizeof(struct cred), 0,
- 			SLAB_HWCACHE_ALIGN|SLAB_PANIC|SLAB_ACCOUNT, NULL);
-+	/*
-+	 * This is needed here because this is the first cred and there is no
-+	 * ucount reference to copy.
-+	 */
-+	set_cred_ucounts(&init_cred, &init_user_ns, GLOBAL_ROOT_UID);
- }
+-	user = info->user;
+-	if (user) {
++	ucounts = info->ucounts;
++	if (ucounts) {
+ 		unsigned long mq_bytes, mq_treesize;
  
- /**
-@@ -704,6 +719,7 @@ struct cred *prepare_kernel_cred(struct task_struct *daemon)
- 	get_uid(new->user);
- 	get_user_ns(new->user_ns);
- 	get_group_info(new->group_info);
-+	get_ucounts(new->ucounts);
+ 		/* Total amount of bytes accounted for the mqueue */
+@@ -533,7 +534,7 @@ static void mqueue_evict_inode(struct inode *inode)
+ 					  info->attr.mq_msgsize);
  
- #ifdef CONFIG_KEYS
- 	new->session_keyring = NULL;
+ 		spin_lock(&mq_lock);
+-		user->mq_bytes -= mq_bytes;
++		dec_rlimit_ucounts(ucounts, UCOUNT_RLIMIT_MSGQUEUE, mq_bytes);
+ 		/*
+ 		 * get_ns_from_inode() ensures that the
+ 		 * (ipc_ns = sb->s_fs_info) is either a valid ipc_ns
+@@ -543,7 +544,7 @@ static void mqueue_evict_inode(struct inode *inode)
+ 		if (ipc_ns)
+ 			ipc_ns->mq_queues_count--;
+ 		spin_unlock(&mq_lock);
+-		free_uid(user);
++		put_ucounts(ucounts);
+ 	}
+ 	if (ipc_ns)
+ 		put_ipc_ns(ipc_ns);
+diff --git a/kernel/fork.c b/kernel/fork.c
+index ef7936daeeda..f61a5a3dc02f 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -824,6 +824,7 @@ void __init fork_init(void)
+ 	}
+ 
+ 	init_user_ns.ucount_max[UCOUNT_RLIMIT_NPROC] = task_rlimit(&init_task, RLIMIT_NPROC);
++	init_user_ns.ucount_max[UCOUNT_RLIMIT_MSGQUEUE] = task_rlimit(&init_task, RLIMIT_MSGQUEUE);
+ 
+ #ifdef CONFIG_VMAP_STACK
+ 	cpuhp_setup_state(CPUHP_BP_PREPARE_DYN, "fork:vm_stack_cache",
 diff --git a/kernel/ucount.c b/kernel/ucount.c
-index 11b1596e2542..8d3cf7369ee7 100644
+index e03a217949f4..04934fcb4fe0 100644
 --- a/kernel/ucount.c
 +++ b/kernel/ucount.c
-@@ -125,7 +125,7 @@ static struct ucounts *find_ucounts(struct user_namespace *ns, kuid_t uid, struc
- 	return NULL;
- }
- 
--static struct ucounts *get_ucounts(struct user_namespace *ns, kuid_t uid)
-+static struct ucounts *__get_ucounts(struct user_namespace *ns, kuid_t uid)
- {
- 	struct hlist_head *hashent = ucounts_hashentry(ns, uid);
- 	struct ucounts *ucounts, *new;
-@@ -160,7 +160,7 @@ static struct ucounts *get_ucounts(struct user_namespace *ns, kuid_t uid)
- 	return ucounts;
- }
- 
--static void put_ucounts(struct ucounts *ucounts)
-+void put_ucounts(struct ucounts *ucounts)
- {
- 	unsigned long flags;
- 
-@@ -175,14 +175,40 @@ static void put_ucounts(struct ucounts *ucounts)
- 	kfree(ucounts);
- }
- 
--static inline bool atomic_inc_below(atomic_t *v, int u)
-+struct ucounts *get_ucounts(struct ucounts *ucounts)
- {
--	int c, old;
--	c = atomic_read(v);
-+	unsigned long flags;
-+
-+	if (ucounts) {
-+		spin_lock_irqsave(&ucounts_lock, flags);
-+		if (ucounts->count == INT_MAX)
-+			WARN_ONCE(1, "ucounts: counter has reached its maximum value");
-+		else
-+			ucounts->count += 1;
-+		spin_unlock_irqrestore(&ucounts_lock, flags);
-+	}
-+
-+	return ucounts;
-+}
-+
-+void set_cred_ucounts(struct cred *cred, struct user_namespace *ns, kuid_t uid)
-+{
-+	struct ucounts *old = cred->ucounts;
-+	if (old && old->ns == ns && uid_eq(old->uid, uid))
-+		return;
-+	cred->ucounts = __get_ucounts(ns, uid);
-+	if (old)
-+		put_ucounts(old);
-+}
-+
-+static inline bool atomic_long_inc_below(atomic_long_t *v, int u)
-+{
-+	long c, old;
-+	c = atomic_long_read(v);
- 	for (;;) {
- 		if (unlikely(c >= u))
- 			return false;
--		old = atomic_cmpxchg(v, c, c+1);
-+		old = atomic_long_cmpxchg(v, c, c+1);
- 		if (likely(old == c))
- 			return true;
- 		c = old;
-@@ -194,19 +220,19 @@ struct ucounts *inc_ucount(struct user_namespace *ns, kuid_t uid,
- {
- 	struct ucounts *ucounts, *iter, *bad;
- 	struct user_namespace *tns;
--	ucounts = get_ucounts(ns, uid);
-+	ucounts = __get_ucounts(ns, uid);
- 	for (iter = ucounts; iter; iter = tns->ucounts) {
- 		int max;
- 		tns = iter->ns;
- 		max = READ_ONCE(tns->ucount_max[type]);
--		if (!atomic_inc_below(&iter->ucount[type], max))
-+		if (!atomic_long_inc_below(&iter->ucount[type], max))
- 			goto fail;
- 	}
- 	return ucounts;
- fail:
- 	bad = iter;
- 	for (iter = ucounts; iter != bad; iter = iter->ns->ucounts)
--		atomic_dec(&iter->ucount[type]);
-+		atomic_long_dec(&iter->ucount[type]);
- 
- 	put_ucounts(ucounts);
- 	return NULL;
-@@ -216,7 +242,7 @@ void dec_ucount(struct ucounts *ucounts, enum ucount_type type)
- {
- 	struct ucounts *iter;
- 	for (iter = ucounts; iter; iter = iter->ns->ucounts) {
--		int dec = atomic_dec_if_positive(&iter->ucount[type]);
-+		int dec = atomic_long_dec_if_positive(&iter->ucount[type]);
- 		WARN_ON_ONCE(dec < 0);
- 	}
- 	put_ucounts(ucounts);
+@@ -75,6 +75,7 @@ static struct ctl_table user_table[] = {
+ 	UCOUNT_ENTRY("max_inotify_instances"),
+ 	UCOUNT_ENTRY("max_inotify_watches"),
+ #endif
++	{ },
+ 	{ },
+ 	{ }
+ };
 diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index af612945a4d0..4b8a4468d391 100644
+index 974f10da072c..9ace2a45a25d 100644
 --- a/kernel/user_namespace.c
 +++ b/kernel/user_namespace.c
-@@ -1280,6 +1280,7 @@ static int userns_install(struct nsset *nsset, struct ns_common *ns)
+@@ -122,6 +122,7 @@ int create_user_ns(struct cred *new)
+ 		ns->ucount_max[i] = INT_MAX;
+ 	}
+ 	ns->ucount_max[UCOUNT_RLIMIT_NPROC] = rlimit(RLIMIT_NPROC);
++	ns->ucount_max[UCOUNT_RLIMIT_MSGQUEUE] = rlimit(RLIMIT_MSGQUEUE);
+ 	ns->ucounts = ucounts;
  
- 	put_user_ns(cred->user_ns);
- 	set_cred_user_ns(cred, get_user_ns(user_ns));
-+	set_cred_ucounts(cred, user_ns, cred->euid);
- 
- 	return 0;
- }
+ 	/* Inherit USERNS_SETGROUPS_ALLOWED from our parent */
 -- 
 2.29.2
 
