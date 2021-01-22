@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A30FC433E0
-	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 04:38:47 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 970F7C433E0
+	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 04:39:27 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 07A9423884
-	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 04:38:46 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 07A9423884
+	by mail.kernel.org (Postfix) with ESMTPS id 2F1AD23884
+	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 04:39:26 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2F1AD23884
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=namei.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id A159B226E9;
-	Fri, 22 Jan 2021 04:38:46 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id CB5D885D57;
+	Fri, 22 Jan 2021 04:39:26 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id y36a3ji-qyAd; Fri, 22 Jan 2021 04:38:45 +0000 (UTC)
+	with ESMTP id 02EEzNgS+2w7; Fri, 22 Jan 2021 04:39:26 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 179B02047D;
-	Fri, 22 Jan 2021 04:38:45 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 377CC86C12;
+	Fri, 22 Jan 2021 04:39:26 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id F2062C08A1;
-	Fri, 22 Jan 2021 04:38:44 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 32791C08A1;
+	Fri, 22 Jan 2021 04:39:26 +0000 (UTC)
 Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 62A28C013A
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 980F3C013A
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 04:38:43 +0000 (UTC)
+ Fri, 22 Jan 2021 04:39:25 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by hemlock.osuosl.org (Postfix) with ESMTP id 4CEF887247
+ by hemlock.osuosl.org (Postfix) with ESMTP id 8572C87247
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 04:38:43 +0000 (UTC)
+ Fri, 22 Jan 2021 04:39:25 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id NLh5aQlKQ7kz
+ with ESMTP id AChnLAHlO3Zy
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 04:38:42 +0000 (UTC)
+ Fri, 22 Jan 2021 04:39:25 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
 Received: from mail.namei.org (namei.org [65.99.196.166])
- by hemlock.osuosl.org (Postfix) with ESMTPS id CAF4187243
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 0F2C987243
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 04:38:42 +0000 (UTC)
+ Fri, 22 Jan 2021 04:39:25 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by mail.namei.org (Postfix) with ESMTPS id DB2BD49C;
- Fri, 22 Jan 2021 04:37:49 +0000 (UTC)
-Date: Fri, 22 Jan 2021 15:37:49 +1100 (AEDT)
+ by mail.namei.org (Postfix) with ESMTPS id 7FE1C1BC;
+ Fri, 22 Jan 2021 04:38:32 +0000 (UTC)
+Date: Fri, 22 Jan 2021 15:38:32 +1100 (AEDT)
 From: James Morris <jmorris@namei.org>
 To: Christian Brauner <christian.brauner@ubuntu.com>
-Subject: Re: [PATCH v6 27/40] ecryptfs: do not mount on top of idmapped mounts
-In-Reply-To: <20210121131959.646623-28-christian.brauner@ubuntu.com>
-Message-ID: <4ea72812-fee1-e838-9f91-4019adf3359a@namei.org>
+Subject: Re: [PATCH v6 28/40] overlayfs: do not mount on top of idmapped mounts
+In-Reply-To: <20210121131959.646623-29-christian.brauner@ubuntu.com>
+Message-ID: <54ba9dc6-844f-1df4-ab6b-9cd37d9ab465@namei.org>
 References: <20210121131959.646623-1-christian.brauner@ubuntu.com>
- <20210121131959.646623-28-christian.brauner@ubuntu.com>
+ <20210121131959.646623-29-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>,
@@ -102,11 +102,11 @@ Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
 On Thu, 21 Jan 2021, Christian Brauner wrote:
 
-> Prevent ecryptfs from being mounted on top of idmapped mounts.
+> Prevent overlayfs from being mounted on top of idmapped mounts.
 > Stacking filesystems need to be prevented from being mounted on top of
 > idmapped mounts until they have have been converted to handle this.
 > 
-> Link: https://lore.kernel.org/r/20210112220124.837960-39-christian.brauner@ubuntu.com
+> Link: https://lore.kernel.org/r/20210112220124.837960-40-christian.brauner@ubuntu.com
 > Cc: Christoph Hellwig <hch@lst.de>
 > Cc: David Howells <dhowells@redhat.com>
 > Cc: Al Viro <viro@zeniv.linux.org.uk>
