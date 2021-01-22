@@ -7,60 +7,59 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EEAC0C433DB
-	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 03:20:46 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A50AC433E0
+	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 03:22:16 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 845FC23884
-	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 03:20:46 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 845FC23884
+	by mail.kernel.org (Postfix) with ESMTPS id 13B2D23884
+	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 03:22:15 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 13B2D23884
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=namei.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by silver.osuosl.org (Postfix) with ESMTP id 40D542035E;
-	Fri, 22 Jan 2021 03:20:46 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id A241487191;
+	Fri, 22 Jan 2021 03:22:15 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from silver.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 13IT9LzWFGVq; Fri, 22 Jan 2021 03:20:45 +0000 (UTC)
+	with ESMTP id Tlz5940+NTHR; Fri, 22 Jan 2021 03:22:14 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by silver.osuosl.org (Postfix) with ESMTP id 7A4A820030;
-	Fri, 22 Jan 2021 03:11:02 +0000 (UTC)
+	by hemlock.osuosl.org (Postfix) with ESMTP id E58F687186;
+	Fri, 22 Jan 2021 03:22:14 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 5761BC08A1;
-	Fri, 22 Jan 2021 03:11:02 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id C144BC088B;
+	Fri, 22 Jan 2021 03:22:14 +0000 (UTC)
 Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id DEDFFC013A
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 90623C013A
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 03:11:00 +0000 (UTC)
+ Fri, 22 Jan 2021 03:22:12 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id C9DFA868FE
+ by whitealder.osuosl.org (Postfix) with ESMTP id 7EBFE826B7
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 03:11:00 +0000 (UTC)
+ Fri, 22 Jan 2021 03:22:12 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id bj4QQBrdblG8
+ with ESMTP id lfyTBjpSZWxy
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 03:11:00 +0000 (UTC)
+ Fri, 22 Jan 2021 03:22:11 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
 Received: from mail.namei.org (namei.org [65.99.196.166])
- by whitealder.osuosl.org (Postfix) with ESMTPS id 05F6C86882
+ by whitealder.osuosl.org (Postfix) with ESMTPS id C1AD1821AE
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 03:10:59 +0000 (UTC)
+ Fri, 22 Jan 2021 03:22:11 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by mail.namei.org (Postfix) with ESMTPS id 30E8249C;
- Fri, 22 Jan 2021 03:10:07 +0000 (UTC)
-Date: Fri, 22 Jan 2021 14:10:07 +1100 (AEDT)
+ by mail.namei.org (Postfix) with ESMTPS id F0A468CE;
+ Fri, 22 Jan 2021 03:21:18 +0000 (UTC)
+Date: Fri, 22 Jan 2021 14:21:18 +1100 (AEDT)
 From: James Morris <jmorris@namei.org>
 To: Christian Brauner <christian.brauner@ubuntu.com>
-Subject: Re: [PATCH v6 06/40] inode: make init and permission helpers idmapped
- mount aware
-In-Reply-To: <20210121131959.646623-7-christian.brauner@ubuntu.com>
-Message-ID: <27cf2bc-6f4b-289-d691-4f8845cf671c@namei.org>
+Subject: Re: [PATCH v6 09/40] xattr: handle idmapped mounts
+In-Reply-To: <20210121131959.646623-10-christian.brauner@ubuntu.com>
+Message-ID: <ca7b62bc-37d1-839-5bde-caaa661079ce@namei.org>
 References: <20210121131959.646623-1-christian.brauner@ubuntu.com>
- <20210121131959.646623-7-christian.brauner@ubuntu.com>
+ <20210121131959.646623-10-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>,
@@ -103,26 +102,25 @@ Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
 On Thu, 21 Jan 2021, Christian Brauner wrote:
 
-> The inode_owner_or_capable() helper determines whether the caller is the
-> owner of the inode or is capable with respect to that inode. Allow it to
-> handle idmapped mounts. If the inode is accessed through an idmapped
-> mount it according to the mount's user namespace. Afterwards the checks
-> are identical to non-idmapped mounts. If the initial user namespace is
-> passed nothing changes so non-idmapped mounts will see identical
-> behavior as before.
+> From: Tycho Andersen <tycho@tycho.pizza>
 > 
-> Similarly, allow the inode_init_owner() helper to handle idmapped
-> mounts. It initializes a new inode on idmapped mounts by mapping the
-> fsuid and fsgid of the caller from the mount's user namespace. If the
-> initial user namespace is passed nothing changes so non-idmapped mounts
-> will see identical behavior as before.
+> When interacting with extended attributes the vfs verifies that the
+> caller is privileged over the inode with which the extended attribute is
+> associated. For posix access and posix default extended attributes a uid
+> or gid can be stored on-disk. Let the functions handle posix extended
+> attributes on idmapped mounts. If the inode is accessed through an
+> idmapped mount we need to map it according to the mount's user
+> namespace. Afterwards the checks are identical to non-idmapped mounts.
+> This has no effect for e.g. security xattrs since they don't store uids
+> or gids and don't perform permission checks on them like posix acls do.
 > 
-> Link: https://lore.kernel.org/r/20210112220124.837960-13-christian.brauner@ubuntu.com
+> Link: https://lore.kernel.org/r/20210112220124.837960-17-christian.brauner@ubuntu.com
 > Cc: Christoph Hellwig <hch@lst.de>
 > Cc: David Howells <dhowells@redhat.com>
 > Cc: Al Viro <viro@zeniv.linux.org.uk>
 > Cc: linux-fsdevel@vger.kernel.org
 > Reviewed-by: Christoph Hellwig <hch@lst.de>
+> Signed-off-by: Tycho Andersen <tycho@tycho.pizza>
 > Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 
 
