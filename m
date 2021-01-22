@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2719BC433E0
-	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 04:36:33 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A30FC433E0
+	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 04:38:47 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id BE1F323884
-	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 04:36:32 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BE1F323884
+	by mail.kernel.org (Postfix) with ESMTPS id 07A9423884
+	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 04:38:46 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 07A9423884
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=namei.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 57CB5868A2;
-	Fri, 22 Jan 2021 04:36:32 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id A159B226E9;
+	Fri, 22 Jan 2021 04:38:46 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
+Received: from silver.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 2_d1oOVWTbq2; Fri, 22 Jan 2021 04:36:31 +0000 (UTC)
+	with ESMTP id y36a3ji-qyAd; Fri, 22 Jan 2021 04:38:45 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id B651686440;
-	Fri, 22 Jan 2021 04:36:31 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 179B02047D;
+	Fri, 22 Jan 2021 04:38:45 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 94691C08A1;
-	Fri, 22 Jan 2021 04:36:31 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 2E85EC013A
+	by lists.linuxfoundation.org (Postfix) with ESMTP id F2062C08A1;
+	Fri, 22 Jan 2021 04:38:44 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 62A28C013A
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 04:36:30 +0000 (UTC)
+ Fri, 22 Jan 2021 04:38:43 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 18B2C86C11
+ by hemlock.osuosl.org (Postfix) with ESMTP id 4CEF887247
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 04:36:30 +0000 (UTC)
+ Fri, 22 Jan 2021 04:38:43 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
+Received: from hemlock.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id a7HDLVNnWo3e
+ with ESMTP id NLh5aQlKQ7kz
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 04:36:27 +0000 (UTC)
+ Fri, 22 Jan 2021 04:38:42 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
 Received: from mail.namei.org (namei.org [65.99.196.166])
- by whitealder.osuosl.org (Postfix) with ESMTPS id 16A6B86B22
+ by hemlock.osuosl.org (Postfix) with ESMTPS id CAF4187243
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 04:36:27 +0000 (UTC)
+ Fri, 22 Jan 2021 04:38:42 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by mail.namei.org (Postfix) with ESMTPS id 2A83F1BC;
- Fri, 22 Jan 2021 04:35:34 +0000 (UTC)
-Date: Fri, 22 Jan 2021 15:35:34 +1100 (AEDT)
+ by mail.namei.org (Postfix) with ESMTPS id DB2BD49C;
+ Fri, 22 Jan 2021 04:37:49 +0000 (UTC)
+Date: Fri, 22 Jan 2021 15:37:49 +1100 (AEDT)
 From: James Morris <jmorris@namei.org>
 To: Christian Brauner <christian.brauner@ubuntu.com>
-Subject: Re: [PATCH v6 23/40] exec: handle idmapped mounts
-In-Reply-To: <20210121131959.646623-24-christian.brauner@ubuntu.com>
-Message-ID: <48878557-bda5-b5e5-a6a9-f737ccc357b9@namei.org>
+Subject: Re: [PATCH v6 27/40] ecryptfs: do not mount on top of idmapped mounts
+In-Reply-To: <20210121131959.646623-28-christian.brauner@ubuntu.com>
+Message-ID: <4ea72812-fee1-e838-9f91-4019adf3359a@namei.org>
 References: <20210121131959.646623-1-christian.brauner@ubuntu.com>
- <20210121131959.646623-24-christian.brauner@ubuntu.com>
+ <20210121131959.646623-28-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>,
@@ -102,21 +102,15 @@ Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
 On Thu, 21 Jan 2021, Christian Brauner wrote:
 
-> When executing a setuid binary the kernel will verify in bprm_fill_uid()
-> that the inode has a mapping in the caller's user namespace before
-> setting the callers uid and gid. Let bprm_fill_uid() handle idmapped
-> mounts. If the inode is accessed through an idmapped mount it is mapped
-> according to the mount's user namespace. Afterwards the checks are
-> identical to non-idmapped mounts. If the initial user namespace is
-> passed nothing changes so non-idmapped mounts will see identical
-> behavior as before.
+> Prevent ecryptfs from being mounted on top of idmapped mounts.
+> Stacking filesystems need to be prevented from being mounted on top of
+> idmapped mounts until they have have been converted to handle this.
 > 
-> Link: https://lore.kernel.org/r/20210112220124.837960-32-christian.brauner@ubuntu.com
+> Link: https://lore.kernel.org/r/20210112220124.837960-39-christian.brauner@ubuntu.com
 > Cc: Christoph Hellwig <hch@lst.de>
 > Cc: David Howells <dhowells@redhat.com>
 > Cc: Al Viro <viro@zeniv.linux.org.uk>
 > Cc: linux-fsdevel@vger.kernel.org
-> Reviewed-by: Christoph Hellwig <hch@lst.de>
 > Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 
 
