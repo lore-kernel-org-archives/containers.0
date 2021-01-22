@@ -3,64 +3,64 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-10.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
-	autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A83BCC433DB
-	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 17:23:19 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1AF66C433DB
+	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 17:33:49 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 3471923433
-	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 17:23:19 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3471923433
+	by mail.kernel.org (Postfix) with ESMTPS id ACE9123433
+	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 17:33:48 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org ACE9123433
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lst.de
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id EA81287111;
-	Fri, 22 Jan 2021 17:23:18 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from whitealder.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id sHBHIFPc1mqC; Fri, 22 Jan 2021 17:23:15 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 33E7987110;
-	Fri, 22 Jan 2021 17:23:15 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 11C7DC08A1;
-	Fri, 22 Jan 2021 17:23:15 +0000 (UTC)
-Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 6C6D9C013A
- for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 17:23:13 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by silver.osuosl.org (Postfix) with ESMTP id 661C02E0F2
- for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 17:23:13 +0000 (UTC)
+	by silver.osuosl.org (Postfix) with ESMTP id 628AB2E10B;
+	Fri, 22 Jan 2021 17:33:48 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from silver.osuosl.org ([127.0.0.1])
- by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id sQaq6PcdBA7s
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id 6RIXor2DMVfh; Fri, 22 Jan 2021 17:33:47 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by silver.osuosl.org (Postfix) with ESMTP id 84F9F2E10E;
+	Fri, 22 Jan 2021 17:33:47 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 7CFAAC08A1;
+	Fri, 22 Jan 2021 17:33:47 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id BE71AC013A
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 17:23:12 +0000 (UTC)
+ Fri, 22 Jan 2021 17:33:46 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by whitealder.osuosl.org (Postfix) with ESMTP id B9CD786D8B
+ for <containers@lists.linux-foundation.org>;
+ Fri, 22 Jan 2021 17:33:46 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from whitealder.osuosl.org ([127.0.0.1])
+ by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id yhXTDvu4AzUq
+ for <containers@lists.linux-foundation.org>;
+ Fri, 22 Jan 2021 17:33:45 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
 Received: from verein.lst.de (verein.lst.de [213.95.11.211])
- by silver.osuosl.org (Postfix) with ESMTPS id 9DDCB230A1
+ by whitealder.osuosl.org (Postfix) with ESMTPS id 4EAA186E19
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 17:23:12 +0000 (UTC)
+ Fri, 22 Jan 2021 17:33:45 +0000 (UTC)
 Received: by verein.lst.de (Postfix, from userid 2407)
- id ADBE468C4E; Fri, 22 Jan 2021 18:23:08 +0100 (CET)
-Date: Fri, 22 Jan 2021 18:23:08 +0100
+ id 7138F68B05; Fri, 22 Jan 2021 18:33:40 +0100 (CET)
+Date: Fri, 22 Jan 2021 18:33:40 +0100
 From: Christoph Hellwig <hch@lst.de>
 To: Christian Brauner <christian.brauner@ubuntu.com>
-Subject: Re: [PATCH v6 20/40] init: handle idmapped mounts
-Message-ID: <20210122172308.GC20347@lst.de>
+Subject: Re: [PATCH v6 35/40] fs: introduce MOUNT_ATTR_IDMAP
+Message-ID: <20210122173340.GA20658@lst.de>
 References: <20210121131959.646623-1-christian.brauner@ubuntu.com>
- <20210121131959.646623-21-christian.brauner@ubuntu.com>
+ <20210121131959.646623-36-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <20210121131959.646623-21-christian.brauner@ubuntu.com>
+In-Reply-To: <20210121131959.646623-36-christian.brauner@ubuntu.com>
 User-Agent: Mutt/1.5.17 (2007-11-01)
 Cc: Lennart Poettering <lennart@poettering.net>,
  Mimi Zohar <zohar@linux.ibm.com>,
@@ -101,11 +101,20 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Note that in the early init code the user namespace must be init_user_ns
-by definition.  But passing on the information from the file/path seem
-ok just in case someone copy and pastes this code..
+>  /*
+>   * mount_setattr()
+> @@ -127,9 +128,10 @@ struct mount_attr {
+>  	__u64 attr_set;
+>  	__u64 attr_clr;
+>  	__u64 propagation;
+> +	__u64 userns_fd;
+>  };
+>  
+>  /* List of all mount_attr versions. */
+> -#define MOUNT_ATTR_SIZE_VER0	24 /* sizeof first published struct */
+> +#define MOUNT_ATTR_SIZE_VER0	32 /* sizeof first published struct */
 
-Reviewed-by: Christoph Hellwig <hch@lst.de>
+I think this hunk needs to go into the patch adding the structure.
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
