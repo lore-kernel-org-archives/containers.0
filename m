@@ -8,68 +8,69 @@ X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E4C0C433E6
-	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 13:01:00 +0000 (UTC)
-Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 20EB0C433E6
+	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 13:01:01 +0000 (UTC)
+Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 901AC23437
-	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 13:00:59 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 901AC23437
+	by mail.kernel.org (Postfix) with ESMTPS id A90F9235F7
+	for <containers@archiver.kernel.org>; Fri, 22 Jan 2021 13:01:00 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A90F9235F7
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 57D72869ED;
-	Fri, 22 Jan 2021 13:00:59 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from fraxinus.osuosl.org ([127.0.0.1])
-	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id piL7bQNV5su6; Fri, 22 Jan 2021 13:00:58 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by fraxinus.osuosl.org (Postfix) with ESMTP id 8514386A8F;
-	Fri, 22 Jan 2021 13:00:58 +0000 (UTC)
-Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 68F5DC1786;
-	Fri, 22 Jan 2021 13:00:58 +0000 (UTC)
-Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id A79E5C088B
- for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 13:00:55 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 8D54A8708A
- for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 13:00:55 +0000 (UTC)
+	by whitealder.osuosl.org (Postfix) with ESMTP id 42B71870AC;
+	Fri, 22 Jan 2021 13:01:00 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
- by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id UMIOxuT3zLOj
+	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id 3Rv4PFlZupRm; Fri, 22 Jan 2021 13:00:58 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by whitealder.osuosl.org (Postfix) with ESMTP id B2DC187092;
+	Fri, 22 Jan 2021 13:00:58 +0000 (UTC)
+Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 980D6C1DA7;
+	Fri, 22 Jan 2021 13:00:58 +0000 (UTC)
+Received: from silver.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 3D7B4C088B
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 13:00:54 +0000 (UTC)
+ Fri, 22 Jan 2021 13:00:56 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by silver.osuosl.org (Postfix) with ESMTP id 170B12E0F4
+ for <containers@lists.linux-foundation.org>;
+ Fri, 22 Jan 2021 13:00:56 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at osuosl.org
+Received: from silver.osuosl.org ([127.0.0.1])
+ by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id hgR8gU6fiKzB
+ for <containers@lists.linux-foundation.org>;
+ Fri, 22 Jan 2021 13:00:55 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
 Received: from raptor.unsafe.ru (raptor.unsafe.ru [5.9.43.93])
- by whitealder.osuosl.org (Postfix) with ESMTP id 4205487081
+ by silver.osuosl.org (Postfix) with ESMTP id 464DE2E0F2
  for <containers@lists.linux-foundation.org>;
- Fri, 22 Jan 2021 13:00:54 +0000 (UTC)
+ Fri, 22 Jan 2021 13:00:55 +0000 (UTC)
 Received: from comp-core-i7-2640m-0182e6.redhat.com
  (ip-94-112-41-137.net.upcbroadband.cz [94.112.41.137])
  (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
  (No client certificate requested)
- by raptor.unsafe.ru (Postfix) with ESMTPSA id 2416320A19;
- Fri, 22 Jan 2021 13:00:53 +0000 (UTC)
+ by raptor.unsafe.ru (Postfix) with ESMTPSA id 3500920A1D;
+ Fri, 22 Jan 2021 13:00:54 +0000 (UTC)
 From: Alexey Gladkov <gladkov.alexey@gmail.com>
 To: LKML <linux-kernel@vger.kernel.org>, io-uring@vger.kernel.org,
  Kernel Hardening <kernel-hardening@lists.openwall.com>,
  Linux Containers <containers@lists.linux-foundation.org>,
  linux-mm@kvack.org
-Subject: [PATCH v4 4/7] Move RLIMIT_SIGPENDING counter to ucounts
-Date: Fri, 22 Jan 2021 14:00:13 +0100
-Message-Id: <2b0224ee0b3c9fa54543b96d899b20e344a8e6ad.1611320161.git.gladkov.alexey@gmail.com>
+Subject: [PATCH v4 6/7] Move RLIMIT_NPROC check to the place where we
+ increment the counter
+Date: Fri, 22 Jan 2021 14:00:15 +0100
+Message-Id: <f3d4035b4aee52ece0e90606bcb8243a1646c03b.1611320161.git.gladkov.alexey@gmail.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <cover.1611320161.git.gladkov.alexey@gmail.com>
 References: <cover.1611320161.git.gladkov.alexey@gmail.com>
 MIME-Version: 1.0
 X-Greylist: Sender succeeded SMTP AUTH, not delayed by milter-greylist-4.6.1
- (raptor.unsafe.ru [5.9.43.93]); Fri, 22 Jan 2021 13:00:53 +0000 (UTC)
+ (raptor.unsafe.ru [5.9.43.93]); Fri, 22 Jan 2021 13:00:54 +0000 (UTC)
 Cc: Jens Axboe <axboe@kernel.dk>, Kees Cook <keescook@chromium.org>,
  Jann Horn <jannh@google.com>, Linus Torvalds <torvalds@linux-foundation.org>,
  Oleg Nesterov <oleg@redhat.com>, "Eric W . Biederman" <ebiederm@xmission.com>,
@@ -90,202 +91,76 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
+After calling set_user(), we always have to call commit_creds() to apply
+new credentials upon the current task. There is no need to separate
+limit check and counter incrementing.
+
 Signed-off-by: Alexey Gladkov <gladkov.alexey@gmail.com>
 ---
- fs/proc/array.c                |  2 +-
- include/linux/sched/user.h     |  1 -
- include/linux/signal_types.h   |  4 ++-
- include/linux/user_namespace.h |  1 +
- kernel/fork.c                  |  1 +
- kernel/signal.c                | 53 ++++++++++++++--------------------
- kernel/ucount.c                |  1 +
- kernel/user.c                  |  1 -
- kernel/user_namespace.c        |  1 +
- 9 files changed, 30 insertions(+), 35 deletions(-)
+ kernel/cred.c | 22 +++++++++++++++++-----
+ kernel/sys.c  | 13 -------------
+ 2 files changed, 17 insertions(+), 18 deletions(-)
 
-diff --git a/fs/proc/array.c b/fs/proc/array.c
-index bb87e4d89cd8..74b0ea4b7e38 100644
---- a/fs/proc/array.c
-+++ b/fs/proc/array.c
-@@ -284,7 +284,7 @@ static inline void task_sig(struct seq_file *m, struct task_struct *p)
- 		collect_sigign_sigcatch(p, &ignored, &caught);
- 		num_threads = get_nr_threads(p);
- 		rcu_read_lock();  /* FIXME: is this correct? */
--		qsize = atomic_read(&__task_cred(p)->user->sigpending);
-+		qsize = get_ucounts_value(task_ucounts(p), UCOUNT_RLIMIT_SIGPENDING);
- 		rcu_read_unlock();
- 		qlim = task_rlimit(p, RLIMIT_SIGPENDING);
- 		unlock_task_sighand(p, &flags);
-diff --git a/include/linux/sched/user.h b/include/linux/sched/user.h
-index 8a34446681aa..8ba9cec4fb99 100644
---- a/include/linux/sched/user.h
-+++ b/include/linux/sched/user.h
-@@ -12,7 +12,6 @@
-  */
- struct user_struct {
- 	refcount_t __count;	/* reference count */
--	atomic_t sigpending;	/* How many pending signals does this user have? */
- #ifdef CONFIG_FANOTIFY
- 	atomic_t fanotify_listeners;
- #endif
-diff --git a/include/linux/signal_types.h b/include/linux/signal_types.h
-index 68e06c75c5b2..34cb28b8f16c 100644
---- a/include/linux/signal_types.h
-+++ b/include/linux/signal_types.h
-@@ -13,6 +13,8 @@ typedef struct kernel_siginfo {
- 	__SIGINFO;
- } kernel_siginfo_t;
+diff --git a/kernel/cred.c b/kernel/cred.c
+index fdb40adc2ebd..334d2c9ae519 100644
+--- a/kernel/cred.c
++++ b/kernel/cred.c
+@@ -487,14 +487,26 @@ int commit_creds(struct cred *new)
+ 	if (!gid_eq(new->fsgid, old->fsgid))
+ 		key_fsgid_changed(new);
  
-+struct ucounts;
-+
- /*
-  * Real Time signals may be queued.
-  */
-@@ -21,7 +23,7 @@ struct sigqueue {
- 	struct list_head list;
- 	int flags;
- 	kernel_siginfo_t info;
--	struct user_struct *user;
-+	struct ucounts *ucounts;
- };
- 
- /* flags values. */
-diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index 1766cf503d1b..26000aea53c4 100644
---- a/include/linux/user_namespace.h
-+++ b/include/linux/user_namespace.h
-@@ -52,6 +52,7 @@ enum ucount_type {
- #endif
- 	UCOUNT_RLIMIT_NPROC,
- 	UCOUNT_RLIMIT_MSGQUEUE,
-+	UCOUNT_RLIMIT_SIGPENDING,
- 	UCOUNT_COUNTS,
- };
- 
-diff --git a/kernel/fork.c b/kernel/fork.c
-index f61a5a3dc02f..a7be5790392e 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -825,6 +825,7 @@ void __init fork_init(void)
- 
- 	init_user_ns.ucount_max[UCOUNT_RLIMIT_NPROC] = task_rlimit(&init_task, RLIMIT_NPROC);
- 	init_user_ns.ucount_max[UCOUNT_RLIMIT_MSGQUEUE] = task_rlimit(&init_task, RLIMIT_MSGQUEUE);
-+	init_user_ns.ucount_max[UCOUNT_RLIMIT_SIGPENDING] = task_rlimit(&init_task, RLIMIT_SIGPENDING);
- 
- #ifdef CONFIG_VMAP_STACK
- 	cpuhp_setup_state(CPUHP_BP_PREPARE_DYN, "fork:vm_stack_cache",
-diff --git a/kernel/signal.c b/kernel/signal.c
-index 5736c55aaa1a..b01c2007a282 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -412,49 +412,40 @@ void task_join_group_stop(struct task_struct *task)
- static struct sigqueue *
- __sigqueue_alloc(int sig, struct task_struct *t, gfp_t flags, int override_rlimit)
- {
--	struct sigqueue *q = NULL;
--	struct user_struct *user;
--	int sigpending;
-+	struct sigqueue *q = kmem_cache_alloc(sigqueue_cachep, flags);
- 
--	/*
--	 * Protect access to @t credentials. This can go away when all
--	 * callers hold rcu read lock.
--	 *
--	 * NOTE! A pending signal will hold on to the user refcount,
--	 * and we get/put the refcount only when the sigpending count
--	 * changes from/to zero.
+-	/* do it
+-	 * RLIMIT_NPROC limits on user->processes have already been checked
+-	 * in set_user().
 -	 */
--	rcu_read_lock();
--	user = __task_cred(t)->user;
--	sigpending = atomic_inc_return(&user->sigpending);
--	if (sigpending == 1)
--		get_uid(user);
--	rcu_read_unlock();
-+	if (likely(q != NULL)) {
+ 	alter_cred_subscribers(new, 2);
+ 	if (new->user != old->user || new->user_ns != old->user_ns) {
 +		bool overlimit;
- 
--	if (override_rlimit || likely(sigpending <= task_rlimit(t, RLIMIT_SIGPENDING))) {
--		q = kmem_cache_alloc(sigqueue_cachep, flags);
--	} else {
--		print_dropped_signal(sig);
--	}
--
--	if (unlikely(q == NULL)) {
--		if (atomic_dec_and_test(&user->sigpending))
--			free_uid(user);
--	} else {
- 		INIT_LIST_HEAD(&q->list);
- 		q->flags = 0;
--		q->user = user;
++
+ 		set_cred_ucounts(new, new->user_ns, new->euid);
+-		inc_rlimit_ucounts(new->ucounts, UCOUNT_RLIMIT_NPROC, 1);
++
++		overlimit = inc_rlimit_ucounts_and_test(new->ucounts, UCOUNT_RLIMIT_NPROC,
++				1, rlimit(RLIMIT_NPROC));
 +
 +		/*
-+		 * Protect access to @t credentials. This can go away when all
-+		 * callers hold rcu read lock.
++		 * We don't fail in case of NPROC limit excess here because too many
++		 * poorly written programs don't check set*uid() return code, assuming
++		 * it never fails if called by root.  We may still enforce NPROC limit
++		 * for programs doing set*uid()+execve() by harmlessly deferring the
++		 * failure to the execve() stage.
 +		 */
-+		rcu_read_lock();
-+		q->ucounts = get_ucounts(task_ucounts(t));
-+		overlimit = inc_rlimit_ucounts_and_test(q->ucounts, UCOUNT_RLIMIT_SIGPENDING,
-+				1, task_rlimit(t, RLIMIT_SIGPENDING));
-+
-+		if (override_rlimit || likely(!overlimit)) {
-+			rcu_read_unlock();
-+			return q;
-+		}
-+		rcu_read_unlock();
++		if (overlimit && new->user != INIT_USER)
++			current->flags |= PF_NPROC_EXCEEDED;
++		else
++			current->flags &= ~PF_NPROC_EXCEEDED;
  	}
+ 	rcu_assign_pointer(task->real_cred, new);
+ 	rcu_assign_pointer(task->cred, new);
+diff --git a/kernel/sys.c b/kernel/sys.c
+index c2734ab9474e..180c4e06064f 100644
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -467,19 +467,6 @@ static int set_user(struct cred *new)
+ 	if (!new_user)
+ 		return -EAGAIN;
  
--	return q;
-+	print_dropped_signal(sig);
-+	return NULL;
- }
- 
- static void __sigqueue_free(struct sigqueue *q)
- {
- 	if (q->flags & SIGQUEUE_PREALLOC)
- 		return;
--	if (atomic_dec_and_test(&q->user->sigpending))
--		free_uid(q->user);
-+	dec_rlimit_ucounts(q->ucounts, UCOUNT_RLIMIT_SIGPENDING, 1);
-+	put_ucounts(q->ucounts);
- 	kmem_cache_free(sigqueue_cachep, q);
- }
- 
-diff --git a/kernel/ucount.c b/kernel/ucount.c
-index 04934fcb4fe0..823dbe2364c6 100644
---- a/kernel/ucount.c
-+++ b/kernel/ucount.c
-@@ -75,6 +75,7 @@ static struct ctl_table user_table[] = {
- 	UCOUNT_ENTRY("max_inotify_instances"),
- 	UCOUNT_ENTRY("max_inotify_watches"),
- #endif
-+	{ },
- 	{ },
- 	{ },
- 	{ }
-diff --git a/kernel/user.c b/kernel/user.c
-index 7f5ff498207a..6737327f83be 100644
---- a/kernel/user.c
-+++ b/kernel/user.c
-@@ -98,7 +98,6 @@ static DEFINE_SPINLOCK(uidhash_lock);
- /* root_user.__count is 1, for init task cred */
- struct user_struct root_user = {
- 	.__count	= REFCOUNT_INIT(1),
--	.sigpending	= ATOMIC_INIT(0),
- 	.locked_shm     = 0,
- 	.uid		= GLOBAL_ROOT_UID,
- 	.ratelimit	= RATELIMIT_STATE_INIT(root_user.ratelimit, 0, 0),
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 9ace2a45a25d..eeff7f6d81c0 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -123,6 +123,7 @@ int create_user_ns(struct cred *new)
- 	}
- 	ns->ucount_max[UCOUNT_RLIMIT_NPROC] = rlimit(RLIMIT_NPROC);
- 	ns->ucount_max[UCOUNT_RLIMIT_MSGQUEUE] = rlimit(RLIMIT_MSGQUEUE);
-+	ns->ucount_max[UCOUNT_RLIMIT_SIGPENDING] = rlimit(RLIMIT_SIGPENDING);
- 	ns->ucounts = ucounts;
- 
- 	/* Inherit USERNS_SETGROUPS_ALLOWED from our parent */
+-	/*
+-	 * We don't fail in case of NPROC limit excess here because too many
+-	 * poorly written programs don't check set*uid() return code, assuming
+-	 * it never fails if called by root.  We may still enforce NPROC limit
+-	 * for programs doing set*uid()+execve() by harmlessly deferring the
+-	 * failure to the execve() stage.
+-	 */
+-	if (is_ucounts_overlimit(new->ucounts, UCOUNT_RLIMIT_NPROC, rlimit(RLIMIT_NPROC)) &&
+-			new_user != INIT_USER)
+-		current->flags |= PF_NPROC_EXCEEDED;
+-	else
+-		current->flags &= ~PF_NPROC_EXCEEDED;
+-
+ 	free_uid(new->user);
+ 	new->user = new_user;
+ 	return 0;
 -- 
 2.29.2
 
