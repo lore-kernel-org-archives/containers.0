@@ -8,68 +8,68 @@ X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C9F16C433DB
-	for <containers@archiver.kernel.org>; Mon,  1 Feb 2021 14:21:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 27BE5C433E0
+	for <containers@archiver.kernel.org>; Mon,  1 Feb 2021 14:21:12 +0000 (UTC)
 Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 58F5964EAC
+	by mail.kernel.org (Postfix) with ESMTPS id BCD4464EAA
 	for <containers@archiver.kernel.org>; Mon,  1 Feb 2021 14:21:11 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 58F5964EAC
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BCD4464EAA
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by whitealder.osuosl.org (Postfix) with ESMTP id 244DE86870;
+	by whitealder.osuosl.org (Postfix) with ESMTP id 7AC7B868AC;
 	Mon,  1 Feb 2021 14:21:11 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id p8a1VdPccHIJ; Mon,  1 Feb 2021 14:21:07 +0000 (UTC)
+	with ESMTP id qk+W395A9yBp; Mon,  1 Feb 2021 14:21:07 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by whitealder.osuosl.org (Postfix) with ESMTP id C869F86887;
+	by whitealder.osuosl.org (Postfix) with ESMTP id B124586885;
 	Mon,  1 Feb 2021 14:21:05 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id BD64EC0174;
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 9B279C0FA8;
 	Mon,  1 Feb 2021 14:21:05 +0000 (UTC)
 Received: from whitealder.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 89845C0174
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 74276C013A
  for <containers@lists.linux-foundation.org>;
  Mon,  1 Feb 2021 14:21:04 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by whitealder.osuosl.org (Postfix) with ESMTP id 76FAA863FD
+ by whitealder.osuosl.org (Postfix) with ESMTP id 6345B86871
  for <containers@lists.linux-foundation.org>;
  Mon,  1 Feb 2021 14:21:04 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from whitealder.osuosl.org ([127.0.0.1])
  by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id UFD1H89AHD-T
+ with ESMTP id VTI52jxwO2MI
  for <containers@lists.linux-foundation.org>;
- Mon,  1 Feb 2021 14:21:03 +0000 (UTC)
+ Mon,  1 Feb 2021 14:21:02 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.7.6
 Received: from raptor.unsafe.ru (raptor.unsafe.ru [5.9.43.93])
- by whitealder.osuosl.org (Postfix) with ESMTP id F0BA58686A
+ by whitealder.osuosl.org (Postfix) with ESMTP id 3A37A863FD
  for <containers@lists.linux-foundation.org>;
  Mon,  1 Feb 2021 14:21:02 +0000 (UTC)
 Received: from comp-core-i7-2640m-0182e6.redhat.com
  (ip-94-112-41-137.net.upcbroadband.cz [94.112.41.137])
  (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
  (No client certificate requested)
- by raptor.unsafe.ru (Postfix) with ESMTPSA id 467DE20A20;
- Mon,  1 Feb 2021 14:21:02 +0000 (UTC)
+ by raptor.unsafe.ru (Postfix) with ESMTPSA id A1B4820A1C;
+ Mon,  1 Feb 2021 14:21:00 +0000 (UTC)
 From: Alexey Gladkov <gladkov.alexey@gmail.com>
 To: LKML <linux-kernel@vger.kernel.org>, io-uring@vger.kernel.org,
  Kernel Hardening <kernel-hardening@lists.openwall.com>,
  Linux Containers <containers@lists.linux-foundation.org>,
  linux-mm@kvack.org
-Subject: [PATCH v5 5/7] Reimplement RLIMIT_SIGPENDING on top of ucounts
-Date: Mon,  1 Feb 2021 15:18:33 +0100
-Message-Id: <3d76a00f5be908ad75b7dd65230568beb3b0cc10.1612188590.git.gladkov.alexey@gmail.com>
+Subject: [PATCH v5 2/7] Add a reference to ucounts for each cred
+Date: Mon,  1 Feb 2021 15:18:30 +0100
+Message-Id: <9ac6beb4b568cb980635b2c38e90839e0deace85.1612188590.git.gladkov.alexey@gmail.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <cover.1612188590.git.gladkov.alexey@gmail.com>
 References: <cover.1612188590.git.gladkov.alexey@gmail.com>
 MIME-Version: 1.0
 X-Greylist: Sender succeeded SMTP AUTH, not delayed by milter-greylist-4.6.1
- (raptor.unsafe.ru [5.9.43.93]); Mon, 01 Feb 2021 14:21:02 +0000 (UTC)
+ (raptor.unsafe.ru [5.9.43.93]); Mon, 01 Feb 2021 14:21:01 +0000 (UTC)
 Cc: Jens Axboe <axboe@kernel.dk>, Kees Cook <keescook@chromium.org>,
  Jann Horn <jannh@google.com>, Linus Torvalds <torvalds@linux-foundation.org>,
  Oleg Nesterov <oleg@redhat.com>, "Eric W . Biederman" <ebiederm@xmission.com>,
@@ -90,207 +90,292 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-The rlimit counter is tied to uid in the user_namespace. This allows
-rlimit values to be specified in userns even if they are already
-globally exceeded by the user. However, the value of the previous
-user_namespaces cannot be exceeded.
+For RLIMIT_NPROC and some other rlimits the user_struct that holds the
+global limit is kept alive for the lifetime of a process by keeping it
+in struct cred. Adding a pointer to ucounts in the struct cred will
+allow to track RLIMIT_NPROC not only for user in the system, but for
+user in the user_namespace.
+
+Updating ucounts may require memory allocation which may fail. So, we
+cannot change cred.ucounts in the commit_creds() because this function
+cannot fail and it should always return 0. For this reason, we modify
+cred.ucounts before calling the commit_creds().
 
 Signed-off-by: Alexey Gladkov <gladkov.alexey@gmail.com>
 ---
- fs/proc/array.c                |  2 +-
- include/linux/sched/user.h     |  1 -
- include/linux/signal_types.h   |  4 ++-
- include/linux/user_namespace.h |  1 +
- kernel/fork.c                  |  1 +
- kernel/signal.c                | 53 ++++++++++++++--------------------
- kernel/ucount.c                |  1 +
- kernel/user.c                  |  1 -
- kernel/user_namespace.c        |  1 +
- 9 files changed, 30 insertions(+), 35 deletions(-)
+ fs/exec.c                      |  4 +++
+ include/linux/cred.h           |  2 ++
+ include/linux/user_namespace.h |  3 +++
+ kernel/cred.c                  | 45 ++++++++++++++++++++++++++++++++++
+ kernel/fork.c                  |  6 +++++
+ kernel/sys.c                   | 12 +++++++++
+ kernel/ucount.c                | 26 +++++++++++++++++---
+ kernel/user_namespace.c        |  3 +++
+ 8 files changed, 98 insertions(+), 3 deletions(-)
 
-diff --git a/fs/proc/array.c b/fs/proc/array.c
-index bb87e4d89cd8..74b0ea4b7e38 100644
---- a/fs/proc/array.c
-+++ b/fs/proc/array.c
-@@ -284,7 +284,7 @@ static inline void task_sig(struct seq_file *m, struct task_struct *p)
- 		collect_sigign_sigcatch(p, &ignored, &caught);
- 		num_threads = get_nr_threads(p);
- 		rcu_read_lock();  /* FIXME: is this correct? */
--		qsize = atomic_read(&__task_cred(p)->user->sigpending);
-+		qsize = get_ucounts_value(task_ucounts(p), UCOUNT_RLIMIT_SIGPENDING);
- 		rcu_read_unlock();
- 		qlim = task_rlimit(p, RLIMIT_SIGPENDING);
- 		unlock_task_sighand(p, &flags);
-diff --git a/include/linux/sched/user.h b/include/linux/sched/user.h
-index 8a34446681aa..8ba9cec4fb99 100644
---- a/include/linux/sched/user.h
-+++ b/include/linux/sched/user.h
-@@ -12,7 +12,6 @@
-  */
- struct user_struct {
- 	refcount_t __count;	/* reference count */
--	atomic_t sigpending;	/* How many pending signals does this user have? */
- #ifdef CONFIG_FANOTIFY
- 	atomic_t fanotify_listeners;
- #endif
-diff --git a/include/linux/signal_types.h b/include/linux/signal_types.h
-index 68e06c75c5b2..34cb28b8f16c 100644
---- a/include/linux/signal_types.h
-+++ b/include/linux/signal_types.h
-@@ -13,6 +13,8 @@ typedef struct kernel_siginfo {
- 	__SIGINFO;
- } kernel_siginfo_t;
+diff --git a/fs/exec.c b/fs/exec.c
+index 5d4d52039105..0371a3400be5 100644
+--- a/fs/exec.c
++++ b/fs/exec.c
+@@ -1360,6 +1360,10 @@ int begin_new_exec(struct linux_binprm * bprm)
+ 	WRITE_ONCE(me->self_exec_id, me->self_exec_id + 1);
+ 	flush_signal_handlers(me, 0);
  
-+struct ucounts;
++	retval = set_cred_ucounts(bprm->cred);
++	if (retval < 0)
++		goto out_unlock;
 +
- /*
-  * Real Time signals may be queued.
-  */
-@@ -21,7 +23,7 @@ struct sigqueue {
- 	struct list_head list;
- 	int flags;
- 	kernel_siginfo_t info;
--	struct user_struct *user;
+ 	/*
+ 	 * install the new credentials for this executable
+ 	 */
+diff --git a/include/linux/cred.h b/include/linux/cred.h
+index 18639c069263..ad160e5fe5c6 100644
+--- a/include/linux/cred.h
++++ b/include/linux/cred.h
+@@ -144,6 +144,7 @@ struct cred {
+ #endif
+ 	struct user_struct *user;	/* real user ID subscription */
+ 	struct user_namespace *user_ns; /* user_ns the caps and keyrings are relative to. */
 +	struct ucounts *ucounts;
- };
+ 	struct group_info *group_info;	/* supplementary groups for euid/fsgid */
+ 	/* RCU deletion */
+ 	union {
+@@ -170,6 +171,7 @@ extern int set_security_override_from_ctx(struct cred *, const char *);
+ extern int set_create_files_as(struct cred *, struct inode *);
+ extern int cred_fscmp(const struct cred *, const struct cred *);
+ extern void __init cred_init(void);
++extern int set_cred_ucounts(struct cred *);
  
- /* flags values. */
+ /*
+  * check for validity of credentials
 diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index 66d471753bed..66aebabc6c7f 100644
+index 0bb833fd41f4..43f5847cc897 100644
 --- a/include/linux/user_namespace.h
 +++ b/include/linux/user_namespace.h
-@@ -52,6 +52,7 @@ enum ucount_type {
- #endif
- 	UCOUNT_RLIMIT_NPROC,
- 	UCOUNT_RLIMIT_MSGQUEUE,
-+	UCOUNT_RLIMIT_SIGPENDING,
- 	UCOUNT_COUNTS,
- };
+@@ -102,6 +102,9 @@ bool setup_userns_sysctls(struct user_namespace *ns);
+ void retire_userns_sysctls(struct user_namespace *ns);
+ struct ucounts *inc_ucount(struct user_namespace *ns, kuid_t uid, enum ucount_type type);
+ void dec_ucount(struct ucounts *ucounts, enum ucount_type type);
++struct ucounts *alloc_ucounts(struct user_namespace *ns, kuid_t uid);
++struct ucounts *get_ucounts(struct ucounts *ucounts);
++void put_ucounts(struct ucounts *ucounts);
  
+ #ifdef CONFIG_USER_NS
+ 
+diff --git a/kernel/cred.c b/kernel/cred.c
+index 421b1149c651..8194a59e283f 100644
+--- a/kernel/cred.c
++++ b/kernel/cred.c
+@@ -119,6 +119,8 @@ static void put_cred_rcu(struct rcu_head *rcu)
+ 	if (cred->group_info)
+ 		put_group_info(cred->group_info);
+ 	free_uid(cred->user);
++	if (cred->ucounts)
++		put_ucounts(cred->ucounts);
+ 	put_user_ns(cred->user_ns);
+ 	kmem_cache_free(cred_jar, cred);
+ }
+@@ -284,6 +286,11 @@ struct cred *prepare_creds(void)
+ 
+ 	if (security_prepare_creds(new, old, GFP_KERNEL_ACCOUNT) < 0)
+ 		goto error;
++
++	new->ucounts = get_ucounts(new->ucounts);
++	if (!new->ucounts)
++		goto error;
++
+ 	validate_creds(new);
+ 	return new;
+ 
+@@ -363,6 +370,8 @@ int copy_creds(struct task_struct *p, unsigned long clone_flags)
+ 		ret = create_user_ns(new);
+ 		if (ret < 0)
+ 			goto error_put;
++		if (set_cred_ucounts(new) < 0)
++			goto error_put;
+ 	}
+ 
+ #ifdef CONFIG_KEYS
+@@ -653,6 +662,33 @@ int cred_fscmp(const struct cred *a, const struct cred *b)
+ }
+ EXPORT_SYMBOL(cred_fscmp);
+ 
++int set_cred_ucounts(struct cred *new)
++{
++	struct task_struct *task = current;
++	const struct cred *old = task->real_cred;
++	struct ucounts *old_ucounts = new->ucounts;
++
++	BUG_ON(task->cred != old);
++
++	if (new->user == old->user && new->user_ns == old->user_ns)
++		return 0;
++
++	/*
++	 * This optimization is needed because alloc_ucounts() uses locks
++	 * for table lookups.
++	 */
++	if (old_ucounts && old_ucounts->ns == new->user_ns && uid_eq(old_ucounts->uid, new->euid))
++		return 0;
++
++	if (!(new->ucounts = alloc_ucounts(new->user_ns, new->euid)))
++		return -EAGAIN;
++
++	if (old_ucounts)
++		put_ucounts(old_ucounts);
++
++	return 0;
++}
++
+ /*
+  * initialise the credentials stuff
+  */
+@@ -661,6 +697,11 @@ void __init cred_init(void)
+ 	/* allocate a slab in which we can store credentials */
+ 	cred_jar = kmem_cache_create("cred_jar", sizeof(struct cred), 0,
+ 			SLAB_HWCACHE_ALIGN|SLAB_PANIC|SLAB_ACCOUNT, NULL);
++	/*
++	 * This is needed here because this is the first cred and there is no
++	 * ucount reference to copy.
++	 */
++	init_cred.ucounts = alloc_ucounts(init_cred.user_ns, init_cred.euid);
+ }
+ 
+ /**
+@@ -719,6 +760,10 @@ struct cred *prepare_kernel_cred(struct task_struct *daemon)
+ 	if (security_prepare_creds(new, old, GFP_KERNEL_ACCOUNT) < 0)
+ 		goto error;
+ 
++	new->ucounts = get_ucounts(new->ucounts);
++	if (!new->ucounts)
++		goto error;
++
+ 	put_cred(old);
+ 	validate_creds(new);
+ 	return new;
 diff --git a/kernel/fork.c b/kernel/fork.c
-index bdd5be6062ab..4c91709af704 100644
+index 37720a6d04ea..b0d36dea0a9c 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -825,6 +825,7 @@ void __init fork_init(void)
+@@ -2959,6 +2959,12 @@ int ksys_unshare(unsigned long unshare_flags)
+ 	if (err)
+ 		goto bad_unshare_cleanup_cred;
  
- 	init_user_ns.ucount_max[UCOUNT_RLIMIT_NPROC] = task_rlimit(&init_task, RLIMIT_NPROC);
- 	init_user_ns.ucount_max[UCOUNT_RLIMIT_MSGQUEUE] = task_rlimit(&init_task, RLIMIT_MSGQUEUE);
-+	init_user_ns.ucount_max[UCOUNT_RLIMIT_SIGPENDING] = task_rlimit(&init_task, RLIMIT_SIGPENDING);
- 
- #ifdef CONFIG_VMAP_STACK
- 	cpuhp_setup_state(CPUHP_BP_PREPARE_DYN, "fork:vm_stack_cache",
-diff --git a/kernel/signal.c b/kernel/signal.c
-index 5736c55aaa1a..b01c2007a282 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -412,49 +412,40 @@ void task_join_group_stop(struct task_struct *task)
- static struct sigqueue *
- __sigqueue_alloc(int sig, struct task_struct *t, gfp_t flags, int override_rlimit)
- {
--	struct sigqueue *q = NULL;
--	struct user_struct *user;
--	int sigpending;
-+	struct sigqueue *q = kmem_cache_alloc(sigqueue_cachep, flags);
- 
--	/*
--	 * Protect access to @t credentials. This can go away when all
--	 * callers hold rcu read lock.
--	 *
--	 * NOTE! A pending signal will hold on to the user refcount,
--	 * and we get/put the refcount only when the sigpending count
--	 * changes from/to zero.
--	 */
--	rcu_read_lock();
--	user = __task_cred(t)->user;
--	sigpending = atomic_inc_return(&user->sigpending);
--	if (sigpending == 1)
--		get_uid(user);
--	rcu_read_unlock();
-+	if (likely(q != NULL)) {
-+		bool overlimit;
- 
--	if (override_rlimit || likely(sigpending <= task_rlimit(t, RLIMIT_SIGPENDING))) {
--		q = kmem_cache_alloc(sigqueue_cachep, flags);
--	} else {
--		print_dropped_signal(sig);
--	}
--
--	if (unlikely(q == NULL)) {
--		if (atomic_dec_and_test(&user->sigpending))
--			free_uid(user);
--	} else {
- 		INIT_LIST_HEAD(&q->list);
- 		q->flags = 0;
--		q->user = user;
++	if (new_cred) {
++		err = set_cred_ucounts(new_cred);
++		if (err)
++			goto bad_unshare_cleanup_cred;
++	}
 +
-+		/*
-+		 * Protect access to @t credentials. This can go away when all
-+		 * callers hold rcu read lock.
-+		 */
-+		rcu_read_lock();
-+		q->ucounts = get_ucounts(task_ucounts(t));
-+		overlimit = inc_rlimit_ucounts_and_test(q->ucounts, UCOUNT_RLIMIT_SIGPENDING,
-+				1, task_rlimit(t, RLIMIT_SIGPENDING));
+ 	if (new_fs || new_fd || do_sysvsem || new_cred || new_nsproxy) {
+ 		if (do_sysvsem) {
+ 			/*
+diff --git a/kernel/sys.c b/kernel/sys.c
+index 51f00fe20e4d..373def7debe8 100644
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -553,6 +553,10 @@ long __sys_setreuid(uid_t ruid, uid_t euid)
+ 	if (retval < 0)
+ 		goto error;
+ 
++	retval = set_cred_ucounts(new);
++	if (retval < 0)
++		goto error;
 +
-+		if (override_rlimit || likely(!overlimit)) {
-+			rcu_read_unlock();
-+			return q;
-+		}
-+		rcu_read_unlock();
- 	}
+ 	return commit_creds(new);
  
--	return q;
-+	print_dropped_signal(sig);
-+	return NULL;
- }
+ error:
+@@ -611,6 +615,10 @@ long __sys_setuid(uid_t uid)
+ 	if (retval < 0)
+ 		goto error;
  
- static void __sigqueue_free(struct sigqueue *q)
- {
- 	if (q->flags & SIGQUEUE_PREALLOC)
- 		return;
--	if (atomic_dec_and_test(&q->user->sigpending))
--		free_uid(q->user);
-+	dec_rlimit_ucounts(q->ucounts, UCOUNT_RLIMIT_SIGPENDING, 1);
-+	put_ucounts(q->ucounts);
- 	kmem_cache_free(sigqueue_cachep, q);
- }
++	retval = set_cred_ucounts(new);
++	if (retval < 0)
++		goto error;
++
+ 	return commit_creds(new);
  
+ error:
+@@ -686,6 +694,10 @@ long __sys_setresuid(uid_t ruid, uid_t euid, uid_t suid)
+ 	if (retval < 0)
+ 		goto error;
+ 
++	retval = set_cred_ucounts(new);
++	if (retval < 0)
++		goto error;
++
+ 	return commit_creds(new);
+ 
+ error:
 diff --git a/kernel/ucount.c b/kernel/ucount.c
-index 4e690e085f7d..83cf02fdeaaf 100644
+index 04c561751af1..9644bced74b4 100644
 --- a/kernel/ucount.c
 +++ b/kernel/ucount.c
-@@ -75,6 +75,7 @@ static struct ctl_table user_table[] = {
- 	UCOUNT_ENTRY("max_inotify_instances"),
- 	UCOUNT_ENTRY("max_inotify_watches"),
- #endif
-+	{ },
- 	{ },
- 	{ },
- 	{ }
-diff --git a/kernel/user.c b/kernel/user.c
-index 7f5ff498207a..6737327f83be 100644
---- a/kernel/user.c
-+++ b/kernel/user.c
-@@ -98,7 +98,6 @@ static DEFINE_SPINLOCK(uidhash_lock);
- /* root_user.__count is 1, for init task cred */
- struct user_struct root_user = {
- 	.__count	= REFCOUNT_INIT(1),
--	.sigpending	= ATOMIC_INIT(0),
- 	.locked_shm     = 0,
- 	.uid		= GLOBAL_ROOT_UID,
- 	.ratelimit	= RATELIMIT_STATE_INIT(root_user.ratelimit, 0, 0),
+@@ -125,7 +125,7 @@ static struct ucounts *find_ucounts(struct user_namespace *ns, kuid_t uid, struc
+ 	return NULL;
+ }
+ 
+-static struct ucounts *get_ucounts(struct user_namespace *ns, kuid_t uid)
++struct ucounts *alloc_ucounts(struct user_namespace *ns, kuid_t uid)
+ {
+ 	struct hlist_head *hashent = ucounts_hashentry(ns, uid);
+ 	struct ucounts *ucounts, *new;
+@@ -160,11 +160,31 @@ static struct ucounts *get_ucounts(struct user_namespace *ns, kuid_t uid)
+ 	return ucounts;
+ }
+ 
+-static void put_ucounts(struct ucounts *ucounts)
++struct ucounts *get_ucounts(struct ucounts *ucounts)
++{
++	unsigned long flags;
++
++	if (!ucounts)
++		return NULL;
++
++	spin_lock_irqsave(&ucounts_lock, flags);
++	if (ucounts->count == INT_MAX) {
++		WARN_ONCE(1, "ucounts: counter has reached its maximum value");
++		ucounts = NULL;
++	} else {
++		ucounts->count += 1;
++	}
++	spin_unlock_irqrestore(&ucounts_lock, flags);
++
++	return ucounts;
++}
++
++void put_ucounts(struct ucounts *ucounts)
+ {
+ 	unsigned long flags;
+ 
+ 	spin_lock_irqsave(&ucounts_lock, flags);
++	BUG_ON(ucounts->count <= 0);
+ 	ucounts->count -= 1;
+ 	if (!ucounts->count)
+ 		hlist_del_init(&ucounts->node);
+@@ -194,7 +214,7 @@ struct ucounts *inc_ucount(struct user_namespace *ns, kuid_t uid,
+ {
+ 	struct ucounts *ucounts, *iter, *bad;
+ 	struct user_namespace *tns;
+-	ucounts = get_ucounts(ns, uid);
++	ucounts = alloc_ucounts(ns, uid);
+ 	for (iter = ucounts; iter; iter = tns->ucounts) {
+ 		long max;
+ 		tns = iter->ns;
 diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index cc90d5203acf..df1bed32dd48 100644
+index af612945a4d0..516db53166ab 100644
 --- a/kernel/user_namespace.c
 +++ b/kernel/user_namespace.c
-@@ -123,6 +123,7 @@ int create_user_ns(struct cred *new)
- 	}
- 	ns->ucount_max[UCOUNT_RLIMIT_NPROC] = rlimit(RLIMIT_NPROC);
- 	ns->ucount_max[UCOUNT_RLIMIT_MSGQUEUE] = rlimit(RLIMIT_MSGQUEUE);
-+	ns->ucount_max[UCOUNT_RLIMIT_SIGPENDING] = rlimit(RLIMIT_SIGPENDING);
- 	ns->ucounts = ucounts;
+@@ -1281,6 +1281,9 @@ static int userns_install(struct nsset *nsset, struct ns_common *ns)
+ 	put_user_ns(cred->user_ns);
+ 	set_cred_user_ns(cred, get_user_ns(user_ns));
  
- 	/* Inherit USERNS_SETGROUPS_ALLOWED from our parent */
++	if (set_cred_ucounts(cred) < 0)
++		return -EINVAL;
++
+ 	return 0;
+ }
+ 
 -- 
 2.29.2
 
