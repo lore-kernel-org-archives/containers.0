@@ -2,82 +2,91 @@ Return-Path: <SRS0=rdDx=HR=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
-	DKIM_ADSP_CUSTOM_MED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 43C62C433E6
-	for <containers@archiver.kernel.org>; Mon, 15 Feb 2021 12:43:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5969BC433DB
+	for <containers@archiver.kernel.org>; Mon, 15 Feb 2021 15:09:50 +0000 (UTC)
 Received: from smtp3.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id E942164DC3
-	for <containers@archiver.kernel.org>; Mon, 15 Feb 2021 12:43:36 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E942164DC3
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	by mail.kernel.org (Postfix) with ESMTPS id E3BD264E2B
+	for <containers@archiver.kernel.org>; Mon, 15 Feb 2021 15:09:49 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E3BD264E2B
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=intel.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by smtp3.osuosl.org (Postfix) with ESMTP id 7BD5C6F513
-	for <containers@archiver.kernel.org>; Mon, 15 Feb 2021 12:43:36 +0000 (UTC)
+	by smtp3.osuosl.org (Postfix) with ESMTP id 84ABA6F494
+	for <containers@archiver.kernel.org>; Mon, 15 Feb 2021 15:09:49 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from smtp3.osuosl.org ([127.0.0.1])
 	by localhost (smtp3.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id OnzROUC5XzJS for <containers@archiver.kernel.org>;
-	Mon, 15 Feb 2021 12:43:34 +0000 (UTC)
+	with ESMTP id KSCdVmck1JqU for <containers@archiver.kernel.org>;
+	Mon, 15 Feb 2021 15:09:46 +0000 (UTC)
 Received: by smtp3.osuosl.org (Postfix, from userid 1001)
-	id 3AACC6F57E; Mon, 15 Feb 2021 12:43:34 +0000 (UTC)
+	id C4E2F6F496; Mon, 15 Feb 2021 15:09:46 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by smtp3.osuosl.org (Postfix) with ESMTP id 540876F4B9;
-	Mon, 15 Feb 2021 12:42:51 +0000 (UTC)
+	by smtp3.osuosl.org (Postfix) with ESMTP id 13006600C6;
+	Mon, 15 Feb 2021 15:09:44 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id F4234C1834;
-	Mon, 15 Feb 2021 12:42:50 +0000 (UTC)
-Received: from smtp3.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 705C7C013A
+	by lists.linuxfoundation.org (Postfix) with ESMTP id E07E2C0174;
+	Mon, 15 Feb 2021 15:09:43 +0000 (UTC)
+Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 99155C013A
  for <containers@lists.linux-foundation.org>;
- Mon, 15 Feb 2021 12:42:49 +0000 (UTC)
+ Mon, 15 Feb 2021 15:09:42 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by smtp3.osuosl.org (Postfix) with ESMTP id 42B626F522
+ by hemlock.osuosl.org (Postfix) with ESMTP id 80C2F87146
  for <containers@lists.linux-foundation.org>;
- Mon, 15 Feb 2021 12:42:49 +0000 (UTC)
+ Mon, 15 Feb 2021 15:09:42 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from smtp3.osuosl.org ([127.0.0.1])
- by localhost (smtp3.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id vBYWI1WiWweM
+Received: from hemlock.osuosl.org ([127.0.0.1])
+ by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id qG7mG1Gxj6Wg
  for <containers@lists.linux-foundation.org>;
- Mon, 15 Feb 2021 12:42:47 +0000 (UTC)
-Received: by smtp3.osuosl.org (Postfix, from userid 1001)
- id 41C266F503; Mon, 15 Feb 2021 12:42:47 +0000 (UTC)
-X-Greylist: from auto-whitelisted by SQLgrey-1.8.0
-Received: from raptor.unsafe.ru (raptor.unsafe.ru [5.9.43.93])
- by smtp3.osuosl.org (Postfix) with ESMTP id 0058F6F482
+ Mon, 15 Feb 2021 15:09:41 +0000 (UTC)
+X-Greylist: domain auto-whitelisted by SQLgrey-1.7.6
+Received: from mga09.intel.com (mga09.intel.com [134.134.136.24])
+ by hemlock.osuosl.org (Postfix) with ESMTPS id 53CED87143
  for <containers@lists.linux-foundation.org>;
- Mon, 15 Feb 2021 12:42:43 +0000 (UTC)
-Received: from comp-core-i7-2640m-0182e6.redhat.com
- (ip-94-113-225-162.net.upcbroadband.cz [94.113.225.162])
- (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
- (No client certificate requested)
- by raptor.unsafe.ru (Postfix) with ESMTPSA id 2B2E420A19;
- Mon, 15 Feb 2021 12:42:42 +0000 (UTC)
-From: Alexey Gladkov <gladkov.alexey@gmail.com>
-To: LKML <linux-kernel@vger.kernel.org>, io-uring@vger.kernel.org,
+ Mon, 15 Feb 2021 15:09:41 +0000 (UTC)
+IronPort-SDR: UhUF93+uxsmK9ZwaSo2dDrRXSK5P6s9hOQffRMnXjgGb9fNk38PrtMa2iqx+OWYba6WA8Cc7vE
+ myZRnMj/esEA==
+X-IronPort-AV: E=McAfee;i="6000,8403,9896"; a="182832460"
+X-IronPort-AV: E=Sophos;i="5.81,180,1610438400"; 
+ d="gz'50?scan'50,208,50";a="182832460"
+Received: from orsmga004.jf.intel.com ([10.7.209.38])
+ by orsmga102.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384;
+ 15 Feb 2021 07:09:40 -0800
+IronPort-SDR: D9oQpDO9392vOPOw7f+TIHXnqGyjYHncrSPR9S/01eWEQc2nUhCJZI2y6MG1G+O34Z318SEHub
+ eVIM7YmtN1WQ==
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="5.81,180,1610438400"; 
+ d="gz'50?scan'50,208,50";a="512228299"
+Received: from lkp-server02.sh.intel.com (HELO cd560a204411) ([10.239.97.151])
+ by orsmga004.jf.intel.com with ESMTP; 15 Feb 2021 07:09:37 -0800
+Received: from kbuild by cd560a204411 with local (Exim 4.92)
+ (envelope-from <lkp@intel.com>)
+ id 1lBfVI-0007Mj-JQ; Mon, 15 Feb 2021 15:09:36 +0000
+Date: Mon, 15 Feb 2021 23:09:10 +0800
+From: kernel test robot <lkp@intel.com>
+To: Alexey Gladkov <gladkov.alexey@gmail.com>,
+ LKML <linux-kernel@vger.kernel.org>, io-uring@vger.kernel.org,
  Kernel Hardening <kernel-hardening@lists.openwall.com>,
  Linux Containers <containers@lists.linux-foundation.org>,
  linux-mm@kvack.org
-Subject: [PATCH v6 3/7] Reimplement RLIMIT_NPROC on top of ucounts
-Date: Mon, 15 Feb 2021 13:41:10 +0100
-Message-Id: <72fdcd154bec7e0dfad090f1af65ddac1e767451.1613392826.git.gladkov.alexey@gmail.com>
-X-Mailer: git-send-email 2.29.2
-In-Reply-To: <cover.1613392826.git.gladkov.alexey@gmail.com>
-References: <cover.1613392826.git.gladkov.alexey@gmail.com>
+Subject: Re: [PATCH v6 6/7] Reimplement RLIMIT_MEMLOCK on top of ucounts
+Message-ID: <202102152322.HTmdsPl3-lkp@intel.com>
+References: <04cdc5d6da93511c0493612581b319b2255ea3d6.1613392826.git.gladkov.alexey@gmail.com>
 MIME-Version: 1.0
-X-Greylist: Sender succeeded SMTP AUTH, not delayed by milter-greylist-4.6.1
- (raptor.unsafe.ru [5.9.43.93]); Mon, 15 Feb 2021 12:42:42 +0000 (UTC)
-Cc: Jens Axboe <axboe@kernel.dk>, Kees Cook <keescook@chromium.org>,
- Jann Horn <jannh@google.com>, Linus Torvalds <torvalds@linux-foundation.org>,
- Oleg Nesterov <oleg@redhat.com>, "Eric W . Biederman" <ebiederm@xmission.com>,
+Content-Type: multipart/mixed; boundary="dDRMvlgZJXvWKvBx"
+Content-Disposition: inline
+In-Reply-To: <04cdc5d6da93511c0493612581b319b2255ea3d6.1613392826.git.gladkov.alexey@gmail.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
+Cc: kbuild-all@lists.01.org, Linux Memory Management List <linux-mm@kvack.org>,
+ "Eric W . Biederman" <ebiederm@xmission.com>,
  Andrew Morton <akpm@linux-foundation.org>, Alexey Gladkov <legion@kernel.org>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
@@ -90,477 +99,400 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-The rlimit counter is tied to uid in the user_namespace. This allows
-rlimit values to be specified in userns even if they are already
-globally exceeded by the user. However, the value of the previous
-user_namespaces cannot be exceeded.
 
-To illustrate the impact of rlimits, let's say there is a program that
-does not fork. Some service-A wants to run this program as user X in
-multiple containers. Since the program never fork the service wants to
-set RLIMIT_NPROC=1.
+--dDRMvlgZJXvWKvBx
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-service-A
- \- program (uid=1000, container1, rlimit_nproc=1)
- \- program (uid=1000, container2, rlimit_nproc=1)
+Hi Alexey,
 
-The service-A sets RLIMIT_NPROC=1 and runs the program in container1.
-When the service-A tries to run a program with RLIMIT_NPROC=1 in
-container2 it fails since user X already has one running process.
+Thank you for the patch! Yet something to improve:
 
-We cannot use existing inc_ucounts / dec_ucounts because they do not
-allow us to exceed the maximum for the counter. Some rlimits can be
-overlimited by root or if the user has the appropriate capability.
+[auto build test ERROR on kselftest/next]
+[also build test ERROR on linux/master linus/master v5.11 next-20210212]
+[cannot apply to hnaz-linux-mm/master]
+[If your patch is applied to the wrong git tree, kindly drop us a note.
+And when submitting patch, we suggest to use '--base' as documented in
+https://git-scm.com/docs/git-format-patch]
 
-Signed-off-by: Alexey Gladkov <gladkov.alexey@gmail.com>
+url:    https://github.com/0day-ci/linux/commits/Alexey-Gladkov/Count-rlimits-in-each-user-namespace/20210215-204524
+base:   https://git.kernel.org/pub/scm/linux/kernel/git/shuah/linux-kselftest.git next
+config: xtensa-common_defconfig (attached as .config)
+compiler: xtensa-linux-gcc (GCC) 9.3.0
+reproduce (this is a W=1 build):
+        wget https://raw.githubusercontent.com/intel/lkp-tests/master/sbin/make.cross -O ~/bin/make.cross
+        chmod +x ~/bin/make.cross
+        # https://github.com/0day-ci/linux/commit/f009495a8def89a71b9e0b9025a39379d6f9097d
+        git remote add linux-review https://github.com/0day-ci/linux
+        git fetch --no-tags linux-review Alexey-Gladkov/Count-rlimits-in-each-user-namespace/20210215-204524
+        git checkout f009495a8def89a71b9e0b9025a39379d6f9097d
+        # save the attached .config to linux build tree
+        COMPILER_INSTALL_PATH=$HOME/0day COMPILER=gcc-9.3.0 make.cross ARCH=xtensa 
+
+If you fix the issue, kindly add following tag as appropriate
+Reported-by: kernel test robot <lkp@intel.com>
+
+All errors (new ones prefixed by >>):
+
+   ipc/shm.c: In function 'newseg':
+>> ipc/shm.c:653:5: error: passing argument 4 of 'hugetlb_file_setup' from incompatible pointer type [-Werror=incompatible-pointer-types]
+     653 |     &shp->mlock_cred, HUGETLB_SHMFS_INODE,
+         |     ^~~~~~~~~~~~~~~~
+         |     |
+         |     const struct cred **
+   In file included from ipc/shm.c:30:
+   include/linux/hugetlb.h:457:17: note: expected 'struct cred **' but argument is of type 'const struct cred **'
+     457 |   struct cred **cred, int creat_flags,
+         |   ~~~~~~~~~~~~~~^~~~
+   cc1: some warnings being treated as errors
+
+
+vim +/hugetlb_file_setup +653 ipc/shm.c
+
+   592	
+   593	/**
+   594	 * newseg - Create a new shared memory segment
+   595	 * @ns: namespace
+   596	 * @params: ptr to the structure that contains key, size and shmflg
+   597	 *
+   598	 * Called with shm_ids.rwsem held as a writer.
+   599	 */
+   600	static int newseg(struct ipc_namespace *ns, struct ipc_params *params)
+   601	{
+   602		key_t key = params->key;
+   603		int shmflg = params->flg;
+   604		size_t size = params->u.size;
+   605		int error;
+   606		struct shmid_kernel *shp;
+   607		size_t numpages = (size + PAGE_SIZE - 1) >> PAGE_SHIFT;
+   608		struct file *file;
+   609		char name[13];
+   610		vm_flags_t acctflag = 0;
+   611	
+   612		if (size < SHMMIN || size > ns->shm_ctlmax)
+   613			return -EINVAL;
+   614	
+   615		if (numpages << PAGE_SHIFT < size)
+   616			return -ENOSPC;
+   617	
+   618		if (ns->shm_tot + numpages < ns->shm_tot ||
+   619				ns->shm_tot + numpages > ns->shm_ctlall)
+   620			return -ENOSPC;
+   621	
+   622		shp = kvmalloc(sizeof(*shp), GFP_KERNEL);
+   623		if (unlikely(!shp))
+   624			return -ENOMEM;
+   625	
+   626		shp->shm_perm.key = key;
+   627		shp->shm_perm.mode = (shmflg & S_IRWXUGO);
+   628		shp->mlock_cred = NULL;
+   629	
+   630		shp->shm_perm.security = NULL;
+   631		error = security_shm_alloc(&shp->shm_perm);
+   632		if (error) {
+   633			kvfree(shp);
+   634			return error;
+   635		}
+   636	
+   637		sprintf(name, "SYSV%08x", key);
+   638		if (shmflg & SHM_HUGETLB) {
+   639			struct hstate *hs;
+   640			size_t hugesize;
+   641	
+   642			hs = hstate_sizelog((shmflg >> SHM_HUGE_SHIFT) & SHM_HUGE_MASK);
+   643			if (!hs) {
+   644				error = -EINVAL;
+   645				goto no_file;
+   646			}
+   647			hugesize = ALIGN(size, huge_page_size(hs));
+   648	
+   649			/* hugetlb_file_setup applies strict accounting */
+   650			if (shmflg & SHM_NORESERVE)
+   651				acctflag = VM_NORESERVE;
+   652			file = hugetlb_file_setup(name, hugesize, acctflag,
+ > 653					&shp->mlock_cred, HUGETLB_SHMFS_INODE,
+   654					(shmflg >> SHM_HUGE_SHIFT) & SHM_HUGE_MASK);
+   655		} else {
+   656			/*
+   657			 * Do not allow no accounting for OVERCOMMIT_NEVER, even
+   658			 * if it's asked for.
+   659			 */
+   660			if  ((shmflg & SHM_NORESERVE) &&
+   661					sysctl_overcommit_memory != OVERCOMMIT_NEVER)
+   662				acctflag = VM_NORESERVE;
+   663			file = shmem_kernel_file_setup(name, size, acctflag);
+   664		}
+   665		error = PTR_ERR(file);
+   666		if (IS_ERR(file)) {
+   667			shp->mlock_cred = NULL;
+   668			goto no_file;
+   669		}
+   670	
+   671		shp->shm_cprid = get_pid(task_tgid(current));
+   672		shp->shm_lprid = NULL;
+   673		shp->shm_atim = shp->shm_dtim = 0;
+   674		shp->shm_ctim = ktime_get_real_seconds();
+   675		shp->shm_segsz = size;
+   676		shp->shm_nattch = 0;
+   677		shp->shm_file = file;
+   678		shp->shm_creator = current;
+   679	
+   680		/* ipc_addid() locks shp upon success. */
+   681		error = ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni);
+   682		if (error < 0)
+   683			goto no_id;
+   684	
+   685		list_add(&shp->shm_clist, &current->sysvshm.shm_clist);
+   686	
+   687		/*
+   688		 * shmid gets reported as "inode#" in /proc/pid/maps.
+   689		 * proc-ps tools use this. Changing this will break them.
+   690		 */
+   691		file_inode(file)->i_ino = shp->shm_perm.id;
+   692	
+   693		ns->shm_tot += numpages;
+   694		error = shp->shm_perm.id;
+   695	
+   696		ipc_unlock_object(&shp->shm_perm);
+   697		rcu_read_unlock();
+   698		return error;
+   699	
+   700	no_id:
+   701		ipc_update_pid(&shp->shm_cprid, NULL);
+   702		ipc_update_pid(&shp->shm_lprid, NULL);
+   703		if (is_file_hugepages(file) && shp->mlock_cred)
+   704			user_shm_unlock(size, shp->mlock_cred);
+   705		fput(file);
+   706		ipc_rcu_putref(&shp->shm_perm, shm_rcu_free);
+   707		return error;
+   708	no_file:
+   709		call_rcu(&shp->shm_perm.rcu, shm_rcu_free);
+   710		return error;
+   711	}
+   712	
+
 ---
- fs/exec.c                      |  2 +-
- fs/io-wq.c                     | 22 ++++++------
- fs/io-wq.h                     |  2 +-
- fs/io_uring.c                  |  2 +-
- include/linux/cred.h           |  2 ++
- include/linux/sched/user.h     |  1 -
- include/linux/user_namespace.h | 13 ++++++++
- kernel/cred.c                  | 10 +++---
- kernel/exit.c                  |  2 +-
- kernel/fork.c                  |  9 ++---
- kernel/sys.c                   |  2 +-
- kernel/ucount.c                | 61 ++++++++++++++++++++++++++++++++++
- kernel/user.c                  |  1 -
- kernel/user_namespace.c        |  3 +-
- 14 files changed, 103 insertions(+), 29 deletions(-)
+0-DAY CI Kernel Test Service, Intel Corporation
+https://lists.01.org/hyperkitty/list/kbuild-all@lists.01.org
 
-diff --git a/fs/exec.c b/fs/exec.c
-index 0371a3400be5..e6d7f186f33c 100644
---- a/fs/exec.c
-+++ b/fs/exec.c
-@@ -1874,7 +1874,7 @@ static int do_execveat_common(int fd, struct filename *filename,
- 	 * whether NPROC limit is still exceeded.
- 	 */
- 	if ((current->flags & PF_NPROC_EXCEEDED) &&
--	    atomic_read(&current_user()->processes) > rlimit(RLIMIT_NPROC)) {
-+	    is_ucounts_overlimit(current_ucounts(), UCOUNT_RLIMIT_NPROC, rlimit(RLIMIT_NPROC))) {
- 		retval = -EAGAIN;
- 		goto out_ret;
- 	}
-diff --git a/fs/io-wq.c b/fs/io-wq.c
-index a564f36e260c..5b6940c90c61 100644
---- a/fs/io-wq.c
-+++ b/fs/io-wq.c
-@@ -20,6 +20,7 @@
- #include <linux/blk-cgroup.h>
- #include <linux/audit.h>
- #include <linux/cpu.h>
-+#include <linux/user_namespace.h>
- 
- #include "../kernel/sched/sched.h"
- #include "io-wq.h"
-@@ -120,7 +121,7 @@ struct io_wq {
- 	io_wq_work_fn *do_work;
- 
- 	struct task_struct *manager;
--	struct user_struct *user;
-+	const struct cred *cred;
- 	refcount_t refs;
- 	struct completion done;
- 
-@@ -234,7 +235,7 @@ static void io_worker_exit(struct io_worker *worker)
- 	if (worker->flags & IO_WORKER_F_RUNNING)
- 		atomic_dec(&acct->nr_running);
- 	if (!(worker->flags & IO_WORKER_F_BOUND))
--		atomic_dec(&wqe->wq->user->processes);
-+		dec_rlimit_ucounts(wqe->wq->cred->ucounts, UCOUNT_RLIMIT_NPROC, 1);
- 	worker->flags = 0;
- 	preempt_enable();
- 
-@@ -364,15 +365,15 @@ static void __io_worker_busy(struct io_wqe *wqe, struct io_worker *worker,
- 			worker->flags |= IO_WORKER_F_BOUND;
- 			wqe->acct[IO_WQ_ACCT_UNBOUND].nr_workers--;
- 			wqe->acct[IO_WQ_ACCT_BOUND].nr_workers++;
--			atomic_dec(&wqe->wq->user->processes);
-+			dec_rlimit_ucounts(wqe->wq->cred->ucounts, UCOUNT_RLIMIT_NPROC, 1);
- 		} else {
- 			worker->flags &= ~IO_WORKER_F_BOUND;
- 			wqe->acct[IO_WQ_ACCT_UNBOUND].nr_workers++;
- 			wqe->acct[IO_WQ_ACCT_BOUND].nr_workers--;
--			atomic_inc(&wqe->wq->user->processes);
-+			inc_rlimit_ucounts(wqe->wq->cred->ucounts, UCOUNT_RLIMIT_NPROC, 1);
- 		}
- 		io_wqe_inc_running(wqe, worker);
--	 }
-+	}
- }
- 
- /*
-@@ -707,7 +708,7 @@ static bool create_io_worker(struct io_wq *wq, struct io_wqe *wqe, int index)
- 	raw_spin_unlock_irq(&wqe->lock);
- 
- 	if (index == IO_WQ_ACCT_UNBOUND)
--		atomic_inc(&wq->user->processes);
-+		inc_rlimit_ucounts(wq->cred->ucounts, UCOUNT_RLIMIT_NPROC, 1);
- 
- 	refcount_inc(&wq->refs);
- 	wake_up_process(worker->task);
-@@ -838,7 +839,7 @@ static bool io_wq_can_queue(struct io_wqe *wqe, struct io_wqe_acct *acct,
- 	if (free_worker)
- 		return true;
- 
--	if (atomic_read(&wqe->wq->user->processes) >= acct->max_workers &&
-+	if (is_ucounts_overlimit(wqe->wq->cred->ucounts, UCOUNT_RLIMIT_NPROC, acct->max_workers) &&
- 	    !(capable(CAP_SYS_RESOURCE) || capable(CAP_SYS_ADMIN)))
- 		return false;
- 
-@@ -1074,7 +1075,7 @@ struct io_wq *io_wq_create(unsigned bounded, struct io_wq_data *data)
- 	wq->do_work = data->do_work;
- 
- 	/* caller must already hold a reference to this */
--	wq->user = data->user;
-+	wq->cred = data->cred;
- 
- 	ret = -ENOMEM;
- 	for_each_node(node) {
-@@ -1090,10 +1091,7 @@ struct io_wq *io_wq_create(unsigned bounded, struct io_wq_data *data)
- 		wqe->node = alloc_node;
- 		wqe->acct[IO_WQ_ACCT_BOUND].max_workers = bounded;
- 		atomic_set(&wqe->acct[IO_WQ_ACCT_BOUND].nr_running, 0);
--		if (wq->user) {
--			wqe->acct[IO_WQ_ACCT_UNBOUND].max_workers =
--					task_rlimit(current, RLIMIT_NPROC);
--		}
-+		wqe->acct[IO_WQ_ACCT_UNBOUND].max_workers = task_rlimit(current, RLIMIT_NPROC);
- 		atomic_set(&wqe->acct[IO_WQ_ACCT_UNBOUND].nr_running, 0);
- 		wqe->wq = wq;
- 		raw_spin_lock_init(&wqe->lock);
-diff --git a/fs/io-wq.h b/fs/io-wq.h
-index b158f8addcf3..4130e247c556 100644
---- a/fs/io-wq.h
-+++ b/fs/io-wq.h
-@@ -111,7 +111,7 @@ typedef void (free_work_fn)(struct io_wq_work *);
- typedef struct io_wq_work *(io_wq_work_fn)(struct io_wq_work *);
- 
- struct io_wq_data {
--	struct user_struct *user;
-+	const struct cred *cred;
- 
- 	io_wq_work_fn *do_work;
- 	free_work_fn *free_work;
-diff --git a/fs/io_uring.c b/fs/io_uring.c
-index 931671082e61..389998f39843 100644
---- a/fs/io_uring.c
-+++ b/fs/io_uring.c
-@@ -8084,7 +8084,7 @@ static int io_init_wq_offload(struct io_ring_ctx *ctx,
- 	unsigned int concurrency;
- 	int ret = 0;
- 
--	data.user = ctx->user;
-+	data.cred = ctx->creds;
- 	data.free_work = io_free_work;
- 	data.do_work = io_wq_submit_work;
- 
-diff --git a/include/linux/cred.h b/include/linux/cred.h
-index ad160e5fe5c6..8025fe48198f 100644
---- a/include/linux/cred.h
-+++ b/include/linux/cred.h
-@@ -372,6 +372,7 @@ static inline void put_cred(const struct cred *_cred)
- 
- #define task_uid(task)		(task_cred_xxx((task), uid))
- #define task_euid(task)		(task_cred_xxx((task), euid))
-+#define task_ucounts(task)	(task_cred_xxx((task), ucounts))
- 
- #define current_cred_xxx(xxx)			\
- ({						\
-@@ -388,6 +389,7 @@ static inline void put_cred(const struct cred *_cred)
- #define current_fsgid() 	(current_cred_xxx(fsgid))
- #define current_cap()		(current_cred_xxx(cap_effective))
- #define current_user()		(current_cred_xxx(user))
-+#define current_ucounts()	(current_cred_xxx(ucounts))
- 
- extern struct user_namespace init_user_ns;
- #ifdef CONFIG_USER_NS
-diff --git a/include/linux/sched/user.h b/include/linux/sched/user.h
-index a8ec3b6093fc..d33d867ad6c1 100644
---- a/include/linux/sched/user.h
-+++ b/include/linux/sched/user.h
-@@ -12,7 +12,6 @@
-  */
- struct user_struct {
- 	refcount_t __count;	/* reference count */
--	atomic_t processes;	/* How many processes does this user have? */
- 	atomic_t sigpending;	/* How many pending signals does this user have? */
- #ifdef CONFIG_FANOTIFY
- 	atomic_t fanotify_listeners;
-diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index f71b5a4a3e74..0a27cd049404 100644
---- a/include/linux/user_namespace.h
-+++ b/include/linux/user_namespace.h
-@@ -50,9 +50,12 @@ enum ucount_type {
- 	UCOUNT_INOTIFY_INSTANCES,
- 	UCOUNT_INOTIFY_WATCHES,
- #endif
-+	UCOUNT_RLIMIT_NPROC,
- 	UCOUNT_COUNTS,
- };
- 
-+#define MAX_PER_NAMESPACE_UCOUNTS UCOUNT_RLIMIT_NPROC
-+
- struct user_namespace {
- 	struct uid_gid_map	uid_map;
- 	struct uid_gid_map	gid_map;
-@@ -107,6 +110,16 @@ struct ucounts *alloc_ucounts(struct user_namespace *ns, kuid_t uid);
- struct ucounts *get_ucounts(struct ucounts *ucounts);
- void put_ucounts(struct ucounts *ucounts);
- 
-+static inline long get_ucounts_value(struct ucounts *ucounts, enum ucount_type type)
-+{
-+	return atomic_long_read(&ucounts->ucount[type]);
-+}
-+
-+bool inc_rlimit_ucounts(struct ucounts *ucounts, enum ucount_type type, long v);
-+bool inc_rlimit_ucounts_and_test(struct ucounts *ucounts, enum ucount_type type, long v, long max);
-+void dec_rlimit_ucounts(struct ucounts *ucounts, enum ucount_type type, long v);
-+bool is_ucounts_overlimit(struct ucounts *ucounts, enum ucount_type type, long max);
-+
- #ifdef CONFIG_USER_NS
- 
- static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
-diff --git a/kernel/cred.c b/kernel/cred.c
-index 58a8a9e24347..dcfa30b337c5 100644
---- a/kernel/cred.c
-+++ b/kernel/cred.c
-@@ -360,7 +360,7 @@ int copy_creds(struct task_struct *p, unsigned long clone_flags)
- 		kdebug("share_creds(%p{%d,%d})",
- 		       p->cred, atomic_read(&p->cred->usage),
- 		       read_cred_subscribers(p->cred));
--		atomic_inc(&p->cred->user->processes);
-+		inc_rlimit_ucounts(task_ucounts(p), UCOUNT_RLIMIT_NPROC, 1);
- 		return 0;
- 	}
- 
-@@ -395,8 +395,8 @@ int copy_creds(struct task_struct *p, unsigned long clone_flags)
- 	}
- #endif
- 
--	atomic_inc(&new->user->processes);
- 	p->cred = p->real_cred = get_cred(new);
-+	inc_rlimit_ucounts(task_ucounts(p), UCOUNT_RLIMIT_NPROC, 1);
- 	alter_cred_subscribers(new, 2);
- 	validate_creds(new);
- 	return 0;
-@@ -496,12 +496,12 @@ int commit_creds(struct cred *new)
- 	 * in set_user().
- 	 */
- 	alter_cred_subscribers(new, 2);
--	if (new->user != old->user)
--		atomic_inc(&new->user->processes);
-+	if (new->user != old->user || new->user_ns != old->user_ns)
-+		inc_rlimit_ucounts(new->ucounts, UCOUNT_RLIMIT_NPROC, 1);
- 	rcu_assign_pointer(task->real_cred, new);
- 	rcu_assign_pointer(task->cred, new);
- 	if (new->user != old->user)
--		atomic_dec(&old->user->processes);
-+		dec_rlimit_ucounts(old->ucounts, UCOUNT_RLIMIT_NPROC, 1);
- 	alter_cred_subscribers(old, -2);
- 
- 	/* send notifications */
-diff --git a/kernel/exit.c b/kernel/exit.c
-index 04029e35e69a..61c0fe902b50 100644
---- a/kernel/exit.c
-+++ b/kernel/exit.c
-@@ -188,7 +188,7 @@ void release_task(struct task_struct *p)
- 	/* don't need to get the RCU readlock here - the process is dead and
- 	 * can't be modifying its own credentials. But shut RCU-lockdep up */
- 	rcu_read_lock();
--	atomic_dec(&__task_cred(p)->user->processes);
-+	dec_rlimit_ucounts(task_ucounts(p), UCOUNT_RLIMIT_NPROC, 1);
- 	rcu_read_unlock();
- 
- 	cgroup_release(p);
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 40a5da7d3d70..812b023ecdce 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -819,9 +819,11 @@ void __init fork_init(void)
- 	init_task.signal->rlim[RLIMIT_SIGPENDING] =
- 		init_task.signal->rlim[RLIMIT_NPROC];
- 
--	for (i = 0; i < UCOUNT_COUNTS; i++)
-+	for (i = 0; i < MAX_PER_NAMESPACE_UCOUNTS; i++)
- 		init_user_ns.ucount_max[i] = max_threads/2;
- 
-+	init_user_ns.ucount_max[UCOUNT_RLIMIT_NPROC] = task_rlimit(&init_task, RLIMIT_NPROC);
-+
- #ifdef CONFIG_VMAP_STACK
- 	cpuhp_setup_state(CPUHP_BP_PREPARE_DYN, "fork:vm_stack_cache",
- 			  NULL, free_vm_stack_cache);
-@@ -1962,8 +1964,7 @@ static __latent_entropy struct task_struct *copy_process(
- 	DEBUG_LOCKS_WARN_ON(!p->softirqs_enabled);
- #endif
- 	retval = -EAGAIN;
--	if (atomic_read(&p->real_cred->user->processes) >=
--			task_rlimit(p, RLIMIT_NPROC)) {
-+	if (is_ucounts_overlimit(task_ucounts(p), UCOUNT_RLIMIT_NPROC, rlimit(RLIMIT_NPROC))) {
- 		if (p->real_cred->user != INIT_USER &&
- 		    !capable(CAP_SYS_RESOURCE) && !capable(CAP_SYS_ADMIN))
- 			goto bad_fork_free;
-@@ -2366,7 +2367,7 @@ static __latent_entropy struct task_struct *copy_process(
- #endif
- 	delayacct_tsk_free(p);
- bad_fork_cleanup_count:
--	atomic_dec(&p->cred->user->processes);
-+	dec_rlimit_ucounts(task_ucounts(p), UCOUNT_RLIMIT_NPROC, 1);
- 	exit_creds(p);
- bad_fork_free:
- 	p->state = TASK_DEAD;
-diff --git a/kernel/sys.c b/kernel/sys.c
-index 373def7debe8..304b6b5e5942 100644
---- a/kernel/sys.c
-+++ b/kernel/sys.c
-@@ -474,7 +474,7 @@ static int set_user(struct cred *new)
- 	 * for programs doing set*uid()+execve() by harmlessly deferring the
- 	 * failure to the execve() stage.
- 	 */
--	if (atomic_read(&new_user->processes) >= rlimit(RLIMIT_NPROC) &&
-+	if (is_ucounts_overlimit(new->ucounts, UCOUNT_RLIMIT_NPROC, rlimit(RLIMIT_NPROC)) &&
- 			new_user != INIT_USER)
- 		current->flags |= PF_NPROC_EXCEEDED;
- 	else
-diff --git a/kernel/ucount.c b/kernel/ucount.c
-index 50cc1dfb7d28..2f42d2ee6e27 100644
---- a/kernel/ucount.c
-+++ b/kernel/ucount.c
-@@ -7,6 +7,7 @@
- #include <linux/hash.h>
- #include <linux/kmemleak.h>
- #include <linux/user_namespace.h>
-+#include <linux/security.h>
- 
- struct ucounts init_ucounts = {
- 	.ns    = &init_user_ns,
-@@ -80,6 +81,7 @@ static struct ctl_table user_table[] = {
- 	UCOUNT_ENTRY("max_inotify_instances"),
- 	UCOUNT_ENTRY("max_inotify_watches"),
- #endif
-+	{ },
- 	{ }
- };
- #endif /* CONFIG_SYSCTL */
-@@ -222,6 +224,19 @@ static inline bool atomic_long_inc_below(atomic_long_t *v, int u)
- 	}
- }
- 
-+static inline long atomic_long_dec_value(atomic_long_t *v, long n)
-+{
-+	long c, old;
-+	c = atomic_long_read(v);
-+	for (;;) {
-+		old = atomic_long_cmpxchg(v, c, c - n);
-+		if (likely(old == c))
-+			return c;
-+		c = old;
-+	}
-+	return c;
-+}
-+
- struct ucounts *inc_ucount(struct user_namespace *ns, kuid_t uid,
- 			   enum ucount_type type)
- {
-@@ -255,6 +270,51 @@ void dec_ucount(struct ucounts *ucounts, enum ucount_type type)
- 	put_ucounts(ucounts);
- }
- 
-+bool inc_rlimit_ucounts(struct ucounts *ucounts, enum ucount_type type, long v)
-+{
-+	struct ucounts *iter;
-+	bool overlimit = false;
-+
-+	for (iter = ucounts; iter; iter = iter->ns->ucounts) {
-+		long max = READ_ONCE(iter->ns->ucount_max[type]);
-+		if (atomic_long_add_return(v, &iter->ucount[type]) > max)
-+			overlimit = true;
-+	}
-+
-+	return overlimit;
-+}
-+
-+bool inc_rlimit_ucounts_and_test(struct ucounts *ucounts, enum ucount_type type,
-+		long v, long max)
-+{
-+	bool overlimit = inc_rlimit_ucounts(ucounts, type, v);
-+	if (!overlimit && get_ucounts_value(ucounts, type) > max)
-+		overlimit = true;
-+	return overlimit;
-+}
-+
-+void dec_rlimit_ucounts(struct ucounts *ucounts, enum ucount_type type, long v)
-+{
-+	struct ucounts *iter;
-+	for (iter = ucounts; iter; iter = iter->ns->ucounts) {
-+		long dec = atomic_long_dec_value(&iter->ucount[type], v);
-+		WARN_ON_ONCE(dec < 0);
-+	}
-+}
-+
-+bool is_ucounts_overlimit(struct ucounts *ucounts, enum ucount_type type, long max)
-+{
-+	struct ucounts *iter;
-+	if (get_ucounts_value(ucounts, type) > max)
-+		return true;
-+	for (iter = ucounts; iter; iter = iter->ns->ucounts) {
-+		max = READ_ONCE(iter->ns->ucount_max[type]);
-+		if (get_ucounts_value(iter, type) > max)
-+			return true;
-+	}
-+	return false;
-+}
-+
- static __init int user_namespace_sysctl_init(void)
- {
- #ifdef CONFIG_SYSCTL
-@@ -271,6 +331,7 @@ static __init int user_namespace_sysctl_init(void)
- 	BUG_ON(!setup_userns_sysctls(&init_user_ns));
- #endif
- 	hlist_add_ucounts(&init_ucounts);
-+	inc_rlimit_ucounts(&init_ucounts, UCOUNT_RLIMIT_NPROC, 1);
- 	return 0;
- }
- subsys_initcall(user_namespace_sysctl_init);
-diff --git a/kernel/user.c b/kernel/user.c
-index a2478cddf536..7f5ff498207a 100644
---- a/kernel/user.c
-+++ b/kernel/user.c
-@@ -98,7 +98,6 @@ static DEFINE_SPINLOCK(uidhash_lock);
- /* root_user.__count is 1, for init task cred */
- struct user_struct root_user = {
- 	.__count	= REFCOUNT_INIT(1),
--	.processes	= ATOMIC_INIT(1),
- 	.sigpending	= ATOMIC_INIT(0),
- 	.locked_shm     = 0,
- 	.uid		= GLOBAL_ROOT_UID,
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 516db53166ab..2434b13b02e5 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -118,9 +118,10 @@ int create_user_ns(struct cred *new)
- 	ns->owner = owner;
- 	ns->group = group;
- 	INIT_WORK(&ns->work, free_user_ns);
--	for (i = 0; i < UCOUNT_COUNTS; i++) {
-+	for (i = 0; i < MAX_PER_NAMESPACE_UCOUNTS; i++) {
- 		ns->ucount_max[i] = INT_MAX;
- 	}
-+	ns->ucount_max[UCOUNT_RLIMIT_NPROC] = rlimit(RLIMIT_NPROC);
- 	ns->ucounts = ucounts;
- 
- 	/* Inherit USERNS_SETGROUPS_ALLOWED from our parent */
--- 
-2.29.2
+--dDRMvlgZJXvWKvBx
+Content-Type: application/gzip
+Content-Disposition: attachment; filename=".config.gz"
+Content-Transfer-Encoding: base64
+
+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
+BGcKPxI1hcHtvHcLaGzo/wPiRAJv66cAAA==
+
+--dDRMvlgZJXvWKvBx
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
+--dDRMvlgZJXvWKvBx--
