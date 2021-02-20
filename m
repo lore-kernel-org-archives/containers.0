@@ -2,95 +2,94 @@ Return-Path: <SRS0=3V/s=HW=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-21.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+X-Spam-Status: No, score=-16.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D6405C433DB
-	for <containers@archiver.kernel.org>; Sat, 20 Feb 2021 09:12:50 +0000 (UTC)
-Received: from hemlock.osuosl.org (smtp2.osuosl.org [140.211.166.133])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D67DDC433E0
+	for <containers@archiver.kernel.org>; Sat, 20 Feb 2021 09:13:26 +0000 (UTC)
+Received: from fraxinus.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 6CE2E64ED6
-	for <containers@archiver.kernel.org>; Sat, 20 Feb 2021 09:12:50 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6CE2E64ED6
+	by mail.kernel.org (Postfix) with ESMTPS id 8146964ED6
+	for <containers@archiver.kernel.org>; Sat, 20 Feb 2021 09:13:26 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8146964ED6
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=sargun.me
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 483C487593;
-	Sat, 20 Feb 2021 09:12:50 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 666B486CB5;
+	Sat, 20 Feb 2021 09:13:26 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from hemlock.osuosl.org ([127.0.0.1])
+Received: from fraxinus.osuosl.org ([127.0.0.1])
 	by localhost (.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id VFjucC6QvykX; Sat, 20 Feb 2021 09:12:49 +0000 (UTC)
+	with ESMTP id nW5_NS4G10Ix; Sat, 20 Feb 2021 09:13:25 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by hemlock.osuosl.org (Postfix) with ESMTP id 6E37687584;
-	Sat, 20 Feb 2021 09:12:49 +0000 (UTC)
+	by fraxinus.osuosl.org (Postfix) with ESMTP id 94EFC86CAF;
+	Sat, 20 Feb 2021 09:13:25 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 4F1FBC000A;
-	Sat, 20 Feb 2021 09:12:49 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 7CBE9C000A;
+	Sat, 20 Feb 2021 09:13:25 +0000 (UTC)
 Received: from smtp3.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 54971C0001
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 70EC7C0001
  for <containers@lists.linux-foundation.org>;
- Sat, 20 Feb 2021 09:12:48 +0000 (UTC)
+ Sat, 20 Feb 2021 09:13:24 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by smtp3.osuosl.org (Postfix) with ESMTP id 26D2A6F652
+ by smtp3.osuosl.org (Postfix) with ESMTP id 4A3B46F65F
  for <containers@lists.linux-foundation.org>;
- Sat, 20 Feb 2021 09:12:48 +0000 (UTC)
+ Sat, 20 Feb 2021 09:13:24 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from smtp3.osuosl.org ([127.0.0.1])
  by localhost (smtp3.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id wZVfh8ouF-6q
+ with ESMTP id 4prL5yzVkCc7
  for <containers@lists.linux-foundation.org>;
- Sat, 20 Feb 2021 09:12:46 +0000 (UTC)
+ Sat, 20 Feb 2021 09:13:23 +0000 (UTC)
 Received: by smtp3.osuosl.org (Postfix, from userid 1001)
- id 9C8646F65A; Sat, 20 Feb 2021 09:12:46 +0000 (UTC)
-X-Greylist: delayed 00:07:10 by SQLgrey-1.8.0
-Received: from mail-pg1-f181.google.com (mail-pg1-f181.google.com
- [209.85.215.181])
- by smtp3.osuosl.org (Postfix) with ESMTPS id BACFC6F5B5
+ id 697F86F637; Sat, 20 Feb 2021 09:13:23 +0000 (UTC)
+X-Greylist: from auto-whitelisted by SQLgrey-1.8.0
+Received: from mail-pg1-f179.google.com (mail-pg1-f179.google.com
+ [209.85.215.179])
+ by smtp3.osuosl.org (Postfix) with ESMTPS id 172ED606B8
  for <containers@lists.linux-foundation.org>;
- Sat, 20 Feb 2021 09:12:19 +0000 (UTC)
-Received: by mail-pg1-f181.google.com with SMTP id m2so6922147pgq.5
+ Sat, 20 Feb 2021 09:13:03 +0000 (UTC)
+Received: by mail-pg1-f179.google.com with SMTP id t25so6928717pga.2
  for <containers@lists.linux-foundation.org>;
- Sat, 20 Feb 2021 01:12:19 -0800 (PST)
+ Sat, 20 Feb 2021 01:13:03 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sargun.me; s=google;
  h=from:to:cc:subject:date:message-id:in-reply-to:references
  :mime-version:content-transfer-encoding;
- bh=gHoTVMZ1UCBwdJSMckbP0vCuuAUYGs3AMqboTTCk/6s=;
- b=M8jyYb1AfjIub5FpjkEgb8pECdA0sptmR8F+v8kGpyHkMkWx5xgrkrprMX0eQ6f6Kx
- zRWbb/N7GU9/p/7ZNcIWz4/OVtwc90PAhG2/IDuD5mBYpCeJ1f3YRr0JMA4OY3o9mkkD
- hjdn+8Q7mGF769MtadV1iLSubqEk6Umr2T82M=
+ bh=8uhnHjYHLCuhTU6M3tfoU1v40Q35VuY6aG3sX6eVDyc=;
+ b=oINI3a66W+i5evnFiC1om4CrVR+l4Dpl+FfnJV+aaKdHq3y6KNMlz9d8BHcvismR1o
+ TMdbrTK+OIStNUQmh34wgpmb5ZEytU6iiCHDxeYr4f7s5BNeVaTOhgnlSUpnQ8LhceEg
+ 1NPwYqN7MIAsH1qXtKrPrHXew0IfX4dO9qxL8=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
  h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
  :references:mime-version:content-transfer-encoding;
- bh=gHoTVMZ1UCBwdJSMckbP0vCuuAUYGs3AMqboTTCk/6s=;
- b=IXfePn7HmHLMxW3gj0UnHYvPMZHvdQcn5aO6WhiFNA1F9vCi8tPib5fFF/bKoYTwVC
- 9XU/WWH4wdMx0lzQLpRjg1BMZ87QoWRwPXJpX/yKJMtw/TBX82EOLNdLcnD46SFt+Bju
- 37DokuPfj8JbbbBg6OIXoO968k++SsPV8yLqiJhgUq/Hwr7dEl5B+xEwuBlUgPh+Rfbu
- mgqXSV0A7mnErlXHHhafvzjmMVFexweqKpTQeFbuNPHL70jeEwe45X1zWAdaUmjOjFQh
- sSplVEmOAALdJZEHWXe75U9wR2VvHp94/qoLmMRppmjV9A7I298USknH9+X1alA7Vroc
- gxXQ==
-X-Gm-Message-State: AOAM533n5uqjiAzj32TYIF2vgXGnP/6jRT4xcV+ITKw2IStUGYlPxYRa
- H9srUzDI6kA3aoaF+L6mz74a+kSMAJcNvnve
-X-Google-Smtp-Source: ABdhPJzApZ6k0Y19OSx4K6RvG/WNKN9UmXIyC/kvlTGF5fypxNXvc2BsMrmCOODYnzulrL3w8peAhA==
-X-Received: by 2002:a62:6346:0:b029:1db:a562:be79 with SMTP id
- x67-20020a6263460000b02901dba562be79mr5734559pfb.81.1613811908173; 
- Sat, 20 Feb 2021 01:05:08 -0800 (PST)
+ bh=8uhnHjYHLCuhTU6M3tfoU1v40Q35VuY6aG3sX6eVDyc=;
+ b=k3hgb8Cmg6uOaTXxByCj8Oa+1eBKkqykjO9I3aNQdX+ntLchfkD5vVdIMLhWxfYTAq
+ cdcu7KAgiOFsA5biWc8VhcRQPH5kkyCyPpEti3HfvIHj1+EcQpkLRIff9+rAG/1Bikpc
+ 8JAYqsvayX1swTP7hAdHWHMXEfQ4yQ6vCPxb+9gxaMZo60QM6o1onyDMQjS5q9IkQqac
+ IyckD9/gI/0dJ0dMfCZMrA87JROTUMaPTTRFR272yy9/WgOiGa8zV+w3sWi1YW4JgElD
+ JbCpQ+xEpCq1h41EFJP81cWb7tve450mdpNDgBmlYL3FdhO7jaUcKH4V0owxqDwE2R7W
+ vQ4g==
+X-Gm-Message-State: AOAM532P1NI47h/3xqMgDe/64H4naXvi32lwgy8E1guiQ9ClbW7gU5oo
+ cAbnqAiLHQv8pHcY4rLgxsbV7lTXyCvdlVp1
+X-Google-Smtp-Source: ABdhPJy7IJ3VExxrUSvVAdN94MbvRPMYPuPR64fdVczeGXWZEVGDUkRzOl/nwi6OdECSi4zyGTVDUw==
+X-Received: by 2002:a62:342:0:b029:1ed:b5f:d075 with SMTP id
+ 63-20020a6203420000b02901ed0b5fd075mr5751870pfd.62.1613811909311; 
+ Sat, 20 Feb 2021 01:05:09 -0800 (PST)
 Received: from ubuntu.netflix.com (136-25-20-203.cab.webpass.net.
  [136.25.20.203])
- by smtp.gmail.com with ESMTPSA id g62sm12226727pgc.32.2021.02.20.01.05.07
+ by smtp.gmail.com with ESMTPSA id g62sm12226727pgc.32.2021.02.20.01.05.08
  (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
- Sat, 20 Feb 2021 01:05:07 -0800 (PST)
+ Sat, 20 Feb 2021 01:05:09 -0800 (PST)
 From: Sargun Dhillon <sargun@sargun.me>
 To: Kees Cook <keescook@chromium.org>, LKML <linux-kernel@vger.kernel.org>,
  Linux Containers <containers@lists.linux-foundation.org>
-Subject: [RFC PATCH 2/3] seccomp: Add wait_killable semantic to seccomp user
- notifier
-Date: Sat, 20 Feb 2021 01:05:01 -0800
-Message-Id: <20210220090502.7202-3-sargun@sargun.me>
+Subject: [RFC PATCH 3/3] selftests/seccomp: Add test for wait killable notifier
+Date: Sat, 20 Feb 2021 01:05:02 -0800
+Message-Id: <20210220090502.7202-4-sargun@sargun.me>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210220090502.7202-1-sargun@sargun.me>
 References: <20210220090502.7202-1-sargun@sargun.me>
@@ -112,132 +111,88 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-The user notifier feature allows for filtering of seccomp notifications in
-userspace. While the user notifier is handling the syscall, the notifying
-process can be preempted, thus ending the notification. This has become a
-growing problem, as Golang has adopted signal based async preemption[1]. In
-this, it will preempt every 10ms, thus leaving the supervisor less than
-10ms to respond to a given notification. If the syscall require I/O (mount,
-connect) on behalf of the process, it can easily take 10ms.
-
-This allows the supervisor to set a flag that moves the process into a
-state where it is only killable by terminating signals as opposed to all
-signals.
+This adds a test for the positive case of the wait killable notifier,
+in testing that when the feature is activated the process acts as
+expected -- in not terminating on a non-fatal signal, and instead
+queueing it up. There is already a test case for normal handlers
+and preemption.
 
 Signed-off-by: Sargun Dhillon <sargun@sargun.me>
-
-[1]: https://github.com/golang/go/issues/24543
 ---
- include/uapi/linux/seccomp.h | 10 ++++++++++
- kernel/seccomp.c             | 35 +++++++++++++++++++++++++++++------
- 2 files changed, 39 insertions(+), 6 deletions(-)
+ tools/testing/selftests/seccomp/seccomp_bpf.c | 60 +++++++++++++++++++
+ 1 file changed, 60 insertions(+)
 
-diff --git a/include/uapi/linux/seccomp.h b/include/uapi/linux/seccomp.h
-index 6ba18b82a02e..f9acdb58138b 100644
---- a/include/uapi/linux/seccomp.h
-+++ b/include/uapi/linux/seccomp.h
-@@ -70,6 +70,16 @@ struct seccomp_notif_sizes {
- 	__u16 seccomp_data;
- };
+diff --git a/tools/testing/selftests/seccomp/seccomp_bpf.c b/tools/testing/selftests/seccomp/seccomp_bpf.c
+index 26c72f2b61b1..a8ef4558d673 100644
+--- a/tools/testing/selftests/seccomp/seccomp_bpf.c
++++ b/tools/testing/selftests/seccomp/seccomp_bpf.c
+@@ -4139,6 +4139,66 @@ TEST(user_notification_addfd_rlimit)
+ 	close(memfd);
+ }
  
-+/*
-+ * Valid flags for struct seccomp_notif
-+ *
-+ * SECCOMP_USER_NOTIF_FLAG_WAIT_KILLABLE
-+ *
-+ * Prevent the notifying process from being interrupted by non-fatal, unmasked
-+ * signals.
-+ */
-+#define SECCOMP_USER_NOTIF_FLAG_WAIT_KILLABLE (1UL << 0)
++TEST(user_notification_signal_wait_killable)
++{
++	pid_t pid;
++	long ret;
++	int status, listener, sk_pair[2];
++	struct seccomp_notif req = {
++		.flags = SECCOMP_USER_NOTIF_FLAG_WAIT_KILLABLE,
++	};
++	struct seccomp_notif_resp resp = {};
++	char c;
 +
- struct seccomp_notif {
- 	__u64 id;
- 	__u32 pid;
-diff --git a/kernel/seccomp.c b/kernel/seccomp.c
-index b48fb0a29455..f8c6c47df5d8 100644
---- a/kernel/seccomp.c
-+++ b/kernel/seccomp.c
-@@ -97,6 +97,8 @@ struct seccomp_knotif {
- 
- 	/* outstanding addfd requests */
- 	struct list_head addfd;
-+
-+	bool wait_killable;
- };
- 
- /**
-@@ -1082,6 +1084,7 @@ static int seccomp_do_user_notification(int this_syscall,
- 	long ret = 0;
- 	struct seccomp_knotif n = {};
- 	struct seccomp_kaddfd *addfd, *tmp;
-+	bool wait_killable = false;
- 
- 	mutex_lock(&match->notify_lock);
- 	err = -ENOSYS;
-@@ -1103,8 +1106,14 @@ static int seccomp_do_user_notification(int this_syscall,
- 	 * This is where we wait for a reply from userspace.
- 	 */
- 	do {
-+		wait_killable = n.state == SECCOMP_NOTIFY_SENT &&
-+				n.wait_killable;
-+
- 		mutex_unlock(&match->notify_lock);
--		err = wait_for_completion_interruptible(&n.ready);
-+		if (wait_killable)
-+			err = wait_for_completion_killable(&n.ready);
-+		else
-+			err = wait_for_completion_interruptible(&n.ready);
- 		mutex_lock(&match->notify_lock);
- 		if (err != 0)
- 			goto interrupted;
-@@ -1420,14 +1429,16 @@ static long seccomp_notify_recv(struct seccomp_filter *filter,
- 	struct seccomp_notif unotif;
- 	ssize_t ret;
- 
-+	ret = copy_from_user(&unotif, buf, sizeof(unotif));
-+	if (ret)
-+		return -EFAULT;
-+
- 	/* Verify that we're not given garbage to keep struct extensible. */
--	ret = check_zeroed_user(buf, sizeof(unotif));
--	if (ret < 0)
--		return ret;
--	if (!ret)
-+	if (unotif.flags & ~(SECCOMP_USER_NOTIF_FLAG_WAIT_KILLABLE))
- 		return -EINVAL;
- 
--	memset(&unotif, 0, sizeof(unotif));
-+	if (unotif.id || unotif.pid)
-+		return -EINVAL;
- 
- 	ret = down_interruptible(&filter->notif->request);
- 	if (ret < 0)
-@@ -1455,6 +1466,12 @@ static long seccomp_notify_recv(struct seccomp_filter *filter,
- 	unotif.pid = task_pid_vnr(knotif->task);
- 	unotif.data = *(knotif->data);
- 
-+	if (unotif.flags & SECCOMP_USER_NOTIF_FLAG_WAIT_KILLABLE) {
-+		knotif->wait_killable = true;
-+		complete(&knotif->ready);
++	ret = prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
++	ASSERT_EQ(0, ret) {
++		TH_LOG("Kernel does not support PR_SET_NO_NEW_PRIVS!");
 +	}
 +
++	ASSERT_EQ(socketpair(PF_LOCAL, SOCK_SEQPACKET, 0, sk_pair), 0);
++	ASSERT_EQ(fcntl(sk_pair[0], F_SETFL, O_NONBLOCK), 0);
 +
- 	knotif->state = SECCOMP_NOTIFY_SENT;
- 	wake_up_poll(&filter->wqh, EPOLLOUT | EPOLLWRNORM);
- 	ret = 0;
-@@ -1473,6 +1490,12 @@ static long seccomp_notify_recv(struct seccomp_filter *filter,
- 		mutex_lock(&filter->notify_lock);
- 		knotif = find_notification(filter, unotif.id);
- 		if (knotif) {
-+			/* Reset the waiting state */
-+			if (knotif->wait_killable) {
-+				knotif->wait_killable = false;
-+				complete(&knotif->ready);
-+			}
++	listener = user_notif_syscall(__NR_gettid,
++				      SECCOMP_FILTER_FLAG_NEW_LISTENER);
++	ASSERT_GE(listener, 0);
 +
- 			knotif->state = SECCOMP_NOTIFY_INIT;
- 			up(&filter->notif->request);
- 		}
++	pid = fork();
++	ASSERT_GE(pid, 0);
++
++	if (pid == 0) {
++		close(sk_pair[0]);
++		handled = sk_pair[1];
++		if (signal(SIGUSR1, signal_handler) == SIG_ERR) {
++			perror("signal");
++			exit(1);
++		}
++
++		ret = syscall(__NR_gettid);
++		exit(!(ret == 42));
++	}
++	close(sk_pair[1]);
++
++	EXPECT_EQ(ioctl(listener, SECCOMP_IOCTL_NOTIF_RECV, &req), 0);
++	EXPECT_EQ(kill(pid, SIGUSR1), 0);
++	/* Make sure we didn't get a signal */
++	EXPECT_EQ(read(sk_pair[0], &c, 1), -1);
++	/* Make sure the notification is still alive */
++	EXPECT_EQ(ioctl(listener, SECCOMP_IOCTL_NOTIF_ID_VALID, &req.id), 0);
++
++	resp.id = req.id;
++	resp.error = 0;
++	resp.val = 42;
++
++	EXPECT_EQ(ioctl(listener, SECCOMP_IOCTL_NOTIF_SEND, &resp), 0);
++
++	EXPECT_EQ(waitpid(pid, &status, 0), pid);
++	EXPECT_EQ(true, WIFEXITED(status));
++	EXPECT_EQ(0, WEXITSTATUS(status));
++	/* Check we eventually received the signal */
++	EXPECT_EQ(read(sk_pair[0], &c, 1), 1);
++}
++
++
+ /*
+  * TODO:
+  * - expand NNP testing
 -- 
 2.25.1
 
