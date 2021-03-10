@@ -1,97 +1,77 @@
-Return-Path: <SRS0=8Shw=ID=lists.linux-foundation.org=containers-bounces@kernel.org>
+Return-Path: <SRS0=WE+R=II=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
+	DKIM_ADSP_CUSTOM_MED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0FE2AC433E0
-	for <containers@archiver.kernel.org>; Fri,  5 Mar 2021 17:56:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4C384C433E9
+	for <containers@archiver.kernel.org>; Wed, 10 Mar 2021 12:01:48 +0000 (UTC)
 Received: from smtp4.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 4C5C5650A5
-	for <containers@archiver.kernel.org>; Fri,  5 Mar 2021 17:56:53 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4C5C5650A5
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=xmission.com
+	by mail.kernel.org (Postfix) with ESMTPS id C6F4D64FEF
+	for <containers@archiver.kernel.org>; Wed, 10 Mar 2021 12:01:47 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C6F4D64FEF
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by smtp4.osuosl.org (Postfix) with ESMTP id 066F54AAFC;
-	Fri,  5 Mar 2021 17:56:53 +0000 (UTC)
+	by smtp4.osuosl.org (Postfix) with ESMTP id 6382044E48;
+	Wed, 10 Mar 2021 12:01:47 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from smtp4.osuosl.org ([127.0.0.1])
 	by localhost (smtp4.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id Th_M4Z-eTSCU; Fri,  5 Mar 2021 17:56:52 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by smtp4.osuosl.org (Postfix) with ESMTP id B6C7F4A053;
-	Fri,  5 Mar 2021 17:56:51 +0000 (UTC)
+	with ESMTP id WCE4awvYDJis; Wed, 10 Mar 2021 12:01:46 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [IPv6:2605:bc80:3010:104::8cd3:938])
+	by smtp4.osuosl.org (Postfix) with ESMTP id 374B949BD7;
+	Wed, 10 Mar 2021 12:01:46 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 87F62C000A;
-	Fri,  5 Mar 2021 17:56:51 +0000 (UTC)
-Received: from smtp1.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id A7711C0001
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 0BC11C000B;
+	Wed, 10 Mar 2021 12:01:46 +0000 (UTC)
+Received: from smtp4.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 94EE5C0001
  for <containers@lists.linux-foundation.org>;
- Fri,  5 Mar 2021 17:56:50 +0000 (UTC)
+ Wed, 10 Mar 2021 12:01:45 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by smtp1.osuosl.org (Postfix) with ESMTP id 95B6383D83
+ by smtp4.osuosl.org (Postfix) with ESMTP id 7608C44E48
  for <containers@lists.linux-foundation.org>;
- Fri,  5 Mar 2021 17:56:50 +0000 (UTC)
+ Wed, 10 Mar 2021 12:01:45 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from smtp1.osuosl.org ([127.0.0.1])
- by localhost (smtp1.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id a1ngiYVQxN9c
+Received: from smtp4.osuosl.org ([127.0.0.1])
+ by localhost (smtp4.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id QOm8gl-Ggbk1
  for <containers@lists.linux-foundation.org>;
- Fri,  5 Mar 2021 17:56:49 +0000 (UTC)
+ Wed, 10 Mar 2021 12:01:44 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.8.0
-Received: from out01.mta.xmission.com (out01.mta.xmission.com [166.70.13.231])
- by smtp1.osuosl.org (Postfix) with ESMTPS id 90F4F83D80
+Received: from raptor.unsafe.ru (raptor.unsafe.ru [5.9.43.93])
+ by smtp4.osuosl.org (Postfix) with ESMTP id F281A4EC84
  for <containers@lists.linux-foundation.org>;
- Fri,  5 Mar 2021 17:56:49 +0000 (UTC)
-Received: from in02.mta.xmission.com ([166.70.13.52])
- by out01.mta.xmission.com with esmtps (TLS1.3) tls
- TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 (Exim 4.93)
- (envelope-from <ebiederm@xmission.com>)
- id 1lIEgu-004e9i-VG; Fri, 05 Mar 2021 10:56:45 -0700
-Received: from ip68-227-160-95.om.om.cox.net ([68.227.160.95]
- helo=fess.xmission.com)
- by in02.mta.xmission.com with esmtpsa (TLS1.3) tls
- TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 (Exim 4.93)
- (envelope-from <ebiederm@xmission.com>)
- id 1lIEgt-004li8-IX; Fri, 05 Mar 2021 10:56:44 -0700
-From: ebiederm@xmission.com (Eric W. Biederman)
-To: Alexey Gladkov <gladkov.alexey@gmail.com>
-References: <20210224051845.GB6114@xsang-OptiPlex-9020>
- <m1czwpl83q.fsf@fess.ebiederm.org>
- <20210224183828.j6uut6sholeo2fzh@example.org>
- <m17dmxl2qa.fsf@fess.ebiederm.org>
- <20210225203657.mjhaqnj5vszna5xw@example.org>
-Date: Fri, 05 Mar 2021 11:56:44 -0600
-In-Reply-To: <20210225203657.mjhaqnj5vszna5xw@example.org> (Alexey Gladkov's
- message of "Thu, 25 Feb 2021 21:36:57 +0100")
-Message-ID: <m1czwd32n7.fsf@fess.ebiederm.org>
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/26.1 (gnu/linux)
-MIME-Version: 1.0
-X-XM-SPF: eid=1lIEgt-004li8-IX; ; ; mid=<m1czwd32n7.fsf@fess.ebiederm.org>; ; ;
- hst=in02.mta.xmission.com; ; ; ip=68.227.160.95; ; ; frm=ebiederm@xmission.com;
- ; ; spf=neutral
-X-XM-AID: U2FsdGVkX1+QpJmPwGjQCYsOz8d21ibu8x9BhUmL7YA=
-X-SA-Exim-Connect-IP: 68.227.160.95
-X-SA-Exim-Mail-From: ebiederm@xmission.com
-Subject: Re: d28296d248:  stress-ng.sigsegv.ops_per_sec -82.7% regression
-X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
-X-SA-Exim-Scanned: Yes (on in02.mta.xmission.com)
-Cc: Jens Axboe <axboe@kernel.dk>, feng.tang@intel.com,
- 0day robot <lkp@intel.com>,
+ Wed, 10 Mar 2021 12:01:43 +0000 (UTC)
+Received: from comp-core-i7-2640m-0182e6.redhat.com
+ (ip-94-113-225-162.net.upcbroadband.cz [94.113.225.162])
+ by raptor.unsafe.ru (Postfix) with ESMTPSA id 59AD640DB8;
+ Wed, 10 Mar 2021 12:01:42 +0000 (UTC)
+From: Alexey Gladkov <gladkov.alexey@gmail.com>
+To: LKML <linux-kernel@vger.kernel.org>, io-uring@vger.kernel.org,
  Kernel Hardening <kernel-hardening@lists.openwall.com>,
  Linux Containers <containers@lists.linux-foundation.org>,
- Jann Horn <jannh@google.com>, LKML <linux-kernel@vger.kernel.org>,
- Oleg Nesterov <oleg@redhat.com>, linux-mm@kvack.org, lkp@lists.01.org,
- kernel test robot <oliver.sang@intel.com>, ying.huang@intel.com,
- Andrew Morton <akpm@linux-foundation.org>, zhengjun.xing@intel.com,
- Linus Torvalds <torvalds@linux-foundation.org>, io-uring@vger.kernel.org,
- Kees Cook <keescook@chromium.org>
+ linux-mm@kvack.org
+Subject: [PATCH v8 1/8] Increase size of ucounts to atomic_long_t
+Date: Wed, 10 Mar 2021 13:01:26 +0100
+Message-Id: <18b439960a2de06e9352c36b8d04fb149a024a86.1615372955.git.gladkov.alexey@gmail.com>
+X-Mailer: git-send-email 2.29.2
+In-Reply-To: <cover.1615372955.git.gladkov.alexey@gmail.com>
+References: <cover.1615372955.git.gladkov.alexey@gmail.com>
+MIME-Version: 1.0
+X-Greylist: Sender succeeded SMTP AUTH, not delayed by milter-greylist-4.6.4
+ (raptor.unsafe.ru [0.0.0.0]); Wed, 10 Mar 2021 12:01:42 +0000 (UTC)
+Cc: Jens Axboe <axboe@kernel.dk>, Kees Cook <keescook@chromium.org>,
+ Jann Horn <jannh@google.com>, Linus Torvalds <torvalds@linux-foundation.org>,
+ Oleg Nesterov <oleg@redhat.com>, "Eric W . Biederman" <ebiederm@xmission.com>,
+ Andrew Morton <akpm@linux-foundation.org>, Alexey Gladkov <legion@kernel.org>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -108,80 +88,94 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-Alexey Gladkov <gladkov.alexey@gmail.com> writes:
+RLIMIT_MSGQUEUE and RLIMIT_MEMLOCK use unsigned long to store their
+counters. As a preparation for moving rlimits based on ucounts, we need
+to increase the size of the variable to long.
 
-> On Wed, Feb 24, 2021 at 12:50:21PM -0600, Eric W. Biederman wrote:
->> Alexey Gladkov <gladkov.alexey@gmail.com> writes:
->> 
->> > On Wed, Feb 24, 2021 at 10:54:17AM -0600, Eric W. Biederman wrote:
->> >> kernel test robot <oliver.sang@intel.com> writes:
->> >> 
->> >> > Greeting,
->> >> >
->> >> > FYI, we noticed a -82.7% regression of stress-ng.sigsegv.ops_per_sec due to commit:
->> >> >
->> >> >
->> >> > commit: d28296d2484fa11e94dff65e93eb25802a443d47 ("[PATCH v7 5/7] Reimplement RLIMIT_SIGPENDING on top of ucounts")
->> >> > url: https://github.com/0day-ci/linux/commits/Alexey-Gladkov/Count-rlimits-in-each-user-namespace/20210222-175836
->> >> > base: https://git.kernel.org/cgit/linux/kernel/git/shuah/linux-kselftest.git next
->> >> >
->> >> > in testcase: stress-ng
->> >> > on test machine: 48 threads Intel(R) Xeon(R) CPU E5-2697 v2 @ 2.70GHz with 112G memory
->> >> > with following parameters:
->> >> >
->> >> > 	nr_threads: 100%
->> >> > 	disk: 1HDD
->> >> > 	testtime: 60s
->> >> > 	class: interrupt
->> >> > 	test: sigsegv
->> >> > 	cpufreq_governor: performance
->> >> > 	ucode: 0x42e
->> >> >
->> >> >
->> >> > In addition to that, the commit also has significant impact on the
->> >> > following tests:
->> >> 
->> >> Thank you.  Now we have a sense of where we need to test the performance
->> >> of these changes carefully.
->> >
->> > One of the reasons for this is that I rolled back the patch that changed
->> > the ucounts.count type to atomic_t. Now get_ucounts() is forced to use a
->> > spin_lock to increase the reference count.
->> 
->> Which given the hickups with getting a working version seems justified.
->> 
->> Now we can add incremental patches on top to improve the performance.
->
-> I'm not sure that get_ucounts() should be used in __sigqueue_alloc() [1].
-> I tried removing it and running KASAN tests that were failing before. So
-> far, I have not found any problems.
->
-> [1]
-> https://git.kernel.org/pub/scm/linux/kernel/git/legion/linux.git/tree/kernel/signal.c?h=patchset/per-userspace-rlimit/v7.1&id=2d4a2e2be7db42c95acb98abfc2a9b370ddd0604#n428
+Signed-off-by: Alexey Gladkov <gladkov.alexey@gmail.com>
+---
+ include/linux/user_namespace.h |  4 ++--
+ kernel/ucount.c                | 16 ++++++++--------
+ 2 files changed, 10 insertions(+), 10 deletions(-)
 
-Hmm.  The code you posted still seems to include the get_ucounts.
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index 64cf8ebdc4ec..0bb833fd41f4 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -85,7 +85,7 @@ struct user_namespace {
+ 	struct ctl_table_header *sysctls;
+ #endif
+ 	struct ucounts		*ucounts;
+-	int ucount_max[UCOUNT_COUNTS];
++	long ucount_max[UCOUNT_COUNTS];
+ } __randomize_layout;
+ 
+ struct ucounts {
+@@ -93,7 +93,7 @@ struct ucounts {
+ 	struct user_namespace *ns;
+ 	kuid_t uid;
+ 	int count;
+-	atomic_t ucount[UCOUNT_COUNTS];
++	atomic_long_t ucount[UCOUNT_COUNTS];
+ };
+ 
+ extern struct user_namespace init_user_ns;
+diff --git a/kernel/ucount.c b/kernel/ucount.c
+index 11b1596e2542..04c561751af1 100644
+--- a/kernel/ucount.c
++++ b/kernel/ucount.c
+@@ -175,14 +175,14 @@ static void put_ucounts(struct ucounts *ucounts)
+ 	kfree(ucounts);
+ }
+ 
+-static inline bool atomic_inc_below(atomic_t *v, int u)
++static inline bool atomic_long_inc_below(atomic_long_t *v, int u)
+ {
+-	int c, old;
+-	c = atomic_read(v);
++	long c, old;
++	c = atomic_long_read(v);
+ 	for (;;) {
+ 		if (unlikely(c >= u))
+ 			return false;
+-		old = atomic_cmpxchg(v, c, c+1);
++		old = atomic_long_cmpxchg(v, c, c+1);
+ 		if (likely(old == c))
+ 			return true;
+ 		c = old;
+@@ -196,17 +196,17 @@ struct ucounts *inc_ucount(struct user_namespace *ns, kuid_t uid,
+ 	struct user_namespace *tns;
+ 	ucounts = get_ucounts(ns, uid);
+ 	for (iter = ucounts; iter; iter = tns->ucounts) {
+-		int max;
++		long max;
+ 		tns = iter->ns;
+ 		max = READ_ONCE(tns->ucount_max[type]);
+-		if (!atomic_inc_below(&iter->ucount[type], max))
++		if (!atomic_long_inc_below(&iter->ucount[type], max))
+ 			goto fail;
+ 	}
+ 	return ucounts;
+ fail:
+ 	bad = iter;
+ 	for (iter = ucounts; iter != bad; iter = iter->ns->ucounts)
+-		atomic_dec(&iter->ucount[type]);
++		atomic_long_dec(&iter->ucount[type]);
+ 
+ 	put_ucounts(ucounts);
+ 	return NULL;
+@@ -216,7 +216,7 @@ void dec_ucount(struct ucounts *ucounts, enum ucount_type type)
+ {
+ 	struct ucounts *iter;
+ 	for (iter = ucounts; iter; iter = iter->ns->ucounts) {
+-		int dec = atomic_dec_if_positive(&iter->ucount[type]);
++		long dec = atomic_long_dec_if_positive(&iter->ucount[type]);
+ 		WARN_ON_ONCE(dec < 0);
+ 	}
+ 	put_ucounts(ucounts);
+-- 
+2.29.2
 
-I like the idea of not needing to increment and decrement the ucount
-reference count every time a signal is sent, unfortunately there is a
-problem.  The way we have implemented setresuid allows different threads
-in a threaded application to have different cred->user values.
-
-That is actually an extension of what posix supports and pthreads will
-keep the creds of a process in sync.  Still I recall looking into this a
-few years ago and there were a few applications that take advantage of
-the linux behavior.
-
-In principle I think it is possible to hold a ucount reference in
-somewhere such as task->signal.  In practice there are enough
-complicating factors I don't immediately see how to implement that.
-
-If the creds were stored in signal_struct instead of in task_struct
-we could simply move the sigpending counts in set_user, when the uid
-of a process changed.
-
-With the current state I don't know how to pick which is the real user.
-
-Eric
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
