@@ -6,61 +6,60 @@ X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
 	DKIM_ADSP_CUSTOM_MED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A9F6AC433E9
-	for <containers@archiver.kernel.org>; Wed, 10 Mar 2021 18:20:26 +0000 (UTC)
-Received: from smtp3.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5406EC4332B
+	for <containers@archiver.kernel.org>; Wed, 10 Mar 2021 18:20:27 +0000 (UTC)
+Received: from smtp4.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 676F164FB3
-	for <containers@archiver.kernel.org>; Wed, 10 Mar 2021 18:20:26 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 676F164FB3
+	by mail.kernel.org (Postfix) with ESMTPS id 1CC1C64EE2
+	for <containers@archiver.kernel.org>; Wed, 10 Mar 2021 18:20:27 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1CC1C64EE2
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by smtp3.osuosl.org (Postfix) with ESMTP id 431C46F48C;
+	by smtp4.osuosl.org (Postfix) with ESMTP id 44B5A4EC53;
 	Wed, 10 Mar 2021 18:20:26 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from smtp3.osuosl.org ([127.0.0.1])
-	by localhost (smtp3.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id X-DTQgAAL88f; Wed, 10 Mar 2021 18:20:25 +0000 (UTC)
+Received: from smtp4.osuosl.org ([127.0.0.1])
+	by localhost (smtp4.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id FR_ipK8-weoK; Wed, 10 Mar 2021 18:20:25 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by smtp3.osuosl.org (Postfix) with ESMTP id 5931E605B1;
+	by smtp4.osuosl.org (Postfix) with ESMTP id 1D64B4EC48;
 	Wed, 10 Mar 2021 18:20:25 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id BC241C0021;
+	by lists.linuxfoundation.org (Postfix) with ESMTP id A4B7AC001F;
 	Wed, 10 Mar 2021 18:20:24 +0000 (UTC)
-Received: from smtp2.osuosl.org (smtp2.osuosl.org [IPv6:2605:bc80:3010::133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 43A63C000A
+Received: from smtp3.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 2E365C0001
  for <containers@lists.linux-foundation.org>;
  Wed, 10 Mar 2021 18:20:23 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by smtp2.osuosl.org (Postfix) with ESMTP id 333A9430E6
+ by smtp3.osuosl.org (Postfix) with ESMTP id 053296ED1C
  for <containers@lists.linux-foundation.org>;
  Wed, 10 Mar 2021 18:20:23 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from smtp2.osuosl.org ([127.0.0.1])
- by localhost (smtp2.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id R7RADzS_kvGd
+Received: from smtp3.osuosl.org ([127.0.0.1])
+ by localhost (smtp3.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id RjdULFxeVXRP
  for <containers@lists.linux-foundation.org>;
  Wed, 10 Mar 2021 18:20:22 +0000 (UTC)
 X-Greylist: from auto-whitelisted by SQLgrey-1.8.0
 Received: from raptor.unsafe.ru (raptor.unsafe.ru [5.9.43.93])
- by smtp2.osuosl.org (Postfix) with ESMTP id 7256042FC6
+ by smtp3.osuosl.org (Postfix) with ESMTP id 1864E605B1
  for <containers@lists.linux-foundation.org>;
  Wed, 10 Mar 2021 18:20:22 +0000 (UTC)
 Received: from comp-core-i7-2640m-0182e6.redhat.com
  (ip-94-113-225-162.net.upcbroadband.cz [94.113.225.162])
- by raptor.unsafe.ru (Postfix) with ESMTPSA id 6054641781;
- Wed, 10 Mar 2021 18:20:21 +0000 (UTC)
+ by raptor.unsafe.ru (Postfix) with ESMTPSA id CBCE54176A;
+ Wed, 10 Mar 2021 18:20:20 +0000 (UTC)
 From: Alexey Gladkov <gladkov.alexey@gmail.com>
 To: LKML <linux-kernel@vger.kernel.org>,
  "Eric W . Biederman" <ebiederm@xmission.com>
-Subject: [PATCH v5 5/5] docs: proc: add documentation about relaxing
- visibility restrictions
-Date: Wed, 10 Mar 2021 19:20:00 +0100
-Message-Id: <ae5b7c21a54aee1f348f63679522aec2b5cc4b51.1615400395.git.gladkov.alexey@gmail.com>
+Subject: [PATCH v5 4/5] proc: Relax check of mount visibility
+Date: Wed, 10 Mar 2021 19:19:59 +0100
+Message-Id: <eeba37cf1db2fb81bd4509efce9063156ebb83dc.1615400395.git.gladkov.alexey@gmail.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <cover.1615400395.git.gladkov.alexey@gmail.com>
 References: <cover.1615400395.git.gladkov.alexey@gmail.com>
@@ -87,24 +86,132 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
+Allow to mount of procfs with subset=pid option even if the entire
+procfs is not fully accessible to the user.
+
 Signed-off-by: Alexey Gladkov <gladkov.alexey@gmail.com>
 ---
- Documentation/filesystems/proc.rst | 2 ++
- 1 file changed, 2 insertions(+)
+ fs/namespace.c     | 27 ++++++++++++++++-----------
+ fs/proc/root.c     | 17 ++++++++++-------
+ include/linux/fs.h |  1 +
+ 3 files changed, 27 insertions(+), 18 deletions(-)
 
-diff --git a/Documentation/filesystems/proc.rst b/Documentation/filesystems/proc.rst
-index 3daf0e7d1071..9d2985a7aad6 100644
---- a/Documentation/filesystems/proc.rst
-+++ b/Documentation/filesystems/proc.rst
-@@ -2190,6 +2190,8 @@ available to you and will not allow procfs to be mounted if:
-   2. Mount is prohibited if a new mount overrides the readonly option or family
-      of atime options.
-   3. If any file or non-empty procfs directory is hidden by another filesystem.
-+     You can still mount procfs even with overlapped directories if the
-+     subset=pid option is used.
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 9d33909d0f9e..f9a38584f865 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -3971,18 +3971,23 @@ static bool mnt_already_visible(struct mnt_namespace *ns,
+ 		    ((mnt_flags & MNT_ATIME_MASK) != (new_flags & MNT_ATIME_MASK)))
+ 			continue;
  
- Chapter 5: Filesystem behavior
- ==============================
+-		/* This mount is not fully visible if there are any
+-		 * locked child mounts that cover anything except for
+-		 * empty directories.
++		/* If this filesystem is completely dynamic, then it
++		 * makes no sense to check for any child mounts.
+ 		 */
+-		list_for_each_entry(child, &mnt->mnt_mounts, mnt_child) {
+-			struct inode *inode = child->mnt_mountpoint->d_inode;
+-			/* Only worry about locked mounts */
+-			if (!(child->mnt.mnt_flags & MNT_LOCKED))
+-				continue;
+-			/* Is the directory permanetly empty? */
+-			if (!is_empty_dir_inode(inode))
+-				goto next;
++		if (!(sb->s_iflags & SB_I_DYNAMIC)) {
++			/* This mount is not fully visible if there are any
++			 * locked child mounts that cover anything except for
++			 * empty directories.
++			 */
++			list_for_each_entry(child, &mnt->mnt_mounts, mnt_child) {
++				struct inode *inode = child->mnt_mountpoint->d_inode;
++				/* Only worry about locked mounts */
++				if (!(child->mnt.mnt_flags & MNT_LOCKED))
++					continue;
++				/* Is the directory permanetly empty? */
++				if (!is_empty_dir_inode(inode))
++					goto next;
++			}
+ 		}
+ 		/* Preserve the locked attributes */
+ 		*new_mnt_flags |= mnt_flags & (MNT_LOCK_READONLY | \
+diff --git a/fs/proc/root.c b/fs/proc/root.c
+index 0d20bb67e79a..049d5c125f8f 100644
+--- a/fs/proc/root.c
++++ b/fs/proc/root.c
+@@ -145,18 +145,21 @@ static int proc_parse_param(struct fs_context *fc, struct fs_parameter *param)
+ 	return 0;
+ }
+ 
+-static int proc_apply_options(struct proc_fs_info *fs_info,
++static int proc_apply_options(struct super_block *s,
+ 			       struct fs_context *fc,
+ 			       struct user_namespace *user_ns)
+ {
+ 	struct proc_fs_context *ctx = fc->fs_private;
++	struct proc_fs_info *fs_info = proc_sb_info(s);
+ 
+ 	if (ctx->mask & (1 << Opt_gid))
+ 		fs_info->pid_gid = make_kgid(user_ns, ctx->gid);
+ 	if (ctx->mask & (1 << Opt_hidepid))
+ 		fs_info->hide_pid = ctx->hidepid;
+ 	if (ctx->mask & (1 << Opt_subset)) {
+-		if (ctx->pidonly != PROC_PIDONLY_ON && fs_info->pidonly == PROC_PIDONLY_ON)
++		if (ctx->pidonly == PROC_PIDONLY_ON)
++			s->s_iflags |= SB_I_DYNAMIC;
++		else if (fs_info->pidonly == PROC_PIDONLY_ON)
+ 			return invalf(fc, "proc: subset=pid cannot be unset\n");
+ 		fs_info->pidonly = ctx->pidonly;
+ 	}
+@@ -176,9 +179,6 @@ static int proc_fill_super(struct super_block *s, struct fs_context *fc)
+ 
+ 	fs_info->pid_ns = get_pid_ns(ctx->pid_ns);
+ 	fs_info->mounter_cred = get_cred(fc->cred);
+-	ret = proc_apply_options(fs_info, fc, current_user_ns());
+-	if (ret)
+-		return ret;
+ 
+ 	/* User space would break if executables or devices appear on proc */
+ 	s->s_iflags |= SB_I_USERNS_VISIBLE | SB_I_NOEXEC | SB_I_NODEV;
+@@ -190,6 +190,10 @@ static int proc_fill_super(struct super_block *s, struct fs_context *fc)
+ 	s->s_time_gran = 1;
+ 	s->s_fs_info = fs_info;
+ 
++	ret = proc_apply_options(s, fc, current_user_ns());
++	if (ret)
++		return ret;
++
+ 	/*
+ 	 * procfs isn't actually a stacking filesystem; however, there is
+ 	 * too much magic going on inside it to permit stacking things on
+@@ -223,14 +227,13 @@ static int proc_fill_super(struct super_block *s, struct fs_context *fc)
+ static int proc_reconfigure(struct fs_context *fc)
+ {
+ 	struct super_block *sb = fc->root->d_sb;
+-	struct proc_fs_info *fs_info = proc_sb_info(sb);
+ 
+ 	sync_filesystem(sb);
+ 
+ 	put_cred(fs_info->mounter_cred);
+ 	fs_info->mounter_cred = get_cred(fc->cred);
+ 
+-	return proc_apply_options(fs_info, fc, current_user_ns());
++	return proc_apply_options(sb, fc, current_user_ns());
+ }
+ 
+ static int proc_get_tree(struct fs_context *fc)
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index fd47deea7c17..2c9a47bad796 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1390,6 +1390,7 @@ extern int send_sigurg(struct fown_struct *fown);
+ #define SB_I_USERNS_VISIBLE		0x00000010 /* fstype already mounted */
+ #define SB_I_IMA_UNVERIFIABLE_SIGNATURE	0x00000020
+ #define SB_I_UNTRUSTED_MOUNTER		0x00000040
++#define SB_I_DYNAMIC			0x00000080
+ 
+ #define SB_I_SKIP_SYNC	0x00000100	/* Skip superblock at global sync */
+ 
 -- 
 2.29.2
 
