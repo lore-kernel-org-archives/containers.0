@@ -1,115 +1,105 @@
-Return-Path: <SRS0=eEUr=IL=lists.linux-foundation.org=containers-bounces@kernel.org>
+Return-Path: <SRS0=kdfE=IN=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_RED autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_RED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 524B6C433E0
-	for <containers@archiver.kernel.org>; Sat, 13 Mar 2021 00:05:50 +0000 (UTC)
-Received: from smtp3.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0DC0FC433E0
+	for <containers@archiver.kernel.org>; Mon, 15 Mar 2021 22:03:05 +0000 (UTC)
+Received: from smtp2.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id DD66E64F70
-	for <containers@archiver.kernel.org>; Sat, 13 Mar 2021 00:05:49 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DD66E64F70
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
+	by mail.kernel.org (Postfix) with ESMTPS id 81BDA64DF4
+	for <containers@archiver.kernel.org>; Mon, 15 Mar 2021 22:03:04 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 81BDA64DF4
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=chromium.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by smtp3.osuosl.org (Postfix) with ESMTP id AD491605EC;
-	Sat, 13 Mar 2021 00:05:49 +0000 (UTC)
+	by smtp2.osuosl.org (Postfix) with ESMTP id 265AB42FF0;
+	Mon, 15 Mar 2021 22:03:04 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from smtp3.osuosl.org ([127.0.0.1])
-	by localhost (smtp3.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id HGQFOBO7wYIi; Sat, 13 Mar 2021 00:05:47 +0000 (UTC)
+Received: from smtp2.osuosl.org ([127.0.0.1])
+	by localhost (smtp2.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id J-zoYrzH6H3K; Mon, 15 Mar 2021 22:03:03 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by smtp3.osuosl.org (Postfix) with ESMTP id 09A06605F9;
-	Sat, 13 Mar 2021 00:05:47 +0000 (UTC)
+	by smtp2.osuosl.org (Postfix) with ESMTP id 3116043155;
+	Mon, 15 Mar 2021 22:03:03 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id D37F7C000A;
-	Sat, 13 Mar 2021 00:05:46 +0000 (UTC)
-Received: from smtp4.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id AAE06C0001
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 04BF0C000C;
+	Mon, 15 Mar 2021 22:03:03 +0000 (UTC)
+Received: from smtp1.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 4658FC000A
  for <containers@lists.linux-foundation.org>;
- Sat, 13 Mar 2021 00:05:44 +0000 (UTC)
+ Mon, 15 Mar 2021 22:03:02 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by smtp4.osuosl.org (Postfix) with ESMTP id 9201B4ED47
+ by smtp1.osuosl.org (Postfix) with ESMTP id 1F5F183837
  for <containers@lists.linux-foundation.org>;
- Sat, 13 Mar 2021 00:05:44 +0000 (UTC)
+ Mon, 15 Mar 2021 22:03:02 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Authentication-Results: smtp4.osuosl.org (amavisd-new);
- dkim=pass (1024-bit key) header.d=redhat.com
-Received: from smtp4.osuosl.org ([127.0.0.1])
- by localhost (smtp4.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id NlL-2BmIARYA
+Authentication-Results: smtp1.osuosl.org (amavisd-new);
+ dkim=pass (1024-bit key) header.d=chromium.org
+Received: from smtp1.osuosl.org ([127.0.0.1])
+ by localhost (smtp1.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id yFLzDcegd0lM
  for <containers@lists.linux-foundation.org>;
- Sat, 13 Mar 2021 00:05:43 +0000 (UTC)
-X-Greylist: domain auto-whitelisted by SQLgrey-1.8.0
-Received: from us-smtp-delivery-124.mimecast.com
- (us-smtp-delivery-124.mimecast.com [63.128.21.124])
- by smtp4.osuosl.org (Postfix) with ESMTPS id E98D04ED4C
+ Mon, 15 Mar 2021 22:03:01 +0000 (UTC)
+X-Greylist: whitelisted by SQLgrey-1.8.0
+Received: from mail-pg1-x531.google.com (mail-pg1-x531.google.com
+ [IPv6:2607:f8b0:4864:20::531])
+ by smtp1.osuosl.org (Postfix) with ESMTPS id 37BCD8382D
  for <containers@lists.linux-foundation.org>;
- Sat, 13 Mar 2021 00:05:42 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
- s=mimecast20190719; t=1615593941;
- h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
- to:to:cc:cc:mime-version:mime-version:content-type:content-type:
- in-reply-to:in-reply-to:references:references;
- bh=mVXvmcYP1sSR9GWfD7PGzVWbpYUCA5Ac+5UF3mw/8Ks=;
- b=en25UQwrJkeJku5zlYHghg+cRQDUgKlT1EQkPYv59oW0lRnGkTBYPO1lZ3gRyLAzfLRi+Y
- TEVLWuy5mZh/vAgjSD8xBHPycXYa1eN/2EFxKpUmEXOazpYI8Gu0V/T+uOJfw3LVcsEEiB
- dbsTJ7+c2MT61fH/gnBqBNHNeUtxGfQ=
-Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
- [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-488-GopGBo6-M_m5rNeEHuJOdg-1; Fri, 12 Mar 2021 19:05:39 -0500
-X-MC-Unique: GopGBo6-M_m5rNeEHuJOdg-1
-Received: from smtp.corp.redhat.com (int-mx08.intmail.prod.int.phx2.redhat.com
- [10.5.11.23])
- (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
- (No client certificate requested)
- by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 1783939382;
- Sat, 13 Mar 2021 00:05:34 +0000 (UTC)
-Received: from horse.redhat.com (ovpn-114-2.rdu2.redhat.com [10.10.114.2])
- by smtp.corp.redhat.com (Postfix) with ESMTP id B94811F065;
- Sat, 13 Mar 2021 00:05:29 +0000 (UTC)
-Received: by horse.redhat.com (Postfix, from userid 10451)
- id 49B3622054F; Fri, 12 Mar 2021 19:05:29 -0500 (EST)
-Date: Fri, 12 Mar 2021 19:05:29 -0500
-From: Vivek Goyal <vgoyal@redhat.com>
-To: Christian Brauner <christian.brauner@ubuntu.com>
-Subject: Re: [PATCH v6 02/40] fs: add id translation helpers
-Message-ID: <20210313000529.GA181317@redhat.com>
-References: <20210121131959.646623-1-christian.brauner@ubuntu.com>
- <20210121131959.646623-3-christian.brauner@ubuntu.com>
+ Mon, 15 Mar 2021 22:03:01 +0000 (UTC)
+Received: by mail-pg1-x531.google.com with SMTP id l2so21292899pgb.1
+ for <containers@lists.linux-foundation.org>;
+ Mon, 15 Mar 2021 15:03:01 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=chromium.org; s=google;
+ h=date:from:to:cc:subject:message-id:references:mime-version
+ :content-disposition:in-reply-to;
+ bh=pM/cP6/Lz3nYNB1A2BCPvDYZL5Nv+dU7p0YG5FmdOHs=;
+ b=i+Pu5UNw/TgHu/fQEXmZOHFShdZNm0HYjuktOVvh43UQqWK9OXoxwTL0KfkLH1Lh3o
+ Mkcv0D3zl4D39+93TZwtmfQnzTN3Fg40p8XufRexRcM6m8VQsn9YV4Kt6YovAUS/J0Qh
+ oZNwlAoLttJ/w9GIdPY7BRwFC7DF52oYAgWR8=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=1e100.net; s=20161025;
+ h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+ :mime-version:content-disposition:in-reply-to;
+ bh=pM/cP6/Lz3nYNB1A2BCPvDYZL5Nv+dU7p0YG5FmdOHs=;
+ b=cJdq8rYTp+aCnsGMTBlT+TyAzOKyLAM/pY4SKOIl3Rr8s6oGOwBbJ/hSBjsdJhZ+pF
+ iC1n1V8PecVa76OR2d2g52nB+9BaXlgDsVdkrBxoDP2iySaOirvRzS1lsKKGDek2FMFR
+ MnRQJ1ODXTZGMfeAHmu/p5jmV/cAbq3P6pJL0oaCJ1QzIAJPKV4cAl/SgYASBXeOyS4n
+ AQwgfUVRPe9IMO97bxK+TNCOh3LOiciGzyTOArhQpqxqJ2mFLc81NnPG+bnQ5lMPur/n
+ k08dE++VQCOkJKH7yIkFcpUrXZXK8nt4ZQ+W5ReT3+e9xSURfQN2sRHQEXWB09cjoO7U
+ qeKg==
+X-Gm-Message-State: AOAM5335dVWQQxZ3V9SJ81pAujcx6yHlz5QfJ96og2Jl5Stt3MLKhl4i
+ NdLg9anCCgaJX4Xi0GJUhZZTnA==
+X-Google-Smtp-Source: ABdhPJy8q9F/S8HF2FiROpt7pJm13akaXdXmtXbP3bYKMQOOiCIYaDmmj4n4Edotx3q4QzWSMo2peA==
+X-Received: by 2002:a63:f808:: with SMTP id n8mr995720pgh.115.1615845780563;
+ Mon, 15 Mar 2021 15:03:00 -0700 (PDT)
+Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
+ by smtp.gmail.com with ESMTPSA id h15sm14597755pfo.20.2021.03.15.15.02.59
+ (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+ Mon, 15 Mar 2021 15:02:59 -0700 (PDT)
+Date: Mon, 15 Mar 2021 15:02:58 -0700
+From: Kees Cook <keescook@chromium.org>
+To: Alexey Gladkov <gladkov.alexey@gmail.com>
+Subject: Re: [PATCH v8 3/8] Use atomic_t for ucounts reference counting
+Message-ID: <202103151426.ED27141@keescook>
+References: <cover.1615372955.git.gladkov.alexey@gmail.com>
+ <59ee3289194cd97d70085cce701bc494bfcb4fd2.1615372955.git.gladkov.alexey@gmail.com>
 MIME-Version: 1.0
 Content-Disposition: inline
-In-Reply-To: <20210121131959.646623-3-christian.brauner@ubuntu.com>
-X-Scanned-By: MIMEDefang 2.84 on 10.5.11.23
-Cc: Lennart Poettering <lennart@poettering.net>,
- Mimi Zohar <zohar@linux.ibm.com>,
- James Bottomley <James.Bottomley@hansenpartnership.com>,
- Andreas Dilger <adilger.kernel@dilger.ca>,
- containers@lists.linux-foundation.org, Christoph Hellwig <hch@lst.de>,
- Tycho Andersen <tycho@tycho.ws>, Paul Moore <paul@paul-moore.com>,
- Jonathan Corbet <corbet@lwn.net>, smbarber@chromium.org,
- Alban Crequy <alban@kinvolk.io>, linux-ext4@vger.kernel.org,
- Mrunal Patel <mpatel@redhat.com>, Kees Cook <keescook@chromium.org>,
- Arnd Bergmann <arnd@arndb.de>, selinux@vger.kernel.org,
- Josh Triplett <josh@joshtriplett.org>,
- Seth Forshee <seth.forshee@canonical.com>, Aleksa Sarai <cyphar@cyphar.com>,
- Alexander Viro <viro@zeniv.linux.org.uk>, Andy Lutomirski <luto@kernel.org>,
- OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
- Geoffrey Thomas <geofft@ldpreload.com>, David Howells <dhowells@redhat.com>,
- John Johansen <john.johansen@canonical.com>, Theodore Tso <tytso@mit.edu>,
- Dmitry Kasatkin <dmitry.kasatkin@gmail.com>,
- Stephen Smalley <stephen.smalley.work@gmail.com>, linux-xfs@vger.kernel.org,
- linux-security-module@vger.kernel.org,
- "Eric W. Biederman" <ebiederm@xmission.com>, linux-api@vger.kernel.org,
- Casey Schaufler <casey@schaufler-ca.com>, linux-fsdevel@vger.kernel.org,
- linux-integrity@vger.kernel.org,
- Linus Torvalds <torvalds@linux-foundation.org>, Todd Kjos <tkjos@google.com>
+In-Reply-To: <59ee3289194cd97d70085cce701bc494bfcb4fd2.1615372955.git.gladkov.alexey@gmail.com>
+Cc: Jens Axboe <axboe@kernel.dk>,
+ Kernel Hardening <kernel-hardening@lists.openwall.com>,
+ Linus Torvalds <torvalds@linux-foundation.org>,
+ Linux Containers <containers@lists.linux-foundation.org>,
+ Jann Horn <jannh@google.com>, LKML <linux-kernel@vger.kernel.org>,
+ Oleg Nesterov <oleg@redhat.com>, linux-mm@kvack.org,
+ "Eric W . Biederman" <ebiederm@xmission.com>,
+ Andrew Morton <akpm@linux-foundation.org>, Alexey Gladkov <legion@kernel.org>,
+ io-uring@vger.kernel.org
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -126,139 +116,54 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Thu, Jan 21, 2021 at 02:19:21PM +0100, Christian Brauner wrote:
-> Add simple helpers to make it easy to map kuids into and from idmapped
-> mounts. We provide simple wrappers that filesystems can use to e.g.
-> initialize inodes similar to i_{uid,gid}_read() and i_{uid,gid}_write().
-> Accessing an inode through an idmapped mount maps the i_uid and i_gid of
-> the inode to the mount's user namespace. If the fsids are used to
-> initialize inodes they are unmapped according to the mount's user
-> namespace. Passing the initial user namespace to these helpers makes
-> them a nop and so any non-idmapped paths will not be impacted.
-> 
-> Link: https://lore.kernel.org/r/20210112220124.837960-9-christian.brauner@ubuntu.com
-> Cc: David Howells <dhowells@redhat.com>
-> Cc: Al Viro <viro@zeniv.linux.org.uk>
-> Cc: linux-fsdevel@vger.kernel.org
-> Reviewed-by: Christoph Hellwig <hch@lst.de>
-> Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
-> ---
-> /* v2 */
-> - Christoph Hellwig <hch@lst.de>:
->   - Get rid of the ifdefs and the config option that hid idmapped mounts.
-> 
-> /* v3 */
-> unchanged
-> 
-> /* v4 */
-> - Serge Hallyn <serge@hallyn.com>:
->   - Use "mnt_userns" to refer to a vfsmount's userns everywhere to make
->     terminology consistent.
-> 
-> /* v5 */
-> unchanged
-> base-commit: 7c53f6b671f4aba70ff15e1b05148b10d58c2837
-> 
-> /* v6 */
-> unchanged
-> base-commit: 19c329f6808995b142b3966301f217c831e7cf31
-> ---
->  include/linux/fs.h | 47 ++++++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 47 insertions(+)
-> 
-> diff --git a/include/linux/fs.h b/include/linux/fs.h
-> index fd0b80e6361d..3165998e2294 100644
-> --- a/include/linux/fs.h
-> +++ b/include/linux/fs.h
-> @@ -40,6 +40,7 @@
->  #include <linux/build_bug.h>
->  #include <linux/stddef.h>
->  #include <linux/mount.h>
-> +#include <linux/cred.h>
->  
->  #include <asm/byteorder.h>
->  #include <uapi/linux/fs.h>
-> @@ -1573,6 +1574,52 @@ static inline void i_gid_write(struct inode *inode, gid_t gid)
->  	inode->i_gid = make_kgid(inode->i_sb->s_user_ns, gid);
->  }
->  
-> +static inline kuid_t kuid_into_mnt(struct user_namespace *mnt_userns,
-> +				   kuid_t kuid)
+On Wed, Mar 10, 2021 at 01:01:28PM +0100, Alexey Gladkov wrote:
+> The current implementation of the ucounts reference counter requires the
+> use of spin_lock. We're going to use get_ucounts() in more performance
+> critical areas like a handling of RLIMIT_SIGPENDING.
+
+This really looks like it should be refcount_t. I read the earlier
+thread[1] on this, and it's not clear to me that this is a "normal"
+condition. I think there was a bug in that version (This appeared
+to *instantly* crash at boot with mnt_init() calling alloc_mnt_ns()
+calling inc_ucount()). The current code looks like just a "regular"
+reference counter of the allocated struct ucounts. Overflow should be
+very unexpected, yes? And operating on a "0" ucounts should be a bug
+too, right?
+
+> [...]
+> +/* 127: arbitrary random number, small enough to assemble well */
+> +#define refcount_zero_or_close_to_overflow(ucounts) \
+> +	((unsigned int) atomic_read(&ucounts->count) + 127u <= 127u)
+
+Regardless, this should absolutely not have "refcount" as a prefix. I
+realize it's only used here, but that's needlessly confusing with regard
+to it being atomic_t not refcount_t.
+
+> +struct ucounts *get_ucounts(struct ucounts *ucounts)
 > +{
-> +	return make_kuid(mnt_userns, __kuid_val(kuid));
+> +	if (ucounts) {
+> +		if (refcount_zero_or_close_to_overflow(ucounts)) {
+> +			WARN_ONCE(1, "ucounts: counter has reached its maximum value");
+> +			return NULL;
+> +		}
+> +		atomic_inc(&ucounts->count);
+> +	}
+> +	return ucounts;
 > +}
-> +
 
-Hi Christian,
+I feel like this should just be:
 
-I am having little trouble w.r.t function names and trying to figure
-out whether they are mapping id down or up.
+	refcount_inc_not_zero(&ucounts->count);
 
-For example, kuid_into_mnt() ultimately calls map_id_down(). That is,
-id visible inside user namespace is mapped to host
-(if observer is in init_user_ns, IIUC).
+Or, to address Linus's comment in the v3 series, change get_ucounts to
+not return NULL first -- I can't see why that can ever happen in v8.
 
-But fsuid_into_mnt() ultimately calls map_id_up(). That's take a kuid
-and map it into the user_namespace.
+-Kees
 
-So both the helpers end with into_mnt() but one maps id down and
-other maps id up. I found this confusing and was wondering how
-should I visualize it. So thought of asking you.
+[1] https://lore.kernel.org/lkml/116c7669744404364651e3b380db2d82bb23f983.1610722473.git.gladkov.alexey@gmail.com/
 
-Is this intentional or can naming be improved so that *_into_mnt()
-means one thing (Either map_id_up() or map_id_down()). And vice-a-versa
-for *_from_mnt().
-
-Thanks
-Vivek
-
-> +static inline kgid_t kgid_into_mnt(struct user_namespace *mnt_userns,
-> +				   kgid_t kgid)
-> +{
-> +	return make_kgid(mnt_userns, __kgid_val(kgid));
-> +}
-> +
-> +static inline kuid_t i_uid_into_mnt(struct user_namespace *mnt_userns,
-> +				    const struct inode *inode)
-> +{
-> +	return kuid_into_mnt(mnt_userns, inode->i_uid);
-> +}
-> +
-> +static inline kgid_t i_gid_into_mnt(struct user_namespace *mnt_userns,
-> +				    const struct inode *inode)
-> +{
-> +	return kgid_into_mnt(mnt_userns, inode->i_gid);
-> +}
-> +
-> +static inline kuid_t kuid_from_mnt(struct user_namespace *mnt_userns,
-> +				   kuid_t kuid)
-> +{
-> +	return KUIDT_INIT(from_kuid(mnt_userns, kuid));
-> +}
-> +
-> +static inline kgid_t kgid_from_mnt(struct user_namespace *mnt_userns,
-> +				   kgid_t kgid)
-> +{
-> +	return KGIDT_INIT(from_kgid(mnt_userns, kgid));
-> +}
-> +
-> +static inline kuid_t fsuid_into_mnt(struct user_namespace *mnt_userns)
-> +{
-> +	return kuid_from_mnt(mnt_userns, current_fsuid());
-> +}
-> +
-> +static inline kgid_t fsgid_into_mnt(struct user_namespace *mnt_userns)
-> +{
-> +	return kgid_from_mnt(mnt_userns, current_fsgid());
-> +}
-> +
->  extern struct timespec64 current_time(struct inode *inode);
->  
->  /*
-> -- 
-> 2.30.0
-> 
-
+-- 
+Kees Cook
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
