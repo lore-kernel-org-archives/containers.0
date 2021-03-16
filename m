@@ -6,101 +6,95 @@ X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
 	SPF_PASS,URIBL_RED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5B3B2C433DB
-	for <containers@archiver.kernel.org>; Tue, 16 Mar 2021 19:26:32 +0000 (UTC)
-Received: from smtp1.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A267BC433E6
+	for <containers@archiver.kernel.org>; Tue, 16 Mar 2021 19:33:03 +0000 (UTC)
+Received: from smtp3.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id E422A64DCE
-	for <containers@archiver.kernel.org>; Tue, 16 Mar 2021 19:26:31 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E422A64DCE
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org
+	by mail.kernel.org (Postfix) with ESMTPS id 3F00164EB3
+	for <containers@archiver.kernel.org>; Tue, 16 Mar 2021 19:33:03 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3F00164EB3
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=chromium.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by smtp1.osuosl.org (Postfix) with ESMTP id 9E84483942;
-	Tue, 16 Mar 2021 19:26:31 +0000 (UTC)
+	by smtp3.osuosl.org (Postfix) with ESMTP id 0107B60716;
+	Tue, 16 Mar 2021 19:33:03 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from smtp1.osuosl.org ([127.0.0.1])
-	by localhost (smtp1.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id i4TzDogArSlL; Tue, 16 Mar 2021 19:26:30 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by smtp1.osuosl.org (Postfix) with ESMTP id 6912883934;
-	Tue, 16 Mar 2021 19:26:30 +0000 (UTC)
+Received: from smtp3.osuosl.org ([127.0.0.1])
+	by localhost (smtp3.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id mHXNE2IK0OkL; Tue, 16 Mar 2021 19:33:02 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [IPv6:2605:bc80:3010:104::8cd3:938])
+	by smtp3.osuosl.org (Postfix) with ESMTP id 08EDD606D0;
+	Tue, 16 Mar 2021 19:33:02 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 55CDAC000B;
-	Tue, 16 Mar 2021 19:26:30 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id BFE4AC000D;
+	Tue, 16 Mar 2021 19:33:01 +0000 (UTC)
 Received: from smtp3.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id A6A57C000A
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 7E3E0C000B
  for <containers@lists.linux-foundation.org>;
- Tue, 16 Mar 2021 19:26:28 +0000 (UTC)
+ Tue, 16 Mar 2021 19:33:00 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by smtp3.osuosl.org (Postfix) with ESMTP id A1AE3606A2
+ by smtp3.osuosl.org (Postfix) with ESMTP id 5E2456001B
  for <containers@lists.linux-foundation.org>;
- Tue, 16 Mar 2021 19:26:28 +0000 (UTC)
+ Tue, 16 Mar 2021 19:33:00 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Authentication-Results: smtp3.osuosl.org (amavisd-new);
- dkim=pass (1024-bit key) header.d=linux-foundation.org
 Received: from smtp3.osuosl.org ([127.0.0.1])
  by localhost (smtp3.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id DpYolfcSzcvA
+ with ESMTP id UbefS2JxgmBe
  for <containers@lists.linux-foundation.org>;
- Tue, 16 Mar 2021 19:26:27 +0000 (UTC)
+ Tue, 16 Mar 2021 19:32:59 +0000 (UTC)
 X-Greylist: whitelisted by SQLgrey-1.8.0
-Received: from mail-lf1-x134.google.com (mail-lf1-x134.google.com
- [IPv6:2a00:1450:4864:20::134])
- by smtp3.osuosl.org (Postfix) with ESMTPS id 87E3E6064B
+Received: from mail-pj1-x1029.google.com (mail-pj1-x1029.google.com
+ [IPv6:2607:f8b0:4864:20::1029])
+ by smtp3.osuosl.org (Postfix) with ESMTPS id B6CBE606D0
  for <containers@lists.linux-foundation.org>;
- Tue, 16 Mar 2021 19:26:27 +0000 (UTC)
-Received: by mail-lf1-x134.google.com with SMTP id v2so51171051lft.9
+ Tue, 16 Mar 2021 19:32:59 +0000 (UTC)
+Received: by mail-pj1-x1029.google.com with SMTP id
+ kk2-20020a17090b4a02b02900c777aa746fso16516pjb.3
  for <containers@lists.linux-foundation.org>;
- Tue, 16 Mar 2021 12:26:27 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=linux-foundation.org; s=google;
- h=mime-version:references:in-reply-to:from:date:message-id:subject:to
- :cc; bh=PJ8ESo0xqLlhuMcPL8POiu1QM1DGh9i+Siia5DD90iA=;
- b=PjQAR7jNs9aEbwhkT9krh4CX5Eq0E0nqKvuTh1ox18H2jnLEyvjLF0ogBNQZx70+qE
- w88lKXrGNC0u2RLFwPYEFIJJP7fzVM1wcZzREZLxuIVXkxTvV3Utf4GXsqCDaqxts1Nt
- pQkwtLqPxVJxeYhj4PkZwJA43mxfvW69caxtc=
+ Tue, 16 Mar 2021 12:32:59 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=chromium.org; s=google;
+ h=date:from:to:cc:subject:message-id:references:mime-version
+ :content-disposition:in-reply-to;
+ bh=m51X9CHwtfCE5IH0P5AqXawZY6zUnwHs3ugCFSUHYWY=;
+ b=O7izbeJETQwKGKZ937uPGZzffYmkBls3HZoWUKMlGCiundJ7Esi6XAj8SgsJvWW0bv
+ EJUFAG+4vJqYaQUGivkM98LHXg2BKzD8QVMa4YwQpHq1qpaDrWp8lpCb3ag0Q4QiV/vF
+ 6tH4HcqcvVGLbNhOh8UgqfrH9b3TNRcSjeCPw=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
- h=x-gm-message-state:mime-version:references:in-reply-to:from:date
- :message-id:subject:to:cc;
- bh=PJ8ESo0xqLlhuMcPL8POiu1QM1DGh9i+Siia5DD90iA=;
- b=spAodccemi3e6PMD/7i8PqOYu1bQmtdvxukzZdCADMppyKdegFVDhoBAv8V9lRau6I
- P7amhiDw2gawplDeElrF1nSsQzMgu9kVQla4mSaY5fjaBo7TL1tK4BZUkmscZ3oObkaM
- 9MGriI2vtU+zmloaH4Lx4C8+xD1n95usXSbXcDkMmanE3ctY5Uy0qdrT+myqYhL5eKdy
- vfzSwTGm3PE8Hi/r8wAv6x//0YeLeDHBy2quntDm643q0j9R4Wq3n4lomlT/dNQbunDe
- G8HS6bZU0uyI2XcHr+3ezUusLa+tkPSaTrCO2BVXPsnI15KNY4DaLuRydcFWAPK72M+F
- QKtQ==
-X-Gm-Message-State: AOAM532Iq21+jvvdW34mZdM/zieTnxkp8Qic01ZgZ8Zq5LV/RVjUczky
- NB6HeHN0wSfwRVvbC840OStabMOgdbwelYt5
-X-Google-Smtp-Source: ABdhPJwJyXyH16ZZXyG97hAf7WdZ2xVnP1C1jqmgUQwgjIF1rhnHYzliY4eK4j6k6+fSQ2SMZ/aiyg==
-X-Received: by 2002:ac2:47eb:: with SMTP id b11mr195566lfp.390.1615922784236; 
- Tue, 16 Mar 2021 12:26:24 -0700 (PDT)
-Received: from mail-lj1-f169.google.com (mail-lj1-f169.google.com.
- [209.85.208.169])
- by smtp.gmail.com with ESMTPSA id b25sm3277210ljo.80.2021.03.16.12.26.22
- for <containers@lists.linux-foundation.org>
- (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
- Tue, 16 Mar 2021 12:26:23 -0700 (PDT)
-Received: by mail-lj1-f169.google.com with SMTP id u10so186716lju.7
- for <containers@lists.linux-foundation.org>;
- Tue, 16 Mar 2021 12:26:22 -0700 (PDT)
-X-Received: by 2002:a2e:9bd0:: with SMTP id w16mr118915ljj.465.1615922781857; 
- Tue, 16 Mar 2021 12:26:21 -0700 (PDT)
-MIME-Version: 1.0
+ h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+ :mime-version:content-disposition:in-reply-to;
+ bh=m51X9CHwtfCE5IH0P5AqXawZY6zUnwHs3ugCFSUHYWY=;
+ b=I4didmp5gxP86TRpUmkEwVjqm1n8CtZiAo5iIezodLh6lJNfd/epM3EIjBCh5FEQB6
+ AB5cGQRyjXKQl7hJWFjzPKvmctRcHqV851R9qtwf78GbdDK1bPkgMZ7PWIvC5Lk1uHGD
+ sKtWRYwegRj/VM/Z2y4DrMwuNiDY9ZCSAqllefYqy8xXzF8qSJomEykNYrCOpuCW2ks/
+ qIzWUXGbuWOdBEi9iqvWb3a0WXz7fRQXMdOOOlc3neNl72aRi9jYGbw/0RvZtb8c/dAE
+ a0HhwEUuRF3OalDA8PFeZRyfake6jF30Gs70Q4bfplytv9UzQXvgZpnSCjR1gD6ZlIYu
+ wAxw==
+X-Gm-Message-State: AOAM532QexVvRIPCIevajoP68t2jm6UNVqSIhq0VQ0/DtVvCJJXgHCoz
+ Ke8KQnXYl9cS9HxGut2V/IXGyg==
+X-Google-Smtp-Source: ABdhPJymLmZUQcJf9mTPzHM6y4qPylvnlWR8uKp+iBIhoMb95+cXNuw7H/BK680P/1W8mJYXiVs6sg==
+X-Received: by 2002:a17:902:c1d5:b029:e6:52e0:6bdd with SMTP id
+ c21-20020a170902c1d5b02900e652e06bddmr902471plc.49.1615923179208; 
+ Tue, 16 Mar 2021 12:32:59 -0700 (PDT)
+Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
+ by smtp.gmail.com with ESMTPSA id fr23sm193056pjb.22.2021.03.16.12.32.58
+ (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+ Tue, 16 Mar 2021 12:32:58 -0700 (PDT)
+Date: Tue, 16 Mar 2021 12:32:57 -0700
+From: Kees Cook <keescook@chromium.org>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Subject: Re: [PATCH v8 3/8] Use atomic_t for ucounts reference counting
+Message-ID: <202103161229.75FDE42F@keescook>
 References: <cover.1615372955.git.gladkov.alexey@gmail.com>
  <59ee3289194cd97d70085cce701bc494bfcb4fd2.1615372955.git.gladkov.alexey@gmail.com>
  <202103151426.ED27141@keescook>
  <CAHk-=wjYOCgM+mKzwTZwkDDg12DdYjFFkmoFKYLim7NFmR9HBg@mail.gmail.com>
  <202103161146.E118DE5@keescook>
-In-Reply-To: <202103161146.E118DE5@keescook>
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Date: Tue, 16 Mar 2021 12:26:05 -0700
-X-Gmail-Original-Message-ID: <CAHk-=wj7k2nCB8Q5kMYsYi1ajb99yZ-EYn_MYFMQ2bw3nWuT5Q@mail.gmail.com>
-Message-ID: <CAHk-=wj7k2nCB8Q5kMYsYi1ajb99yZ-EYn_MYFMQ2bw3nWuT5Q@mail.gmail.com>
-Subject: Re: [PATCH v8 3/8] Use atomic_t for ucounts reference counting
-To: Kees Cook <keescook@chromium.org>
+ <CAHk-=wj7k2nCB8Q5kMYsYi1ajb99yZ-EYn_MYFMQ2bw3nWuT5Q@mail.gmail.com>
+MIME-Version: 1.0
+Content-Disposition: inline
+In-Reply-To: <CAHk-=wj7k2nCB8Q5kMYsYi1ajb99yZ-EYn_MYFMQ2bw3nWuT5Q@mail.gmail.com>
 Cc: Jens Axboe <axboe@kernel.dk>,
  Kernel Hardening <kernel-hardening@lists.openwall.com>,
  Linux Containers <containers@lists.linux-foundation.org>,
@@ -125,132 +119,34 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Tue, Mar 16, 2021 at 11:49 AM Kees Cook <keescook@chromium.org> wrote:
->
-> Right -- I saw that when digging through the thread. I'm honestly
-> curious, though, why did the 0-day bot find a boot crash? (I can't
-> imagine ucounts wrapped in 0.4 seconds.) So it looked like an
-> increment-from-zero case, which seems like it would be a bug?
+On Tue, Mar 16, 2021 at 12:26:05PM -0700, Linus Torvalds wrote:
+> Note that the above very intentionally does allow the "we can go over
+> the limit" case for another reason: we still have that regular
+> *unconditional* get_page(), that has a "I absolutely need a temporary
+> ref to this page, but I know it's not some long-term thing that a user
+> can force". That's not only our traditional model, but it's something
+> that some kernel code simply does need, so it's a good feature in
+> itself. That might be less of an issue for ucounts, but for pages, we
+> somethines do have "I need to take a ref to this page just for my own
+> use while I then drop the page lock and do something else".
 
-Agreed. It's almost certainly a bug. Possibly a use-after-free, but
-more likely just a "this count had never gotten initialized to
-anything but zero, but is used by the init process (and kernel
-threads) and will be incremented but never be free'd, so we never
-noticed"
+Right, get_page() has a whole other set of requirements. :) I just
+couldn't find the "we _must_ to get a reference to ucounts" code path,
+so I was scratching my head.
 
-> Heh, right -- I'm not arguing that refcount_t MUST be used, I just didn't
-> see the code path that made them unsuitable: hitting INT_MAX - 128 seems
-> very hard to do. Anyway, I'll go study it more to try to understand what
-> I'm missing.
+> And it's possible that "refcount_t" could use that exact same model,
+> and actually then offer that option that ucounts wants, of a "try to
+> get a refcount, but if we have too many refcounts, then never mind, I
+> can just return an error to user space instead".
 
-So as you may have seen later in the thread, I don't like the "INT_MAX
-- 128" as a limit.
+Yeah, if there starts to be more of these cases, I think it'd be a
+nice addition. And with the recent performance work Will Deacon did on
+refcount_t, I think any general performance concerns are met now. But
+I'd love to just leave refcount_t alone until we can really show a need
+for an API change. :P
 
-I think the page count thing does the right thing: it has separate
-"debug checks" and "limit checks", and the way it's done it never
-really needs to worry about doing the (often) expensive cmpxchg loop,
-because the limit check is _so_ far off the final case that we don't
-care, and the debug checks aren't about races, they are about "uhhuh,
-yoiu used this wrong".
-
-So what the page code does is:
-
- - try_get_page() has a limit check _and_ a debug check:
-
-    (a) the limit check is "you've used up half the refcounts, I'm not
-giving you any more".
-    (b) the debug check is "you can't get a page that has a zero count
-or has underflowed".
-
-   it's not obvious that it has both of those checks, because they are
-merged into one single WARN_ON_ONCE(), but that's purely for "we
-actually want that warning for the limit check, because that looks
-like somebody trying an attack" and it just got combined.
-
-   So technically, the code really should do
-
-        page = compound_head(page);
-        /* Debug check for mis-use of the count */
-        if (WARN_ON_ONCE(page_ref_zero_or_close_to_overflow(page)))
-                return false;
-        /*
-         * Limit check - we're not incrementing the
-         * count (much) past the halfway point
-         */
-        if (page_ref_count(page) <= 0)
-                return false;
-
-        /* The actual atomic reference - the above were done "carelessly" */
-        page_ref_inc(page);
-        return true;
-
-   because the "oh, we're not allowing you this ref" is not
-_technically_ wrong, it's just traditionally wrong, if you see what I
-mean.
-
-and notice how none of the above really cares about the
-"page_ref_inc()" itself being atomic wrt the checks.  It's ok if we
-race, and the page ref goes a bit above the half-way point. You can't
-race _so_ much that you actually overflow, because our limit check is
-_so_ far away from the overflow area that it's not an issue.
-
-And similarly, the debug check with
-page_ref_zero_or_close_to_overflow() is one of those things that are
-trying to see underflows or bad use-cases, and trying to do that
-atomically with the actual ref update doesn't really help. The
-underfulow or mis-use will have happened before we increment the page
-count.
-
-So the above is very close to what the ucounts code I think really
-wants to do: the "zero_or_close_to_overflow" is an error case: it
-means something just underflowed, or you were trying to increment a
-ref to something you didn't have a reference to in the first place.
-
-And the "<= 0" check is just the cheap test for "I'm giving you at
-most half the counter space, because I don't want to have to even
-remotely worry about overflow".
-
-Note that the above very intentionally does allow the "we can go over
-the limit" case for another reason: we still have that regular
-*unconditional* get_page(), that has a "I absolutely need a temporary
-ref to this page, but I know it's not some long-term thing that a user
-can force". That's not only our traditional model, but it's something
-that some kernel code simply does need, so it's a good feature in
-itself. That might be less of an issue for ucounts, but for pages, we
-somethines do have "I need to take a ref to this page just for my own
-use while I then drop the page lock and do something else".
-
-The "put_page()" case then has its own debug check (in
-"put_page_testzero()") which says "hey, you can't put a page that has
-no refcount.
-
-Thct could could easily use that "zero_or_close_to_overflow(()" rule
-too, but if you actually do underflow for real, you'll see the zero
-(again - races aren't really important because even if you have some
-attack vector that depends on the race, such attack vectors will also
-have to depend on doing the thing over and over and over again until
-it successfully hits the race, so you'll see the zero case in
-practice, and trying to be "atomic" for debug testing is thus
-pointless.
-
-So I do think out page counting this is actually pretty good.
-
-And it's possible that "refcount_t" could use that exact same model,
-and actually then offer that option that ucounts wants, of a "try to
-get a refcount, but if we have too many refcounts, then never mind, I
-can just return an error to user space instead".
-
-Hmm? On x86 (and honestly, these days on arm too with the new
-atomics), it's generally quite a bit cheaper to do an atomic
-increment/decrement than it is to do a cmpxchg loop. That seems to
-become even more true as microarchitectures optimize those atomics -
-apparently AMD actually does regular locked ops by doing them
-optimistically out-of-order, and verifying that the serialization
-requirements hold after-the-fact. So plain simple locked ops that
-historically used to be quite expensive are getting less so (because
-they've obviously gotten much more important over the years).
-
-                Linus
+-- 
+Kees Cook
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
