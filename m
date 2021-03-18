@@ -1,108 +1,97 @@
-Return-Path: <SRS0=7SHr=IO=lists.linux-foundation.org=containers-bounces@kernel.org>
+Return-Path: <SRS0=u2Kp=IQ=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_RED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A267BC433E6
-	for <containers@archiver.kernel.org>; Tue, 16 Mar 2021 19:33:03 +0000 (UTC)
-Received: from smtp3.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DE138C433E0
+	for <containers@archiver.kernel.org>; Thu, 18 Mar 2021 05:17:37 +0000 (UTC)
+Received: from smtp4.osuosl.org (smtp4.osuosl.org [140.211.166.137])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 3F00164EB3
-	for <containers@archiver.kernel.org>; Tue, 16 Mar 2021 19:33:03 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3F00164EB3
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=chromium.org
+	by mail.kernel.org (Postfix) with ESMTPS id 0C3D364E61
+	for <containers@archiver.kernel.org>; Thu, 18 Mar 2021 05:17:36 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0C3D364E61
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=sargun.me
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by smtp3.osuosl.org (Postfix) with ESMTP id 0107B60716;
-	Tue, 16 Mar 2021 19:33:03 +0000 (UTC)
+	by smtp4.osuosl.org (Postfix) with ESMTP id 8A5024ECB4;
+	Thu, 18 Mar 2021 05:17:36 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from smtp3.osuosl.org ([127.0.0.1])
-	by localhost (smtp3.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id mHXNE2IK0OkL; Tue, 16 Mar 2021 19:33:02 +0000 (UTC)
+Received: from smtp4.osuosl.org ([127.0.0.1])
+	by localhost (smtp4.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id zsnvtknUMkgR; Thu, 18 Mar 2021 05:17:35 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [IPv6:2605:bc80:3010:104::8cd3:938])
-	by smtp3.osuosl.org (Postfix) with ESMTP id 08EDD606D0;
-	Tue, 16 Mar 2021 19:33:02 +0000 (UTC)
+	by smtp4.osuosl.org (Postfix) with ESMTP id 367644EC67;
+	Thu, 18 Mar 2021 05:17:35 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id BFE4AC000D;
-	Tue, 16 Mar 2021 19:33:01 +0000 (UTC)
-Received: from smtp3.osuosl.org (smtp3.osuosl.org [140.211.166.136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 7E3E0C000B
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 0B397C000B;
+	Thu, 18 Mar 2021 05:17:35 +0000 (UTC)
+Received: from smtp1.osuosl.org (smtp1.osuosl.org [140.211.166.138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 2E78DC0001
  for <containers@lists.linux-foundation.org>;
- Tue, 16 Mar 2021 19:33:00 +0000 (UTC)
+ Thu, 18 Mar 2021 05:17:33 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by smtp3.osuosl.org (Postfix) with ESMTP id 5E2456001B
+ by smtp1.osuosl.org (Postfix) with ESMTP id 079688410F
  for <containers@lists.linux-foundation.org>;
- Tue, 16 Mar 2021 19:33:00 +0000 (UTC)
+ Thu, 18 Mar 2021 05:17:33 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from smtp3.osuosl.org ([127.0.0.1])
- by localhost (smtp3.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id UbefS2JxgmBe
+Authentication-Results: smtp1.osuosl.org (amavisd-new);
+ dkim=pass (1024-bit key) header.d=sargun.me
+Received: from smtp1.osuosl.org ([127.0.0.1])
+ by localhost (smtp1.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id VHcvf_iFVygP
  for <containers@lists.linux-foundation.org>;
- Tue, 16 Mar 2021 19:32:59 +0000 (UTC)
+ Thu, 18 Mar 2021 05:17:32 +0000 (UTC)
 X-Greylist: whitelisted by SQLgrey-1.8.0
-Received: from mail-pj1-x1029.google.com (mail-pj1-x1029.google.com
- [IPv6:2607:f8b0:4864:20::1029])
- by smtp3.osuosl.org (Postfix) with ESMTPS id B6CBE606D0
+Received: from mail-qk1-x72a.google.com (mail-qk1-x72a.google.com
+ [IPv6:2607:f8b0:4864:20::72a])
+ by smtp1.osuosl.org (Postfix) with ESMTPS id D9E3484098
  for <containers@lists.linux-foundation.org>;
- Tue, 16 Mar 2021 19:32:59 +0000 (UTC)
-Received: by mail-pj1-x1029.google.com with SMTP id
- kk2-20020a17090b4a02b02900c777aa746fso16516pjb.3
+ Thu, 18 Mar 2021 05:17:31 +0000 (UTC)
+Received: by mail-qk1-x72a.google.com with SMTP id n24so867484qkh.9
  for <containers@lists.linux-foundation.org>;
- Tue, 16 Mar 2021 12:32:59 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=chromium.org; s=google;
- h=date:from:to:cc:subject:message-id:references:mime-version
- :content-disposition:in-reply-to;
- bh=m51X9CHwtfCE5IH0P5AqXawZY6zUnwHs3ugCFSUHYWY=;
- b=O7izbeJETQwKGKZ937uPGZzffYmkBls3HZoWUKMlGCiundJ7Esi6XAj8SgsJvWW0bv
- EJUFAG+4vJqYaQUGivkM98LHXg2BKzD8QVMa4YwQpHq1qpaDrWp8lpCb3ag0Q4QiV/vF
- 6tH4HcqcvVGLbNhOh8UgqfrH9b3TNRcSjeCPw=
+ Wed, 17 Mar 2021 22:17:31 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sargun.me; s=google;
+ h=from:to:cc:subject:date:message-id:mime-version
+ :content-transfer-encoding;
+ bh=dvne1Wiq64R4j+AonMhFQvYnH0536sN6z3oij4WU7oI=;
+ b=Wv9Qy0m79eqdXXNb99OPYp3knuzP3vlYrqyZH2lWV99OKteCqgDTDNnU/7K43qyBdO
+ KF9fhH9pxfRkDZo0hA6Gc5am7fZe+11ujWvYAp7t/gZ11FKR/HSc8rJtclH/0RtrpWjR
+ kxbaBxy1h2Wd8cRjbo5IB222iSWBjxDEiPi6U=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
- h=x-gm-message-state:date:from:to:cc:subject:message-id:references
- :mime-version:content-disposition:in-reply-to;
- bh=m51X9CHwtfCE5IH0P5AqXawZY6zUnwHs3ugCFSUHYWY=;
- b=I4didmp5gxP86TRpUmkEwVjqm1n8CtZiAo5iIezodLh6lJNfd/epM3EIjBCh5FEQB6
- AB5cGQRyjXKQl7hJWFjzPKvmctRcHqV851R9qtwf78GbdDK1bPkgMZ7PWIvC5Lk1uHGD
- sKtWRYwegRj/VM/Z2y4DrMwuNiDY9ZCSAqllefYqy8xXzF8qSJomEykNYrCOpuCW2ks/
- qIzWUXGbuWOdBEi9iqvWb3a0WXz7fRQXMdOOOlc3neNl72aRi9jYGbw/0RvZtb8c/dAE
- a0HhwEUuRF3OalDA8PFeZRyfake6jF30Gs70Q4bfplytv9UzQXvgZpnSCjR1gD6ZlIYu
- wAxw==
-X-Gm-Message-State: AOAM532QexVvRIPCIevajoP68t2jm6UNVqSIhq0VQ0/DtVvCJJXgHCoz
- Ke8KQnXYl9cS9HxGut2V/IXGyg==
-X-Google-Smtp-Source: ABdhPJymLmZUQcJf9mTPzHM6y4qPylvnlWR8uKp+iBIhoMb95+cXNuw7H/BK680P/1W8mJYXiVs6sg==
-X-Received: by 2002:a17:902:c1d5:b029:e6:52e0:6bdd with SMTP id
- c21-20020a170902c1d5b02900e652e06bddmr902471plc.49.1615923179208; 
- Tue, 16 Mar 2021 12:32:59 -0700 (PDT)
-Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
- by smtp.gmail.com with ESMTPSA id fr23sm193056pjb.22.2021.03.16.12.32.58
+ h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+ :content-transfer-encoding;
+ bh=dvne1Wiq64R4j+AonMhFQvYnH0536sN6z3oij4WU7oI=;
+ b=VrsLmwtA56gOTeoEb0hsoO/0FPeSRsuHdO4xx87UO2d6dDCs1ys7pqX2CxaWTuJuD9
+ qIeAE5FdpN58cseNF3Yl2+BhXZoeCng/C3Y2KfcVEZHtuevsCp6jFQHCVmKthkCn8SZX
+ KimI1aroxs36dYLhQzKgg3iDLTG8Z0YdZkBNg3QM6HbZS45FKsXe+CirCQDE9/jLQmE0
+ Y65g/FWubdjdwcPLTjAXqUzVyXXRdDlAqrsMmrk3wtaX5Wjp8d8mRlCTPdUQcBt94OYg
+ ddDgN78HV3s1s7wVnTTnx8hkJ1r8raNG62VW/c9Ocnv91BkCmbrzwbetsItho6FGY9tI
+ SpoA==
+X-Gm-Message-State: AOAM530M7GTi1ftxPEPmkvJ8A4/E0iiRNddWzvpUU13QFBiUowUxjh+G
+ dPxibPlPbeFeVM6D2TfIaiy6gw==
+X-Google-Smtp-Source: ABdhPJwvwdEKQdlPPCftOKm0+XTbgHo3ayldENMXKWFLwwovmsAqCdH1lOlHJKQS1jSs6gayw3cdXw==
+X-Received: by 2002:ae9:e005:: with SMTP id m5mr2649605qkk.61.1616044650180;
+ Wed, 17 Mar 2021 22:17:30 -0700 (PDT)
+Received: from ubuntu.netflix.com (136-25-20-203.cab.webpass.net.
+ [136.25.20.203])
+ by smtp.gmail.com with ESMTPSA id f8sm1032345qkk.23.2021.03.17.22.17.28
  (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
- Tue, 16 Mar 2021 12:32:58 -0700 (PDT)
-Date: Tue, 16 Mar 2021 12:32:57 -0700
-From: Kees Cook <keescook@chromium.org>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Subject: Re: [PATCH v8 3/8] Use atomic_t for ucounts reference counting
-Message-ID: <202103161229.75FDE42F@keescook>
-References: <cover.1615372955.git.gladkov.alexey@gmail.com>
- <59ee3289194cd97d70085cce701bc494bfcb4fd2.1615372955.git.gladkov.alexey@gmail.com>
- <202103151426.ED27141@keescook>
- <CAHk-=wjYOCgM+mKzwTZwkDDg12DdYjFFkmoFKYLim7NFmR9HBg@mail.gmail.com>
- <202103161146.E118DE5@keescook>
- <CAHk-=wj7k2nCB8Q5kMYsYi1ajb99yZ-EYn_MYFMQ2bw3nWuT5Q@mail.gmail.com>
+ Wed, 17 Mar 2021 22:17:29 -0700 (PDT)
+From: Sargun Dhillon <sargun@sargun.me>
+To: Kees Cook <keescook@chromium.org>, LKML <linux-kernel@vger.kernel.org>,
+ Linux Containers <containers@lists.linux-foundation.org>
+Subject: [PATCH 0/5] Handle seccomp notification preemption
+Date: Wed, 17 Mar 2021 22:17:21 -0700
+Message-Id: <20210318051726.2488-1-sargun@sargun.me>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
-Content-Disposition: inline
-In-Reply-To: <CAHk-=wj7k2nCB8Q5kMYsYi1ajb99yZ-EYn_MYFMQ2bw3nWuT5Q@mail.gmail.com>
-Cc: Jens Axboe <axboe@kernel.dk>,
- Kernel Hardening <kernel-hardening@lists.openwall.com>,
- Linux Containers <containers@lists.linux-foundation.org>,
- Jann Horn <jannh@google.com>, LKML <linux-kernel@vger.kernel.org>,
- Oleg Nesterov <oleg@redhat.com>, Linux-MM <linux-mm@kvack.org>,
- "Eric W . Biederman" <ebiederm@xmission.com>,
- Andrew Morton <akpm@linux-foundation.org>, Alexey Gladkov <legion@kernel.org>,
- io-uring <io-uring@vger.kernel.org>
+Cc: Giuseppe Scrivano <gscrivan@redhat.com>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -119,34 +108,46 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Tue, Mar 16, 2021 at 12:26:05PM -0700, Linus Torvalds wrote:
-> Note that the above very intentionally does allow the "we can go over
-> the limit" case for another reason: we still have that regular
-> *unconditional* get_page(), that has a "I absolutely need a temporary
-> ref to this page, but I know it's not some long-term thing that a user
-> can force". That's not only our traditional model, but it's something
-> that some kernel code simply does need, so it's a good feature in
-> itself. That might be less of an issue for ucounts, but for pages, we
-> somethines do have "I need to take a ref to this page just for my own
-> use while I then drop the page lock and do something else".
 
-Right, get_page() has a whole other set of requirements. :) I just
-couldn't find the "we _must_ to get a reference to ucounts" code path,
-so I was scratching my head.
+This patchset addresses a race condition we've dealt with recently with
+seccomp. Specifically programs interrupting syscalls while they're in
+progress. This was exacerbated by Golang's recent adoption of "async
+preemption", in which they try to interrupt any syscall that's been
+running for more than 10ms during GC. During certain syscalls, it's
+non-trivial to write them in a reetrant manner in userspace (mount).
 
-> And it's possible that "refcount_t" could use that exact same model,
-> and actually then offer that option that ucounts wants, of a "try to
-> get a refcount, but if we have too many refcounts, then never mind, I
-> can just return an error to user space instead".
+This has a couple semantic changes, and relaxes a check on seccomp_data, and
+changes the semantics with ordering of how addfd and notification replies
+in the supervisor are handled.
 
-Yeah, if there starts to be more of these cases, I think it'd be a
-nice addition. And with the recent performance work Will Deacon did on
-refcount_t, I think any general performance concerns are met now. But
-I'd love to just leave refcount_t alone until we can really show a need
-for an API change. :P
+It also follows up on the original proposal from Tycho[2] to allow
+for adding an FD and returning that value atomically.
+
+Changes since v1[1]:
+ * Fix some documentation
+ * Add Rata's patches to allow for direct return from addfd
+
+[1]: https://lore.kernel.org/lkml/20210220090502.7202-1-sargun@sargun.me/
+[2]: https://lore.kernel.org/lkml/202012011322.26DCBC64F2@keescook/
+
+Rodrigo Campos (1):
+  seccomp: Support atomic "addfd + send reply"
+
+Sargun Dhillon (4):
+  seccomp: Refactor notification handler to prepare for new semantics
+  seccomp: Add wait_killable semantic to seccomp user notifier
+  selftests/seccomp: Add test for wait killable notifier
+  selftests/seccomp: Add test for atomic addfd+send
+
+ .../userspace-api/seccomp_filter.rst          |  15 +-
+ include/uapi/linux/seccomp.h                  |   4 +
+ kernel/seccomp.c                              | 129 ++++++++++++++----
+ tools/testing/selftests/seccomp/seccomp_bpf.c | 102 ++++++++++++++
+ 4 files changed, 220 insertions(+), 30 deletions(-)
 
 -- 
-Kees Cook
+2.25.1
+
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
