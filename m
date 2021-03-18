@@ -7,88 +7,88 @@ X-Spam-Status: No, score=-11.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DE138C433E0
-	for <containers@archiver.kernel.org>; Thu, 18 Mar 2021 05:17:37 +0000 (UTC)
-Received: from smtp4.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EFB81C433E0
+	for <containers@archiver.kernel.org>; Thu, 18 Mar 2021 05:17:42 +0000 (UTC)
+Received: from smtp2.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 0C3D364E61
-	for <containers@archiver.kernel.org>; Thu, 18 Mar 2021 05:17:36 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0C3D364E61
+	by mail.kernel.org (Postfix) with ESMTPS id 8B40F64E61
+	for <containers@archiver.kernel.org>; Thu, 18 Mar 2021 05:17:42 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8B40F64E61
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=sargun.me
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by smtp4.osuosl.org (Postfix) with ESMTP id 8A5024ECB4;
-	Thu, 18 Mar 2021 05:17:36 +0000 (UTC)
+	by smtp2.osuosl.org (Postfix) with ESMTP id 3D47D41566;
+	Thu, 18 Mar 2021 05:17:42 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from smtp4.osuosl.org ([127.0.0.1])
-	by localhost (smtp4.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id zsnvtknUMkgR; Thu, 18 Mar 2021 05:17:35 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [IPv6:2605:bc80:3010:104::8cd3:938])
-	by smtp4.osuosl.org (Postfix) with ESMTP id 367644EC67;
-	Thu, 18 Mar 2021 05:17:35 +0000 (UTC)
+Received: from smtp2.osuosl.org ([127.0.0.1])
+	by localhost (smtp2.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id 9KPbZDUkvuXQ; Thu, 18 Mar 2021 05:17:41 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by smtp2.osuosl.org (Postfix) with ESMTP id 4BCF64308E;
+	Thu, 18 Mar 2021 05:17:41 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 0B397C000B;
-	Thu, 18 Mar 2021 05:17:35 +0000 (UTC)
-Received: from smtp1.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 2E78DC0001
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 300D0C000B;
+	Thu, 18 Mar 2021 05:17:41 +0000 (UTC)
+Received: from smtp3.osuosl.org (smtp3.osuosl.org [IPv6:2605:bc80:3010::136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id DE57FC0001
  for <containers@lists.linux-foundation.org>;
- Thu, 18 Mar 2021 05:17:33 +0000 (UTC)
+ Thu, 18 Mar 2021 05:17:39 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by smtp1.osuosl.org (Postfix) with ESMTP id 079688410F
+ by smtp3.osuosl.org (Postfix) with ESMTP id D59786065F
  for <containers@lists.linux-foundation.org>;
- Thu, 18 Mar 2021 05:17:33 +0000 (UTC)
+ Thu, 18 Mar 2021 05:17:39 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Authentication-Results: smtp1.osuosl.org (amavisd-new);
+Authentication-Results: smtp3.osuosl.org (amavisd-new);
  dkim=pass (1024-bit key) header.d=sargun.me
-Received: from smtp1.osuosl.org ([127.0.0.1])
- by localhost (smtp1.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id VHcvf_iFVygP
+Received: from smtp3.osuosl.org ([127.0.0.1])
+ by localhost (smtp3.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id cNdKKMy6bpzs
  for <containers@lists.linux-foundation.org>;
- Thu, 18 Mar 2021 05:17:32 +0000 (UTC)
+ Thu, 18 Mar 2021 05:17:39 +0000 (UTC)
 X-Greylist: whitelisted by SQLgrey-1.8.0
-Received: from mail-qk1-x72a.google.com (mail-qk1-x72a.google.com
- [IPv6:2607:f8b0:4864:20::72a])
- by smtp1.osuosl.org (Postfix) with ESMTPS id D9E3484098
+Received: from mail-qt1-x82b.google.com (mail-qt1-x82b.google.com
+ [IPv6:2607:f8b0:4864:20::82b])
+ by smtp3.osuosl.org (Postfix) with ESMTPS id F21B66063C
  for <containers@lists.linux-foundation.org>;
- Thu, 18 Mar 2021 05:17:31 +0000 (UTC)
-Received: by mail-qk1-x72a.google.com with SMTP id n24so867484qkh.9
+ Thu, 18 Mar 2021 05:17:38 +0000 (UTC)
+Received: by mail-qt1-x82b.google.com with SMTP id m7so3195127qtq.11
  for <containers@lists.linux-foundation.org>;
- Wed, 17 Mar 2021 22:17:31 -0700 (PDT)
+ Wed, 17 Mar 2021 22:17:38 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sargun.me; s=google;
  h=from:to:cc:subject:date:message-id:mime-version
  :content-transfer-encoding;
  bh=dvne1Wiq64R4j+AonMhFQvYnH0536sN6z3oij4WU7oI=;
- b=Wv9Qy0m79eqdXXNb99OPYp3knuzP3vlYrqyZH2lWV99OKteCqgDTDNnU/7K43qyBdO
- KF9fhH9pxfRkDZo0hA6Gc5am7fZe+11ujWvYAp7t/gZ11FKR/HSc8rJtclH/0RtrpWjR
- kxbaBxy1h2Wd8cRjbo5IB222iSWBjxDEiPi6U=
+ b=BoUqbf3cZLg3qFUwWWqEUwJVuQOHaZQ7m0KpH72xR4G9zVv6ZTGyXH/5BAO5o/PNx4
+ ujzaI6M7W0Ro92j3FgNhqeqKpgu9IKTEzLYeb6owKJxDs1hAw1pYiVAzOUG4acdrS6dq
+ GK3pZumXBKM72LJ+iA54H6g8QJo3yKkXDVI7I=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
  h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
  :content-transfer-encoding;
  bh=dvne1Wiq64R4j+AonMhFQvYnH0536sN6z3oij4WU7oI=;
- b=VrsLmwtA56gOTeoEb0hsoO/0FPeSRsuHdO4xx87UO2d6dDCs1ys7pqX2CxaWTuJuD9
- qIeAE5FdpN58cseNF3Yl2+BhXZoeCng/C3Y2KfcVEZHtuevsCp6jFQHCVmKthkCn8SZX
- KimI1aroxs36dYLhQzKgg3iDLTG8Z0YdZkBNg3QM6HbZS45FKsXe+CirCQDE9/jLQmE0
- Y65g/FWubdjdwcPLTjAXqUzVyXXRdDlAqrsMmrk3wtaX5Wjp8d8mRlCTPdUQcBt94OYg
- ddDgN78HV3s1s7wVnTTnx8hkJ1r8raNG62VW/c9Ocnv91BkCmbrzwbetsItho6FGY9tI
- SpoA==
-X-Gm-Message-State: AOAM530M7GTi1ftxPEPmkvJ8A4/E0iiRNddWzvpUU13QFBiUowUxjh+G
- dPxibPlPbeFeVM6D2TfIaiy6gw==
-X-Google-Smtp-Source: ABdhPJwvwdEKQdlPPCftOKm0+XTbgHo3ayldENMXKWFLwwovmsAqCdH1lOlHJKQS1jSs6gayw3cdXw==
-X-Received: by 2002:ae9:e005:: with SMTP id m5mr2649605qkk.61.1616044650180;
- Wed, 17 Mar 2021 22:17:30 -0700 (PDT)
+ b=VxZizEnFrZEF6RrJZjv0NSs3svVHkctKJdl+ECf3vCYR4t8NK/UqOuTLaGqAJtFyiI
+ 9KUQgIF4X7DRwga0jD/fH+TuoNs+iC8cUw9VZcK6oUChVmujS1EPRaCnaFz+atxER1xC
+ 1w5BMyeyjjEHk2aV1RAfZuughoAuGnUAaMcivyFn90xlRHl5Vx0BZmQkCNGPW57mQbor
+ m5N/GBV2BisvLOQnOI+779REZGKVKVDAymQi/+Q3GcoBy+tlgc4GFXS3c+b5RLMxzPrj
+ XTxyNtRCVYGhQm+fcv2RSwDlRIHhjr44dj2hyobDrX2LKI+K/ueHacHRoVRSgSNFXCMG
+ 3vNg==
+X-Gm-Message-State: AOAM533cQhE2P8xjIXf8fqCMrz0H/cnuKmmVFSPb/wjajW9Z2PqYY49K
+ qLK3+7HwdRf4Q8ZBxPk5ZXwYGw==
+X-Google-Smtp-Source: ABdhPJwytlGS/bDJZFsU53lfvc4ZqkgTL2PoYKatFygd5a8aIbB0TnGDRoS71WcXBoF7akK9D6rtnQ==
+X-Received: by 2002:ac8:3a42:: with SMTP id w60mr2244046qte.307.1616044657380; 
+ Wed, 17 Mar 2021 22:17:37 -0700 (PDT)
 Received: from ubuntu.netflix.com (136-25-20-203.cab.webpass.net.
  [136.25.20.203])
- by smtp.gmail.com with ESMTPSA id f8sm1032345qkk.23.2021.03.17.22.17.28
+ by smtp.gmail.com with ESMTPSA id m16sm937852qkm.100.2021.03.17.22.17.35
  (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
- Wed, 17 Mar 2021 22:17:29 -0700 (PDT)
+ Wed, 17 Mar 2021 22:17:36 -0700 (PDT)
 From: Sargun Dhillon <sargun@sargun.me>
 To: Kees Cook <keescook@chromium.org>, LKML <linux-kernel@vger.kernel.org>,
  Linux Containers <containers@lists.linux-foundation.org>
 Subject: [PATCH 0/5] Handle seccomp notification preemption
-Date: Wed, 17 Mar 2021 22:17:21 -0700
-Message-Id: <20210318051726.2488-1-sargun@sargun.me>
+Date: Wed, 17 Mar 2021 22:17:28 -0700
+Message-Id: <20210318051733.2544-1-sargun@sargun.me>
 X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
 Cc: Giuseppe Scrivano <gscrivan@redhat.com>
