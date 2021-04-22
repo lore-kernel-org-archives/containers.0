@@ -7,71 +7,71 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0DDFDC43460
-	for <containers@archiver.kernel.org>; Thu, 22 Apr 2021 12:28:02 +0000 (UTC)
-Received: from smtp4.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C65FC43460
+	for <containers@archiver.kernel.org>; Thu, 22 Apr 2021 12:28:03 +0000 (UTC)
+Received: from smtp3.osuosl.org (smtp3.osuosl.org [140.211.166.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id A0F896147F
-	for <containers@archiver.kernel.org>; Thu, 22 Apr 2021 12:28:01 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A0F896147F
+	by mail.kernel.org (Postfix) with ESMTPS id 3928C61463
+	for <containers@archiver.kernel.org>; Thu, 22 Apr 2021 12:28:03 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3928C61463
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by smtp4.osuosl.org (Postfix) with ESMTP id 4B70140621;
-	Thu, 22 Apr 2021 12:28:01 +0000 (UTC)
+	by smtp3.osuosl.org (Postfix) with ESMTP id 065DD608A0;
+	Thu, 22 Apr 2021 12:28:03 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from smtp4.osuosl.org ([127.0.0.1])
-	by localhost (smtp4.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id pSbIkvxQ-2p7; Thu, 22 Apr 2021 12:28:00 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [IPv6:2605:bc80:3010:104::8cd3:938])
-	by smtp4.osuosl.org (Postfix) with ESMTP id CF9554055C;
-	Thu, 22 Apr 2021 12:27:59 +0000 (UTC)
+Received: from smtp3.osuosl.org ([127.0.0.1])
+	by localhost (smtp3.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id Ei5MRTn93iI7; Thu, 22 Apr 2021 12:28:02 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by smtp3.osuosl.org (Postfix) with ESMTP id EE6C3606F2;
+	Thu, 22 Apr 2021 12:28:01 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id B48F1C001A;
-	Thu, 22 Apr 2021 12:27:59 +0000 (UTC)
-Received: from smtp1.osuosl.org (smtp1.osuosl.org [140.211.166.138])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 7FE28C000B
+	by lists.linuxfoundation.org (Postfix) with ESMTP id CF325C000F;
+	Thu, 22 Apr 2021 12:28:01 +0000 (UTC)
+Received: from smtp1.osuosl.org (smtp1.osuosl.org [IPv6:2605:bc80:3010::138])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 60CBBC000B
  for <containers@lists.linux-foundation.org>;
- Thu, 22 Apr 2021 12:27:58 +0000 (UTC)
+ Thu, 22 Apr 2021 12:28:01 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by smtp1.osuosl.org (Postfix) with ESMTP id 6EB5E83D6B
+ by smtp1.osuosl.org (Postfix) with ESMTP id 50B0683D87
  for <containers@lists.linux-foundation.org>;
- Thu, 22 Apr 2021 12:27:58 +0000 (UTC)
+ Thu, 22 Apr 2021 12:28:01 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Authentication-Results: smtp1.osuosl.org (amavisd-new);
  dkim=pass (2048-bit key) header.d=kernel.org
 Received: from smtp1.osuosl.org ([127.0.0.1])
  by localhost (smtp1.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id lK6XF_jhLqjO
+ with ESMTP id UXLwr9MV_CVy
  for <containers@lists.linux-foundation.org>;
- Thu, 22 Apr 2021 12:27:57 +0000 (UTC)
+ Thu, 22 Apr 2021 12:28:00 +0000 (UTC)
 X-Greylist: domain auto-whitelisted by SQLgrey-1.8.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
- by smtp1.osuosl.org (Postfix) with ESMTPS id B4D9283D5F
+ by smtp1.osuosl.org (Postfix) with ESMTPS id B53E583D6B
  for <containers@lists.linux-foundation.org>;
+ Thu, 22 Apr 2021 12:28:00 +0000 (UTC)
+Received: by mail.kernel.org (Postfix) with ESMTPSA id AC0B46146B;
  Thu, 22 Apr 2021 12:27:57 +0000 (UTC)
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 9561661574;
- Thu, 22 Apr 2021 12:27:54 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
- s=k20201202; t=1619094477;
- bh=fP29DG3NBsXSw/mOMG+IGXDEiWXAJ3rxrytILV+WtVo=;
+ s=k20201202; t=1619094480;
+ bh=LYPfQthXMNQ1j9xLmLGXwzKg7zmVgH1XIEPaB1Wwz2Y=;
  h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
- b=hK3t3bW+/iIxipJnxe9I6TLE22NYRford0WwCIAeQGh1SjTM8qYc+EbGcJJjDe8Oz
- 5Jkenhy/Sqg9Mpj9JGoUa4s73zlFtUwDk1ustshaC0qB9GGJefRHFbJ1dTTVKC9zff
- zEQHWVjSz7d1cqvyIMF+3ede0vYUPzfzw933N+uyLDy5yIZ73uh49j8AaKc9Ynu2lS
- 4Sa4nbc0zwPwtQWlpFlRwIDbGluohwObqZq8oKpqy2mnp07OdHJMEr/KyNHD2raNso
- YtMjaVSWXyeC3354rpBhOgk36g0SCSKiCZ8l/XlwnowxzAEXnFztZAyil1SI/MwYxF
- RnDJqGW7vPwOg==
+ b=ug9dX7vRz+FtzTRXvkbuDxG/uOMLB2nXneNbtqRPFk6MQy2Q8ZfAaDbxSNlBViBDV
+ Au6lPRutiSI/TvNNrpZtC/EoOunlb5W4n5Xdvka4c9QfnXegQGtEc1bKcaBCJaMGwo
+ BIhXDs/iwQLycW/ul5krwdXnbfxD3v6CKMd/knz0AjqNJM9gId0N5JhYFGxfuraAcx
+ 1V/uFAy0jHmrVN48+tnpXGfzZbt5xb05hhlYsq3qqFbdRZmJrC+vW+07eVkozBu2S0
+ nGZpKUCQobsvJu7RmlXwrQbFW6Z/n+SC8Zv5nBXMYktu6EN+Mstv73EyzwjZnI3WUP
+ QjwUfgmZ5Szsw==
 From: legion@kernel.org
 To: LKML <linux-kernel@vger.kernel.org>,
  Kernel Hardening <kernel-hardening@lists.openwall.com>,
  Linux Containers <containers@lists.linux-foundation.org>,
  linux-mm@kvack.org
-Subject: [PATCH v11 8/9] kselftests: Add test to check for rlimit changes in
- different user namespaces
-Date: Thu, 22 Apr 2021 14:27:15 +0200
-Message-Id: <28cafdcdd4abd8494b34a27f1970b666b30de8bf.1619094428.git.legion@kernel.org>
+Subject: [PATCH v11 9/9] ucounts: Set ucount_max to the largest positive value
+ the type can hold
+Date: Thu, 22 Apr 2021 14:27:16 +0200
+Message-Id: <1825a5dfa18bc5a570e79feb05e2bd07fd57e7e3.1619094428.git.legion@kernel.org>
 X-Mailer: git-send-email 2.29.3
 In-Reply-To: <cover.1619094428.git.legion@kernel.org>
 References: <cover.1619094428.git.legion@kernel.org>
@@ -99,228 +99,80 @@ Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
 From: Alexey Gladkov <legion@kernel.org>
 
-The testcase runs few instances of the program with RLIMIT_NPROC=1 from
-user uid=60000, in different user namespaces.
+The ns->ucount_max[] is signed long which is less than the rlimit size.
+We have to protect ucount_max[] from overflow and only use the largest
+value that we can hold.
+
+On 32bit using "long" instead of "unsigned long" to hold the counts has
+the downside that RLIMIT_MSGQUEUE and RLIMIT_MEMLOCK are limited to 2GiB
+instead of 4GiB. I don't think anyone cares but it should be mentioned
+in case someone does.
+
+The RLIMIT_NPROC and RLIMIT_SIGPENDING used atomic_t so their maximum
+hasn't changed.
 
 Signed-off-by: Alexey Gladkov <legion@kernel.org>
 ---
- tools/testing/selftests/Makefile              |   1 +
- tools/testing/selftests/rlimits/.gitignore    |   2 +
- tools/testing/selftests/rlimits/Makefile      |   6 +
- tools/testing/selftests/rlimits/config        |   1 +
- .../selftests/rlimits/rlimits-per-userns.c    | 161 ++++++++++++++++++
- 5 files changed, 171 insertions(+)
- create mode 100644 tools/testing/selftests/rlimits/.gitignore
- create mode 100644 tools/testing/selftests/rlimits/Makefile
- create mode 100644 tools/testing/selftests/rlimits/config
- create mode 100644 tools/testing/selftests/rlimits/rlimits-per-userns.c
+ include/linux/user_namespace.h | 6 ++++++
+ kernel/fork.c                  | 8 ++++----
+ kernel/user_namespace.c        | 8 ++++----
+ 3 files changed, 14 insertions(+), 8 deletions(-)
 
-diff --git a/tools/testing/selftests/Makefile b/tools/testing/selftests/Makefile
-index 6c575cf34a71..a4ea1481bd9a 100644
---- a/tools/testing/selftests/Makefile
-+++ b/tools/testing/selftests/Makefile
-@@ -48,6 +48,7 @@ TARGETS += proc
- TARGETS += pstore
- TARGETS += ptrace
- TARGETS += openat2
-+TARGETS += rlimits
- TARGETS += rseq
- TARGETS += rtc
- TARGETS += seccomp
-diff --git a/tools/testing/selftests/rlimits/.gitignore b/tools/testing/selftests/rlimits/.gitignore
-new file mode 100644
-index 000000000000..091021f255b3
---- /dev/null
-+++ b/tools/testing/selftests/rlimits/.gitignore
-@@ -0,0 +1,2 @@
-+# SPDX-License-Identifier: GPL-2.0-only
-+rlimits-per-userns
-diff --git a/tools/testing/selftests/rlimits/Makefile b/tools/testing/selftests/rlimits/Makefile
-new file mode 100644
-index 000000000000..03aadb406212
---- /dev/null
-+++ b/tools/testing/selftests/rlimits/Makefile
-@@ -0,0 +1,6 @@
-+# SPDX-License-Identifier: GPL-2.0-or-later
-+
-+CFLAGS += -Wall -O2 -g
-+TEST_GEN_PROGS := rlimits-per-userns
-+
-+include ../lib.mk
-diff --git a/tools/testing/selftests/rlimits/config b/tools/testing/selftests/rlimits/config
-new file mode 100644
-index 000000000000..416bd53ce982
---- /dev/null
-+++ b/tools/testing/selftests/rlimits/config
-@@ -0,0 +1 @@
-+CONFIG_USER_NS=y
-diff --git a/tools/testing/selftests/rlimits/rlimits-per-userns.c b/tools/testing/selftests/rlimits/rlimits-per-userns.c
-new file mode 100644
-index 000000000000..26dc949e93ea
---- /dev/null
-+++ b/tools/testing/selftests/rlimits/rlimits-per-userns.c
-@@ -0,0 +1,161 @@
-+// SPDX-License-Identifier: GPL-2.0-or-later
-+/*
-+ * Author: Alexey Gladkov <gladkov.alexey@gmail.com>
-+ */
-+#define _GNU_SOURCE
-+#include <sys/types.h>
-+#include <sys/wait.h>
-+#include <sys/time.h>
-+#include <sys/resource.h>
-+#include <sys/prctl.h>
-+#include <sys/stat.h>
-+
-+#include <unistd.h>
-+#include <stdlib.h>
-+#include <stdio.h>
-+#include <string.h>
-+#include <sched.h>
-+#include <signal.h>
-+#include <limits.h>
-+#include <fcntl.h>
-+#include <errno.h>
-+#include <err.h>
-+
-+#define NR_CHILDS 2
-+
-+static char *service_prog;
-+static uid_t user   = 60000;
-+static uid_t group  = 60000;
-+
-+static void setrlimit_nproc(rlim_t n)
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index e42efd0ae595..2409fd57fd61 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -122,6 +122,12 @@ long inc_rlimit_ucounts(struct ucounts *ucounts, enum ucount_type type, long v);
+ bool dec_rlimit_ucounts(struct ucounts *ucounts, enum ucount_type type, long v);
+ bool is_ucounts_overlimit(struct ucounts *ucounts, enum ucount_type type, unsigned long max);
+ 
++static inline void set_rlimit_ucount_max(struct user_namespace *ns,
++		enum ucount_type type, unsigned long max)
 +{
-+	pid_t pid = getpid();
-+	struct rlimit limit = {
-+		.rlim_cur = n,
-+		.rlim_max = n
-+	};
-+
-+	warnx("(pid=%d): Setting RLIMIT_NPROC=%ld", pid, n);
-+
-+	if (setrlimit(RLIMIT_NPROC, &limit) < 0)
-+		err(EXIT_FAILURE, "(pid=%d): setrlimit(RLIMIT_NPROC)", pid);
++	ns->ucount_max[type] = max <= LONG_MAX ? max : LONG_MAX;
 +}
 +
-+static pid_t fork_child(void)
-+{
-+	pid_t pid = fork();
-+
-+	if (pid < 0)
-+		err(EXIT_FAILURE, "fork");
-+
-+	if (pid > 0)
-+		return pid;
-+
-+	pid = getpid();
-+
-+	warnx("(pid=%d): New process starting ...", pid);
-+
-+	if (prctl(PR_SET_PDEATHSIG, SIGKILL) < 0)
-+		err(EXIT_FAILURE, "(pid=%d): prctl(PR_SET_PDEATHSIG)", pid);
-+
-+	signal(SIGUSR1, SIG_DFL);
-+
-+	warnx("(pid=%d): Changing to uid=%d, gid=%d", pid, user, group);
-+
-+	if (setgid(group) < 0)
-+		err(EXIT_FAILURE, "(pid=%d): setgid(%d)", pid, group);
-+	if (setuid(user) < 0)
-+		err(EXIT_FAILURE, "(pid=%d): setuid(%d)", pid, user);
-+
-+	warnx("(pid=%d): Service running ...", pid);
-+
-+	warnx("(pid=%d): Unshare user namespace", pid);
-+	if (unshare(CLONE_NEWUSER) < 0)
-+		err(EXIT_FAILURE, "unshare(CLONE_NEWUSER)");
-+
-+	char *const argv[] = { "service", NULL };
-+	char *const envp[] = { "I_AM_SERVICE=1", NULL };
-+
-+	warnx("(pid=%d): Executing real service ...", pid);
-+
-+	execve(service_prog, argv, envp);
-+	err(EXIT_FAILURE, "(pid=%d): execve", pid);
-+}
-+
-+int main(int argc, char **argv)
-+{
-+	size_t i;
-+	pid_t child[NR_CHILDS];
-+	int wstatus[NR_CHILDS];
-+	int childs = NR_CHILDS;
-+	pid_t pid;
-+
-+	if (getenv("I_AM_SERVICE")) {
-+		pause();
-+		exit(EXIT_SUCCESS);
-+	}
-+
-+	service_prog = argv[0];
-+	pid = getpid();
-+
-+	warnx("(pid=%d) Starting testcase", pid);
-+
-+	/*
-+	 * This rlimit is not a problem for root because it can be exceeded.
-+	 */
-+	setrlimit_nproc(1);
-+
-+	for (i = 0; i < NR_CHILDS; i++) {
-+		child[i] = fork_child();
-+		wstatus[i] = 0;
-+		usleep(250000);
-+	}
-+
-+	while (1) {
-+		for (i = 0; i < NR_CHILDS; i++) {
-+			if (child[i] <= 0)
-+				continue;
-+
-+			errno = 0;
-+			pid_t ret = waitpid(child[i], &wstatus[i], WNOHANG);
-+
-+			if (!ret || (!WIFEXITED(wstatus[i]) && !WIFSIGNALED(wstatus[i])))
-+				continue;
-+
-+			if (ret < 0 && errno != ECHILD)
-+				warn("(pid=%d): waitpid(%d)", pid, child[i]);
-+
-+			child[i] *= -1;
-+			childs -= 1;
-+		}
-+
-+		if (!childs)
-+			break;
-+
-+		usleep(250000);
-+
-+		for (i = 0; i < NR_CHILDS; i++) {
-+			if (child[i] <= 0)
-+				continue;
-+			kill(child[i], SIGUSR1);
-+		}
-+	}
-+
-+	for (i = 0; i < NR_CHILDS; i++) {
-+		if (WIFEXITED(wstatus[i]))
-+			warnx("(pid=%d): pid %d exited, status=%d",
-+				pid, -child[i], WEXITSTATUS(wstatus[i]));
-+		else if (WIFSIGNALED(wstatus[i]))
-+			warnx("(pid=%d): pid %d killed by signal %d",
-+				pid, -child[i], WTERMSIG(wstatus[i]));
-+
-+		if (WIFSIGNALED(wstatus[i]) && WTERMSIG(wstatus[i]) == SIGUSR1)
-+			continue;
-+
-+		warnx("(pid=%d): Test failed", pid);
-+		exit(EXIT_FAILURE);
-+	}
-+
-+	warnx("(pid=%d): Test passed", pid);
-+	exit(EXIT_SUCCESS);
-+}
+ #ifdef CONFIG_USER_NS
+ 
+ static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
+diff --git a/kernel/fork.c b/kernel/fork.c
+index a3a5e317c3c0..2cd01c443196 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -822,10 +822,10 @@ void __init fork_init(void)
+ 	for (i = 0; i < MAX_PER_NAMESPACE_UCOUNTS; i++)
+ 		init_user_ns.ucount_max[i] = max_threads/2;
+ 
+-	init_user_ns.ucount_max[UCOUNT_RLIMIT_NPROC] = task_rlimit(&init_task, RLIMIT_NPROC);
+-	init_user_ns.ucount_max[UCOUNT_RLIMIT_MSGQUEUE] = task_rlimit(&init_task, RLIMIT_MSGQUEUE);
+-	init_user_ns.ucount_max[UCOUNT_RLIMIT_SIGPENDING] = task_rlimit(&init_task, RLIMIT_SIGPENDING);
+-	init_user_ns.ucount_max[UCOUNT_RLIMIT_MEMLOCK] = task_rlimit(&init_task, RLIMIT_MEMLOCK);
++	set_rlimit_ucount_max(&init_user_ns, UCOUNT_RLIMIT_NPROC, task_rlimit(&init_task, RLIMIT_NPROC));
++	set_rlimit_ucount_max(&init_user_ns, UCOUNT_RLIMIT_MSGQUEUE, task_rlimit(&init_task, RLIMIT_MSGQUEUE));
++	set_rlimit_ucount_max(&init_user_ns, UCOUNT_RLIMIT_SIGPENDING, task_rlimit(&init_task, RLIMIT_SIGPENDING));
++	set_rlimit_ucount_max(&init_user_ns, UCOUNT_RLIMIT_MEMLOCK, task_rlimit(&init_task, RLIMIT_MEMLOCK));
+ 
+ #ifdef CONFIG_VMAP_STACK
+ 	cpuhp_setup_state(CPUHP_BP_PREPARE_DYN, "fork:vm_stack_cache",
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 5ef0d4b182ba..df7651935fd5 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -121,10 +121,10 @@ int create_user_ns(struct cred *new)
+ 	for (i = 0; i < MAX_PER_NAMESPACE_UCOUNTS; i++) {
+ 		ns->ucount_max[i] = INT_MAX;
+ 	}
+-	ns->ucount_max[UCOUNT_RLIMIT_NPROC] = rlimit(RLIMIT_NPROC);
+-	ns->ucount_max[UCOUNT_RLIMIT_MSGQUEUE] = rlimit(RLIMIT_MSGQUEUE);
+-	ns->ucount_max[UCOUNT_RLIMIT_SIGPENDING] = rlimit(RLIMIT_SIGPENDING);
+-	ns->ucount_max[UCOUNT_RLIMIT_MEMLOCK] = rlimit(RLIMIT_MEMLOCK);
++	set_rlimit_ucount_max(ns, UCOUNT_RLIMIT_NPROC, rlimit(RLIMIT_NPROC));
++	set_rlimit_ucount_max(ns, UCOUNT_RLIMIT_MSGQUEUE, rlimit(RLIMIT_MSGQUEUE));
++	set_rlimit_ucount_max(ns, UCOUNT_RLIMIT_SIGPENDING, rlimit(RLIMIT_SIGPENDING));
++	set_rlimit_ucount_max(ns, UCOUNT_RLIMIT_MEMLOCK, rlimit(RLIMIT_MEMLOCK));
+ 	ns->ucounts = ucounts;
+ 
+ 	/* Inherit USERNS_SETGROUPS_ALLOWED from our parent */
 -- 
 2.29.3
 
