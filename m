@@ -1,102 +1,101 @@
-Return-Path: <SRS0=gt/T=JU=lists.linux-foundation.org=containers-bounces@kernel.org>
+Return-Path: <SRS0=jAU3=JX=lists.linux-foundation.org=containers-bounces@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
+X-Spam-Status: No, score=-11.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 291B0C433B4
-	for <containers@archiver.kernel.org>; Fri, 23 Apr 2021 14:36:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3B1D2C433B4
+	for <containers@archiver.kernel.org>; Mon, 26 Apr 2021 18:06:21 +0000 (UTC)
 Received: from smtp2.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 8807861354
-	for <containers@archiver.kernel.org>; Fri, 23 Apr 2021 14:36:54 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8807861354
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lists.linux-foundation.org
+	by mail.kernel.org (Postfix) with ESMTPS id 632A7613BC
+	for <containers@archiver.kernel.org>; Mon, 26 Apr 2021 18:06:20 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 632A7613BC
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=sargun.me
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by smtp2.osuosl.org (Postfix) with ESMTP id 2CA794063C;
-	Fri, 23 Apr 2021 14:36:54 +0000 (UTC)
+	by smtp2.osuosl.org (Postfix) with ESMTP id 0306B40160;
+	Mon, 26 Apr 2021 18:06:20 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Received: from smtp2.osuosl.org ([127.0.0.1])
 	by localhost (smtp2.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id kbeTlGbN1lrp; Fri, 23 Apr 2021 14:36:53 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [IPv6:2605:bc80:3010:104::8cd3:938])
-	by smtp2.osuosl.org (Postfix) with ESMTP id 0DA294061E;
-	Fri, 23 Apr 2021 14:36:52 +0000 (UTC)
+	with ESMTP id REN1G613sNjA; Mon, 26 Apr 2021 18:06:18 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by smtp2.osuosl.org (Postfix) with ESMTP id 281B7400C7;
+	Mon, 26 Apr 2021 18:06:18 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id E7C02C000E;
-	Fri, 23 Apr 2021 14:36:52 +0000 (UTC)
-Received: from smtp4.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 279C7C000B
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 01571C000E;
+	Mon, 26 Apr 2021 18:06:18 +0000 (UTC)
+Received: from smtp4.osuosl.org (smtp4.osuosl.org [IPv6:2605:bc80:3010::137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id BE7E8C000B
  for <containers@lists.linux-foundation.org>;
- Fri, 23 Apr 2021 14:36:52 +0000 (UTC)
+ Mon, 26 Apr 2021 18:06:16 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by smtp4.osuosl.org (Postfix) with ESMTP id 20E7040517
+ by smtp4.osuosl.org (Postfix) with ESMTP id 9F3F840407
  for <containers@lists.linux-foundation.org>;
- Fri, 23 Apr 2021 14:36:52 +0000 (UTC)
+ Mon, 26 Apr 2021 18:06:16 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Authentication-Results: smtp4.osuosl.org (amavisd-new);
- dkim=pass (2048-bit key) header.d=arista.com
+ dkim=pass (1024-bit key) header.d=sargun.me
 Received: from smtp4.osuosl.org ([127.0.0.1])
  by localhost (smtp4.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id KnNtksv0u6kG
+ with ESMTP id NvfusM4oE8Sk
  for <containers@lists.linux-foundation.org>;
- Fri, 23 Apr 2021 14:36:50 +0000 (UTC)
+ Mon, 26 Apr 2021 18:06:15 +0000 (UTC)
 X-Greylist: whitelisted by SQLgrey-1.8.0
-Received: from mail-lf1-x133.google.com (mail-lf1-x133.google.com
- [IPv6:2a00:1450:4864:20::133])
- by smtp4.osuosl.org (Postfix) with ESMTPS id 965E1404D7
+Received: from mail-pl1-x62c.google.com (mail-pl1-x62c.google.com
+ [IPv6:2607:f8b0:4864:20::62c])
+ by smtp4.osuosl.org (Postfix) with ESMTPS id 40844403ED
  for <containers@lists.linux-foundation.org>;
- Fri, 23 Apr 2021 14:36:50 +0000 (UTC)
-Received: by mail-lf1-x133.google.com with SMTP id x19so47488385lfa.2
+ Mon, 26 Apr 2021 18:06:14 +0000 (UTC)
+Received: by mail-pl1-x62c.google.com with SMTP id s20so13534984plr.13
  for <containers@lists.linux-foundation.org>;
- Fri, 23 Apr 2021 07:36:50 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arista.com; s=google;
- h=mime-version:references:in-reply-to:from:date:message-id:subject:to
- :cc; bh=rGVMK1LPh9iIc+XnF1YdK9uGnLn1GjuOH4C0X7AWW18=;
- b=ibnNxKI5LWvzWd65BU2zvJQ3lZMkhb1LLEARrXo8fh/Rbz/rfSC6mIwVjEdsykK89c
- NejtsnaccVOuASPeR9gGFE5MPQzHaHKRgP5Y/pz0cOECwfTI0q8/0miB8rvnra9ZOCZ/
- ng1jnduShfGZAfZyFIY5f0GV9vDniT6Xx7XqgmFTLL7DqonI8SYoqhkDjdN5jfba7u7P
- PvQxVkNETEmcUxzBXMmpliJQJ97BhmLTKtJ+gTKzXfdKmCjPyMCQVNqlf/QSI6u/3aEi
- hksfL1C3NTyGLoxH+em122rqRRn3Wtx8Qdyo4zc0DE13g71NRdPskvQx8eSfOG4kIHrI
- AcoQ==
+ Mon, 26 Apr 2021 11:06:14 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sargun.me; s=google;
+ h=from:to:cc:subject:date:message-id:mime-version
+ :content-transfer-encoding;
+ bh=crrXl04Pmuu3hnq0cq7H9ljH1hJvjphFD3Ivc9bSiG0=;
+ b=KkujWiFEtrvDAwAIA9yFog0WvpXFYbxTqf2G6PUO4jUn/BaScPI3Tya5PV1L/3Cphv
+ X1quUztMcdUAqr1aNZoIlFF8shCRsL5iSXKoT8rL4PBYQhGnkwuUnww3FRvMfW4iIBNf
+ yqRb+3jdPBjRhm2gSJJjyoJKi8vUJjO8Jgrn8=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=1e100.net; s=20161025;
- h=x-gm-message-state:mime-version:references:in-reply-to:from:date
- :message-id:subject:to:cc;
- bh=rGVMK1LPh9iIc+XnF1YdK9uGnLn1GjuOH4C0X7AWW18=;
- b=GePZ9SzK7sEwSFEIHI0RDdlglklCptAQLSMyvEp6se4HqLxa5oWrH6EnuPrjrrcBfK
- EhHsSVUN6GlVpfkXgdRRwTaG+3//+vEoUVbYtPIAwsXpafnaJBwAMTBn03W+wWwGh7d5
- fElMsVZGlk8yg5UvWP3YG4p3RAjYJB7w5weFVMUbG2GYxacD5nhZ0STrVQuCfb1AELMM
- uhexsSGxax0AOyS8l57e/i2HQVEHawVzPCWpAwTd2NGoPje+6qUuUpzhFP8VSONca02x
- E/t8aapR22FVg2Deq1uVb2KWvMJcHP+r1EnDnYku0RoyT/qk2VQYtjG8+mF5V9V89sIH
- dZXg==
-X-Gm-Message-State: AOAM533S6bzz749EO4UY1Hmgw3CT4RF43pdsbHtVcOgKpyZIon3rMAa5
- DNor5Pyda3s7rsLiYUQ7U9uk40yPqSG0MfWcYSD2NA==
-X-Google-Smtp-Source: ABdhPJyP6Uu0qWuAegZYZDUSEd9xuSqzExELRiyoT5S0n936RRLzfq/8QcEhnek3SSimkfoYPYC2HuOLBQSjzbhGPSQ=
-X-Received: by 2002:a19:7e97:: with SMTP id z145mr3212097lfc.280.1619188608499; 
- Fri, 23 Apr 2021 07:36:48 -0700 (PDT)
+ h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+ :content-transfer-encoding;
+ bh=crrXl04Pmuu3hnq0cq7H9ljH1hJvjphFD3Ivc9bSiG0=;
+ b=uAVNJpIRWMbSy/5Xt93AfKN3sjRqh/OwlCOTaz78x3O8tGu8pK3Nu27YqAztLs8NvS
+ HuVff2+eulKvDcTx0MuVuJYRYhT9tPRNfrKhX62LRgFhHWaSMXF/pj64GOgbcN4G4fLc
+ bTQ/ZGvcCi/mJ6cfTNfqWfD3bMlL4MvfuyJca3B3O85LN6WqPA230BzdlkSReJyq5lPM
+ l38hNbeIwusGvzf9YJT9XKYi5tcQtf53ArrRVyjTUhWlJCKvFWUVeBENLjmfb1J0yHa4
+ e4y6rO6qxShky8bFjFsWLeFyF9tD+3mAcg0xlZTox0mbWssCe+XWI1tC6ePvPawRIKfx
+ mllA==
+X-Gm-Message-State: AOAM5304ZUj1pC6gRtCc6+8b4tlTEc2jXJwGqgQAjlxDIYp+v0bgS5s1
+ P1jot+uTPxWS3a4Yn3hN0itFrg==
+X-Google-Smtp-Source: ABdhPJy/Na1du6oypewjuRbextqXDjv9/n/HngVaKUqVIV9ZTBLt/a/dxAeeBWwA43q5YE2/pPc8cg==
+X-Received: by 2002:a17:90b:3754:: with SMTP id
+ ne20mr4999359pjb.39.1619460374084; 
+ Mon, 26 Apr 2021 11:06:14 -0700 (PDT)
+Received: from ubuntu.netflix.com (136-25-20-203.cab.webpass.net.
+ [136.25.20.203])
+ by smtp.gmail.com with ESMTPSA id j7sm326835pfd.129.2021.04.26.11.06.12
+ (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+ Mon, 26 Apr 2021 11:06:13 -0700 (PDT)
+From: Sargun Dhillon <sargun@sargun.me>
+To: Kees Cook <keescook@chromium.org>, LKML <linux-kernel@vger.kernel.org>,
+ Linux Containers <containers@lists.linux-foundation.org>,
+ Rodrigo Campos <rodrigo@kinvolk.io>,
+ Christian Brauner <christian.brauner@ubuntu.com>
+Subject: [PATCH RESEND 0/5] Handle seccomp notification preemption
+Date: Mon, 26 Apr 2021 11:06:05 -0700
+Message-Id: <20210426180610.2363-1-sargun@sargun.me>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
-References: <87ft6act3c.fsf@redhat.com>
- <20210421172714.912119-1-snaipe@arista.com>
- <87h7jyvfsm.fsf@redhat.com>
-In-Reply-To: <87h7jyvfsm.fsf@redhat.com>
-Date: Fri, 23 Apr 2021 16:36:12 +0200
-Message-ID: <CAK8sBDOfVKvv4V-0wzz6ZAsi0Gs6pPVDHhxg++RLgcdA5mmF3g@mail.gmail.com>
-Subject: Re: LPC 2020 Hackroom Session: summary and next steps for isolated
- user namespaces
-To: Giuseppe Scrivano <gscrivan@redhat.com>
-Cc: Alexander Mihalicyn <alexander@mihalicyn.com>, jcsible@cert.org,
- Wat Lim <watl@google.com>, Kees Cook <keescook@chromium.org>,
- containers@lists.linux-foundation.org, josh@joshtriplett.org,
- vgoyal@redhat.com, linux-kernel@vger.kernel.org, cyphar@cyphar.com,
- ebiederm@xmission.com, mic@digikod.net, christian.brauner@ubuntu.com,
- luto@amacapital.net, mpatel@redhat.com, ptikhomirov@virtuozzo.com,
- geofft@ldpreload.com
+Cc: Giuseppe Scrivano <gscrivan@redhat.com>, Will Drewry <wad@chromium.org>,
+ Andy Lutomirski <luto@amacapital.net>, Alban Crequy <alban@kinvolk.io>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
 Precedence: list
@@ -108,58 +107,58 @@ List-Post: <mailto:containers@lists.linux-foundation.org>
 List-Help: <mailto:containers-request@lists.linux-foundation.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>, 
  <mailto:containers-request@lists.linux-foundation.org?subject=subscribe>
-From: =?UTF-8?B?RnJhbmtsaW4g4oCcU25haXBl4oCdIE1hdGhpZXU=?= via Containers
- <containers@lists.linux-foundation.org>
-Reply-To: =?UTF-8?B?RnJhbmtsaW4g4oCcU25haXBl4oCdIE1hdGhpZXU=?=
- <snaipe@arista.com>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Thu, Apr 22, 2021 at 11:18 AM Giuseppe Scrivano <gscrivan@redhat.com> wrote:
-> thanks for the feedback.  We are still facing the issue with rootless
-> Podman, and these patches (listed here so you won't need to dig into archives):
->
-> https://github.com/giuseppe/linux/commit/7e0701b389c497472d11fab8570c153a414050af
-> https://github.com/giuseppe/linux/commit/1c5fe726346b216293a527719e64f34e6297f0c2
->
-> would solve the issue for us as well and we can use setgroups within a
-> user namespace in a safe way.
->
-> Any comments on this approach?  Could we move forward with it?
->
+This patchset addresses a race condition we've dealt with recently with
+seccomp. Specifically programs interrupting syscalls while they're in
+progress. This was exacerbated by Golang's recent adoption of "async
+preemption", in which they try to interrupt any syscall that's been
+running for more than 10ms during GC. During certain syscalls, it's
+non-trivial to write them in a reetrant manner in userspace (mount).
 
-I rebased and built your changes on top of v5.10, patched our tool to
-burn "shadow" into /proc/self/setgroups, and it's working beautifully:
+This has a couple semantic changes, and relaxes a check on seccomp_data, and
+changes the semantics with ordering of how addfd and notification replies
+in the supervisor are handled.
 
-    $ id
-    uid=1000(snaipe) gid=1000(snaipe) groups=1000(snaipe),998(wheel)
+I'm resending after rebasing and testing on v5.12. It turns out this change
+also fixed a bug Rodrigo found that could occur with addfd around certain
+race conditions[2].
 
-    $ bst grep . /proc/self/uid_map /proc/self/gid_map /proc/self/setgroups
-    /proc/self/uid_map:         0       1000          1
-    /proc/self/uid_map:         1     100000      65536
-    /proc/self/gid_map:         0       1000          1
-    /proc/self/gid_map:         1     100000      65536
-    /proc/self/setgroups:shadow
+It also follows up on the original proposal from Tycho[3] to allow
+for adding an FD and returning that value atomically.
 
-    $ ls -l
-    total 8
-    drwxr-xr-x 2 root wheel 4096 Apr 23 14:18 allowed
-    drwx---r-x 2 root wheel 4096 Apr 23 14:18 denied
+Changes since v1[1]:
+ * Fix some documentation
+ * Add Rata's patches to allow for direct return from addfd
 
-    $ bst sh -c 'id; ls allowed denied'
-    uid=0(root) gid=0(root) groups=0(root)
-    allowed:
-    ls: cannot open directory 'denied': Permission denied
+[1]: https://lore.kernel.org/lkml/20210220090502.7202-1-sargun@sargun.me/
+[2]: https://lore.kernel.org/lkml/20210413160151.3301-1-rodrigo@kinvolk.io/
+[3]: https://lore.kernel.org/lkml/202012011322.26DCBC64F2@keescook/
 
-    $ bst --groups 1 sh -c 'id; ls allowed denied'
-    uid=0(root) gid=0(root) groups=0(root),1(daemon)
-    allowed:
-    ls: cannot open directory 'denied': Permission denied
 
+Rodrigo Campos (2):
+  seccomp: Support atomic "addfd + send reply"
+  selftests/seccomp: Add test for atomic addfd+send
+
+Sargun Dhillon (3):
+  seccomp: Refactor notification handler to prepare for new semantics
+  seccomp: Add wait_killable semantic to seccomp user notifier
+  selftests/seccomp: Add test for wait killable notifier
+
+ .../userspace-api/seccomp_filter.rst          |  15 +-
+ include/uapi/linux/seccomp.h                  |   4 +
+ kernel/seccomp.c                              | 129 ++++++++++++++----
+ tools/testing/selftests/seccomp/seccomp_bpf.c | 102 ++++++++++++++
+ 4 files changed, 220 insertions(+), 30 deletions(-)
+
+
+base-commit: 9f4ad9e425a1d3b6a34617b8ea226d56a119a717
 -- 
-Snaipe
+2.25.1
+
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
