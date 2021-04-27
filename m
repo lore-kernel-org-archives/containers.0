@@ -2,76 +2,82 @@ Return-Path: <SRS0=Ze4f=JY=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C237C433ED
-	for <containers@archiver.kernel.org>; Tue, 27 Apr 2021 16:24:01 +0000 (UTC)
-Received: from smtp3.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3FBC2C433B4
+	for <containers@archiver.kernel.org>; Tue, 27 Apr 2021 16:35:13 +0000 (UTC)
+Received: from smtp1.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id AF040613E7
-	for <containers@archiver.kernel.org>; Tue, 27 Apr 2021 16:24:00 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AF040613E7
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
+	by mail.kernel.org (Postfix) with ESMTPS id 7C944613C3
+	for <containers@archiver.kernel.org>; Tue, 27 Apr 2021 16:35:12 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7C944613C3
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=sargun.me
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by smtp3.osuosl.org (Postfix) with ESMTP id 5EF916067C;
-	Tue, 27 Apr 2021 16:24:00 +0000 (UTC)
+	by smtp1.osuosl.org (Postfix) with ESMTP id 2438C83BC4;
+	Tue, 27 Apr 2021 16:35:12 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from smtp3.osuosl.org ([127.0.0.1])
-	by localhost (smtp3.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id eCfEyQBaIdVu; Tue, 27 Apr 2021 16:23:59 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [IPv6:2605:bc80:3010:104::8cd3:938])
-	by smtp3.osuosl.org (Postfix) with ESMTP id 39AF160609;
-	Tue, 27 Apr 2021 16:23:59 +0000 (UTC)
+Received: from smtp1.osuosl.org ([127.0.0.1])
+	by localhost (smtp1.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id KqbIa8Pn-FY2; Tue, 27 Apr 2021 16:35:11 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by smtp1.osuosl.org (Postfix) with ESMTP id 0E5BF83BE0;
+	Tue, 27 Apr 2021 16:35:10 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 1D165C000E;
-	Tue, 27 Apr 2021 16:23:59 +0000 (UTC)
+	by lists.linuxfoundation.org (Postfix) with ESMTP id DAE2FC0024;
+	Tue, 27 Apr 2021 16:35:10 +0000 (UTC)
 Received: from smtp4.osuosl.org (smtp4.osuosl.org [140.211.166.137])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 101A0C000B
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 4103EC0011
  for <containers@lists.linux-foundation.org>;
- Tue, 27 Apr 2021 16:23:58 +0000 (UTC)
+ Tue, 27 Apr 2021 16:35:08 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by smtp4.osuosl.org (Postfix) with ESMTP id E6FEA4030F
+ by smtp4.osuosl.org (Postfix) with ESMTP id 2D93740611
  for <containers@lists.linux-foundation.org>;
- Tue, 27 Apr 2021 16:23:57 +0000 (UTC)
+ Tue, 27 Apr 2021 16:35:08 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
 Authentication-Results: smtp4.osuosl.org (amavisd-new);
- dkim=pass (2048-bit key) header.d=kernel.org
+ dkim=pass (1024-bit key) header.d=sargun.me
 Received: from smtp4.osuosl.org ([127.0.0.1])
  by localhost (smtp4.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id acewgAhupkMY
+ with ESMTP id zDJxGFQx5AJ3
  for <containers@lists.linux-foundation.org>;
- Tue, 27 Apr 2021 16:23:56 +0000 (UTC)
-X-Greylist: domain auto-whitelisted by SQLgrey-1.8.0
-Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
- by smtp4.osuosl.org (Postfix) with ESMTPS id 9FA05402F0
+ Tue, 27 Apr 2021 16:35:05 +0000 (UTC)
+X-Greylist: whitelisted by SQLgrey-1.8.0
+Received: from mail-io1-xd30.google.com (mail-io1-xd30.google.com
+ [IPv6:2607:f8b0:4864:20::d30])
+ by smtp4.osuosl.org (Postfix) with ESMTPS id E1DBE401D8
  for <containers@lists.linux-foundation.org>;
- Tue, 27 Apr 2021 16:23:56 +0000 (UTC)
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 0A4DE613E8
+ Tue, 27 Apr 2021 16:35:04 +0000 (UTC)
+Received: by mail-io1-xd30.google.com with SMTP id p8so7506305iol.11
  for <containers@lists.linux-foundation.org>;
- Tue, 27 Apr 2021 16:23:56 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
- s=k20201202; t=1619540636;
- bh=l/R2qtxCn2ERJyPjYguJ0k39jAGXWUp2uQC+JMs9fuA=;
- h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
- b=O2KYc3CKaic0+kVdqHwz6NUbKNzh+h1LwX/U5B7DAk2n9gfQUarAKKBG4byLutmxL
- CSiAa3kK5T4m0Pq0fUraRZdHUxk2p7CCwxbMdfPvpeI78OhHjYslxmWBVyh0Xi0Fx5
- 1PYiI5MSKNTTlp9a/CA9VHEVYNwsY45CaWfegLBTYN8mNgYz+VeQU9zinXSTaJjyyV
- ailQ8+ttWae1DHFXF3xtR4iF/Ql8jTI+lF+2osJe3z7MpJeDbu0uyHXFjoftaPqmS9
- bpHtLU1GnntvAu98y9TYtOmpBOrJTJco12W4rXovHJhYHTfegUgSrEdiEtKDjzikkS
- i5CE7iwNyyigw==
-Received: by mail-ej1-f41.google.com with SMTP id zg3so8746887ejb.8
- for <containers@lists.linux-foundation.org>;
- Tue, 27 Apr 2021 09:23:55 -0700 (PDT)
-X-Gm-Message-State: AOAM532L6uuT+1qXw8QPpbLucbFgzY/UNBP5f2URPW25TCk3P1USdY84
- GXNK2JCsV132RXLdwAcKY3xdxd1ajdOpuEgSaE7GMA==
-X-Google-Smtp-Source: ABdhPJxy9HL2ysFtlcSqWMWsv6cwp5/qFMPBPyFAP9+p+Zf66TnmOU2k4NUG/ma1/9pG/95JQLjY1P5Iln/2Bz8TT8E=
-X-Received: by 2002:a17:906:e096:: with SMTP id
- gh22mr2231171ejb.101.1619540634457; 
- Tue, 27 Apr 2021 09:23:54 -0700 (PDT)
+ Tue, 27 Apr 2021 09:35:04 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sargun.me; s=google;
+ h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+ :cc; bh=INHOzD23PluMifB464PN3y3YCplArL1gtSHLIv2/4JU=;
+ b=XoZF0rMHVUDwD8/V3ZaMnpFrCUzlDeaxMJtq6++MJ9jF5ZWA3V8SUFzQn4RDwb8Lkm
+ QQU4mpE/WKOlTiUpcQpEjyWqO3LCJn1lk/T7UZusGYcp3Q0RQFFLEBcHT10Vy7ER/Krp
+ Sfgvxkz8NRGLI1Fxh+yS75N4rrdcJdojdlilo=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=1e100.net; s=20161025;
+ h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+ :message-id:subject:to:cc;
+ bh=INHOzD23PluMifB464PN3y3YCplArL1gtSHLIv2/4JU=;
+ b=D8QXGRq5zjjEtM3wpw38gTJOlDxlGjufRExKS2hiy8RYezo5COm3+/ykw7tlTMLlvC
+ rGSb2kJgkUzYzgYKXTzoVYPBPAFyktSWpKIqAnhWOsSM+NfHKrW7sraaCllb3/92ghit
+ imxXcAp4VJ2yNr8VWU1KzwsoQ16DsHUzlTX/p7ekVuF0F1o7X7/WZyxF7DZtxluRc1ww
+ NedKJA37JdTtyUb1N0LHpaEYIOSRleNWuPvhOJUgWoxl9m2DzlsyoJmOzwId7UB6RBZK
+ y5WbuCj35PLoBGsayj0vtmdco8Ujjls3vS6GL+3aV8TGMe0LPHEtqMAUfNw1tW653YFj
+ KqJQ==
+X-Gm-Message-State: AOAM532PQ4aoTXQuwmbPvc7JgxnzdeuE/uNtQjWyymGb/RflEiMxIifS
+ HH2xxaN2v/ogSSoP2zZLP8fj7UJ45UqiPk7CVbWvlg==
+X-Google-Smtp-Source: ABdhPJzQns1HjP3hSguwiYnNN8zYmAtz0ZNRJCCQEjDVSMXuKi29IJ4y6tTcPiOgDQhO69i9e8pkcNn6c00dltZYxsU=
+X-Received: by 2002:a05:6638:35ab:: with SMTP id
+ v43mr22446989jal.65.1619541303738; 
+ Tue, 27 Apr 2021 09:35:03 -0700 (PDT)
 MIME-Version: 1.0
 References: <20210426180610.2363-1-sargun@sargun.me>
  <20210426180610.2363-3-sargun@sargun.me>
@@ -79,17 +85,17 @@ References: <20210426180610.2363-1-sargun@sargun.me>
  <20210426221527.GA30835@ircssh-2.c.rugged-nimbus-611.internal>
  <20210427134853.GA1746081@cisco>
 In-Reply-To: <20210427134853.GA1746081@cisco>
-From: Andy Lutomirski <luto@kernel.org>
-Date: Tue, 27 Apr 2021 09:23:42 -0700
-X-Gmail-Original-Message-ID: <CALCETrVrfBtQPh=YeDEK4P9+QHQvNxHbn8ZT3fdQNznpSeS5oQ@mail.gmail.com>
-Message-ID: <CALCETrVrfBtQPh=YeDEK4P9+QHQvNxHbn8ZT3fdQNznpSeS5oQ@mail.gmail.com>
+From: Sargun Dhillon <sargun@sargun.me>
+Date: Tue, 27 Apr 2021 09:34:26 -0700
+Message-ID: <CAMp4zn8MPvkWmt6Yqo+nQCd-HRNRc_=rVYAAF4LjvY2F7-OdGQ@mail.gmail.com>
 Subject: Re: [PATCH RESEND 2/5] seccomp: Add wait_killable semantic to seccomp
  user notifier
 To: Tycho Andersen <tycho@tycho.pizza>
 Cc: Giuseppe Scrivano <gscrivan@redhat.com>, Will Drewry <wad@chromium.org>,
  Kees Cook <keescook@chromium.org>,
  Linux Containers <containers@lists.linux-foundation.org>,
- LKML <linux-kernel@vger.kernel.org>, Alban Crequy <alban@kinvolk.io>,
+ LKML <linux-kernel@vger.kernel.org>, Andy Lutomirski <luto@amacapital.net>,
+ Alban Crequy <alban@kinvolk.io>,
  Christian Brauner <christian.brauner@ubuntu.com>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
@@ -162,31 +168,18 @@ On Tue, Apr 27, 2021 at 6:48 AM Tycho Andersen <tycho@tycho.pizza> wrote:
 > per-RECV-call vs. per-filter. Seems like it might be simpler to have
 > it be per-filter?
 >
+> Tycho
 
-Backing up a minute, how is the current behavior not a serious
-correctness issue?  I can think of two scenarios that seem entirely
-broken right now:
+You're right.
 
-1. Process makes a syscall that is not permitted to return -EINTR.  It
-gets a signal and returns -EINTR when user notifiers are in use.
+I think an alternative solution would be to make it on a per-action
+basis, and in the filter have a different action for non-preemptible
+user notifications.
 
-2. Process makes a syscall that is permitted to return -EINTR.  But
--EINTR for IO means "I got interrupted and *did not do the IO*".
-Nevertheless, the syscall returns -EINTR and the IO is done.
-
-ISTM the current behavior is severely broken, and the new behavior
-isn't *that* much better since it simply ignores signals and can't
-emulate -EINTR (or all the various restart modes, sigh).  Surely the
-right behavior is to have the seccomped process notice that it got a
-signal and inform the monitor of that fact so that the monitor can
-take appropriate action.
-
-IOW, I don't think that the current behavior *or* the patched opt-in
-behavior is great.  I think we would do better to have the filter
-indicate that it is signal-aware and to document that non-signal-aware
-filters cannot behave correctly with respect to signals.
-
---Andy
+Since you can only install one filter, I do not think we want to make
+it so we do it on a entire filter basis, in case a filter handles a combination
+of preemptible and non-preemptible syscalls. For example if you mix
+mount and accept.
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
