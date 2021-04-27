@@ -2,93 +2,77 @@ Return-Path: <SRS0=Ze4f=JY=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.0 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A50BAC43461
-	for <containers@archiver.kernel.org>; Tue, 27 Apr 2021 22:10:38 +0000 (UTC)
-Received: from smtp3.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 213ADC433ED
+	for <containers@archiver.kernel.org>; Tue, 27 Apr 2021 23:20:12 +0000 (UTC)
+Received: from smtp1.osuosl.org (smtp1.osuosl.org [140.211.166.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id B1F78613B4
-	for <containers@archiver.kernel.org>; Tue, 27 Apr 2021 22:10:37 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B1F78613B4
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=sargun.me
+	by mail.kernel.org (Postfix) with ESMTPS id C0E0761404
+	for <containers@archiver.kernel.org>; Tue, 27 Apr 2021 23:20:11 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C0E0761404
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by smtp3.osuosl.org (Postfix) with ESMTP id 4FCC860A47;
-	Tue, 27 Apr 2021 22:10:37 +0000 (UTC)
+	by smtp1.osuosl.org (Postfix) with ESMTP id 918AC83B7D;
+	Tue, 27 Apr 2021 23:20:11 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from smtp3.osuosl.org ([127.0.0.1])
-	by localhost (smtp3.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id e0Z-wNiNTdSx; Tue, 27 Apr 2021 22:10:35 +0000 (UTC)
-Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [IPv6:2605:bc80:3010:104::8cd3:938])
-	by smtp3.osuosl.org (Postfix) with ESMTP id 34B99608CF;
-	Tue, 27 Apr 2021 22:10:35 +0000 (UTC)
+Received: from smtp1.osuosl.org ([127.0.0.1])
+	by localhost (smtp1.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id ZGM1Oy94V0yj; Tue, 27 Apr 2021 23:20:10 +0000 (UTC)
+Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
+	by smtp1.osuosl.org (Postfix) with ESMTP id 6C22F83AB2;
+	Tue, 27 Apr 2021 23:20:10 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 07F94C001C;
-	Tue, 27 Apr 2021 22:10:35 +0000 (UTC)
-Received: from smtp2.osuosl.org (smtp2.osuosl.org [140.211.166.133])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 2185FC0001
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 4F94EC0022;
+	Tue, 27 Apr 2021 23:20:10 +0000 (UTC)
+Received: from smtp4.osuosl.org (smtp4.osuosl.org [140.211.166.137])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 01A87C0001
  for <containers@lists.linux-foundation.org>;
- Tue, 27 Apr 2021 22:10:34 +0000 (UTC)
+ Tue, 27 Apr 2021 23:20:09 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by smtp2.osuosl.org (Postfix) with ESMTP id 089B0403E7
+ by smtp4.osuosl.org (Postfix) with ESMTP id E1B1C40348
  for <containers@lists.linux-foundation.org>;
- Tue, 27 Apr 2021 22:10:34 +0000 (UTC)
+ Tue, 27 Apr 2021 23:20:08 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Authentication-Results: smtp2.osuosl.org (amavisd-new);
- dkim=pass (1024-bit key) header.d=sargun.me
-Received: from smtp2.osuosl.org ([127.0.0.1])
- by localhost (smtp2.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id poZdKBWpRMwM
+Authentication-Results: smtp4.osuosl.org (amavisd-new);
+ dkim=pass (2048-bit key) header.d=kernel.org
+Received: from smtp4.osuosl.org ([127.0.0.1])
+ by localhost (smtp4.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id iAK7-hXJrr-U
  for <containers@lists.linux-foundation.org>;
- Tue, 27 Apr 2021 22:10:32 +0000 (UTC)
-X-Greylist: whitelisted by SQLgrey-1.8.0
-Received: from mail-il1-x131.google.com (mail-il1-x131.google.com
- [IPv6:2607:f8b0:4864:20::131])
- by smtp2.osuosl.org (Postfix) with ESMTPS id A8F4340001
+ Tue, 27 Apr 2021 23:20:08 +0000 (UTC)
+X-Greylist: domain auto-whitelisted by SQLgrey-1.8.0
+Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
+ by smtp4.osuosl.org (Postfix) with ESMTPS id F043140203
  for <containers@lists.linux-foundation.org>;
- Tue, 27 Apr 2021 22:10:32 +0000 (UTC)
-Received: by mail-il1-x131.google.com with SMTP id j12so5894632ils.4
+ Tue, 27 Apr 2021 23:20:07 +0000 (UTC)
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 87501613B0
  for <containers@lists.linux-foundation.org>;
- Tue, 27 Apr 2021 15:10:32 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sargun.me; s=google;
- h=date:from:to:cc:subject:message-id:references:mime-version
- :content-disposition:in-reply-to:user-agent;
- bh=J3OZQuMMYXhVRdbAGQKUg7Wra51AHbtP59/ycR6cv1A=;
- b=oLMo6M7eRBG1HrCjd7sWkyEU1zNn7c1dNI2nSNyG7pjWl3w068pOFMPhpW/AcnTaPv
- tCdMb6rULM+RIohelzjfDLq+l6ZbzrKLyBWjTm5BbpCT+ODZhmB/LKNRZDXI0vUJQYE3
- sV/EQ7yolgixvjTxAhI1tFHPkXqX3J3uqn6vQ=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=1e100.net; s=20161025;
- h=x-gm-message-state:date:from:to:cc:subject:message-id:references
- :mime-version:content-disposition:in-reply-to:user-agent;
- bh=J3OZQuMMYXhVRdbAGQKUg7Wra51AHbtP59/ycR6cv1A=;
- b=txQz0XaGIS7cfUW81fw3As474thz9VbSZYlyPrPC4YKdYyED8peTRNpR1c4XELmrSt
- 11zfDvBeqGyEyVLfSWvYf33tLHLUjGmtVL5Nu+qHENCS30i2Zv553RvSqcYUTVnt0ylX
- N+e7BHwSWQOonQVJb1+zUI8x18j2OLSWFqfmXzZc5mXT6OMSgo4csu8VjThtzj1CpCeb
- mmyDh/kBH0LdpeQArittVWvBAiIZbtcLdifqTYDMXJE3YL0YzsVzrfCJW3iGptMjvjFA
- l3IqSU6F7Dm2eCkSTZ95Z3sGhWkmZIQ8/7PYxGe9nxWCsqUws5q2Juc9fXkCb2gQ/y9h
- HHbQ==
-X-Gm-Message-State: AOAM533x4Tq9XxrLd5DC42gZgzyiyd53iw6o2x0Gx5uP41J2RrTYKC1g
- S8yj3R08iuNajVCWf97USy3fMg==
-X-Google-Smtp-Source: ABdhPJw34ZHavmKPDKd0vx3zQxgvpuLI+I18D2MJ1XBSYeqrCsPCmQS1A/sWP4DQ9voyjhp4gEccCg==
-X-Received: by 2002:a92:c0c2:: with SMTP id t2mr20188209ilf.210.1619561431634; 
- Tue, 27 Apr 2021 15:10:31 -0700 (PDT)
-Received: from ircssh-2.c.rugged-nimbus-611.internal
- (80.60.198.104.bc.googleusercontent.com. [104.198.60.80])
- by smtp.gmail.com with ESMTPSA id n22sm528725ioc.5.2021.04.27.15.10.30
- (version=TLS1_2 cipher=ECDHE-ECDSA-CHACHA20-POLY1305 bits=256/256);
- Tue, 27 Apr 2021 15:10:30 -0700 (PDT)
-Date: Tue, 27 Apr 2021 22:10:29 +0000
-From: Sargun Dhillon <sargun@sargun.me>
-To: Tycho Andersen <tycho@tycho.pizza>
-Subject: Re: [PATCH RESEND 2/5] seccomp: Add wait_killable semantic to
- seccomp user notifier
-Message-ID: <20210427221028.GA16602@ircssh-2.c.rugged-nimbus-611.internal>
+ Tue, 27 Apr 2021 23:20:07 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+ s=k20201202; t=1619565607;
+ bh=b7cCUl+pInAQSCdSLxxEHiqgrpafGjB6QGUrbgdSdW8=;
+ h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+ b=gAuNoOnb+TzAJvulRvremrjCXTJbOCGZYpInY2oOOsEIs+tdL4VmZ5jTpik/udDQc
+ F8H7zqvRFv7SzXLaRD6ePgyw1lNn27v6BArxAvWqkOqCMvIwqWl7BlvhCuIMlZo7MG
+ +clPD40WB5yAeAqQIigAvDAWasc8a4xdiUvFNGYaD0SiFadHsK6QFwCvJ3JieIY4hI
+ PdT5m98NgbcJP/jVKGpIZg1T227V5ACxVb57fbkHXLKXtmazjFvoYWW/eXLnsKt2DV
+ d5/xdqZuX9bBC2vAFavPKJ/q+YYa31aHk5dFUAWk/2vA3hXmbXQhhJMymVETpzdk6j
+ nkJ1Nt1aTjERA==
+Received: by mail-ej1-f42.google.com with SMTP id u21so91842403ejo.13
+ for <containers@lists.linux-foundation.org>;
+ Tue, 27 Apr 2021 16:20:07 -0700 (PDT)
+X-Gm-Message-State: AOAM530fGPJo+7Ig1ld+OpSnu2BlJjbHQgwo7fldzZa1P006unyYkGng
+ 0DeyLNtV1XNU7u3n5qE1iLBe+VfAInQPJov8fge9fw==
+X-Google-Smtp-Source: ABdhPJydjs/9Sc1dOAsRhil4oUfvv7Cs/7PhNOIxi+US/eV1CjEpGrInfcbeag8xKQA0HLeXEuHwxlD6Fl7qa8Th9zE=
+X-Received: by 2002:a17:906:f742:: with SMTP id
+ jp2mr9066184ejb.199.1619565606053; 
+ Tue, 27 Apr 2021 16:20:06 -0700 (PDT)
+MIME-Version: 1.0
 References: <20210426180610.2363-1-sargun@sargun.me>
  <20210426180610.2363-3-sargun@sargun.me>
  <20210426190229.GB1605795@cisco>
@@ -96,10 +80,15 @@ References: <20210426180610.2363-1-sargun@sargun.me>
  <20210427134853.GA1746081@cisco>
  <CALCETrVrfBtQPh=YeDEK4P9+QHQvNxHbn8ZT3fdQNznpSeS5oQ@mail.gmail.com>
  <20210427170753.GA1786245@cisco>
-MIME-Version: 1.0
-Content-Disposition: inline
-In-Reply-To: <20210427170753.GA1786245@cisco>
-User-Agent: Mutt/1.9.4 (2018-02-28)
+ <20210427221028.GA16602@ircssh-2.c.rugged-nimbus-611.internal>
+In-Reply-To: <20210427221028.GA16602@ircssh-2.c.rugged-nimbus-611.internal>
+From: Andy Lutomirski <luto@kernel.org>
+Date: Tue, 27 Apr 2021 16:19:54 -0700
+X-Gmail-Original-Message-ID: <CALCETrX9JnHE9BOhRxCc1bCvEBfbOY8bb2rxeKTsDNxfMruntQ@mail.gmail.com>
+Message-ID: <CALCETrX9JnHE9BOhRxCc1bCvEBfbOY8bb2rxeKTsDNxfMruntQ@mail.gmail.com>
+Subject: Re: [PATCH RESEND 2/5] seccomp: Add wait_killable semantic to seccomp
+ user notifier
+To: Sargun Dhillon <sargun@sargun.me>
 Cc: Giuseppe Scrivano <gscrivan@redhat.com>, Will Drewry <wad@chromium.org>,
  Kees Cook <keescook@chromium.org>,
  Linux Containers <containers@lists.linux-foundation.org>,
@@ -122,124 +111,86 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-On Tue, Apr 27, 2021 at 11:07:53AM -0600, Tycho Andersen wrote:
-> On Tue, Apr 27, 2021 at 09:23:42AM -0700, Andy Lutomirski wrote:
-> > On Tue, Apr 27, 2021 at 6:48 AM Tycho Andersen <tycho@tycho.pizza> wrote:
-> > >
-> > > On Mon, Apr 26, 2021 at 10:15:28PM +0000, Sargun Dhillon wrote:
-> > > > On Mon, Apr 26, 2021 at 01:02:29PM -0600, Tycho Andersen wrote:
-> > > > > On Mon, Apr 26, 2021 at 11:06:07AM -0700, Sargun Dhillon wrote:
-> > > > > > @@ -1103,11 +1111,31 @@ static int seccomp_do_user_notification(int this_syscall,
-> > > > > >    * This is where we wait for a reply from userspace.
-> > > > > >    */
-> > > > > >   do {
-> > > > > > +         interruptible = notification_interruptible(&n);
-> > > > > > +
-> > > > > >           mutex_unlock(&match->notify_lock);
-> > > > > > -         err = wait_for_completion_interruptible(&n.ready);
-> > > > > > +         if (interruptible)
-> > > > > > +                 err = wait_for_completion_interruptible(&n.ready);
-> > > > > > +         else
-> > > > > > +                 err = wait_for_completion_killable(&n.ready);
-> > > > > >           mutex_lock(&match->notify_lock);
-> > > > > > -         if (err != 0)
-> > > > > > +
-> > > > > > +         if (err != 0) {
-> > > > > > +                 /*
-> > > > > > +                  * There is a race condition here where if the
-> > > > > > +                  * notification was received with the
-> > > > > > +                  * SECCOMP_USER_NOTIF_FLAG_WAIT_KILLABLE flag, but a
-> > > > > > +                  * non-fatal signal was received before we could
-> > > > > > +                  * transition we could erroneously end our wait early.
-> > > > > > +                  *
-> > > > > > +                  * The next wait for completion will ensure the signal
-> > > > > > +                  * was not fatal.
-> > > > > > +                  */
-> > > > > > +                 if (interruptible && !notification_interruptible(&n))
-> > > > > > +                         continue;
-> > > > >
-> > > > > I'm trying to understand how one would hit this race,
-> > > > >
+On Tue, Apr 27, 2021 at 3:10 PM Sargun Dhillon <sargun@sargun.me> wrote:
+>
+> On Tue, Apr 27, 2021 at 11:07:53AM -0600, Tycho Andersen wrote:
+> > On Tue, Apr 27, 2021 at 09:23:42AM -0700, Andy Lutomirski wrote:
+> > > On Tue, Apr 27, 2021 at 6:48 AM Tycho Andersen <tycho@tycho.pizza> wrote:
 > > > >
-> > > > I'm thinking:
-> > > > P: Process that "generates" notification
-> > > > S: Supervisor
-> > > > U: User
-> > > >
-> > > > P: Generated notification
-> > > > S: ioctl(RECV...) // With wait_killable flag.
-> > > > ...complete is called in the supervisor, but the P may not be woken up...
-> > > > U: kill -SIGTERM $P
-> > > > ...signal gets delivered to p and causes wakeup and
-> > > > wait_for_completion_interruptible returns 1...
-> > > >
-> > > > Then you need to check the race
+> > > > On Mon, Apr 26, 2021 at 10:15:28PM +0000, Sargun Dhillon wrote:
 > > >
-> > > I see, thanks. This seems like a consequence of having the flag be
-> > > per-RECV-call vs. per-filter. Seems like it might be simpler to have
-> > > it be per-filter?
-> > >
-I agree that it is hard / impossible to guarantee correctness *after* the fact.
-> > 
-> > Backing up a minute, how is the current behavior not a serious
-> > correctness issue?  I can think of two scenarios that seem entirely
-> > broken right now:
-> > 
-> > 1. Process makes a syscall that is not permitted to return -EINTR.  It
-> > gets a signal and returns -EINTR when user notifiers are in use.
+> > > ISTM the current behavior is severely broken, and the new behavior
+> > > isn't *that* much better since it simply ignores signals and can't
+> > > emulate -EINTR (or all the various restart modes, sigh).  Surely the
+> > > right behavior is to have the seccomped process notice that it got a
+> > > signal and inform the monitor of that fact so that the monitor can
+> > > take appropriate action.
 > >
-Yes, there's a whole host of problems here. Things like fsmount should not
-be interruptible.
- 
-> > 2. Process makes a syscall that is permitted to return -EINTR.  But
-> > -EINTR for IO means "I got interrupted and *did not do the IO*".
-> > Nevertheless, the syscall returns -EINTR and the IO is done.
-In general, I think that the idea is to do as little side-effect I/O
-as possible. The use cases we've looked at all have nice ways to unwind
-them (perf_event_open, BPF, accept), but others are less good for unwinding
-(mount). There are some middle ground calls like connect, but they're
-less bad.
+> > This doesn't help your case (2) though, since the IO could be done
+> > before the supervisor gets the notification.
 
-> > 
-> > ISTM the current behavior is severely broken, and the new behavior
-> > isn't *that* much better since it simply ignores signals and can't
-> > emulate -EINTR (or all the various restart modes, sigh).  Surely the
-> > right behavior is to have the seccomped process notice that it got a
-> > signal and inform the monitor of that fact so that the monitor can
-> > take appropriate action.
-> 
-> This doesn't help your case (2) though, since the IO could be done
-> before the supervisor gets the notification.
-> 
-I think for something like mount, if it fails (gets interrupted) via a
-fatal signal, that's grounds for terminating the container.
+Tycho, I disagree.  Here's how native syscalls work:
 
-> > IOW, I don't think that the current behavior *or* the patched opt-in
-> > behavior is great.  I think we would do better to have the filter
-> > indicate that it is signal-aware and to document that non-signal-aware
-> > filters cannot behave correctly with respect to signals.
-> 
-> I think it would be hard to make a signal-aware filter, it really does
-> feel like the only thing to do is a killable wait.
-> 
-> Tycho
+1. Entry work is done and the syscall hander does whatever it does at
+the beginning of the function.  This is entirely non-interruptible.
 
-There are plenty of scenarios where the syscall can be handled in an interruptible
-fashion. I like to use accept as an example. I think Jann Horn had put together
-a patchset on how the supervisor could be notified (as opposed to background
-polling). If the call is interrupted, you can just "finish" the accept on restart
-of the sycall by handing the FD over.
+2. The syscall handler decides it wants to wait, interruptibly,
+killably or otherwise.
 
-I see a handful of paths forward:
+3. It gets signaled.  It takes appropriate action.  Appropriate action
+does *not* mean -EINTR.  It means that something that is correct *for
+that syscall* happens.  For nanosleep(), this involves the restart
+block (and I don't think we need to support the restart block).  For
+accept(), it mostly seems to mean that the syscall completes as usual.
+For write(2), it means that, depending on file type and whether any IO
+has occured, either -EINTR is returned and no IO happens, or fewer
+bytes than requested are transferred, or the syscall completes.  (Or,
+if it's a KILL, the process dies early and partial IO is ignored.)
+For some syscalls (some AF_UNIX writes, for example, or ptrace()), the
+syscall indeed gets interrupted, but it uses one of the -ERESTART
+mecahnisms.
 
-* We add a new action USER_NOTIF_KILLABLE which requires a fatal signal
-  in order to be interrupted
-* We add a chunk of data to the USER_NOTIF return code (say, WAIT_KILLABLE)
-  from the BPF filter that indicates what kind of wait should happen
-* (what is happening now) An ioctl flag to say pickup the notification
-  and put it into a wait_killable state
-* An ioctl "command" that puts an existing notifcation in progress into
-  the wait killable state.
+User notifiers should allow correct emulation.  Right now, it doesn't,
+but there is no reason it can't.
+
+> >
+> I think for something like mount, if it fails (gets interrupted) via a
+> fatal signal, that's grounds for terminating the container.
+
+That would be quite obnoxious if it happens after the container
+starts.  Ctrl-C-ing a fusermount call should not be grounds for
+outright destruction.
+>
+> I see a handful of paths forward:
+>
+> * We add a new action USER_NOTIF_KILLABLE which requires a fatal signal
+>   in order to be interrupted
+> * We add a chunk of data to the USER_NOTIF return code (say, WAIT_KILLABLE)
+>   from the BPF filter that indicates what kind of wait should happen
+> * (what is happening now) An ioctl flag to say pickup the notification
+>   and put it into a wait_killable state
+> * An ioctl "command" that puts an existing notifcation in progress into
+>   the wait killable state.
+
+In the simplest correct API, I think that kills should always kill the
+task.  Non-kill signals should not kill the syscall but the user
+notifier should be informed that a signal happened.  (Whether this
+requires POLLPRI or some other handshaking mechanism is an open
+question.)
+
+The only real downside I see is that genuinely interruptible syscalls
+will end up with higher than necessary signal latency if they occur
+during the interruptible period.  An extended API could allow the
+filter to return an indication that an interrupt should result in a
+specified error code (-EINTR, ERESTARTxyz, etc), and the monitor could
+do a new ioctl() to tell the kernel that the syscall should stop being
+interruptible.  That ioctl() itself would return a status saying
+whether the syscall was already interrupted.  One nice feature of this
+approach is that the existing model is equivalent to the filter saying
+"interruptible with EINTR" and the monitor simply forgetting to do the
+new ioctl.
+
+--Andy
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
