@@ -2,96 +2,90 @@ Return-Path: <SRS0=wqWt=J3=lists.linux-foundation.org=containers-bounces@kernel.
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AB35DC433B4
-	for <containers@archiver.kernel.org>; Fri, 30 Apr 2021 20:49:59 +0000 (UTC)
-Received: from smtp3.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 39FBCC433B4
+	for <containers@archiver.kernel.org>; Fri, 30 Apr 2021 23:23:06 +0000 (UTC)
+Received: from smtp2.osuosl.org (smtp2.osuosl.org [140.211.166.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPS id 61DA8613EF
-	for <containers@archiver.kernel.org>; Fri, 30 Apr 2021 20:49:59 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 61DA8613EF
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=sargun.me
+	by mail.kernel.org (Postfix) with ESMTPS id AF98861418
+	for <containers@archiver.kernel.org>; Fri, 30 Apr 2021 23:23:05 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AF98861418
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: mail.kernel.org; spf=pass smtp.mailfrom=containers-bounces@lists.linux-foundation.org
 Received: from localhost (localhost [127.0.0.1])
-	by smtp3.osuosl.org (Postfix) with ESMTP id 315D66F9EA;
-	Fri, 30 Apr 2021 20:49:59 +0000 (UTC)
+	by smtp2.osuosl.org (Postfix) with ESMTP id 77C2043232;
+	Fri, 30 Apr 2021 23:23:05 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
-Received: from smtp3.osuosl.org ([127.0.0.1])
-	by localhost (smtp3.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 74GnEwC_-wkE; Fri, 30 Apr 2021 20:49:58 +0000 (UTC)
+Received: from smtp2.osuosl.org ([127.0.0.1])
+	by localhost (smtp2.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id FGPjTGqF0vdL; Fri, 30 Apr 2021 23:23:04 +0000 (UTC)
 Received: from lists.linuxfoundation.org (lf-lists.osuosl.org [140.211.9.56])
-	by smtp3.osuosl.org (Postfix) with ESMTP id 234736F9E3;
-	Fri, 30 Apr 2021 20:49:58 +0000 (UTC)
+	by smtp2.osuosl.org (Postfix) with ESMTP id 7C0E1401DD;
+	Fri, 30 Apr 2021 23:23:04 +0000 (UTC)
 Received: from lf-lists.osuosl.org (localhost [127.0.0.1])
-	by lists.linuxfoundation.org (Postfix) with ESMTP id 03992C000E;
-	Fri, 30 Apr 2021 20:49:58 +0000 (UTC)
-Received: from smtp3.osuosl.org (smtp3.osuosl.org [IPv6:2605:bc80:3010::136])
- by lists.linuxfoundation.org (Postfix) with ESMTP id 01A1BC0001
+	by lists.linuxfoundation.org (Postfix) with ESMTP id 62C81C000D;
+	Fri, 30 Apr 2021 23:23:04 +0000 (UTC)
+Received: from smtp3.osuosl.org (smtp3.osuosl.org [140.211.166.136])
+ by lists.linuxfoundation.org (Postfix) with ESMTP id 64F36C0001
  for <containers@lists.linux-foundation.org>;
- Fri, 30 Apr 2021 20:49:57 +0000 (UTC)
+ Fri, 30 Apr 2021 23:23:02 +0000 (UTC)
 Received: from localhost (localhost [127.0.0.1])
- by smtp3.osuosl.org (Postfix) with ESMTP id C5A926080F
+ by smtp3.osuosl.org (Postfix) with ESMTP id 3EB026FA2A
  for <containers@lists.linux-foundation.org>;
- Fri, 30 Apr 2021 20:49:56 +0000 (UTC)
+ Fri, 30 Apr 2021 23:23:02 +0000 (UTC)
 X-Virus-Scanned: amavisd-new at osuosl.org
+Authentication-Results: smtp3.osuosl.org (amavisd-new);
+ dkim=pass (2048-bit key) header.d=kernel.org
 Received: from smtp3.osuosl.org ([127.0.0.1])
  by localhost (smtp3.osuosl.org [127.0.0.1]) (amavisd-new, port 10024)
- with ESMTP id tDDpFVoNzpKV
+ with ESMTP id m00WtEMDumJn
  for <containers@lists.linux-foundation.org>;
- Fri, 30 Apr 2021 20:49:56 +0000 (UTC)
-X-Greylist: whitelisted by SQLgrey-1.8.0
-Received: from mail-qt1-x834.google.com (mail-qt1-x834.google.com
- [IPv6:2607:f8b0:4864:20::834])
- by smtp3.osuosl.org (Postfix) with ESMTPS id 056EC6F9E0
+ Fri, 30 Apr 2021 23:23:01 +0000 (UTC)
+X-Greylist: domain auto-whitelisted by SQLgrey-1.8.0
+Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
+ by smtp3.osuosl.org (Postfix) with ESMTPS id B951A6F8B5
  for <containers@lists.linux-foundation.org>;
- Fri, 30 Apr 2021 20:49:55 +0000 (UTC)
-Received: by mail-qt1-x834.google.com with SMTP id l1so12806144qtr.12
+ Fri, 30 Apr 2021 23:23:01 +0000 (UTC)
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 48D906143D
  for <containers@lists.linux-foundation.org>;
- Fri, 30 Apr 2021 13:49:55 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sargun.me; s=google;
- h=from:to:cc:subject:date:message-id:in-reply-to:references
- :mime-version:content-transfer-encoding;
- bh=yd8KWtQAvkY0SPkWFn+RWMjh2rwrInFMPxMpFUWurrE=;
- b=F1Fmjqa0/NusbR+Xv3n5bLeQ5mNO0RhmFeHGo5tnNqj9ZfhueTpPQk1E5tf6xiSuKW
- UCloCAh/kBxToeq90qh5s8KXh3Y7gI7qTEc9pJaM+sDzOHmUm6PJWSo5OazZhioJ6JC7
- 0rvMRYj3XCCyfOUBh7h0u3NFWuUXr4IQg5Ccw=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=1e100.net; s=20161025;
- h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
- :references:mime-version:content-transfer-encoding;
- bh=yd8KWtQAvkY0SPkWFn+RWMjh2rwrInFMPxMpFUWurrE=;
- b=m/gzh33hcDrCKIYH6fjv382VlRc0ICP/XMbb/7Cdq8WfYhNBKOQ4BhWhErnmXHBUsM
- tC6rGB1F0GKEwhBCFjkbp4qikHNCA+hMwg0117CgR/GoZm4Yxm0DtzJf5z7LwYP6XRGi
- 5o0hjqJfCs0+L116A+MVHwv9+U5/hezwFK69zAYhozCfoqKmHYHGaC8a61/VJLggvdAr
- mguaQruzSMqATU7OBvFLse18CzWgo3iLXpj46K1hnpoW613XXL4lAkv+WnSvJSKU3swk
- +FIbnlyOMopddWNp4J9FHgW/NFjbof49iE3HpBbkBOzhvbDv4IdwO/xlAF1tFtfrKh74
- aUUA==
-X-Gm-Message-State: AOAM53183LC0O6z4TB7AvCOEAf2gnTf+3wI7F/UKaC4NBG+dSpLnkhrO
- E9LhE3udME0X0Bnvf4BpjLWPNA==
-X-Google-Smtp-Source: ABdhPJwPNEazDuUTgXNovxew7UYAfs57u0+1fz00ZZuZ+0WqbmiT/GQSwTseAr7VyiPS51h/CrxTvw==
-X-Received: by 2002:ac8:46d4:: with SMTP id h20mr5991932qto.355.1619815794735; 
- Fri, 30 Apr 2021 13:49:54 -0700 (PDT)
-Received: from ubuntu.netflix.com (136-25-20-203.cab.webpass.net.
- [136.25.20.203])
- by smtp.gmail.com with ESMTPSA id z17sm3161960qtf.10.2021.04.30.13.49.52
- (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
- Fri, 30 Apr 2021 13:49:53 -0700 (PDT)
-From: Sargun Dhillon <sargun@sargun.me>
-To: Kees Cook <keescook@chromium.org>, LKML <linux-kernel@vger.kernel.org>,
- Linux Containers <containers@lists.linux-foundation.org>
-Subject: [PATCH v2 5/5] selftests/seccomp: Add test for atomic addfd+send
-Date: Fri, 30 Apr 2021 13:49:39 -0700
-Message-Id: <20210430204939.5152-6-sargun@sargun.me>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20210430204939.5152-1-sargun@sargun.me>
-References: <20210430204939.5152-1-sargun@sargun.me>
+ Fri, 30 Apr 2021 23:23:01 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+ s=k20201202; t=1619824981;
+ bh=uKGdbljdVGUHQi7F59H24hqyS4ay41ngXPz142NF5VI=;
+ h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+ b=TPkhZLN8mxjWxsgT2WPk6oH1cLXMqqQ9nnNWxI2CV/P0LxdgS7LzVsu/LCcj6nit6
+ DQ+JZSJYMwiLuiGeT9hGYIHEuYmR4x4m2fppC89xVc5IYdj556kY8bBBaLiX4JoZ/8
+ 1gZQOtXikpwQ3F20xGKHAqFucv8Cw4KGPJGoyWKpIIP96ZnCHnnPw957QRSovdurJZ
+ dFTyt/QhMEYMgsGXoH0a2ZLQwTrhYGzljRHwIyTNXPv2J4X6VzNp2atvIx2BGi5fg2
+ DPDux58pdd/B+A6caPBaCyyVVF9znLS/6Qbs/aLJESz314TbkYzrC+Dis97QWPz3rV
+ vYzTl0Cnrm1kw==
+Received: by mail-ej1-f43.google.com with SMTP id t4so24284973ejo.0
+ for <containers@lists.linux-foundation.org>;
+ Fri, 30 Apr 2021 16:23:01 -0700 (PDT)
+X-Gm-Message-State: AOAM533nQ0VlFjOcZ8X8VevhxgsF+BDt9SpJa6XtW9TU15COt0Bcs6rt
+ CmVTACXm8szlhB7ytLaXyrOZYEuRPvqPEkDF2HBP1g==
+X-Google-Smtp-Source: ABdhPJwbkpKTSR9ZXCaL5ZHH1Qt+HE/3pAODcuL1ueLvo4bd+qN0Bkl1AYINz3PbnMv34jstNqIOUi0Y8B/iArQ9Y5A=
+X-Received: by 2002:a17:906:c010:: with SMTP id
+ e16mr6883221ejz.214.1619824979806; 
+ Fri, 30 Apr 2021 16:22:59 -0700 (PDT)
 MIME-Version: 1.0
-Cc: Giuseppe Scrivano <gscrivan@redhat.com>, Andy Lutomirski <luto@kernel.org>,
+References: <20210430204939.5152-1-sargun@sargun.me>
+ <20210430204939.5152-3-sargun@sargun.me>
+In-Reply-To: <20210430204939.5152-3-sargun@sargun.me>
+From: Andy Lutomirski <luto@kernel.org>
+Date: Fri, 30 Apr 2021 16:22:48 -0700
+X-Gmail-Original-Message-ID: <CALCETrXWFbB7v8wRKeNC-gxMqUZ9ZJUZx9nQiLu64qYi2Bx5FQ@mail.gmail.com>
+Message-ID: <CALCETrXWFbB7v8wRKeNC-gxMqUZ9ZJUZx9nQiLu64qYi2Bx5FQ@mail.gmail.com>
+Subject: Re: [PATCH v2 2/5] seccomp: Add wait_killable semantic to seccomp
+ user notifier
+To: Sargun Dhillon <sargun@sargun.me>
+Cc: Giuseppe Scrivano <gscrivan@redhat.com>, Kees Cook <keescook@chromium.org>,
+ Linux Containers <containers@lists.linux-foundation.org>,
+ LKML <linux-kernel@vger.kernel.org>, Andy Lutomirski <luto@kernel.org>,
  Christian Brauner <christian.brauner@ubuntu.com>
 X-BeenThere: containers@lists.linux-foundation.org
 X-Mailman-Version: 2.1.15
@@ -109,92 +103,30 @@ Content-Transfer-Encoding: 7bit
 Errors-To: containers-bounces@lists.linux-foundation.org
 Sender: "Containers" <containers-bounces@lists.linux-foundation.org>
 
-From: Rodrigo Campos <rodrigo@kinvolk.io>
+On Fri, Apr 30, 2021 at 1:49 PM Sargun Dhillon <sargun@sargun.me> wrote:
+>
+> The user notifier feature allows for filtering of seccomp notifications in
+> userspace. While the user notifier is handling the syscall, the notifying
+> process can be preempted, thus ending the notification. This has become a
+> growing problem, as Golang has adopted signal based async preemption[1]. In
+> this, it will preempt every 10ms, thus leaving the supervisor less than
+> 10ms to respond to a given notification. If the syscall require I/O (mount,
+> connect) on behalf of the process, it can easily take 10ms.
+>
+> This allows the supervisor to set a flag that moves the process into a
+> state where it is only killable by terminating signals as opposed to all
+> signals. The process can still be terminated before the supervisor receives
+> the notification.
 
-This just adds a test to verify that when using the new introduced flag
-to ADDFD, a valid fd is added and returned as the syscall result.
+This is still racy, right?  If a signal arrives after the syscall
+enters the seccomp code but before the supervisor gets around to
+issuing the new ioctl, the syscall will erroneously return -EINTR,
+right?
 
-Signed-off-by: Rodrigo Campos <rodrigo@kinvolk.io>
-Signed-off-by: Sargun Dhillon <sargun@sargun.me>
----
- tools/testing/selftests/seccomp/seccomp_bpf.c | 38 +++++++++++++++++++
- 1 file changed, 38 insertions(+)
+Can we please just fully fix this instead of piling a racy partial fix
+on top of an incorrect design?
 
-diff --git a/tools/testing/selftests/seccomp/seccomp_bpf.c b/tools/testing/selftests/seccomp/seccomp_bpf.c
-index 9a72ba8bb4f7..be911809212f 100644
---- a/tools/testing/selftests/seccomp/seccomp_bpf.c
-+++ b/tools/testing/selftests/seccomp/seccomp_bpf.c
-@@ -240,6 +240,10 @@ struct seccomp_notif_addfd {
- #define SECCOMP_IOCTL_NOTIF_SET_WAIT_KILLABLE	SECCOMP_IOW(4, __u64)
- #endif
- 
-+#ifndef SECCOMP_ADDFD_FLAG_SEND
-+#define SECCOMP_ADDFD_FLAG_SEND	(1UL << 1) /* Addfd and return it, atomically */
-+#endif
-+
- struct seccomp_notif_addfd_small {
- 	__u64 id;
- 	char weird[4];
-@@ -3981,8 +3985,14 @@ TEST(user_notification_addfd)
- 	ASSERT_GE(pid, 0);
- 
- 	if (pid == 0) {
-+		/* fds will be added and this value is expected */
- 		if (syscall(__NR_getppid) != USER_NOTIF_MAGIC)
- 			exit(1);
-+
-+		/* Atomic addfd+send is received here. Check it is a valid fd */
-+		if (fcntl(syscall(__NR_getppid), F_GETFD) == -1)
-+			exit(1);
-+
- 		exit(syscall(__NR_getppid) != USER_NOTIF_MAGIC);
- 	}
- 
-@@ -4061,6 +4071,30 @@ TEST(user_notification_addfd)
- 	ASSERT_EQ(ioctl(listener, SECCOMP_IOCTL_NOTIF_RECV, &req), 0);
- 	ASSERT_EQ(addfd.id, req.id);
- 
-+	/* Verify we can do an atomic addfd and send */
-+	addfd.newfd = 0;
-+	addfd.flags = SECCOMP_ADDFD_FLAG_SEND;
-+	fd = ioctl(listener, SECCOMP_IOCTL_NOTIF_ADDFD, &addfd);
-+
-+	/* Child has fds 0-6 and 42 used, we expect the lower fd available: 7 */
-+	EXPECT_EQ(fd, 7);
-+	EXPECT_EQ(filecmp(getpid(), pid, memfd, fd), 0);
-+
-+	/*
-+	 * This sets the ID of the ADD FD to the last request plus 1. The
-+	 * notification ID increments 1 per notification.
-+	 */
-+	addfd.id = req.id + 1;
-+
-+	/* This spins until the underlying notification is generated */
-+	while (ioctl(listener, SECCOMP_IOCTL_NOTIF_ADDFD, &addfd) != -1 &&
-+	       errno != -EINPROGRESS)
-+		nanosleep(&delay, NULL);
-+
-+	memset(&req, 0, sizeof(req));
-+	ASSERT_EQ(ioctl(listener, SECCOMP_IOCTL_NOTIF_RECV, &req), 0);
-+	ASSERT_EQ(addfd.id, req.id);
-+
- 	resp.id = req.id;
- 	resp.error = 0;
- 	resp.val = USER_NOTIF_MAGIC;
-@@ -4121,6 +4155,10 @@ TEST(user_notification_addfd_rlimit)
- 	EXPECT_EQ(ioctl(listener, SECCOMP_IOCTL_NOTIF_ADDFD, &addfd), -1);
- 	EXPECT_EQ(errno, EMFILE);
- 
-+	addfd.flags = SECCOMP_ADDFD_FLAG_SEND;
-+	EXPECT_EQ(ioctl(listener, SECCOMP_IOCTL_NOTIF_ADDFD, &addfd), -1);
-+	EXPECT_EQ(errno, EMFILE);
-+
- 	addfd.newfd = 100;
- 	addfd.flags = SECCOMP_ADDFD_FLAG_SETFD;
- 	EXPECT_EQ(ioctl(listener, SECCOMP_IOCTL_NOTIF_ADDFD, &addfd), -1);
--- 
-2.25.1
-
+--Andy
 _______________________________________________
 Containers mailing list
 Containers@lists.linux-foundation.org
