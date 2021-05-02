@@ -1,38 +1,38 @@
-Received: from mail-qk1-f169.google.com (mail-qk1-f169.google.com [209.85.222.169])
+Received: from mail-qv1-f51.google.com (mail-qv1-f51.google.com [209.85.219.51])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3A46570
-	for <containers@lists.linux.dev>; Sun,  2 May 2021 00:19:03 +0000 (UTC)
-Received: by mail-qk1-f169.google.com with SMTP id t17so1900412qkg.4
-        for <containers@lists.linux.dev>; Sat, 01 May 2021 17:19:03 -0700 (PDT)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4152F70
+	for <containers@lists.linux.dev>; Sun,  2 May 2021 00:19:08 +0000 (UTC)
+Received: by mail-qv1-f51.google.com with SMTP id b14so930881qvf.9
+        for <containers@lists.linux.dev>; Sat, 01 May 2021 17:19:08 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=sargun.me; s=google;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=YFrHuiCgVxuk3VucJdjHQohm6Nqxsi7Fn/b9oyEwGz0=;
-        b=FoAUu8AC6MTunvQ8yarUmTFUe5rHqCGRgvUD0UYyeUlF4ZAbQmfZZQHt2WGb3+sX+Z
-         DACsq6VP9hE39GEHjzoljku5KgxAxA1pzP24nNCoJnvHUXBZW5VjA7bse7e9935VczCP
-         SY4Vl6fldwrS0Fbp4kCSOlZ4xUOAQn51kJoys=
+        bh=vfAsECn/fzRz8G1nJMm0ods0ajgpdWjB1GxnEL0hfI8=;
+        b=fpbZq7C8+zvIV2lES2K6x9lsB7pyHmvs4Yxy9DkSMbsmefAzZD0E/RgPvUXyJdb6Q+
+         TKiP2DEq/Pxqu7/7b055o0hEv0TFebGCinfp9yJUuVm05BmUcNSiL/BkcfH9VT/J9oaq
+         JotWx2+KQ5biyK6x3pTn80D1Wzv4ta3gS2qzs=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=YFrHuiCgVxuk3VucJdjHQohm6Nqxsi7Fn/b9oyEwGz0=;
-        b=g0Aw6Xb0rFWj1ImT083G9u/qWYtDgeaOyU1bXsOL4mdvHHjRVaowsT2b8Fux9etT9J
-         rsMJ6HGmxLcQOPj9fj9OGZKkdCQ/XHQJ6N9SpYmszI4bvjVqPs7MSOHSPE1NQ7v8IXqM
-         0w+CK3uG9ZJLXAbbWZ8idszVmkPvnmKBUQDgDqVASzXkWkBrVR+ZhfC5NxU3b53Tggfb
-         zSCKsSr/EWGINaubpZiManJg11QJbOoIrug1ijSUKAtcx6uH/WFGHMTMvHRSbeqIDuBQ
-         KyQyroOWn3PffuJBJj9XdYM17IrPQL3N/tvergyuDvXs925mhnopTqKQsHTR6z2oC9F0
-         yN9g==
-X-Gm-Message-State: AOAM530/8NOKPPha8YxCJMrrqxkqX5Gn6LERmgcZxX3ODCjD/0IlebR6
-	2wK0S8ha101eB06pDYPJqx15yw==
-X-Google-Smtp-Source: ABdhPJypwSf8TS50lZmHuge623bTNQIf81qG1QW2YfGdO+acApuR7mmBjkWsugo3NrXpKYyzCSiObg==
-X-Received: by 2002:a37:7782:: with SMTP id s124mr12425117qkc.305.1619914742997;
-        Sat, 01 May 2021 17:19:02 -0700 (PDT)
+        bh=vfAsECn/fzRz8G1nJMm0ods0ajgpdWjB1GxnEL0hfI8=;
+        b=hM8ts6gyxwlEw+1k13ZoK7HcymS92E/xs629uifbl446TepbHTcY0vGvViKhw9ay0/
+         5UwuEBW0f3Gf8jSbFVtIfBMnlw1YKMnc/8IX8LZp/f7j2KZ5T6ZPN1Pw7cZPTcNQp7xC
+         ankOHktAWPfUqb2wu+L9UiQzqbijVszZFdPQMdB9TuoMJuskwx5k3pTqr8aRSvxZbHqg
+         0mQ82StKi6NYuEFPhenBZiH+ri/sRk46f1gVWqlpJndJuRTFmeWKwC9zecNYci2VUjQ0
+         xX5Qc0T30hdSeeE1f3b7wTpz+kV4bRwmTzqjB0fxBT3qO0ksm/NULvcNXSDx1RzLLYbU
+         APqg==
+X-Gm-Message-State: AOAM530u9BCCchr82y8RVA0uEnr+fiNxNdRoDsLsTt5ri1hjWPUplxPf
+	WKTcvVILEMoAFsNum5OaMB2tOg==
+X-Google-Smtp-Source: ABdhPJwNAfn4+E6CCzyl/D25KYz95m1jhCAOsy1DssEolXqjzMVufdUNRmGSHjVvoBu+pvuBtTZmrA==
+X-Received: by 2002:a05:6214:2503:: with SMTP id gf3mr12604871qvb.61.1619914747252;
+        Sat, 01 May 2021 17:19:07 -0700 (PDT)
 Received: from ubuntu.netflix.com (136-25-20-203.cab.webpass.net. [136.25.20.203])
-        by smtp.gmail.com with ESMTPSA id p5sm5146067qkh.135.2021.05.01.17.19.00
+        by smtp.gmail.com with ESMTPSA id p5sm5146067qkh.135.2021.05.01.17.19.03
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 01 May 2021 17:19:02 -0700 (PDT)
+        Sat, 01 May 2021 17:19:06 -0700 (PDT)
 From: Sargun Dhillon <sargun@sargun.me>
 To: Kees Cook <keescook@chromium.org>,
 	LKML <linux-kernel@vger.kernel.org>,
@@ -45,9 +45,9 @@ Cc: Sargun Dhillon <sargun@sargun.me>,
 	Giuseppe Scrivano <gscrivan@redhat.com>,
 	Christian Brauner <christian.brauner@ubuntu.com>,
 	=?UTF-8?q?Micka=C3=ABl=20Sala=C3=BCn?= <mic@linux.microsoft.com>
-Subject: [PATCH 1/4] Documentation: seccomp: Fix user notification documentation
-Date: Sat,  1 May 2021 17:18:48 -0700
-Message-Id: <20210502001851.3346-2-sargun@sargun.me>
+Subject: [PATCH 2/4] seccomp: Refactor notification handler to prepare for new semantics
+Date: Sat,  1 May 2021 17:18:49 -0700
+Message-Id: <20210502001851.3346-3-sargun@sargun.me>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210502001851.3346-1-sargun@sargun.me>
 References: <20210502001851.3346-1-sargun@sargun.me>
@@ -58,42 +58,72 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-The documentation had some previously incorrect information about how
-userspace notifications (and responses) were handled due to a change
-from a previously proposed patchset.
+This refactors the user notification code to have a do / while loop around
+the completion condition. This has a small change in semantic, in that
+previously we ignored addfd calls upon wakeup if the notification had been
+responded to, but instead with the new change we check for an outstanding
+addfd calls prior to returning to userspace.
 
+Rodrigo Campos also identified a bug that can result in addfd causing
+an early return, when the supervisor didn't actually handle the syscall [1].
+
+[1]: https://lore.kernel.org/lkml/20210413160151.3301-1-rodrigo@kinvolk.io/
+
+Fixes: 7cf97b125455 ("seccomp: Introduce addfd ioctl to seccomp user notifier")
 Signed-off-by: Sargun Dhillon <sargun@sargun.me>
 ---
- Documentation/userspace-api/seccomp_filter.rst | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
+ kernel/seccomp.c | 30 ++++++++++++++++--------------
+ 1 file changed, 16 insertions(+), 14 deletions(-)
 
-diff --git a/Documentation/userspace-api/seccomp_filter.rst b/Documentation/userspace-api/seccomp_filter.rst
-index bd9165241b6c..6efb41cc8072 100644
---- a/Documentation/userspace-api/seccomp_filter.rst
-+++ b/Documentation/userspace-api/seccomp_filter.rst
-@@ -250,14 +250,14 @@ Users can read via ``ioctl(SECCOMP_IOCTL_NOTIF_RECV)``  (or ``poll()``) on a
- seccomp notification fd to receive a ``struct seccomp_notif``, which contains
- five members: the input length of the structure, a unique-per-filter ``id``,
- the ``pid`` of the task which triggered this request (which may be 0 if the
--task is in a pid ns not visible from the listener's pid namespace), a ``flags``
--member which for now only has ``SECCOMP_NOTIF_FLAG_SIGNALED``, representing
--whether or not the notification is a result of a non-fatal signal, and the
--``data`` passed to seccomp. Userspace can then make a decision based on this
--information about what to do, and ``ioctl(SECCOMP_IOCTL_NOTIF_SEND)`` a
--response, indicating what should be returned to userspace. The ``id`` member of
--``struct seccomp_notif_resp`` should be the same ``id`` as in ``struct
--seccomp_notif``.
-+task is in a pid ns not visible from the listener's pid namespace). The
-+notification also contains the ``data`` passed to seccomp, and a filters flag.
-+The structure should be zeroed out prior to calling the ioctl.
-+
-+Userspace can then make a decision based on this information about what to do,
-+and ``ioctl(SECCOMP_IOCTL_NOTIF_SEND)`` a response, indicating what should be
-+returned to userspace. The ``id`` member of ``struct seccomp_notif_resp`` should
-+be the same ``id`` as in ``struct seccomp_notif``.
+diff --git a/kernel/seccomp.c b/kernel/seccomp.c
+index 1d60fc2c9987..93684cc63285 100644
+--- a/kernel/seccomp.c
++++ b/kernel/seccomp.c
+@@ -1098,28 +1098,30 @@ static int seccomp_do_user_notification(int this_syscall,
  
- It is worth noting that ``struct seccomp_data`` contains the values of register
- arguments to the syscall, but does not contain pointers to memory. The task's
+ 	up(&match->notif->request);
+ 	wake_up_poll(&match->wqh, EPOLLIN | EPOLLRDNORM);
+-	mutex_unlock(&match->notify_lock);
+ 
+ 	/*
+ 	 * This is where we wait for a reply from userspace.
+ 	 */
+-wait:
+-	err = wait_for_completion_interruptible(&n.ready);
+-	mutex_lock(&match->notify_lock);
+-	if (err == 0) {
+-		/* Check if we were woken up by a addfd message */
++	do {
++		mutex_unlock(&match->notify_lock);
++		err = wait_for_completion_interruptible(&n.ready);
++		mutex_lock(&match->notify_lock);
++		if (err != 0)
++			goto interrupted;
++
+ 		addfd = list_first_entry_or_null(&n.addfd,
+ 						 struct seccomp_kaddfd, list);
+-		if (addfd && n.state != SECCOMP_NOTIFY_REPLIED) {
++		/* Check if we were woken up by a addfd message */
++		if (addfd)
+ 			seccomp_handle_addfd(addfd);
+-			mutex_unlock(&match->notify_lock);
+-			goto wait;
+-		}
+-		ret = n.val;
+-		err = n.error;
+-		flags = n.flags;
+-	}
+ 
++	}  while (n.state != SECCOMP_NOTIFY_REPLIED);
++
++	ret = n.val;
++	err = n.error;
++	flags = n.flags;
++
++interrupted:
+ 	/* If there were any pending addfd calls, clear them out */
+ 	list_for_each_entry_safe(addfd, tmp, &n.addfd, list) {
+ 		/* The process went away before we got a chance to handle it */
 -- 
 2.25.1
 
