@@ -1,38 +1,38 @@
-Received: from mail-qk1-f180.google.com (mail-qk1-f180.google.com [209.85.222.180])
+Received: from mail-qk1-f169.google.com (mail-qk1-f169.google.com [209.85.222.169])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2182B70
-	for <containers@lists.linux.dev>; Sun,  2 May 2021 00:19:01 +0000 (UTC)
-Received: by mail-qk1-f180.google.com with SMTP id t17so1900386qkg.4
-        for <containers@lists.linux.dev>; Sat, 01 May 2021 17:19:01 -0700 (PDT)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3A46570
+	for <containers@lists.linux.dev>; Sun,  2 May 2021 00:19:03 +0000 (UTC)
+Received: by mail-qk1-f169.google.com with SMTP id t17so1900412qkg.4
+        for <containers@lists.linux.dev>; Sat, 01 May 2021 17:19:03 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=sargun.me; s=google;
-        h=from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=1Of0XcLlfHKCxHPsgc9mruieTzxAs761HczQBIKnhe0=;
-        b=RJJsSKb3J60FEzVIAXoIuWglAxKe/2ieSjFdC/m8M4pCax51twizMiQJD4xRJf5cUP
-         1PUHPfJmCTkgdV3QuOfLqnpf4Pq3A3bBE4/lsPM67Mxqg+LY6A9pqmBlfIvvRch3vTS8
-         KaXFLUQZEAxFqfZ0qa3rBLWpEhsMn9YW8SQvw=
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=YFrHuiCgVxuk3VucJdjHQohm6Nqxsi7Fn/b9oyEwGz0=;
+        b=FoAUu8AC6MTunvQ8yarUmTFUe5rHqCGRgvUD0UYyeUlF4ZAbQmfZZQHt2WGb3+sX+Z
+         DACsq6VP9hE39GEHjzoljku5KgxAxA1pzP24nNCoJnvHUXBZW5VjA7bse7e9935VczCP
+         SY4Vl6fldwrS0Fbp4kCSOlZ4xUOAQn51kJoys=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=1Of0XcLlfHKCxHPsgc9mruieTzxAs761HczQBIKnhe0=;
-        b=rOSyIqmu1mVIhKovExCfOuyjQDZXzgVyKcCUgCRpfHCRZR6tQirK8L/ou6zDOC3BkG
-         0rdt0J2kfMFx2Em42hscM5045mw1H4V+z5mDb30ceQI54m08U4Fe3rkuVMxfLXWrj3pP
-         EXFG+L9ilLmcBJYa/OlQBUSi7vPfx/xprenbJnmUN8o50WDgcHyDOK6tfiXlaSTpPheg
-         N6xBOSi5vlp9aUm5f0ySbwxi2TjJSjCHTdHHdqUudVrACpVEyZUM8FaCFTHOYQOZKFYw
-         vnIVSg/9mG9qJ4NSvYUKXA0YdVOgP85DIg45PQ3rYCE8hxeC1yfkjOIvvIaJN3p7cHK8
-         kdug==
-X-Gm-Message-State: AOAM530/HCFRzHU4FLB7zFbVx1Pa0ZpPiP7IbV3txbL1cZfMT7jMMlw+
-	5NYpOCUMb/OnT10aKc5DUvlG4Q==
-X-Google-Smtp-Source: ABdhPJx+X8W3mQclWNKXDwLEWvNcsz3apjytoglj/cO4uLOZ16u8fa7kuVU/QBHXPMoJFD1AmA5xpw==
-X-Received: by 2002:a37:b603:: with SMTP id g3mr12729945qkf.38.1619914740751;
-        Sat, 01 May 2021 17:19:00 -0700 (PDT)
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=YFrHuiCgVxuk3VucJdjHQohm6Nqxsi7Fn/b9oyEwGz0=;
+        b=g0Aw6Xb0rFWj1ImT083G9u/qWYtDgeaOyU1bXsOL4mdvHHjRVaowsT2b8Fux9etT9J
+         rsMJ6HGmxLcQOPj9fj9OGZKkdCQ/XHQJ6N9SpYmszI4bvjVqPs7MSOHSPE1NQ7v8IXqM
+         0w+CK3uG9ZJLXAbbWZ8idszVmkPvnmKBUQDgDqVASzXkWkBrVR+ZhfC5NxU3b53Tggfb
+         zSCKsSr/EWGINaubpZiManJg11QJbOoIrug1ijSUKAtcx6uH/WFGHMTMvHRSbeqIDuBQ
+         KyQyroOWn3PffuJBJj9XdYM17IrPQL3N/tvergyuDvXs925mhnopTqKQsHTR6z2oC9F0
+         yN9g==
+X-Gm-Message-State: AOAM530/8NOKPPha8YxCJMrrqxkqX5Gn6LERmgcZxX3ODCjD/0IlebR6
+	2wK0S8ha101eB06pDYPJqx15yw==
+X-Google-Smtp-Source: ABdhPJypwSf8TS50lZmHuge623bTNQIf81qG1QW2YfGdO+acApuR7mmBjkWsugo3NrXpKYyzCSiObg==
+X-Received: by 2002:a37:7782:: with SMTP id s124mr12425117qkc.305.1619914742997;
+        Sat, 01 May 2021 17:19:02 -0700 (PDT)
 Received: from ubuntu.netflix.com (136-25-20-203.cab.webpass.net. [136.25.20.203])
-        by smtp.gmail.com with ESMTPSA id p5sm5146067qkh.135.2021.05.01.17.18.58
+        by smtp.gmail.com with ESMTPSA id p5sm5146067qkh.135.2021.05.01.17.19.00
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 01 May 2021 17:18:59 -0700 (PDT)
+        Sat, 01 May 2021 17:19:02 -0700 (PDT)
 From: Sargun Dhillon <sargun@sargun.me>
 To: Kees Cook <keescook@chromium.org>,
 	LKML <linux-kernel@vger.kernel.org>,
@@ -45,10 +45,12 @@ Cc: Sargun Dhillon <sargun@sargun.me>,
 	Giuseppe Scrivano <gscrivan@redhat.com>,
 	Christian Brauner <christian.brauner@ubuntu.com>,
 	=?UTF-8?q?Micka=C3=ABl=20Sala=C3=BCn?= <mic@linux.microsoft.com>
-Subject: [PATCH 0/4] Atomic addfd send and reply
-Date: Sat,  1 May 2021 17:18:47 -0700
-Message-Id: <20210502001851.3346-1-sargun@sargun.me>
+Subject: [PATCH 1/4] Documentation: seccomp: Fix user notification documentation
+Date: Sat,  1 May 2021 17:18:48 -0700
+Message-Id: <20210502001851.3346-2-sargun@sargun.me>
 X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20210502001851.3346-1-sargun@sargun.me>
+References: <20210502001851.3346-1-sargun@sargun.me>
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
@@ -56,30 +58,42 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-This is somewhat of a respin of "Handle seccomp notification preemption"
-but without the controversial parts.
+The documentation had some previously incorrect information about how
+userspace notifications (and responses) were handled due to a change
+from a previously proposed patchset.
 
-This patchset addresses a race condition we've dealt with recently with
-seccomp. Specifically programs interrupting syscalls while they're in
-progress. This was exacerbated by Golang's recent adoption of "async
-preemption", in which they try to interrupt any syscall that's been
-running for more than 10ms during GC. During certain syscalls, it's
-non-trivial to write them in a reetrant manner in userspace (socket).
+Signed-off-by: Sargun Dhillon <sargun@sargun.me>
+---
+ Documentation/userspace-api/seccomp_filter.rst | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
 
-Rodrigo Campos (2):
-  seccomp: Support atomic "addfd + send reply"
-  selftests/seccomp: Add test for atomic addfd+send
-
-Sargun Dhillon (2):
-  Documentation: seccomp: Fix user notification documentation
-  seccomp: Refactor notification handler to prepare for new semantics
-
- .../userspace-api/seccomp_filter.rst          | 28 +++++--
- include/uapi/linux/seccomp.h                  |  1 +
- kernel/seccomp.c                              | 79 ++++++++++++++-----
- tools/testing/selftests/seccomp/seccomp_bpf.c | 38 +++++++++
- 4 files changed, 120 insertions(+), 26 deletions(-)
-
+diff --git a/Documentation/userspace-api/seccomp_filter.rst b/Documentation/userspace-api/seccomp_filter.rst
+index bd9165241b6c..6efb41cc8072 100644
+--- a/Documentation/userspace-api/seccomp_filter.rst
++++ b/Documentation/userspace-api/seccomp_filter.rst
+@@ -250,14 +250,14 @@ Users can read via ``ioctl(SECCOMP_IOCTL_NOTIF_RECV)``  (or ``poll()``) on a
+ seccomp notification fd to receive a ``struct seccomp_notif``, which contains
+ five members: the input length of the structure, a unique-per-filter ``id``,
+ the ``pid`` of the task which triggered this request (which may be 0 if the
+-task is in a pid ns not visible from the listener's pid namespace), a ``flags``
+-member which for now only has ``SECCOMP_NOTIF_FLAG_SIGNALED``, representing
+-whether or not the notification is a result of a non-fatal signal, and the
+-``data`` passed to seccomp. Userspace can then make a decision based on this
+-information about what to do, and ``ioctl(SECCOMP_IOCTL_NOTIF_SEND)`` a
+-response, indicating what should be returned to userspace. The ``id`` member of
+-``struct seccomp_notif_resp`` should be the same ``id`` as in ``struct
+-seccomp_notif``.
++task is in a pid ns not visible from the listener's pid namespace). The
++notification also contains the ``data`` passed to seccomp, and a filters flag.
++The structure should be zeroed out prior to calling the ioctl.
++
++Userspace can then make a decision based on this information about what to do,
++and ``ioctl(SECCOMP_IOCTL_NOTIF_SEND)`` a response, indicating what should be
++returned to userspace. The ``id`` member of ``struct seccomp_notif_resp`` should
++be the same ``id`` as in ``struct seccomp_notif``.
+ 
+ It is worth noting that ``struct seccomp_data`` contains the values of register
+ arguments to the syscall, but does not contain pointers to memory. The task's
 -- 
 2.25.1
 
