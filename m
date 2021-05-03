@@ -1,389 +1,144 @@
-Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-lf1-f54.google.com (mail-lf1-f54.google.com [209.85.167.54])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0C9C572
-	for <containers@lists.linux.dev>; Mon,  3 May 2021 14:40:31 +0000 (UTC)
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 2C2E0611C2;
-	Mon,  3 May 2021 14:40:27 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1620052830;
-	bh=tmch2PIT1C8gQWfauWKXwhbLVkYhCqnym9EO8BwGtf0=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=qaXbOAjeeLrkrJ5MY/HoxFwFTzspOwiKy8xrxG5foxrg/6Pwlxt7k3xDgsWwNV47y
-	 /585IpmIdfZZIbk+I327Qh10zDNvSiP0eCWidJkERgK/HWzntCs823k8NyZrl7NkIy
-	 JilUUXW8Z/8ztmbQDgC53viTGt9a0eI9EbsPJStdKyGjcgOxpru/OOBUykYKSsmlU/
-	 EEeVdztLDLJhanb9B7lWcrTH2SncQTaFqkJTw7LZi9eC8BWMRqu2f5fAHLoY14UhoP
-	 c6MAN8wtKSWQVnS+jnFiLiXD1bwqRXL4QlTb//xN1VCOipKibwkqy8zTl1IRPkM+6S
-	 rPOIX3H5BSQqw==
-From: Christian Brauner <brauner@kernel.org>
-To: Tejun Heo <tj@kernel.org>,
-	Roman Gushchin <guro@fb.com>
-Cc: Shakeel Butt <shakeelb@google.com>,
-	Zefan Li <lizefan.x@bytedance.com>,
-	Johannes Weiner <hannes@cmpxchg.org>,
-	cgroups@vger.kernel.org,
-	containers@lists.linux.dev,
-	Christian Brauner <christian.brauner@ubuntu.com>
-Subject: [PATCH v2 5/5] tests/cgroup: test cgroup.kill
-Date: Mon,  3 May 2021 16:39:23 +0200
-Message-Id: <20210503143922.3093755-5-brauner@kernel.org>
-X-Mailer: git-send-email 2.27.0
-In-Reply-To: <20210503143922.3093755-1-brauner@kernel.org>
-References: <20210503143922.3093755-1-brauner@kernel.org>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AF17370
+	for <containers@lists.linux.dev>; Mon,  3 May 2021 17:19:01 +0000 (UTC)
+Received: by mail-lf1-f54.google.com with SMTP id x2so9156376lff.10
+        for <containers@lists.linux.dev>; Mon, 03 May 2021 10:19:01 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=google.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=R+Vb4/GnRKT0G3TyENF1aghjj1j3gbMmpQpEJoj800U=;
+        b=c27n9YevnhEL7qhFHSX8WIPq7f9Xf/Vax2kDUH6WQX6IvFhn49FPKTwKQtejaK+7AR
+         /rwB2wrVwBq14wkXa5vAed5c8820GAsbdFORm5nRsJfPVnPYBL79m94hhuUEqngxvD/N
+         QEgwAIZ0m088luZf/t8sJ73EiyULxbytMEgfAmmeiG5Iw9L8SufvOh3NqEqwJso/NiRh
+         akCHql1Erb+4ds4A61aFo9njXjH3KKVjLZ/BNy39h2kIHRJj0Jz9uCLjQbIwXQRfXqbL
+         sCVjhi12jalrivFesev4AhaDoSgrOKyoJ1z9npbBpEVNTXbpKwWIz5vnMXs/8tosAx71
+         Q7JQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=R+Vb4/GnRKT0G3TyENF1aghjj1j3gbMmpQpEJoj800U=;
+        b=gHr/uevcSrlSoQsDrojz7itfFgzjoBag/xWCo0mUmNumSU6YDla/9V4KTmbCnHg+7n
+         MyTrJGcnJ8OLuG3MDNyZW4BHW1XdsJXMIlc3R+VqbFdwWPR5ahDgE65O0cJiVh8Bj5rr
+         nRygy4J+i40a3Hr/09U9I3BIzQN8wqaoOfhxvLtvrFn4VIYH50wWM02jdygoeQZELv6B
+         MlsGis0n41/hZZ/Csv1aaJovco1M5HKz5sS435gYq0+JmhMUaEQzDljErkd3hckFaycR
+         7SLEDICZHFzzrEAoY3XsRE0hna83tSDf98Y+otMaMFBjuqxQQAnaL47kq0iJIyVQG6gW
+         0r8g==
+X-Gm-Message-State: AOAM530EyywQjGyYD2ZTg0dILtVb3YujRFi5TwTEZ5F3ehBMD9p+2NoU
+	Q/1sEKMDQTrkD6IVTYQ1HQd5a/YML91YvtnmpuwJzw==
+X-Google-Smtp-Source: ABdhPJwaOiCoMX5nrqV/yHZ8HsBRe/LlUNWE4Q/aEklpWcuwCMmxJU4mC4VoW8ssk7rh5EuyB/dUrnLN91P2ZX2cOWY=
+X-Received: by 2002:a05:6512:92e:: with SMTP id f14mr13765420lft.347.1620062339702;
+ Mon, 03 May 2021 10:18:59 -0700 (PDT)
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-X-Patch-Hashes: v=1; h=sha256; i=oBIHbe+ijtHkI/43k7XYiClzsWtmNv8ACAd1Hl7Tjf8=; m=GL6pVTfDlcasRrJs3zAP4Et9ePmCqhO4Zpxn9QZoR+c=; p=5kAnjYrPMs11m2C7AJUHQbfh1+I4oz+ePfjXaKrI9+c=; g=4170d2494d01c59c2e7f222a43721cc7e5c91ae1
-X-Patch-Sig: m=pgp; i=christian.brauner@ubuntu.com; s=0x0x91C61BC06578DCA2; b=iHUEABYKAB0WIQRAhzRXHqcMeLMyaSiRxhvAZXjcogUCYJAK7wAKCRCRxhvAZXjcojEqAQDu6Qk 55ftET/kdy0nVw3047ltApi5WFwo6g9KEM27CfAD/bs9E/NJY71HkuBpkF/WJZLCysfBwF2MkJFks 5aT7nAw=
-Content-Transfer-Encoding: 8bit
+References: <20210503143922.3093755-1-brauner@kernel.org>
+In-Reply-To: <20210503143922.3093755-1-brauner@kernel.org>
+From: Shakeel Butt <shakeelb@google.com>
+Date: Mon, 3 May 2021 10:18:49 -0700
+Message-ID: <CALvZod4TsZcOL6Nng4y9H3-CqeCEqn-TRV1sWbt=T5q-57hXUQ@mail.gmail.com>
+Subject: Re: [PATCH v2 1/5] cgroup: introduce cgroup.kill
+To: Christian Brauner <brauner@kernel.org>
+Cc: Tejun Heo <tj@kernel.org>, Roman Gushchin <guro@fb.com>, Zefan Li <lizefan.x@bytedance.com>, 
+	Johannes Weiner <hannes@cmpxchg.org>, Cgroups <cgroups@vger.kernel.org>, containers@lists.linux.dev, 
+	Christian Brauner <christian.brauner@ubuntu.com>
+Content-Type: text/plain; charset="UTF-8"
 
-From: Christian Brauner <christian.brauner@ubuntu.com>
+On Mon, May 3, 2021 at 7:40 AM Christian Brauner <brauner@kernel.org> wrote:
+>
+> From: Christian Brauner <christian.brauner@ubuntu.com>
+>
+> Introduce the cgroup.kill file. It does what it says on the tin and
+> allows a caller to kill a cgroup by writing "1" into cgroup.kill.
+> The file is available in non-root cgroups.
+>
+> Killing cgroups is a process directed operation, i.e. the whole
+> thread-group is affected. Consequently trying to write to cgroup.kill in
+> threaded cgroups will be rejected and EOPNOTSUPP returned. This behavior
+> aligns with cgroup.procs where reads in threaded-cgroups are rejected
+> with EOPNOTSUPP.
+>
+> The cgroup.kill file is write-only since killing a cgroup is an event
+> not which makes it different from e.g. freezer where a cgroup
+> transitions between the two states.
+>
+> As with all new cgroup features cgroup.kill is recursive by default.
+>
+> Killing a cgroup is protected against concurrent migrations through the
+> cgroup mutex. To protect against forkbombs and to mitigate the effect of
+> racing forks a new CGRP_KILL css set lock protected flag is introduced
+> that is set prior to killing a cgroup and unset after the cgroup has
+> been killed. We can then check in cgroup_post_fork() where we hold the
+> css set lock already whether the cgroup is currently being killed. If so
+> we send the child a SIGKILL signal immediately taking it down as soon as
+> it returns to userspace. To make the killing of the child semantically
+> clean it is killed after all cgroup attachment operations have been
+> finalized.
+>
+> There are various use-cases of this interface:
+> - Containers usually have a conservative layout where each container
+>   usually has a delegated cgroup. For such layouts there is a 1:1
+>   mapping between container and cgroup. If the container in addition
+>   uses a separate pid namespace then killing a container usually becomes
+>   a simple kill -9 <container-init-pid> from an ancestor pid namespace.
+>   However, there are quite a few scenarios where that isn't true. For
+>   example, there are containers that share the cgroup with other
+>   processes on purpose that are supposed to be bound to the lifetime of
+>   the container but are not in the same pidns of the container.
+>   Containers that are in a delegated cgroup but share the pid namespace
+>   with the host or other containers.
+> - Service managers such as systemd use cgroups to group and organize
+>   processes belonging to a service. They usually rely on a recursive
+>   algorithm now to kill a service. With cgroup.kill this becomes a
+>   simple write to cgroup.kill.
+> - Userspace OOM implementations can make good use of this feature to
+>   efficiently take down whole cgroups quickly.
+> - The kill program can gain a new
+>   kill --cgroup /sys/fs/cgroup/delegated
+>   flag to take down cgroups.
+>
+> A few observations about the semantics:
+> - If parent and child are in the same cgroup and CLONE_INTO_CGROUP is
+>   not specified we are not taking cgroup mutex meaning the cgroup can be
+>   killed while a process in that cgroup is forking.
+>   If the kill request happens right before cgroup_can_fork() and before
+>   the parent grabs its siglock the parent is guaranteed to see the
+>   pending SIGKILL. In addition we perform another check in
+>   cgroup_post_fork() whether the cgroup is being killed and is so take
+>   down the child (see above). This is robust enough and protects gainst
+>   forkbombs. If userspace really really wants to have stricter
+>   protection the simple solution would be to grab the write side of the
+>   cgroup threadgroup rwsem which will force all ongoing forks to
+>   complete before killing starts. We concluded that this is not
+>   necessary as the semantics for concurrent forking should simply align
+>   with freezer where a similar check as cgroup_post_fork() is performed.
+>
+>   For all other cases CLONE_INTO_CGROUP is required. In this case we
+>   will grab the cgroup mutex so the cgroup can't be killed while we
+>   fork. Once we're done with the fork and have dropped cgroup mutex we
+>   are visible and will be found by any subsequent kill request.
+> - We obviously don't kill kthreads. This means a cgroup that has a
+>   kthread will not become empty after killing and consequently no
+>   unpopulated event will be generated. The assumption is that kthreads
+>   should be in the root cgroup only anyway so this is not an issue.
+> - We skip killing tasks that already have pending fatal signals.
+> - Freezer doesn't care about tasks in different pid namespaces, i.e. if
+>   you have two tasks in different pid namespaces the cgroup would still
+>   be frozen. The cgroup.kill mechanism consequently behaves the same
+>   way, i.e. we kill all processes and ignore in which pid namespace they
+>   exist.
+> - If the caller is located in a cgroup that is killed the caller will
+>   obviously be killed as well.
+>
+> Cc: Shakeel Butt <shakeelb@google.com>
+> Cc: Roman Gushchin <guro@fb.com>
+> Cc: Tejun Heo <tj@kernel.org>
+> Cc: cgroups@vger.kernel.org
+> Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 
-Test that the new cgroup.kill feature works as intended.
-
-Cc: Tejun Heo <tj@kernel.org>
-Cc: cgroups@vger.kernel.org
-Acked-by: Roman Gushchin <guro@fb.com>
-Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
----
-/* v2 */
-- Christian Brauner <christian.brauner@ubuntu.com>:
-  - Remove debug logging (It wasn't very helpful in the first place.).
----
- tools/testing/selftests/cgroup/.gitignore  |   3 +-
- tools/testing/selftests/cgroup/Makefile    |   2 +
- tools/testing/selftests/cgroup/test_kill.c | 291 +++++++++++++++++++++
- 3 files changed, 295 insertions(+), 1 deletion(-)
- create mode 100644 tools/testing/selftests/cgroup/test_kill.c
-
-diff --git a/tools/testing/selftests/cgroup/.gitignore b/tools/testing/selftests/cgroup/.gitignore
-index 84cfcabea838..be9643ef6285 100644
---- a/tools/testing/selftests/cgroup/.gitignore
-+++ b/tools/testing/selftests/cgroup/.gitignore
-@@ -2,4 +2,5 @@
- test_memcontrol
- test_core
- test_freezer
--test_kmem
-\ No newline at end of file
-+test_kmem
-+test_kill
-diff --git a/tools/testing/selftests/cgroup/Makefile b/tools/testing/selftests/cgroup/Makefile
-index f027d933595b..59e222460581 100644
---- a/tools/testing/selftests/cgroup/Makefile
-+++ b/tools/testing/selftests/cgroup/Makefile
-@@ -9,6 +9,7 @@ TEST_GEN_PROGS = test_memcontrol
- TEST_GEN_PROGS += test_kmem
- TEST_GEN_PROGS += test_core
- TEST_GEN_PROGS += test_freezer
-+TEST_GEN_PROGS += test_kill
- 
- include ../lib.mk
- 
-@@ -16,3 +17,4 @@ $(OUTPUT)/test_memcontrol: cgroup_util.c ../clone3/clone3_selftests.h
- $(OUTPUT)/test_kmem: cgroup_util.c ../clone3/clone3_selftests.h
- $(OUTPUT)/test_core: cgroup_util.c ../clone3/clone3_selftests.h
- $(OUTPUT)/test_freezer: cgroup_util.c ../clone3/clone3_selftests.h
-+$(OUTPUT)/test_kill: cgroup_util.c ../clone3/clone3_selftests.h ../pidfd/pidfd.h
-diff --git a/tools/testing/selftests/cgroup/test_kill.c b/tools/testing/selftests/cgroup/test_kill.c
-new file mode 100644
-index 000000000000..3e1132deed33
---- /dev/null
-+++ b/tools/testing/selftests/cgroup/test_kill.c
-@@ -0,0 +1,291 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
-+
-+#include <errno.h>
-+#include <linux/limits.h>
-+#include <stdbool.h>
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <string.h>
-+#include <sys/types.h>
-+#include <unistd.h>
-+
-+#include "../kselftest.h"
-+#include "../pidfd/pidfd.h"
-+#include "cgroup_util.h"
-+
-+/*
-+ * Kill the given cgroup and wait for the inotify signal.
-+ * If there are no events in 10 seconds, treat this as an error.
-+ * Then check that the cgroup is in the desired state.
-+ */
-+static int cg_kill_wait(const char *cgroup)
-+{
-+	int fd, ret = -1;
-+
-+	fd = cg_prepare_for_wait(cgroup);
-+	if (fd < 0)
-+		return fd;
-+
-+	ret = cg_write(cgroup, "cgroup.kill", "1");
-+	if (ret)
-+		goto out;
-+
-+	ret = cg_wait_for(fd);
-+	if (ret)
-+		goto out;
-+
-+	ret = cg_read_strcmp(cgroup, "cgroup.events", "populated 0\n");
-+out:
-+	close(fd);
-+	return ret;
-+}
-+
-+/*
-+ * A simple process running in a sleep loop until being
-+ * re-parented.
-+ */
-+static int child_fn(const char *cgroup, void *arg)
-+{
-+	int ppid = getppid();
-+
-+	while (getppid() == ppid)
-+		usleep(1000);
-+
-+	return getppid() == ppid;
-+}
-+
-+static int test_cgkill_simple(const char *root)
-+{
-+	pid_t pids[100];
-+	int ret = KSFT_FAIL;
-+	char *cgroup = NULL;
-+	int i;
-+
-+	cgroup = cg_name(root, "cg_test_simple");
-+	if (!cgroup)
-+		goto cleanup;
-+
-+	if (cg_create(cgroup))
-+		goto cleanup;
-+
-+	for (i = 0; i < 100; i++)
-+		pids[i] = cg_run_nowait(cgroup, child_fn, NULL);
-+
-+	if (cg_wait_for_proc_count(cgroup, 100))
-+		goto cleanup;
-+
-+        if (cg_write(cgroup, "cgroup.kill", "1"))
-+		goto cleanup;
-+
-+	if (cg_read_strcmp(cgroup, "cgroup.events", "populated 1\n"))
-+		goto cleanup;
-+
-+	if (cg_kill_wait(cgroup))
-+		goto cleanup;
-+
-+	if (cg_read_strcmp(cgroup, "cgroup.events", "populated 0\n"))
-+		goto cleanup;
-+
-+	ret = KSFT_PASS;
-+
-+cleanup:
-+	for (i = 0; i < 100; i++)
-+		wait_for_pid(pids[i]);
-+
-+	if (cgroup)
-+		cg_destroy(cgroup);
-+	free(cgroup);
-+	return ret;
-+}
-+
-+/*
-+ * The test creates the following hierarchy:
-+ *       A
-+ *    / / \ \
-+ *   B  E  I K
-+ *  /\  |
-+ * C  D F
-+ *      |
-+ *      G
-+ *      |
-+ *      H
-+ *
-+ * with a process in C, H and 3 processes in K.
-+ * Then it tries to kill the whole tree.
-+ */
-+static int test_cgkill_tree(const char *root)
-+{
-+	pid_t pids[5];
-+	char *cgroup[10] = {0};
-+	int ret = KSFT_FAIL;
-+	int i;
-+
-+	cgroup[0] = cg_name(root, "cg_test_tree_A");
-+	if (!cgroup[0])
-+		goto cleanup;
-+
-+	cgroup[1] = cg_name(cgroup[0], "B");
-+	if (!cgroup[1])
-+		goto cleanup;
-+
-+	cgroup[2] = cg_name(cgroup[1], "C");
-+	if (!cgroup[2])
-+		goto cleanup;
-+
-+	cgroup[3] = cg_name(cgroup[1], "D");
-+	if (!cgroup[3])
-+		goto cleanup;
-+
-+	cgroup[4] = cg_name(cgroup[0], "E");
-+	if (!cgroup[4])
-+		goto cleanup;
-+
-+	cgroup[5] = cg_name(cgroup[4], "F");
-+	if (!cgroup[5])
-+		goto cleanup;
-+
-+	cgroup[6] = cg_name(cgroup[5], "G");
-+	if (!cgroup[6])
-+		goto cleanup;
-+
-+	cgroup[7] = cg_name(cgroup[6], "H");
-+	if (!cgroup[7])
-+		goto cleanup;
-+
-+	cgroup[8] = cg_name(cgroup[0], "I");
-+	if (!cgroup[8])
-+		goto cleanup;
-+
-+	cgroup[9] = cg_name(cgroup[0], "K");
-+	if (!cgroup[9])
-+		goto cleanup;
-+
-+	for (i = 0; i < 10; i++)
-+		if (cg_create(cgroup[i]))
-+			goto cleanup;
-+
-+	pids[0] = cg_run_nowait(cgroup[2], child_fn, NULL);
-+	pids[1] = cg_run_nowait(cgroup[7], child_fn, NULL);
-+	pids[2] = cg_run_nowait(cgroup[9], child_fn, NULL);
-+	pids[3] = cg_run_nowait(cgroup[9], child_fn, NULL);
-+	pids[4] = cg_run_nowait(cgroup[9], child_fn, NULL);
-+
-+	/*
-+	 * Wait until all child processes will enter
-+	 * corresponding cgroups.
-+	 */
-+
-+	if (cg_wait_for_proc_count(cgroup[2], 1) ||
-+	    cg_wait_for_proc_count(cgroup[7], 1) ||
-+	    cg_wait_for_proc_count(cgroup[9], 3))
-+		goto cleanup;
-+
-+	/*
-+	 * Kill A and check that we get an empty notification.
-+	 */
-+	if (cg_kill_wait(cgroup[0]))
-+		goto cleanup;
-+
-+	ret = KSFT_PASS;
-+
-+cleanup:
-+	for (i = 0; i < 5; i++)
-+		wait_for_pid(pids[i]);
-+
-+	for (i = 9; i >= 0 && cgroup[i]; i--) {
-+		cg_destroy(cgroup[i]);
-+		free(cgroup[i]);
-+	}
-+
-+	return ret;
-+}
-+
-+static int forkbomb_fn(const char *cgroup, void *arg)
-+{
-+	int ppid;
-+
-+	fork();
-+	fork();
-+
-+	ppid = getppid();
-+
-+	while (getppid() == ppid)
-+		usleep(1000);
-+
-+	return getppid() == ppid;
-+}
-+
-+/*
-+ * The test runs a fork bomb in a cgroup and tries to kill it.
-+ */
-+static int test_cgkill_forkbomb(const char *root)
-+{
-+	int ret = KSFT_FAIL;
-+	char *cgroup = NULL;
-+	pid_t pid = -ESRCH;
-+
-+	cgroup = cg_name(root, "cg_forkbomb_test");
-+	if (!cgroup)
-+		goto cleanup;
-+
-+	if (cg_create(cgroup))
-+		goto cleanup;
-+
-+	pid = cg_run_nowait(cgroup, forkbomb_fn, NULL);
-+	if (pid < 0)
-+		goto cleanup;
-+
-+	usleep(100000);
-+
-+	if (cg_kill_wait(cgroup))
-+		goto cleanup;
-+
-+	if (cg_wait_for_proc_count(cgroup, 0))
-+		goto cleanup;
-+
-+	ret = KSFT_PASS;
-+
-+cleanup:
-+	if (cgroup)
-+		cg_destroy(cgroup);
-+	if (pid > 0)
-+		wait_for_pid(pid);
-+	free(cgroup);
-+	return ret;
-+}
-+
-+#define T(x) { x, #x }
-+struct cgkill_test {
-+	int (*fn)(const char *root);
-+	const char *name;
-+} tests[] = {
-+	T(test_cgkill_simple),
-+	T(test_cgkill_tree),
-+	T(test_cgkill_forkbomb),
-+};
-+#undef T
-+
-+int main(int argc, char *argv[])
-+{
-+	char root[PATH_MAX];
-+	int i, ret = EXIT_SUCCESS;
-+
-+	if (cg_find_unified_root(root, sizeof(root)))
-+		ksft_exit_skip("cgroup v2 isn't mounted\n");
-+	for (i = 0; i < ARRAY_SIZE(tests); i++) {
-+		switch (tests[i].fn(root)) {
-+		case KSFT_PASS:
-+			ksft_test_result_pass("%s\n", tests[i].name);
-+			break;
-+		case KSFT_SKIP:
-+			ksft_test_result_skip("%s\n", tests[i].name);
-+			break;
-+		default:
-+			ret = EXIT_FAILURE;
-+			ksft_test_result_fail("%s\n", tests[i].name);
-+			break;
-+		}
-+	}
-+
-+	return ret;
-+}
--- 
-2.27.0
-
+Reviewed-by: Shakeel Butt <shakeelb@google.com>
