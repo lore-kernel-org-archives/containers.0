@@ -1,51 +1,76 @@
-Received: from mail.hallyn.com (mail.hallyn.com [178.63.66.53])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-lf1-f41.google.com (mail-lf1-f41.google.com [209.85.167.41])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 38FC571
-	for <containers@lists.linux.dev>; Tue,  4 May 2021 01:55:36 +0000 (UTC)
-Received: by mail.hallyn.com (Postfix, from userid 1001)
-	id E4EC71036; Mon,  3 May 2021 20:47:35 -0500 (CDT)
-Date: Mon, 3 May 2021 20:47:35 -0500
-From: "Serge E. Hallyn" <serge@hallyn.com>
-To: Christian Brauner <brauner@kernel.org>
-Cc: Tejun Heo <tj@kernel.org>, Roman Gushchin <guro@fb.com>,
-	Shakeel Butt <shakeelb@google.com>,
-	Zefan Li <lizefan.x@bytedance.com>,
-	Johannes Weiner <hannes@cmpxchg.org>, cgroups@vger.kernel.org,
-	containers@lists.linux.dev,
-	Christian Brauner <christian.brauner@ubuntu.com>
-Subject: Re: [PATCH v2 1/5] cgroup: introduce cgroup.kill
-Message-ID: <20210504014735.GA14731@mail.hallyn.com>
-References: <20210503143922.3093755-1-brauner@kernel.org>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 227B070
+	for <containers@lists.linux.dev>; Tue,  4 May 2021 18:29:34 +0000 (UTC)
+Received: by mail-lf1-f41.google.com with SMTP id c3so10675866lfs.7
+        for <containers@lists.linux.dev>; Tue, 04 May 2021 11:29:33 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=google.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=JXXBzPVYriNU3AZ8+T/Ep3xDDMXplh3X9mxTUQBN+dA=;
+        b=hUIk+ejn4mtB5LxTTxxmX1ZYUMPfRW5P8+zTJMe6n5i7h98wmNOBt3kaTME94977CJ
+         68D0w2yrHs/GckpeSze/93uWthbAOqoG77DneKmNQznDB9tNH/eAf+q48A+C1hGuv3XS
+         Rm+2A59azRpg2dSEuZk8CxcVx96ggecVZOt+K81EQjGcYjjc4ovtg3pfBUWPStMPYHgS
+         byiQHzCg7fyjt/Zb+iswScBHIKYAMPvulGqgFsOESr4b80b0OLp9Zkgld+gC78KlaCyp
+         2W6mVjuaY8+77uVUp/t9IZXfQB01ZTjMYKGJ2qCPBNhQphXjt6sPcZrLuq96VlK4xleN
+         QSMA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=JXXBzPVYriNU3AZ8+T/Ep3xDDMXplh3X9mxTUQBN+dA=;
+        b=RbmQJik/30cbCRO2aexMmExvZH3bz3aX5XHxTzztD0JzrdPyq/aXg5sPNJ3scSqHJx
+         XHRr6GKQP6307R7czucCzNFXrj5qA4UiL9Rxy9GPf2dpwvYeVu+m5arjFgztwxRc8kWB
+         Lt4qKGwNQV/EG45elCAYuh1SoBOucL/L72PCzKvuFhSnzAHQPaMuPIDuu+0gc2svimnG
+         hVULOk/pAvLbkFeUmc233kAjZ5VNatQkahlME+apSdEwGAcpXCY0861jdOMYalANG5TO
+         mnjzEfXhsYYVrAcC2eiZ5e35jzwOXlpZoUIIu9GQ2ai+7SfET2eeVzRoewodrcD5bm6L
+         iyVA==
+X-Gm-Message-State: AOAM532iV7gE0q2wGUVtgQ7Qj+fivPiMpMwtbOHDymU8acJc55JkBzza
+	L94zRdyuQLrPEwBgqr+sJfWngpnj7XTrrY1OUpUt1A==
+X-Google-Smtp-Source: ABdhPJzTFw0ATQzNtH7zRPhI1FS9ArT6LmgJd+cmxH6tIg2VPP6mKUzSJaCoH/lzHoBxhNRCnEZ2Pfb8FX81sFWxseo=
+X-Received: by 2002:a05:6512:2344:: with SMTP id p4mr2756781lfu.299.1620152972009;
+ Tue, 04 May 2021 11:29:32 -0700 (PDT)
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+References: <20210503143922.3093755-1-brauner@kernel.org>
 In-Reply-To: <20210503143922.3093755-1-brauner@kernel.org>
-User-Agent: Mutt/1.9.4 (2018-02-28)
+From: Shakeel Butt <shakeelb@google.com>
+Date: Tue, 4 May 2021 11:29:21 -0700
+Message-ID: <CALvZod4jsb6bFzTOS4ZRAJGAzBru0oWanAhezToprjACfGm+ew@mail.gmail.com>
+Subject: Re: [PATCH v2 1/5] cgroup: introduce cgroup.kill
+To: Christian Brauner <brauner@kernel.org>, Michal Hocko <mhocko@kernel.org>
+Cc: Tejun Heo <tj@kernel.org>, Roman Gushchin <guro@fb.com>, Zefan Li <lizefan.x@bytedance.com>, 
+	Johannes Weiner <hannes@cmpxchg.org>, Cgroups <cgroups@vger.kernel.org>, containers@lists.linux.dev, 
+	Christian Brauner <christian.brauner@ubuntu.com>, Linux MM <linux-mm@kvack.org>
+Content-Type: text/plain; charset="UTF-8"
 
-On Mon, May 03, 2021 at 04:39:19PM +0200, Christian Brauner wrote:
++Michal Hocko
+
+On Mon, May 3, 2021 at 7:40 AM Christian Brauner <brauner@kernel.org> wrote:
+>
 > From: Christian Brauner <christian.brauner@ubuntu.com>
-> 
+>
 > Introduce the cgroup.kill file. It does what it says on the tin and
 > allows a caller to kill a cgroup by writing "1" into cgroup.kill.
 > The file is available in non-root cgroups.
-> 
+>
 > Killing cgroups is a process directed operation, i.e. the whole
 > thread-group is affected. Consequently trying to write to cgroup.kill in
 > threaded cgroups will be rejected and EOPNOTSUPP returned. This behavior
 > aligns with cgroup.procs where reads in threaded-cgroups are rejected
 > with EOPNOTSUPP.
-> 
+>
 > The cgroup.kill file is write-only since killing a cgroup is an event
 > not which makes it different from e.g. freezer where a cgroup
 > transitions between the two states.
-> 
+>
 > As with all new cgroup features cgroup.kill is recursive by default.
-> 
+>
 > Killing a cgroup is protected against concurrent migrations through the
 > cgroup mutex. To protect against forkbombs and to mitigate the effect of
 > racing forks a new CGRP_KILL css set lock protected flag is introduced
@@ -56,7 +81,7 @@ On Mon, May 03, 2021 at 04:39:19PM +0200, Christian Brauner wrote:
 > it returns to userspace. To make the killing of the child semantically
 > clean it is killed after all cgroup attachment operations have been
 > finalized.
-> 
+>
 > There are various use-cases of this interface:
 > - Containers usually have a conservative layout where each container
 >   usually has a delegated cgroup. For such layouts there is a 1:1
@@ -75,10 +100,21 @@ On Mon, May 03, 2021 at 04:39:19PM +0200, Christian Brauner wrote:
 >   simple write to cgroup.kill.
 > - Userspace OOM implementations can make good use of this feature to
 >   efficiently take down whole cgroups quickly.
+
+Just to further add the motivation for userspace oom-killers. Instead
+of traversing the tree, opening cgroup.procs and manually killing the
+processes under memory pressure, the userspace oom-killer can just
+keep the list of cgroup.kill files open and just write '1' when it
+decides to trigger the oom-kill.
+
+Michal, what do you think of putting the processes killed through this
+interface into the oom_reaper_list as well? Will there be any
+concerns?
+
 > - The kill program can gain a new
 >   kill --cgroup /sys/fs/cgroup/delegated
 >   flag to take down cgroups.
-> 
+>
 > A few observations about the semantics:
 > - If parent and child are in the same cgroup and CLONE_INTO_CGROUP is
 >   not specified we are not taking cgroup mutex meaning the cgroup can be
@@ -94,7 +130,7 @@ On Mon, May 03, 2021 at 04:39:19PM +0200, Christian Brauner wrote:
 >   complete before killing starts. We concluded that this is not
 >   necessary as the semantics for concurrent forking should simply align
 >   with freezer where a similar check as cgroup_post_fork() is performed.
-> 
+>
 >   For all other cases CLONE_INTO_CGROUP is required. In this case we
 >   will grab the cgroup mutex so the cgroup can't be killed while we
 >   fork. Once we're done with the fork and have dropped cgroup mutex we
@@ -111,221 +147,10 @@ On Mon, May 03, 2021 at 04:39:19PM +0200, Christian Brauner wrote:
 >   exist.
 > - If the caller is located in a cgroup that is killed the caller will
 >   obviously be killed as well.
-> 
+>
 > Cc: Shakeel Butt <shakeelb@google.com>
 > Cc: Roman Gushchin <guro@fb.com>
 > Cc: Tejun Heo <tj@kernel.org>
 > Cc: cgroups@vger.kernel.org
 > Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
-
-Reviewed-by: Serge Hallyn <serge@hallyn.com>
-
-> ---
-> 
-> The series can be pulled from
-> 
-> git@gitolite.kernel.org:pub/scm/linux/kernel/git/brauner/linux tags/cgroup.kill.v5.14
-> 
-> /* v2 */
-> - Roman Gushchin <guro@fb.com>:
->   - Retrieve cgrp->flags only once and check CGRP_* bits on it.
-> ---
->  include/linux/cgroup-defs.h |   3 +
->  kernel/cgroup/cgroup.c      | 127 ++++++++++++++++++++++++++++++++----
->  2 files changed, 116 insertions(+), 14 deletions(-)
-> 
-> diff --git a/include/linux/cgroup-defs.h b/include/linux/cgroup-defs.h
-> index 559ee05f86b2..43fef771009a 100644
-> --- a/include/linux/cgroup-defs.h
-> +++ b/include/linux/cgroup-defs.h
-> @@ -71,6 +71,9 @@ enum {
->  
->  	/* Cgroup is frozen. */
->  	CGRP_FROZEN,
-> +
-> +	/* Control group has to be killed. */
-> +	CGRP_KILL,
->  };
->  
->  /* cgroup_root->flags */
-> diff --git a/kernel/cgroup/cgroup.c b/kernel/cgroup/cgroup.c
-> index 9153b20e5cc6..aee84b99534a 100644
-> --- a/kernel/cgroup/cgroup.c
-> +++ b/kernel/cgroup/cgroup.c
-> @@ -3654,6 +3654,80 @@ static ssize_t cgroup_freeze_write(struct kernfs_open_file *of,
->  	return nbytes;
->  }
->  
-> +static void __cgroup_kill(struct cgroup *cgrp)
-> +{
-> +	struct css_task_iter it;
-> +	struct task_struct *task;
-> +
-> +	lockdep_assert_held(&cgroup_mutex);
-> +
-> +	spin_lock_irq(&css_set_lock);
-> +	set_bit(CGRP_KILL, &cgrp->flags);
-> +	spin_unlock_irq(&css_set_lock);
-> +
-> +	css_task_iter_start(&cgrp->self, CSS_TASK_ITER_PROCS | CSS_TASK_ITER_THREADED, &it);
-> +	while ((task = css_task_iter_next(&it))) {
-> +		/* Ignore kernel threads here. */
-> +		if (task->flags & PF_KTHREAD)
-> +			continue;
-> +
-> +		/* Skip tasks that are already dying. */
-> +		if (__fatal_signal_pending(task))
-> +			continue;
-> +
-> +		send_sig(SIGKILL, task, 0);
-> +	}
-> +	css_task_iter_end(&it);
-> +
-> +	spin_lock_irq(&css_set_lock);
-> +	clear_bit(CGRP_KILL, &cgrp->flags);
-> +	spin_unlock_irq(&css_set_lock);
-> +}
-> +
-> +static void cgroup_kill(struct cgroup *cgrp)
-> +{
-> +	struct cgroup_subsys_state *css;
-> +	struct cgroup *dsct;
-> +
-> +	lockdep_assert_held(&cgroup_mutex);
-> +
-> +	cgroup_for_each_live_descendant_pre(dsct, css, cgrp)
-> +		__cgroup_kill(dsct);
-> +}
-> +
-> +static ssize_t cgroup_kill_write(struct kernfs_open_file *of, char *buf,
-> +				 size_t nbytes, loff_t off)
-> +{
-> +	ssize_t ret = 0;
-> +	int kill;
-> +	struct cgroup *cgrp;
-> +
-> +	ret = kstrtoint(strstrip(buf), 0, &kill);
-> +	if (ret)
-> +		return ret;
-> +
-> +	if (kill != 1)
-> +		return -ERANGE;
-> +
-> +	cgrp = cgroup_kn_lock_live(of->kn, false);
-> +	if (!cgrp)
-> +		return -ENOENT;
-> +
-> +	/*
-> +	 * Killing is a process directed operation, i.e. the whole thread-group
-> +	 * is taken down so act like we do for cgroup.procs and only make this
-> +	 * writable in non-threaded cgroups.
-> +	 */
-> +	if (cgroup_is_threaded(cgrp))
-> +		ret = -EOPNOTSUPP;
-> +	else
-> +		cgroup_kill(cgrp);
-> +
-> +	cgroup_kn_unlock(of->kn);
-> +
-> +	return ret ?: nbytes;
-> +}
-> +
->  static int cgroup_file_open(struct kernfs_open_file *of)
->  {
->  	struct cftype *cft = of_cft(of);
-> @@ -4846,6 +4920,11 @@ static struct cftype cgroup_base_files[] = {
->  		.seq_show = cgroup_freeze_show,
->  		.write = cgroup_freeze_write,
->  	},
-> +	{
-> +		.name = "cgroup.kill",
-> +		.flags = CFTYPE_NOT_ON_ROOT,
-> +		.write = cgroup_kill_write,
-> +	},
->  	{
->  		.name = "cpu.stat",
->  		.seq_show = cpu_stat_show,
-> @@ -6077,6 +6156,8 @@ void cgroup_post_fork(struct task_struct *child,
->  		      struct kernel_clone_args *kargs)
->  	__releases(&cgroup_threadgroup_rwsem) __releases(&cgroup_mutex)
->  {
-> +	unsigned long cgrp_flags = 0;
-> +	bool kill = false;
->  	struct cgroup_subsys *ss;
->  	struct css_set *cset;
->  	int i;
-> @@ -6088,6 +6169,11 @@ void cgroup_post_fork(struct task_struct *child,
->  
->  	/* init tasks are special, only link regular threads */
->  	if (likely(child->pid)) {
-> +		if (kargs->cgrp)
-> +			cgrp_flags = kargs->cgrp->flags;
-> +		else
-> +			cgrp_flags = cset->dfl_cgrp->flags;
-> +
->  		WARN_ON_ONCE(!list_empty(&child->cg_list));
->  		cset->nr_tasks++;
->  		css_set_move_task(child, NULL, cset, false);
-> @@ -6096,23 +6182,32 @@ void cgroup_post_fork(struct task_struct *child,
->  		cset = NULL;
->  	}
->  
-> -	/*
-> -	 * If the cgroup has to be frozen, the new task has too.  Let's set
-> -	 * the JOBCTL_TRAP_FREEZE jobctl bit to get the task into the
-> -	 * frozen state.
-> -	 */
-> -	if (unlikely(cgroup_task_freeze(child))) {
-> -		spin_lock(&child->sighand->siglock);
-> -		WARN_ON_ONCE(child->frozen);
-> -		child->jobctl |= JOBCTL_TRAP_FREEZE;
-> -		spin_unlock(&child->sighand->siglock);
-> +	if (!(child->flags & PF_KTHREAD)) {
-> +		if (test_bit(CGRP_FREEZE, &cgrp_flags)) {
-> +			/*
-> +			 * If the cgroup has to be frozen, the new task has
-> +			 * too. Let's set the JOBCTL_TRAP_FREEZE jobctl bit to
-> +			 * get the task into the frozen state.
-> +			 */
-> +			spin_lock(&child->sighand->siglock);
-> +			WARN_ON_ONCE(child->frozen);
-> +			child->jobctl |= JOBCTL_TRAP_FREEZE;
-> +			spin_unlock(&child->sighand->siglock);
-> +
-> +			/*
-> +			 * Calling cgroup_update_frozen() isn't required here,
-> +			 * because it will be called anyway a bit later from
-> +			 * do_freezer_trap(). So we avoid cgroup's transient
-> +			 * switch from the frozen state and back.
-> +			 */
-> +		}
->  
->  		/*
-> -		 * Calling cgroup_update_frozen() isn't required here,
-> -		 * because it will be called anyway a bit later from
-> -		 * do_freezer_trap(). So we avoid cgroup's transient switch
-> -		 * from the frozen state and back.
-> +		 * If the cgroup is to be killed notice it now and take the
-> +		 * child down right after we finished preparing it for
-> +		 * userspace.
->  		 */
-> +		kill = test_bit(CGRP_KILL, &cgrp_flags);
->  	}
->  
->  	spin_unlock_irq(&css_set_lock);
-> @@ -6135,6 +6230,10 @@ void cgroup_post_fork(struct task_struct *child,
->  		put_css_set(rcset);
->  	}
->  
-> +	/* Cgroup has to be killed so take down child immediately. */
-> +	if (kill)
-> +		send_sig(SIGKILL, child, 0);
-> +
->  	cgroup_css_set_put_fork(kargs);
->  }
->  
-> 
-> base-commit: 9f4ad9e425a1d3b6a34617b8ea226d56a119a717
-> -- 
-> 2.27.0
-> 
+[...]
