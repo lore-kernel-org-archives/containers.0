@@ -1,156 +1,175 @@
-Received: from mail-lf1-f41.google.com (mail-lf1-f41.google.com [209.85.167.41])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [216.205.24.124])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 227B070
-	for <containers@lists.linux.dev>; Tue,  4 May 2021 18:29:34 +0000 (UTC)
-Received: by mail-lf1-f41.google.com with SMTP id c3so10675866lfs.7
-        for <containers@lists.linux.dev>; Tue, 04 May 2021 11:29:33 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=JXXBzPVYriNU3AZ8+T/Ep3xDDMXplh3X9mxTUQBN+dA=;
-        b=hUIk+ejn4mtB5LxTTxxmX1ZYUMPfRW5P8+zTJMe6n5i7h98wmNOBt3kaTME94977CJ
-         68D0w2yrHs/GckpeSze/93uWthbAOqoG77DneKmNQznDB9tNH/eAf+q48A+C1hGuv3XS
-         Rm+2A59azRpg2dSEuZk8CxcVx96ggecVZOt+K81EQjGcYjjc4ovtg3pfBUWPStMPYHgS
-         byiQHzCg7fyjt/Zb+iswScBHIKYAMPvulGqgFsOESr4b80b0OLp9Zkgld+gC78KlaCyp
-         2W6mVjuaY8+77uVUp/t9IZXfQB01ZTjMYKGJ2qCPBNhQphXjt6sPcZrLuq96VlK4xleN
-         QSMA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=JXXBzPVYriNU3AZ8+T/Ep3xDDMXplh3X9mxTUQBN+dA=;
-        b=RbmQJik/30cbCRO2aexMmExvZH3bz3aX5XHxTzztD0JzrdPyq/aXg5sPNJ3scSqHJx
-         XHRr6GKQP6307R7czucCzNFXrj5qA4UiL9Rxy9GPf2dpwvYeVu+m5arjFgztwxRc8kWB
-         Lt4qKGwNQV/EG45elCAYuh1SoBOucL/L72PCzKvuFhSnzAHQPaMuPIDuu+0gc2svimnG
-         hVULOk/pAvLbkFeUmc233kAjZ5VNatQkahlME+apSdEwGAcpXCY0861jdOMYalANG5TO
-         mnjzEfXhsYYVrAcC2eiZ5e35jzwOXlpZoUIIu9GQ2ai+7SfET2eeVzRoewodrcD5bm6L
-         iyVA==
-X-Gm-Message-State: AOAM532iV7gE0q2wGUVtgQ7Qj+fivPiMpMwtbOHDymU8acJc55JkBzza
-	L94zRdyuQLrPEwBgqr+sJfWngpnj7XTrrY1OUpUt1A==
-X-Google-Smtp-Source: ABdhPJzTFw0ATQzNtH7zRPhI1FS9ArT6LmgJd+cmxH6tIg2VPP6mKUzSJaCoH/lzHoBxhNRCnEZ2Pfb8FX81sFWxseo=
-X-Received: by 2002:a05:6512:2344:: with SMTP id p4mr2756781lfu.299.1620152972009;
- Tue, 04 May 2021 11:29:32 -0700 (PDT)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7A64E70
+	for <containers@lists.linux.dev>; Wed,  5 May 2021 15:09:17 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1620227356;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=f65ENMyQ1N+0g9OsSvxp8jCBBY+W8xaRUzctsJuzZuk=;
+	b=AFDiGwWfLucdqyspLX/RYt+eQ/jpMmqYc5gDXCp85lcOIoVmnau5cHMq56tygzYbYg4EBP
+	XoCqwz5s3a/ij2uX4s/zfwF0LCERD2B/gyYalUB0Zv3g9yBgjaxidHTIIrCHs7ghumiVu5
+	G0neZDCwZKHgoS7kh3KNB/W/UB8/Ndo=
+Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
+ [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
+ us-mta-515-D6JOqljxNvO0oRuE4eHGMQ-1; Wed, 05 May 2021 11:09:12 -0400
+X-MC-Unique: D6JOqljxNvO0oRuE4eHGMQ-1
+Received: from smtp.corp.redhat.com (int-mx08.intmail.prod.int.phx2.redhat.com [10.5.11.23])
+	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 8E50E1966327;
+	Wed,  5 May 2021 15:09:11 +0000 (UTC)
+Received: from localhost (ovpn-113-154.ams2.redhat.com [10.36.113.154])
+	by smtp.corp.redhat.com (Postfix) with ESMTPS id EB3F819D61;
+	Wed,  5 May 2021 15:09:10 +0000 (UTC)
+From: Giuseppe Scrivano <gscrivan@redhat.com>
+To: "Serge E. Hallyn" <serge@hallyn.com>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>,
+  linux-kernel@vger.kernel.org,  christian.brauner@ubuntu.com,  "Linux
+ Containers" <containers@lists.linux.dev>
+Subject: Re: [PATCH] kernel: automatically split user namespace extent
+References: <20201126100839.381415-1-gscrivan@redhat.com>
+	<87ft4pe7km.fsf@x220.int.ebiederm.org> <87pn3schlg.fsf@redhat.com>
+	<20210402143212.GA18282@mail.hallyn.com> <87zgygg2xc.fsf@redhat.com>
+Date: Wed, 05 May 2021 17:09:08 +0200
+In-Reply-To: <87zgygg2xc.fsf@redhat.com> (Giuseppe Scrivano's message of "Fri,
+	02 Apr 2021 16:46:07 +0200")
+Message-ID: <87v97x43qj.fsf@redhat.com>
+User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.2 (gnu/linux)
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-References: <20210503143922.3093755-1-brauner@kernel.org>
-In-Reply-To: <20210503143922.3093755-1-brauner@kernel.org>
-From: Shakeel Butt <shakeelb@google.com>
-Date: Tue, 4 May 2021 11:29:21 -0700
-Message-ID: <CALvZod4jsb6bFzTOS4ZRAJGAzBru0oWanAhezToprjACfGm+ew@mail.gmail.com>
-Subject: Re: [PATCH v2 1/5] cgroup: introduce cgroup.kill
-To: Christian Brauner <brauner@kernel.org>, Michal Hocko <mhocko@kernel.org>
-Cc: Tejun Heo <tj@kernel.org>, Roman Gushchin <guro@fb.com>, Zefan Li <lizefan.x@bytedance.com>, 
-	Johannes Weiner <hannes@cmpxchg.org>, Cgroups <cgroups@vger.kernel.org>, containers@lists.linux.dev, 
-	Christian Brauner <christian.brauner@ubuntu.com>, Linux MM <linux-mm@kvack.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain
+X-Scanned-By: MIMEDefang 2.84 on 10.5.11.23
 
-+Michal Hocko
+Hi Serge,
 
-On Mon, May 3, 2021 at 7:40 AM Christian Brauner <brauner@kernel.org> wrote:
->
-> From: Christian Brauner <christian.brauner@ubuntu.com>
->
-> Introduce the cgroup.kill file. It does what it says on the tin and
-> allows a caller to kill a cgroup by writing "1" into cgroup.kill.
-> The file is available in non-root cgroups.
->
-> Killing cgroups is a process directed operation, i.e. the whole
-> thread-group is affected. Consequently trying to write to cgroup.kill in
-> threaded cgroups will be rejected and EOPNOTSUPP returned. This behavior
-> aligns with cgroup.procs where reads in threaded-cgroups are rejected
-> with EOPNOTSUPP.
->
-> The cgroup.kill file is write-only since killing a cgroup is an event
-> not which makes it different from e.g. freezer where a cgroup
-> transitions between the two states.
->
-> As with all new cgroup features cgroup.kill is recursive by default.
->
-> Killing a cgroup is protected against concurrent migrations through the
-> cgroup mutex. To protect against forkbombs and to mitigate the effect of
-> racing forks a new CGRP_KILL css set lock protected flag is introduced
-> that is set prior to killing a cgroup and unset after the cgroup has
-> been killed. We can then check in cgroup_post_fork() where we hold the
-> css set lock already whether the cgroup is currently being killed. If so
-> we send the child a SIGKILL signal immediately taking it down as soon as
-> it returns to userspace. To make the killing of the child semantically
-> clean it is killed after all cgroup attachment operations have been
-> finalized.
->
-> There are various use-cases of this interface:
-> - Containers usually have a conservative layout where each container
->   usually has a delegated cgroup. For such layouts there is a 1:1
->   mapping between container and cgroup. If the container in addition
->   uses a separate pid namespace then killing a container usually becomes
->   a simple kill -9 <container-init-pid> from an ancestor pid namespace.
->   However, there are quite a few scenarios where that isn't true. For
->   example, there are containers that share the cgroup with other
->   processes on purpose that are supposed to be bound to the lifetime of
->   the container but are not in the same pidns of the container.
->   Containers that are in a delegated cgroup but share the pid namespace
->   with the host or other containers.
-> - Service managers such as systemd use cgroups to group and organize
->   processes belonging to a service. They usually rely on a recursive
->   algorithm now to kill a service. With cgroup.kill this becomes a
->   simple write to cgroup.kill.
-> - Userspace OOM implementations can make good use of this feature to
->   efficiently take down whole cgroups quickly.
+Giuseppe Scrivano <gscrivan@redhat.com> writes:
 
-Just to further add the motivation for userspace oom-killers. Instead
-of traversing the tree, opening cgroup.procs and manually killing the
-processes under memory pressure, the userspace oom-killer can just
-keep the list of cgroup.kill files open and just write '1' when it
-decides to trigger the oom-kill.
+> Hi Serge,
+>
+> "Serge E. Hallyn" <serge@hallyn.com> writes:
+>
+>> On Wed, Dec 02, 2020 at 05:12:27PM +0100, Giuseppe Scrivano wrote:
+>>> Hi Eric,
+>>> 
+>>> ebiederm@xmission.com (Eric W. Biederman) writes:
+>>> 
+>>> > Nit: The tag should have been "userns:" rather than kernel.
+>>> >
+>>> > Giuseppe Scrivano <gscrivan@redhat.com> writes:
+>>> >
+>>> >> writing to the id map fails when an extent overlaps multiple mappings
+>>> >> in the parent user namespace, e.g.:
+>>> >>
+>>> >> $ cat /proc/self/uid_map
+>>> >>          0       1000          1
+>>> >>          1     100000      65536
+>>> >> $ unshare -U sleep 100 &
+>>> >> [1] 1029703
+>>> >> $ printf "0 0 100\n" | tee /proc/$!/uid_map
+>>> >> 0 0 100
+>>> >> tee: /proc/1029703/uid_map: Operation not permitted
+>>> >>
+>>> >> To prevent it from happening, automatically split an extent so that
+>>> >> each portion fits in one extent in the parent user namespace.
+>>> >
+>>> > I don't see anything fundamentally wrong with relaxing this
+>>> > restriction, but more code does have more room for bugs to hide.
+>>> >
+>>> > What is the advantage of relaxing this restriction?
+>>> 
+>>> we are running rootless containers in a namespace created with
+>>> newuidmap/newgidmap where the mappings look like:
+>>> 
+>>> $ cat /proc/self/uid_map
+>>> 0       1000          1
+>>> 1     110000      65536
+>>> 
+>>> users are allowed to create child user namespaces and specify the
+>>> mappings to use.  Doing so, they often hit the issue that the mappings
+>>> cannot overlap multiple extents in the parent user namespace.
+>>> 
+>>> The issue could be completely addressed in user space, but to me it
+>>> looks like an implementation detail that user space should not know
+>>> about.
+>>> In addition, it would also be slower (additional read of the current
+>>> uid_map and gid_map files) and must be implemented separately in each
+>>> container runtime.
+>>> 
+>>> >> $ cat /proc/self/uid_map
+>>> >>          0       1000          1
+>>> >>          1     110000      65536
+>>> >> $ unshare -U sleep 100 &
+>>> >> [1] 1552
+>>> >> $ printf "0 0 100\n" | tee /proc/$!/uid_map
+>>> >> 0 0 100
+>>> >> $ cat /proc/$!/uid_map
+>>> >>          0          0          1
+>>> >>          1          1         99
+>>> >>
+>>> >> Signed-off-by: Giuseppe Scrivano <gscrivan@redhat.com>
+>>> >> ---
+>>> >>  kernel/user_namespace.c | 62 ++++++++++++++++++++++++++++++++++-------
+>>> >>  1 file changed, 52 insertions(+), 10 deletions(-)
+>>> >>
+>>> >> diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+>>> >> index 87804e0371fe..b5542be2bd0a 100644
+>>> >> --- a/kernel/user_namespace.c
+>>> >> +++ b/kernel/user_namespace.c
+>>> >> @@ -706,6 +706,41 @@ const struct seq_operations proc_projid_seq_operations = {
+>>> >>  	.show = projid_m_show,
+>>> >>  };
+>>> >>  
+>>> >> +static void split_overlapping_mappings(struct uid_gid_map *parent_map,
+>>> >> +				       struct uid_gid_extent *extent,
+>>> >> +				       struct uid_gid_extent *overflow_extent)
+>>> >> +{
+>>> >> +	unsigned int idx;
+>>> >> +
+>>> >> +	overflow_extent->first = (u32) -1;
+>>> >> +
+>>> >> +	/* Split extent if it not fully contained in an extent from parent_map.  */
+>>> >> +	for (idx = 0; idx < parent_map->nr_extents; idx++) {
+>>> >
+>>> > Ouch!
+>>> >
+>>> > For the larger tree we perform binary searches typically and
+>>> > here you are walking every entry unconditionally.
+>>> >
+>>> > It looks like this makes the write O(N^2) from O(NlogN)
+>>> > which for a user facing function is not desirable.
+>>> >
+>>> > I think something like insert_and_split_extent may be ok.
+>>> > Incorporating your loop and the part that inserts an element.
+>>> >
+>>> > As written this almost doubles the complexity of the code,
+>>> > as well as making it perform much worse.  Which is a problem.
+>>> 
+>>> I've attempted to implement the new functionality at input validation
+>>> time to not touch the existing security checks.
+>>> 
+>>> I've thought the pattern for iterating the extents was fine as I've
+>>> taken it from mappings_overlap (even if it is used differently on an
+>>> unsorted array).
+>>> 
+>>> Thanks for the hint, I'll move the new logic when map_id_range_down() is
+>>> used and I'll send a v2.
+>>
+>> Hi,
+>>
+>> sorry if I miseed it.  Did you ever send a v2?
+>
+> no worries, the v2 is here:
+>
+> https://lkml.kernel.org/lkml/20201203150252.1229077-1-gscrivan@redhat.com/
 
-Michal, what do you think of putting the processes killed through this
-interface into the oom_reaper_list as well? Will there be any
-concerns?
+have you had a chance to look at the patch?
 
-> - The kill program can gain a new
->   kill --cgroup /sys/fs/cgroup/delegated
->   flag to take down cgroups.
->
-> A few observations about the semantics:
-> - If parent and child are in the same cgroup and CLONE_INTO_CGROUP is
->   not specified we are not taking cgroup mutex meaning the cgroup can be
->   killed while a process in that cgroup is forking.
->   If the kill request happens right before cgroup_can_fork() and before
->   the parent grabs its siglock the parent is guaranteed to see the
->   pending SIGKILL. In addition we perform another check in
->   cgroup_post_fork() whether the cgroup is being killed and is so take
->   down the child (see above). This is robust enough and protects gainst
->   forkbombs. If userspace really really wants to have stricter
->   protection the simple solution would be to grab the write side of the
->   cgroup threadgroup rwsem which will force all ongoing forks to
->   complete before killing starts. We concluded that this is not
->   necessary as the semantics for concurrent forking should simply align
->   with freezer where a similar check as cgroup_post_fork() is performed.
->
->   For all other cases CLONE_INTO_CGROUP is required. In this case we
->   will grab the cgroup mutex so the cgroup can't be killed while we
->   fork. Once we're done with the fork and have dropped cgroup mutex we
->   are visible and will be found by any subsequent kill request.
-> - We obviously don't kill kthreads. This means a cgroup that has a
->   kthread will not become empty after killing and consequently no
->   unpopulated event will be generated. The assumption is that kthreads
->   should be in the root cgroup only anyway so this is not an issue.
-> - We skip killing tasks that already have pending fatal signals.
-> - Freezer doesn't care about tasks in different pid namespaces, i.e. if
->   you have two tasks in different pid namespaces the cgroup would still
->   be frozen. The cgroup.kill mechanism consequently behaves the same
->   way, i.e. we kill all processes and ignore in which pid namespace they
->   exist.
-> - If the caller is located in a cgroup that is killed the caller will
->   obviously be killed as well.
->
-> Cc: Shakeel Butt <shakeelb@google.com>
-> Cc: Roman Gushchin <guro@fb.com>
-> Cc: Tejun Heo <tj@kernel.org>
-> Cc: cgroups@vger.kernel.org
-> Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
-[...]
+Thanks,
+Giuseppe
+
