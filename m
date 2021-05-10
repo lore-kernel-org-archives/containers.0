@@ -1,41 +1,41 @@
-Received: from mail-qt1-f178.google.com (mail-qt1-f178.google.com [209.85.160.178])
+Received: from mail-qv1-f53.google.com (mail-qv1-f53.google.com [209.85.219.53])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B14922FAD
-	for <containers@lists.linux.dev>; Mon, 10 May 2021 17:23:00 +0000 (UTC)
-Received: by mail-qt1-f178.google.com with SMTP id v4so3697793qtp.1
-        for <containers@lists.linux.dev>; Mon, 10 May 2021 10:23:00 -0700 (PDT)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E53C42FAD
+	for <containers@lists.linux.dev>; Mon, 10 May 2021 17:23:01 +0000 (UTC)
+Received: by mail-qv1-f53.google.com with SMTP id q5so8745096qvv.6
+        for <containers@lists.linux.dev>; Mon, 10 May 2021 10:23:01 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=YZ7jgh8n9Ewl7aTtjcfWvHPosfSycLeUWDUFaOitHlw=;
-        b=gW8vw40vlqTZ2jCM73vqolZZWkLgjI6c84c2tdzyF63+bw928QLCYtR1cCbArh3pRd
-         7ovyWIfbukHuJpC8I7uocQczXzzhiM37478tup8wGcHa9YA6ProL07kpILxau+hPNc2Z
-         XDp/teyLZrcVl4lsg+9NSwJqpwBAUX0gLRB6kbiNAO863Ay4jolZ1LpvwD876Jp4HEOD
-         31q0MFGgavZgCRlU9YO2QgQTRKL6A0uRlzJ5H/pklh1oGZrW6huBhC5bux0ofYfwvL30
-         Bgw/sm8wtwEFGGwfu06ZqEyz5XOu4GOGvDUi5Tt/UKSV84Ip3fEBKpELlDAhLuiORzgr
-         3A7w==
+        bh=eKWNKjvr3PIJMbAHVnciIVF869iR5Tf3Vcd3i8yjR7k=;
+        b=HPSFDpKwtpmI97BZ7OnEnwlJ7OuP8yE/VAmnjLJjS/naYUPkqSuhZgmTx/MyS2dJRa
+         lTtgjMdq+j883FGfyq5Ddx/EzmsZX28SURajAkG7zoBAffmgLcLiiZVI4ZmqTjStSXPe
+         c5auVjYHCI6/Zqk0WI6uyEHrglF2tMX5qfckEWKUtfESCHpkGA8Fmpt4fXiQwVFnQkcU
+         vE9oVeoAjDcNT1GQXtRDa7aQfDBGD0GICi9rLDLMeUJl3CLnoyG3MI+tmYe613gAmgWU
+         tJ6DGKEmlbW1JghfZciGQxHlFrIMJuxQ4N6d4DLi9kg9xFmMciPx/ZPo+vnnfC/e1PI2
+         ZYWA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=YZ7jgh8n9Ewl7aTtjcfWvHPosfSycLeUWDUFaOitHlw=;
-        b=Jecm8zBXydmwOC3aRmkB0f2Df3o5m4CY9+k1wUpxX3WdMMry02UK5kioVDTnCQuZTX
-         7C3/UqaM6+17yfftCuGnqAjscm7GD85/jAQF1SMDgnoxs4rcR4Moi0B4dsYp5gbi90AJ
-         vpvYG3HVnyMrvBUhhLJTKyFguQhB6gI/EcjiCTePjVd87nFNxPyz/ZUNRHWBuKD3EG7s
-         LFNKoOV9u2kWX5T7neg06hzfsZB+YLbfae8RgOSAlo876mUBYFMxF/9fwtJOvI6s1mwf
-         0ayArSamAgYbKteLECMGIZmAWsUra+KURM29BmYbTX4YVSjXjdeUiUTZt+2U2g/EzaYp
-         26+w==
-X-Gm-Message-State: AOAM532OQYIC5Q87MFsd6lrJSaISYMkeUeJq2UklwnQXrKkPGxaFP2IE
-	J0yVow8xt52fqBUgKnsuAhf59MVO6IxXzeHW
-X-Google-Smtp-Source: ABdhPJym19kE/RMpadgsTPFOwNJudsn2Uv/1tnLrQ9Li4RWoca5YsWzywFdeZDE6mOLLRD3fnk6emA==
-X-Received: by 2002:a05:622a:10e:: with SMTP id u14mr23252254qtw.229.1620667379628;
-        Mon, 10 May 2021 10:22:59 -0700 (PDT)
+        bh=eKWNKjvr3PIJMbAHVnciIVF869iR5Tf3Vcd3i8yjR7k=;
+        b=qweHJ6B3hThhljfyAwewhXvcgxEjEDnXV0NmjKx84PjPdwFNiyEthDpBIVOuviGHJU
+         jPqztRtM1kj3rvUss23wru/KhLSPnMD0yU3haR1xCf80lLfyE4919QOtT/jFypgyGKfo
+         u0ZKMwImfnr2aKqJ5EYO3HCSYscHJcYJ8MwuHMTlY/UYTskZ9lOXL+nV1fNlaYKzpSv2
+         kPXEfFv4EYym4Eq23sI2AglUF4W2Hnju5Z4ooyVbklz5YYgPKyEWk8lCE7+cn1/vYtBN
+         8r+azhCjQmKTaM0KVkPMnL9PYJKo8yObEm9BaDMgGb4Diw2Ndtd4jzapgmyf7TWaSIbI
+         LdoA==
+X-Gm-Message-State: AOAM530jm35wD++NnypiGOVMQBweuhaBo27I8lYInoJSX3vCbWN84INW
+	xuJeJ2IvPmL9gngYkkDZP5gnAKFdECk/N9z4
+X-Google-Smtp-Source: ABdhPJxHKiUOuiZgZMAXiPdZZ8hqDpsF0UZO35YHyOMtFSuBp7jsqZ6dvzUky2eQee+s+Ub8pszoBA==
+X-Received: by 2002:ad4:4b33:: with SMTP id s19mr24460456qvw.35.1620667380808;
+        Mon, 10 May 2021 10:23:00 -0700 (PDT)
 Received: from localhost.localdomain (host-173-230-99-154.tnkngak.clients.pavlovmedia.com. [173.230.99.154])
-        by smtp.gmail.com with ESMTPSA id q7sm11924367qki.17.2021.05.10.10.22.58
+        by smtp.gmail.com with ESMTPSA id q7sm11924367qki.17.2021.05.10.10.22.59
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 10 May 2021 10:22:59 -0700 (PDT)
+        Mon, 10 May 2021 10:23:00 -0700 (PDT)
 From: YiFei Zhu <zhuyifei1999@gmail.com>
 To: containers@lists.linux.dev,
 	bpf@vger.kernel.org
@@ -60,9 +60,9 @@ Cc: YiFei Zhu <yifeifz2@illinois.edu>,
 	Tobin Feldman-Fitzthum <tobin@ibm.com>,
 	Tom Hromatka <tom.hromatka@oracle.com>,
 	Will Drewry <wad@chromium.org>
-Subject: [RFC PATCH bpf-next seccomp 05/12] samples/bpf: Add eBPF seccomp sample programs
-Date: Mon, 10 May 2021 12:22:42 -0500
-Message-Id: <5f7c10074e10f994f3984a564531d5d9285d53eb.1620499942.git.yifeifz2@illinois.edu>
+Subject: [RFC PATCH bpf-next seccomp 06/12] lsm: New hook seccomp_extended
+Date: Mon, 10 May 2021 12:22:43 -0500
+Message-Id: <f7ebfa197042ec56628cecd29b5eedd8f0cfb9c3.1620499942.git.yifeifz2@illinois.edu>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <cover.1620499942.git.yifeifz2@illinois.edu>
 References: <cover.1620499942.git.yifeifz2@illinois.edu>
@@ -73,157 +73,84 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-From: Sargun Dhillon <sargun@sargun.me>
+From: YiFei Zhu <yifeifz2@illinois.edu>
 
-This adds a sample program that uses seccomp-eBPF, called
-test_seccomp. It shows the simple ability to code seccomp filters
-in C.
+This hooks takes no argument, and returns 0 if the current task is
+permitted to use extended seccomp-eBPF features, or -errno if it is
+not permitted.
 
-Signed-off-by: Sargun Dhillon <sargun@sargun.me>
-Link: https://lists.linux-foundation.org/pipermail/containers/2018-February/038573.html
-Co-developed-by: Jinghao Jia <jinghao7@illinois.edu>
-Signed-off-by: Jinghao Jia <jinghao7@illinois.edu>
-[YiFei: change from bpf_load to libbpf]
-Co-developed-by: YiFei Zhu <yifeifz2@illinois.edu>
 Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
 ---
- samples/bpf/Makefile            |  3 ++
- samples/bpf/test_seccomp_kern.c | 41 +++++++++++++++++++++++++++
- samples/bpf/test_seccomp_user.c | 49 +++++++++++++++++++++++++++++++++
- 3 files changed, 93 insertions(+)
- create mode 100644 samples/bpf/test_seccomp_kern.c
- create mode 100644 samples/bpf/test_seccomp_user.c
+ include/linux/lsm_hook_defs.h |  4 ++++
+ include/linux/security.h      | 13 +++++++++++++
+ security/security.c           |  8 ++++++++
+ 3 files changed, 25 insertions(+)
 
-diff --git a/samples/bpf/Makefile b/samples/bpf/Makefile
-index 45ceca4e2c70..d49e7f91eba6 100644
---- a/samples/bpf/Makefile
-+++ b/samples/bpf/Makefile
-@@ -55,6 +55,7 @@ tprogs-y += task_fd_query
- tprogs-y += xdp_sample_pkts
- tprogs-y += ibumad
- tprogs-y += hbm
-+tprogs-y += test_seccomp
+diff --git a/include/linux/lsm_hook_defs.h b/include/linux/lsm_hook_defs.h
+index 61f04f7dc1a4..94e18d95e1cc 100644
+--- a/include/linux/lsm_hook_defs.h
++++ b/include/linux/lsm_hook_defs.h
+@@ -391,6 +391,10 @@ LSM_HOOK(int, 0, bpf_map_alloc_security, struct bpf_map *map)
+ LSM_HOOK(void, LSM_RET_VOID, bpf_map_free_security, struct bpf_map *map)
+ LSM_HOOK(int, 0, bpf_prog_alloc_security, struct bpf_prog_aux *aux)
+ LSM_HOOK(void, LSM_RET_VOID, bpf_prog_free_security, struct bpf_prog_aux *aux)
++
++#ifdef CONFIG_SECCOMP_FILTER_EXTENDED
++LSM_HOOK(int, 0, seccomp_extended, void)
++#endif /* CONFIG_SECCOMP_FILTER_EXTENDED */
+ #endif /* CONFIG_BPF_SYSCALL */
  
- # Libbpf dependencies
- LIBBPF = $(TOOLS_PATH)/lib/bpf/libbpf.a
-@@ -113,6 +114,7 @@ task_fd_query-objs := task_fd_query_user.o $(TRACE_HELPERS)
- xdp_sample_pkts-objs := xdp_sample_pkts_user.o
- ibumad-objs := ibumad_user.o
- hbm-objs := hbm.o $(CGROUP_HELPERS)
-+test_seccomp-objs := test_seccomp_user.o
+ LSM_HOOK(int, 0, locked_down, enum lockdown_reason what)
+diff --git a/include/linux/security.h b/include/linux/security.h
+index 9aeda3f9e838..8e98dd98ac90 100644
+--- a/include/linux/security.h
++++ b/include/linux/security.h
+@@ -1960,6 +1960,11 @@ extern int security_bpf_map_alloc(struct bpf_map *map);
+ extern void security_bpf_map_free(struct bpf_map *map);
+ extern int security_bpf_prog_alloc(struct bpf_prog_aux *aux);
+ extern void security_bpf_prog_free(struct bpf_prog_aux *aux);
++
++#ifdef CONFIG_SECCOMP_FILTER_EXTENDED
++extern int security_seccomp_extended(void);
++#endif /* CONFIG_SECCOMP_FILTER_EXTENDED */
++
+ #else
+ static inline int security_bpf(int cmd, union bpf_attr *attr,
+ 					     unsigned int size)
+@@ -1992,6 +1997,14 @@ static inline int security_bpf_prog_alloc(struct bpf_prog_aux *aux)
  
- # Tell kbuild to always build the programs
- always-y := $(tprogs-y)
-@@ -174,6 +176,7 @@ always-y += ibumad_kern.o
- always-y += hbm_out_kern.o
- always-y += hbm_edt_kern.o
- always-y += xdpsock_kern.o
-+always-y += test_seccomp_kern.o
- 
- ifeq ($(ARCH), arm)
- # Strip all except -D__LINUX_ARM_ARCH__ option needed to handle linux
-diff --git a/samples/bpf/test_seccomp_kern.c b/samples/bpf/test_seccomp_kern.c
-new file mode 100644
-index 000000000000..efd42f47d9c4
---- /dev/null
-+++ b/samples/bpf/test_seccomp_kern.c
-@@ -0,0 +1,41 @@
-+// SPDX-License-Identifier: GPL-2.0
-+#include <uapi/linux/seccomp.h>
-+#include <uapi/linux/bpf.h>
-+#include <uapi/linux/unistd.h>
-+#include <uapi/linux/errno.h>
-+#include <bpf/bpf_helpers.h>
-+#include <uapi/linux/audit.h>
+ static inline void security_bpf_prog_free(struct bpf_prog_aux *aux)
+ { }
 +
-+#if defined(__x86_64__)
-+#define ARCH	AUDIT_ARCH_X86_64
-+#elif defined(__i386__)
-+#define ARCH	AUDIT_ARCH_I386
-+#else
-+#endif
-+
-+#ifdef ARCH
-+/* Returns EPERM when trying to close fd 999 */
-+SEC("seccomp")
-+int bpf_prog1(struct seccomp_data *ctx)
++#ifdef CONFIG_SECCOMP_FILTER_EXTENDED
++static inline int security_seccomp_extended(void)
 +{
-+	/*
-+	 * Make sure this BPF program is being run on the same architecture it
-+	 * was compiled on.
-+	 */
-+	if (ctx->arch != ARCH)
-+		return SECCOMP_RET_ERRNO | EPERM;
-+	if (ctx->nr == __NR_close && ctx->args[0] == 999)
-+		return SECCOMP_RET_ERRNO | EPERM;
-+
-+	return SECCOMP_RET_ALLOW;
-+}
-+#else
-+#warning Architecture not supported -- Blocking all syscalls
-+SEC("seccomp")
-+int bpf_prog1(struct seccomp_data *ctx)
-+{
-+	return SECCOMP_RET_ERRNO | EPERM;
-+}
-+#endif
-+
-+char _license[] SEC("license") = "GPL";
-diff --git a/samples/bpf/test_seccomp_user.c b/samples/bpf/test_seccomp_user.c
-new file mode 100644
-index 000000000000..ba17e18666b9
---- /dev/null
-+++ b/samples/bpf/test_seccomp_user.c
-@@ -0,0 +1,49 @@
-+// SPDX-License-Identifier: GPL-2.0
-+#include <assert.h>
-+#include <bpf/libbpf.h>
-+#include <errno.h>
-+#include <linux/bpf.h>
-+#include <linux/seccomp.h>
-+#include <linux/unistd.h>
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <strings.h>
-+#include <sys/prctl.h>
-+#include <unistd.h>
-+
-+int main(int argc, char **argv)
-+{
-+	struct bpf_object *obj;
-+	char filename[256];
-+	int prog_fd;
-+
-+	snprintf(filename, sizeof(filename), "%s_kern.o", argv[0]);
-+
-+	if (bpf_prog_load(filename, BPF_PROG_TYPE_SECCOMP, &obj, &prog_fd))
-+		exit(EXIT_FAILURE);
-+	if (prog_fd < 0) {
-+		fprintf(stderr, "ERROR: no program found: %s\n",
-+			strerror(prog_fd));
-+		exit(EXIT_FAILURE);
-+	}
-+
-+	/* set new_new_privs so non-privileged users can attach filters */
-+	if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)) {
-+		perror("prctl(NO_NEW_PRIVS)");
-+		exit(EXIT_FAILURE);
-+	}
-+
-+	if (syscall(__NR_seccomp, SECCOMP_SET_MODE_FILTER,
-+		    SECCOMP_FILTER_FLAG_EXTENDED, &prog_fd)) {
-+		perror("seccomp");
-+		exit(EXIT_FAILURE);
-+	}
-+
-+	close(111);
-+	assert(errno == EBADF);
-+	close(999);
-+	assert(errno == EPERM);
-+
-+	printf("close syscall successfully filtered\n");
 +	return 0;
 +}
++#endif /* CONFIG_SECCOMP_FILTER_EXTENDED */
++
+ #endif /* CONFIG_SECURITY */
+ #endif /* CONFIG_BPF_SYSCALL */
+ 
+diff --git a/security/security.c b/security/security.c
+index 94383f83ba42..301afe76ffb2 100644
+--- a/security/security.c
++++ b/security/security.c
+@@ -2553,6 +2553,14 @@ void security_bpf_prog_free(struct bpf_prog_aux *aux)
+ {
+ 	call_void_hook(bpf_prog_free_security, aux);
+ }
++
++#ifdef CONFIG_SECCOMP_FILTER_EXTENDED
++int security_seccomp_extended(void)
++{
++	return call_int_hook(seccomp_extended, 0);
++}
++#endif
++
+ #endif /* CONFIG_BPF_SYSCALL */
+ 
+ int security_locked_down(enum lockdown_reason what)
 -- 
 2.31.1
 
