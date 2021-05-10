@@ -1,33 +1,59 @@
-Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
+Received: from ms.lwn.net (ms.lwn.net [45.79.88.28])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CDE8670
-	for <containers@lists.linux.dev>; Mon, 10 May 2021 14:49:37 +0000 (UTC)
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 0DAE6613DE;
-	Mon, 10 May 2021 14:49:34 +0000 (UTC)
-Date: Mon, 10 May 2021 16:49:32 +0200
-From: Christian Brauner <christian.brauner@ubuntu.com>
-To: Tejun Heo <tj@kernel.org>
-Cc: Christian Brauner <brauner@kernel.org>, Roman Gushchin <guro@fb.com>,
-	Shakeel Butt <shakeelb@google.com>,
-	Zefan Li <lizefan.x@bytedance.com>,
-	Johannes Weiner <hannes@cmpxchg.org>, cgroups@vger.kernel.org,
-	containers@lists.linux.dev, Serge Hallyn <serge@hallyn.com>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0CBB970
+	for <containers@lists.linux.dev>; Mon, 10 May 2021 15:46:02 +0000 (UTC)
+Received: from localhost (unknown [IPv6:2601:281:8300:104d::5f6])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by ms.lwn.net (Postfix) with ESMTPSA id 558132B4;
+	Mon, 10 May 2021 15:39:03 +0000 (UTC)
+DKIM-Filter: OpenDKIM Filter v2.11.0 ms.lwn.net 558132B4
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=lwn.net; s=20201203;
+	t=1620661143; bh=kAxTOos9FhekUtxqCg7hz6hwN4pulQIZ55PVCksaoi0=;
+	h=From:To:Cc:Subject:In-Reply-To:References:Date:From;
+	b=PTniAJrYlNDmkQ6f+1nDRzUQlwTUPhkx+L6/kP43U0/cGCzORYOmTAaQq3+UTpeqE
+	 D4uyD634BSuIgKb0ucUpW3hsX7XH4OL55XS2xzLD12p4UtA757JIhGNhm3/SMUytL8
+	 LiftNqplFiKPRxOaxcD8q1RJJtHZc8eOGBiRJyHmp/sULa5RTjpncocQgv9tJJxNy9
+	 23+b8XRuu0MabjyZzB8Zpsk61S7mw0Cjpksgy3yHScFfaFkz+3fD/eqbzGmsqXQQbE
+	 6WWAw9KTbxn+ljHG0MI6l7xKO5QB0rhM6rauBi8rf0+ss4P7tY7nGWfpCIXs85gF6H
+	 HJUE96da1+Mig==
+From: Jonathan Corbet <corbet@lwn.net>
+To: Christian Brauner <brauner@kernel.org>, Tejun Heo <tj@kernel.org>, Roman
+ Gushchin <guro@fb.com>
+Cc: Shakeel Butt <shakeelb@google.com>, Zefan Li <lizefan.x@bytedance.com>,
+ Johannes Weiner <hannes@cmpxchg.org>, cgroups@vger.kernel.org,
+ containers@lists.linux.dev, Christian Brauner
+ <christian.brauner@ubuntu.com>, Serge Hallyn <serge@hallyn.com>
 Subject: Re: [PATCH v3 1/5] cgroup: introduce cgroup.kill
-Message-ID: <20210510144932.iv6gfc36ahkuihnz@wittgenstein>
+In-Reply-To: <20210508121542.1269256-1-brauner@kernel.org>
 References: <20210508121542.1269256-1-brauner@kernel.org>
- <YJlGSZlZYaaujm2O@slm.duckdns.org>
+Date: Mon, 10 May 2021 09:39:02 -0600
+Message-ID: <874kfaha3t.fsf@meer.lwn.net>
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <YJlGSZlZYaaujm2O@slm.duckdns.org>
+Content-Type: text/plain
 
-On Mon, May 10, 2021 at 10:42:17AM -0400, Tejun Heo wrote:
-> Applied to cgroup/for-5.14.
+Christian Brauner <brauner@kernel.org> writes:
 
-Thanks!
-Christian
+> Introduce the cgroup.kill file. It does what it says on the tin and
+> allows a caller to kill a cgroup by writing "1" into cgroup.kill.
+> The file is available in non-root cgroups.
+
+So I feel like I'm missing something fundamental here...perhaps somebody
+can supply a suitable cluebat.  It seems inevitable to me that, sooner
+or later, somebody will surely wish that this mechanism could send a
+signal other than SIGKILL, but this interface won't allow that.  Even if
+you won't want to implement an arbitrary signal now, it seems like
+defining the interface to require writing "9" rather than "1" would
+avoid closing that option off in the future.
+
+I assume there's some reason why you don't want to do that, but I'm to
+slow to figure out what it is...?
+
+Thanks,
+
+jon
