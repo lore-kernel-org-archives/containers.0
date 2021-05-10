@@ -1,41 +1,41 @@
-Received: from mail-qt1-f176.google.com (mail-qt1-f176.google.com [209.85.160.176])
+Received: from mail-qt1-f174.google.com (mail-qt1-f174.google.com [209.85.160.174])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1F7702FAD
-	for <containers@lists.linux.dev>; Mon, 10 May 2021 17:22:58 +0000 (UTC)
-Received: by mail-qt1-f176.google.com with SMTP id j19so12495005qtp.7
-        for <containers@lists.linux.dev>; Mon, 10 May 2021 10:22:58 -0700 (PDT)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 89CA32FAD
+	for <containers@lists.linux.dev>; Mon, 10 May 2021 17:22:59 +0000 (UTC)
+Received: by mail-qt1-f174.google.com with SMTP id p6so12489683qtk.13
+        for <containers@lists.linux.dev>; Mon, 10 May 2021 10:22:59 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=Nm+KuM9ff9d7ka8+7ZtDl8pCOVV7hGgjqFXWjHyaY58=;
-        b=fsjib6JFKB1SyB4TqRkLe0oWxCn6a1aMnr343ATb8KbJa7WNWCrgCvWk1DqdmUShU8
-         Pv+g+pQxTacxI3WgWyPQv1i2tcRvXE3tWDfxy5HSjnYmZ0y5123dlnOJajG4VXOX8LCm
-         PkN3Fqn/x8pg1XHiARTjzmQiHC/tpRSU/6FD5fei9iutaoGdsZDfv4u/vwnIfSYqU4RB
-         8NnTOo52srAdZIPVCxkAddbaikyphzE4t5/DqDz2ofo1KgbPtGdDb6E2mHDFmaEwmiLF
-         1KFSRo8kBRB3sJOpmaqVnk917oZDw0zYIdOHhLZrQEbLe4NvSCJE4OVdXMJEhL/ZFQj7
-         HRlw==
+        bh=rahaQaLyFPP9GGvK15BOl5iZ4PSYmD/vlR06dUAD7e0=;
+        b=RJePQanVHTvnYJXjtq/LxIaIBOPhJjnoxA29/o8xMmHwkNv7CtioYcn32Jnr3SwqWQ
+         almESooTi22DGCQjJhrwJtY+mrcCKsxmpiB0l4BKhdIscp06rl+ZJvphWiOYy07hRQBp
+         +ET28ugKg6/csqDQ9YcfzO8JQYI3Z3AuIn8yxn8L5/HezfUh7pf/QDa/t6dC0uob7xAG
+         EXIg+EXqE/ijLiYxCt4djfIa9vOAKQy0xK4dzteIwuNKEU1vmnxy9Gyzit3IxvXfeWJy
+         cIQ+yt1Cp3SLgLxTpZdrKQNlDvAz6m3Y0UEkkeDGQ7pOZTX6Yi5qt48S2kirpaNRU30m
+         gRsg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=Nm+KuM9ff9d7ka8+7ZtDl8pCOVV7hGgjqFXWjHyaY58=;
-        b=e48NwuhOig/U1tttkZ+NPhD+W+XgokYkwWwgCopoFLKJ3MFRc3aeyqKgwr9s5I+naE
-         eTlw5Uzo956EjuV7Q7gO0ADhVMJY32gYnV4FQ75uT5g+FLIU90jB15Z9Y0xFBIAxlsnr
-         EuMGLGzMhHGgqfzIJsdZ8TIiIJvX1iYRp9oaK6Iet2dN9bId+RV/JUzm4AigJL/hAXog
-         FwTG1vsqLQYMSuBPYLd5x/W/WAZTm0+RFDEAvmX1jmCwME7Hr2+aKDtNYvJ1mzOlqtcL
-         +IrOr17fuajZXDu9s7J4bUq+xNG/JVnTeu+xf7HxWzUVj0mGCawaWliftIXzqUpYE3Af
-         eB8g==
-X-Gm-Message-State: AOAM533mwxboHMM4PiW1+Zz0oLe1CfUAW1CiO3K3e7QCGX2hdC+qrDge
-	1uRlCIXjNXVZ7sqCUK3WmdWS7H3z4PhNWa+k
-X-Google-Smtp-Source: ABdhPJyrRbwmlmB0HmoAXEyUfIQvt7D/1NgpybbDMUmlcNeiDapwTWCT1jz6kOsYOgAoqNEcZWiGSQ==
-X-Received: by 2002:ac8:5806:: with SMTP id g6mr24084856qtg.152.1620667377051;
-        Mon, 10 May 2021 10:22:57 -0700 (PDT)
+        bh=rahaQaLyFPP9GGvK15BOl5iZ4PSYmD/vlR06dUAD7e0=;
+        b=CmO0q+lUhz4X1RGsg31KXCsCBh7qG9I0IKFlZF5ICygriJ6cy2Q2ZiqrVHqNHVfq9U
+         TM+vk7ayKRFjR/gKr6q/TEbYD8eS9k3ECTly2QE3GvsSzwmopn1oAEx6EJwu/sD4ZPRP
+         jrsnXlaRSO63nWOggp/zY1Nua5LHr9SK1QGFKnBypXlAVEsRmoVbSLRDnt/hVhL/gIWx
+         9d7+auEQR4gpsh5zDT+LEfuu1/5hhc0+YKtpVb6KDp45REwxhWkaQiAjSq0c4kjUGI/c
+         3L06lDpQLxPhkH79h/1EcDp/zx6oVtXVfAL0XDmS2IVQtZ/Z+vPaGoNRoxYox648s0Mm
+         ts8w==
+X-Gm-Message-State: AOAM531GvZmzZ0JEKQvsEuBYMh9cabu11LFYKIvrwS/DHHUftcHJIbBs
+	UBYW31ovDars2pyxhJGlq9+DpeqZWuga9ZxF
+X-Google-Smtp-Source: ABdhPJz7dTCeaErW7vArw1fyKmZO4UJ0S1Q0/i4pR56D4pC8rE886IfEcheNNTd/YWEMMzCCas1NRg==
+X-Received: by 2002:ac8:7f83:: with SMTP id z3mr14353597qtj.239.1620667378335;
+        Mon, 10 May 2021 10:22:58 -0700 (PDT)
 Received: from localhost.localdomain (host-173-230-99-154.tnkngak.clients.pavlovmedia.com. [173.230.99.154])
-        by smtp.gmail.com with ESMTPSA id q7sm11924367qki.17.2021.05.10.10.22.55
+        by smtp.gmail.com with ESMTPSA id q7sm11924367qki.17.2021.05.10.10.22.57
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 10 May 2021 10:22:56 -0700 (PDT)
+        Mon, 10 May 2021 10:22:58 -0700 (PDT)
 From: YiFei Zhu <zhuyifei1999@gmail.com>
 To: containers@lists.linux.dev,
 	bpf@vger.kernel.org
@@ -60,9 +60,9 @@ Cc: YiFei Zhu <yifeifz2@illinois.edu>,
 	Tobin Feldman-Fitzthum <tobin@ibm.com>,
 	Tom Hromatka <tom.hromatka@oracle.com>,
 	Will Drewry <wad@chromium.org>
-Subject: [RFC PATCH bpf-next seccomp 03/12] seccomp, ptrace: Add a mechanism to retrieve attached eBPF seccomp filters
-Date: Mon, 10 May 2021 12:22:40 -0500
-Message-Id: <b09d7033ae669b3611edd13899d59d1cc437fbf6.1620499942.git.yifeifz2@illinois.edu>
+Subject: [RFC PATCH bpf-next seccomp 04/12] libbpf: recognize section "seccomp"
+Date: Mon, 10 May 2021 12:22:41 -0500
+Message-Id: <78401c1929394e999f154bcecd5aa00d2178d1c5.1620499942.git.yifeifz2@illinois.edu>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <cover.1620499942.git.yifeifz2@illinois.edu>
 References: <cover.1620499942.git.yifeifz2@illinois.edu>
@@ -73,124 +73,28 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-From: Sargun Dhillon <sargun@sargun.me>
+From: YiFei Zhu <yifeifz2@illinois.edu>
 
-This extends the ptrace API to allow fetching eBPF seccomp filters
-attached to programs. This is to enable checkpoint / restore cases.
-The user will have to use the traditional PTRACE_SECCOMP_GET_FILTER
-API call, and if they get an invalid medium type error they can switch
-over to the eBPF variant of the API -- PTRACE_SECCOMP_GET_FILTER_EXTENDED.
+The section is set to program type BPF_PROG_TYPE_SECCOMP with no
+attach type.
 
-Signed-off-by: Sargun Dhillon <sargun@sargun.me>
-Link: https://lists.linux-foundation.org/pipermail/containers/2018-February/038478.html
-[YiFei: increase ptrace number to 0x4210]
 Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
 ---
- include/linux/seccomp.h     | 12 ++++++++++++
- include/uapi/linux/ptrace.h |  2 ++
- kernel/ptrace.c             |  4 ++++
- kernel/seccomp.c            | 37 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 55 insertions(+)
+ tools/lib/bpf/libbpf.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/include/linux/seccomp.h b/include/linux/seccomp.h
-index c0750dc05de5..7ce9e3b3fa80 100644
---- a/include/linux/seccomp.h
-+++ b/include/linux/seccomp.h
-@@ -122,6 +122,18 @@ static inline long seccomp_get_metadata(struct task_struct *task,
- 	return -EINVAL;
- }
- #endif /* CONFIG_SECCOMP_FILTER && CONFIG_CHECKPOINT_RESTORE */
-+#if defined(CONFIG_SECCOMP_FILTER_EXTENDED) && defined(CONFIG_CHECKPOINT_RESTORE)
-+extern long seccomp_get_filter_extended(struct task_struct *task,
-+					unsigned long n,
-+					void __user *data);
-+#else
-+static inline long seccomp_get_filter_extended(struct task_struct *task,
-+					       unsigned long n,
-+					       void __user *data)
-+{
-+	return -EINVAL;
-+}
-+#endif /* CONFIG_SECCOMP_FILTER_EXTENDED && CONFIG_CHECKPOINT_RESTORE */
- 
- #ifdef CONFIG_SECCOMP_CACHE_DEBUG
- struct seq_file;
-diff --git a/include/uapi/linux/ptrace.h b/include/uapi/linux/ptrace.h
-index 3747bf816f9a..725a03614c28 100644
---- a/include/uapi/linux/ptrace.h
-+++ b/include/uapi/linux/ptrace.h
-@@ -112,6 +112,8 @@ struct ptrace_rseq_configuration {
- 	__u32 pad;
+diff --git a/tools/lib/bpf/libbpf.c b/tools/lib/bpf/libbpf.c
+index e2a3cf437814..42ce79b47378 100644
+--- a/tools/lib/bpf/libbpf.c
++++ b/tools/lib/bpf/libbpf.c
+@@ -8958,6 +8958,7 @@ static const struct bpf_sec_def section_defs[] = {
+ 	BPF_PROG_SEC("struct_ops",		BPF_PROG_TYPE_STRUCT_OPS),
+ 	BPF_EAPROG_SEC("sk_lookup/",		BPF_PROG_TYPE_SK_LOOKUP,
+ 						BPF_SK_LOOKUP),
++	BPF_PROG_SEC("seccomp",			BPF_PROG_TYPE_SECCOMP),
  };
  
-+#define PTRACE_SECCOMP_GET_FILTER_EXTENDED	0x4210
-+
- /*
-  * These values are stored in task->ptrace_message
-  * by tracehook_report_syscall_* to describe the current syscall-stop.
-diff --git a/kernel/ptrace.c b/kernel/ptrace.c
-index 76f09456ec4b..1e8d2155231f 100644
---- a/kernel/ptrace.c
-+++ b/kernel/ptrace.c
-@@ -1247,6 +1247,10 @@ int ptrace_request(struct task_struct *child, long request,
- 		break;
- #endif
- 
-+	case PTRACE_SECCOMP_GET_FILTER_EXTENDED:
-+		ret = seccomp_get_filter_extended(child, addr, datavp);
-+		break;
-+
- 	default:
- 		break;
- 	}
-diff --git a/kernel/seccomp.c b/kernel/seccomp.c
-index 1ef26a5bf93f..8550ae885245 100644
---- a/kernel/seccomp.c
-+++ b/kernel/seccomp.c
-@@ -2168,6 +2168,43 @@ long seccomp_get_metadata(struct task_struct *task,
- }
- #endif
- 
-+#if defined(CONFIG_SECCOMP_FILTER_EXTENDED) && defined(CONFIG_CHECKPOINT_RESTORE)
-+long seccomp_get_filter_extended(struct task_struct *task,
-+				 unsigned long filter_off,
-+				 void __user *data)
-+{
-+	struct seccomp_filter *filter;
-+	struct bpf_prog *prog;
-+	long ret;
-+
-+	if (!capable(CAP_SYS_ADMIN) ||
-+	    current->seccomp.mode != SECCOMP_MODE_DISABLED) {
-+		return -EACCES;
-+	}
-+
-+	filter = get_nth_filter(task, filter_off);
-+	if (IS_ERR(filter))
-+		return PTR_ERR(filter);
-+
-+	if (bpf_prog_was_classic(filter->prog)) {
-+		ret = -EMEDIUMTYPE;
-+		goto out;
-+	}
-+	prog = bpf_prog_inc_not_zero(filter->prog);
-+	if (IS_ERR(prog)) {
-+		ret = PTR_ERR(prog);
-+		goto out;
-+	}
-+
-+	ret = bpf_prog_new_fd(filter->prog);
-+	if (ret < 0)
-+		bpf_prog_put(prog);
-+out:
-+	__put_seccomp_filter(filter);
-+	return ret;
-+}
-+#endif
-+
- #ifdef CONFIG_SYSCTL
- 
- /* Human readable action names for friendly sysctl interaction */
+ #undef BPF_PROG_SEC_IMPL
 -- 
 2.31.1
 
