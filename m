@@ -1,163 +1,205 @@
-Received: from mx0b-00082601.pphosted.com (mx0b-00082601.pphosted.com [67.231.153.30])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-qk1-f179.google.com (mail-qk1-f179.google.com [209.85.222.179])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4100872
-	for <containers@lists.linux.dev>; Mon, 10 May 2021 16:43:22 +0000 (UTC)
-Received: from pps.filterd (m0109331.ppops.net [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.16.0.43/8.16.0.43) with SMTP id 14AGY2AO018327;
-	Mon, 10 May 2021 09:43:10 -0700
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=date : from : to : cc :
- subject : message-id : references : content-type : in-reply-to :
- mime-version; s=facebook; bh=rrhlUjnD6bW9ponz5bLx07YD8kJYtj+nkd59IW5qQh0=;
- b=eyOkPaWU8zIt3GEf1JBDYLZRNakId2LVFo1YjobMDEkr4PeD5TKDW+gXjPpOuPPRigCR
- TRMM/dEoZulAslHh2QkHKZs5ESd34hRUcIyNiQJr9u0WFraFPbtwUPxYY89dt4RheSdC
- rppMBZDRD/e7A86tR7mvq6pJ9tR7VNHphp0= 
-Received: from maileast.thefacebook.com ([163.114.130.16])
-	by mx0a-00082601.pphosted.com with ESMTP id 38drfvh0gb-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT);
-	Mon, 10 May 2021 09:43:09 -0700
-Received: from NAM10-BN7-obe.outbound.protection.outlook.com (100.104.31.183)
- by o365-in.thefacebook.com (100.104.35.173) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.2176.2; Mon, 10 May 2021 09:43:08 -0700
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=IrpU/cyvXguGGRMR6NERkkh7IXmAFJs+QMFBQdAYL6DstlZ7wKCMC6sMJ6mnjqJYgM0Y0ifoagih0IzbkzqeUtSMI1ggYQZJL/DGRHCvmL0XAWgHYNNmHzPLpt2hJ1oOalae8XU6qg93Ywy5xO3gn8z1QlC8/gX+wv4HNP2YiOrc1G9QL9iBAiA1VSVevbBV0WhYrd6ayOIGJIp05Sus0kyvk2rdpqiuiV7rjCABL6jTeIGvYQOEFOfzb5a5ekreVrMR70cmpqv+vYSc3SRwiTHl+/DkRY6PCtRqzt4FNhV5dIPJnXzzOjCcF/h7rHnRSu7bN7oaxNw0B8/psYykuw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=rrhlUjnD6bW9ponz5bLx07YD8kJYtj+nkd59IW5qQh0=;
- b=lpELwvhFY3Vxc2dXdlDiGu3sbWjTg+8pxr3ZmfLgnE3AyeqplVv6cYUkLRHr0T1u0sHE76lakP5hgwbjOaSj8zb9MO55wgA3WwzdniTCDL6pODn4CRdCI7YHlReR5tYfzP6RTIL7ROFPC4h8auUtszAGgIr6xIaZg6kStSqSNozpOEcjWVhIFp73X476G5rgh8e3IY8eASunoSvbPRXRea5riFC9PntyZgOd+pjjeDdq6PEEGas+VmNNlB8M79bfCUzEfsOLz8HQdkJlfk2yjXnY0IoZKJwe9oJQJ7NKspyT8e0tixcaGnXQl5oKJt19uQjQM86DrtroiWFUCfLWEg==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=fb.com; dmarc=pass action=none header.from=fb.com; dkim=pass
- header.d=fb.com; arc=none
-Authentication-Results: lwn.net; dkim=none (message not signed)
- header.d=none;lwn.net; dmarc=none action=none header.from=fb.com;
-Received: from BYAPR15MB4136.namprd15.prod.outlook.com (2603:10b6:a03:96::24)
- by SJ0PR15MB4219.namprd15.prod.outlook.com (2603:10b6:a03:2ca::6) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4108.29; Mon, 10 May
- 2021 16:43:08 +0000
-Received: from BYAPR15MB4136.namprd15.prod.outlook.com
- ([fe80::dd03:6ead:be0f:eca0]) by BYAPR15MB4136.namprd15.prod.outlook.com
- ([fe80::dd03:6ead:be0f:eca0%5]) with mapi id 15.20.4108.031; Mon, 10 May 2021
- 16:43:08 +0000
-Date: Mon, 10 May 2021 09:43:03 -0700
-From: Roman Gushchin <guro@fb.com>
-To: Jonathan Corbet <corbet@lwn.net>
-CC: Christian Brauner <brauner@kernel.org>, Tejun Heo <tj@kernel.org>,
-        Shakeel
- Butt <shakeelb@google.com>,
-        Zefan Li <lizefan.x@bytedance.com>,
-        Johannes
- Weiner <hannes@cmpxchg.org>, <cgroups@vger.kernel.org>,
-        <containers@lists.linux.dev>,
-        Christian Brauner
-	<christian.brauner@ubuntu.com>,
-        Serge Hallyn <serge@hallyn.com>
-Subject: Re: [PATCH v3 1/5] cgroup: introduce cgroup.kill
-Message-ID: <YJlilxwEoZS01+RE@carbon.DHCP.thefacebook.com>
-References: <20210508121542.1269256-1-brauner@kernel.org>
- <874kfaha3t.fsf@meer.lwn.net>
-Content-Type: text/plain; charset="us-ascii"
-Content-Disposition: inline
-In-Reply-To: <874kfaha3t.fsf@meer.lwn.net>
-X-Originating-IP: [2620:10d:c090:400::5:2495]
-X-ClientProxiedBy: CO2PR05CA0061.namprd05.prod.outlook.com
- (2603:10b6:102:2::29) To BYAPR15MB4136.namprd15.prod.outlook.com
- (2603:10b6:a03:96::24)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5DFD672
+	for <containers@lists.linux.dev>; Mon, 10 May 2021 17:22:54 +0000 (UTC)
+Received: by mail-qk1-f179.google.com with SMTP id f29so3839800qka.0
+        for <containers@lists.linux.dev>; Mon, 10 May 2021 10:22:54 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=iG5ORSr0tp4Kp2mLVlTS2Pl/UeKyobnaxc6VNZQHUqM=;
+        b=GxNnVmiZo/F5Mb/Q/FprCJSVUHvBh9nTwGKOYNHjIlmCzZ8LJYZDJCwWMc7bntzll9
+         hmB75LtmlUqcv7EXNQQc4EShaV9xaixq1QrXkfjGXtD4+wwNKeZQaz3dHV/jvK69v58N
+         KS2091VjWgjXtytJ7GHj+OkhAotbYJ/46j/E32vz6w+zjn4w+5Ao6mWWnkleKijPFsps
+         Dvkc++WuHLEkMV9xIwg22QaK0Z7nA4OyqiJVSRR4YytIbcmQqqpZQEbFwJaldQzQKGUD
+         I4yqlmzGBpVkPGPWxphWurbtRRH8cISCPCW00VDYgQ7aCk+b/VY007ZzvW/I6RuoUlkc
+         Rf8w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=iG5ORSr0tp4Kp2mLVlTS2Pl/UeKyobnaxc6VNZQHUqM=;
+        b=fNFkx8y5YMkMDrNtyn0dVl8xkmbhh6lBzsjM0QJgopxrQm0W9eRCYKaARyW58N/HTK
+         V/xiaWX0eUBkGxCb0jE/l0/rQghXUozoTPl1gpd0E2QhUR7q5laSk/6UPyBJCse9D/MD
+         lTCdfjnw9XQkmVI6eQe4rTHGHv97btl5PkrA2igj5zUr+vToNhkdA3gZXnj8rBCFYc1y
+         m4gfAlw/Qo9u3Flupeg0qysayT1gPTy2xiOa5r1cmVtPXbHsNUjvO3zhT7B3hJ+W7zi2
+         FWAD1Q3b6mteVYxJ+wWoTHOPcTpasHW3PhyQG7PZImc+Qr//MlbTr3mcpXS2DdQwx8E2
+         1cDg==
+X-Gm-Message-State: AOAM533kyLotqNciJvk3iMtKgavMDDNexoaHXB/e3j7qUAj+CXN02V90
+	8fiMQ3Nt9rfvrdmL7E/G5h/vnA9x+6oRXg==
+X-Google-Smtp-Source: ABdhPJyu5NVCx2/cSF+kf8FXQ5H/89SQH7HfJwdpOgLjGbA+VbP2nCMJgZvMOvRlrY15XVF1eqJfrQ==
+X-Received: by 2002:a37:43d4:: with SMTP id q203mr24177461qka.124.1620667373115;
+        Mon, 10 May 2021 10:22:53 -0700 (PDT)
+Received: from localhost.localdomain (host-173-230-99-154.tnkngak.clients.pavlovmedia.com. [173.230.99.154])
+        by smtp.gmail.com with ESMTPSA id q7sm11924367qki.17.2021.05.10.10.22.51
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 10 May 2021 10:22:52 -0700 (PDT)
+From: YiFei Zhu <zhuyifei1999@gmail.com>
+To: containers@lists.linux.dev,
+	bpf@vger.kernel.org
+Cc: YiFei Zhu <yifeifz2@illinois.edu>,
+	linux-security-module@vger.kernel.org,
+	Alexei Starovoitov <ast@kernel.org>,
+	Andrea Arcangeli <aarcange@redhat.com>,
+	Andy Lutomirski <luto@amacapital.net>,
+	Austin Kuo <hckuo2@illinois.edu>,
+	Claudio Canella <claudio.canella@iaik.tugraz.at>,
+	Daniel Borkmann <daniel@iogearbox.net>,
+	Daniel Gruss <daniel.gruss@iaik.tugraz.at>,
+	Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
+	Giuseppe Scrivano <gscrivan@redhat.com>,
+	Hubertus Franke <frankeh@us.ibm.com>,
+	Jann Horn <jannh@google.com>,
+	Jinghao Jia <jinghao7@illinois.edu>,
+	Josep Torrellas <torrella@illinois.edu>,
+	Kees Cook <keescook@chromium.org>,
+	Sargun Dhillon <sargun@sargun.me>,
+	Tianyin Xu <tyxu@illinois.edu>,
+	Tobin Feldman-Fitzthum <tobin@ibm.com>,
+	Tom Hromatka <tom.hromatka@oracle.com>,
+	Will Drewry <wad@chromium.org>
+Subject: [RFC PATCH bpf-next seccomp 00/12] eBPF seccomp filters
+Date: Mon, 10 May 2021 12:22:37 -0500
+Message-Id: <cover.1620499942.git.yifeifz2@illinois.edu>
+X-Mailer: git-send-email 2.31.1
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-X-MS-Exchange-MessageSentRepresentingType: 1
-Received: from carbon.DHCP.thefacebook.com (2620:10d:c090:400::5:2495) by CO2PR05CA0061.namprd05.prod.outlook.com (2603:10b6:102:2::29) with Microsoft SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4129.11 via Frontend Transport; Mon, 10 May 2021 16:43:07 +0000
-X-MS-PublicTrafficType: Email
-X-MS-Office365-Filtering-Correlation-Id: 6eacc6dd-97bc-4469-57f5-08d913d2b0c5
-X-MS-TrafficTypeDiagnostic: SJ0PR15MB4219:
-X-Microsoft-Antispam-PRVS: <SJ0PR15MB42191BAE0A6834D96FCE8DD0BE549@SJ0PR15MB4219.namprd15.prod.outlook.com>
-X-FB-Source: Internal
-X-MS-Oob-TLC-OOBClassifiers: OLM:9508;
-X-MS-Exchange-SenderADCheck: 1
-X-Microsoft-Antispam: BCL:0;
-X-Microsoft-Antispam-Message-Info: o+YxB2TTuHItZY1RPc5hROtnLxryMy8Jc+k8UiGvwHkKApkfDMxlQtZFb4d4pvfXTs6kzLa9/xnBHkRXc4EkO/jHgkzYkWZ+9x5jjdQiMhRfZd9n04Y0Mj1/NlNPXutJmkFH4v4H7ePBuqFiThp8iF0lXoxW7psJWPoWIcJdSiwuZxKvgblxzNFCpqUCYfRd3O3HTv+H8zm1Xo9q+0Pv+1N2q7AQhBOpuk5VqgOYGkcV67HpPwoSrERzEM/VtKAUczxZCCCanracnD43v40xzhkRP3WbeC7MqKf/agTsfetfIb4KEp8C6+CVAG2ptlCot/5VjQHJwJcNDvYMQVXWju//+q+hfSH/KV1cpqDlF/ZvhnleRSSSCdIwqVIIePNE3WwKeMnX0yemxbsBnsfJyVzqAKzIRWmfV1KOncV1D5qaI+yrG7GfSzy/LYSgg94U+tuXo8YU/+evNhQObLYsDDwz9bde28HqxY4jLZ/glY2bcYlxoVKZfuwyI9Oc5NGQu5RmK0ksC44Zxu0SuQJZ01j2sWv9DgD7FkAORAnFna34TE3tdTTM7FcVnYN83PY/pySBBjeMip9RrZ25tAUO30WZ3Qs/va5WcsyBLkP6ru1aP/L0rjTvujCiRKu2c9RGdAo2M+lhLY45Sr6ramvkrg==
-X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:BYAPR15MB4136.namprd15.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(366004)(39860400002)(376002)(396003)(136003)(346002)(8936002)(7416002)(54906003)(6666004)(478600001)(38100700002)(5660300002)(186003)(16526019)(4326008)(6916009)(6506007)(55016002)(86362001)(8676002)(9686003)(7696005)(52116002)(2906002)(66946007)(66556008)(66476007)(316002)(67856001);DIR:OUT;SFP:1102;
-X-MS-Exchange-AntiSpam-MessageData: =?us-ascii?Q?b6y3ktXrlUmjSWQ/TQT3ObolBkYmhlfFCuXa7JnUOoKT/7Cqu3i4450Tcumk?=
- =?us-ascii?Q?pJxc5DAoUAOVtf5lAAw6mD5w2BCBqhZImE3JpUz5pVMWyOpz7LcgZM6YubrQ?=
- =?us-ascii?Q?MTvHu+K/qiLMTIAf/0la402les/qnhNzBlEOOe7bC9whMwT5o9quVFbGX/aZ?=
- =?us-ascii?Q?s+ochfOZ4dyWrkaHooy6KeqUXw+PLYg493lOfGkZ3Ec6qOS+0v5ei9X+bIMS?=
- =?us-ascii?Q?0FLTnhDCq/TEw9FsyFrkZ1YGJ6uaDgJe74ibaIn9HjAKbaIbE2p8LvwDs2MP?=
- =?us-ascii?Q?3f7EvCEELcIvD/VJdIK4cjqG5RFNmY5yAjRzGYuEOD0WTH/5lQP/Sj5VqnrH?=
- =?us-ascii?Q?LHaV1CCG5/kXmP3aVl5PsJ7+GOF0FTeuTT2M05fDwLFWSkjqH3U+TnWD8zI/?=
- =?us-ascii?Q?WkuyC/MK0xwUCNULRDJnJWB1rbJZa0El+Xy1Zpoh4qNpip1gnUorF4DcexAp?=
- =?us-ascii?Q?6+BrOfV0soTX/ZuNU2T3pFqZmQtGstIqp39T7FnlgBXq1Avfa52gX9g7Tpsn?=
- =?us-ascii?Q?JsfL7fO91PaW0jS0PmPZJ/ImwXxsKQgITbyOXYi3ozizh7dtPtXdSYb6YqJ3?=
- =?us-ascii?Q?beb6vPBooWTazBAT+xdNevo6/XMRzt58ougjuN7C4wDWznTYhvoRX3D2VArH?=
- =?us-ascii?Q?iyjyA9qa5eiBPQSsth0B+n0NMQ5Pj4Zi9l/85mIINhuwGdyZUJW/xK3L8ysZ?=
- =?us-ascii?Q?KSZiBv8+NrTC9PpPYczmpXPoGMuJy464LK/LFAxhuQ9A1b8f7edZzOLHOI/t?=
- =?us-ascii?Q?PnydSnKBJW+SpMN+pOJhv2yztOjwPRpZx2OgqqTuBfbemjtfzZxKdfwGBoUU?=
- =?us-ascii?Q?UnXPk+02qu5RSSdBJ2XIPkBwZJLGENDuPfx2vckYln3B8kwFZRKsW8dFLYIq?=
- =?us-ascii?Q?ugoPePvYzSQfz4X0sKtw/IHJZP0hNoN5K13ZE/QORgW0BKW920s2Kt8ZmjPK?=
- =?us-ascii?Q?fucok4WlL9MpgsIQLaDd7F+36YokCP+zQLN+rcUvMBWFa/t9PfDA6Reuj2Jx?=
- =?us-ascii?Q?xRvIIL0lEn1fnoRmiRJa2pDXdkhFrBnFwG50xbAeNdFVO3H/eFU4vJ9gWRI8?=
- =?us-ascii?Q?8Usa8gG6aGjQ65GPg3pphn7uyEHHkrwCQSmaMxL7eLczfcM3fxe11kqb7jtv?=
- =?us-ascii?Q?MlvvRHjvedJ+Xs2S0Woxgf+amQxBS4jkk/cstxM6YSx16koeiJOeH0/z6HbE?=
- =?us-ascii?Q?yifwFLuoodkbGayy6OGvlVXh+Di+nzymN6eADv/fkqhTvZodY2of73CiNpNS?=
- =?us-ascii?Q?c/dxMUpIj3W5yGB/Z2X8MnGhHXEjx+p7n2OLKsSOaHU0CDgFodsFTyAHCi5D?=
- =?us-ascii?Q?EM0DsPW8T1uuhL/8geWtWGwJ9SH99ypDwQQ7FeYhhGJYVQ=3D=3D?=
-X-MS-Exchange-CrossTenant-Network-Message-Id: 6eacc6dd-97bc-4469-57f5-08d913d2b0c5
-X-MS-Exchange-CrossTenant-AuthSource: BYAPR15MB4136.namprd15.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 10 May 2021 16:43:08.0601
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: 8ae927fe-1255-47a7-a2af-5f3a069daaa2
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: Su7LjLcba/6Pz54ehlDgTRkja6LMiOYj9I8AaBR0vV7xXEo1QSBDigRZ/vhe1dek
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SJ0PR15MB4219
-X-OriginatorOrg: fb.com
-X-Proofpoint-GUID: fw1e-AwgZQkgJUqWqPhKE0LPT-hrb2LU
-X-Proofpoint-ORIG-GUID: fw1e-AwgZQkgJUqWqPhKE0LPT-hrb2LU
-X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:6.0.391,18.0.761
- definitions=2021-05-10_11:2021-05-10,2021-05-10 signatures=0
-X-Proofpoint-Spam-Details: rule=fb_default_notspam policy=fb_default score=0 lowpriorityscore=0
- priorityscore=1501 suspectscore=0 malwarescore=0 adultscore=0 phishscore=0
- mlxscore=0 impostorscore=0 bulkscore=0 spamscore=0 mlxlogscore=774
- clxscore=1011 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2104190000 definitions=main-2105100113
-X-FB-Internal: deliver
+Content-Transfer-Encoding: 8bit
 
-On Mon, May 10, 2021 at 09:39:02AM -0600, Jonathan Corbet wrote:
-> Christian Brauner <brauner@kernel.org> writes:
-> 
-> > Introduce the cgroup.kill file. It does what it says on the tin and
-> > allows a caller to kill a cgroup by writing "1" into cgroup.kill.
-> > The file is available in non-root cgroups.
-> 
-> So I feel like I'm missing something fundamental here...perhaps somebody
-> can supply a suitable cluebat.  It seems inevitable to me that, sooner
-> or later, somebody will surely wish that this mechanism could send a
-> signal other than SIGKILL, but this interface won't allow that.  Even if
-> you won't want to implement an arbitrary signal now, it seems like
-> defining the interface to require writing "9" rather than "1" would
-> avoid closing that option off in the future.
-> 
-> I assume there's some reason why you don't want to do that, but I'm to
-> slow to figure out what it is...?
+From: YiFei Zhu <yifeifz2@illinois.edu>
 
-I think the consensus was that most signals are a process/thread-level thing
-and are rarely sent to more than one process, so sending them to all processes
-in a cgroup is never required. So far nobody came with any real-life use case
-behind SIGKILL. SIGSTOP/SIGCONT could be that case, but the cgroup v2 freezer
-is doing virtually the same and eliminates this need.
+Based on: https://lists.linux-foundation.org/pipermail/containers/2018-February/038571.html
 
-Even SIGTERM which is often used before SIGKILL as a grateful termination
-attempt has to be sent to a proper process in the cgroup (e.g. container-level
-init or the main process in the workload).
+This patchset enables seccomp filters to be written in eBPF.
+Supporting eBPF filters has been proposed a few times in the past.
+The main concerns were (1) use cases and (2) security. We have
+identified many use cases that can benefit from advanced eBPF
+filters, such as:
 
-If a new case will arise, it will be possible to introduce a new interface
-file, but it looks very unlikely that there will be many such cases to justify
-a more generic interface. On the other side keeping it boolean makes it more
-consistent with the rest of the cgroup v2 api.
+  * exec-only-once filter / apply filter after exec
+  * syscall logging (eg. via maps)
+  * expressiveness & better tooling (no need for DSLs like easyseccomp)
+  * contained syscall fault injection
+  * Temporal System Call Specialization [1] with restrictive
+    initialization phases (serving phase syscalls are filtered)
+  * possible future extensions such as syscall serialization and
+    argument rewriting
 
-Thanks!
+These features can also be achieved by user notifier + ptrace but
+unfortunately user notifier is a lot of context switches (see the
+benchmark results below), and hence much less efficient than eBPF.
+
+For security, for an unprivileged caller, our implementation is as
+restrictive as user notifier + ptrace, in regards to capabilities.
+eBPF helpers follow the privilege model of original eBPF helpers.
+
+Advanced eBPF feature (maps & helpers) is restricted by a new LSM
+hook seccomp_extended. If LSM permits these features, then all standard
+bpf helpers are permitted, and tracing helpers are permitted too if the
+loader is bpf_capable and perfmon_capable. Mutable privileges should
+not be a concern because if seccomp-eBPF is used to implement a mutable
+policy of privileges, such policy can be implemented using user
+notifier anyhow (which does not require seccomp-eBPF).
+
+Moreover, a mechanism for reading user memory is added. The same
+prototypes of bpf_probe_read_user{,str} from tracing are used. However,
+when the loader of bpf program does not have CAP_PTRACE, the helper
+will return -EPERM if the task under seccomp filter is non-dumpable.
+The reason for this is that if we perform reduction from seccomp-eBPF
+to user notifier + ptrace, ptrace requires CAP_PTRACE to read from
+a non-dumpable process. However, eBPF does not solve the TOCTOU problem
+of user notifier, so users should not use this to enforce a policy
+based on memory contents.
+
+In addition, a mechanism for storing process states between filter runs
+is added. This uses the BPF-LSM task storage. However, since
+unprivileged bpf loaders do not have access to ptr to BTF ID for use as
+the task parameter to the helpers, the workaround is to use NULL as the
+parameter, and the helper will fallback to current's group leader. This
+is insufficient, unfortunately, because of the BTF enforcement in
+bpf_local_storage_map_alloc_check, and the fact that tasks without
+bpf_capable cannot load map BTFs. (Can I ask why this is restricted
+this way?)
+
+Giuseppe Scrivano shows how to support eBPF filters in crun [2], based
+on which we have tested a number of stateful filters.
+
+Performance wise, Jinghao did a test of 1,000,000 getpid() calls on an
+Intel i7-9700K, with stock Ubuntu config. The syscalls are half EPERM
+and half passthrough to the getpid() syscall handler [3]. The tests
+are done recording a median of 10:
+
+                user notif      eBPF            ratio
+QEMU            6808104 us      80508.5 us      84.6
+Bare Metal      3403667.5 us    80316 us        42.4
+
+[1] https://www.usenix.org/conference/usenixsecurity20/presentation/ghavamnia
+[2] https://github.com/giuseppe/crun/commit/3906b4fbcb671f8f188deef08c94ceae86a80120
+[3] https://github.com/xlab-uiuc/seccomp-ebpf-upstream/tree/perf-test
+
+Patch 1 moves no_new_privs check in filter loading.
+Patch 2 implements basic support for seccomp-eBPF in the kernel.
+Patch 3 enables a ptracer to get a fd to the eBPF for CRIU.
+Patch 4 enables libbpf to recognize the section "seccomp".
+Patch 5 adds a sample program test_seccomp to samples/bpf.
+
+Patch 6 adds an LSM hook seccomp_extended.
+Patch 7 allows bpf verifier hooks to restrict direct map access.
+Patch 8 implements restrictions for eBPF filters depending on LSM hooks.
+Patch 9 lets Yama LSM restrict seccomp-ebpf based on ptrace_scope.
+
+Patch 10 enables seccomp-ebpf to read user memory.
+Patch 11 allows bpf helpers to have nullable ptr to BTF ID as argument.
+Patch 12 implements process storage using BPF-LSM task storage.
+
+Sargun Dhillon (3):
+  bpf, seccomp: Add eBPF filter capabilities
+  seccomp, ptrace: Add a mechanism to retrieve attached eBPF seccomp
+    filters
+  samples/bpf: Add eBPF seccomp sample programs
+
+YiFei Zhu (9):
+  seccomp: Move no_new_privs check to after prepare_filter
+  libbpf: recognize section "seccomp"
+  lsm: New hook seccomp_extended
+  bpf/verifier: allow restricting direct map access
+  seccomp-ebpf: restrict filter to almost cBPF if LSM request such
+  yama: (concept) restrict seccomp-eBPF with ptrace_scope
+  seccomp-ebpf: Add ability to read user memory
+  bpf/verifier: support NULL-able ptr to BTF ID as helper argument
+  seccomp-ebpf: support task storage from BPF-LSM, defaulting to group
+    leader
+
+ arch/Kconfig                    |   7 +
+ include/linux/bpf.h             |   8 ++
+ include/linux/bpf_types.h       |   4 +
+ include/linux/lsm_hook_defs.h   |   4 +
+ include/linux/seccomp.h         |  15 +-
+ include/linux/security.h        |  13 ++
+ include/uapi/linux/bpf.h        |   1 +
+ include/uapi/linux/ptrace.h     |   2 +
+ include/uapi/linux/seccomp.h    |   1 +
+ kernel/bpf/bpf_task_storage.c   |  64 +++++++--
+ kernel/bpf/syscall.c            |   1 +
+ kernel/bpf/verifier.c           |  15 +-
+ kernel/ptrace.c                 |   4 +
+ kernel/seccomp.c                | 235 ++++++++++++++++++++++++++++----
+ kernel/trace/bpf_trace.c        |  42 ++++++
+ samples/bpf/Makefile            |   3 +
+ samples/bpf/test_seccomp_kern.c |  41 ++++++
+ samples/bpf/test_seccomp_user.c |  49 +++++++
+ security/security.c             |   8 ++
+ security/yama/yama_lsm.c        |  30 ++++
+ tools/include/uapi/linux/bpf.h  |   1 +
+ tools/lib/bpf/libbpf.c          |   1 +
+ 22 files changed, 511 insertions(+), 38 deletions(-)
+ create mode 100644 samples/bpf/test_seccomp_kern.c
+ create mode 100644 samples/bpf/test_seccomp_user.c
+
+--
+2.31.1
