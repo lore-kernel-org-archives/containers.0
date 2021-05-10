@@ -1,242 +1,109 @@
-Received: from mail-qt1-f179.google.com (mail-qt1-f179.google.com [209.85.160.179])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8CFCE2FAF
-	for <containers@lists.linux.dev>; Mon, 10 May 2021 17:23:09 +0000 (UTC)
-Received: by mail-qt1-f179.google.com with SMTP id p6so12490161qtk.13
-        for <containers@lists.linux.dev>; Mon, 10 May 2021 10:23:09 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=5/rwXY3Tz97DG7RI33m/7eYmkIHu/XikiymKc76hRuI=;
-        b=Qoor7W8OoHJh8YFJwaDNYg1EhzPV+XmZZTxmIbK8xsOopphUxHRO+5slKwOBJQsxbB
-         Ig1Em/YJCGj0gQIgKNbEvqsRN99g0dxRQP7xB1Nlb1l+talVrXYw83g7AoiJZndYjJWb
-         RoauFxCt9kJiLqVvhi4ZPmj3J2HEYIWm3TAvEIR2YaFvOTGt+Da3DvynvW1VdZfLwRVL
-         reXVfLFNd7Hs8jGhbbq8hZ5I53DE0OyVE9APlZR6pjJKWV0GLjIlBCWh6yj/YWyM7AYb
-         BwqFa47yZICJI86OMu4z7Nt0B0UT91cZqaab6CLdOVLg/oHqXwW72BI543Lw/8JOgrbt
-         ZZ9A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=5/rwXY3Tz97DG7RI33m/7eYmkIHu/XikiymKc76hRuI=;
-        b=FwQLcvo6bqhNZRDUHpICfxEwRpEOPkTomVu/tQe/tnGU6CuK1mE+/vNd2LdO3K/8bg
-         58M/SS4qNO2Z/fYHz3AFXggb+NvFyDmFm6NhXyy3/pKp6fD1MXBl9H7F5SI2imrLKkdQ
-         WNJwOGtv5PniOq9Cx6UE0K7+TWEieinKlTxZaioscQaZGV3EgqEm8on7bV4CtcbX/198
-         52KKXgYLoHzr4dH8dz81HNIY3NkIxv2VzCAYBj0+UA1+U8etVaGlhG8z9LlTlO4g6mdx
-         VaC3Kanwcnq08opUY96YsXF0S099FZbvwZuhrBaJB3VDu3sAtMHsuI3FWd3LjWVZY6oR
-         4OKg==
-X-Gm-Message-State: AOAM532jSIr6+T3I+VU7+1FIzALuHu5pJsQUGelcyNczouAgdx52Irf9
-	irLE9SWo0SZ5NOKEI0zUfEvNcQFVpHleMml5
-X-Google-Smtp-Source: ABdhPJzZxsGB9ozvYjpJmRg62FFX02uOjGCBLcBwlLpOtloL9dHrxHJL0pVdAzZwU8U1raciHQh7vg==
-X-Received: by 2002:a05:622a:15c9:: with SMTP id d9mr6841464qty.103.1620667388424;
-        Mon, 10 May 2021 10:23:08 -0700 (PDT)
-Received: from localhost.localdomain (host-173-230-99-154.tnkngak.clients.pavlovmedia.com. [173.230.99.154])
-        by smtp.gmail.com with ESMTPSA id q7sm11924367qki.17.2021.05.10.10.23.07
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 10 May 2021 10:23:08 -0700 (PDT)
-From: YiFei Zhu <zhuyifei1999@gmail.com>
-To: containers@lists.linux.dev,
-	bpf@vger.kernel.org
-Cc: YiFei Zhu <yifeifz2@illinois.edu>,
-	linux-security-module@vger.kernel.org,
-	Alexei Starovoitov <ast@kernel.org>,
-	Andrea Arcangeli <aarcange@redhat.com>,
-	Andy Lutomirski <luto@amacapital.net>,
-	Austin Kuo <hckuo2@illinois.edu>,
-	Claudio Canella <claudio.canella@iaik.tugraz.at>,
-	Daniel Borkmann <daniel@iogearbox.net>,
-	Daniel Gruss <daniel.gruss@iaik.tugraz.at>,
-	Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
-	Giuseppe Scrivano <gscrivan@redhat.com>,
-	Hubertus Franke <frankeh@us.ibm.com>,
-	Jann Horn <jannh@google.com>,
-	Jinghao Jia <jinghao7@illinois.edu>,
-	Josep Torrellas <torrella@illinois.edu>,
-	Kees Cook <keescook@chromium.org>,
-	Sargun Dhillon <sargun@sargun.me>,
-	Tianyin Xu <tyxu@illinois.edu>,
-	Tobin Feldman-Fitzthum <tobin@ibm.com>,
-	Tom Hromatka <tom.hromatka@oracle.com>,
-	Will Drewry <wad@chromium.org>
-Subject: [RFC PATCH bpf-next seccomp 12/12] seccomp-ebpf: support task storage from BPF-LSM, defaulting to group leader
-Date: Mon, 10 May 2021 12:22:49 -0500
-Message-Id: <db41ad3924d01374d08984d20ad6678f91b82cde.1620499942.git.yifeifz2@illinois.edu>
-X-Mailer: git-send-email 2.31.1
-In-Reply-To: <cover.1620499942.git.yifeifz2@illinois.edu>
-References: <cover.1620499942.git.yifeifz2@illinois.edu>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ACADF72
+	for <containers@lists.linux.dev>; Mon, 10 May 2021 17:47:37 +0000 (UTC)
+Received: by mail.kernel.org (Postfix) with ESMTPSA id C29306157E
+	for <containers@lists.linux.dev>; Mon, 10 May 2021 17:47:36 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1620668856;
+	bh=LxXDkuPWjPQk4BmdoXaxIQ+fI40u1+HYDgg51chi/dQ=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+	b=FzFrcSOFgyjvVtFkpiu6+C/STNJuhbAaHo/DOw/NYxZvNS6ZGgaVJAqpg9gIKT1Ms
+	 VB6gj6QPLcaVh+L7+RFNXnJpvK0m7zTEGGlAAsMytaqWncu1fp0C/IwWmFVxM1jZwA
+	 u2ysW4OjGP13tL/9yvCPdVvVH69beEDByCln/iG+oSgAVwfFuNe7HQyGv6itb/eohr
+	 Izh/oA20a9kgy4yRBfR24MMtOm7a3Di/007vrMj1ra9aKkxAU7BsuJ3frzzqGIzn0n
+	 9llxTT3hAepIrRV2U1TRLD0MnpxE8pPhEr1eazWVXg7SH1/dTar9ltIHgZwWqmwiFK
+	 JW73YP9Pr4W6A==
+Received: by mail-ej1-f51.google.com with SMTP id s20so20291111ejr.9
+        for <containers@lists.linux.dev>; Mon, 10 May 2021 10:47:36 -0700 (PDT)
+X-Gm-Message-State: AOAM5311a8OcNcS3uEQmhA7M4b1HvO2KmhXiubT+GbtZql5XksrxjLjR
+	hTm3Nou+M0PPBtD63x7AWxaC+rV3+ceWfmMZN/jK8g==
+X-Google-Smtp-Source: ABdhPJy2u4NRHO7LXCrZDzVo0MGiSrS4ukdNDyUpYt96TNfdTFbw5aaY0iqnaNSKOQ9xWZbpI6ahZnrIdR2D6q8tRLM=
+X-Received: by 2002:a17:907:1629:: with SMTP id hb41mr27755324ejc.316.1620668855059;
+ Mon, 10 May 2021 10:47:35 -0700 (PDT)
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <cover.1620499942.git.yifeifz2@illinois.edu>
+In-Reply-To: <cover.1620499942.git.yifeifz2@illinois.edu>
+From: Andy Lutomirski <luto@kernel.org>
+Date: Mon, 10 May 2021 10:47:22 -0700
+X-Gmail-Original-Message-ID: <CALCETrUQBonh5BC4eomTLpEOFHVcQSz9SPcfOqNFTf2TPht4-Q@mail.gmail.com>
+Message-ID: <CALCETrUQBonh5BC4eomTLpEOFHVcQSz9SPcfOqNFTf2TPht4-Q@mail.gmail.com>
+Subject: Re: [RFC PATCH bpf-next seccomp 00/12] eBPF seccomp filters
+To: YiFei Zhu <zhuyifei1999@gmail.com>
+Cc: containers@lists.linux.dev, bpf <bpf@vger.kernel.org>, 
+	YiFei Zhu <yifeifz2@illinois.edu>, LSM List <linux-security-module@vger.kernel.org>, 
+	Alexei Starovoitov <ast@kernel.org>, Andrea Arcangeli <aarcange@redhat.com>, Austin Kuo <hckuo2@illinois.edu>, 
+	Claudio Canella <claudio.canella@iaik.tugraz.at>, Daniel Borkmann <daniel@iogearbox.net>, 
+	Daniel Gruss <daniel.gruss@iaik.tugraz.at>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, 
+	Giuseppe Scrivano <gscrivan@redhat.com>, Hubertus Franke <frankeh@us.ibm.com>, Jann Horn <jannh@google.com>, 
+	Jinghao Jia <jinghao7@illinois.edu>, Josep Torrellas <torrella@illinois.edu>, 
+	Kees Cook <keescook@chromium.org>, Sargun Dhillon <sargun@sargun.me>, Tianyin Xu <tyxu@illinois.edu>, 
+	Tobin Feldman-Fitzthum <tobin@ibm.com>, Tom Hromatka <tom.hromatka@oracle.com>, Will Drewry <wad@chromium.org>
+Content-Type: text/plain; charset="UTF-8"
 
-From: YiFei Zhu <yifeifz2@illinois.edu>
+On Mon, May 10, 2021 at 10:22 AM YiFei Zhu <zhuyifei1999@gmail.com> wrote:
+>
+> From: YiFei Zhu <yifeifz2@illinois.edu>
+>
+> Based on: https://lists.linux-foundation.org/pipermail/containers/2018-February/038571.html
+>
+> This patchset enables seccomp filters to be written in eBPF.
+> Supporting eBPF filters has been proposed a few times in the past.
+> The main concerns were (1) use cases and (2) security. We have
+> identified many use cases that can benefit from advanced eBPF
+> filters, such as:
 
-This enables seccomp-eBPF filters to have per-process state even when
-the filter is loaded by an unprivileged process. Without CAP_BPF &&
-CAP_PERFMON no access to ptr to BTF ID is possible, so the only valid
-task the verifier will accept is NULL, and the helper implementation
-fallbacks to the group leader to have a per-process storage.
+I haven't reviewed this carefully, but I think we need to distinguish
+a few things:
 
-Filters loaded by privileged processes may still access the storage
-of arbitrary tasks via a valid task_struct ptr to BTF ID.
+1. Using the eBPF *language*.
 
-Since task storage require rcu being locked. We lock and unlock
-rcu before every seccomp-eBPF filter execution.
+2. Allowing the use of stateful / non-pure eBPF features.
 
-I'm not sure if this is the best way to do this. One, this introduces
-a dependency on BPF-LSM. Two, per-thread storage is not accessible
-to unprivileged filter loaders; it has to be per-process.
+3. Allowing the eBPF programs to read the target process' memory.
 
-Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
----
- include/linux/bpf.h           |  2 ++
- kernel/bpf/bpf_task_storage.c | 64 ++++++++++++++++++++++++++++++-----
- kernel/seccomp.c              |  4 +++
- 3 files changed, 61 insertions(+), 9 deletions(-)
+I'm generally in favor of (1).  I'm not at all sure about (2), and I'm
+even less convinced by (3).
 
-diff --git a/include/linux/bpf.h b/include/linux/bpf.h
-index efa6444b88d3..7c9755802275 100644
---- a/include/linux/bpf.h
-+++ b/include/linux/bpf.h
-@@ -1964,7 +1964,9 @@ extern const struct bpf_func_proto bpf_ktime_get_coarse_ns_proto;
- extern const struct bpf_func_proto bpf_sock_from_file_proto;
- extern const struct bpf_func_proto bpf_get_socket_ptr_cookie_proto;
- extern const struct bpf_func_proto bpf_task_storage_get_proto;
-+extern const struct bpf_func_proto bpf_task_storage_get_default_leader_proto;
- extern const struct bpf_func_proto bpf_task_storage_delete_proto;
-+extern const struct bpf_func_proto bpf_task_storage_delete_default_leader_proto;
- extern const struct bpf_func_proto bpf_for_each_map_elem_proto;
- extern const struct bpf_func_proto bpf_probe_read_user_proto;
- extern const struct bpf_func_proto bpf_probe_read_user_dumpable_proto;
-diff --git a/kernel/bpf/bpf_task_storage.c b/kernel/bpf/bpf_task_storage.c
-index 3ce75758d394..5ddf3a92d359 100644
---- a/kernel/bpf/bpf_task_storage.c
-+++ b/kernel/bpf/bpf_task_storage.c
-@@ -224,19 +224,19 @@ static int bpf_pid_task_storage_delete_elem(struct bpf_map *map, void *key)
- 	return err;
- }
- 
--BPF_CALL_4(bpf_task_storage_get, struct bpf_map *, map, struct task_struct *,
--	   task, void *, value, u64, flags)
-+static void *_bpf_task_storage_get(struct bpf_map *map, struct task_struct *task,
-+				   void *value, u64 flags)
- {
- 	struct bpf_local_storage_data *sdata;
- 
- 	if (flags & ~(BPF_LOCAL_STORAGE_GET_F_CREATE))
--		return (unsigned long)NULL;
-+		return NULL;
- 
- 	if (!task)
--		return (unsigned long)NULL;
-+		return NULL;
- 
- 	if (!bpf_task_storage_trylock())
--		return (unsigned long)NULL;
-+		return NULL;
- 
- 	sdata = task_storage_lookup(task, map, true);
- 	if (sdata)
-@@ -251,12 +251,24 @@ BPF_CALL_4(bpf_task_storage_get, struct bpf_map *, map, struct task_struct *,
- 
- unlock:
- 	bpf_task_storage_unlock();
--	return IS_ERR_OR_NULL(sdata) ? (unsigned long)NULL :
--		(unsigned long)sdata->data;
-+	return IS_ERR_OR_NULL(sdata) ? NULL : sdata->data;
- }
- 
--BPF_CALL_2(bpf_task_storage_delete, struct bpf_map *, map, struct task_struct *,
--	   task)
-+BPF_CALL_4(bpf_task_storage_get, struct bpf_map *, map, struct task_struct *,
-+	   task, void *, value, u64, flags)
-+{
-+	return (unsigned long)_bpf_task_storage_get(map, task, value, flags);
-+}
-+
-+BPF_CALL_4(bpf_task_storage_get_default_leader, struct bpf_map *, map,
-+	   struct task_struct *, task, void *, value, u64, flags)
-+{
-+	if (!task)
-+		task = current->group_leader;
-+	return (unsigned long)_bpf_task_storage_get(map, task, value, flags);
-+}
-+
-+static int _bpf_task_storage_delete(struct bpf_map *map, struct task_struct *task)
- {
- 	int ret;
- 
-@@ -275,6 +287,20 @@ BPF_CALL_2(bpf_task_storage_delete, struct bpf_map *, map, struct task_struct *,
- 	return ret;
- }
- 
-+BPF_CALL_2(bpf_task_storage_delete, struct bpf_map *, map, struct task_struct *,
-+	   task)
-+{
-+	return _bpf_task_storage_delete(map, task);
-+}
-+
-+BPF_CALL_2(bpf_task_storage_delete_default_leader, struct bpf_map *, map,
-+	   struct task_struct *, task)
-+{
-+	if (!task)
-+		task = current->group_leader;
-+	return _bpf_task_storage_delete(map, task);
-+}
-+
- static int notsupp_get_next_key(struct bpf_map *map, void *key, void *next_key)
- {
- 	return -ENOTSUPP;
-@@ -330,6 +356,17 @@ const struct bpf_func_proto bpf_task_storage_get_proto = {
- 	.arg4_type = ARG_ANYTHING,
- };
- 
-+const struct bpf_func_proto bpf_task_storage_get_default_leader_proto = {
-+	.func = bpf_task_storage_get_default_leader,
-+	.gpl_only = false,
-+	.ret_type = RET_PTR_TO_MAP_VALUE_OR_NULL,
-+	.arg1_type = ARG_CONST_MAP_PTR,
-+	.arg2_type = ARG_PTR_TO_BTF_ID_OR_NULL,
-+	.arg2_btf_id = &bpf_task_storage_btf_ids[0],
-+	.arg3_type = ARG_PTR_TO_MAP_VALUE_OR_NULL,
-+	.arg4_type = ARG_ANYTHING,
-+};
-+
- const struct bpf_func_proto bpf_task_storage_delete_proto = {
- 	.func = bpf_task_storage_delete,
- 	.gpl_only = false,
-@@ -338,3 +375,12 @@ const struct bpf_func_proto bpf_task_storage_delete_proto = {
- 	.arg2_type = ARG_PTR_TO_BTF_ID,
- 	.arg2_btf_id = &bpf_task_storage_btf_ids[0],
- };
-+
-+const struct bpf_func_proto bpf_task_storage_delete_default_leader_proto = {
-+	.func = bpf_task_storage_delete_default_leader,
-+	.gpl_only = false,
-+	.ret_type = RET_INTEGER,
-+	.arg1_type = ARG_CONST_MAP_PTR,
-+	.arg2_type = ARG_PTR_TO_BTF_ID_OR_NULL,
-+	.arg2_btf_id = &bpf_task_storage_btf_ids[0],
-+};
-diff --git a/kernel/seccomp.c b/kernel/seccomp.c
-index 330e9c365cdc..5b41b2aee39c 100644
---- a/kernel/seccomp.c
-+++ b/kernel/seccomp.c
-@@ -2457,6 +2457,10 @@ seccomp_func_proto(enum bpf_func_id func_id, const struct bpf_prog *prog)
- 		return ns_capable(current_user_ns(), CAP_SYS_PTRACE) ?
- 			&bpf_probe_read_user_str_proto :
- 			&bpf_probe_read_user_dumpable_str_proto;
-+	case BPF_FUNC_task_storage_get:
-+		return &bpf_task_storage_get_default_leader_proto;
-+	case BPF_FUNC_task_storage_delete:
-+		return &bpf_task_storage_delete_default_leader_proto;
- 	default:
- 		break;
- 	}
--- 
-2.31.1
+>
+>   * exec-only-once filter / apply filter after exec
 
+This is (2).  I'm not sure it's a good idea.
+
+>   * syscall logging (eg. via maps)
+
+This is (2).  Probably useful, but doesn't obviously belong in
+seccomp, or at least not as part of the same seccomp feature as
+regular filtering.
+
+>   * expressiveness & better tooling (no need for DSLs like easyseccomp)
+
+(1).  Sounds good.
+
+>   * contained syscall fault injection
+
+(2)?  We can already do this with notifiers.
+
+> For security, for an unprivileged caller, our implementation is as
+> restrictive as user notifier + ptrace, in regards to capabilities.
+> eBPF helpers follow the privilege model of original eBPF helpers.
+
+eBPF doesn't really have a privilege model yet.  There was a long and
+disappointing thread about this awhile back.
+
+> Moreover, a mechanism for reading user memory is added. The same
+> prototypes of bpf_probe_read_user{,str} from tracing are used. However,
+> when the loader of bpf program does not have CAP_PTRACE, the helper
+> will return -EPERM if the task under seccomp filter is non-dumpable.
+> The reason for this is that if we perform reduction from seccomp-eBPF
+> to user notifier + ptrace, ptrace requires CAP_PTRACE to read from
+> a non-dumpable process. However, eBPF does not solve the TOCTOU problem
+> of user notifier, so users should not use this to enforce a policy
+> based on memory contents.
+
+What is this for?
