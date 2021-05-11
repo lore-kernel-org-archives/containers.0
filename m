@@ -1,149 +1,118 @@
-Received: from mail-pf1-f177.google.com (mail-pf1-f177.google.com [209.85.210.177])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from wout2-smtp.messagingengine.com (wout2-smtp.messagingengine.com [64.147.123.25])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9643170
-	for <containers@lists.linux.dev>; Tue, 11 May 2021 07:14:13 +0000 (UTC)
-Received: by mail-pf1-f177.google.com with SMTP id h127so15392807pfe.9
-        for <containers@lists.linux.dev>; Tue, 11 May 2021 00:14:13 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=OCE0VDemWP3Un3BUBubMOTJqKvhb1dlengItxJN9kCg=;
-        b=dvWBVFkDpMFMjORmV6mBzC0CLWkszPaXOBWqcbLFzQzTFGR8V382LPXY3RSt47PSwJ
-         PriWUdBlYzxBgzlQNm5VRwrDBalYJyi4uPr4uNiM03Hhrk0iVoYWwKNMrXEF3QPf4kZn
-         8mYO91HE02cfwkoVfsLEemXRhNo12BIrGCV1CBSxLmQzPP/OPv/cCQbJE999w5QZlFVP
-         MgNjN52ICxRoOyOdkf4lNyAbxXiGrRk5UJKx0PXf3/2shlFSiB1fC/qgalaGcR4ze6SW
-         drEy294gra5n6N4J3H0s4FAXsbsORpig3yHGOau0FvDpSHnDDbNCwvpGF3DpsAxtIaGv
-         +KoQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=OCE0VDemWP3Un3BUBubMOTJqKvhb1dlengItxJN9kCg=;
-        b=Bm1YgIu+tnSdflPdNjT+SyzmzAhS9LOomsu0JUIWf7drpse64G5ZXfoRj/pgAc5JOI
-         0piZrrQh37nAiZoL6Kd6HRp1NHfl7F7NCfHsU3Eh8Up9qxxl/ok5Qm42+MTQw89SBbF3
-         IFAeHOILwtB0qLDfAsUi1eT7GO+mathe+hbBC8UvLzUAqyF0mdnzLaeCKb6INK/BW02j
-         KNf7AXIcpqjPsn1SeBvJTktzGwBrwON5XD58+IR92BCpdw2aA5OtfJNXImKDa60Wb5l3
-         G35Jq+dN4kYkrSd05bQDwd3SZ14JxosfJurS3hjbz7ryWO0ezlZHEyVsgnOHEgWjDHyZ
-         Al4A==
-X-Gm-Message-State: AOAM533TOKWKH9CQqDlYhMGQjJQNsTFqaQJvKyO796afSsoaSj4QEesX
-	dRb6itywdd0URWnl655dodOYg8NfQt+Pruk2/oU=
-X-Google-Smtp-Source: ABdhPJzB5dBcRqYw4ILOKKlWtRmv2VdjzfR/h5MVREf5B3Yicsh7OXee7jd9MFZwwpcPeUm13xty8co8o8PTnZYrbzw=
-X-Received: by 2002:a05:6a00:139a:b029:2a1:2e2d:5924 with SMTP id
- t26-20020a056a00139ab02902a12e2d5924mr25069886pfg.15.1620717252935; Tue, 11
- May 2021 00:14:12 -0700 (PDT)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 84E1971
+	for <containers@lists.linux.dev>; Tue, 11 May 2021 21:50:17 +0000 (UTC)
+Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
+	by mailout.west.internal (Postfix) with ESMTP id 411CF179C;
+	Tue, 11 May 2021 17:50:16 -0400 (EDT)
+Received: from mailfrontend1 ([10.202.2.162])
+  by compute3.internal (MEProxy); Tue, 11 May 2021 17:50:16 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tycho.pizza; h=
+	date:from:to:cc:subject:message-id:references:mime-version
+	:content-type:in-reply-to; s=fm3; bh=iTB27FskG3qCZ/2+bDx/QlZWQqb
+	cFgHZ/tiyid5nlZI=; b=7wOTtwaBCKi2Ph3V7Bp4qMNOOqG+9iAw7K2WYx0ZMY2
+	1DJxVEVwVrm/LLM6oNsp07CN/qc76Y3WgW5m0N4XKnLYzv6JyTWWiDo3iONQT3z4
+	FrTsdhnCwS1a2AyHoRbt8AkaX7GEZFBKyXd1VK3stqcR/TYac1qKew+mVG0yj+ox
+	2Y0TfZ6nQTn7ntugviIRC/z5HmmzHdtR0JOmvo2TsWOGIeZxHtKWPSx+ylG72eCj
+	IRiMjThdighylcMGhbs/obPyynJWta2Ac8tsGBUrYWP7296Kl9dS65bV5gCO9d1L
+	WKiSiHlDsucoM2IzKXJZ4l6d/M60tJa4dZmIIegsKzg==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:content-type:date:from:in-reply-to
+	:message-id:mime-version:references:subject:to:x-me-proxy
+	:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; bh=iTB27F
+	skG3qCZ/2+bDx/QlZWQqbcFgHZ/tiyid5nlZI=; b=gfRlOifrWLAtiISTbrk8TX
+	MhLuJ0GVYscP6MPJVvVP9NbMBg7jLtyka6pVCQ/Hq8y6tgrYrxDGoYjO/QnGKPw8
+	DcBuZPw5pWPiTvMGeFvfHi0VZpqoraH5cfs0YawHI1gHJc9++EmGjhas/sXltSjL
+	jinfgoV7vdqXpqUut7ZUFLGvmcxTT/diAVUlSFIUhviJrpiAs4ov9ILXFrxPRcQ4
+	HWJPmMJ8i+prsdypFG7Y7XVCEu9dJmV+dc6okplURcuxFbJtpGcb86MRLBbGQ6QK
+	BsfF8aDj8B8qrLLeFdRbrFFFdYiB53mpz4/b0G98EzV6EBC/NgtIQPV8SZY/QMcA
+	==
+X-ME-Sender: <xms:F_yaYJ-IXBmopj3q39YpU_7Svquf8PwQTGtLVz6eNjzlo-pGmK6hJw>
+    <xme:F_yaYNshrwshbFYUDXGK4l9Pl_I8Kz-ZuMB2KE3w2wICM5avCvDrWf104GgOMXrQW
+    8XMI_Kt0h6p5OTkBbY>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeduledrvdehuddgtddvucetufdoteggodetrfdotf
+    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
+    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
+    cujfgurhepfffhvffukfhfgggtuggjsehttdertddttddvnecuhfhrohhmpefvhigthhho
+    ucetnhguvghrshgvnhcuoehthigthhhosehthigthhhordhpihiiiigrqeenucggtffrrg
+    htthgvrhhnpeegkeefjeegkedtjefgfeduleekueetjeeghffhuefgffefleehgeeifedv
+    gfethfenucfkphepuddvkedruddtjedrvdeguddrudejieenucevlhhushhtvghrufhiii
+    gvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpehthigthhhosehthigthhhordhpihii
+    iigr
+X-ME-Proxy: <xmx:F_yaYHCEQGkr_49ALjrWzFHv2hSaMaKUdLRbow1YEX4KV7kzdUHAJg>
+    <xmx:F_yaYNdvmEOUAzcYtgn52UB95jJAO1NUa2K3yckU3_49t7fCmQOnmA>
+    <xmx:F_yaYOOM2oQxNCLYH5EUNRG4bg5cK3XqmgIWYiUNK7XUgXkm6OaxVA>
+    <xmx:F_yaYNfYYL_nrzbe4OnTWDVsHzie_VwKWLYMSbVxc-S49DBtcFBUbg>
+Received: from cisco (unknown [128.107.241.176])
+	by mail.messagingengine.com (Postfix) with ESMTPA;
+	Tue, 11 May 2021 17:50:12 -0400 (EDT)
+Date: Tue, 11 May 2021 15:50:10 -0600
+From: Tycho Andersen <tycho@tycho.pizza>
+To: Sargun Dhillon <sargun@sargun.me>
+Cc: Kees Cook <keescook@chromium.org>, LKML <linux-kernel@vger.kernel.org>,
+	Linux Containers <containers@lists.linux.dev>,
+	Andy Lutomirski <luto@kernel.org>,
+	Rodrigo Campos <rodrigo@kinvolk.io>,
+	Mauricio =?iso-8859-1?Q?V=E1squez?= Bernal <mauricio@kinvolk.io>,
+	Giuseppe Scrivano <gscrivan@redhat.com>,
+	Christian Brauner <christian.brauner@ubuntu.com>,
+	=?iso-8859-1?Q?Micka=EBl_Sala=FCn?= <mic@linux.microsoft.com>
+Subject: Re: [PATCH 3/4] seccomp: Support atomic "addfd + send reply"
+Message-ID: <20210511215010.GB1964106@cisco>
+References: <20210502001851.3346-1-sargun@sargun.me>
+ <20210502001851.3346-4-sargun@sargun.me>
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-References: <cover.1620499942.git.yifeifz2@illinois.edu> <53db70ed544928d227df7e3f3a1f8c53e3665c65.1620499942.git.yifeifz2@illinois.edu>
- <20210511020425.54nygajvrpxqnfsh@ast-mbp.dhcp.thefacebook.com>
-In-Reply-To: <20210511020425.54nygajvrpxqnfsh@ast-mbp.dhcp.thefacebook.com>
-From: YiFei Zhu <zhuyifei1999@gmail.com>
-Date: Tue, 11 May 2021 02:14:01 -0500
-Message-ID: <CABqSeAT8iz-VhWjWqABqGbF7ydkoT7LmzJ5Do8K1ANQvQK=FJQ@mail.gmail.com>
-Subject: Re: [RFC PATCH bpf-next seccomp 10/12] seccomp-ebpf: Add ability to
- read user memory
-To: Alexei Starovoitov <alexei.starovoitov@gmail.com>
-Cc: containers@lists.linux.dev, bpf <bpf@vger.kernel.org>, 
-	YiFei Zhu <yifeifz2@illinois.edu>, LSM List <linux-security-module@vger.kernel.org>, 
-	Alexei Starovoitov <ast@kernel.org>, Andrea Arcangeli <aarcange@redhat.com>, 
-	Andy Lutomirski <luto@amacapital.net>, Austin Kuo <hckuo2@illinois.edu>, 
-	Claudio Canella <claudio.canella@iaik.tugraz.at>, Daniel Borkmann <daniel@iogearbox.net>, 
-	Daniel Gruss <daniel.gruss@iaik.tugraz.at>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, 
-	Giuseppe Scrivano <gscrivan@redhat.com>, Hubertus Franke <frankeh@us.ibm.com>, Jann Horn <jannh@google.com>, 
-	Jinghao Jia <jinghao7@illinois.edu>, Josep Torrellas <torrella@illinois.edu>, 
-	Kees Cook <keescook@chromium.org>, Sargun Dhillon <sargun@sargun.me>, Tianyin Xu <tyxu@illinois.edu>, 
-	Tobin Feldman-Fitzthum <tobin@ibm.com>, Tom Hromatka <tom.hromatka@oracle.com>, Will Drewry <wad@chromium.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20210502001851.3346-4-sargun@sargun.me>
 
-On Mon, May 10, 2021 at 9:04 PM Alexei Starovoitov
-<alexei.starovoitov@gmail.com> wrote:
->
-> On Mon, May 10, 2021 at 12:22:47PM -0500, YiFei Zhu wrote:
-> >
-> > +BPF_CALL_3(bpf_probe_read_user_dumpable, void *, dst, u32, size,
-> > +        const void __user *, unsafe_ptr)
-> > +{
-> > +     int ret = -EPERM;
-> > +
-> > +     if (get_dumpable(current->mm))
-> > +             ret = copy_from_user_nofault(dst, unsafe_ptr, size);
->
-> Could you explain a bit more how dumpable flag makes it safe for unpriv?
-> The unpriv prog is attached to the children tasks only, right?
-> and dumpable gets cleared if euid changes?
+Hi,
 
-This is the "reduction to ptrace". The model here is that the eBPF
-seccomp filter is doing the equivalent of ptracing the user process
-using the privileges of the task at the time of loading the seccomp
-filter.
+On Sat, May 01, 2021 at 05:18:50PM -0700, Sargun Dhillon wrote:
 
-ptrace access control is governed by ptrace.c:__ptrace_may_access. The
-requirements are:
-* always allow thread group introspection -- assume false so we are
-more restrictive than ptrace.
-* tracer has CAP_PTRACE in the target user namespace or tracer
-r/fsu/gidid equal target resu/gid -- discuss below
-* tracer has CAP_PTRACE in the target user namespace or target is
-SUID_DUMP_USER (I realized I should probably change the condition to
-== SUID_DUMP_USER).
-* passes LSM checks (eg yama ptrace_scope) -- we expose a hook to LSM
-but it's more of a "disable all advanced seccomp-eBPF features". How
-would a better interface to LSM look like?
+[snip]
 
-The dumpable check handles the "target is SUID_DUMP_USER" condition,
-in the circumstance that the loader does not have CAP_PTRACE in its
-namespace at the time of load. Why would this imply its CAP_PTRACE
-capability in target namespace? This is based on my understanding on
-how capabilities and user namespaces interact:
-For the sake of simplicity, let's first assume that loader is the same
-task as the task that attaches the filter (via prctl or seccomp
-syscall).
-* Case 1: target and loader are the same user namespace. Trivial case,
-the two operations are the same.
-* Case 2: target is loader's parent namespace. Can't happen under
-assumption. Seccomp affects itself and children only, and it is only
-possible to join a descendant user ns.
-* Case 3: target is loader's descendant namespace. Loader would have
-full CAP_PTRACE on target. We are more restrictive than ptrace.
-* Case 4: target and loader are on unrelated namespace branches. Can't
-happen under assumption. Same as case 2.
+> Other patches in this series add a way to block signals when a syscall
+> is put to wait by seccomp.
 
-Let's break this assumption and see what happens if the loader and
-attacher are in different contexts:
-* Case 1: attacher is less capable (as a general term of "what it can
-do") than loader then all of the above applies, since the model
-concerns and checks the capabilities of the loader.
-* Case 2: attacher is more capable than loader. The attacher would
-need an fd to the prog to attach it:
-  * subcase 1: attacher inherited the fd after an exec and became more
-capable. uh... why is it trusting fds from a less capable context?
-  * subcase 2: attacher has CAP_SYS_ADMIN and gets the fd via
-BPF_PROG_GET_FD_BY_ID. uh... why is it trusting random fds and
-attaching it?
-  * subcase 3: attacher received the fd via a domain socket from a
-process which may be in a different user namespace. On my first
-thought, I thought, why is it trusting random fds from a less capable
-context? Except I just thought of an adversary could:
-    * Clone into new userns,
-    * Load filter in child, which has CAP_PTRACE in new userns
-    * Send filter to the parent which doesn't have CAP_PTRACE in its userns
-    * It's broken :(
-We'll think more about this case. One way is to check against init
-namespace, which means unpriv container runtimes won't have the
-non-dumpable override. Though, it shouldn't be affecting most of the
-use cases. Alternatively we can store which userns it was loaded from
-and reject attaching from a different userns.
+I guess we can drop this bit from the message if the series is split.
 
-Regarding u/gids, for an attacher to attach a seccomp filter, whether
-cBPF or eBPF, if it doesn't have CAP_SYS_ADMIN in its current ns, it
-will have to set no_new_privs on itself before it can attach. (Unlike
-the previous discussion, this check is done at attach time rather than
-load.) With no_new_privs the target's privs is a subset of the
-attacher's, so the attacher should have a way to match the target's
-resuid, so this condition is not a concern.
+> The struct seccomp_notif_resp, used when doing SECCOMP_IOCTL_NOTIF_SEND
+> ioctl() to send a response to the target, has three more fields that we
+> don't allow to set when doing the addfd ioctl() to also return. The
+> reasons to disallow each field are:
+>  * val: This will be set to the new allocated fd. No point taking it
+>    from userspace in this case.
+>  * error: If this is non-zero, the value is ignored. Therefore,
+>    it is pointless in this case as we want to return the value.
+>  * flags: The only flag is to let userspace continue to execute the
+>    syscall. This seems pointless, as we want the syscall to return the
+>    allocated fd.
+> 
+> This is why those fields are not possible to set when using this new
+> flag.
 
-YiFei Zhu
+I don't quite understand this; you don't need a NOTIF_SEND at all
+with the way this currently works, right?
+
+> @@ -1113,7 +1136,7 @@ static int seccomp_do_user_notification(int this_syscall,
+>  						 struct seccomp_kaddfd, list);
+>  		/* Check if we were woken up by a addfd message */
+>  		if (addfd)
+> -			seccomp_handle_addfd(addfd);
+> +			seccomp_handle_addfd(addfd, &n);
+>  
+>  	}  while (n.state != SECCOMP_NOTIFY_REPLIED);
+>  
+
+This while() bit is introduced in the previous patch, can we fold this
+deletion into that somehow?
+
+Thanks,
+
+Tycho
