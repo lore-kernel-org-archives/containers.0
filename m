@@ -1,67 +1,71 @@
-Received: from wout2-smtp.messagingengine.com (wout2-smtp.messagingengine.com [64.147.123.25])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pg1-f177.google.com (mail-pg1-f177.google.com [209.85.215.177])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 84E1971
-	for <containers@lists.linux.dev>; Tue, 11 May 2021 21:50:17 +0000 (UTC)
-Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
-	by mailout.west.internal (Postfix) with ESMTP id 411CF179C;
-	Tue, 11 May 2021 17:50:16 -0400 (EDT)
-Received: from mailfrontend1 ([10.202.2.162])
-  by compute3.internal (MEProxy); Tue, 11 May 2021 17:50:16 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tycho.pizza; h=
-	date:from:to:cc:subject:message-id:references:mime-version
-	:content-type:in-reply-to; s=fm3; bh=iTB27FskG3qCZ/2+bDx/QlZWQqb
-	cFgHZ/tiyid5nlZI=; b=7wOTtwaBCKi2Ph3V7Bp4qMNOOqG+9iAw7K2WYx0ZMY2
-	1DJxVEVwVrm/LLM6oNsp07CN/qc76Y3WgW5m0N4XKnLYzv6JyTWWiDo3iONQT3z4
-	FrTsdhnCwS1a2AyHoRbt8AkaX7GEZFBKyXd1VK3stqcR/TYac1qKew+mVG0yj+ox
-	2Y0TfZ6nQTn7ntugviIRC/z5HmmzHdtR0JOmvo2TsWOGIeZxHtKWPSx+ylG72eCj
-	IRiMjThdighylcMGhbs/obPyynJWta2Ac8tsGBUrYWP7296Kl9dS65bV5gCO9d1L
-	WKiSiHlDsucoM2IzKXJZ4l6d/M60tJa4dZmIIegsKzg==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to:x-me-proxy
-	:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; bh=iTB27F
-	skG3qCZ/2+bDx/QlZWQqbcFgHZ/tiyid5nlZI=; b=gfRlOifrWLAtiISTbrk8TX
-	MhLuJ0GVYscP6MPJVvVP9NbMBg7jLtyka6pVCQ/Hq8y6tgrYrxDGoYjO/QnGKPw8
-	DcBuZPw5pWPiTvMGeFvfHi0VZpqoraH5cfs0YawHI1gHJc9++EmGjhas/sXltSjL
-	jinfgoV7vdqXpqUut7ZUFLGvmcxTT/diAVUlSFIUhviJrpiAs4ov9ILXFrxPRcQ4
-	HWJPmMJ8i+prsdypFG7Y7XVCEu9dJmV+dc6okplURcuxFbJtpGcb86MRLBbGQ6QK
-	BsfF8aDj8B8qrLLeFdRbrFFFdYiB53mpz4/b0G98EzV6EBC/NgtIQPV8SZY/QMcA
-	==
-X-ME-Sender: <xms:F_yaYJ-IXBmopj3q39YpU_7Svquf8PwQTGtLVz6eNjzlo-pGmK6hJw>
-    <xme:F_yaYNshrwshbFYUDXGK4l9Pl_I8Kz-ZuMB2KE3w2wICM5avCvDrWf104GgOMXrQW
-    8XMI_Kt0h6p5OTkBbY>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeduledrvdehuddgtddvucetufdoteggodetrfdotf
-    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
-    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
-    cujfgurhepfffhvffukfhfgggtuggjsehttdertddttddvnecuhfhrohhmpefvhigthhho
-    ucetnhguvghrshgvnhcuoehthigthhhosehthigthhhordhpihiiiigrqeenucggtffrrg
-    htthgvrhhnpeegkeefjeegkedtjefgfeduleekueetjeeghffhuefgffefleehgeeifedv
-    gfethfenucfkphepuddvkedruddtjedrvdeguddrudejieenucevlhhushhtvghrufhiii
-    gvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpehthigthhhosehthigthhhordhpihii
-    iigr
-X-ME-Proxy: <xmx:F_yaYHCEQGkr_49ALjrWzFHv2hSaMaKUdLRbow1YEX4KV7kzdUHAJg>
-    <xmx:F_yaYNdvmEOUAzcYtgn52UB95jJAO1NUa2K3yckU3_49t7fCmQOnmA>
-    <xmx:F_yaYOOM2oQxNCLYH5EUNRG4bg5cK3XqmgIWYiUNK7XUgXkm6OaxVA>
-    <xmx:F_yaYNfYYL_nrzbe4OnTWDVsHzie_VwKWLYMSbVxc-S49DBtcFBUbg>
-Received: from cisco (unknown [128.107.241.176])
-	by mail.messagingengine.com (Postfix) with ESMTPA;
-	Tue, 11 May 2021 17:50:12 -0400 (EDT)
-Date: Tue, 11 May 2021 15:50:10 -0600
-From: Tycho Andersen <tycho@tycho.pizza>
-To: Sargun Dhillon <sargun@sargun.me>
-Cc: Kees Cook <keescook@chromium.org>, LKML <linux-kernel@vger.kernel.org>,
-	Linux Containers <containers@lists.linux.dev>,
-	Andy Lutomirski <luto@kernel.org>,
-	Rodrigo Campos <rodrigo@kinvolk.io>,
-	Mauricio =?iso-8859-1?Q?V=E1squez?= Bernal <mauricio@kinvolk.io>,
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0D14D71
+	for <containers@lists.linux.dev>; Wed, 12 May 2021 21:56:19 +0000 (UTC)
+Received: by mail-pg1-f177.google.com with SMTP id t193so6786732pgb.4
+        for <containers@lists.linux.dev>; Wed, 12 May 2021 14:56:19 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=hBIs9zoBCXixFNxxI1Y+QgjxyyGXOI7pXer0FPPUGm0=;
+        b=h89iCqDDuXOH0Vk/EDXInZ940Xzs4Le9rckXb8+3vJOmj6dTacxaNPcSLCegTrOdPY
+         n/RRF55MyoEnnk4FE2zPC3Vgvy5Vu81rSVKuf+1SCruex/PQseABn2OyfW034Zb/divX
+         a6XhRDaw3OAQ0UFEObBl1ZgXy6I40MTOh2snwYyxQ2U/xlM14eBI/3qPZu3Djt2+zTWU
+         cN8LIg8YRa8g29WSkLKVk0u6z9CUP8pOE9/AaS9/kkzQW/RjlN2qquZFLUWAQSLvkAn2
+         HYtEkb12kZhbIjOtBpQq3kaGeZjooaW+uYeFTnTLfzj/q/cMc+ic7sm2ETM+9aF8gfiG
+         ABwQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=hBIs9zoBCXixFNxxI1Y+QgjxyyGXOI7pXer0FPPUGm0=;
+        b=OYCYgXvhn59PbYCRfnzOTZylzeiGXkCqEwQSquuW4/75YLCVgW+Dbex1wSe/tKDhFE
+         H/TjWoOEZlCpyF65tUHZWdUyn3ZR84+qSyQRdsRKSWK4SfjgbEiu48mDhiFFuzFXM3nS
+         jNCygm7Qn5Kc6/1OED+SW/U3tPz2S7iy0oyimG8PXhU817nR5knGuQB/MBT/5J/k22r3
+         GFXvlcoH+xdK/dliu3EjPZFmE6njvJRTu7HQQCIDFmjyNU/uEn1HNKsBBpL/AlXr29qa
+         Y2dXGcE1O3EiQuhDyby2wffj9UFGkTpUPt62hpaiWnC8ANOPHGrcEcqA3wAJM/4XaMtn
+         pE3g==
+X-Gm-Message-State: AOAM532dB7VLuy38tMxIt/XDLklHyDginWeaOyJplqRGlVtPTTYIfN0K
+	sBmEKGUxzRVT+LO8okiQn24=
+X-Google-Smtp-Source: ABdhPJzzHHVxOgUL5O+vv5ub4DxlXrQ8ixk7FCr/isi0NgKkbD5mfmURGn7iMDGC1xGCebwLWPPt0w==
+X-Received: by 2002:a05:6a00:7d4:b029:28e:2b3:58bf with SMTP id n20-20020a056a0007d4b029028e02b358bfmr36865687pfu.77.1620856579425;
+        Wed, 12 May 2021 14:56:19 -0700 (PDT)
+Received: from ast-mbp.dhcp.thefacebook.com ([2620:10d:c090:400::5:c6f4])
+        by smtp.gmail.com with ESMTPSA id 15sm567382pjf.57.2021.05.12.14.56.15
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 12 May 2021 14:56:18 -0700 (PDT)
+Date: Wed, 12 May 2021 14:56:13 -0700
+From: Alexei Starovoitov <alexei.starovoitov@gmail.com>
+To: YiFei Zhu <zhuyifei1999@gmail.com>
+Cc: containers@lists.linux.dev, bpf <bpf@vger.kernel.org>,
+	YiFei Zhu <yifeifz2@illinois.edu>,
+	LSM List <linux-security-module@vger.kernel.org>,
+	Alexei Starovoitov <ast@kernel.org>,
+	Andrea Arcangeli <aarcange@redhat.com>,
+	Andy Lutomirski <luto@amacapital.net>,
+	Austin Kuo <hckuo2@illinois.edu>,
+	Claudio Canella <claudio.canella@iaik.tugraz.at>,
+	Daniel Borkmann <daniel@iogearbox.net>,
+	Daniel Gruss <daniel.gruss@iaik.tugraz.at>,
+	Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
 	Giuseppe Scrivano <gscrivan@redhat.com>,
-	Christian Brauner <christian.brauner@ubuntu.com>,
-	=?iso-8859-1?Q?Micka=EBl_Sala=FCn?= <mic@linux.microsoft.com>
-Subject: Re: [PATCH 3/4] seccomp: Support atomic "addfd + send reply"
-Message-ID: <20210511215010.GB1964106@cisco>
-References: <20210502001851.3346-1-sargun@sargun.me>
- <20210502001851.3346-4-sargun@sargun.me>
+	Hubertus Franke <frankeh@us.ibm.com>, Jann Horn <jannh@google.com>,
+	Jinghao Jia <jinghao7@illinois.edu>,
+	Josep Torrellas <torrella@illinois.edu>,
+	Kees Cook <keescook@chromium.org>,
+	Sargun Dhillon <sargun@sargun.me>, Tianyin Xu <tyxu@illinois.edu>,
+	Tobin Feldman-Fitzthum <tobin@ibm.com>,
+	Tom Hromatka <tom.hromatka@oracle.com>,
+	Will Drewry <wad@chromium.org>
+Subject: Re: [RFC PATCH bpf-next seccomp 12/12] seccomp-ebpf: support task
+ storage from BPF-LSM, defaulting to group leader
+Message-ID: <20210512215613.jtvvyu7mahfkztdf@ast-mbp.dhcp.thefacebook.com>
+References: <cover.1620499942.git.yifeifz2@illinois.edu>
+ <db41ad3924d01374d08984d20ad6678f91b82cde.1620499942.git.yifeifz2@illinois.edu>
+ <20210511015814.5sr37y4ogf5cr7c5@ast-mbp.dhcp.thefacebook.com>
+ <CABqSeARf03BsdWJJO-w=Bb+goHB6nmBaErz8Qmpgden_Q4Txeg@mail.gmail.com>
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
@@ -69,50 +73,50 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20210502001851.3346-4-sargun@sargun.me>
+In-Reply-To: <CABqSeARf03BsdWJJO-w=Bb+goHB6nmBaErz8Qmpgden_Q4Txeg@mail.gmail.com>
 
-Hi,
-
-On Sat, May 01, 2021 at 05:18:50PM -0700, Sargun Dhillon wrote:
-
-[snip]
-
-> Other patches in this series add a way to block signals when a syscall
-> is put to wait by seccomp.
-
-I guess we can drop this bit from the message if the series is split.
-
-> The struct seccomp_notif_resp, used when doing SECCOMP_IOCTL_NOTIF_SEND
-> ioctl() to send a response to the target, has three more fields that we
-> don't allow to set when doing the addfd ioctl() to also return. The
-> reasons to disallow each field are:
->  * val: This will be set to the new allocated fd. No point taking it
->    from userspace in this case.
->  * error: If this is non-zero, the value is ignored. Therefore,
->    it is pointless in this case as we want to return the value.
->  * flags: The only flag is to let userspace continue to execute the
->    syscall. This seems pointless, as we want the syscall to return the
->    allocated fd.
+On Tue, May 11, 2021 at 12:44:46AM -0500, YiFei Zhu wrote:
+> On Mon, May 10, 2021 at 8:58 PM Alexei Starovoitov
+> <alexei.starovoitov@gmail.com> wrote:
+> >
+> > On Mon, May 10, 2021 at 12:22:49PM -0500, YiFei Zhu wrote:
+> > > +
+> > > +BPF_CALL_4(bpf_task_storage_get_default_leader, struct bpf_map *, map,
+> > > +        struct task_struct *, task, void *, value, u64, flags)
+> > > +{
+> > > +     if (!task)
+> > > +             task = current->group_leader;
+> >
+> > Did you actually need it to be group_leader or current is enough?
+> > If so loading BTF is not necessary.
 > 
-> This is why those fields are not possible to set when using this new
-> flag.
+> I think if task_storage were to be used to apply a policy onto a set
+> of tasks, there are probably more use cases to perform the state
+> transitions across an entire process than state transitions across a
+> single thread. Though, since seccomp only applies to the process tree
+> a lot of use cases of a per-process storage would be covered by a
+> global datasec too.
+> 
+> > You could have exposed it bpf_get_current_task_btf() and passed its
+> > return value into bpf_task_storage_get.
+> >
+> > On the other side loading BTF can be relaxed to unpriv,
+> > but doing current->group_leader deref will make it priv only anyway.
+> 
+> Yeah, that deref is what I was concerned about. It seems that if I
+> expose BTF structs to a prog type it gains the ability to deref it,
+> and I definitely don't want unpriv reading task_structs. Though yeah
+> we could potentially change the verifier to prohibit PTR_TO_BTF_ID
+> deref and any pointer arithmetic on it...
+> 
+> How about, we expose bpf_get_current_task_btf to unpriv, prohibit
+> unpriv deref and pointer arithmetic, and have NULL be
+> current->group_leader? This way, unpriv has access to both per-thread
+> and per-process.
 
-I don't quite understand this; you don't need a NOTIF_SEND at all
-with the way this currently works, right?
-
-> @@ -1113,7 +1136,7 @@ static int seccomp_do_user_notification(int this_syscall,
->  						 struct seccomp_kaddfd, list);
->  		/* Check if we were woken up by a addfd message */
->  		if (addfd)
-> -			seccomp_handle_addfd(addfd);
-> +			seccomp_handle_addfd(addfd, &n);
->  
->  	}  while (n.state != SECCOMP_NOTIFY_REPLIED);
->  
-
-This while() bit is introduced in the previous patch, can we fold this
-deletion into that somehow?
-
-Thanks,
-
-Tycho
+NULL to mean current->group_leader is too specific and not extensible.
+I'd rather add another bpf_get_current_task_btf-like helper that
+returns parent or group_leader depending on flags.
+For now I wouldn't even do that. As you said hashmap with key=pid will
+work fine. task_local_storage is a performance optimization.
+I'd focus on landing the key bits before optimizing.
