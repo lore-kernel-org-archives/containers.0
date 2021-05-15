@@ -1,115 +1,160 @@
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 341E772
-	for <containers@lists.linux.dev>; Thu, 13 May 2021 17:16:08 +0000 (UTC)
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 0E2166144A
-	for <containers@lists.linux.dev>; Thu, 13 May 2021 17:16:07 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6D9CB2FB4
+	for <containers@lists.linux.dev>; Sat, 15 May 2021 15:49:03 +0000 (UTC)
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 1C79A61377;
+	Sat, 15 May 2021 15:49:02 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1620926167;
-	bh=Ry2wjIVSYj1t6KKG93LfA7nqkdFhgjKLx802ZbZeA0A=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=mEkE7LLBXRwRAGqz9BaFjjMCPBb9Eq4M/yjSpJDZJX30xdkOJKuw4d7dcrfA40tmh
-	 Wpt0YLo+ULypdIyBtvkKq3gSNhR7zjv3/1qlImNgpQs3geDVtNAqfye/vAaqhEHa76
-	 UO6Q8bfZaZin+mfljCfQwBiQ2Tk/NahMUgS+2a0XV9jEh9+tusx6TAxnNY3nb/mIhx
-	 z8sAbcgyCwUaly5pYkX7CXvi7LaTz+s82Dg17iaTdj09kVBsI22ydnVEZa9HIANf8c
-	 QInpIhNp2cj8MJZXhFQJW8kunB4hRDgggudLvfFGMZyv45tywHvDz8zd16IXfoflFG
-	 lQIhE3ZS/90mQ==
-Received: by mail-ed1-f45.google.com with SMTP id s6so31751628edu.10
-        for <containers@lists.linux.dev>; Thu, 13 May 2021 10:16:06 -0700 (PDT)
-X-Gm-Message-State: AOAM533VxQfupJFAzT0DhwAlpUDnjq390hWNz87ZVe0nue2mD4+WB4ry
-	5SIUTCQgJl6EMxEBDmhM/Y5vZlbRvyg3roLyrsU5Rg==
-X-Google-Smtp-Source: ABdhPJzXLGCnTkj2E/00lNqydWmiYxjCYe6O+PIcMnjIWu8EnTQzfh9BwwyDPhJVG7WJp8KKqPul2wugt7zsXVQjzI4=
-X-Received: by 2002:a05:6402:cac:: with SMTP id cn12mr53201537edb.238.1620926165459;
- Thu, 13 May 2021 10:16:05 -0700 (PDT)
+	s=k20201202; t=1621093742;
+	bh=9ko5ujwWSKEVrSBOJZLnsjRLIRjeY6NbE+C84Janp6A=;
+	h=Subject:To:Cc:References:From:Date:In-Reply-To:From;
+	b=VplB6vOb81I15gaP96w7NAfJVwBNSo74K+pZrkTh2byuCeMxQS4KLu9HwfPChFwSS
+	 zoZtyHDfitTCrovGL8PqPXzzrnGc3OGQqZoXCuKpIG2PkswHTt+S6HVNiq3ToKpM1i
+	 vLeYc7r42NQKcHhTVtK7T9Sd6hbBw2kPZtcRS0zPhAv78fiMN/i02hJM+tlwyJiVI3
+	 Po6rRsz0HhWInqitj82tjWdkLVZgD+byf2Zo55BMthAbYP3sRdozcMZUjZ4U3Mu6Ol
+	 rn3vG6O8S4W2QtP7cEHXROW8fC1R6u3t9Fd+cJA8illFbq1x/5yDbu/WLzVyCkbSj+
+	 aeYm1tq2x25fQ==
+Subject: Re: [RFC PATCH bpf-next seccomp 00/12] eBPF seccomp filters
+To: YiFei Zhu <zhuyifei1999@gmail.com>
+Cc: containers@lists.linux.dev, bpf <bpf@vger.kernel.org>,
+ YiFei Zhu <yifeifz2@illinois.edu>,
+ LSM List <linux-security-module@vger.kernel.org>,
+ Alexei Starovoitov <ast@kernel.org>, Andrea Arcangeli <aarcange@redhat.com>,
+ Austin Kuo <hckuo2@illinois.edu>,
+ Claudio Canella <claudio.canella@iaik.tugraz.at>,
+ Daniel Borkmann <daniel@iogearbox.net>,
+ Daniel Gruss <daniel.gruss@iaik.tugraz.at>,
+ Dimitrios Skarlatos <dskarlat@cs.cmu.edu>,
+ Giuseppe Scrivano <gscrivan@redhat.com>, Hubertus Franke
+ <frankeh@us.ibm.com>, Jann Horn <jannh@google.com>,
+ Jinghao Jia <jinghao7@illinois.edu>, Josep Torrellas
+ <torrella@illinois.edu>, Kees Cook <keescook@chromium.org>,
+ Sargun Dhillon <sargun@sargun.me>, Tianyin Xu <tyxu@illinois.edu>,
+ Tobin Feldman-Fitzthum <tobin@ibm.com>,
+ Tom Hromatka <tom.hromatka@oracle.com>, Will Drewry <wad@chromium.org>
+References: <cover.1620499942.git.yifeifz2@illinois.edu>
+ <CALCETrUQBonh5BC4eomTLpEOFHVcQSz9SPcfOqNFTf2TPht4-Q@mail.gmail.com>
+ <CABqSeASYRXMwTQwLfm_Tapg45VUy9sPfV7BeeV8p7XJrDoLf+Q@mail.gmail.com>
+From: Andy Lutomirski <luto@kernel.org>
+Message-ID: <b3a1684b-86e4-74c4-184b-7700613aa838@kernel.org>
+Date: Sat, 15 May 2021 08:49:01 -0700
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.10.1
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-References: <CABqSeAR9rgARxYGYUVZQgZ0a-wqZxy-qeoVpu495XHxpj0Ku=A@mail.gmail.com>
- <B541CF0E-3410-4CA3-93E4-670052C5FC11@amacapital.net> <CABqSeAT1OeiW69RipcY6U4drPtJ+GaygZqXfd8aL8uX4d4Wp=A@mail.gmail.com>
-In-Reply-To: <CABqSeAT1OeiW69RipcY6U4drPtJ+GaygZqXfd8aL8uX4d4Wp=A@mail.gmail.com>
-From: Andy Lutomirski <luto@kernel.org>
-Date: Thu, 13 May 2021 10:15:54 -0700
-X-Gmail-Original-Message-ID: <CALCETrWfV0C8c9erk-imRrndsY8dEffT=W4mJZnoKYP8-Dxojg@mail.gmail.com>
-Message-ID: <CALCETrWfV0C8c9erk-imRrndsY8dEffT=W4mJZnoKYP8-Dxojg@mail.gmail.com>
-Subject: Re: [RFC PATCH bpf-next seccomp 10/12] seccomp-ebpf: Add ability to
- read user memory
-To: YiFei Zhu <zhuyifei1999@gmail.com>
-Cc: Alexei Starovoitov <alexei.starovoitov@gmail.com>, containers@lists.linux.dev, 
-	bpf <bpf@vger.kernel.org>, YiFei Zhu <yifeifz2@illinois.edu>, 
-	LSM List <linux-security-module@vger.kernel.org>, Alexei Starovoitov <ast@kernel.org>, 
-	Andrea Arcangeli <aarcange@redhat.com>, Austin Kuo <hckuo2@illinois.edu>, 
-	Claudio Canella <claudio.canella@iaik.tugraz.at>, Daniel Borkmann <daniel@iogearbox.net>, 
-	Daniel Gruss <daniel.gruss@iaik.tugraz.at>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, 
-	Giuseppe Scrivano <gscrivan@redhat.com>, Hubertus Franke <frankeh@us.ibm.com>, Jann Horn <jannh@google.com>, 
-	Jinghao Jia <jinghao7@illinois.edu>, Josep Torrellas <torrella@illinois.edu>, 
-	Kees Cook <keescook@chromium.org>, Sargun Dhillon <sargun@sargun.me>, Tianyin Xu <tyxu@illinois.edu>, 
-	Tobin Feldman-Fitzthum <tobin@ibm.com>, Tom Hromatka <tom.hromatka@oracle.com>, Will Drewry <wad@chromium.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+In-Reply-To: <CABqSeASYRXMwTQwLfm_Tapg45VUy9sPfV7BeeV8p7XJrDoLf+Q@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 
-On Thu, May 13, 2021 at 10:13 AM YiFei Zhu <zhuyifei1999@gmail.com> wrote:
->
-> On Thu, May 13, 2021 at 9:53 AM Andy Lutomirski <luto@amacapital.net> wro=
-te:
-> > > On May 12, 2021, at 10:26 PM, YiFei Zhu <zhuyifei1999@gmail.com> wrot=
-e:
-> > >
-> > > =EF=BB=BFOn Wed, May 12, 2021 at 5:36 PM Alexei Starovoitov
-> > > <alexei.starovoitov@gmail.com> wrote:
-> > >> Typically the verifier does all the checks at load time to avoid
-> > >> run-time overhead during program execution. Then at attach time we
-> > >> check that attach parameters provided at load time match exactly
-> > >> to those at attach time. ifindex, attach_btf_id, etc fall into this =
-category.
-> > >> Doing something similar it should be possible to avoid
-> > >> doing get_dumpable() at run-time.
-> > >
-> > > Do you mean to move the check of dumpable to load time instead of
-> > > runtime? I do not think that makes sense. A process may arbitrarily
-> > > set its dumpable attribute during execution via prctl. A process coul=
-d
-> > > do set itself to non-dumpable, before interacting with sensitive
-> > > information that would better not be possible to be dumped (eg.
-> > > ssh-agent does this [1]). Therefore, being dumpable at one point in
-> > > time does not indicate anything about whether it stays dumpable at a
-> > > later point in time. Besides, seccomp filters are inherited across
-> > > clone and exec, attaching to many tasks with no option to detach. Wha=
-t
-> > > should the load-time check of task dump-ability be against? The
-> > > current task may only be the tip of an iceburg.
-> > >
-> > > [1] https://github.com/openssh/openssh-portable/blob/2dc328023f60212c=
-d29504fc05d849133ae47355/ssh-agent.c#L1398
-> > >
-> > >
-> >
-> > First things first: why are you checking dumpable at all?  Once you fig=
-ure out why and whether it=E2=80=99s needed, you may learn something about =
-what task to check.
-> >
-> > I don=E2=80=99t think checking dumpable makes any sense.
->
-> ptrace. We don't want to extend one's ability to read another
-> process's memory if they could not read it via ptrace
-> (process_vm_readv or ptrace(PTRACE_PEEK{TEXT,DATA})). The constraints
-> for ptrace to access a target's memory I've written down earlier [1],
-> but tl;dr: to be at least as restrictive as ptrace, a tracer without
-> CAP_PTRACE cannot trace a non-dumpable process. What's the target
-> process (i.e. the process whose memory is being read) in the context
-> of a seccomp filter? The current task. Does that answer your
-> questions?
->
-> [1] https://lore.kernel.org/bpf/CABqSeAT8iz-VhWjWqABqGbF7ydkoT7LmzJ5Do8K1=
-ANQvQK=3DFJQ@mail.gmail.com/
+On 5/10/21 10:21 PM, YiFei Zhu wrote:
+> On Mon, May 10, 2021 at 12:47 PM Andy Lutomirski <luto@kernel.org> wrote:
+>> On Mon, May 10, 2021 at 10:22 AM YiFei Zhu <zhuyifei1999@gmail.com> wrote:
+>>>
+>>> From: YiFei Zhu <yifeifz2@illinois.edu>
+>>>
+>>> Based on: https://lists.linux-foundation.org/pipermail/containers/2018-February/038571.html
+>>>
+>>> This patchset enables seccomp filters to be written in eBPF.
+>>> Supporting eBPF filters has been proposed a few times in the past.
+>>> The main concerns were (1) use cases and (2) security. We have
+>>> identified many use cases that can benefit from advanced eBPF
+>>> filters, such as:
+>>
+>> I haven't reviewed this carefully, but I think we need to distinguish
+>> a few things:
+>>
+>> 1. Using the eBPF *language*.
+>>
+>> 2. Allowing the use of stateful / non-pure eBPF features.
+>>
+>> 3. Allowing the eBPF programs to read the target process' memory.
+>>
+>> I'm generally in favor of (1).  I'm not at all sure about (2), and I'm
+>> even less convinced by (3).
+>>
+>>>
+>>>   * exec-only-once filter / apply filter after exec
+>>
+>> This is (2).  I'm not sure it's a good idea.
+> 
+> The basic idea is that for a container runtime it may wait to execute
+> a program in a container without that program being able to execve
+> another program, stopping any attack that involves loading another
+> binary. The container runtime can block any syscall but execve in the
+> exec-ed process by using only cBPF.
+> 
+> The use case is suggested by Andrea Arcangeli and Giuseppe Scrivano.
+> @Andrea and @Giuseppe, could you clarify more in case I missed
+> something?
 
-The whole seccomp model is based on the assumption that the filter
-installer completely controls the filtered task.  Reading memory is
-not qualitatively different.
+We've discussed having a notifier-using filter be able to replace its
+filter.  This would allow this and other use cases without any
+additional eBPF or cBPF code.
 
-To be clear, this is not to be interpreted as an ack to allowing
-seccomp to read process memory.  I'm saying that, if seccomp gains the
-ability to read process memory, I don't think a dumpable or ptrace
-check is needed.
+>> eBPF doesn't really have a privilege model yet.  There was a long and
+>> disappointing thread about this awhile back.
+> 
+> The idea is that “seccomp-eBPF does not make life easier for an
+> adversary”. Any attack an adversary could potentially utilize
+> seccomp-eBPF, they can do the same with other eBPF features, i.e. it
+> would be an issue with eBPF in general rather than specifically
+> seccomp’s use of eBPF.
+> 
+> Here it is referring to the helpers goes to the base
+> bpf_base_func_proto if the caller is unprivileged (!bpf_capable ||
+> !perfmon_capable). In this case, if the adversary would utilize eBPF
+> helpers to perform an attack, they could do it via another
+> unprivileged prog type.
+> 
+> That said, there are a few additional helpers this patchset is adding:
+> * get_current_uid_gid
+> * get_current_pid_tgid
+>   These two provide public information (are namespaces a concern?). I
+> have no idea what kind of exploit it could add unless the adversary
+> somehow side-channels the task_struct? But in that case, how is the
+> reading of task_struct different from how the rest of the kernel is
+> reading task_struct?
+
+Yes, namespaces are a concern.  This idea got mostly shot down for kdbus
+(what ever happened to that?), and it likely has the same problems for
+seccomp.
+
+>>
+>> What is this for?
+> 
+> Memory reading opens up lots of use cases. For example, logging what
+> files are being opened without imposing too much performance penalty
+> from strace. Or as an accelerator for user notify emulation, where
+> syscalls can be rejected on a fast path if we know the memory contents
+> does not satisfy certain conditions that user notify will check.
+> 
+
+This has all kinds of race conditions.
+
+
+I hate to be a party pooper, but this patchset is going to very high bar
+to acceptance.  Right now, seccomp has a couple of excellent properties:
+
+First, while it has limited expressiveness, it is simple enough that the
+implementation can be easily understood and the scope for
+vulnerabilities that fall through the cracks of the seccomp sandbox
+model is low.  Compare this to Windows' low-integrity/high-integrity
+sandbox system: there is a never ending string of sandbox escapes due to
+token misuse, unexpected things at various integrity levels, etc.
+Seccomp doesn't have tokens or integrity levels, and these bugs don't
+happen.
+
+Second, seccomp works, almost unchanged, in a completely unprivileged
+context.  The last time making eBPF work sensibly in a less- or
+-unprivileged context, the maintainers mostly rejected the idea of
+developing/debugging a permission model for maps, cleaning up the bpf
+object id system, etc.  You are going to have a very hard time
+convincing the seccomp maintainers to let any of these mechanism
+interact with seccomp until the underlying permission model is in place.
+
+--Andy
