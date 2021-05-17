@@ -1,239 +1,115 @@
-Received: from mail-io1-f48.google.com (mail-io1-f48.google.com [209.85.166.48])
+Received: from mail-il1-f176.google.com (mail-il1-f176.google.com [209.85.166.176])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6205E70
-	for <containers@lists.linux.dev>; Mon, 17 May 2021 17:08:35 +0000 (UTC)
-Received: by mail-io1-f48.google.com with SMTP id i7so6516157ioa.12
-        for <containers@lists.linux.dev>; Mon, 17 May 2021 10:08:35 -0700 (PDT)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 17ED870
+	for <containers@lists.linux.dev>; Mon, 17 May 2021 17:54:32 +0000 (UTC)
+Received: by mail-il1-f176.google.com with SMTP id z1so6887744ils.0
+        for <containers@lists.linux.dev>; Mon, 17 May 2021 10:54:31 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=sargun.me; s=google;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc:content-transfer-encoding;
-        bh=hN1fiA1phqGUjL4yu5RPTW49+OWuWPqOhTclUxcTVTM=;
-        b=stvBT95tmJr9ijwlzfUrpbqTeGdjjqzLDbsC1KySG1+IwC4oOU3lk0OhRAPjqM+QIK
-         NISJeFGF4Bc3IN9KlaBuuKAvNaWhy8mQ0Qw1Vsv1olKD4D49m+WADyzLiS0+Yg+e0YgS
-         fdf+5jNwgljDMOCt43k0bYZSvGmf+NPMPi768=
+         :cc;
+        bh=zLSBrGc0WfP3Pu9mRhepzRhhSNQ0d1+mv4ZIuny3PCE=;
+        b=apMSSFZpnC0TCNR6wciOFVOjRv8HfBGsEB0/NxZxsirwzsFUiv6nrFHwONXyfMSlEE
+         A1gPKjm42FG93MI7TR/J504p6LZ3yq44igR52eJTPS8fSneRQbJ+w67uroW9BpNdf1FK
+         f7jpVKFrswoQOw/92eHdDcfxYbpaJ+ymYLPl0=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=hN1fiA1phqGUjL4yu5RPTW49+OWuWPqOhTclUxcTVTM=;
-        b=hBiWEKTe4LIbT427ys1ZJySUmpdleEu1sAHizVELWglEXGpoQnIu3tydrowRzvYxDZ
-         KM0X8OnnUPVSr60LN+xtcWRx05dfpZxUo+rSt+ijlMdd9IDKOoc2/QOLUZ3ZlTO2JDRB
-         XZ2dj1gddiGtd1sWv5sKnaxNveAbLBjSWh7vAXOsJu+FWH2MjKHBIWTVHu3j1GHttVMP
-         0vMQZDNjR1q69kgsOimfeCdTVSX25jF3LDNDhJn5eTooGK/JCmL3W3LixxbuGlsKs6z9
-         bmft+O7NawCsT3JviIoPnyO9oo9KB73ZlL1kOs0aXmY/tA3az3vErFdmT/kO/QXd5Vq1
-         FAXw==
-X-Gm-Message-State: AOAM5327ykhwDrlkgBVs1GitKtdn+a+UMx4r9x8pGKQVSw9JR6ofI44n
-	LDluyFZ2jOcBzpG/Lzr4+C4eflrsp8BvkRwHy7gUJA==
-X-Google-Smtp-Source: ABdhPJyxx1VOxJo+YjtzQesx0ri4JWpHUTsm/VBLiwbJ8L3CSi75xkRZ3+Sx1dQPhNxWcFsB+t6M+Hw5iNklVL4sGp8=
-X-Received: by 2002:a05:6638:10c4:: with SMTP id q4mr977779jad.29.1621271314217;
- Mon, 17 May 2021 10:08:34 -0700 (PDT)
+         :message-id:subject:to:cc;
+        bh=zLSBrGc0WfP3Pu9mRhepzRhhSNQ0d1+mv4ZIuny3PCE=;
+        b=ite18rFI9LR763Bs5ZdlORJ3eDcn5Kw6lr99NRiKo8MkhF3cGllNX1vyXsXEIbtai1
+         TTzCQP2L9mNCzAY0IcWdwsobkBIYSquaPa+ycGg8y+3zOyF9xWeGG6xHrunMCH7SBt5O
+         bN0K2cgac5pruGTsykkmkjVVB4VDfaYZrQ2SNtl+EnQeV8SPYcIzmhjlCD3eYZnJ6vrU
+         wkLxG269o0cVrtymuemGwCkKBFpyx0bxvNu9ka5lMoAV+AJMbaX51mAyWxkno82ZFIDL
+         hAhN8NIZ3Ovf2v2gRQK0DuNn63OkOmp58tSVaul/Vmq43DskIg3IsCo3SMyfS/tIKdPJ
+         Cinw==
+X-Gm-Message-State: AOAM5323DCjBlgsVqcEzalu6v0c1Omnii4AQzTn7H5Gs5vI+GZuPo6h3
+	eODkMz7XY6ZBacUUodqDwY4GKWsmcvCMhpYcZ/HvJQ==
+X-Google-Smtp-Source: ABdhPJz0yLEKO0WcXF7iyAjs9lEnYLEYrMbzmli7FuGJ1q9A81v4fu3+IcyiLYeLQyULoMrRAZ/WMgIDAxvC2AxDVno=
+X-Received: by 2002:a92:2a0a:: with SMTP id r10mr765713ile.274.1621274071101;
+ Mon, 17 May 2021 10:54:31 -0700 (PDT)
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-References: <cover.1620499942.git.yifeifz2@illinois.edu> <CALCETrUQBonh5BC4eomTLpEOFHVcQSz9SPcfOqNFTf2TPht4-Q@mail.gmail.com>
- <CABqSeASYRXMwTQwLfm_Tapg45VUy9sPfV7BeeV8p7XJrDoLf+Q@mail.gmail.com>
- <fffbea8189794a8da539f6082af3de8e@DM5PR11MB1692.namprd11.prod.outlook.com> <CAGMVDEGzGB4+6gJPTw6Tdng5ur9Jua+mCbqwPoNZ16EFaDcmjA@mail.gmail.com>
-In-Reply-To: <CAGMVDEGzGB4+6gJPTw6Tdng5ur9Jua+mCbqwPoNZ16EFaDcmjA@mail.gmail.com>
+References: <20210502001851.3346-1-sargun@sargun.me> <20210502001851.3346-4-sargun@sargun.me>
+ <20210511215010.GB1964106@cisco>
+In-Reply-To: <20210511215010.GB1964106@cisco>
 From: Sargun Dhillon <sargun@sargun.me>
-Date: Mon, 17 May 2021 10:07:58 -0700
-Message-ID: <CAMp4zn86JwT-p8-unev9rOBeeyfm4KNxkDzygCqYjX=duBMywg@mail.gmail.com>
-Subject: Re: [RFC PATCH bpf-next seccomp 00/12] eBPF seccomp filters
-To: Tianyin Xu <tyxu@illinois.edu>
-Cc: Andy Lutomirski <luto@kernel.org>, YiFei Zhu <zhuyifei1999@gmail.com>, 
-	"containers@lists.linux.dev" <containers@lists.linux.dev>, bpf <bpf@vger.kernel.org>, 
-	"Zhu, YiFei" <yifeifz2@illinois.edu>, LSM List <linux-security-module@vger.kernel.org>, 
-	Alexei Starovoitov <ast@kernel.org>, Andrea Arcangeli <aarcange@redhat.com>, 
-	"Kuo, Hsuan-Chi" <hckuo2@illinois.edu>, Claudio Canella <claudio.canella@iaik.tugraz.at>, 
-	Daniel Borkmann <daniel@iogearbox.net>, Daniel Gruss <daniel.gruss@iaik.tugraz.at>, 
-	Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, Giuseppe Scrivano <gscrivan@redhat.com>, 
-	Hubertus Franke <frankeh@us.ibm.com>, Jann Horn <jannh@google.com>, 
-	"Jia, Jinghao" <jinghao7@illinois.edu>, "Torrellas, Josep" <torrella@illinois.edu>, 
-	Kees Cook <keescook@chromium.org>, Tobin Feldman-Fitzthum <tobin@ibm.com>, 
-	Tom Hromatka <tom.hromatka@oracle.com>, Will Drewry <wad@chromium.org>
+Date: Mon, 17 May 2021 10:53:55 -0700
+Message-ID: <CAMp4zn-crcdi6AR9VfAmpb0TO9sDtpdwA4C59ERqwdoQW7yTAg@mail.gmail.com>
+Subject: Re: [PATCH 3/4] seccomp: Support atomic "addfd + send reply"
+To: Tycho Andersen <tycho@tycho.pizza>
+Cc: Kees Cook <keescook@chromium.org>, LKML <linux-kernel@vger.kernel.org>, 
+	Linux Containers <containers@lists.linux.dev>, Andy Lutomirski <luto@kernel.org>, 
+	Rodrigo Campos <rodrigo@kinvolk.io>, =?UTF-8?Q?Mauricio_V=C3=A1squez_Bernal?= <mauricio@kinvolk.io>, 
+	Giuseppe Scrivano <gscrivan@redhat.com>, Christian Brauner <christian.brauner@ubuntu.com>, 
+	=?UTF-8?B?TWlja2HDq2wgU2FsYcO8bg==?= <mic@linux.microsoft.com>
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
 
-On Sun, May 16, 2021 at 1:39 AM Tianyin Xu <tyxu@illinois.edu> wrote:
+On Tue, May 11, 2021 at 2:50 PM Tycho Andersen <tycho@tycho.pizza> wrote:
 >
-> On Sat, May 15, 2021 at 10:49 AM Andy Lutomirski <luto@kernel.org> wrote:
+> Hi,
+>
+> On Sat, May 01, 2021 at 05:18:50PM -0700, Sargun Dhillon wrote:
+>
+> [snip]
+>
+> > Other patches in this series add a way to block signals when a syscall
+> > is put to wait by seccomp.
+>
+> I guess we can drop this bit from the message if the series is split.
+>
+Makes sense.
+
+> > The struct seccomp_notif_resp, used when doing SECCOMP_IOCTL_NOTIF_SEND
+> > ioctl() to send a response to the target, has three more fields that we
+> > don't allow to set when doing the addfd ioctl() to also return. The
+> > reasons to disallow each field are:
+> >  * val: This will be set to the new allocated fd. No point taking it
+> >    from userspace in this case.
+> >  * error: If this is non-zero, the value is ignored. Therefore,
+> >    it is pointless in this case as we want to return the value.
+> >  * flags: The only flag is to let userspace continue to execute the
+> >    syscall. This seems pointless, as we want the syscall to return the
+> >    allocated fd.
 > >
-> > On 5/10/21 10:21 PM, YiFei Zhu wrote:
-> > > On Mon, May 10, 2021 at 12:47 PM Andy Lutomirski <luto@kernel.org> wr=
-ote:
-> > >> On Mon, May 10, 2021 at 10:22 AM YiFei Zhu <zhuyifei1999@gmail.com> =
-wrote:
-> > >>>
-> > >>> From: YiFei Zhu <yifeifz2@illinois.edu>
-> > >>>
-> > >>> Based on: https://urldefense.com/v3/__https://lists.linux-foundatio=
-n.org/pipermail/containers/2018-February/038571.html__;!!DZ3fjg!thbAoRgmCeW=
-jlv0qPDndNZW1j6Y2Kl_huVyUffr4wVbISf-aUiULaWHwkKJrNJyo$
-> > >>>
-> > >>> This patchset enables seccomp filters to be written in eBPF.
-> > >>> Supporting eBPF filters has been proposed a few times in the past.
-> > >>> The main concerns were (1) use cases and (2) security. We have
-> > >>> identified many use cases that can benefit from advanced eBPF
-> > >>> filters, such as:
-> > >>
-> > >> I haven't reviewed this carefully, but I think we need to distinguis=
-h
-> > >> a few things:
-> > >>
-> > >> 1. Using the eBPF *language*.
-> > >>
-> > >> 2. Allowing the use of stateful / non-pure eBPF features.
-> > >>
-> > >> 3. Allowing the eBPF programs to read the target process' memory.
-> > >>
-> > >> I'm generally in favor of (1).  I'm not at all sure about (2), and I=
-'m
-> > >> even less convinced by (3).
-> > >>
-> > >>>
-> > >>>   * exec-only-once filter / apply filter after exec
-> > >>
-> > >> This is (2).  I'm not sure it's a good idea.
-> > >
-> > > The basic idea is that for a container runtime it may wait to execute
-> > > a program in a container without that program being able to execve
-> > > another program, stopping any attack that involves loading another
-> > > binary. The container runtime can block any syscall but execve in the
-> > > exec-ed process by using only cBPF.
-> > >
-> > > The use case is suggested by Andrea Arcangeli and Giuseppe Scrivano.
-> > > @Andrea and @Giuseppe, could you clarify more in case I missed
-> > > something?
+> > This is why those fields are not possible to set when using this new
+> > flag.
+>
+> I don't quite understand this; you don't need a NOTIF_SEND at all
+> with the way this currently works, right?
+>
+I reworded:
+
+This effectively combines SECCOMP_IOCTL_NOTIF_ADDFD and
+SECCOMP_IOCTL_NOTIF_SEND into an atomic opteration. The notification's
+return value, nor error can be set by the user. Upon successful invocation
+of the SECCOMP_IOCTL_NOTIF_ADDFD ioctl with the SECCOMP_ADDFD_FLAG_SEND
+flag, the notifying process's errno will be 0, and the return value will
+be the file descriptor number that was installed.
+
+How does that sound?
+
+> > @@ -1113,7 +1136,7 @@ static int seccomp_do_user_notification(int this_syscall,
+> >                                                struct seccomp_kaddfd, list);
+> >               /* Check if we were woken up by a addfd message */
+> >               if (addfd)
+> > -                     seccomp_handle_addfd(addfd);
+> > +                     seccomp_handle_addfd(addfd, &n);
 > >
-> > We've discussed having a notifier-using filter be able to replace its
-> > filter.  This would allow this and other use cases without any
-> > additional eBPF or cBPF code.
+> >       }  while (n.state != SECCOMP_NOTIFY_REPLIED);
 > >
 >
-> A notifier is not always a solution (even ignoring its perf overhead).
->
-> One problem, pointed out by Andrea Arcangeli, is that notifiers need
-> userspace daemons. So, it can hardly be used by daemonless container
-> engines like Podman.
->
-> And, /* sorry for repeating.. */ the performance overhead of notifiers
-> is not close to ebpf, which prevents use cases that require native
-> performance.
-
-While I agree with you that this is the case right now, there's no reason i=
-t
-has to be the case. There's a variety of mechanisms that can be employed
-to significantly speed up the performance of the notifier. For example, rig=
-ht
-now the notifier is behind one large per-filter lock. That could be removed
-allowing for better concurrency. There are a large number of mechanisms
-that scale O(n) with the outstanding notifications -- again, something
-that could be improved.
-
-The other big improvement that could be made is being able to use something
-like io_uring with the notifier interface, but it would require a
-fairly significant
-user API change -- and a move away from ioctl. I'm not sure if people are
-excited about that idea at the moment.
+> This while() bit is introduced in the previous patch, can we fold this
+> deletion into that somehow?
+I'm not sure what you're getting at. This just an argument change which
+also passes the notification to the addfd function. The patch is split out
+to allow it to be backported to stable.
 
 >
+> Thanks,
 >
-> > >> eBPF doesn't really have a privilege model yet.  There was a long an=
-d
-> > >> disappointing thread about this awhile back.
-> > >
-> > > The idea is that =E2=80=9Cseccomp-eBPF does not make life easier for =
-an
-> > > adversary=E2=80=9D. Any attack an adversary could potentially utilize
-> > > seccomp-eBPF, they can do the same with other eBPF features, i.e. it
-> > > would be an issue with eBPF in general rather than specifically
-> > > seccomp=E2=80=99s use of eBPF.
-> > >
-> > > Here it is referring to the helpers goes to the base
-> > > bpf_base_func_proto if the caller is unprivileged (!bpf_capable ||
-> > > !perfmon_capable). In this case, if the adversary would utilize eBPF
-> > > helpers to perform an attack, they could do it via another
-> > > unprivileged prog type.
-> > >
-> > > That said, there are a few additional helpers this patchset is adding=
-:
-> > > * get_current_uid_gid
-> > > * get_current_pid_tgid
-> > >   These two provide public information (are namespaces a concern?). I
-> > > have no idea what kind of exploit it could add unless the adversary
-> > > somehow side-channels the task_struct? But in that case, how is the
-> > > reading of task_struct different from how the rest of the kernel is
-> > > reading task_struct?
-> >
-> > Yes, namespaces are a concern.  This idea got mostly shot down for kdbu=
-s
-> > (what ever happened to that?), and it likely has the same problems for
-> > seccomp.
-> >
-> > >>
-> > >> What is this for?
-> > >
-> > > Memory reading opens up lots of use cases. For example, logging what
-> > > files are being opened without imposing too much performance penalty
-> > > from strace. Or as an accelerator for user notify emulation, where
-> > > syscalls can be rejected on a fast path if we know the memory content=
-s
-> > > does not satisfy certain conditions that user notify will check.
-> > >
-> >
-> > This has all kinds of race conditions.
-> >
-> >
-> > I hate to be a party pooper, but this patchset is going to very high ba=
-r
-> > to acceptance.  Right now, seccomp has a couple of excellent properties=
-:
-> >
-> > First, while it has limited expressiveness, it is simple enough that th=
-e
-> > implementation can be easily understood and the scope for
-> > vulnerabilities that fall through the cracks of the seccomp sandbox
-> > model is low.  Compare this to Windows' low-integrity/high-integrity
-> > sandbox system: there is a never ending string of sandbox escapes due t=
-o
-> > token misuse, unexpected things at various integrity levels, etc.
-> > Seccomp doesn't have tokens or integrity levels, and these bugs don't
-> > happen.
-> >
-> > Second, seccomp works, almost unchanged, in a completely unprivileged
-> > context.  The last time making eBPF work sensibly in a less- or
-> > -unprivileged context, the maintainers mostly rejected the idea of
-> > developing/debugging a permission model for maps, cleaning up the bpf
-> > object id system, etc.  You are going to have a very hard time
-> > convincing the seccomp maintainers to let any of these mechanism
-> > interact with seccomp until the underlying permission model is in place=
-.
-> >
-> > --Andy
->
-> Thanks for pointing out the tradeoff between expressiveness vs. simplicit=
-y.
->
-> Note that we are _not_ proposing to replace cbpf, but propose to also
-> support ebpf filters. There certainly are use cases where cbpf is
-> sufficient, but there are also important use cases ebpf could make
-> life much easier.
->
-> Most importantly, we strongly believe that ebpf filters can be
-> supported without reducing security.
->
-> No worries about =E2=80=9Cparty pooping=E2=80=9D and we appreciate the fe=
-edback. We=E2=80=99d
-> love to hear concerns and collect feedback so we can address them to
-> hit that very high bar.
->
->
-> ~t
->
-> --
-> Tianyin Xu
-> University of Illinois at Urbana-Champaign
-> https://tianyin.github.io/
+> Tycho
