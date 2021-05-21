@@ -1,93 +1,77 @@
-Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-il1-f169.google.com (mail-il1-f169.google.com [209.85.166.169])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 653B870
-	for <containers@lists.linux.dev>; Fri, 21 May 2021 15:45:38 +0000 (UTC)
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 35C1D61401;
-	Fri, 21 May 2021 15:45:34 +0000 (UTC)
-Date: Fri, 21 May 2021 17:45:32 +0200
-From: Christian Brauner <christian.brauner@ubuntu.com>
-To: Sargun Dhillon <sargun@sargun.me>
-Cc: Kees Cook <keescook@chromium.org>, LKML <linux-kernel@vger.kernel.org>,
-	containers@lists.linux.dev, Tycho Andersen <tycho@tycho.pizza>,
-	Andy Lutomirski <luto@kernel.org>,
-	Rodrigo Campos <rodrigo@kinvolk.io>,
-	Mauricio =?utf-8?Q?V=C3=A1squez?= Bernal <mauricio@kinvolk.io>,
-	Giuseppe Scrivano <gscrivan@redhat.com>,
-	=?utf-8?Q?Micka=C3=ABl_Sala=C3=BCn?= <mic@linux.microsoft.com>
-Subject: Re: [PATCH v2 3/4] seccomp: Support atomic "addfd + send reply"
-Message-ID: <20210521154532.utttvofngdg6qeob@wittgenstein>
-References: <20210517193908.3113-1-sargun@sargun.me>
- <20210517193908.3113-4-sargun@sargun.me>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 95A7670
+	for <containers@lists.linux.dev>; Fri, 21 May 2021 16:24:30 +0000 (UTC)
+Received: by mail-il1-f169.google.com with SMTP id o9so18722548ilh.6
+        for <containers@lists.linux.dev>; Fri, 21 May 2021 09:24:30 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=sargun.me; s=google;
+        h=mime-version:from:date:message-id:subject:to:cc;
+        bh=s3TiO4SClJyDInCdOXMYVyRwBESE/9XdyYKBr/TBRzw=;
+        b=xD9f/jwqLhWfHwiZxlTKH7cwVlWbuFa6PW7DSiogWZJeTgg3Wfvdvd++MQb0g3Ln74
+         iQE98/GHLAw6wtdrzSFU8NpCdI3hoUT32o6aX2X7lDvo+p9S2OH1wZ5wsI0lktjNwemA
+         op6jiStYDsM1u0XK68/0NHuL1WFB1Q5fCetT0=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to:cc;
+        bh=s3TiO4SClJyDInCdOXMYVyRwBESE/9XdyYKBr/TBRzw=;
+        b=OHruqh42Y/LJYsk9ZQUr848YAlsl3+2zyjpkx+GoCIbyYriruak6QkYr1zvulJr/1I
+         tRomY5uMngRJqXiNhHBX8tZ1X4ndFnY5xdAJ9dnRdPRRe3liZ2rmbRbUETP1BMt1To5+
+         ketDuRl6wdGqia1jHnkaZ6ewpv8n+Rd/LYlZYTDOyp6y/srd9RnUGlqCQbLFF9rxDXUb
+         THVm6SiAwMwgDsBmn8Kf2OyZqo/GYPN3pIuLcdRC9hIxn9YSRjK3BDyWRrrSe9NTuGmE
+         iaErIoa31duNCEi+qdQpAQnpOSN7GjHE4UnHgnDSw8llCLUU/Dwjm3GG4eRcRyVZvkHx
+         fYHw==
+X-Gm-Message-State: AOAM533WuciptkjQTKvK/ZuifB9E2pML1cvqolVnRBYdWPU75Sj5ow3k
+	zDsb4GD4vTv7tq+Dd7M2l19mxln5gFSDdh+5YArrlBmiqbNZxQ==
+X-Google-Smtp-Source: ABdhPJwYWl9iDZt5RNQ+BQ3SUq1rsxOI4G0oVZhviIvZbj3YffXMXuSOg3ayJSV5/q+aLFyD5F2e1uzHjvQnzhtXnTk=
+X-Received: by 2002:a92:c56a:: with SMTP id b10mr11327888ilj.17.1621614268707;
+ Fri, 21 May 2021 09:24:28 -0700 (PDT)
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <20210517193908.3113-4-sargun@sargun.me>
+From: Sargun Dhillon <sargun@sargun.me>
+Date: Fri, 21 May 2021 09:23:52 -0700
+Message-ID: <CAMp4zn93WRF5u=et=detunN7exhQNoFctr-7Qb8-a9=As8vaQw@mail.gmail.com>
+Subject: Preemption Signal Management
+To: Linux Containers <containers@lists.linux.dev>, LKML <linux-kernel@vger.kernel.org>
+Cc: Kees Cook <keescook@chromium.org>, Christian Brauner <christian.brauner@ubuntu.com>, 
+	Andy Lutomirski <luto@kernel.org>, Tycho Andersen <tycho@tycho.pizza>, 
+	Giuseppe Scrivano <gscrivan@redhat.com>, Rodrigo Campos <rodrigo@kinvolk.io>, 
+	=?UTF-8?Q?Mauricio_V=C3=A1squez_Bernal?= <mauricio@kinvolk.io>
+Content-Type: text/plain; charset="UTF-8"
 
-On Mon, May 17, 2021 at 12:39:07PM -0700, Sargun Dhillon wrote:
-> From: Rodrigo Campos <rodrigo@kinvolk.io>
-> 
-> Alban Crequy reported a race condition userspace faces when we want to
-> add some fds and make the syscall return them[1] using seccomp notify.
-> 
-> The problem is that currently two different ioctl() calls are needed by
-> the process handling the syscalls (agent) for another userspace process
-> (target): SECCOMP_IOCTL_NOTIF_ADDFD to allocate the fd and
-> SECCOMP_IOCTL_NOTIF_SEND to return that value. Therefore, it is possible
-> for the agent to do the first ioctl to add a file descriptor but the
-> target is interrupted (EINTR) before the agent does the second ioctl()
-> call.
-> 
-> This patch adds a flag to the ADDFD ioctl() so it adds the fd and
-> returns that value atomically to the target program, as suggested by
-> Kees Cook[2]. This is done by simply allowing
-> seccomp_do_user_notification() to add the fd and return it in this case.
-> Therefore, in this case the target wakes up from the wait in
-> seccomp_do_user_notification() either to interrupt the syscall or to add
-> the fd and return it.
-> 
-> This "allocate an fd and return" functionality is useful for syscalls
-> that return a file descriptor only, like connect(2). Other syscalls that
-> return a file descriptor but not as return value (or return more than
-> one fd), like socketpair(), pipe(), recvmsg with SCM_RIGHTs, will not
-> work with this flag.
-> 
-> This effectively combines SECCOMP_IOCTL_NOTIF_ADDFD and
-> SECCOMP_IOCTL_NOTIF_SEND into an atomic opteration. The notification's
-> return value, nor error can be set by the user. Upon successful invocation
-> of the SECCOMP_IOCTL_NOTIF_ADDFD ioctl with the SECCOMP_ADDFD_FLAG_SEND
-> flag, the notifying process's errno will be 0, and the return value will
-> be the file descriptor number that was installed.
-> 
-> [1]: https://lore.kernel.org/lkml/CADZs7q4sw71iNHmV8EOOXhUKJMORPzF7thraxZYddTZsxta-KQ@mail.gmail.com/
-> [2]: https://lore.kernel.org/lkml/202012011322.26DCBC64F2@keescook/
-> 
-> Signed-off-by: Rodrigo Campos <rodrigo@kinvolk.io>
-> Signed-off-by: Sargun Dhillon <sargun@sargun.me>
-> Acked-by: Tycho Andersen <tycho@tycho.pizza>
-> ---
->  .../userspace-api/seccomp_filter.rst          | 12 +++++
->  include/uapi/linux/seccomp.h                  |  1 +
->  kernel/seccomp.c                              | 49 +++++++++++++++++--
->  3 files changed, 58 insertions(+), 4 deletions(-)
-> 
-> diff --git a/Documentation/userspace-api/seccomp_filter.rst b/Documentation/userspace-api/seccomp_filter.rst
-> index 6efb41cc8072..d61219889e49 100644
-> --- a/Documentation/userspace-api/seccomp_filter.rst
-> +++ b/Documentation/userspace-api/seccomp_filter.rst
-> @@ -259,6 +259,18 @@ and ``ioctl(SECCOMP_IOCTL_NOTIF_SEND)`` a response, indicating what should be
->  returned to userspace. The ``id`` member of ``struct seccomp_notif_resp`` should
->  be the same ``id`` as in ``struct seccomp_notif``.
->  
-> +Userspace can also add file descriptors to the notifying process via
-> +``ioctl(SECCOMP_IOCTL_NOTIF_ADDFD)``. The ``id`` member of
-> +``struct seccomp_notif_addfd`` should be the same ``id`` as in
-> +``struct seccomp_notif``. The ``newfd_flags`` flag may be used to set flags
-> +like O_EXEC on the file descriptor in the notifying process. If the supervisor
+Andy pointed out that we need a mechanism to determine whether or
+notifications are preempted. He suggested we use EPOLLPRI to indicate
+whether or not notifications are preempted. My outstanding question is
+whether or not we need to be able to get insight of what caused the
+preemption, and to which notification.
 
-nit:
-s/O_EXEC/O_CLOEXEC/
+In the past, Christian has suggested just background polling
+notification IDs for validity, which is a fine mechanism to determine
+that preemption has occurred. We could raise EPOLLPRI whenever a
+notification has changed into the preempted state, but that would
+require an O(n) operations across all outstanding notifications to
+determine which one was preempted, and in addition, it doesn't give a
+lot of information as to why the preemption occurred (fatal signal,
+preemption?).
+
+In order to try to break this into small parts, I suggest:
+1. We make it so EPOLLPRI is raised (always) on preempted notifications
+2. We allow the user to set a flag to "track" notifications. If they
+specify this flag, they can then run a "stronger" ioctl -- let's say
+SECCOMP_IOCTL_NOTIF_STATUS, which, if the flag was specified upon
+receiving the notification will return the current state of the
+notification and if a signal preempted it, it will always do that.
+
+---
+Alternatively (and this is my preference), we add another filter flag,
+like SECCOMP_FILTER_FLAG_NOTIF_PREEMPT, which changes the behaviour
+to:
+1. Raise EPOLLPRI on preempted notifications
+2. All preemption notifications must be cleared via
+SECCOMP_IOCTL_NOTIF_RECV_STATUS.
+
+Opinions?
