@@ -1,111 +1,248 @@
-Received: from out01.mta.xmission.com (out01.mta.xmission.com [166.70.13.231])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-io1-f44.google.com (mail-io1-f44.google.com [209.85.166.44])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 68D5B70
-	for <containers@lists.linux.dev>; Fri, 21 May 2021 18:11:47 +0000 (UTC)
-Received: from in02.mta.xmission.com ([166.70.13.52])
-	by out01.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1lk8BX-000zLU-Nh; Fri, 21 May 2021 10:39:39 -0600
-Received: from ip68-227-160-95.om.om.cox.net ([68.227.160.95] helo=fess.xmission.com)
-	by in02.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1lk8BW-00Ahr4-PK; Fri, 21 May 2021 10:39:39 -0600
-From: ebiederm@xmission.com (Eric W. Biederman)
-To: Sargun Dhillon <sargun@sargun.me>
-Cc: Linux Containers <containers@lists.linux.dev>,  LKML
- <linux-kernel@vger.kernel.org>,  Kees Cook <keescook@chromium.org>,
-  Christian Brauner <christian.brauner@ubuntu.com>,  Andy Lutomirski
- <luto@kernel.org>,  Tycho Andersen <tycho@tycho.pizza>,  Giuseppe Scrivano
- <gscrivan@redhat.com>,  Rodrigo Campos <rodrigo@kinvolk.io>,  Mauricio
- =?utf-8?Q?V=C3=A1squez?= Bernal <mauricio@kinvolk.io>
-References: <CAMp4zn93WRF5u=et=detunN7exhQNoFctr-7Qb8-a9=As8vaQw@mail.gmail.com>
-Date: Fri, 21 May 2021 11:39:27 -0500
-In-Reply-To: <CAMp4zn93WRF5u=et=detunN7exhQNoFctr-7Qb8-a9=As8vaQw@mail.gmail.com>
-	(Sargun Dhillon's message of "Fri, 21 May 2021 09:23:52 -0700")
-Message-ID: <m1eee0xcqo.fsf@fess.ebiederm.org>
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/26.1 (gnu/linux)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 097752FAE
+	for <containers@lists.linux.dev>; Mon, 24 May 2021 18:56:06 +0000 (UTC)
+Received: by mail-io1-f44.google.com with SMTP id o21so28885659iow.13
+        for <containers@lists.linux.dev>; Mon, 24 May 2021 11:56:06 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=sargun.me; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=kY5ODL09+MFOG0z0UW2n/UhvHutj9fmmLO3qpZTedGA=;
+        b=DU9Nb3d0eumYE6yPGePAk/liCz7kzb4TdqRZU3Q9TXKx1N0JT/l2RW1mQ5dVtqN8WV
+         RfLtOktNcAG2XTXy0wmJy59K9Kj9T2JgvzslsaBWDS8Dug081GxE3ql9gr8eG0H8i/8W
+         phWc3AWv+VY0QMEc1d8eIrsiprPFZogFOsvco=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=kY5ODL09+MFOG0z0UW2n/UhvHutj9fmmLO3qpZTedGA=;
+        b=Q7+ICC9rgPzTlwYlM3j/xTDYS+4CIZX6H0TErd8j3+hG5kGmOlT2fUYd/3IlPQrcNb
+         NlLRr+tQj++gqD6Vaz0vFTdTagGVEWvx8mTtuBoeLht8V5pzj5DAq1OeTVI8YsgtJhZg
+         +SLiy8StwFdr5953jffruizTp8AQCB7zJzcBKybCasRupw8WambP0tZ1EQdXCK9on6da
+         wviCpmVuG2dTaZYKVlR14B7hTjlOLladH8hTIjgrNs/BijJ1VVia+JBj0EJv+AQGPsEr
+         +71uYm9+PjDrt/0axyBOwaU2zT1U0+YGC56nsSWDcat4T+BuMElSz9qTifrYXi4Q774S
+         WMTQ==
+X-Gm-Message-State: AOAM530vyY1Zbr5UChm96gAA1blJayKTnpWUdRjFSWVp8Pa2TedEQCbc
+	xWbeGf0KEnDfFtojwfEKZE7rW3xXepNF1CV3SOvrKg==
+X-Google-Smtp-Source: ABdhPJyU5QTyR2R5Ov3SlHc+M44rspLop3d/kpVd20Xusxd9ECjmltvb99VG+PRGEuN4LJN9mjVBUZxMjMroEa/D55c=
+X-Received: by 2002:a05:6602:2d8f:: with SMTP id k15mr16960080iow.114.1621882565864;
+ Mon, 24 May 2021 11:56:05 -0700 (PDT)
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain
-X-XM-SPF: eid=1lk8BW-00Ahr4-PK;;;mid=<m1eee0xcqo.fsf@fess.ebiederm.org>;;;hst=in02.mta.xmission.com;;;ip=68.227.160.95;;;frm=ebiederm@xmission.com;;;spf=neutral
-X-XM-AID: U2FsdGVkX1/Qtp8BV6nWzxx0wp6SUitiWRpy1wcXxlk=
-X-SA-Exim-Connect-IP: 68.227.160.95
-X-SA-Exim-Mail-From: ebiederm@xmission.com
-X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on sa06.xmission.com
-X-Spam-Level: 
-X-Spam-Status: No, score=-0.2 required=8.0 tests=ALL_TRUSTED,BAYES_50,
-	DCC_CHECK_NEGATIVE,T_TM2_M_HEADER_IN_MSG autolearn=disabled
-	version=3.4.2
-X-Spam-Report: 
-	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
-	*  0.8 BAYES_50 BODY: Bayes spam probability is 40 to 60%
-	*      [score: 0.4336]
-	*  0.0 T_TM2_M_HEADER_IN_MSG BODY: No description available.
-	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
-	*      [sa06 1397; Body=1 Fuz1=1 Fuz2=1]
-X-Spam-DCC: XMission; sa06 1397; Body=1 Fuz1=1 Fuz2=1 
-X-Spam-Combo: ;Sargun Dhillon <sargun@sargun.me>
-X-Spam-Relay-Country: 
-X-Spam-Timing: total 389 ms - load_scoreonly_sql: 0.33 (0.1%),
-	signal_user_changed: 12 (3.1%), b_tie_ro: 10 (2.6%), parse: 0.99
-	(0.3%), extract_message_metadata: 12 (3.1%), get_uri_detail_list: 1.29
-	(0.3%), tests_pri_-1000: 12 (3.2%), tests_pri_-950: 1.31 (0.3%),
-	tests_pri_-900: 1.08 (0.3%), tests_pri_-90: 67 (17.3%), check_bayes:
-	66 (16.9%), b_tokenize: 6 (1.6%), b_tok_get_all: 7 (1.9%),
-	b_comp_prob: 2.2 (0.6%), b_tok_touch_all: 47 (12.1%), b_finish: 0.76
-	(0.2%), tests_pri_0: 270 (69.4%), check_dkim_signature: 0.82 (0.2%),
-	check_dkim_adsp: 2.2 (0.6%), poll_dns_idle: 0.56 (0.1%), tests_pri_10:
-	2.2 (0.6%), tests_pri_500: 6 (1.7%), rewrite_mail: 0.00 (0.0%)
-Subject: Re: Preemption Signal Management
-X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
-X-SA-Exim-Scanned: Yes (on in02.mta.xmission.com)
+References: <cover.1620499942.git.yifeifz2@illinois.edu> <CALCETrUQBonh5BC4eomTLpEOFHVcQSz9SPcfOqNFTf2TPht4-Q@mail.gmail.com>
+ <CABqSeASYRXMwTQwLfm_Tapg45VUy9sPfV7BeeV8p7XJrDoLf+Q@mail.gmail.com>
+ <fffbea8189794a8da539f6082af3de8e@DM5PR11MB1692.namprd11.prod.outlook.com>
+ <CAGMVDEGzGB4+6gJPTw6Tdng5ur9Jua+mCbqwPoNZ16EFaDcmjA@mail.gmail.com>
+ <eae2a0e5038b41c4af87edcb3d4cdc13@DM5PR11MB1692.namprd11.prod.outlook.com> <CAGMVDEFE8g5XKyQbB1xaK3ve58cENN2hZm3u=ktpGFgmBdQkeQ@mail.gmail.com>
+In-Reply-To: <CAGMVDEFE8g5XKyQbB1xaK3ve58cENN2hZm3u=ktpGFgmBdQkeQ@mail.gmail.com>
+From: Sargun Dhillon <sargun@sargun.me>
+Date: Mon, 24 May 2021 11:55:29 -0700
+Message-ID: <CAMp4zn9gAA4csoM=p75_hU_EfxMaw25yrjy0bFnn3gGhrksFhg@mail.gmail.com>
+Subject: Re: [RFC PATCH bpf-next seccomp 00/12] eBPF seccomp filters
+To: Tianyin Xu <tyxu@illinois.edu>
+Cc: Andy Lutomirski <luto@kernel.org>, YiFei Zhu <zhuyifei1999@gmail.com>, 
+	"containers@lists.linux.dev" <containers@lists.linux.dev>, bpf <bpf@vger.kernel.org>, 
+	"Zhu, YiFei" <yifeifz2@illinois.edu>, LSM List <linux-security-module@vger.kernel.org>, 
+	Alexei Starovoitov <ast@kernel.org>, Andrea Arcangeli <aarcange@redhat.com>, 
+	"Kuo, Hsuan-Chi" <hckuo2@illinois.edu>, Claudio Canella <claudio.canella@iaik.tugraz.at>, 
+	Daniel Borkmann <daniel@iogearbox.net>, Daniel Gruss <daniel.gruss@iaik.tugraz.at>, 
+	Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, Giuseppe Scrivano <gscrivan@redhat.com>, 
+	Hubertus Franke <frankeh@us.ibm.com>, Jann Horn <jannh@google.com>, 
+	"Jia, Jinghao" <jinghao7@illinois.edu>, "Torrellas, Josep" <torrella@illinois.edu>, 
+	Kees Cook <keescook@chromium.org>, Tobin Feldman-Fitzthum <tobin@ibm.com>, 
+	Tom Hromatka <tom.hromatka@oracle.com>, Will Drewry <wad@chromium.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Sargun Dhillon <sargun@sargun.me> writes:
-
-> Andy pointed out that we need a mechanism to determine whether or
-> notifications are preempted. He suggested we use EPOLLPRI to indicate
-> whether or not notifications are preempted. My outstanding question is
-> whether or not we need to be able to get insight of what caused the
-> preemption, and to which notification.
-
-Can I have some context please?  Perhaps links to the previous
-conversations?
-
-The subject sounds like you are talking about those things that are
-delivered as the result of kill(2) but the rest does not.  What are
-notification ids?
-
-Is this a seccomp design choice?
-
-> In the past, Christian has suggested just background polling
-> notification IDs for validity, which is a fine mechanism to determine
-> that preemption has occurred. We could raise EPOLLPRI whenever a
-> notification has changed into the preempted state, but that would
-> require an O(n) operations across all outstanding notifications to
-> determine which one was preempted, and in addition, it doesn't give a
-> lot of information as to why the preemption occurred (fatal signal,
-> preemption?).
+On Thu, May 20, 2021 at 1:22 AM Tianyin Xu <tyxu@illinois.edu> wrote:
 >
-> In order to try to break this into small parts, I suggest:
-> 1. We make it so EPOLLPRI is raised (always) on preempted notifications
-> 2. We allow the user to set a flag to "track" notifications. If they
-> specify this flag, they can then run a "stronger" ioctl -- let's say
-> SECCOMP_IOCTL_NOTIF_STATUS, which, if the flag was specified upon
-> receiving the notification will return the current state of the
-> notification and if a signal preempted it, it will always do that.
+> On Mon, May 17, 2021 at 12:08 PM Sargun Dhillon <sargun@sargun.me> wrote:
+> >
+> > While I agree with you that this is the case right now, there's no reas=
+on it
+> > has to be the case. There's a variety of mechanisms that can be employe=
+d
+> > to significantly speed up the performance of the notifier. For example,=
+ right
+> > now the notifier is behind one large per-filter lock. That could be rem=
+oved
+> > allowing for better concurrency. There are a large number of mechanisms
+> > that scale O(n) with the outstanding notifications -- again, something
+> > that could be improved.
 >
-> ---
-> Alternatively (and this is my preference), we add another filter flag,
-> like SECCOMP_FILTER_FLAG_NOTIF_PREEMPT, which changes the behaviour
-> to:
-> 1. Raise EPOLLPRI on preempted notifications
-> 2. All preemption notifications must be cleared via
-> SECCOMP_IOCTL_NOTIF_RECV_STATUS.
+> Thanks for the pointer! But, I don=E2=80=99t think this can fundamentally
+> eliminate the performance gap between the notifiers and the ebpf
+> filters. IMHO, the additional context switches of user notifiers make
+> the difference.
 >
-> Opinions?
+I mean, I still think it can be closed. Or at least get better. I've
+thought about
+working on performance improvements, but they're lower on the list
+than functionality changes.
+
+> >
+> > The other big improvement that could be made is being able to use somet=
+hing
+> > like io_uring with the notifier interface, but it would require a
+> > fairly significant
+> > user API change -- and a move away from ioctl. I'm not sure if people a=
+re
+> > excited about that idea at the moment.
+> >
+>
+> Apologize that I don=E2=80=99t fully understand your proposal. My
+> understanding about io_uring is that it allows you to amortize the
+> cost of context switch but not eliminate it, unless you are willing to
+> dedicate a core for it. I still believe that, even with io_uring, user
+> notifiers are going to be much slower than eBPF filters.
+The notifier gets significantly slower as a function of the notifications. =
+If
+you have a large number of notifications in flight, or if you're trying to
+concurrently handle a large number of notifications, it gets slower. This
+is where something like io_uring is super useful in terms of reducing
+wakeups.
+
+Also, in the original futex2 patches, it had a mechanism to better handle
+(scheduling) of notifier like cases[1]. If the seccomp notifier did a simil=
+ar
+thing, we could see better performance.
+
+>
+> Btw, our patches are based on your patch set (thank you!). Are you
+> using user notifiers (with your improved version?) these days? It will
+> be nice to hear your opinions on ebpf filters.
+>
+I'm so glad that someone is picking up the work on this.
+
+> > >
+> > >
+> > > > >> eBPF doesn't really have a privilege model yet.  There was a lon=
+g and
+> > > > >> disappointing thread about this awhile back.
+> > > > >
+> > > > > The idea is that =E2=80=9Cseccomp-eBPF does not make life easier =
+for an
+> > > > > adversary=E2=80=9D. Any attack an adversary could potentially uti=
+lize
+> > > > > seccomp-eBPF, they can do the same with other eBPF features, i.e.=
+ it
+> > > > > would be an issue with eBPF in general rather than specifically
+> > > > > seccomp=E2=80=99s use of eBPF.
+> > > > >
+> > > > > Here it is referring to the helpers goes to the base
+> > > > > bpf_base_func_proto if the caller is unprivileged (!bpf_capable |=
+|
+> > > > > !perfmon_capable). In this case, if the adversary would utilize e=
+BPF
+> > > > > helpers to perform an attack, they could do it via another
+> > > > > unprivileged prog type.
+> > > > >
+> > > > > That said, there are a few additional helpers this patchset is ad=
+ding:
+> > > > > * get_current_uid_gid
+> > > > > * get_current_pid_tgid
+> > > > >   These two provide public information (are namespaces a concern?=
+). I
+> > > > > have no idea what kind of exploit it could add unless the adversa=
+ry
+> > > > > somehow side-channels the task_struct? But in that case, how is t=
+he
+> > > > > reading of task_struct different from how the rest of the kernel =
+is
+> > > > > reading task_struct?
+> > > >
+> > > > Yes, namespaces are a concern.  This idea got mostly shot down for =
+kdbus
+> > > > (what ever happened to that?), and it likely has the same problems =
+for
+> > > > seccomp.
+> > > >
+So, we actually have a case where we want to inspect an argument --
+We want to look at the FD number that's passed to the sendmsg syscall, and =
+then
+see if that's an AF_INET socket, and if it is, then pass back to
+notifier, otherwise
+allow it to continue through. This is an area where I can see eBPF being
+very useful.
+
+> > > > >>
+> > > > >> What is this for?
+> > > > >
+> > > > > Memory reading opens up lots of use cases. For example, logging w=
+hat
+> > > > > files are being opened without imposing too much performance pena=
+lty
+> > > > > from strace. Or as an accelerator for user notify emulation, wher=
+e
+> > > > > syscalls can be rejected on a fast path if we know the memory con=
+tents
+> > > > > does not satisfy certain conditions that user notify will check.
+> > > > >
+> > > >
+> > > > This has all kinds of race conditions.
+> > > >
+> > > >
+> > > > I hate to be a party pooper, but this patchset is going to very hig=
+h bar
+> > > > to acceptance.  Right now, seccomp has a couple of excellent proper=
+ties:
+> > > >
+> > > > First, while it has limited expressiveness, it is simple enough tha=
+t the
+> > > > implementation can be easily understood and the scope for
+> > > > vulnerabilities that fall through the cracks of the seccomp sandbox
+> > > > model is low.  Compare this to Windows' low-integrity/high-integrit=
+y
+> > > > sandbox system: there is a never ending string of sandbox escapes d=
+ue to
+> > > > token misuse, unexpected things at various integrity levels, etc.
+> > > > Seccomp doesn't have tokens or integrity levels, and these bugs don=
+'t
+> > > > happen.
+> > > >
+> > > > Second, seccomp works, almost unchanged, in a completely unprivileg=
+ed
+> > > > context.  The last time making eBPF work sensibly in a less- or
+> > > > -unprivileged context, the maintainers mostly rejected the idea of
+> > > > developing/debugging a permission model for maps, cleaning up the b=
+pf
+> > > > object id system, etc.  You are going to have a very hard time
+> > > > convincing the seccomp maintainers to let any of these mechanism
+> > > > interact with seccomp until the underlying permission model is in p=
+lace.
+> > > >
+> > > > --Andy
+> > >
+> > > Thanks for pointing out the tradeoff between expressiveness vs. simpl=
+icity.
+> > >
+> > > Note that we are _not_ proposing to replace cbpf, but propose to also
+> > > support ebpf filters. There certainly are use cases where cbpf is
+> > > sufficient, but there are also important use cases ebpf could make
+> > > life much easier.
+> > >
+> > > Most importantly, we strongly believe that ebpf filters can be
+> > > supported without reducing security.
+> > >
+> > > No worries about =E2=80=9Cparty pooping=E2=80=9D and we appreciate th=
+e feedback. We=E2=80=99d
+> > > love to hear concerns and collect feedback so we can address them to
+> > > hit that very high bar.
+> > >
+> > >
+> > > ~t
+> > >
+> > > --
+> > > Tianyin Xu
+> > > University of Illinois at Urbana-Champaign
+> > > https://urldefense.com/v3/__https://tianyin.github.io/__;!!DZ3fjg!o4_=
+_Ob32oapUDg9_f6hzksoFiX9517CJ5-w8qtG9i-WKFs_xWbGQfUHpLjHjCddw$
+>
+
+[1]: https://lore.kernel.org/lkml/20210215152404.250281-1-andrealmeid@colla=
+bora.com/T/
