@@ -1,248 +1,84 @@
-Received: from mail-io1-f44.google.com (mail-io1-f44.google.com [209.85.166.44])
+Received: from mail-lj1-f182.google.com (mail-lj1-f182.google.com [209.85.208.182])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 097752FAE
-	for <containers@lists.linux.dev>; Mon, 24 May 2021 18:56:06 +0000 (UTC)
-Received: by mail-io1-f44.google.com with SMTP id o21so28885659iow.13
-        for <containers@lists.linux.dev>; Mon, 24 May 2021 11:56:06 -0700 (PDT)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BC7C717F
+	for <containers@lists.linux.dev>; Tue, 25 May 2021 16:04:15 +0000 (UTC)
+Received: by mail-lj1-f182.google.com with SMTP id p20so38847691ljj.8
+        for <containers@lists.linux.dev>; Tue, 25 May 2021 09:04:15 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=sargun.me; s=google;
+        d=kinvolk.io; s=google;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc:content-transfer-encoding;
-        bh=kY5ODL09+MFOG0z0UW2n/UhvHutj9fmmLO3qpZTedGA=;
-        b=DU9Nb3d0eumYE6yPGePAk/liCz7kzb4TdqRZU3Q9TXKx1N0JT/l2RW1mQ5dVtqN8WV
-         RfLtOktNcAG2XTXy0wmJy59K9Kj9T2JgvzslsaBWDS8Dug081GxE3ql9gr8eG0H8i/8W
-         phWc3AWv+VY0QMEc1d8eIrsiprPFZogFOsvco=
+         :cc;
+        bh=etyw4lsngOCwaxz3lAVhGn8wpFc4o+0N4m07CszuHys=;
+        b=WSWDsTyvfIO3jcXBz7rf/aCap0pJvuYkQeFaAHhGi82/yhI/JbGAzmvpxl7wQTCLxP
+         kgCDVKtmyO+cBPm1tNHwAeizaDn/ZxYcVHJjmZLTMKdzwSHCzKrbdRrjDjj8hosTkMaT
+         mncIr1itc7WzFkx59meZztEqeeSHvi6YzLHBk=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=kY5ODL09+MFOG0z0UW2n/UhvHutj9fmmLO3qpZTedGA=;
-        b=Q7+ICC9rgPzTlwYlM3j/xTDYS+4CIZX6H0TErd8j3+hG5kGmOlT2fUYd/3IlPQrcNb
-         NlLRr+tQj++gqD6Vaz0vFTdTagGVEWvx8mTtuBoeLht8V5pzj5DAq1OeTVI8YsgtJhZg
-         +SLiy8StwFdr5953jffruizTp8AQCB7zJzcBKybCasRupw8WambP0tZ1EQdXCK9on6da
-         wviCpmVuG2dTaZYKVlR14B7hTjlOLladH8hTIjgrNs/BijJ1VVia+JBj0EJv+AQGPsEr
-         +71uYm9+PjDrt/0axyBOwaU2zT1U0+YGC56nsSWDcat4T+BuMElSz9qTifrYXi4Q774S
-         WMTQ==
-X-Gm-Message-State: AOAM530vyY1Zbr5UChm96gAA1blJayKTnpWUdRjFSWVp8Pa2TedEQCbc
-	xWbeGf0KEnDfFtojwfEKZE7rW3xXepNF1CV3SOvrKg==
-X-Google-Smtp-Source: ABdhPJyU5QTyR2R5Ov3SlHc+M44rspLop3d/kpVd20Xusxd9ECjmltvb99VG+PRGEuN4LJN9mjVBUZxMjMroEa/D55c=
-X-Received: by 2002:a05:6602:2d8f:: with SMTP id k15mr16960080iow.114.1621882565864;
- Mon, 24 May 2021 11:56:05 -0700 (PDT)
+         :message-id:subject:to:cc;
+        bh=etyw4lsngOCwaxz3lAVhGn8wpFc4o+0N4m07CszuHys=;
+        b=KBsF9s9NVpYEzEtVmWBppUgQGT3rDJDJ57J2aFx1T709B/CIb316HxmqDVu09zE0uu
+         mtIYNbgpKg+7crdX9jLedE0CCD8pDPqNGKfCcHYkXd1Hfiu2+C2oipnR1QOqo0kn60Pn
+         pbUzeNCIUWQJvRNBCnQlgTQfj8KszBxy+xYrJ8po+np/SiJXPHMKHQ5mOKXjjtbr1H1J
+         J6sSBvCXDuJ+239AZVA+KNehoz/npBc6DzJB8QF4uo+dAk46XnjwnVXfETj5yebZCvDI
+         yISQ5bBmP1ZFVR90jj6oH/kh5cDe6DK9BfoLheXxJvoeRbkkk/QqX/1dtHV/AvHTeJze
+         qsjg==
+X-Gm-Message-State: AOAM532JnY9O4FS1eFSCIORKLg5BmGnrVmtmRZix8PzBMnTPStJ6x6dF
+	YSN8VeA0sX3Q/wBd3/1AGEO1XAfQaLCVV0SsAGyrlA==
+X-Google-Smtp-Source: ABdhPJzpdi9hkHuHgScJG60EVMPuQ6xED6Vl0PloPs9dBGePF9s1iU2bjO0YKLNK+BMtS8rcsUxshhuvWcJjQui+GQ8=
+X-Received: by 2002:a2e:908e:: with SMTP id l14mr21340214ljg.372.1621958653833;
+ Tue, 25 May 2021 09:04:13 -0700 (PDT)
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-References: <cover.1620499942.git.yifeifz2@illinois.edu> <CALCETrUQBonh5BC4eomTLpEOFHVcQSz9SPcfOqNFTf2TPht4-Q@mail.gmail.com>
- <CABqSeASYRXMwTQwLfm_Tapg45VUy9sPfV7BeeV8p7XJrDoLf+Q@mail.gmail.com>
- <fffbea8189794a8da539f6082af3de8e@DM5PR11MB1692.namprd11.prod.outlook.com>
- <CAGMVDEGzGB4+6gJPTw6Tdng5ur9Jua+mCbqwPoNZ16EFaDcmjA@mail.gmail.com>
- <eae2a0e5038b41c4af87edcb3d4cdc13@DM5PR11MB1692.namprd11.prod.outlook.com> <CAGMVDEFE8g5XKyQbB1xaK3ve58cENN2hZm3u=ktpGFgmBdQkeQ@mail.gmail.com>
-In-Reply-To: <CAGMVDEFE8g5XKyQbB1xaK3ve58cENN2hZm3u=ktpGFgmBdQkeQ@mail.gmail.com>
-From: Sargun Dhillon <sargun@sargun.me>
-Date: Mon, 24 May 2021 11:55:29 -0700
-Message-ID: <CAMp4zn9gAA4csoM=p75_hU_EfxMaw25yrjy0bFnn3gGhrksFhg@mail.gmail.com>
-Subject: Re: [RFC PATCH bpf-next seccomp 00/12] eBPF seccomp filters
-To: Tianyin Xu <tyxu@illinois.edu>
-Cc: Andy Lutomirski <luto@kernel.org>, YiFei Zhu <zhuyifei1999@gmail.com>, 
-	"containers@lists.linux.dev" <containers@lists.linux.dev>, bpf <bpf@vger.kernel.org>, 
-	"Zhu, YiFei" <yifeifz2@illinois.edu>, LSM List <linux-security-module@vger.kernel.org>, 
-	Alexei Starovoitov <ast@kernel.org>, Andrea Arcangeli <aarcange@redhat.com>, 
-	"Kuo, Hsuan-Chi" <hckuo2@illinois.edu>, Claudio Canella <claudio.canella@iaik.tugraz.at>, 
-	Daniel Borkmann <daniel@iogearbox.net>, Daniel Gruss <daniel.gruss@iaik.tugraz.at>, 
-	Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, Giuseppe Scrivano <gscrivan@redhat.com>, 
-	Hubertus Franke <frankeh@us.ibm.com>, Jann Horn <jannh@google.com>, 
-	"Jia, Jinghao" <jinghao7@illinois.edu>, "Torrellas, Josep" <torrella@illinois.edu>, 
-	Kees Cook <keescook@chromium.org>, Tobin Feldman-Fitzthum <tobin@ibm.com>, 
-	Tom Hromatka <tom.hromatka@oracle.com>, Will Drewry <wad@chromium.org>
+References: <20210517193908.3113-1-sargun@sargun.me> <20210517193908.3113-3-sargun@sargun.me>
+In-Reply-To: <20210517193908.3113-3-sargun@sargun.me>
+From: Rodrigo Campos <rodrigo@kinvolk.io>
+Date: Tue, 25 May 2021 18:03:38 +0200
+Message-ID: <CACaBj2Y5YsrbFCw1m9U=8S8uJFiPo_c4riitDE5z-re65a-x9g@mail.gmail.com>
+Subject: Re: [PATCH v2 2/4] seccomp: Refactor notification handler to prepare
+ for new semantics
+To: Sargun Dhillon <sargun@sargun.me>
+Cc: Kees Cook <keescook@chromium.org>, LKML <linux-kernel@vger.kernel.org>, 
+	containers@lists.linux.dev, Tycho Andersen <tycho@tycho.pizza>, 
+	Andy Lutomirski <luto@kernel.org>, =?UTF-8?Q?Mauricio_V=C3=A1squez_Bernal?= <mauricio@kinvolk.io>, 
+	Giuseppe Scrivano <gscrivan@redhat.com>, Christian Brauner <christian.brauner@ubuntu.com>, 
+	=?UTF-8?B?TWlja2HDq2wgU2FsYcO8bg==?= <mic@linux.microsoft.com>
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
 
-On Thu, May 20, 2021 at 1:22 AM Tianyin Xu <tyxu@illinois.edu> wrote:
+On Mon, May 17, 2021 at 9:39 PM Sargun Dhillon <sargun@sargun.me> wrote:
 >
-> On Mon, May 17, 2021 at 12:08 PM Sargun Dhillon <sargun@sargun.me> wrote:
-> >
-> > While I agree with you that this is the case right now, there's no reas=
-on it
-> > has to be the case. There's a variety of mechanisms that can be employe=
-d
-> > to significantly speed up the performance of the notifier. For example,=
- right
-> > now the notifier is behind one large per-filter lock. That could be rem=
-oved
-> > allowing for better concurrency. There are a large number of mechanisms
-> > that scale O(n) with the outstanding notifications -- again, something
-> > that could be improved.
->
-> Thanks for the pointer! But, I don=E2=80=99t think this can fundamentally
-> eliminate the performance gap between the notifiers and the ebpf
-> filters. IMHO, the additional context switches of user notifiers make
-> the difference.
->
-I mean, I still think it can be closed. Or at least get better. I've
-thought about
-working on performance improvements, but they're lower on the list
-than functionality changes.
+> This refactors the user notification code to have a do / while loop around
+> the completion condition. This has a small change in semantic, in that
+> previously we ignored addfd calls upon wakeup if the notification had been
+> responded to, but instead with the new change we check for an outstanding
+> addfd calls prior to returning to userspace.
 
-> >
-> > The other big improvement that could be made is being able to use somet=
-hing
-> > like io_uring with the notifier interface, but it would require a
-> > fairly significant
-> > user API change -- and a move away from ioctl. I'm not sure if people a=
-re
-> > excited about that idea at the moment.
-> >
+I understand why this was a readability improvement on the old
+patchset (that included the wait_killable semantics), as it completely
+changed the loop. But now we only have the atomic addfd+send reply
+that does minimal changes to this part (add a param to a function).
+
+Is it worth changing the semantics?
+
+> Rodrigo Campos also identified a bug that can result in addfd causing
+> an early return, when the supervisor didn't actually handle the
+> syscall [1].
 >
-> Apologize that I don=E2=80=99t fully understand your proposal. My
-> understanding about io_uring is that it allows you to amortize the
-> cost of context switch but not eliminate it, unless you are willing to
-> dedicate a core for it. I still believe that, even with io_uring, user
-> notifiers are going to be much slower than eBPF filters.
-The notifier gets significantly slower as a function of the notifications. =
-If
-you have a large number of notifications in flight, or if you're trying to
-concurrently handle a large number of notifications, it gets slower. This
-is where something like io_uring is super useful in terms of reducing
-wakeups.
+> [1]: https://lore.kernel.org/lkml/20210413160151.3301-1-rodrigo@kinvolk.io/
 
-Also, in the original futex2 patches, it had a mechanism to better handle
-(scheduling) of notifier like cases[1]. If the seccomp notifier did a simil=
-ar
-thing, we could see better performance.
+I was about to resend this, but I'd like to know what others think.
 
->
-> Btw, our patches are based on your patch set (thank you!). Are you
-> using user notifiers (with your improved version?) these days? It will
-> be nice to hear your opinions on ebpf filters.
->
-I'm so glad that someone is picking up the work on this.
+I'm okay with applying any patches to solve the issue (mine linked
+there or this one), slightly in favor of mine as the diff is way
+simpler to backport (applies to 5.9+ kernels) and I don't see a reason
+to change semantics. But no strong opinion.
 
-> > >
-> > >
-> > > > >> eBPF doesn't really have a privilege model yet.  There was a lon=
-g and
-> > > > >> disappointing thread about this awhile back.
-> > > > >
-> > > > > The idea is that =E2=80=9Cseccomp-eBPF does not make life easier =
-for an
-> > > > > adversary=E2=80=9D. Any attack an adversary could potentially uti=
-lize
-> > > > > seccomp-eBPF, they can do the same with other eBPF features, i.e.=
- it
-> > > > > would be an issue with eBPF in general rather than specifically
-> > > > > seccomp=E2=80=99s use of eBPF.
-> > > > >
-> > > > > Here it is referring to the helpers goes to the base
-> > > > > bpf_base_func_proto if the caller is unprivileged (!bpf_capable |=
-|
-> > > > > !perfmon_capable). In this case, if the adversary would utilize e=
-BPF
-> > > > > helpers to perform an attack, they could do it via another
-> > > > > unprivileged prog type.
-> > > > >
-> > > > > That said, there are a few additional helpers this patchset is ad=
-ding:
-> > > > > * get_current_uid_gid
-> > > > > * get_current_pid_tgid
-> > > > >   These two provide public information (are namespaces a concern?=
-). I
-> > > > > have no idea what kind of exploit it could add unless the adversa=
-ry
-> > > > > somehow side-channels the task_struct? But in that case, how is t=
-he
-> > > > > reading of task_struct different from how the rest of the kernel =
-is
-> > > > > reading task_struct?
-> > > >
-> > > > Yes, namespaces are a concern.  This idea got mostly shot down for =
-kdbus
-> > > > (what ever happened to that?), and it likely has the same problems =
-for
-> > > > seccomp.
-> > > >
-So, we actually have a case where we want to inspect an argument --
-We want to look at the FD number that's passed to the sendmsg syscall, and =
-then
-see if that's an AF_INET socket, and if it is, then pass back to
-notifier, otherwise
-allow it to continue through. This is an area where I can see eBPF being
-very useful.
+Opinions?
 
-> > > > >>
-> > > > >> What is this for?
-> > > > >
-> > > > > Memory reading opens up lots of use cases. For example, logging w=
-hat
-> > > > > files are being opened without imposing too much performance pena=
-lty
-> > > > > from strace. Or as an accelerator for user notify emulation, wher=
-e
-> > > > > syscalls can be rejected on a fast path if we know the memory con=
-tents
-> > > > > does not satisfy certain conditions that user notify will check.
-> > > > >
-> > > >
-> > > > This has all kinds of race conditions.
-> > > >
-> > > >
-> > > > I hate to be a party pooper, but this patchset is going to very hig=
-h bar
-> > > > to acceptance.  Right now, seccomp has a couple of excellent proper=
-ties:
-> > > >
-> > > > First, while it has limited expressiveness, it is simple enough tha=
-t the
-> > > > implementation can be easily understood and the scope for
-> > > > vulnerabilities that fall through the cracks of the seccomp sandbox
-> > > > model is low.  Compare this to Windows' low-integrity/high-integrit=
-y
-> > > > sandbox system: there is a never ending string of sandbox escapes d=
-ue to
-> > > > token misuse, unexpected things at various integrity levels, etc.
-> > > > Seccomp doesn't have tokens or integrity levels, and these bugs don=
-'t
-> > > > happen.
-> > > >
-> > > > Second, seccomp works, almost unchanged, in a completely unprivileg=
-ed
-> > > > context.  The last time making eBPF work sensibly in a less- or
-> > > > -unprivileged context, the maintainers mostly rejected the idea of
-> > > > developing/debugging a permission model for maps, cleaning up the b=
-pf
-> > > > object id system, etc.  You are going to have a very hard time
-> > > > convincing the seccomp maintainers to let any of these mechanism
-> > > > interact with seccomp until the underlying permission model is in p=
-lace.
-> > > >
-> > > > --Andy
-> > >
-> > > Thanks for pointing out the tradeoff between expressiveness vs. simpl=
-icity.
-> > >
-> > > Note that we are _not_ proposing to replace cbpf, but propose to also
-> > > support ebpf filters. There certainly are use cases where cbpf is
-> > > sufficient, but there are also important use cases ebpf could make
-> > > life much easier.
-> > >
-> > > Most importantly, we strongly believe that ebpf filters can be
-> > > supported without reducing security.
-> > >
-> > > No worries about =E2=80=9Cparty pooping=E2=80=9D and we appreciate th=
-e feedback. We=E2=80=99d
-> > > love to hear concerns and collect feedback so we can address them to
-> > > hit that very high bar.
-> > >
-> > >
-> > > ~t
-> > >
-> > > --
-> > > Tianyin Xu
-> > > University of Illinois at Urbana-Champaign
-> > > https://urldefense.com/v3/__https://tianyin.github.io/__;!!DZ3fjg!o4_=
-_Ob32oapUDg9_f6hzksoFiX9517CJ5-w8qtG9i-WKFs_xWbGQfUHpLjHjCddw$
->
 
-[1]: https://lore.kernel.org/lkml/20210215152404.250281-1-andrealmeid@colla=
-bora.com/T/
+Best,
+Rodrigo
