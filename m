@@ -1,91 +1,84 @@
-Received: from mail-il1-f170.google.com (mail-il1-f170.google.com [209.85.166.170])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 518312F80
-	for <containers@lists.linux.dev>; Tue, 25 May 2021 20:44:50 +0000 (UTC)
-Received: by mail-il1-f170.google.com with SMTP id m1so27695964ilg.10
-        for <containers@lists.linux.dev>; Tue, 25 May 2021 13:44:50 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=sargun.me; s=google;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=dx8YUAQzEnba5PQjYOv49O+Z4yv1QCI8CcdX+kElxFE=;
-        b=ds+BZ8WNemLxCRt3hQjDdq00sXt+FZBkfFjPJymgA8OxfQGvoYltlsJs2OuLw9T8CH
-         +h96s3THTlhOj6n2IpEF6PFazNr9/Q3OApCcYNX27r9840LIf70pWlZd2RcyB8q0gSr7
-         jAZXKrlwZLfd7lQWgROH4hKw/K1/64E1E61AA=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=dx8YUAQzEnba5PQjYOv49O+Z4yv1QCI8CcdX+kElxFE=;
-        b=qhxw+Z/XOhnyfJJl/9oYCnNysTAx15bI0xEsDlarQDdwsudznNODXxQib0N0+YvWZi
-         RsTBckG/SMCTNDzDrhKVNe1Tyf+Y1V6XDvTibF9EzE96nG2bpsi4YsRoD6wtilyOvWIH
-         klGLsOi6yI11F8Tswfp1JEPN/QAxlRGKaGdcFJ29kqlbcOIQFpMtGYejUGjS8OPwFzRx
-         1Qm0RtTE2wzdQKNEkbPKDX6t7e3+ZQK25vt8LC+57kqOLI7B/onbWKxyC6GZYeK+D1qT
-         EslT8sCaV+yaWynpSo0oLbC9fVfthIS6Nu/8yzJMGTiKXXWnd9uDt6EgGewfctxHUOBz
-         zvyg==
-X-Gm-Message-State: AOAM530QiyCpbCy5NT/JYHO9nJKpntPidB7F7uQxgSdqgYI/p4Yk1tL8
-	pbPJt9nnAghbbyUAt8eoijdQcBmguwKZECvgEidTPg==
-X-Google-Smtp-Source: ABdhPJwOVPdbQ5AimxrE2Fag8ZO6aMG1+Yk/QbKoodRm5vnbn68V97yu0dpyxidaRAv8jDcSxoHgtZrAZroAYA1M9R0=
-X-Received: by 2002:a92:db07:: with SMTP id b7mr21621412iln.282.1621975489294;
- Tue, 25 May 2021 13:44:49 -0700 (PDT)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1A7B170
+	for <containers@lists.linux.dev>; Wed, 26 May 2021 00:39:50 +0000 (UTC)
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 3E86B61417;
+	Wed, 26 May 2021 00:39:50 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1621989590;
+	bh=3zgyZ7zoBJ+hkeHoXCzHp9CwIXm2cdXOf80HROm53hY=;
+	h=Subject:To:Cc:References:From:Date:In-Reply-To:From;
+	b=fkm9ndfDupj8s5n/4/6rrAbb+eXW8zopJv1M6OxIOCLl0dR0AJSykkdvHQxT+jJ0Z
+	 ciVWVIBJURvGSJ6DNr1baOyoLzh2SwFOgpv9W7HTmsHop4Uf09bysR6SxtUyDbq2Zh
+	 knYV2NZc6y94jO2lvi0j0SnP8g249qvncNbZRL+v3ajjvJo7CZbzODOixOr8kiopth
+	 ghq/iBkPoGZI0ZfIldDGx3zIEtXu1vYGfwgTQDjJrJOcj2jK+SBbD1rn1xBOGV0OrM
+	 rUpSUYqWnokjh1aUMK69iHloimM14dWIuG6A2wX6v71YZizpcQUF+u6ze/ww2LNGHA
+	 cDc3UlqUmYe8A==
+Subject: Re: Preemption Signal Management
+To: Sargun Dhillon <sargun@sargun.me>,
+ Linux Containers <containers@lists.linux.dev>,
+ LKML <linux-kernel@vger.kernel.org>
+Cc: Kees Cook <keescook@chromium.org>,
+ Christian Brauner <christian.brauner@ubuntu.com>,
+ Tycho Andersen <tycho@tycho.pizza>, Giuseppe Scrivano <gscrivan@redhat.com>,
+ Rodrigo Campos <rodrigo@kinvolk.io>,
+ =?UTF-8?Q?Mauricio_V=c3=a1squez_Bernal?= <mauricio@kinvolk.io>
+References: <CAMp4zn93WRF5u=et=detunN7exhQNoFctr-7Qb8-a9=As8vaQw@mail.gmail.com>
+From: Andy Lutomirski <luto@kernel.org>
+Message-ID: <f9e0126e-2bd4-eda4-0c07-9393d56d1421@kernel.org>
+Date: Tue, 25 May 2021 17:39:49 -0700
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.10.1
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-References: <20210517193908.3113-1-sargun@sargun.me> <20210517193908.3113-3-sargun@sargun.me>
- <CACaBj2Y5YsrbFCw1m9U=8S8uJFiPo_c4riitDE5z-re65a-x9g@mail.gmail.com>
-In-Reply-To: <CACaBj2Y5YsrbFCw1m9U=8S8uJFiPo_c4riitDE5z-re65a-x9g@mail.gmail.com>
-From: Sargun Dhillon <sargun@sargun.me>
-Date: Tue, 25 May 2021 13:44:13 -0700
-Message-ID: <CAMp4zn-CFaPpVd3zcANfmUQXaLCUPnuT2SrC_Kw5RrF4_Ubuhw@mail.gmail.com>
-Subject: Re: [PATCH v2 2/4] seccomp: Refactor notification handler to prepare
- for new semantics
-To: Rodrigo Campos <rodrigo@kinvolk.io>
-Cc: Kees Cook <keescook@chromium.org>, LKML <linux-kernel@vger.kernel.org>, 
-	Linux Containers <containers@lists.linux.dev>, Tycho Andersen <tycho@tycho.pizza>, 
-	Andy Lutomirski <luto@kernel.org>, =?UTF-8?Q?Mauricio_V=C3=A1squez_Bernal?= <mauricio@kinvolk.io>, 
-	Giuseppe Scrivano <gscrivan@redhat.com>, Christian Brauner <christian.brauner@ubuntu.com>, 
-	=?UTF-8?B?TWlja2HDq2wgU2FsYcO8bg==?= <mic@linux.microsoft.com>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <CAMp4zn93WRF5u=et=detunN7exhQNoFctr-7Qb8-a9=As8vaQw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 
-On Tue, May 25, 2021 at 9:04 AM Rodrigo Campos <rodrigo@kinvolk.io> wrote:
->
-> On Mon, May 17, 2021 at 9:39 PM Sargun Dhillon <sargun@sargun.me> wrote:
-> >
-> > This refactors the user notification code to have a do / while loop around
-> > the completion condition. This has a small change in semantic, in that
-> > previously we ignored addfd calls upon wakeup if the notification had been
-> > responded to, but instead with the new change we check for an outstanding
-> > addfd calls prior to returning to userspace.
->
-> I understand why this was a readability improvement on the old
-> patchset (that included the wait_killable semantics), as it completely
-> changed the loop. But now we only have the atomic addfd+send reply
-> that does minimal changes to this part (add a param to a function).
->
-> Is it worth changing the semantics?
->
-I think that as we add more complexity around different things that
-can cause the notification to change (status), that this is better,
-but I understand wanting to hold off.
+On 5/21/21 9:23 AM, Sargun Dhillon wrote:
+> Andy pointed out that we need a mechanism to determine whether or
+> notifications are preempted. He suggested we use EPOLLPRI to indicate
+> whether or not notifications are preempted. My outstanding question is
+> whether or not we need to be able to get insight of what caused the
+> preemption, and to which notification.
+> 
+> In the past, Christian has suggested just background polling
+> notification IDs for validity, which is a fine mechanism to determine
+> that preemption has occurred. We could raise EPOLLPRI whenever a
+> notification has changed into the preempted state, but that would
+> require an O(n) operations across all outstanding notifications to
+> determine which one was preempted, and in addition, it doesn't give a
+> lot of information as to why the preemption occurred (fatal signal,
+> preemption?).
+> 
+> In order to try to break this into small parts, I suggest:
+> 1. We make it so EPOLLPRI is raised (always) on preempted notifications
+> 2. We allow the user to set a flag to "track" notifications. If they
+> specify this flag, they can then run a "stronger" ioctl -- let's say
+> SECCOMP_IOCTL_NOTIF_STATUS, which, if the flag was specified upon
+> receiving the notification will return the current state of the
+> notification and if a signal preempted it, it will always do that.
+> 
+> ---
+> Alternatively (and this is my preference), we add another filter flag,
+> like SECCOMP_FILTER_FLAG_NOTIF_PREEMPT, which changes the behaviour
+> to:
+> 1. Raise EPOLLPRI on preempted notifications
+> 2. All preemption notifications must be cleared via
+> SECCOMP_IOCTL_NOTIF_RECV_STATUS.
 
-> > Rodrigo Campos also identified a bug that can result in addfd causing
-> > an early return, when the supervisor didn't actually handle the
-> > syscall [1].
-> >
-> > [1]: https://lore.kernel.org/lkml/20210413160151.3301-1-rodrigo@kinvolk.io/
->
-> I was about to resend this, but I'd like to know what others think.
->
-> I'm okay with applying any patches to solve the issue (mine linked
-> there or this one), slightly in favor of mine as the diff is way
-> simpler to backport (applies to 5.9+ kernels) and I don't see a reason
-> to change semantics. But no strong opinion.
->
-> Opinions?
->
->
-> Best,
-> Rodrigo
+This seems sensible, except I don't think "preempted" is the right word.
+ The state machine is pretty simple:
+
+live -> signaled -> killed
+
+(and we can go straight from live to killed, too.)  So EPOLLPRI could be
+signaled if any notification changes state, and a new ioctl could read
+the list of notifications that have changed state.
+
+--Andy
