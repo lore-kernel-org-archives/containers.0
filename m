@@ -1,87 +1,90 @@
-Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pf1-f171.google.com (mail-pf1-f171.google.com [209.85.210.171])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D60272FAD
-	for <containers@lists.linux.dev>; Wed, 26 May 2021 17:52:46 +0000 (UTC)
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 675D26139A;
-	Wed, 26 May 2021 17:52:43 +0000 (UTC)
-Date: Wed, 26 May 2021 19:52:40 +0200
-From: Christian Brauner <christian.brauner@ubuntu.com>
-To: Andy Lutomirski <luto@kernel.org>
-Cc: Sargun Dhillon <sargun@sargun.me>,
-	Linux Containers <containers@lists.linux.dev>,
-	LKML <linux-kernel@vger.kernel.org>,
-	Kees Cook <keescook@chromium.org>,
-	Tycho Andersen <tycho@tycho.pizza>,
-	Giuseppe Scrivano <gscrivan@redhat.com>,
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BA9AB2FAD
+	for <containers@lists.linux.dev>; Thu, 27 May 2021 02:46:04 +0000 (UTC)
+Received: by mail-pf1-f171.google.com with SMTP id p39so2507295pfw.8
+        for <containers@lists.linux.dev>; Wed, 26 May 2021 19:46:04 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=chromium.org; s=google;
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=iNP/SjcyNaIT9Sh+6s8gT1hO3S0wd0g5pCSpuyaozkw=;
+        b=PVk7nItGG9eUgo1RgIty5RHK8WNgpUKygbC/XyLZ+bCNVUctQeKddIwv7nwuobMJmp
+         4QWL/b0oxWQqzgu+n3GXsD3vybSuW/8pNpqIO3Reg/9YYX53Q9at+2q9yWKllwV9rOWS
+         w8SGJ+mCBoQYkmnaPb3fmb3D3KWBgiFlM4S1g=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=iNP/SjcyNaIT9Sh+6s8gT1hO3S0wd0g5pCSpuyaozkw=;
+        b=rt18Ba4ZcExlUgFqu4Ljf+4zppkoCHeB+mWsaPJhEtCZw6Z8EIdbaTpPR/NLgaixx7
+         /+CcTfQWQmTh9QdzjMOD/XpNYcZxpgczjvyOxV2e7HMTvdg14MoeD7c8kKtYijY130Yy
+         Lg8T9uk24664kHF6ZkQko5MQiqBlsI8R0qBb/UFpQkAIa1Jn8FoaOF6CG/HGs4tZXmsk
+         0gGKa9IrQ5de6mIdMAtwxPzAgKUW1IVdTcs6y/wHgBlENUs3X0oWRYYvJrhY+f8j8A1P
+         nAawXUOwsgjznBEkOv6cK5vBIAldRpCxjfBHoxd4qhjifV59onDYio10RAp7OGd1my/y
+         29Ew==
+X-Gm-Message-State: AOAM533uNdCowad/62XlmxzUJ7dsI8diAIXLhHpnzvxusfZ6m99cHJ9/
+	83EZomh1nxD5OrryzpqYFU3bRw==
+X-Google-Smtp-Source: ABdhPJyLebV7fbvP0NGZ6HxNLgvFI/tiSws2o2+nNKzLsAsea2wvqbAA6v5k04MBPNIORgJ1SVcW2g==
+X-Received: by 2002:a63:5a01:: with SMTP id o1mr1563433pgb.313.1622083564242;
+        Wed, 26 May 2021 19:46:04 -0700 (PDT)
+Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
+        by smtp.gmail.com with ESMTPSA id k38sm350372pgi.73.2021.05.26.19.46.03
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 26 May 2021 19:46:03 -0700 (PDT)
+From: Kees Cook <keescook@chromium.org>
+To: Tycho Andersen <tycho@tycho.pizza>,
+	containers@lists.linux.dev,
+	Sargun Dhillon <sargun@sargun.me>,
+	Andy Lutomirski <luto@kernel.org>,
+	LKML <linux-kernel@vger.kernel.org>
+Cc: Kees Cook <keescook@chromium.org>,
 	Rodrigo Campos <rodrigo@kinvolk.io>,
-	Mauricio =?utf-8?Q?V=C3=A1squez?= Bernal <mauricio@kinvolk.io>
-Subject: Re: Preemption Signal Management
-Message-ID: <20210526175240.dyyvnxcvyuauah7h@wittgenstein>
-References: <CAMp4zn93WRF5u=et=detunN7exhQNoFctr-7Qb8-a9=As8vaQw@mail.gmail.com>
- <f9e0126e-2bd4-eda4-0c07-9393d56d1421@kernel.org>
+	=?UTF-8?q?Mauricio=20V=C3=A1squez=20Bernal?= <mauricio@kinvolk.io>,
+	Christian Brauner <christian.brauner@ubuntu.com>,
+	Giuseppe Scrivano <gscrivan@redhat.com>,
+	=?UTF-8?q?Micka=C3=ABl=20Sala=C3=BCn?= <mic@linux.microsoft.com>
+Subject: Re: [PATCH v2 0/4] Atomic addfd send and reply
+Date: Wed, 26 May 2021 19:43:59 -0700
+Message-Id: <162208342966.3725800.17683913220837738980.b4-ty@chromium.org>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20210517193908.3113-1-sargun@sargun.me>
+References: <20210517193908.3113-1-sargun@sargun.me>
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <f9e0126e-2bd4-eda4-0c07-9393d56d1421@kernel.org>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 
-On Tue, May 25, 2021 at 05:39:49PM -0700, Andy Lutomirski wrote:
-> On 5/21/21 9:23 AM, Sargun Dhillon wrote:
-> > Andy pointed out that we need a mechanism to determine whether or
-> > notifications are preempted. He suggested we use EPOLLPRI to indicate
-> > whether or not notifications are preempted. My outstanding question is
-> > whether or not we need to be able to get insight of what caused the
-> > preemption, and to which notification.
-> > 
-> > In the past, Christian has suggested just background polling
-> > notification IDs for validity, which is a fine mechanism to determine
-> > that preemption has occurred. We could raise EPOLLPRI whenever a
-> > notification has changed into the preempted state, but that would
-> > require an O(n) operations across all outstanding notifications to
-> > determine which one was preempted, and in addition, it doesn't give a
-> > lot of information as to why the preemption occurred (fatal signal,
-> > preemption?).
-> > 
-> > In order to try to break this into small parts, I suggest:
-> > 1. We make it so EPOLLPRI is raised (always) on preempted notifications
-> > 2. We allow the user to set a flag to "track" notifications. If they
-> > specify this flag, they can then run a "stronger" ioctl -- let's say
-> > SECCOMP_IOCTL_NOTIF_STATUS, which, if the flag was specified upon
-> > receiving the notification will return the current state of the
-> > notification and if a signal preempted it, it will always do that.
-> > 
-> > ---
-> > Alternatively (and this is my preference), we add another filter flag,
-
-In general this sounds good to me.
-
-> > like SECCOMP_FILTER_FLAG_NOTIF_PREEMPT, which changes the behaviour
-
-And make it combinable with SECCOMP_FILTER_FLAG_NEW_LISTENER, I like that.
-
-> > to:
-> > 1. Raise EPOLLPRI on preempted notifications
-> > 2. All preemption notifications must be cleared via
-> > SECCOMP_IOCTL_NOTIF_RECV_STATUS.
+On Mon, 17 May 2021 12:39:04 -0700, Sargun Dhillon wrote:
+> This is somewhat of a respin of "Handle seccomp notification preemption"
+> but without the controversial parts.
 > 
-> This seems sensible, except I don't think "preempted" is the right word.
->  The state machine is pretty simple:
 > 
-> live -> signaled -> killed
+> This patchset addresses a race condition we've dealt with recently with
+> seccomp. Specifically programs interrupting syscalls while they're in
+> progress. This was exacerbated by Golang's recent adoption of "async
+> preemption", in which they try to interrupt any syscall that's been running
+> for more than 10ms during GC. During certain syscalls, it's non-trivial to
+> write them in a reetrant manner in userspace (socket).
 > 
-> (and we can go straight from live to killed, too.)  So EPOLLPRI could be
-> signaled if any notification changes state, and a new ioctl could read
-> the list of notifications that have changed state.
+> [...]
 
-A common case is will likely be to just rely the status to the
-supervised task and not even perform some complicated action in the
-supervisor.
-So I think a way to optionally combine recv+send at the same time might
-be a good idea. Either another ioctl which is a combined recv+send or a
-flag on the SECCOMP_IOCTL_NOTIF_RECV_STATUS.
+Thanks for your patience on this series! I think this is a clear solution
+for the race. Applied to for-next/seccomp, thanks!
 
-Christian
+[1/4] Documentation: seccomp: Fix user notification documentation
+      https://git.kernel.org/kees/c/1e2ca403fa89
+[2/4] seccomp: Refactor notification handler to prepare for new semantics
+      https://git.kernel.org/kees/c/6a1e0616acde
+[3/4] seccomp: Support atomic "addfd + send reply"
+      https://git.kernel.org/kees/c/ba9ef89cf83e
+[4/4] selftests/seccomp: Add test for atomic addfd+send
+      https://git.kernel.org/kees/c/75c98a0d5d3a
+
+-- 
+Kees Cook
+
