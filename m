@@ -1,39 +1,39 @@
-Received: from mail-pj1-f50.google.com (mail-pj1-f50.google.com [209.85.216.50])
+Received: from mail-pl1-f176.google.com (mail-pl1-f176.google.com [209.85.214.176])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 78B1F2FAD
-	for <containers@lists.linux.dev>; Fri, 28 May 2021 16:50:35 +0000 (UTC)
-Received: by mail-pj1-f50.google.com with SMTP id f8so2904916pjh.0
-        for <containers@lists.linux.dev>; Fri, 28 May 2021 09:50:35 -0700 (PDT)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 161F52FAD
+	for <containers@lists.linux.dev>; Fri, 28 May 2021 17:14:33 +0000 (UTC)
+Received: by mail-pl1-f176.google.com with SMTP id 69so1938169plc.5
+        for <containers@lists.linux.dev>; Fri, 28 May 2021 10:14:33 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=chromium.org; s=google;
         h=date:from:to:cc:subject:message-id:references:mime-version
          :content-disposition:in-reply-to;
-        bh=Bf/qW3piWCuBBeLZ+p4pokx2iGuE3UcRHm7BvkTCNSc=;
-        b=g+Y+IAxG0cB1wATcml49hmgG5JMzliGRY7NR1ATb6fl2roE3wT1z6tSIAd7myl8+Hc
-         T0UIVvOmFc6nKXl5zyyVLm6MzbLhhNPBADN5JeWU/LNd6sA7q1Gokgtjg7j+dtmFJg6b
-         j8Dm5mDF396YU4G0m4gwEVELa8pWBomUZTjF8=
+        bh=jdSDHqrpODkjWfBbbyG6vrMb009iDQOh1kwEFeMeXVQ=;
+        b=JqDww1mmvzIwNQsCG0aunTaF8NLcrJ0Ibo9IfukAcFtkxDz1RT+h5IH3I6n61mpYfV
+         SBce2TSfwOSlKsp8BgY0uPzalxWGBM9cXO2qx7/jvVFNOMnmjjKy6gRG0j0CS+CQCQCK
+         gDT+Y/5uMTCjknH3QY1BFZiEHumHYubymuQ2w=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:date:from:to:cc:subject:message-id:references
          :mime-version:content-disposition:in-reply-to;
-        bh=Bf/qW3piWCuBBeLZ+p4pokx2iGuE3UcRHm7BvkTCNSc=;
-        b=j54fki8lZVyEVXsVSCycUnCdK5HQ7PoLly50NfrMN3LOskLhiEKk5PQCJcrKjJNT9K
-         q5F7jR8hl+bUj7Ee0iUo4e5HPkui8VfTjPHfTRWXXIeSAzUxkmoRIK7tqQHQJaW0fgFE
-         JT3g4zupA7YWpAmpSfkcKWNh4XcsTGyxpb+fc4J2NmGLxN46AVTbT9nUNauwtXZgSxA6
-         0Oid6SJQchtWvCy4yRC82sMzSTlUOPsV81FKZPuD+nju2ZEVQG9gA8JTz7CUUftwqQ7E
-         gMGpxsODCEQkqvP0oEuh17BxHCbXy/VjwcS2vNxmd8oU5Oq/tJrs0Pf+WoQzOGD7YdK4
-         dISA==
-X-Gm-Message-State: AOAM5323w63W9P77BMs7CRAd1xDxloDvPRmxpxkKstI/GUtHyEFNT7zs
-	0wMoMGrylsT+HgxTD6PlGWhY2A==
-X-Google-Smtp-Source: ABdhPJwBG9lRb7x6OUHwPfbld8YZaCMUZ7MT9zFSclWeTljnDURj7UmLVNDXrMQZsqKhuPw7Zu5qmw==
-X-Received: by 2002:a17:903:2290:b029:f3:9129:8397 with SMTP id b16-20020a1709032290b02900f391298397mr8875442plh.13.1622220634969;
-        Fri, 28 May 2021 09:50:34 -0700 (PDT)
+        bh=jdSDHqrpODkjWfBbbyG6vrMb009iDQOh1kwEFeMeXVQ=;
+        b=PtUqZ1jv9j6FO9rx1yQ3YpPoWo4z+80rik171V/TZmZuHW7GMEieG/Zg/Y4TXNOpft
+         y962iIOYb8/8hqJ2J+lGnT9hSSp47MHgEO3uh5i05RuQVk9vSBBTSPIIXgmT7IcfIOsx
+         DlkKoqGHhQtFXdLhk6u31sb9RvMpHTdUFhx/3PMbV3Y1sbAXmTmBePqaODu4euJwmyQ5
+         BEXfS7uCpBSPBbruMbcsexG17DEX2oN2yHxxq5evz1e5zmm3s0d34o4mVSdEyLC5/mwM
+         cOiN8o8H1es+s3FZtE4y5vaFikbxw0RKSm0I3LFTMB5l/gKIvTqTm9g9aaIUGqAChx4G
+         QKXA==
+X-Gm-Message-State: AOAM531V0TyHmA8HQnih+HyWf3Sj/1DT3nxQcpTFvyEuUEv7JkdLNPrH
+	dJ8hjaj/WiJZ4VLi5s2swVRUQA==
+X-Google-Smtp-Source: ABdhPJw0tPyzD2F7Jyx6FGKRdozODrroXNe9pqxuACKJUfpUIY0AqTbpb540nh3W0zU0XJllHER3Kg==
+X-Received: by 2002:a17:90a:6343:: with SMTP id v3mr5530405pjs.61.1622222072618;
+        Fri, 28 May 2021 10:14:32 -0700 (PDT)
 Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
-        by smtp.gmail.com with ESMTPSA id 25sm4640452pfh.39.2021.05.28.09.50.33
+        by smtp.gmail.com with ESMTPSA id p15sm4816757pjb.8.2021.05.28.10.14.31
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 28 May 2021 09:50:34 -0700 (PDT)
-Date: Fri, 28 May 2021 09:50:33 -0700
+        Fri, 28 May 2021 10:14:32 -0700 (PDT)
+Date: Fri, 28 May 2021 10:14:31 -0700
 From: Kees Cook <keescook@chromium.org>
 To: Rodrigo Campos <rodrigo@kinvolk.io>
 Cc: Sargun Dhillon <sargun@sargun.me>, LKML <linux-kernel@vger.kernel.org>,
@@ -45,7 +45,7 @@ Cc: Sargun Dhillon <sargun@sargun.me>, LKML <linux-kernel@vger.kernel.org>,
 	=?iso-8859-1?Q?Micka=EBl_Sala=FCn?= <mic@linux.microsoft.com>
 Subject: Re: [PATCH v2 2/4] seccomp: Refactor notification handler to prepare
  for new semantics
-Message-ID: <202105280949.00DE5B3018@keescook>
+Message-ID: <202105281014.EECE3D3048@keescook>
 References: <20210517193908.3113-1-sargun@sargun.me>
  <20210517193908.3113-3-sargun@sargun.me>
  <CACaBj2YUiowSKzvh02OjpQNqQViA8N0eyRMimkK=90NagRF40w@mail.gmail.com>
@@ -95,32 +95,11 @@ On Fri, May 28, 2021 at 05:27:39PM +0200, Rodrigo Campos wrote:
 > I see the problem, with the patch I don't see it).  5.11 is already
 > EOL, so I didn't try it (probably will work as well).
 
-Great! Thanks for doing that testing.
-
-> The test case that I have is quite a complicated one, though. I'm
-> using the PR we opened to runc to add support for seccomp notify[1]
-> and a seccomp agent slightly modified from the example in the PR with
-> some cgo to use addfd, and need to run it for several thousand
-> iterations, as the kernel needs to be interrupted in a specific line
-> and some kernel locks to be acquired in a specific order for this to
-> trigger. If you think it is important, I can try to cleanup the code
-> and share it, but the issue is basically what I explained here:
-> https://lore.kernel.org/lkml/20210413160151.3301-2-rodrigo@kinvolk.io/
-
-Okay; yeah, sounds like that'll be hard to port sanely. :)
-
-> Can we cc this patch to stable, then? :)
-
-Yup, sounds good to me. I will adjust the tags.
+Oh, btw, may I add a Tested-by: from you for this fix?
 
 Thanks!
 
 -Kees
-
-> Best,
-> Rodrigo
-> 
-> [1]: https://github.com/opencontainers/runc/pull/2682
 
 -- 
 Kees Cook
