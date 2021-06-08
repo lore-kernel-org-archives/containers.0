@@ -1,104 +1,81 @@
-Received: from mail-wm1-f41.google.com (mail-wm1-f41.google.com [209.85.128.41])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mout.kundenserver.de (mout.kundenserver.de [212.227.17.13])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 880A170
-	for <containers@lists.linux.dev>; Thu,  3 Jun 2021 11:34:00 +0000 (UTC)
-Received: by mail-wm1-f41.google.com with SMTP id h3so3184318wmq.3
-        for <containers@lists.linux.dev>; Thu, 03 Jun 2021 04:34:00 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=chrisdown.name; s=google;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to:user-agent;
-        bh=dDlsfUVoPz4mflmjcY/17kiGQZC/D+4tAfNsl24/syY=;
-        b=I33Sa5PdYGfNQKY6cAOIwcMXmeroW1m4Oz5alOZxht7s147JhQGghyjwGeESW8gRo6
-         SuP7K1TW+jJxffBQf2GxFw1F6/UzK1CV4s4VSF8AE9U4cL9xDRHxoG/oa6eHYczCRMj+
-         ahTYmh0FeW4SmS7S7hRi1WnWRh6Ci+cqtf3UA=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=dDlsfUVoPz4mflmjcY/17kiGQZC/D+4tAfNsl24/syY=;
-        b=Owu0uTDBoXT+WZnDwMO6FHf2D4DJfywAH0SM3kjlKrM+60GH134FuOuvSWhXQIf6Wz
-         1T/6Af4L88aLmIAhs5wyhuqCuMn2CKRZGiMH8BOta4xk0jb7bzqPWb48jjkkdvQxg4+D
-         KVwPz4zxLDLBqRrjqniolMeC+Y2JynWs9S85giGSPpjiCuiuGvcc5bZBOuSseEe41zDL
-         XKIeioSD6Ja2/0CIkN2gKcAbRTR/UqtVIHm02ENaSlA489DBKh3wnDoHZC8QqWIc0jZ3
-         ALMcR9MkSbP6LRKh21+GsJ57YiI8Vrpyb5eXrzqoF94JgxQvgT1prfA5vyPRnbkAGgB/
-         XgvQ==
-X-Gm-Message-State: AOAM533CEgj9+CrHQdIDr0nsVo8WTEAjWFcEP2itsLwA9TcDPDz6td/7
-	1VnDt0kciH5Wb0KDi3qjNVydmw==
-X-Google-Smtp-Source: ABdhPJzxGp42YLePRB+COjvEZscGLJ1f57oLKFzG258csqxuu/Y26xpaJN44MSJysb/GFA/LgvlFLA==
-X-Received: by 2002:a1c:7402:: with SMTP id p2mr9615488wmc.88.1622720039043;
-        Thu, 03 Jun 2021 04:33:59 -0700 (PDT)
-Received: from localhost ([2620:10d:c093:400::5:6726])
-        by smtp.gmail.com with ESMTPSA id l16sm5710461wmj.47.2021.06.03.04.33.58
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 03 Jun 2021 04:33:58 -0700 (PDT)
-Date: Thu, 3 Jun 2021 12:33:58 +0100
-From: Chris Down <chris@chrisdown.name>
-To: legion@kernel.org
-Cc: LKML <linux-kernel@vger.kernel.org>,
-	Linux Containers <containers@lists.linux.dev>,
-	Linux Containers <containers@lists.linux-foundation.org>,
-	Linux FS Devel <linux-fsdevel@vger.kernel.org>, linux-mm@kvack.org,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Christian Brauner <christian.brauner@ubuntu.com>,
-	"Eric W . Biederman" <ebiederm@xmission.com>,
-	Johannes Weiner <hannes@cmpxchg.org>,
-	Michal Hocko <mhocko@kernel.org>
-Subject: Re: [PATCH v1] proc: Implement /proc/self/meminfo
-Message-ID: <YLi+JoBwfLtqVGiP@chrisdown.name>
-References: <ac070cd90c0d45b7a554366f235262fa5c566435.1622716926.git.legion@kernel.org>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B1ED32FAD
+	for <containers@lists.linux.dev>; Tue,  8 Jun 2021 09:38:18 +0000 (UTC)
+Received: from [192.168.1.155] ([77.7.0.189]) by mrelayeu.kundenserver.de
+ (mreue109 [212.227.15.183]) with ESMTPSA (Nemesis) id
+ 1MjjGX-1l5cah3HQp-00lF5d; Tue, 08 Jun 2021 11:38:16 +0200
+To: containers@lists.linux.dev,
+ "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+From: "Enrico Weigelt, metux IT consult" <lkml@metux.net>
+Subject: device namespaces
+Message-ID: <ca7520c9-d260-6c87-43b9-f9be24ded50c@metux.net>
+Date: Tue, 8 Jun 2021 11:38:16 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.10.0
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
-Content-Disposition: inline
-In-Reply-To: <ac070cd90c0d45b7a554366f235262fa5c566435.1622716926.git.legion@kernel.org>
-User-Agent: Mutt/2.0.7 (481f3800) (2021-05-04)
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: tl
+Content-Transfer-Encoding: 8bit
+X-Provags-ID: V03:K1:wxk78eUumZYNeOehK+YAmlLZTGCSWO3ghgFrKwZ1SPOQdNhz1ZM
+ GdYoMpQoe+BAap7LC+pC5TIylANATBgsGirjYKOLa2T3RHdVDVaQo5MDPRa4bfw6TZBZoYY
+ RaixW3pVbW/E7B8yip7Ewf+iU/8E/mUHbK15MJ0Gj2lVToUdRy05Gz6JYrNLH3omwp8Wcd4
+ FkmHUPW3SVrZn5lVIPzBg==
+X-Spam-Flag: NO
+X-UI-Out-Filterresults: notjunk:1;V03:K0:Yp3wVbPV/tU=:pGuDUOoK8jP0HwtYX8i4be
+ uUWOoaAGoKZ99Cv+ndQIbNm2sT7dXxR1/v3MqtYhONIki0ketzitptG77//X7N6vUI/bxiBEt
+ lhiW59Y0By9FpnZCNgrQ3zDY5IB8z1RSFojKPUUAQ8KfsoKwwYcEgzvzBLex2vA1yAZBODBwl
+ jJzJRhfAhAEs2TBs60PUC/Ivt/PDWIebjmAJQ2nIXzsHr0AXfg233ADLHnn3yc+/uqJUn+jWq
+ acq8n+4V0OuQ8q4vtVQOqcXFyd2SnH9oKBTNFBoxLDZ9yUmcbVFYj3+C9dNGvTvJnXvgOIoJH
+ jfX5zwD8vhHzt+NdtJKuCy2cWfrh041pAE3FNHVjIVpiZhx4iTvA9naR5D0jChfYyuNP79CxG
+ QNIblvffwgNhKzlcOe84xR77hyzgkhwPWrjW2vJmYDULM8vV9UfenMzTClBvwsmrcKiMw5zua
+ aCwS1QjC3J0q4HxqogmKE+zG59VjO8mQl12emcsWuNq0rPcsxx3vKenBnwLgL+9bsz3F/Xk5M
+ Lza89StjjAenDPH11GF47I=
 
-Hi Alexey,
+Hello folks,
 
-legion@kernel.org writes:
->From: Alexey Gladkov <legion@kernel.org>
->The /proc/meminfo contains information regardless of the cgroups
->restrictions. This file is still widely used [1]. This means that all
->these programs will not work correctly inside container [2][3][4]. Some
->programs try to respect the cgroups limits, but not all of them
->implement support for all cgroup versions [5].
->
->Correct information can be obtained from cgroups, but this requires the
->cgroups to be available inside container and the correct version of
->cgroups to be supported.
 
-Then they should add support for it. We already export these metrics as part of 
-cgroups and plenty of applications like Docker, podman, containerd, systemd, 
-runc, etc already support it.
+I'm going to implement device namespaces, where containers can get an
+entirely different view of the devices in the machine (usually just a
+specific subset, but possibly additional virtual devices).
 
-Putting stuff in /proc to get around the problem of "some other metric I need 
-might not be exported to a container" is not a very compelling argument. If 
-they want it, then export it to the container...
+For start I'd like to add a simple mapping of dev maj/min (leaving aside
+sysfs, udev, etc). An important requirement for me is that the parent ns
+can choose to delegate devices from those it full access too (child
+namespaces can do the same to their childs), and the assignment can
+change (for simplicity ignoring the case of removing devices that are
+already opened by some process - haven't decided yet whether they should
+be forcefully closed or whether keeping them open is a valid use case).
 
-Ultimately, if they're going to have to add support for a new 
-/proc/self/meminfo file anyway, these use cases should just do it properly 
-through the already supported APIs.
+The big question for me now is how exactly to do the table maintenance
+from userland. We already have entries in /proc/<pid>/ns/*. I'm thinking
+about using them as command channel, like this:
 
->+	for_each_online_node(nid)
->+		mem_cgroup_nr_pages(memcg, nid, mi->pages);
->+
->+	mi->slab_reclaimable = memcg_page_state(memcg, NR_SLAB_RECLAIMABLE_B);
->+	mi->slab_unreclaimable = memcg_page_state(memcg, NR_SLAB_UNRECLAIMABLE_B);
->+	mi->cached = memcg_page_state(memcg, NR_FILE_PAGES);
->+	mi->swapcached = memcg_page_state(memcg, NR_SWAPCACHE);
->+	mi->anon_pages = memcg_page_state(memcg, NR_ANON_MAPPED);
->+	mi->mapped = memcg_page_state(memcg, NR_FILE_MAPPED);
->+	mi->nr_pagetable = memcg_page_state(memcg, NR_PAGETABLE);
->+	mi->dirty_pages = memcg_page_state(memcg, NR_FILE_DIRTY);
->+	mi->writeback_pages = memcg_page_state(memcg, NR_WRITEBACK);
->+}
+* new child namespaces are created with empty mapping
+* mapping manipulation is done by just writing commands to the ns file
+* access is only granted if the writing process itself is in the
+  parent's device ns and has CAP_SYS_ADMIN (or maybe their could be some
+  admin user for the ns ? or the 'root' of the corresponding user_ns ?)
+* if the caller has some restrictions on some particular device, these
+  are automatically added (eg. if you're restricted to readonly, you
+  can't give rw to the child ns).
 
-This presents an extraordinarily confusing API. A cgroup can contain more than 
-one process, so it's not right to present this information as "meminfo" in 
-/proc/self when these statistics may not have any relation to the current task 
-under question.
+Is this a good way to go ? Or what would be a better one ?
+
+
+--mtx
+
+-- 
+---
+Hinweis: unverschlüsselte E-Mails können leicht abgehört und manipuliert
+werden ! Für eine vertrauliche Kommunikation senden Sie bitte ihren
+GPG/PGP-Schlüssel zu.
+---
+Enrico Weigelt, metux IT consult
+Free software and Linux embedded engineering
+info@metux.net -- +49-151-27565287
