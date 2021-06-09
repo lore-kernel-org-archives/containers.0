@@ -1,112 +1,91 @@
-Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
+Received: from mout.kundenserver.de (mout.kundenserver.de [212.227.17.24])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8360B70
-	for <containers@lists.linux.dev>; Wed,  9 Jun 2021 08:09:23 +0000 (UTC)
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 257BE61361;
-	Wed,  9 Jun 2021 08:09:20 +0000 (UTC)
-Date: Wed, 9 Jun 2021 10:09:18 +0200
-From: Christian Brauner <christian.brauner@ubuntu.com>
-To: Hannes Reinecke <hare@suse.de>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, gregkh@linuxfoundation.org,
-	containers@lists.linux.dev, linux-kernel@vger.kernel.org,
-	lkml@metux.net
-Subject: Re: device namespaces
-Message-ID: <20210609080918.ma2klvxkjad4pjrn@wittgenstein>
-References: <YL9liW99Ytf6uBlu@kroah.com>
- <9157affa-b27a-c0f4-f6ee-def4a991fd4e@suse.de>
- <20210608142911.ievp2rpuquxjuyus@wittgenstein>
- <d956398e-7ee6-ba36-43cc-4cdcea34b5b9@suse.de>
- <877dj4ff9g.fsf@disp2133>
- <20210609063818.xnod4rzvti3ujkvn@wittgenstein>
- <b9ea9116-7120-b0a7-b739-dd8513e12c5e@suse.de>
- <20210609072108.ldhsxfnfql4pacqx@wittgenstein>
- <85a0d777-dea6-9574-8946-9fc8f912c1af@suse.de>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A74FB70
+	for <containers@lists.linux.dev>; Wed,  9 Jun 2021 08:22:32 +0000 (UTC)
+Received: from [192.168.1.155] ([77.9.120.3]) by mrelayeu.kundenserver.de
+ (mreue106 [212.227.15.183]) with ESMTPSA (Nemesis) id
+ 1Md6AP-1lIexq0haV-00aHkm; Wed, 09 Jun 2021 10:16:29 +0200
+Subject: Re: [PATCH v1] proc: Implement /proc/self/meminfo
+To: Chris Down <chris@chrisdown.name>, legion@kernel.org
+Cc: LKML <linux-kernel@vger.kernel.org>,
+ Linux Containers <containers@lists.linux.dev>,
+ Linux Containers <containers@lists.linux-foundation.org>,
+ Linux FS Devel <linux-fsdevel@vger.kernel.org>, linux-mm@kvack.org,
+ Andrew Morton <akpm@linux-foundation.org>,
+ Christian Brauner <christian.brauner@ubuntu.com>,
+ "Eric W . Biederman" <ebiederm@xmission.com>,
+ Johannes Weiner <hannes@cmpxchg.org>, Michal Hocko <mhocko@kernel.org>
+References: <ac070cd90c0d45b7a554366f235262fa5c566435.1622716926.git.legion@kernel.org>
+ <YLi+JoBwfLtqVGiP@chrisdown.name>
+From: "Enrico Weigelt, metux IT consult" <lkml@metux.net>
+Message-ID: <b8c86081-503c-3671-2ea3-dd3a0950ce25@metux.net>
+Date: Wed, 9 Jun 2021 10:16:25 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.10.0
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <85a0d777-dea6-9574-8946-9fc8f912c1af@suse.de>
+In-Reply-To: <YLi+JoBwfLtqVGiP@chrisdown.name>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: tl
+Content-Transfer-Encoding: 8bit
+X-Provags-ID: V03:K1:7koxO5BYDpAqMJLkjAi8sQ3UCPPXcTQYX99ymXS5Xqgz0nlGGuK
+ Hxb+ndUGgPuVDZUuZ5nTXtCvHrxWi4iW5JK0j7U974MtjWtMY2aS0VLI/KED+rz6ayZZcA4
+ Xx0b/USmKF42nW+OADIYE9NI4u/lRQ5grSAxY4BuHtuBMJUcJGwP8P+bG/xzNZubYSDqN5Y
+ CvXBoBECUCVPaja1xu0uw==
+X-Spam-Flag: NO
+X-UI-Out-Filterresults: notjunk:1;V03:K0:zoQBb+4z59o=:7ZOyVHTdmuL/FRt38Jc0Xq
+ z6a7e2p9o9p4Fh/K7dlpGu2p8PY3d9adDixKn6JwuxZedoaLCZa6jllnT7wZsbcc3sRNQRjms
+ 2K2/vU3bruuqcWHWcfFixNKhS6qnwXYkUp8SEn8E8X2fpSN4rhzVFbmOMngMAKAQoTBBermRS
+ P/ddQ0S/+FZlUy9iQRkylDtpqY5kJy0BW9ztaUct2lgZu12CIEMN3MtVeKUywp0ZgJb4M9J5S
+ nCzSWIKyn5xkTuD/S9oMKk4KTLn6oHQnsTDe5GeQkJUuDChBrOOHrhHqdFtRcpiIC3m8SV4z7
+ wlYyukPHPTff8DKZ/r8HHd2xboz5sEP/gCA1ZQAnuTvru1sCJG52qKRhf4LYhMnPUL2piZBfU
+ Akm267LBxfrf/gCi7a6i4jzboWN1vyDgyGoL/0hS4WwhT9z/oKl0ZkXSVecC57QWD3HczOtIl
+ 2Lq9eM0edI3hc4JTuQeInpWP5NE5R52b1NILvwMxiE+44TR5HOmCw9cygGzR6wN9RB0cxXfv/
+ s5JVElsa3sul+QvmzvUcWM=
 
-On Wed, Jun 09, 2021 at 09:54:05AM +0200, Hannes Reinecke wrote:
-> On 6/9/21 9:21 AM, Christian Brauner wrote:
-> > On Wed, Jun 09, 2021 at 09:02:36AM +0200, Hannes Reinecke wrote:
-> >> On 6/9/21 8:38 AM, Christian Brauner wrote:
-> >>> On Tue, Jun 08, 2021 at 12:16:43PM -0500, Eric W. Biederman wrote:
-> >>>> Hannes Reinecke <hare@suse.de> writes:
-> >>>>
-> >>>>> On 6/8/21 4:29 PM, Christian Brauner wrote:
-> >>>>>> On Tue, Jun 08, 2021 at 04:10:08PM +0200, Hannes Reinecke wrote:
-> >> [ .. ]
-> >>>>> Granted, modifying sysfs layout is not something for the faint-hearted,
-> >>>>> and one really has to look closely to ensure you end up with a
-> >>>>> consistent layout afterwards.
-> >>>>>
-> >>>>> But let's see how things go; might well be that it turns out to be too
-> >>>>> complex to consider. Can't tell yet.
-> >>>>
-> >>>> I would suggest aiming for something like devptsfs without the
-> >>>> complication of /dev/ptmx.
-> >>>>
-> >>>> That is a pseudo filesystem that has a control node and virtual block
-> >>>> devices that were created using that control node.
-> >>>
-> >>> Also see android/binder/binderfs.c
-> >>>
-> >> Ah. Will have a look.
-> > 
-> > I implemented this a few years back and I think it should've made it
-> > onto Android by default now. So that approach does indeed work well, it
-> > seems:
-> > https://chromium.googlesource.com/aosp/platform/system/core/+/master/rootdir/init.rc#257
-> > 
-> > This should be easier to follow than the devpts case because you don't
-> > need to wade through the {t,p}ty layer.
-> > 
-> >>
-> >>>>
-> >>>> That is the cleanest solution I know and is not strictly limited to use
-> >>>> with containers so it can also gain greater traction.  The interaction
-> >>>> with devtmpfs should be simply having devtmpfs create a mount point for
-> >>>> that filesystem.
-> >>>>
-> >>>> This could be a new cleaner api for things like loopback devices.
-> >>>
-> >>> I sent a patchset that implemented this last year.
-> >>>
-> >> Do you have a pointer/commit hash for this?
-> > 
-> > Yes, sure:
-> > https://lore.kernel.org/linux-block/20200424162052.441452-1-christian.brauner@ubuntu.com/
-> > 
-> > You can also just pull my branch. I think it's still based on v5.7 or sm:
-> > https://git.kernel.org/pub/scm/linux/kernel/git/brauner/linux.git/log/?h=loopfs
-> > 
-> > I'm happy to collaborate on this too.
-> >
-> How _very_ curious. 'kernfs: handle multiple namespace tags' and 'loop:
-> preserve sysfs backwards compability' are essentially the same patches I
-> did for my block namespaces prototyp; I named it 'KOBJ_NS_TYPE_BLK', not
-> 'KOBJ_NS_TYPE_USER', though :-)
-> 
-> Guess we really should cooperate.
-> 
-> Speaking of which: why did you name it 'user' namespace?
-> There already is a generic 'user_namespace' in
-> include/linux/user_namespace.h, serving as a container for all
-> namespaces; as such it probably should include this 'user' namespace,
-> leading to quite some confusion.
-> 
-> Or did I misunderstood something here?
+On 03.06.21 13:33, Chris Down wrote:
 
-Ah yes, you misunderstand. The KOBJ_NS_TYPE_* tags are namespace tags.
-So KOBJ_NS_TYPE_NET is a network namespace tag. So KOBJ_NS_TYPE_USER is
-a user namespace tag not a completely new namespace. The idea very
-roughly being that devices such as loop devices are ultimately filtered
-by user namespace which is taken from the s_user_ns the loopfs instance
-is mounted in. We should compare notes.
+Hi folks,
 
-Christian
+
+> Putting stuff in /proc to get around the problem of "some other metric I 
+> need might not be exported to a container" is not a very compelling 
+> argument. If they want it, then export it to the container...
+> 
+> Ultimately, if they're going to have to add support for a new 
+> /proc/self/meminfo file anyway, these use cases should just do it 
+> properly through the already supported APIs.
+
+It's even a bit more complex ...
+
+/proc/meminfo always tells what the *machine* has available, not what a
+process can eat up. That has been this way even long before cgroups.
+(eg. ulimits).
+
+Even if you want a container look more like a VM - /proc/meminfo showing
+what the container (instead of the machine) has available - just looking
+at the calling task's cgroup is also wrong. Because there're cgroups
+outside containers (that really shouldn't be affected) and there're even
+other cgroups inside the container (that further restrict below the
+container's limits).
+
+BTW: applications trying to autotune themselves by looking at
+/proc/meminfo are broken-by-design anyways. This never has been a valid
+metric on how much memory invididual processes can or should eat.
+
+
+--mtx
+
+-- 
+---
+Hinweis: unverschlüsselte E-Mails können leicht abgehört und manipuliert
+werden ! Für eine vertrauliche Kommunikation senden Sie bitte ihren
+GPG/PGP-Schlüssel zu.
+---
+Enrico Weigelt, metux IT consult
+Free software and Linux embedded engineering
+info@metux.net -- +49-151-27565287
