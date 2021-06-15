@@ -1,183 +1,242 @@
-Received: from mout.kundenserver.de (mout.kundenserver.de [212.227.17.13])
+Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8113A72
-	for <containers@lists.linux.dev>; Tue, 15 Jun 2021 11:24:47 +0000 (UTC)
-Received: from [192.168.1.155] ([95.115.9.120]) by mrelayeu.kundenserver.de
- (mreue106 [212.227.15.183]) with ESMTPSA (Nemesis) id
- 1MxEYY-1l4SP348mu-00xa0B; Tue, 15 Jun 2021 13:24:26 +0200
-Subject: Re: device namespaces
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Christian Brauner <christian.brauner@ubuntu.com>,
- Hannes Reinecke <hare@suse.de>, gregkh@linuxfoundation.org,
- containers@lists.linux.dev, linux-kernel@vger.kernel.org
-References: <YL9liW99Ytf6uBlu@kroah.com>
- <9157affa-b27a-c0f4-f6ee-def4a991fd4e@suse.de>
- <20210608142911.ievp2rpuquxjuyus@wittgenstein>
- <d956398e-7ee6-ba36-43cc-4cdcea34b5b9@suse.de> <877dj4ff9g.fsf@disp2133>
- <20210609063818.xnod4rzvti3ujkvn@wittgenstein>
- <b9ea9116-7120-b0a7-b739-dd8513e12c5e@suse.de>
- <20210609072108.ldhsxfnfql4pacqx@wittgenstein>
- <85a0d777-dea6-9574-8946-9fc8f912c1af@suse.de>
- <20210609080918.ma2klvxkjad4pjrn@wittgenstein> <87v96k1d65.fsf@disp2133>
- <c504a8c6-73f8-b45c-6d6b-6f5a1300ab3a@metux.net> <874ke0s60c.fsf@disp2133>
-From: "Enrico Weigelt, metux IT consult" <lkml@metux.net>
-Message-ID: <2bee9206-ca4a-8456-fabf-9557db599545@metux.net>
-Date: Tue, 15 Jun 2021 13:24:24 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.10.0
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2A58A72
+	for <containers@lists.linux.dev>; Tue, 15 Jun 2021 11:32:32 +0000 (UTC)
+Received: by mail.kernel.org (Postfix) with ESMTPSA id C1F0161107;
+	Tue, 15 Jun 2021 11:32:27 +0000 (UTC)
+Date: Tue, 15 Jun 2021 13:32:22 +0200
+From: Christian Brauner <christian.brauner@ubuntu.com>
+To: legion@kernel.org
+Cc: LKML <linux-kernel@vger.kernel.org>,
+	Linux Containers <containers@lists.linux.dev>,
+	Linux Containers <containers@lists.linux-foundation.org>,
+	Linux FS Devel <linux-fsdevel@vger.kernel.org>, linux-mm@kvack.org,
+	Andrew Morton <akpm@linux-foundation.org>,
+	"Eric W . Biederman" <ebiederm@xmission.com>,
+	Johannes Weiner <hannes@cmpxchg.org>,
+	Michal Hocko <mhocko@kernel.org>, Chris Down <chris@chrisdown.name>,
+	cgroups@vger.kernel.org
+Subject: Re: [PATCH v1] proc: Implement /proc/self/meminfo
+Message-ID: <20210615113222.edzkaqfvrris4nth@wittgenstein>
+References: <ac070cd90c0d45b7a554366f235262fa5c566435.1622716926.git.legion@kernel.org>
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-In-Reply-To: <874ke0s60c.fsf@disp2133>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: tl
-Content-Transfer-Encoding: 8bit
-X-Provags-ID: V03:K1:jCdrTdFTo3v1QFUiCmmyn5ZmBHRUiO4hgjDbjsiUDKcvFYQgVpG
- MzxaUBZTk15UO7N/emYKMKMYnFSY8RuOfJWfabJ6xepRixLqVedqJvVPF0Dv04u7oClqrWA
- Plzx5mjayWJIXPOZgNIoedYh9N45aM7Kzw+sIl7mRye8YLIHwHlJxLPCZkpH5LV1HpY0ftY
- DSjP/3NlGnzkmHosvNO7Q==
-X-Spam-Flag: NO
-X-UI-Out-Filterresults: notjunk:1;V03:K0:pxyFj5pv3CU=:saOJa9+d6IMozxJ/a2ZUm0
- LsWDty2f9E48uuSVi7iXXmA8Qq+6WpUrnI8MbYc4qOLf8Dm3gAJBzrgvEq4qSf5nbNxoPtfXc
- Hp9MOZxLyzR6FnmDwHiU65OrzZhoM9lplRMDyELPR9blkVMR8UuDg3nIwVxS3rxEhRlM0UmS2
- 4aQqa5Ax86/XXjtss8CFqZfx37IwykKHiRp7XCDOBd1CWAD+QCNmFqYv9xZfJScVH3gpfmHcU
- W7713eWab8eJo91nQYTTUUF27cghK+rmqmXYBqi7sCsVa02mn0S7PcUfWpkzxilzgVJUPePL+
- Iu/dia1Nu2RQGvglwBYaIiSLzkFWh3a4nluSaCtyvv9nsZoDVjq8IOna+UAa4iY1UNzTMO9mk
- hWOtd1wKdpK6fhtTVfMgnPtBzDGcZxIGB5nzcGQ7fxQBazO6ZuO6EnYt+ldq+OjQrB7XgJqXs
- P2ovnrlWFlaoqh40aUeNGsQAMuQ0cqywxqI0uP5zB40hjkLE2d48i7BvPe1BxgXNhWNVQvbyI
- nbWn9VoEu0MMb56iae0niQ=
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+In-Reply-To: <ac070cd90c0d45b7a554366f235262fa5c566435.1622716926.git.legion@kernel.org>
 
-On 14.06.21 19:36, Eric W. Biederman wrote:
-
-> By virtual devices I mean all devices that are not physical pieces
-> of hardware.  For block devices I mean devices such as loopback
-> devices that are created on demand.  Ramdisks that start this
-> conversation could also be considered virtual devices.
-
-Ok. Do you also count partitions in here ?
-
-IMHO we've got another category to look up: devices that (can) create
-more (sub)devices. Examples coming into my head are loopdev, ptmx,
-partitions, etc.
-
-The big problem here: fist we'd need to be clear on the actual
-semantics in namespaced context, for example:
-
-* what happens when you talk to /dev/loop0 and create a new loopdev
-   inside a container - shall it be ever visible on the host ?
-
-* what if you want to create an loopdev on some file thats only visible
-   to the host, but that loopdev shall appear inside a container ?
-   ("virtual disk" scenario)
-
->> How would you skip the virtual devices from sysfs ? Adding some filter
->> into sysfs that looks at the device class (or some flag within it) ?
+On Thu, Jun 03, 2021 at 12:43:07PM +0200, legion@kernel.org wrote:
+> From: Alexey Gladkov <legion@kernel.org>
 > 
-> I would just not run the code to create sysfs entries when the virtual
-> devices are created.
-
-Oh, that would most likely make userland unhappy.
-
-Besides, that won't be so trivial due to the way sysfs works. Because
-sysfs more or less just presents kobj's. Each kobj may have attributes,
-a parent, and a list of childs. A device is n kobj, and it needs to
-be registered into the device hierarchy to work at all. Sysfs itself
-doesn't really know whether something is a virtual device (or a device
-at all) - it just calls some functions from kobject_type for things like
-reading/writing attributes, etc. But I don't see anything where
-kobject_type's can implement their own iterators.
-
-As things are right now, not registering a device in sysfs means not
-registering it at all.
-
-By the way: i'm just wondering whether it would make sense to give
-kobject_type it's own iteration and lookup functions. Unless I'm fully
-mistaken, that could help solving several other problems, e.g. device
-renaming (currently *very* tricky and only works to some extend for
-network devices).
-
-IMHO, we could then eg. fetch the device names (/sys/devices/...)
-directly from the struct device instead of the kset (perhaps a simple
-list instead of kset would also do here), and also create the symlinks
-(e.g. /sys/class/.../) on the fly. Once that's done, renaming a device
-should become rather simple.
-
-At that point, adding multiple views or certain parts of sysfs (e.g. the
-devices hierarchy) could perhaps be done by implementing special
-iterators take take the view criteria into account.
-
-@Greg: what's your take on that iterator idea ?
-
-> If you have virtual devices showing up in their own filesystem they
-> don't even need major or minor numbers.  You can just have files
-> that accept ioctls like device nodes.  In principle it is
-> possible to skip a lot of the historical infrastructure.  If the
-> infrastructure is not needed it is worth skipping.
-
-Ah, I see where you're going. You wanna completely drop these virtual 
-devices and replace them by a synthentic fs that *looks* like it
-contains devices ? Well, theoretically it should be possible, since fs'
-may handle opening device nodes completely own, instead of calling 
-generic code (is there any that actually does ?).
-
-BUT: in that case we have to really make sure that processes inside the
-container cannot ever open any device node outside that special fs.
-
-> I haven't dug into the block layer recently enough to say what is needed
-> or not.  I think there are some thing such as stat on a mounted
-> filesystem that need a major and minor numbers.  Which probably means
-> you have to use major and minor numbers.  By virtue of using common
-> infrastructure that implies showing up in sysfs and devtmpfs.  Things
-> would be limited just by not mounting devtmpfs in a container.
-
-Note that this approach also needs to support things like dynamically
-creating new device nodes (inside the container), udev, ... otherwise
-you'd need very special handling in userland again (lxc folks would
-become very unhappy ;-))
-
-> It is worth checking how much of the common infrastructure you need when
-> you start creating virtual devices.
-
-s/virtual devices/synthetic filesystems/;
-
-You approach goes much into the Plan9 direction (which in generally I'd
-love to see). But whatever we gonna do here needs to remain compatible
-with what existing userland expects - we've got a lot of Unix tradition
-to keep here.
-
-OR: we had to declare that (once inside the devns) we throw it all alway
-and it create something entirely new that's more like an Plan9 subsystem
-than an Linux container. Also interesting, but not what i've started
-this discussion for.
-
-> The only reason the network devices need changes to sysfs is to allow
-> different network devices with the same name to show up in different
-> network namespaces.
+> The /proc/meminfo contains information regardless of the cgroups
+> restrictions. This file is still widely used [1]. This means that all
+> these programs will not work correctly inside container [2][3][4]. Some
+> programs try to respect the cgroups limits, but not all of them
+> implement support for all cgroup versions [5].
 > 
-> If you can fundamentally avoid the problem of devices with the same
-> name needing to show up in sysfs and devtmpfs by using filesystems
-> then sysfs and devtmpfs needs no changes.
+> Correct information can be obtained from cgroups, but this requires the
+> cgroups to be available inside container and the correct version of
+> cgroups to be supported.
+> 
+> There is lxcfs [6] that emulates /proc/meminfo using fuse to provide
+> information regarding cgroups. This patch can help them.
+> 
+> This patch adds /proc/self/meminfo that contains a subset of
+> /proc/meminfo respecting cgroup restrictions.
+> 
+> We cannot just create /proc/self/meminfo and make a symlink at the old
+> location because this will break the existing apparmor rules [7].
+> Therefore, the patch adds a separate file with the same format.
 
-Well, that's only for the sysfs part. Network devices still need to
-be namespaced in other places (socket, etc) - what's already done by
-netns.
+Interesting work. Thanks. This is basically a variant of what I
+suggested at Plumbers and in [1].
 
-But yes, it sounds nice if we had entirely different namespaces for
-network device names (e.g. any of the hosts network devices could
-appear simply as "eth0" inside a container, if you want to)
+Judging from the patches sent by Waiman Long in [2] to also virtualize
+/proc/cpuinfo and /sys/devices/system/cpu this is a larger push to
+provide virtualized system information to containers.
 
+Although somewhere in the thread here this veered off into apparently
+just being a way for a process to gather information about it's own
+resources. At which point I'm confused why looking at its cgroups
+isn't enough.
 
---mtx
+So /proc/self/meminfo seems to just be the start. And note the two
+approaches seem to diverge too. This provides a new file while the other
+patchset virtualizes existing proc files/folders.
 
--- 
----
-Hinweis: unverschlüsselte E-Mails können leicht abgehört und manipuliert
-werden ! Für eine vertrauliche Kommunikation senden Sie bitte ihren
-GPG/PGP-Schlüssel zu.
----
-Enrico Weigelt, metux IT consult
-Free software and Linux embedded engineering
-info@metux.net -- +49-151-27565287
+In any case it seems you might want to talk since afaict you're all at
+the same company but don't seem to be aware of each others work (Which
+happens of course.).
+
+For the sake of history such patchsets have been pushed for before by
+the Siteground people.
+
+Chris and Johannes made a good point that the information provided in
+this file can be gathered from cgroups already. So applications should
+probably switch to reading those out of their cgroup and most are doing
+that already.
+
+And reading values out of cgroups is pretty straightforward even with
+the differences between cgroup v1 and v2. Userspace is doing it all over
+the place all of the time and the code has now existed for years so the
+cgroup interface is a problem. And with cgroup v2 it keeps growing so
+much more useful metrics that looking at meminfo isn't really cutting it
+anyway.
+
+So I think the argument that applications should start looking at their
+cgroup info if they want to find out detailed info is a solid argument
+that shouldn't be easily brushed aside.
+
+What might be worth is knowing exactly what applications are looking at
+/proc/meminfo and /proc/cpuinfo and make decision based on that info.
+None of that is clearly outlined in the thread unfortunately.
+
+So I immediately see two types of applications that could benefit from
+this patchset. The first ones are legacy applications that aren't aware
+of cgroups and aren't actively maintained. Introducing such
+functionality for these applications seems a weak argument.
+
+The second type is new and maintained applications that look at global
+info such as /proc/meminfo and /proc/cpuinfo. So such applications have
+ignored cgroups for a decade now. This makes it very unconvincing that
+they will suddenly switch to a newly introduced file. Especially if the
+entries in a new file aren't a 1:1 mapping of the old file.
+
+Johannes made another good point about it not being clear what
+applications actually want. And he's very right in that. It seems
+straightforward to virtualize things like meminfo but it actually isn't.
+And it's something you quite often discover after the fact. We have
+extensive experience implementing it in LXCFS in userspace. People kept
+and keep arguing what information exactly is supposed to go into
+calculating those values based on what best helps their use-case.
+
+Swap was an especially contentious point. In fact, sometimes users want
+to turn of swap even though it exists on the host and there's a command
+line switch in LXCFS to control that behavior.
+
+Another example supporting Johannes worry is virtualizing /proc/cpuinfo
+where some people wanted to virtualize cpu counts based on cpu shares.
+So we have two modes to virtualize cpus: based on cpuset alone or based
+on cpuset and cpu shares. And both modes are actively used. And that all
+really depends on application and workload.
+
+Finally, although LXCFS is briefly referenced in the commit message but
+it isn't explained very well and what it does.
+
+And we should consider it since this is a full existing userspace
+solution to the problem solved in this patchset including Dan's JRE
+use-case.
+
+This is a project started in 2014 and it is in production use since 2014
+and it delivers the features of this patchset here and more.
+
+For example, it's used in the Linux susbystem of Chromebooks, it's used
+by Alibaba (see [3]) and it is used for the JRE use-case by Google's
+Anthos when migrating such legacy applications (see [4]).
+
+At first, I was convinced we could make use of /proc/self/meminfo in
+LXCFS which is why I held back but we can't. We can't simply bind-mount
+it over /proc/meminfo because it's not a 1:1 correspondence between all
+fields. We could potentially read some values we now calculate and
+display it in /proc/meminfo but we can't stop virtualizing /proc/meminfo
+itself. So we don't gain anything from this. When Alex asked me about it
+I tried to come up with good ways to integrate this but the gain is just
+too little for us.
+
+Because our experience tells us that applications that want this type of
+virtualization don't really care about heir own resources. They care
+about a virtualized view of the system's resources. And the system in
+question is often a container. But it get's very tricky since we don't
+really define what a container is. So what data the user wants to see
+depends on the used container runtime, type of container, and workload.
+An application container has very different needs than a system
+container that boots systemd. LXCFS can be very flexible here and
+virtualize according to the users preferences (see the split between
+cpuset and cpuset + cpu shares virtualization for cpu counts).
+
+In any case, LXCFS is a tiny FUSE filesystem which virtualizes various
+procfs and sysfs files for a container:
+
+/proc/cpuinfo
+/proc/diskstats
+/proc/meminfo
+/proc/stat
+/proc/swaps
+/proc/uptime
+/proc/slabinfo
+/sys/devices/system/cpu/*
+/sys/devices/system/cpu/online
+
+If you call top in a container that makes use of this it will display
+everything virtualized to the container (See [5] for an example of
+/proc/cpuinfo and /sys/devices/system/cpu/*.). And JRE will not
+overallocate resources. It's actively used for all of that.
+
+Below at [5] you can find an example where 2 cpus out of 8 have been
+assigned to the container's cpuset. The container values are virtualized
+as you can see.
+
+[1]: https://lkml.org/lkml/2020/6/4/951
+[2]: https://lore.kernel.org/lkml/YMe/cGV4JPbzFRk0@slm.duckdns.org
+[3]: https://www.alibabacloud.com/blog/kubernetes-demystified-using-lxcfs-to-improve-container-resource-visibility_594109
+[4]: https://cloud.google.com/blog/products/containers-kubernetes/migrate-for-anthos-streamlines-legacy-java-app-modernization
+[5]: ## /proc/cpuinfo
+     #### Host
+     brauner@wittgenstein|~
+     > ls -al /sys/devices/system/cpu/ | grep cpu[[:digit:]]
+     drwxr-xr-x 10 root root    0 Jun 14 21:22 cpu0
+     drwxr-xr-x 10 root root    0 Jun 14 21:22 cpu1
+     drwxr-xr-x 10 root root    0 Jun 14 21:22 cpu2
+     drwxr-xr-x 10 root root    0 Jun 14 21:22 cpu3
+     drwxr-xr-x 10 root root    0 Jun 14 21:22 cpu4
+     drwxr-xr-x 10 root root    0 Jun 14 21:22 cpu5
+     drwxr-xr-x 10 root root    0 Jun 14 21:22 cpu6
+     drwxr-xr-x 10 root root    0 Jun 14 21:22 cpu7
+     
+     #### Container
+     brauner@wittgenstein|~
+     > lxc exec f1 -- ls -al /sys/devices/system/cpu/ | grep cpu[[:digit:]]
+     drwxr-xr-x  2 nobody nogroup   0 Jun 15 10:22 cpu3
+     drwxr-xr-x  2 nobody nogroup   0 Jun 15 10:22 cpu4
+     
+     ## /sys/devices/system/cpu/*
+     #### Host
+     brauner@wittgenstein|~
+     > grep ^processor /proc/cpuinfo
+     processor       : 0
+     processor       : 1
+     processor       : 2
+     processor       : 3
+     processor       : 4
+     processor       : 5
+     processor       : 6
+     processor       : 7
+     
+     #### Container
+     brauner@wittgenstein|~
+     > lxc exec f1 -- grep ^processor /proc/cpuinfo
+     processor       : 0
+     processor       : 1
+
+     ## top
+     #### Host
+     top - 13:16:47 up 15:54, 39 users,  load average: 0,76, 0,47, 0,40
+     Tasks: 434 total,   1 running, 433 sleeping,   0 stopped,   0 zombie
+     %Cpu0  :  2,7 us,  2,4 sy,  0,0 ni, 94,5 id,  0,0 wa,  0,0 hi,  0,3 si,  0,0 st
+     %Cpu1  :  3,3 us,  1,3 sy,  0,0 ni, 95,3 id,  0,0 wa,  0,0 hi,  0,0 si,  0,0 st
+     %Cpu2  :  1,6 us,  9,1 sy,  0,0 ni, 89,3 id,  0,0 wa,  0,0 hi,  0,0 si,  0,0 st
+     %Cpu3  :  2,3 us,  1,3 sy,  0,0 ni, 96,4 id,  0,0 wa,  0,0 hi,  0,0 si,  0,0 st
+     %Cpu4  :  2,7 us,  1,7 sy,  0,0 ni, 95,7 id,  0,0 wa,  0,0 hi,  0,0 si,  0,0 st
+     %Cpu5  :  2,9 us,  2,9 sy,  0,0 ni, 94,1 id,  0,0 wa,  0,0 hi,  0,0 si,  0,0 st
+     %Cpu6  :  2,3 us,  1,0 sy,  0,0 ni, 96,3 id,  0,0 wa,  0,0 hi,  0,3 si,  0,0 st
+     %Cpu7  :  3,3 us,  1,3 sy,  0,0 ni, 95,4 id,  0,0 wa,  0,0 hi,  0,0 si,  0,0 st
+
+     #### Container
+     top - 11:16:13 up  2:08,  0 users,  load average: 0.27, 0.36, 0.36
+     Tasks:  24 total,   1 running,  23 sleeping,   0 stopped,   0 zombie
+     %Cpu0  :  0.0 us,  0.0 sy,  0.0 ni,100.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+     %Cpu1  :  0.0 us,  0.0 sy,  0.0 ni,100.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
