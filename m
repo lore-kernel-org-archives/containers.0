@@ -1,179 +1,131 @@
-Received: from mail-lj1-f175.google.com (mail-lj1-f175.google.com [209.85.208.175])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from out02.mta.xmission.com (out02.mta.xmission.com [166.70.13.232])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3B21B71
-	for <containers@lists.linux.dev>; Fri, 18 Jun 2021 23:39:02 +0000 (UTC)
-Received: by mail-lj1-f175.google.com with SMTP id k8so16075707lja.4
-        for <containers@lists.linux.dev>; Fri, 18 Jun 2021 16:39:02 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=Tc6KnzldMt7lAUMkOKZvz0InbTpN/HVH+jn+WvW53/E=;
-        b=eL7fdXlfwBHtKxmU60+CMtMA5r/XRaknloeToSvovaCy6C1p3D+StnRGc6RHxSKOyB
-         cbYWJzeNoxiX28R42+0V7Is0XqgT4rJZybOUPajsM5WmZT59S1flesvHNzV55nydgD8i
-         zrq3N45K8cnGIdEvTrRRZAan57g2JQv+zqU+8zH2iOuH2PmKzAgWc/kX/kfhYxIwNKJa
-         5obKI77TLDUM8aw3RbCG8up/2Cdi9EiN+j9Jybf71xqaOyGGi1fq1EdaKDn1VvdWEwre
-         jmbSxEbYJwvYUzhjyRt2W8BKdvi7sHpAfYEOsBn1K0jgoqJXweGTYOdJIR0oFJ1ZJyH9
-         /Erw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=Tc6KnzldMt7lAUMkOKZvz0InbTpN/HVH+jn+WvW53/E=;
-        b=Fz/c3KH9WQOustBLxr/9VDlg53PA0RlKM5iD0Tl0oICTg1CtoAACtl1ED8QQU3xFwp
-         ZUmXV2qtVfDWqv45VKxuab18z7wsFnUpQqQ9fQMpUaW34nGVNQfCjlAuTaAHRgmiYBma
-         LtpqXm1lXCuE8B8Ig0EVlzk60vWMFcn+M604iEy+DoY91cY6SGuQ93v/sRVtTIAg+ku5
-         L7+P2KqSZyTh5WJG4xIgFaQ+ie/Xo4ACm2D/4J7huDYg27jUZJvEEhGrHozGJXQc4VMP
-         2/IwGw74n1hm6EJAQlOjgIoQpjwgkvd2EN88nWWpur6PQkeDakdav970+HHPJW0tfrxv
-         orqQ==
-X-Gm-Message-State: AOAM5339Y4BQE9CKTLTMxbuanh70vrT3W2SXunkHgrApExF6A7NryGnu
-	7i6w5SS18HzLVBJoSmTTq7+G985p/UMc7lnZD6M4+g==
-X-Google-Smtp-Source: ABdhPJyNRAgajgALbhCeexQMXZgno4VB8f7zK8yOADUk0+qMeoNDo2tJ9pGi8pHJ/tzQZNYzH21l23ame2aoIMzBkxY=
-X-Received: by 2002:a05:651c:1108:: with SMTP id d8mr10895928ljo.0.1624059540015;
- Fri, 18 Jun 2021 16:39:00 -0700 (PDT)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AA9E017F
+	for <containers@lists.linux.dev>; Mon, 28 Jun 2021 22:57:50 +0000 (UTC)
+Received: from in01.mta.xmission.com ([166.70.13.51])
+	by out02.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.93)
+	(envelope-from <ebiederm@xmission.com>)
+	id 1lxzr7-00608r-S8; Mon, 28 Jun 2021 16:35:53 -0600
+Received: from ip68-227-160-95.om.om.cox.net ([68.227.160.95]:42554 helo=email.xmission.com)
+	by in01.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.93)
+	(envelope-from <ebiederm@xmission.com>)
+	id 1lxzr6-00HLpd-TB; Mon, 28 Jun 2021 16:35:53 -0600
+From: ebiederm@xmission.com (Eric W. Biederman)
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: <linux-kernel@vger.kernel.org> ,
+ Linux Containers <containers@lists.linux.dev> 
+Date: Mon, 28 Jun 2021 17:35:22 -0500
+Message-ID: <87fsx1vcr9.fsf@disp2133>
+User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/26.1 (gnu/linux)
+Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-References: <ac070cd90c0d45b7a554366f235262fa5c566435.1622716926.git.legion@kernel.org>
- <20210615113222.edzkaqfvrris4nth@wittgenstein> <20210615124715.nzd5we5tl7xc2n2p@example.org>
- <CALvZod7po_fK9JpcUNVrN6PyyP9k=hdcyRfZmHjSVE5r_8Laqw@mail.gmail.com> <87zgvpg4wt.fsf@disp2133>
-In-Reply-To: <87zgvpg4wt.fsf@disp2133>
-From: Shakeel Butt <shakeelb@google.com>
-Date: Fri, 18 Jun 2021 16:38:48 -0700
-Message-ID: <CALvZod70DNiWF-jTUHp6pOVtVX9pzdvYXaQ1At3GHtdKD=iTwQ@mail.gmail.com>
-Subject: Re: [PATCH v1] proc: Implement /proc/self/meminfo
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Alexey Gladkov <legion@kernel.org>, Christian Brauner <christian.brauner@ubuntu.com>, 
-	LKML <linux-kernel@vger.kernel.org>, 
-	Linux Containers <containers@lists.linux.dev>, 
-	Linux Containers <containers@lists.linux-foundation.org>, 
-	Linux FS Devel <linux-fsdevel@vger.kernel.org>, Linux MM <linux-mm@kvack.org>, 
-	Andrew Morton <akpm@linux-foundation.org>, Johannes Weiner <hannes@cmpxchg.org>, 
-	Michal Hocko <mhocko@kernel.org>, Chris Down <chris@chrisdown.name>, 
-	Cgroups <cgroups@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain
+X-XM-SPF: eid=1lxzr6-00HLpd-TB;;;mid=<87fsx1vcr9.fsf@disp2133>;;;hst=in01.mta.xmission.com;;;ip=68.227.160.95;;;frm=ebiederm@xmission.com;;;spf=neutral
+X-XM-AID: U2FsdGVkX19Abjp+/CULO/pIKiKFXWFdmlNGmE03DqY=
+X-SA-Exim-Connect-IP: 68.227.160.95
+X-SA-Exim-Mail-From: ebiederm@xmission.com
+X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on sa06.xmission.com
+X-Spam-Level: **
+X-Spam-Status: No, score=2.0 required=8.0 tests=ALL_TRUSTED,BAYES_50,
+	DCC_CHECK_NEGATIVE,XMSubMetaSxObfu_03,XMSubMetaSx_00
+	autolearn=disabled version=3.4.2
+X-Spam-Report: 
+	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
+	*  0.8 BAYES_50 BODY: Bayes spam probability is 40 to 60%
+	*      [score: 0.4452]
+	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
+	*      [sa06 1397; Body=1 Fuz1=1 Fuz2=1]
+	*  1.2 XMSubMetaSxObfu_03 Obfuscated Sexy Noun-People
+	*  1.0 XMSubMetaSx_00 1+ Sexy Words
+X-Spam-DCC: XMission; sa06 1397; Body=1 Fuz1=1 Fuz2=1 
+X-Spam-Combo: **;Linus Torvalds <torvalds@linux-foundation.org>
+X-Spam-Relay-Country: 
+X-Spam-Timing: total 359 ms - load_scoreonly_sql: 0.03 (0.0%),
+	signal_user_changed: 11 (2.9%), b_tie_ro: 9 (2.6%), parse: 0.80 (0.2%),
+	 extract_message_metadata: 3.4 (1.0%), get_uri_detail_list: 1.55
+	(0.4%), tests_pri_-1000: 3.3 (0.9%), tests_pri_-950: 1.19 (0.3%),
+	tests_pri_-900: 1.02 (0.3%), tests_pri_-90: 64 (17.8%), check_bayes:
+	63 (17.4%), b_tokenize: 7 (1.9%), b_tok_get_all: 7 (2.0%),
+	b_comp_prob: 1.81 (0.5%), b_tok_touch_all: 43 (12.1%), b_finish: 0.91
+	(0.3%), tests_pri_0: 257 (71.4%), check_dkim_signature: 0.46 (0.1%),
+	check_dkim_adsp: 2.8 (0.8%), poll_dns_idle: 1.05 (0.3%), tests_pri_10:
+	2.1 (0.6%), tests_pri_500: 8 (2.3%), rewrite_mail: 0.00 (0.0%)
+Subject: [GIT PULL]  ucounts: Count rlimits in each user namespace
+X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
+X-SA-Exim-Scanned: Yes (on in01.mta.xmission.com)
 
-On Wed, Jun 16, 2021 at 9:17 AM Eric W. Biederman <ebiederm@xmission.com> wrote:
->
-> Shakeel Butt <shakeelb@google.com> writes:
->
-> > On Tue, Jun 15, 2021 at 5:47 AM Alexey Gladkov <legion@kernel.org> wrote:
-> >>
-> > [...]
-> >>
-> >> I made the second version of the patch [1], but then I had a conversation
-> >> with Eric W. Biederman offlist. He convinced me that it is a bad idea to
-> >> change all the values in meminfo to accommodate cgroups. But we agreed
-> >> that MemAvailable in /proc/meminfo should respect cgroups limits. This
-> >> field was created to hide implementation details when calculating
-> >> available memory. You can see that it is quite widely used [2].
-> >> So I want to try to move in that direction.
-> >>
-> >> [1] https://git.kernel.org/pub/scm/linux/kernel/git/legion/linux.git/log/?h=patchset/meminfo/v2.0
-> >> [2] https://codesearch.debian.net/search?q=MemAvailable%3A
-> >>
-> >
-> > Please see following two links on the previous discussion on having
-> > per-memcg MemAvailable stat.
-> >
-> > [1] https://lore.kernel.org/linux-mm/alpine.DEB.2.22.394.2006281445210.855265@chino.kir.corp.google.com/
-> > [2] https://lore.kernel.org/linux-mm/alpine.DEB.2.23.453.2007142018150.2667860@chino.kir.corp.google.com/
-> >
-> > MemAvailable itself is an imprecise metric and involving memcg makes
-> > this metric even more weird. The difference of semantics of swap
-> > accounting of v1 and v2 is one source of this weirdness (I have not
-> > checked your patch if it is handling this weirdness). The lazyfree and
-> > deferred split pages are another source.
-> >
-> > So, I am not sure if complicating an already imprecise metric will
-> > make it more useful.
->
-> Making a good guess at how much memory can be allocated without
-> triggering swapping or otherwise stressing the system is something that
-> requires understanding our mm internals.
->
-> To be able to continue changing the mm or even mm policy without
-> introducing regressions in userspace we need to export values that
-> userspace can use.
 
-The issue is the dependence of such exported values on mm internals.
-MM internal code and policy changes will change this value and there
-is a potential of userspace regression.
+Linus,
 
->
-> At a first approximation that seems to look like MemAvailable.
->
-> MemAvailable seems to have a good definition.  Roughly the amount of
-> memory that can be allocated without triggering swapping.
+Please pull the for-linus branch from the git tree:
 
-Nowadays, I don't think MemAvailable giving "amount of memory that can
-be allocated without triggering swapping" is even roughly accurate.
-Actually IMO "without triggering swap" is not something an application
-should concern itself with where refaults from some swap types
-(zswap/swap-on-zram) are much faster than refaults from disk.
+  git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
 
-> Updated
-> to include not trigger memory cgroup based swapping and I sounds good.
->
-> I don't know if it will work in practice but I think it is worth
-> exploring.
+  HEAD: 5e6b8a50a7cec5686ee2c4bda1d49899c79a7eae cred: add missing return error code when set_cred_ucounts() failed
 
-I agree.
+This is the work mainly by Alexey Gladkov to limit rlimits to the
+rlimits of the user that created a user namespace, and to allow users to
+have stricter limits on the resources created within a user namespace.
 
->
-> I do know that hiding the implementation details and providing userspace
-> with information it can directly use seems like the programming model
-> that needs to be explored.  Most programs should not care if they are in
-> a memory cgroup, etc.  Programs, load management systems, and even
-> balloon drivers have a legitimately interest in how much additional load
-> can be placed on a systems memory.
->
+There is a more detailed changelog from Alexey in the merge commit
+9b624988221b ("ucounts: Count rlimits in each user namespace")
 
-How much additional load can be placed on a system *until what*. I
-think we should focus more on the "until" part to make the problem
-more tractable.
+---
 
->
-> A version of this that I remember working fairly well is free space
-> on compressed filesystems.  As I recall compressed filesystems report
-> the amount of uncompressed space that is available (an underestimate).
-> This results in the amount of space consumed going up faster than the
-> free space goes down.
->
-> We can't do exactly the same thing with our memory usability estimate,
-> but having our estimate be a reliable underestimate might be enough
-> to avoid problems with reporting too much memory as available to
-> userspace.
->
-> I know that MemAvailable already does that /2 so maybe it is already
-> aiming at being an underestimate.  Perhaps we need some additional
-> accounting to help create a useful metric for userspace as well.
->
+Alexey Gladkov (9):
+      Increase size of ucounts to atomic_long_t
+      Add a reference to ucounts for each cred
+      Use atomic_t for ucounts reference counting
+      Reimplement RLIMIT_NPROC on top of ucounts
+      Reimplement RLIMIT_MSGQUEUE on top of ucounts
+      Reimplement RLIMIT_SIGPENDING on top of ucounts
+      Reimplement RLIMIT_MEMLOCK on top of ucounts
+      kselftests: Add test to check for rlimit changes in different user namespaces
+      ucounts: Set ucount_max to the largest positive value the type can hold
 
-The real challenge here is that we are not 100% sure if a page is
-reclaimable until we try to reclaim it. For example we might have file
-lrus filled with lazyfree pages which might have been accessed.
-MemAvailable will show half the size of file lrus but once we try to
-reclaim them, we have to move them back to anon lru and drastic drop
-in MemAvailable.
+Eric W. Biederman (2):
+      ucounts: Count rlimits in each user namespace
+      ucounts: Silence warning in dec_rlimit_ucounts
 
->
-> I don't know the final answer.  I do know that not designing an
-> interface that userspace can use to deal with it's legitimate concerns
-> is sticking our collective heads in the sand and wishing the problem
-> will go away.
+Yang Yingliang (1):
+      cred: add missing return error code when set_cred_ucounts() failed
 
-I am a bit skeptical that a single interface would be enough but first
-we should formalize what exactly the application wants with some
-concrete use-cases. More specifically, are the applications interested
-in avoiding swapping or OOM or stall?
+ fs/exec.c                                          |   6 +-
+ fs/hugetlbfs/inode.c                               |  16 +-
+ fs/proc/array.c                                    |   2 +-
+ include/linux/cred.h                               |   4 +
+ include/linux/hugetlb.h                            |   4 +-
+ include/linux/mm.h                                 |   4 +-
+ include/linux/sched/user.h                         |   7 -
+ include/linux/shmem_fs.h                           |   2 +-
+ include/linux/signal_types.h                       |   4 +-
+ include/linux/user_namespace.h                     |  31 +++-
+ ipc/mqueue.c                                       |  40 ++---
+ ipc/shm.c                                          |  26 ++--
+ kernel/cred.c                                      |  51 ++++++-
+ kernel/exit.c                                      |   2 +-
+ kernel/fork.c                                      |  18 ++-
+ kernel/signal.c                                    |  25 ++--
+ kernel/sys.c                                       |  14 +-
+ kernel/ucount.c                                    | 116 +++++++++++----
+ kernel/user.c                                      |   3 -
+ kernel/user_namespace.c                            |   9 +-
+ mm/memfd.c                                         |   4 +-
+ mm/mlock.c                                         |  22 ++-
+ mm/mmap.c                                          |   4 +-
+ mm/shmem.c                                         |  10 +-
+ tools/testing/selftests/Makefile                   |   1 +
+ tools/testing/selftests/rlimits/.gitignore         |   2 +
+ tools/testing/selftests/rlimits/Makefile           |   6 +
+ tools/testing/selftests/rlimits/config             |   1 +
+ .../testing/selftests/rlimits/rlimits-per-userns.c | 161 +++++++++++++++++++++
+ 29 files changed, 468 insertions(+), 127 deletions(-)
 
-Second, is the reactive approach acceptable? Instead of an upfront
-number representing the room for growth, how about just grow and
-backoff when some event (oom or stall) which we want to avoid is about
-to happen? This is achievable today for oom and stall with PSI and
-memory.high and it avoids the hard problem of reliably estimating the
-reclaimable memory.
+
