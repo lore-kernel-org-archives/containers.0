@@ -1,95 +1,53 @@
-Received: from mail-lf1-f47.google.com (mail-lf1-f47.google.com [209.85.167.47])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 45052177
-	for <containers@lists.linux.dev>; Tue, 29 Jun 2021 03:47:31 +0000 (UTC)
-Received: by mail-lf1-f47.google.com with SMTP id a11so36731401lfg.11
-        for <containers@lists.linux.dev>; Mon, 28 Jun 2021 20:47:31 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linux-foundation.org; s=google;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=SAkvrvf9vGodn3/SdXI/Z/HezeeoY0M2aYPCWRA/0sw=;
-        b=FmHwzUVnPSfz54gaaoFrV1I0m/OZYcDkto7MvfD87BMJlg2wfd6ksfLDQbgEpoWnMe
-         GAzSOezqUJyyT5jjyC+szrJQMOrt+WSEMBY7k37vOZp5Td1xrgjvF0meno42vsEqDRBl
-         FOMVPDRn63bn/bCTzLCUFsYJJWTGc/rswSo/w=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=SAkvrvf9vGodn3/SdXI/Z/HezeeoY0M2aYPCWRA/0sw=;
-        b=h82xCLxoUij52p+ahHRcixCE5hnX12j+AH8pD8/7UwORYNz3mDf5NsA6mLVdmuwZaN
-         9qzz36jHnOIt5PxL2oAGfi79DXQ6wJBOlmsmd9ddIoyTsxKbdtuEqNQNbBQJBDnLZnVK
-         buPd5CPnGcAZTI4/9jKpl7cEhnraniDdWggkZM1EKd5wMhCL2oFpxhBTISZZ3IGXVl03
-         LFKT+OTwm49oBefkCEt3C3dVEyeBSHX3yoQYg0SPAcCsU6XSI1TNPnn8YQ31DeQYQ9Dg
-         bDlPrjlnOKO3yFxvU7/yHjVBoIHL35hhdCwKQMHLsj6PzZzHQk7CWRJg0OWYcaJDym4j
-         xrvQ==
-X-Gm-Message-State: AOAM530Ar+LW+v7j0gnTJdLRODI0vMNW0tP3PZd8v3ROVBSmC5Z0ee2P
-	bVZ4bTC4n0Io9bSdJ+2yXXcrOmwT2BgDNsm5Q1k=
-X-Google-Smtp-Source: ABdhPJwjQI8VSkM6r/Gxcu8WQeELtslR66uW7na+psdq4qA95PloIkchzMtmTkI0RQbe0O5msKLdKA==
-X-Received: by 2002:a19:f505:: with SMTP id j5mr21977945lfb.126.1624938449279;
-        Mon, 28 Jun 2021 20:47:29 -0700 (PDT)
-Received: from mail-lj1-f181.google.com (mail-lj1-f181.google.com. [209.85.208.181])
-        by smtp.gmail.com with ESMTPSA id x15sm1469829lfa.156.2021.06.28.20.47.29
-        for <containers@lists.linux.dev>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 28 Jun 2021 20:47:29 -0700 (PDT)
-Received: by mail-lj1-f181.google.com with SMTP id k21so8259155ljh.2
-        for <containers@lists.linux.dev>; Mon, 28 Jun 2021 20:47:29 -0700 (PDT)
-X-Received: by 2002:a2e:b553:: with SMTP id a19mr2124829ljn.507.1624938447840;
- Mon, 28 Jun 2021 20:47:27 -0700 (PDT)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 65221177
+	for <containers@lists.linux.dev>; Tue, 29 Jun 2021 03:50:29 +0000 (UTC)
+Received: by mail.kernel.org (Postfix) with ESMTPS id 113A161D45;
+	Tue, 29 Jun 2021 03:50:29 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1624938629;
+	bh=mBcihKQwRuYIZ7hNVGOlPKSYpIvpR8gV6G+gvDxoX7g=;
+	h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
+	b=aiPdTynHNtEFxlQYB2eTkOATMfJC1v9pe8EUT3CRP6clMWRJ6/vKhLQebUBzWt2ab
+	 ZGOXLIMiwZA2H0WHZVc8lnsCqo+ma0QG4P8XJiWGab17VaDHy9t7ceVn5rV7wEzqZF
+	 JMpRwE7MeX0jIO5ewGnVgYpE1TzDvSz/yf1mV5Oxk0thveHDH/mKSpDKPJ4MRfanHM
+	 sFbJKYhi4PAwVoEaLiI9c9qY74YcawmMAYzU5LredGOzhAQAc4vPNW4GOlGPgFvVt1
+	 6q9e38Zcio6eHC3URFgQTdtkNqBo1M9RtQjc/tE3zH09MwRdu3sBeItJuxX9TAI2Ke
+	 SMawT/+C4I3sA==
+Received: from pdx-korg-docbuild-2.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
+	by pdx-korg-docbuild-2.ci.codeaurora.org (Postfix) with ESMTP id 0AD3C60A38;
+	Tue, 29 Jun 2021 03:50:29 +0000 (UTC)
+Subject: Re: [GIT PULL]  ucounts: Count rlimits in each user namespace
+From: pr-tracker-bot@kernel.org
+In-Reply-To: <87fsx1vcr9.fsf@disp2133>
+References: <87fsx1vcr9.fsf@disp2133>
+X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
+X-PR-Tracked-Message-Id: <87fsx1vcr9.fsf@disp2133>
+X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
+X-PR-Tracked-Commit-Id: 5e6b8a50a7cec5686ee2c4bda1d49899c79a7eae
+X-PR-Merge-Tree: torvalds/linux.git
+X-PR-Merge-Refname: refs/heads/master
+X-PR-Merge-Commit-Id: c54b245d011855ea91c5beff07f1db74143ce614
+Message-Id: <162493862903.19305.8368460220248089655.pr-tracker-bot@kernel.org>
+Date: Tue, 29 Jun 2021 03:50:29 +0000
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.linux.dev>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
-MIME-Version: 1.0
-References: <87fsx1vcr9.fsf@disp2133>
-In-Reply-To: <87fsx1vcr9.fsf@disp2133>
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Date: Mon, 28 Jun 2021 20:47:12 -0700
-X-Gmail-Original-Message-ID: <CAHk-=wj1z-NKxedgZvSS37iH=EKE47PkL=+BYccAUtsuB1sySQ@mail.gmail.com>
-Message-ID: <CAHk-=wj1z-NKxedgZvSS37iH=EKE47PkL=+BYccAUtsuB1sySQ@mail.gmail.com>
-Subject: Re: [GIT PULL] ucounts: Count rlimits in each user namespace
-To: "Eric W. Biederman" <ebiederm@xmission.com>, Alexey Gladkov <legion@kernel.org>
-Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, 
-	Linux Containers <containers@lists.linux.dev>
-Content-Type: text/plain; charset="UTF-8"
 
-On Mon, Jun 28, 2021 at 3:35 PM Eric W. Biederman <ebiederm@xmission.com> wrote:
->
-> This is the work mainly by Alexey Gladkov to limit rlimits to the
-> rlimits of the user that created a user namespace, and to allow users to
-> have stricter limits on the resources created within a user namespace.
+The pull request you sent on Mon, 28 Jun 2021 17:35:22 -0500:
 
-I guess all the performance issues got sorted, since I haven't seen
-any reports from the test robots.
+> git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
 
-I do end up with two questions, mainly because of looking at the
-result of the conflict resolution.
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/c54b245d011855ea91c5beff07f1db74143ce614
 
-In particular, in __sigqueue_alloc(), two oddities..
+Thank you!
 
-Why the "sigpending < LONG_MAX" test in that
-
-        if (override_rlimit || (sigpending < LONG_MAX && sigpending <=
-task_rlimit(t, RLIMIT_SIGPENDING))) {
-
-thing?
-
-And why test for "ucounts" being non-NULL in
-
-                if (ucounts && dec_rlimit_ucounts(ucounts,
-UCOUNT_RLIMIT_SIGPENDING, 1))
-                        put_ucounts(ucounts);
-
-when afaik both of those should be happy with a NULL 'ucounts' pointer
-(if it was NULL, we certainly already used it for the reverse
-operations for get_ucounts() and inc_rlimit_ucounts()..)
-
-Hmm?
-
-And somebody should verify that I didn't screw anything up in my merge
-resolution. It all looked very straightforward, but mistakes happen..
-
-                   Linus
+-- 
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/prtracker.html
