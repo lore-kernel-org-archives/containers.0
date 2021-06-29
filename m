@@ -1,131 +1,95 @@
-Received: from out02.mta.xmission.com (out02.mta.xmission.com [166.70.13.232])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-lf1-f47.google.com (mail-lf1-f47.google.com [209.85.167.47])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AA9E017F
-	for <containers@lists.linux.dev>; Mon, 28 Jun 2021 22:57:50 +0000 (UTC)
-Received: from in01.mta.xmission.com ([166.70.13.51])
-	by out02.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1lxzr7-00608r-S8; Mon, 28 Jun 2021 16:35:53 -0600
-Received: from ip68-227-160-95.om.om.cox.net ([68.227.160.95]:42554 helo=email.xmission.com)
-	by in01.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1lxzr6-00HLpd-TB; Mon, 28 Jun 2021 16:35:53 -0600
-From: ebiederm@xmission.com (Eric W. Biederman)
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: <linux-kernel@vger.kernel.org> ,
- Linux Containers <containers@lists.linux.dev> 
-Date: Mon, 28 Jun 2021 17:35:22 -0500
-Message-ID: <87fsx1vcr9.fsf@disp2133>
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/26.1 (gnu/linux)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 45052177
+	for <containers@lists.linux.dev>; Tue, 29 Jun 2021 03:47:31 +0000 (UTC)
+Received: by mail-lf1-f47.google.com with SMTP id a11so36731401lfg.11
+        for <containers@lists.linux.dev>; Mon, 28 Jun 2021 20:47:31 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linux-foundation.org; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=SAkvrvf9vGodn3/SdXI/Z/HezeeoY0M2aYPCWRA/0sw=;
+        b=FmHwzUVnPSfz54gaaoFrV1I0m/OZYcDkto7MvfD87BMJlg2wfd6ksfLDQbgEpoWnMe
+         GAzSOezqUJyyT5jjyC+szrJQMOrt+WSEMBY7k37vOZp5Td1xrgjvF0meno42vsEqDRBl
+         FOMVPDRn63bn/bCTzLCUFsYJJWTGc/rswSo/w=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=SAkvrvf9vGodn3/SdXI/Z/HezeeoY0M2aYPCWRA/0sw=;
+        b=h82xCLxoUij52p+ahHRcixCE5hnX12j+AH8pD8/7UwORYNz3mDf5NsA6mLVdmuwZaN
+         9qzz36jHnOIt5PxL2oAGfi79DXQ6wJBOlmsmd9ddIoyTsxKbdtuEqNQNbBQJBDnLZnVK
+         buPd5CPnGcAZTI4/9jKpl7cEhnraniDdWggkZM1EKd5wMhCL2oFpxhBTISZZ3IGXVl03
+         LFKT+OTwm49oBefkCEt3C3dVEyeBSHX3yoQYg0SPAcCsU6XSI1TNPnn8YQ31DeQYQ9Dg
+         bDlPrjlnOKO3yFxvU7/yHjVBoIHL35hhdCwKQMHLsj6PzZzHQk7CWRJg0OWYcaJDym4j
+         xrvQ==
+X-Gm-Message-State: AOAM530Ar+LW+v7j0gnTJdLRODI0vMNW0tP3PZd8v3ROVBSmC5Z0ee2P
+	bVZ4bTC4n0Io9bSdJ+2yXXcrOmwT2BgDNsm5Q1k=
+X-Google-Smtp-Source: ABdhPJwjQI8VSkM6r/Gxcu8WQeELtslR66uW7na+psdq4qA95PloIkchzMtmTkI0RQbe0O5msKLdKA==
+X-Received: by 2002:a19:f505:: with SMTP id j5mr21977945lfb.126.1624938449279;
+        Mon, 28 Jun 2021 20:47:29 -0700 (PDT)
+Received: from mail-lj1-f181.google.com (mail-lj1-f181.google.com. [209.85.208.181])
+        by smtp.gmail.com with ESMTPSA id x15sm1469829lfa.156.2021.06.28.20.47.29
+        for <containers@lists.linux.dev>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 28 Jun 2021 20:47:29 -0700 (PDT)
+Received: by mail-lj1-f181.google.com with SMTP id k21so8259155ljh.2
+        for <containers@lists.linux.dev>; Mon, 28 Jun 2021 20:47:29 -0700 (PDT)
+X-Received: by 2002:a2e:b553:: with SMTP id a19mr2124829ljn.507.1624938447840;
+ Mon, 28 Jun 2021 20:47:27 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain
-X-XM-SPF: eid=1lxzr6-00HLpd-TB;;;mid=<87fsx1vcr9.fsf@disp2133>;;;hst=in01.mta.xmission.com;;;ip=68.227.160.95;;;frm=ebiederm@xmission.com;;;spf=neutral
-X-XM-AID: U2FsdGVkX19Abjp+/CULO/pIKiKFXWFdmlNGmE03DqY=
-X-SA-Exim-Connect-IP: 68.227.160.95
-X-SA-Exim-Mail-From: ebiederm@xmission.com
-X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on sa06.xmission.com
-X-Spam-Level: **
-X-Spam-Status: No, score=2.0 required=8.0 tests=ALL_TRUSTED,BAYES_50,
-	DCC_CHECK_NEGATIVE,XMSubMetaSxObfu_03,XMSubMetaSx_00
-	autolearn=disabled version=3.4.2
-X-Spam-Report: 
-	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
-	*  0.8 BAYES_50 BODY: Bayes spam probability is 40 to 60%
-	*      [score: 0.4452]
-	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
-	*      [sa06 1397; Body=1 Fuz1=1 Fuz2=1]
-	*  1.2 XMSubMetaSxObfu_03 Obfuscated Sexy Noun-People
-	*  1.0 XMSubMetaSx_00 1+ Sexy Words
-X-Spam-DCC: XMission; sa06 1397; Body=1 Fuz1=1 Fuz2=1 
-X-Spam-Combo: **;Linus Torvalds <torvalds@linux-foundation.org>
-X-Spam-Relay-Country: 
-X-Spam-Timing: total 359 ms - load_scoreonly_sql: 0.03 (0.0%),
-	signal_user_changed: 11 (2.9%), b_tie_ro: 9 (2.6%), parse: 0.80 (0.2%),
-	 extract_message_metadata: 3.4 (1.0%), get_uri_detail_list: 1.55
-	(0.4%), tests_pri_-1000: 3.3 (0.9%), tests_pri_-950: 1.19 (0.3%),
-	tests_pri_-900: 1.02 (0.3%), tests_pri_-90: 64 (17.8%), check_bayes:
-	63 (17.4%), b_tokenize: 7 (1.9%), b_tok_get_all: 7 (2.0%),
-	b_comp_prob: 1.81 (0.5%), b_tok_touch_all: 43 (12.1%), b_finish: 0.91
-	(0.3%), tests_pri_0: 257 (71.4%), check_dkim_signature: 0.46 (0.1%),
-	check_dkim_adsp: 2.8 (0.8%), poll_dns_idle: 1.05 (0.3%), tests_pri_10:
-	2.1 (0.6%), tests_pri_500: 8 (2.3%), rewrite_mail: 0.00 (0.0%)
-Subject: [GIT PULL]  ucounts: Count rlimits in each user namespace
-X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
-X-SA-Exim-Scanned: Yes (on in01.mta.xmission.com)
+References: <87fsx1vcr9.fsf@disp2133>
+In-Reply-To: <87fsx1vcr9.fsf@disp2133>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Mon, 28 Jun 2021 20:47:12 -0700
+X-Gmail-Original-Message-ID: <CAHk-=wj1z-NKxedgZvSS37iH=EKE47PkL=+BYccAUtsuB1sySQ@mail.gmail.com>
+Message-ID: <CAHk-=wj1z-NKxedgZvSS37iH=EKE47PkL=+BYccAUtsuB1sySQ@mail.gmail.com>
+Subject: Re: [GIT PULL] ucounts: Count rlimits in each user namespace
+To: "Eric W. Biederman" <ebiederm@xmission.com>, Alexey Gladkov <legion@kernel.org>
+Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, 
+	Linux Containers <containers@lists.linux.dev>
+Content-Type: text/plain; charset="UTF-8"
 
+On Mon, Jun 28, 2021 at 3:35 PM Eric W. Biederman <ebiederm@xmission.com> wrote:
+>
+> This is the work mainly by Alexey Gladkov to limit rlimits to the
+> rlimits of the user that created a user namespace, and to allow users to
+> have stricter limits on the resources created within a user namespace.
 
-Linus,
+I guess all the performance issues got sorted, since I haven't seen
+any reports from the test robots.
 
-Please pull the for-linus branch from the git tree:
+I do end up with two questions, mainly because of looking at the
+result of the conflict resolution.
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
+In particular, in __sigqueue_alloc(), two oddities..
 
-  HEAD: 5e6b8a50a7cec5686ee2c4bda1d49899c79a7eae cred: add missing return error code when set_cred_ucounts() failed
+Why the "sigpending < LONG_MAX" test in that
 
-This is the work mainly by Alexey Gladkov to limit rlimits to the
-rlimits of the user that created a user namespace, and to allow users to
-have stricter limits on the resources created within a user namespace.
+        if (override_rlimit || (sigpending < LONG_MAX && sigpending <=
+task_rlimit(t, RLIMIT_SIGPENDING))) {
 
-There is a more detailed changelog from Alexey in the merge commit
-9b624988221b ("ucounts: Count rlimits in each user namespace")
+thing?
 
----
+And why test for "ucounts" being non-NULL in
 
-Alexey Gladkov (9):
-      Increase size of ucounts to atomic_long_t
-      Add a reference to ucounts for each cred
-      Use atomic_t for ucounts reference counting
-      Reimplement RLIMIT_NPROC on top of ucounts
-      Reimplement RLIMIT_MSGQUEUE on top of ucounts
-      Reimplement RLIMIT_SIGPENDING on top of ucounts
-      Reimplement RLIMIT_MEMLOCK on top of ucounts
-      kselftests: Add test to check for rlimit changes in different user namespaces
-      ucounts: Set ucount_max to the largest positive value the type can hold
+                if (ucounts && dec_rlimit_ucounts(ucounts,
+UCOUNT_RLIMIT_SIGPENDING, 1))
+                        put_ucounts(ucounts);
 
-Eric W. Biederman (2):
-      ucounts: Count rlimits in each user namespace
-      ucounts: Silence warning in dec_rlimit_ucounts
+when afaik both of those should be happy with a NULL 'ucounts' pointer
+(if it was NULL, we certainly already used it for the reverse
+operations for get_ucounts() and inc_rlimit_ucounts()..)
 
-Yang Yingliang (1):
-      cred: add missing return error code when set_cred_ucounts() failed
+Hmm?
 
- fs/exec.c                                          |   6 +-
- fs/hugetlbfs/inode.c                               |  16 +-
- fs/proc/array.c                                    |   2 +-
- include/linux/cred.h                               |   4 +
- include/linux/hugetlb.h                            |   4 +-
- include/linux/mm.h                                 |   4 +-
- include/linux/sched/user.h                         |   7 -
- include/linux/shmem_fs.h                           |   2 +-
- include/linux/signal_types.h                       |   4 +-
- include/linux/user_namespace.h                     |  31 +++-
- ipc/mqueue.c                                       |  40 ++---
- ipc/shm.c                                          |  26 ++--
- kernel/cred.c                                      |  51 ++++++-
- kernel/exit.c                                      |   2 +-
- kernel/fork.c                                      |  18 ++-
- kernel/signal.c                                    |  25 ++--
- kernel/sys.c                                       |  14 +-
- kernel/ucount.c                                    | 116 +++++++++++----
- kernel/user.c                                      |   3 -
- kernel/user_namespace.c                            |   9 +-
- mm/memfd.c                                         |   4 +-
- mm/mlock.c                                         |  22 ++-
- mm/mmap.c                                          |   4 +-
- mm/shmem.c                                         |  10 +-
- tools/testing/selftests/Makefile                   |   1 +
- tools/testing/selftests/rlimits/.gitignore         |   2 +
- tools/testing/selftests/rlimits/Makefile           |   6 +
- tools/testing/selftests/rlimits/config             |   1 +
- .../testing/selftests/rlimits/rlimits-per-userns.c | 161 +++++++++++++++++++++
- 29 files changed, 468 insertions(+), 127 deletions(-)
+And somebody should verify that I didn't screw anything up in my merge
+resolution. It all looked very straightforward, but mistakes happen..
 
-
+                   Linus
