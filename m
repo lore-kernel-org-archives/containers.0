@@ -1,34 +1,34 @@
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 54E72168
-	for <containers@lists.linux.dev>; Tue, 29 Jun 2021 21:22:24 +0000 (UTC)
-Received: by mail.kernel.org (Postfix) with ESMTPSA id A0F8261DA0;
-	Tue, 29 Jun 2021 21:22:22 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9D46670
+	for <containers@lists.linux.dev>; Thu,  1 Jul 2021 16:41:47 +0000 (UTC)
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 457D2613D9;
+	Thu,  1 Jul 2021 16:41:46 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1625001743;
-	bh=DASKGpMIPrP2jFKLyy4+IOkW669wEy21u5wK1pFUSt0=;
+	s=k20201202; t=1625157707;
+	bh=in4VU5RIWGG684bNvSMnsw+p9BXQ9s8OKZF7cAC6rHk=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=DKxc6PAR5H2fNFB1FwSxjgTDm9aqiE0K/UepIySbYe/1vPLUhsNrG8okJnJgI5uJW
-	 gKwnWrLizzHaGxmIl9uZh7gLOGvuBT6YUF4ZiM/B2MMz3pkOS8JBrAtoYbk8Ngiwb1
-	 U9C81E2JLMWCns3rmrwp+TH71C3QKa3ymYAyoIfr8s70cKtOynqxSC0DZYdlw8u6l2
-	 UYvO+xqiqmMECBsnfz09BkbN5HfGhmkYRqRykPQpUOAkTxv4Fk8gl5hyLB9jbpRR08
-	 TWNS+yyXI2XeFS7e/KQTyelcCCpWD4mNF/v0k9XAPIM1+8zb5UqAuW8bU8dmiThAqH
-	 21IGPypj97MiQ==
-Date: Tue, 29 Jun 2021 23:22:20 +0200
+	b=Oftp7ZdL5tE7BCXQ9XLJaOCuSFxJqXMIudHmTDRPg3s9N/siAL7ardyWWIxe/WIxz
+	 eGDaPd+4v0xzauntvznH6SycncZ+gCaNt3/Tf2Xa0VBpSYMBsKCXcRyku/Xx0DZjW2
+	 UkhtBkTcZSlwYAlECZDD6ee11ZIZUir6keuWKNbztnyZCTqIAjHJqeB9Htq2sAVyJ4
+	 eHBq+9MmLC5+2+BImx1FVX42C4i9M3sIDbnSo5cBFNwkWQz/2LbXjzhLT8qrc4IYqB
+	 BaNsDRmnNRfDB6vX90aHL/xBRKO6bIgef7EW8esxcPzmLDTyPA5cWYiGU6FroSuGUt
+	 TTRAsxBF9L2IA==
+Date: Thu, 1 Jul 2021 18:41:44 +0200
 From: Alexey Gladkov <legion@kernel.org>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>,
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
 	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	Linux Containers <containers@lists.linux.dev>
 Subject: Re: [GIT PULL] ucounts: Count rlimits in each user namespace
-Message-ID: <20210629212220.itvtsqls4tnmrei7@example.org>
+Message-ID: <20210701164144.u2dod4g2obfj4kit@example.org>
 References: <87fsx1vcr9.fsf@disp2133>
  <CAHk-=wj1z-NKxedgZvSS37iH=EKE47PkL=+BYccAUtsuB1sySQ@mail.gmail.com>
- <20210629171757.shyr222zjpm6ev5t@example.org>
- <CAHk-=wgcpK3XdFKJ98b_YucXbQMJMgJssAk=sQ-XUo-tyiMjVg@mail.gmail.com>
- <20210629202028.gduluywejae75icj@example.org>
- <CAHk-=wjQks3o_3=WewaXw++h+a318B3LTLSFER9Ee4n1pLCZLw@mail.gmail.com>
+ <87czs4u0rm.fsf@disp2133>
+ <CAHk-=wgs5+3MLjG_hsQcKdamOcTsJLsk47tV12FfD_0f2h47Rg@mail.gmail.com>
+ <87mtr8sjvr.fsf@disp2133>
+ <87a6n8simq.fsf@disp2133>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
@@ -37,66 +37,50 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <CAHk-=wjQks3o_3=WewaXw++h+a318B3LTLSFER9Ee4n1pLCZLw@mail.gmail.com>
+In-Reply-To: <87a6n8simq.fsf@disp2133>
 
-On Tue, Jun 29, 2021 at 01:33:39PM -0700, Linus Torvalds wrote:
-> On Tue, Jun 29, 2021 at 1:20 PM Alexey Gladkov <legion@kernel.org> wrote:
+On Tue, Jun 29, 2021 at 12:09:01PM -0500, Eric W. Biederman wrote:
+> ebiederm@xmission.com (Eric W. Biederman) writes:
+> 
+> > Linus Torvalds <torvalds@linux-foundation.org> writes:
 > >
-> > Waaaait. task_ucounts() is a different thing. This function only gets a
-> > field from the task structure without any reference counting. But the
-> > get_ucounts() is more like get_user_ns() or get_uid(), but does not ignore
-> > counter overflow.
+> >> On Tue, Jun 29, 2021 at 8:52 AM Eric W. Biederman <ebiederm@xmission.com> wrote:
+> >>>
+> >>> Linus Torvalds <torvalds@linux-foundation.org> writes:
+> >>>
+> >>> > Why the "sigpending < LONG_MAX" test in that
+> >>> >
+> >>> >         if (override_rlimit || (sigpending < LONG_MAX && sigpending <=
+> >>> > task_rlimit(t, RLIMIT_SIGPENDING))) {
+> >>> > thing?
+> >>>
+> >>> On second look that sigpending < LONG_MAX check is necessary.  When
+> >>> inc_rlimit_ucounts detects a problem it returns LONG_MAX.
+> >>
+> >> I saw that, but _without_ that test you'd be left with just that
+> >>
+> >>     sigpending <= task_rlimit(t, RLIMIT_SIGPENDING)
+> >>
+> >> and if task_rlimit() is LONG_MAX, then that means "no limits", so it is all ok.
+> >
+> > It means no limits locally.  The creator of your user namespace might
+> > have had a limit which you are also bound by.
+> >
+> > The other possibility is that inc_rlimits_ucounts caused a sigpending
+> > counter to overflow.  In which case we need to fail and run
+> > dec_rlimit_ucounts to keep the counter from staying overflowed.
+> >
+> > So I don't see a clever way to avoid the sigpending < LONG_MAX  test.
 > 
-> Alexey, that code cannot be right.
+> Hmm.  I take that back.  There is a simple clever way to satisfy all of
+> the tests.
 > 
-> Look here:
+> - sigpending < LONG_MAX && sigpending <= task_rlimit(t, RLIMIT_SIGPENDING)
+> + sigpending < task_rlimit(t, RLIMIT_SIGPENDING)
 > 
->         rcu_read_lock();
->         ucounts = task_ucounts(t);
->         sigpending = inc_rlimit_ucounts(ucounts, UCOUNT_RLIMIT_SIGPENDING, 1);
->         if (sigpending == 1)
->                 ucounts = get_ucounts(ucounts);
->         rcu_read_unlock();
-> 
-> so now we've done that inc_rlimit_ucounts() unconditionally on that
-> task_ucounts() thing.
-> 
-> And then if the allocation fails (or the limit is hit) the code does
-> 
->         if (ucounts && dec_rlimit_ucounts(ucounts, UCOUNT_RLIMIT_SIGPENDING, 1))
->                 put_ucounts(ucounts);
-> 
-> ie now it does the dec_rlimit_ucounts _conditionally_.
-> 
-> See what I'm complaining about? This is not logical, AND IT CANNOT
-> POSSIBLY BE RIGHT.
-> 
-> My argument is that
-> 
->  (a) the dec_rlimit_ucounts() has to pair up with
-> inc_rlimit_ucounts(), or you're leaking counts
-> 
->  (b) get_ucounts() has to pair up with put_ucounts().
-> 
-> Note that (a) has to be REGARDLESS of whether get_ucounts() was
-> successful or not.
-> 
-> > Earlier I tried to use refcount_t which never returns errors [1]. We
-> > talked and you said that ignoring counter overflow errors is bad
-> > design for this case.
-> 
-> You can't ignore counter overflow errors, no. But that's exactly what
-> that code is doing.
-> 
-> If get_ucount() fails due to overflow, you don't return an error. You
-> just miscount the end result!
-> 
-> So yeah, its' "testing" the overflow condition, but that's not an
-> argument, when it then DOES EXPLICITLY THE WRONG THING.
-> 
-> At that point, the test is actively harmful and wrong. See?
+> That would just need a small comment to explain the subtleties.  
 
-Yes. Please, give me some time to fix it.
+Is it because user.sigpending was atomic_t before this patch ?
 
 -- 
 Rgrds, legion
