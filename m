@@ -1,170 +1,122 @@
-Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B904A168
-	for <containers@lists.linux.dev>; Mon, 26 Jul 2021 11:39:21 +0000 (UTC)
-Received: from pps.filterd (m0098421.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.0.43/8.16.0.43) with SMTP id 16QBZ6ad051245;
-	Mon, 26 Jul 2021 07:39:11 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=subject : to : cc :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=pp1;
- bh=RBl+6UdLVky9tWqZDo2q1IFMQU6oHXn0KMujZbMsKoU=;
- b=ed1+OaXPYv7fRZ/JGsE2oVWfvq51dvv9rKTcLqDrhJU2zfLRR3i34wGX++3T9cPET/K8
- BkX5DL2RPgdVPxse7ODsj3Uk3rjbkSPHHz3AKDvfEYNJ979V2QGuAheqyxKBrdROnxbR
- EiIB5WxTiRvjzihnVxNArIxP+d29MLDOioKLO1nBM1Ds4wwTIHU0GlO7IhQ0v6u8nJ7f
- bNMUzG3mzJeKKF0PnIb4AM+cRKQ6K+CGaFvDiv9NQhgiv+eYtAPp/gBq746g9Z7E4zQw
- XNPCMCZaf6XvCVdZReqXflEhc/ROftp4XGxmA3e+vWp4u+redDk/vB7D2Ceyv1awqYjz 1Q== 
-Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3a1us5hbq1-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 26 Jul 2021 07:39:11 -0400
-Received: from m0098421.ppops.net (m0098421.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 16QBZ8ou051358;
-	Mon, 26 Jul 2021 07:39:11 -0400
-Received: from ppma01fra.de.ibm.com (46.49.7a9f.ip4.static.sl-reverse.com [159.122.73.70])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3a1us5hbnv-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 26 Jul 2021 07:39:10 -0400
-Received: from pps.filterd (ppma01fra.de.ibm.com [127.0.0.1])
-	by ppma01fra.de.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 16QBcBTY017668;
-	Mon, 26 Jul 2021 11:39:09 GMT
-Received: from b06cxnps3075.portsmouth.uk.ibm.com (d06relay10.portsmouth.uk.ibm.com [9.149.109.195])
-	by ppma01fra.de.ibm.com with ESMTP id 3a0ag8rp6k-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 26 Jul 2021 11:39:08 +0000
-Received: from d06av23.portsmouth.uk.ibm.com (d06av23.portsmouth.uk.ibm.com [9.149.105.59])
-	by b06cxnps3075.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 16QBd60020906250
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Mon, 26 Jul 2021 11:39:06 GMT
-Received: from d06av23.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 0630EA405B;
-	Mon, 26 Jul 2021 11:39:06 +0000 (GMT)
-Received: from d06av23.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 347A6A406B;
-	Mon, 26 Jul 2021 11:39:03 +0000 (GMT)
-Received: from [9.199.48.104] (unknown [9.199.48.104])
-	by d06av23.portsmouth.uk.ibm.com (Postfix) with ESMTP;
-	Mon, 26 Jul 2021 11:39:02 +0000 (GMT)
-Subject: Re: [RFD] Provide virtualized CPU system information for containers
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        containers@lists.linux.dev, containers@lists.linux-foundation.org,
-        legion@kernel.org, akpm@linux-foundation.org,
-        christian.brauner@ubuntu.com, hannes@cmpxchg.org, mhocko@kernel.org,
-        Alexey Makhalov
- <amakhalov@vmware.com>, llong@redhat.com,
-        pratik.r.sampat@gmail.com
-References: <ac76aada-f94d-d596-9b3c-1dca5a9914d0@linux.ibm.com>
- <874kcmmkz4.fsf@disp2133>
-From: Pratik Sampat <psampat@linux.ibm.com>
-Message-ID: <fe947175-62f5-c3fa-158c-7be2dd886c0e@linux.ibm.com>
-Date: Mon, 26 Jul 2021 17:09:02 +0530
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.11.0
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 420393FC3
+	for <containers@lists.linux.dev>; Mon, 23 Aug 2021 16:17:15 +0000 (UTC)
+Received: by mail.kernel.org (Postfix) with ESMTPSA id F0724613D2;
+	Mon, 23 Aug 2021 16:17:13 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1629735434;
+	bh=gh23DwG5/x4c4F1O5I7aJHgigmYmMs61WqC4Xp5rDqw=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+	b=Rz/u91l07tl7ws78s8KJN6vglg01dhY2Om1r3cF/WBXW6W+0fYhv2ZY9fYpiEm7ca
+	 AyjjdWua8NicjsQ41RbddswSXOQRR+tOz9W0xrMJtpbYB7Tc5VUkOOBYruCbK3LGyl
+	 +7G4jMWDXT5KVXBcsYwjKOP1rVxLKTy+2zT270TfL7kl71V7Vsgppk0+Amaf2q7zIs
+	 I0PNfYx0NSTAKP0idzOiXfglccTLFK2f+MQiIH4DzfgoYGYvqVgmXfoCN+gOzYq36m
+	 dl2kuF2wR3FxQSXGK58kv/VWPsWvQWOVZWIENU1CzYYMxO8QeAYw+7QDw9cB5ksNZm
+	 n+pGdBbUW+Q/g==
+From: Alexey Gladkov <legion@kernel.org>
+To: LKML <linux-kernel@vger.kernel.org>,
+	"Eric W . Biederman" <ebiederm@xmission.com>
+Cc: Linux Containers <containers@lists.linux.dev>,
+	syzbot+01985d7909f9468f013c@syzkaller.appspotmail.com
+Subject: [PATCH v1] ucounts: Increase ucounts reference counter before the security hook
+Date: Mon, 23 Aug 2021 18:16:33 +0200
+Message-Id: <97433b1742c3331f02ad92de5a4f07d673c90613.1629735352.git.legion@kernel.org>
+X-Mailer: git-send-email 2.32.0
+In-Reply-To: <000000000000b1f4d305c9ef72ad@google.com>
+References: <000000000000b1f4d305c9ef72ad@google.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-In-Reply-To: <874kcmmkz4.fsf@disp2133>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 7bit
-Content-Language: en-US
-X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: j3Iw1sZBev5z4RiyBqyF6JIhbSrHxozq
-X-Proofpoint-GUID: AVKjNkh0thjZ2cfZlB5QDBzvYxPiMJ2A
-X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:6.0.391,18.0.790
- definitions=2021-07-26_06:2021-07-26,2021-07-26 signatures=0
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 malwarescore=0
- priorityscore=1501 spamscore=0 lowpriorityscore=0 adultscore=0
- clxscore=1015 impostorscore=0 mlxscore=0 mlxlogscore=999 phishscore=0
- suspectscore=0 bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2104190000 definitions=main-2107260067
+Content-Transfer-Encoding: 8bit
 
-Thank you for your comments.
+We need to increment the ucounts reference counter befor security_prepare_creds()
+because this function may fail and abort_creds() will try to decrement
+this reference.
 
-On 22/07/21 8:52 pm, Eric W. Biederman wrote:
-> As stated I think this idea is a non-starter.
->
-> There is a real problem that there are applications that have a
-> legitimate need to know what cpu resources are available for them to use
-> and we don't have a good interfaces for them to request that
-> information.
->
-> I think MESOS solved this by passing a MAX_CPUS environment variable,
-> and at least the JVM was modified to use that variable.
->
-> That said as situations can be a bit more dynamic and fluid having
-> something where an application can look and see what resources are
-> available from it's view of the world seems reasonable.
->
-> AKA we need something so applications can stop conflating physical
-> cpu resources that are available with cpu resources that are allowed
-> to be used in an application.
->
-> This might be as simple as implementing a /proc/self/cpus_available
-> file.
->
-> Without the will to go through find existing open source applications
-> that care and update them so that they will use the new interface I
-> don't think anything will really happen.
+[   96.465056][ T8641] FAULT_INJECTION: forcing a failure.
+[   96.465056][ T8641] name fail_page_alloc, interval 1, probability 0, space 0, times 0
+[   96.478453][ T8641] CPU: 1 PID: 8641 Comm: syz-executor668 Not tainted 5.14.0-rc6-syzkaller #0
+[   96.487215][ T8641] Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011
+[   96.497254][ T8641] Call Trace:
+[   96.500517][ T8641]  dump_stack_lvl+0x1d3/0x29f
+[   96.505758][ T8641]  ? show_regs_print_info+0x12/0x12
+[   96.510944][ T8641]  ? log_buf_vmcoreinfo_setup+0x498/0x498
+[   96.516652][ T8641]  should_fail+0x384/0x4b0
+[   96.521141][ T8641]  prepare_alloc_pages+0x1d1/0x5a0
+[   96.526236][ T8641]  __alloc_pages+0x14d/0x5f0
+[   96.530808][ T8641]  ? __rmqueue_pcplist+0x2030/0x2030
+[   96.536073][ T8641]  ? lockdep_hardirqs_on_prepare+0x3e2/0x750
+[   96.542056][ T8641]  ? alloc_pages+0x3f3/0x500
+[   96.546635][ T8641]  allocate_slab+0xf1/0x540
+[   96.551120][ T8641]  ___slab_alloc+0x1cf/0x350
+[   96.555689][ T8641]  ? kzalloc+0x1d/0x30
+[   96.559740][ T8641]  __kmalloc+0x2e7/0x390
+[   96.563980][ T8641]  ? kzalloc+0x1d/0x30
+[   96.568029][ T8641]  kzalloc+0x1d/0x30
+[   96.571903][ T8641]  security_prepare_creds+0x46/0x220
+[   96.577174][ T8641]  prepare_creds+0x411/0x640
+[   96.581747][ T8641]  __sys_setfsuid+0xe2/0x3a0
+[   96.586333][ T8641]  do_syscall_64+0x3d/0xb0
+[   96.590739][ T8641]  entry_SYSCALL_64_after_hwframe+0x44/0xae
+[   96.596611][ T8641] RIP: 0033:0x445a69
+[   96.600483][ T8641] Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 11 15 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+[   96.620152][ T8641] RSP: 002b:00007f1054173318 EFLAGS: 00000246 ORIG_RAX: 000000000000007a
+[   96.628543][ T8641] RAX: ffffffffffffffda RBX: 00000000004ca4c8 RCX: 0000000000445a69
+[   96.636600][ T8641] RDX: 0000000000000010 RSI: 00007f10541732f0 RDI: 0000000000000000
+[   96.644550][ T8641] RBP: 00000000004ca4c0 R08: 0000000000000001 R09: 0000000000000000
+[   96.652500][ T8641] R10: 0000000000000000 R11: 0000000000000246 R12: 00000000004ca4cc
+[   96.660631][ T8641] R13: 00007fffffe0b62f R14: 00007f1054173400 R15: 0000000000022000
 
- From a process granular point of view I believe a /proc/self approach solves
-this problem at root. However, as you have stated too; applications will now
-have to look at another interface for the correct information and that could
-potentially be a challenge.
+Fixes: 905ae01c4ae2 ("Add a reference to ucounts for each cred")
+Reported-by: syzbot+01985d7909f9468f013c@syzkaller.appspotmail.com
+Signed-off-by: Alexey Gladkov <legion@kernel.org>
+---
+ kernel/cred.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
->
-> The problem I see with changing existing interfaces that describe the
-> hardware is that the definition becomes unclear and so different
-> applications can legitimately expect different things, and it would
-> become impossible to implement what is needed correctly.
-
-In our experimentation and survey we found out that container applications which
-were restricted based on a cgroup restriction - both cpuset or period/quota
-benefited from coherent information. That was also my understanding with the
-usage of tools like LXCFS in the userspace.
-
-Would you happen to know if there are any applications that expect the full
-hardware/topology view even though it itself is restricted in its usage?
-
->
-> The problem I see with using cgroup interfaces is that they are not
-> targeted at end user applications and but rather are targeted at the
-> problem of controlling access to a resource.  Using them report what is
-> available again gets you into the multiple master problem.  Especially
-> as cgroups may not be the only thing in the system controlling access to
-> your resource.
-
-I agree, cgroup is a control interface and should not be used for presenting of
-information and cgroups may not be the only thing in the system controlling
-access to the resources.
-
-This is where the idea for a different interface really stemmed from.
-That although there are mechanisms to restrict and control usage, there is no
-interface that presents information coherently to the userspace
-
-> So I really think the only good solution that people won't mind is to go
-> through the applications figure out what information is legitimately
-> needed from an application perspective, and build an interface tailored
-> for applications to get that information.
->
-> Then applications can be updated to use the new interface, and as the
-> implementation of the system changes the implementation in the kernel
-> can be updated to keep the applications working.
-
-I concur with this approach to build an application first interface.
-
-My current frame of reference for the problems come from tools like LXCFS which
-are built around the existing interfaces to present information and the
-experiments were designed to quantify those shortcomings.
-We could definitely use some help in understanding the shortcomings of the
-current interfaces from people who use these applications.
-
---
-Pratik
-
-> Eric
+diff --git a/kernel/cred.c b/kernel/cred.c
+index e6fd2b3fc31f..f784e08c2fbd 100644
+--- a/kernel/cred.c
++++ b/kernel/cred.c
+@@ -286,13 +286,13 @@ struct cred *prepare_creds(void)
+ 	new->security = NULL;
+ #endif
+ 
+-	if (security_prepare_creds(new, old, GFP_KERNEL_ACCOUNT) < 0)
+-		goto error;
+-
+ 	new->ucounts = get_ucounts(new->ucounts);
+ 	if (!new->ucounts)
+ 		goto error;
+ 
++	if (security_prepare_creds(new, old, GFP_KERNEL_ACCOUNT) < 0)
++		goto error;
++
+ 	validate_creds(new);
+ 	return new;
+ 
+@@ -753,13 +753,13 @@ struct cred *prepare_kernel_cred(struct task_struct *daemon)
+ #ifdef CONFIG_SECURITY
+ 	new->security = NULL;
+ #endif
+-	if (security_prepare_creds(new, old, GFP_KERNEL_ACCOUNT) < 0)
+-		goto error;
+-
+ 	new->ucounts = get_ucounts(new->ucounts);
+ 	if (!new->ucounts)
+ 		goto error;
+ 
++	if (security_prepare_creds(new, old, GFP_KERNEL_ACCOUNT) < 0)
++		goto error;
++
+ 	put_cred(old);
+ 	validate_creds(new);
+ 	return new;
+-- 
+2.32.0
 
