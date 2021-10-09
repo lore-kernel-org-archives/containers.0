@@ -1,24 +1,24 @@
 Received: from desiato.infradead.org (desiato.infradead.org [90.155.92.199])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1387772
-	for <containers@lists.linux.dev>; Sat,  9 Oct 2021 22:38:02 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D008872
+	for <containers@lists.linux.dev>; Sat,  9 Oct 2021 22:41:46 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=infradead.org; s=desiato.20200630; h=In-Reply-To:Content-Type:MIME-Version:
 	References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
 	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=hPKAcZK5izPuDfWh8AAW5OoknbBIjrsDsl4cSr/xTWk=; b=qmgd5RoIVCBNZUjd7+fltt0qg3
-	vAD6cLLr91kNcKSvgMFgaGmncnqOXqJWzSthinZwzI6PVrGfBvHMCYaf6mq2RBJ9rRqyJQq1ZU3+p
-	tkn9+Vk7uw8s+hneNDkMNqSgnJPfsz19O2ad46wSeRuzqF1dsnCB26873MpSrLz9UENnyWMeremWS
-	FC52qqbE2BgTUia5i1q1XmLKAKRzbt9VpbLmVw2lXvqNLK7iQ+PwnG0Z05UUlb6jKJUolPj4KdEZW
-	7nnRANZxbiJykY2+Lj46fB1yEZmpH4siJpkmtJESYo+JO3Ux0r0StFPhTIc93Ob56diWrKRjc/7RE
-	3hEDqCzg==;
+	bh=irb6FRwPU2dQSsNxYUCgkPV+9G3ES5Ac2nbK8COEBzU=; b=DXMGHD/JX7AFdlaWO/D2GkVpwP
+	QHCWfAPEgda5tzNYUSnnKZKCGkQknXnodDJbMYotyD8jaVhs69KREgh7jIBPVJ/5E16H/9bcgXTKD
+	IroinWzWCbs73n5/onzduuOpL3gxMExtapMVaQDRRpCm+DFsvm9c3Pm+SfhOnfW5wzJefTXiU1YGc
+	VgkiiMjqM65eIxzikDCe9D2I1XruRKUFEougWAdwFo2xqTsuoZ/gbloLdtivYIomIPmuJTli09DRS
+	c3QhGj6d23zWxNrWup/YMnbaDJBwo5HH6sd5/tN9kVP1mZSgoEURfTGx2vX/FVt2MFL7+d9egwyvg
+	cVv9mw4Q==;
 Received: from j217100.upc-j.chello.nl ([24.132.217.100] helo=worktop.programming.kicks-ass.net)
 	by desiato.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-	id 1mZKyL-008urs-G5; Sat, 09 Oct 2021 22:37:41 +0000
+	id 1mZL2B-008uuN-8R; Sat, 09 Oct 2021 22:41:39 +0000
 Received: by worktop.programming.kicks-ass.net (Postfix, from userid 1000)
-	id 013FA9811D4; Sun, 10 Oct 2021 00:37:39 +0200 (CEST)
-Date: Sun, 10 Oct 2021 00:37:39 +0200
+	id D30FD9811D4; Sun, 10 Oct 2021 00:41:38 +0200 (CEST)
+Date: Sun, 10 Oct 2021 00:41:38 +0200
 From: Peter Zijlstra <peterz@infradead.org>
 To: "Pratik R. Sampat" <psampat@linux.ibm.com>
 Cc: bristot@redhat.com, christian@brauner.io, ebiederm@xmission.com,
@@ -27,10 +27,9 @@ Cc: bristot@redhat.com, christian@brauner.io, ebiederm@xmission.com,
 	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
 	cgroups@vger.kernel.org, containers@lists.linux.dev,
 	containers@lists.linux-foundation.org, pratik.r.sampat@gmail.com
-Subject: Re: [RFC 1/5] ns: Introduce CPU Namespace
-Message-ID: <20211009223739.GY174703@worktop.programming.kicks-ass.net>
+Subject: Re: [RFC 0/5] kernel: Introduce CPU Namespace
+Message-ID: <20211009224138.GZ174703@worktop.programming.kicks-ass.net>
 References: <20211009151243.8825-1-psampat@linux.ibm.com>
- <20211009151243.8825-2-psampat@linux.ibm.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
@@ -39,51 +38,34 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20211009151243.8825-2-psampat@linux.ibm.com>
+In-Reply-To: <20211009151243.8825-1-psampat@linux.ibm.com>
 
-On Sat, Oct 09, 2021 at 08:42:39PM +0530, Pratik R. Sampat wrote:
-> diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-> index 2d9ff40f4661..0413175e6d73 100644
-> --- a/kernel/sched/core.c
-> +++ b/kernel/sched/core.c
-> @@ -27,6 +27,8 @@
->  #include "pelt.h"
->  #include "smp.h"
->  
-> +#include <linux/cpu_namespace.h>
-> +
->  /*
->   * Export tracepoints that act as a bare tracehook (ie: have no trace event
->   * associated with them) to allow external modules to probe them.
-> @@ -7559,6 +7561,7 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
->  {
->  	cpumask_var_t cpus_allowed, new_mask;
->  	struct task_struct *p;
-> +	cpumask_t temp;
->  	int retval;
->  
->  	rcu_read_lock();
+On Sat, Oct 09, 2021 at 08:42:38PM +0530, Pratik R. Sampat wrote:
 
-You're not supposed to put a cpumask_t on stack. Those things can be
-huge.
+> Current shortcomings in the prototype:
+> --------------------------------------
+> 1. Containers also frequently use cfs period and quotas to restrict CPU
+>    runtime also known as millicores in modern container runtimes.
+>    The RFC interface currently does not account for this in
+>    the scheme of things.
+> 2. While /proc/stat is now namespace aware and userspace programs like
+>    top will see the CPU utilization for their view of virtual CPUs;
+>    if the system or any other application outside the namespace
+>    bumps up the CPU utilization it will still show up in sys/user time.
+>    This should ideally be shown as stolen time instead.
+>    The current implementation plugs into the display of stats rather
+>    than accounting which causes incorrect reporting of stolen time.
+> 3. The current implementation assumes that no hotplug operations occur
+>    within a container and hence the online and present cpus within a CPU
+>    namespace are always the same and query the same CPU namespace mask
+> 4. As this is a proof of concept, currently we do not differentiate
+>    between cgroup cpus_allowed and effective_cpus and plugs them into
+>    the same virtual CPU map of the namespace
+> 5. As described in a fair use implication earlier, knowledge of the
+>    CPU topology can potentially be taken an misused with a flood.
+>    While scrambling the CPUset in the namespace can help by
+>    obfuscation of information, the topology can still be roughly figured
+>    out with the use of IPI latencies to determine siblings or far away
+>    cores
 
-> @@ -7682,8 +7686,9 @@ SYSCALL_DEFINE3(sched_setaffinity, pid_t, pid, unsigned int, len,
->  long sched_getaffinity(pid_t pid, struct cpumask *mask)
->  {
->  	struct task_struct *p;
-> +	cpumask_var_t temp;
->  	unsigned long flags;
-> -	int retval;
-> +	int retval, cpu;
->  
->  	rcu_read_lock();
->  
-> @@ -7698,6 +7703,13 @@ long sched_getaffinity(pid_t pid, struct cpumask *mask)
->  
->  	raw_spin_lock_irqsave(&p->pi_lock, flags);
->  	cpumask_and(mask, &p->cpus_mask, cpu_active_mask);
-> +	cpumask_clear(temp);
-
-There's a distinct lack of allocating temp before use. Are you sure you
-actually tested this?
-
+6. completely destroys and ignores any machine topology information.
