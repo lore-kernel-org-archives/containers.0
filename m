@@ -1,124 +1,201 @@
-Received: from mail-pj1-f50.google.com (mail-pj1-f50.google.com [209.85.216.50])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B799C2C81
-	for <containers@lists.linux.dev>; Mon, 11 Oct 2021 17:42:29 +0000 (UTC)
-Received: by mail-pj1-f50.google.com with SMTP id om14so1925416pjb.5
-        for <containers@lists.linux.dev>; Mon, 11 Oct 2021 10:42:29 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=sender:date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:content-transfer-encoding:in-reply-to;
-        bh=cv+8p4QBr+yumNO08E52pdNZjmudW0YvW+eKFeVXzNw=;
-        b=X2Ln10Tg4qFyX1S7WwFgytlT9WmcLpxGM4Zit5dEo/o+1WnWYfpNX3gNqY4uzNIAN6
-         Ntyju7CQJyfW85aoc0hfLy+G7n+1MefYEgfBKmm0h1ZuvROPAUWv3EVbcTtD4vcfc+pg
-         XrIwgPiXVy1qkK/HWnDaeiKTRSPRwPmqGK278qGMcqunMoECVG4wY8sKczSXTrp5P7dG
-         p8gHyjLlv03q7Um00Npt36ae6F98ErTGhZoMrEuwsh+yY3MijosVvecksUfE/jMtXzxj
-         vkO9BV7RzVaMhR3xGwb8bNFnp3uyzr8dBPSYQ+ONNzOqyFNGGEhOqfefekQeLs1fMCxj
-         +bCA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:sender:date:from:to:cc:subject:message-id
-         :references:mime-version:content-disposition
-         :content-transfer-encoding:in-reply-to;
-        bh=cv+8p4QBr+yumNO08E52pdNZjmudW0YvW+eKFeVXzNw=;
-        b=0yth7PPpzURAVjr7Vq/a4vP5vavmvVwbD1h7Q0gTdCcX2X67Wn83d1CNdBIRQGw0Fl
-         mBk4cFqOVOLIQGC7jfL5knpdWWE+JEtKdCUvj93rIxDdBqUS/CMaPr8ioNhpGA5OWKUz
-         3Kl6pJO+2OHHtouwwOZ3QXbHG3b/FjSCabho3z5seRiOW4dFkQ5KhuWEpbx8rH68nJk/
-         SYeaXbGaU4h5498e2kckp6MNf6s+yih9a2Qb1rLbtbFA3iuP9wa1lZFhjgHcWZqSOiHR
-         ergpiI89lpqf9YjaxBKxX8FwwEgU/0fsSLAD84QQHZe+ytTo9YB7Oocu14WfOBBauAZk
-         20Rw==
-X-Gm-Message-State: AOAM532CQNAv8xenaD+U6YJNeBTA4zZbsBXri73R4UlYOx8tdj3j+8VN
-	4Cu++k5hd/Uwy45zNne7zYc=
-X-Google-Smtp-Source: ABdhPJzFg5/nX0pFvcYymJXdKatF3YOnKw5en66PJoUNMTNFTwT1k00B02IC7OgL2Qt8J7R1nPrwNQ==
-X-Received: by 2002:a17:90a:8b89:: with SMTP id z9mr367573pjn.89.1633974148929;
-        Mon, 11 Oct 2021 10:42:28 -0700 (PDT)
-Received: from localhost (2603-800c-1a02-1bae-e24f-43ff-fee6-449f.res6.spectrum.com. [2603:800c:1a02:1bae:e24f:43ff:fee6:449f])
-        by smtp.gmail.com with ESMTPSA id e12sm8471062pfl.67.2021.10.11.10.42.28
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 11 Oct 2021 10:42:28 -0700 (PDT)
-Sender: Tejun Heo <htejun@gmail.com>
-Date: Mon, 11 Oct 2021 07:42:27 -1000
-From: Tejun Heo <tj@kernel.org>
-To: Michal =?iso-8859-1?Q?Koutn=FD?= <mkoutny@suse.com>
-Cc: Christian Brauner <christian.brauner@ubuntu.com>,
-	"Pratik R. Sampat" <psampat@linux.ibm.com>, bristot@redhat.com,
-	christian@brauner.io, ebiederm@xmission.com,
-	lizefan.x@bytedance.com, hannes@cmpxchg.org, mingo@kernel.org,
-	juri.lelli@redhat.com, linux-kernel@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org,
-	containers@lists.linux.dev, containers@lists.linux-foundation.org,
-	pratik.r.sampat@gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8EAC972
+	for <containers@lists.linux.dev>; Tue, 12 Oct 2021 08:42:46 +0000 (UTC)
+Received: from pps.filterd (m0098396.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 19C7C74B025604;
+	Tue, 12 Oct 2021 04:42:32 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=subject : to : cc :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=pp1;
+ bh=rK3EwTpFj9LRvp36w/iPeujwAgGDeB8sSzAGLI+vZEQ=;
+ b=pGidHLBzx7XnxMBwI17SZlst61RfbveN3cLfuPIqdp4IGjOGlxIaphUE3rtkrXRIIDUD
+ F5X5H9bh7Pur2SYeKt0sVajbTXvSQNHGqCmVgtK75ALKLhPAAiVZbN04dqtqxZnk4t83
+ u2YphOOy5G9D1kVlM7Siek3guh7fI7y/sPCNLI1ZhvlKMa0+4titwlG+IlVxsDh/t4VX
+ lhJGXzg43N4r6IzSR5VlyGeICLnA5TYmGy4JiP2wNGaK3MVEe1gHeHCx3GRZ2HpeteNh
+ ZVxmRLBkweDJdOydjKPHlw/vieqiIiKUhWwwLQ6K7G1VWgP+5xWo0F+lcdUFibDQq/gb Eg== 
+Received: from pps.reinject (localhost [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3bn5rtsv5t-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 12 Oct 2021 04:42:32 -0400
+Received: from m0098396.ppops.net (m0098396.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 19C8eU0V015379;
+	Tue, 12 Oct 2021 04:42:31 -0400
+Received: from ppma03ams.nl.ibm.com (62.31.33a9.ip4.static.sl-reverse.com [169.51.49.98])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3bn5rtsv56-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 12 Oct 2021 04:42:31 -0400
+Received: from pps.filterd (ppma03ams.nl.ibm.com [127.0.0.1])
+	by ppma03ams.nl.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 19C8ZQB0026597;
+	Tue, 12 Oct 2021 08:42:28 GMT
+Received: from b06cxnps3075.portsmouth.uk.ibm.com (d06relay10.portsmouth.uk.ibm.com [9.149.109.195])
+	by ppma03ams.nl.ibm.com with ESMTP id 3bk2q9e5gq-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 12 Oct 2021 08:42:28 +0000
+Received: from d06av26.portsmouth.uk.ibm.com (d06av26.portsmouth.uk.ibm.com [9.149.105.62])
+	by b06cxnps3075.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 19C8gOVw43778398
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Tue, 12 Oct 2021 08:42:24 GMT
+Received: from d06av26.portsmouth.uk.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 69378AE05F;
+	Tue, 12 Oct 2021 08:42:24 +0000 (GMT)
+Received: from d06av26.portsmouth.uk.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id AF8EFAE051;
+	Tue, 12 Oct 2021 08:42:19 +0000 (GMT)
+Received: from [9.43.19.240] (unknown [9.43.19.240])
+	by d06av26.portsmouth.uk.ibm.com (Postfix) with ESMTP;
+	Tue, 12 Oct 2021 08:42:19 +0000 (GMT)
 Subject: Re: [RFC 0/5] kernel: Introduce CPU Namespace
-Message-ID: <YWR3g+ZE2j3w1Npz@slm.duckdns.org>
+To: Christian Brauner <christian.brauner@ubuntu.com>
+Cc: bristot@redhat.com, christian@brauner.io, ebiederm@xmission.com,
+        lizefan.x@bytedance.com, tj@kernel.org, hannes@cmpxchg.org,
+        mingo@kernel.org, juri.lelli@redhat.com, linux-kernel@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org,
+        containers@lists.linux.dev, containers@lists.linux-foundation.org,
+        pratik.r.sampat@gmail.com
 References: <20211009151243.8825-1-psampat@linux.ibm.com>
  <20211011101124.d5mm7skqfhe5g35h@wittgenstein>
- <20211011141737.GA58758@blackbody.suse.cz>
+From: Pratik Sampat <psampat@linux.ibm.com>
+Message-ID: <a0f9ed06-1e5d-d3d0-21a5-710c8e27749c@linux.ibm.com>
+Date: Tue, 12 Oct 2021 14:12:18 +0530
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.11.0
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <20211011141737.GA58758@blackbody.suse.cz>
+In-Reply-To: <20211011101124.d5mm7skqfhe5g35h@wittgenstein>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
+Content-Language: en-US
+X-TM-AS-GCONF: 00
+X-Proofpoint-GUID: hON9CxZwJ3YbnQZQADJaFNG-XDyMh0FS
+X-Proofpoint-ORIG-GUID: UE9RlvQyQcG0TApwRdTcpouIkHdRgZ3B
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.182.1,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.0.607.475
+ definitions=2021-10-12_02,2021-10-11_01,2020-04-07_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 mlxscore=0 impostorscore=0
+ bulkscore=0 phishscore=0 mlxlogscore=999 lowpriorityscore=0 malwarescore=0
+ spamscore=0 suspectscore=0 priorityscore=1501 clxscore=1011 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2109230001
+ definitions=main-2110120045
 
 Hello,
+> Thank your for providing a new approach to this problem and thanks for
+> summarizing some of the painpoints and current solutions. I do agree
+> that this is a problem we should tackle in some form.
+>
+> I have one design comment and one process related comments.
+>
+> Fundamentally I think making this a new namespace is not the correct
+> approach. One core feature of a namespace it that it is an opt-in
+> isolation mechanism: if I do CLONE_NEW* that is when the new isolation
+> mechanism kicks. The correct reporting through procfs and sysfs is
+> built into that and we do bugfixes whenever reported information is
+> wrong.
+>
+> The cpu namespace would be different; a point I think you're making as
+> well further above:
+>
+>> The control and the display interface is fairly disjoint with each
+>> other. Restrictions can be set through control interfaces like cgroups,
+> A task wouldn't really opt-in to cpu isolation with CLONE_NEWCPU it
+> would only affect resource reporting. So it would be one half of the
+> semantics of a namespace.
+>
+I completely agree with you on this, fundamentally a namespace should
+isolate both the resource as well as the reporting. As you mentioned
+too, cgroups handles the resource isolation while this namespace
+handles the reporting and this seems to break the semantics of what a
+namespace should really be.
 
-On Mon, Oct 11, 2021 at 04:17:37PM +0200, Michal Koutný wrote:
-> The problem as I see it is the mapping from a real dedicated HW to a
-> cgroup restricted environment ("container"), which can be shared. In
-> this instance, the virtualized view would not be able to represent a
-> situation when a CPU is assigned non-exclusively to multiple cpusets.
+The CPU resource is unique in that sense, at least in this context,
+which makes it tricky to design a interface that presents coherent
+information.
 
-There is a fundamental problem with trying to represent a resource shared
-environment controlled with cgroup using system-wide interfaces including
-procfs because the goal of many cgroup resource control includes
-work-conservation, which also is one of the main reason why containers are
-more attractive in resource-intense deployments. System-level interfaces
-naturally describe a discrete system, which can't express the dynamic
-distribution with cgroups.
+> In all honesty, I think cpu resource reporting through procfs/sysfs as
+> done today without taking a tasks cgroup information into account is a
+> bug. But the community has long agreed that fixing this would be a
+> regression.
+>
+> I think that either we need to come up with new non-syscall based
+> interfaces that allow to query virtualized cpu information and buy into
+> the process of teaching userspace about them. This is even independent
+> of containers.
+> This is in line with proposing e.g. new procfs/sysfs files. Userspace
+> can then keep supplementing cpu virtualization via e.g. stuff like LXCFS
+> until tools have switched to read their cpu information from new
+> interfaces. Something that they need to be taught anyway.
 
-There are aspects of cgroups which are akin to hard partitioning and thus
-can be represented by diddling with system level interfaces. Whether those
-are worthwhile to pursuit depends on how easy and useful they are; however,
-there's no avoiding that each of those is gonna be a very partial and
-fragmented thing, which significantly contributes the default cons list of
-such attempts.
+I too think that having a brand new interface all together and teaching
+userspace about it is much cleaner approach.
+On the same lines, if were to do that, we could also add more useful
+metrics in that interface like ballpark number of threads to saturate
+usage as well as gather more such metrics as suggested by Tejun Heo.
 
-> > Existing solutions to the problem include userspace tools like LXCFS
-> > which can fake the sysfs information by mounting onto the sysfs online
-> > file to be in coherence with the limits set through cgroup cpuset.
-> > However, LXCFS is an external solution and needs to be explicitly setup
-> > for applications that require it. Another concern is also that tools
-> > like LXCFS don't handle all the other display mechanism like procfs load
-> > stats.
-> >
-> > Therefore, the need of a clean interface could be advocated for.
-> 
-> I'd like to write something in support of your approach but I'm afraid that the
-> problem of the mapping (dedicated vs shared) makes this most suitable for some
-> external/separate entity such as the LCXFS already.
+My only concern for this would be that if today applications aren't
+modifying their code to read the existing cgroup interface and would
+rather resort to using userspace side-channel solutions like LXCFS or
+wrapping them up in kata containers, would it now be compelling enough
+to introduce yet another interface?
 
-This is more of a unit problem than an interface one - ie. the existing
-numbers in the system interface doesn't really fit what needs to be
-described.
+While I concur with Tejun Heo's comment the mail thread and overloading
+existing interfaces of sys and proc which were originally designed for
+system wide resources, may not be a great idea:
 
-One approach that we've found useful in practice is dynamically changing
-resource consumption based on shortage, as measured by PSI, rather than some
-number representing what's available. e.g. for a build service, building a
-feedback loop which monitors its own cpu, memory and io pressures and
-modulates the number of concurrent jobs.
+> There is a fundamental problem with trying to represent a resource shared
+> environment controlled with cgroup using system-wide interfaces including
+> procfs
 
-There are some numbers which would be fundamentlaly useful - e.g. ballpark
-number of threads needed to saturate the computing capacity available to the
-cgroup, or ballpark bytes of memory available without noticeable contention.
-Those, I think we definitely need to work on, but I don't see much point in
-trying to bend existing /proc numbers for them.
+A fundamental question we probably need to ascertain could be -
+Today, is it incorrect for applications to look at the sys and procfs to
+get resource information, regardless of their runtime environment?
 
-Thanks.
+Also, if an application were to only be able to view the resources
+based on the restrictions set regardless of the interface - would there
+be a disadvantage for them if they could only see an overloaded context
+sensitive view rather than the whole system view?
 
--- 
-tejun
+> Or if we really want to have this tied to a namespace then I think we
+> should consider extending CLONE_NEWCGROUP since cgroups are were cpu
+> isolation for containers is really happening. And arguably we should
+> restrict this to cgroup v2.
+
+Given some thought, I tend to agree this could be wrapped in a cgroup
+namespace. However, some more deliberation is definitely needed to
+determine if by including CPU isolation here we aren't breaking
+another semantic set by the cgroup namespace itself as cgroups don't
+necessarily have to have restrictions on CPUs set and can also allow
+mixing of restrictions from cpuset and cfs period-quota.
+
+>
+>  From a process perspective, I think this is something were we will need
+> strong guidance from the cgroup and cpu crowd. Ultimately, they need to
+> be the ones merging a feature like this as this is very much into their
+> territory.
+
+I agree, we definitely need the guidance from the cgroups and cpu folks
+from the community. We would also benefit from guidance from the
+userspace community like containers and understand how they use the
+existing interfaces so that we can arrive at a holistic view of what
+everybody could benefit by.
+
+>
+> Christian
+
+Thank you once again for all the comments, the CPU namespace is me
+taking a stab trying to highlight the problem itself. Not without
+its flaws, having a coherent interface does seem to show benefits as
+well.
+Hence, if the consensus builds for the right interface for solving this
+problem, I would be glad to help in contributing to a solution towards
+it.
+
+Thanks,
+Pratik
+
+
+
