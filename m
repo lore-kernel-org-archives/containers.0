@@ -1,168 +1,228 @@
-Received: from mail-pg1-f171.google.com (mail-pg1-f171.google.com [209.85.215.171])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5179E2C81
-	for <containers@lists.linux.dev>; Thu, 14 Oct 2021 22:14:31 +0000 (UTC)
-Received: by mail-pg1-f171.google.com with SMTP id 66so6774934pgc.9
-        for <containers@lists.linux.dev>; Thu, 14 Oct 2021 15:14:31 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=sender:date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=C5ZuKrGzyI6sXcttUGT8m4bIhAiihLIa6Po9/1DTork=;
-        b=AsE4PDAG7h8rwyf8bL0F9Io1UF0AoB2kT269QADqYzz+dKtUQx60eUE9HUAHP8Z2Bn
-         uC08a/3eAlVxbqwKa/qT8bLYMerUdPOKCGoFBWmLJcRh7g8cFRavDIDHuoNAXemunyc3
-         V6INJTbXAxAS9Jnbszimpa1g+68qh9s0SdjeSYXc0UhbjCvYuKjefabWJe4ojMhhZn+C
-         pbnXxRrC/Eylg/ZBrgx543czX/iLm3zfSmRuuHlLHU/tGce8ckWeiAQkhJHLxrec8wht
-         p4MFNx48pCbGHNwS5DPD82va6P50sWg/rE7o+au6qdSB8gB9Yg3jZXtRzNNJ+QnFrzM1
-         nWvg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:sender:date:from:to:cc:subject:message-id
-         :references:mime-version:content-disposition:in-reply-to;
-        bh=C5ZuKrGzyI6sXcttUGT8m4bIhAiihLIa6Po9/1DTork=;
-        b=C0c8xCHZfln6d9/ZOT2tNEhVW1gDszWJLGXGUyjg/KdgZAIf5JgridQ9xsx0y7bvyh
-         g20R8BNwVHsoIl88Atkc+gvN/DNIM7u9EfheKvcMbyDXR3WCMPmrto6MMM3RfCkQsEis
-         5OkcpUkW9Mu7W4izX6CeXO/DUhUjdBLj7e7c+SA2gjpuhXH5gTYZXXUsuDEBOoSvo4Co
-         7BFfxj4+cngP1xvl6+lWEz3PFB+zZ7PsK5U0iSwaGWSGa4iA34L/Osqh08I/3BT01BiR
-         s/Nt6TwjJJwUvOc3EAWZQgEjHBp6NB9lWmDUwmbzdcX/d0j6SV5Oygwz50qzbZGztsDW
-         iorA==
-X-Gm-Message-State: AOAM531/q7d/D985OIAacDQvr35obo45gVjAYHlF4Et1Bc0nWX7O9W7s
-	Zog0/THmUAF3uI2U6KdX2fs=
-X-Google-Smtp-Source: ABdhPJwbfxlAoia3kcqBZJw5PExi3eKMTEzSvH3nooHbwUgFD0V2vSQCTqQuhbBWK7latyS5h4Xwzg==
-X-Received: by 2002:a63:2361:: with SMTP id u33mr6168320pgm.369.1634249670578;
-        Thu, 14 Oct 2021 15:14:30 -0700 (PDT)
-Received: from localhost (2603-800c-1a02-1bae-e24f-43ff-fee6-449f.res6.spectrum.com. [2603:800c:1a02:1bae:e24f:43ff:fee6:449f])
-        by smtp.gmail.com with ESMTPSA id l4sm3233910pga.71.2021.10.14.15.14.29
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 14 Oct 2021 15:14:30 -0700 (PDT)
-Sender: Tejun Heo <htejun@gmail.com>
-Date: Thu, 14 Oct 2021 12:14:28 -1000
-From: Tejun Heo <tj@kernel.org>
-To: Pratik Sampat <psampat@linux.ibm.com>
-Cc: Christian Brauner <christian.brauner@ubuntu.com>, bristot@redhat.com,
-	christian@brauner.io, ebiederm@xmission.com,
-	lizefan.x@bytedance.com, hannes@cmpxchg.org, mingo@kernel.org,
-	juri.lelli@redhat.com, linux-kernel@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org,
-	containers@lists.linux.dev, containers@lists.linux-foundation.org,
-	pratik.r.sampat@gmail.com
-Subject: Re: [RFC 0/5] kernel: Introduce CPU Namespace
-Message-ID: <YWirxCjschoRJQ14@slm.duckdns.org>
-References: <20211009151243.8825-1-psampat@linux.ibm.com>
- <20211011101124.d5mm7skqfhe5g35h@wittgenstein>
- <a0f9ed06-1e5d-d3d0-21a5-710c8e27749c@linux.ibm.com>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 61A9C29CA
+	for <containers@lists.linux.dev>; Mon, 18 Oct 2021 15:29:33 +0000 (UTC)
+Received: from pps.filterd (m0098410.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 19IE0N0S000432;
+	Mon, 18 Oct 2021 11:29:27 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
+ mime-version : subject : to : cc : references : from : in-reply-to :
+ content-type : content-transfer-encoding; s=pp1;
+ bh=rcJecVSV9JJG4iazj3f+iELtHVS0LVi684kZY28slOs=;
+ b=mqH+feqf8Hb96BFOXyA67/YgYynP5NHv/Yz0TI8SovXpfs7dbpTqX5yYEPiyXPogaT0P
+ XIOBrQIcRvyWtdt2hjI3WyYToW9m/suJxgrLX/uzoagEE8vvUh+rHqt+mMvlQ/xlbHtW
+ +JoWWWm1rfgNOrYLz/V1QrddYcGU2oqmzltViA2wX9I1mMRYf6VcbrpoS7lSb9gEVo2k
+ uoSRPOt/of8eYkRH7LDSDMWZA8vpRsfPMw0zk+Nl+rIeKederxDTHVeaRwLCldWIqQSl
+ AQ2oSBa9SuSV5gyqXJL0b443IhkTH0lo70MC3WqoRL/Sh4qWWxR3JAq4Xa20Mr7zv8Uh +g== 
+Received: from pps.reinject (localhost [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3bs8vkvpra-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Mon, 18 Oct 2021 11:29:27 -0400
+Received: from m0098410.ppops.net (m0098410.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 19IFMoTr011438;
+	Mon, 18 Oct 2021 11:29:27 -0400
+Received: from ppma03fra.de.ibm.com (6b.4a.5195.ip4.static.sl-reverse.com [149.81.74.107])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3bs8vkvpqc-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Mon, 18 Oct 2021 11:29:26 -0400
+Received: from pps.filterd (ppma03fra.de.ibm.com [127.0.0.1])
+	by ppma03fra.de.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 19IFBYRa003805;
+	Mon, 18 Oct 2021 15:29:24 GMT
+Received: from b06avi18878370.portsmouth.uk.ibm.com (b06avi18878370.portsmouth.uk.ibm.com [9.149.26.194])
+	by ppma03fra.de.ibm.com with ESMTP id 3bqpc96xx4-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Mon, 18 Oct 2021 15:29:24 +0000
+Received: from d06av25.portsmouth.uk.ibm.com (d06av25.portsmouth.uk.ibm.com [9.149.105.61])
+	by b06avi18878370.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 19IFNWP763111574
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Mon, 18 Oct 2021 15:23:32 GMT
+Received: from d06av25.portsmouth.uk.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 1331811C050;
+	Mon, 18 Oct 2021 15:29:22 +0000 (GMT)
+Received: from d06av25.portsmouth.uk.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 7FCD311C05C;
+	Mon, 18 Oct 2021 15:29:17 +0000 (GMT)
+Received: from [9.43.5.59] (unknown [9.43.5.59])
+	by d06av25.portsmouth.uk.ibm.com (Postfix) with ESMTP;
+	Mon, 18 Oct 2021 15:29:17 +0000 (GMT)
+Message-ID: <b5f8505c-38d5-af6f-0de7-4f9df7ae9b9b@linux.ibm.com>
+Date: Mon, 18 Oct 2021 20:59:16 +0530
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <a0f9ed06-1e5d-d3d0-21a5-710c8e27749c@linux.ibm.com>
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.1.0
+Subject: Re: [RFC 0/5] kernel: Introduce CPU Namespace
+Content-Language: en-US
+To: Tejun Heo <tj@kernel.org>
+Cc: Christian Brauner <christian.brauner@ubuntu.com>, bristot@redhat.com,
+        christian@brauner.io, ebiederm@xmission.com, lizefan.x@bytedance.com,
+        hannes@cmpxchg.org, mingo@kernel.org, juri.lelli@redhat.com,
+        linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        cgroups@vger.kernel.org, containers@lists.linux.dev,
+        containers@lists.linux-foundation.org, pratik.r.sampat@gmail.com
+References: <20211009151243.8825-1-psampat@linux.ibm.com>
+ <20211011101124.d5mm7skqfhe5g35h@wittgenstein>
+ <a0f9ed06-1e5d-d3d0-21a5-710c8e27749c@linux.ibm.com>
+ <YWirxCjschoRJQ14@slm.duckdns.org>
+From: Pratik Sampat <psampat@linux.ibm.com>
+In-Reply-To: <YWirxCjschoRJQ14@slm.duckdns.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-TM-AS-GCONF: 00
+X-Proofpoint-GUID: olrr0wC6rZHl_pzXUHGZ6Zj92X7utMiM
+X-Proofpoint-ORIG-GUID: 7JIhdfYuc3_3Tz8ordGqJ0m0G30qAnTY
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.182.1,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.0.607.475
+ definitions=2021-10-18_06,2021-10-18_01,2020-04-07_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 priorityscore=1501
+ malwarescore=0 mlxlogscore=999 bulkscore=0 clxscore=1015 suspectscore=0
+ adultscore=0 phishscore=0 mlxscore=0 spamscore=0 lowpriorityscore=0
+ impostorscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2109230001 definitions=main-2110180093
 
-Hello,
 
-On Tue, Oct 12, 2021 at 02:12:18PM +0530, Pratik Sampat wrote:
-> > > The control and the display interface is fairly disjoint with each
-> > > other. Restrictions can be set through control interfaces like cgroups,
-> > A task wouldn't really opt-in to cpu isolation with CLONE_NEWCPU it
-> > would only affect resource reporting. So it would be one half of the
-> > semantics of a namespace.
-> > 
-> I completely agree with you on this, fundamentally a namespace should
-> isolate both the resource as well as the reporting. As you mentioned
-> too, cgroups handles the resource isolation while this namespace
-> handles the reporting and this seems to break the semantics of what a
-> namespace should really be.
-> 
-> The CPU resource is unique in that sense, at least in this context,
-> which makes it tricky to design a interface that presents coherent
-> information.
 
-It's only unique in the context that you're trying to place CPU distribution
-into the namespace framework when the resource in question isn't distributed
-that way. All of the three major local resources - CPU, memory and IO - are
-in the same boat. Computing resources, the physical ones, don't render
-themselves naturally to accounting and ditributing by segmenting _name_
-spaces which ultimately just shows and hides names. This direction is a
-dead-end.
+On 15/10/21 3:44 am, Tejun Heo wrote:
+> Hello,
+>
+> On Tue, Oct 12, 2021 at 02:12:18PM +0530, Pratik Sampat wrote:
+>>>> The control and the display interface is fairly disjoint with each
+>>>> other. Restrictions can be set through control interfaces like cgroups,
+>>> A task wouldn't really opt-in to cpu isolation with CLONE_NEWCPU it
+>>> would only affect resource reporting. So it would be one half of the
+>>> semantics of a namespace.
+>>>
+>> I completely agree with you on this, fundamentally a namespace should
+>> isolate both the resource as well as the reporting. As you mentioned
+>> too, cgroups handles the resource isolation while this namespace
+>> handles the reporting and this seems to break the semantics of what a
+>> namespace should really be.
+>>
+>> The CPU resource is unique in that sense, at least in this context,
+>> which makes it tricky to design a interface that presents coherent
+>> information.
+> It's only unique in the context that you're trying to place CPU distribution
+> into the namespace framework when the resource in question isn't distributed
+> that way. All of the three major local resources - CPU, memory and IO - are
+> in the same boat. Computing resources, the physical ones, don't render
+> themselves naturally to accounting and ditributing by segmenting _name_
+> spaces which ultimately just shows and hides names. This direction is a
+> dead-end.
+>
+>> I too think that having a brand new interface all together and teaching
+>> userspace about it is much cleaner approach.
+>> On the same lines, if were to do that, we could also add more useful
+>> metrics in that interface like ballpark number of threads to saturate
+>> usage as well as gather more such metrics as suggested by Tejun Heo.
+>>
+>> My only concern for this would be that if today applications aren't
+>> modifying their code to read the existing cgroup interface and would
+>> rather resort to using userspace side-channel solutions like LXCFS or
+>> wrapping them up in kata containers, would it now be compelling enough
+>> to introduce yet another interface?
+> While I'm sympathetic to compatibility argument, identifying available
+> resources was never well-define with the existing interfaces. Most of the
+> available information is what hardware is available but there's no
+> consistent way of knowing what the software environment is like. Is the
+> application the only one on the system? How much memory should be set aside
+> for system management, monitoring and other administrative operations?
+>
+> In practice, the numbers that are available can serve as the starting points
+> on top of which application and environment specific knoweldge has to be
+> applied to actually determine deployable configurations, which in turn would
+> go through iterative adjustments unless the workload is self-sizing.
+>
+> Given such variability in requirements, I'm not sure what numbers should be
+> baked into the "namespaced" system metrics. Some numbers, e.g., number of
+> CPUs can may be mapped from cpuset configuration but even that requires
+> quite a bit of assumptions about how cpuset is configured and the
+> expectations the applications would have while other numbers - e.g.
+> available memory - is a total non-starter.
+>
+> If we try to fake these numbers for containers, what's likely to happen is
+> that the service owners would end up tuning workload size against whatever
+> number the kernel is showing factoring in all the environmental factors
+> knowingly or just through iterations. And that's not *really* an interface
+> which provides compatibility. We're just piping new numbers which don't
+> really mean what they used to mean and whose meanings can change depending
+> on configuration through existing interfaces and letting users figure out
+> what to do with the new numbers.
+>
+> To achieve compatibility where applications don't need to be changed, I
+> don't think there is a solution which doesn't involve going through
+> userspace. For other cases and long term, the right direction is providing
+> well-defined resource metrics that applications can make sense of and use to
+> size themselves dynamically.
 
-> I too think that having a brand new interface all together and teaching
-> userspace about it is much cleaner approach.
-> On the same lines, if were to do that, we could also add more useful
-> metrics in that interface like ballpark number of threads to saturate
-> usage as well as gather more such metrics as suggested by Tejun Heo.
-> 
-> My only concern for this would be that if today applications aren't
-> modifying their code to read the existing cgroup interface and would
-> rather resort to using userspace side-channel solutions like LXCFS or
-> wrapping them up in kata containers, would it now be compelling enough
-> to introduce yet another interface?
+I agree that major local resources like CPUs and memory cannot to be
+distributed cleanly in a namespace semantic.
+Thus the memory resource like CPU too does face similar coherency
+issues where /proc/meminfo can be different from what the restrictions
+are.
 
-While I'm sympathetic to compatibility argument, identifying available
-resources was never well-define with the existing interfaces. Most of the
-available information is what hardware is available but there's no
-consistent way of knowing what the software environment is like. Is the
-application the only one on the system? How much memory should be set aside
-for system management, monitoring and other administrative operations?
+While a CPU namespace maybe not be the preferred way of solving
+this problem, the prototype RFC is rather for understanding related
+problems with this as well as other potential directions that we could
+explore for solving this problem.
 
-In practice, the numbers that are available can serve as the starting points
-on top of which application and environment specific knoweldge has to be
-applied to actually determine deployable configurations, which in turn would
-go through iterative adjustments unless the workload is self-sizing.
+Also, I agree with your point about variability of requirements. If the
+interface we give even though it is in conjunction with the limits set,
+if the applications have to derive metrics from this or from other
+kernel information regardless; then the interface would not be useful.
+If the solution to this problem lies in userspace, then I'm all for it
+as well. However, the intention is to probe if this could potentially be
+solved in cleanly in the kernel.
 
-Given such variability in requirements, I'm not sure what numbers should be
-baked into the "namespaced" system metrics. Some numbers, e.g., number of
-CPUs can may be mapped from cpuset configuration but even that requires
-quite a bit of assumptions about how cpuset is configured and the
-expectations the applications would have while other numbers - e.g.
-available memory - is a total non-starter.
+>> While I concur with Tejun Heo's comment the mail thread and overloading
+>> existing interfaces of sys and proc which were originally designed for
+>> system wide resources, may not be a great idea:
+>>
+>>> There is a fundamental problem with trying to represent a resource shared
+>>> environment controlled with cgroup using system-wide interfaces including
+>>> procfs
+>> A fundamental question we probably need to ascertain could be -
+>> Today, is it incorrect for applications to look at the sys and procfs to
+>> get resource information, regardless of their runtime environment?
+> Well, it's incomplete even without containerization. Containerization just
+> amplifies the shortcomings. All of these problems existed well before
+> cgroups / namespaces. How would you know how much resource you can consume
+> on a system just looking at hardware resources without implicit knowledge of
+> what else is on the system? It's just that we are now more likely to load
+> systems dynamically with containerization.
 
-If we try to fake these numbers for containers, what's likely to happen is
-that the service owners would end up tuning workload size against whatever
-number the kernel is showing factoring in all the environmental factors
-knowingly or just through iterations. And that's not *really* an interface
-which provides compatibility. We're just piping new numbers which don't
-really mean what they used to mean and whose meanings can change depending
-on configuration through existing interfaces and letting users figure out
-what to do with the new numbers.
+Yes, these shortcomings exist even without containerization, on a
+dynamically loaded multi-tenant system it becomes very difficult to
+determine what is the maximum amount resource that can be requested
+before we hurt our own performance.
+cgroups and namespace mechanics help containers give some structure to
+the maximum amount of resources that they can consume. However,
+applications are unable to leverage that in some cases especially if
+they are more inclined to look at a more traditional system wide
+interface like sys and proc.
 
-To achieve compatibility where applications don't need to be changed, I
-don't think there is a solution which doesn't involve going through
-userspace. For other cases and long term, the right direction is providing
-well-defined resource metrics that applications can make sense of and use to
-size themselves dynamically.
+>> Also, if an application were to only be able to view the resources
+>> based on the restrictions set regardless of the interface - would there
+>> be a disadvantage for them if they could only see an overloaded context
+>> sensitive view rather than the whole system view?
+> Can you elaborate further? I have a hard time understanding what's being
+> asked.
 
-> While I concur with Tejun Heo's comment the mail thread and overloading
-> existing interfaces of sys and proc which were originally designed for
-> system wide resources, may not be a great idea:
-> 
-> > There is a fundamental problem with trying to represent a resource shared
-> > environment controlled with cgroup using system-wide interfaces including
-> > procfs
-> 
-> A fundamental question we probably need to ascertain could be -
-> Today, is it incorrect for applications to look at the sys and procfs to
-> get resource information, regardless of their runtime environment?
+The question that I have essentially tries to understand the
+implications of overloading existing interface's definitions to be
+context sensitive.
+The way that the prototype works today is that it does not interfere
+with the information when the system boots or even when it is run in a
+new namespace.
+The effects are only observed when restrictions are applied to it.
+Therefore, what would potentially break if interfaces like these are
+made to divulge information based on restrictions rather than the whole
+system view?
 
-Well, it's incomplete even without containerization. Containerization just
-amplifies the shortcomings. All of these problems existed well before
-cgroups / namespaces. How would you know how much resource you can consume
-on a system just looking at hardware resources without implicit knowledge of
-what else is on the system? It's just that we are now more likely to load
-systems dynamically with containerization.
+Thanks
+Pratik
 
-> Also, if an application were to only be able to view the resources
-> based on the restrictions set regardless of the interface - would there
-> be a disadvantage for them if they could only see an overloaded context
-> sensitive view rather than the whole system view?
-
-Can you elaborate further? I have a hard time understanding what's being
-asked.
-
-Thanks.
-
--- 
-tejun
