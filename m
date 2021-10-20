@@ -1,193 +1,109 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pf1-f182.google.com (mail-pf1-f182.google.com [209.85.210.182])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ED6E22C8B
-	for <containers@lists.linux.dev>; Wed, 20 Oct 2021 10:44:43 +0000 (UTC)
-Received: from pps.filterd (m0098399.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 19KAM0vJ030303;
-	Wed, 20 Oct 2021 06:44:37 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
- mime-version : subject : to : cc : references : from : in-reply-to :
- content-type : content-transfer-encoding; s=pp1;
- bh=SD+SCg0skNn/G8bPIH66EtOVwTbj3NFy6mI+5VN/Q5s=;
- b=PZZppYkh/ARYtQF6DTllxaxC2TsLrFX66Zh88bWos3rMX2NYk5Q2jZsEAY7M5L7hsz90
- 4MCfmaeeBUIQi8wDabhMjZ+GvPLNh9c4jqFmdvZXznQFyDNf4JHe2mSeA2PpiEKYmbMk
- WIiQFsuEUMBlsyB8tqoyfc4/NU9JtUM6sVrbr3KEUWKZdmyB7pxIuiZcB6s7mZf+Ga2N
- 9NuKu1p7TIhplQ6/Jeivs8OGZj7XE2Dyyupj11TrgsAKScodKsFr5GRuTaj3xwyxGBmb
- LtZ+RXQkhbnGMAnAdGSekEDjtpJYMpiV4vFEcmdCkQj9wMnbFDszulmjpGpyx88Ud0RI JQ== 
-Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3btha10d6t-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 20 Oct 2021 06:44:37 -0400
-Received: from m0098399.ppops.net (m0098399.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 19KAOWXh010381;
-	Wed, 20 Oct 2021 06:44:36 -0400
-Received: from ppma06ams.nl.ibm.com (66.31.33a9.ip4.static.sl-reverse.com [169.51.49.102])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3btha10d5w-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 20 Oct 2021 06:44:36 -0400
-Received: from pps.filterd (ppma06ams.nl.ibm.com [127.0.0.1])
-	by ppma06ams.nl.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 19KAfbdo010873;
-	Wed, 20 Oct 2021 10:44:34 GMT
-Received: from b06avi18626390.portsmouth.uk.ibm.com (b06avi18626390.portsmouth.uk.ibm.com [9.149.26.192])
-	by ppma06ams.nl.ibm.com with ESMTP id 3bqp0k3hmu-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 20 Oct 2021 10:44:33 +0000
-Received: from d06av22.portsmouth.uk.ibm.com (d06av22.portsmouth.uk.ibm.com [9.149.105.58])
-	by b06avi18626390.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 19KAce5L58786244
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Wed, 20 Oct 2021 10:38:40 GMT
-Received: from d06av22.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 0E5F44C094;
-	Wed, 20 Oct 2021 10:44:31 +0000 (GMT)
-Received: from d06av22.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 0CEF04C092;
-	Wed, 20 Oct 2021 10:44:27 +0000 (GMT)
-Received: from [9.43.80.161] (unknown [9.43.80.161])
-	by d06av22.portsmouth.uk.ibm.com (Postfix) with ESMTP;
-	Wed, 20 Oct 2021 10:44:26 +0000 (GMT)
-Message-ID: <77854748-081f-46c7-df51-357ca78b83b3@linux.ibm.com>
-Date: Wed, 20 Oct 2021 16:14:25 +0530
-Precedence: bulk
-X-Mailing-List: containers@lists.linux.dev
-List-Id: <containers.lists.linux.dev>
-List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
-List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.1.0
-Subject: Re: [RFC 0/5] kernel: Introduce CPU Namespace
-Content-Language: en-US
-To: Tejun Heo <tj@kernel.org>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CEB992C85
+	for <containers@lists.linux.dev>; Wed, 20 Oct 2021 16:35:34 +0000 (UTC)
+Received: by mail-pf1-f182.google.com with SMTP id t184so3460711pfd.0
+        for <containers@lists.linux.dev>; Wed, 20 Oct 2021 09:35:34 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=sender:date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=rIB4RavRgXcRDUTdHan5IBjQWDQ5rtleRcIK4BBeq24=;
+        b=Dq+l1NK7j0k2wEeaEka8PtuRkbWUI5me6x4H3y/NPBhOwrtkvjXZAjEaOas436KnV2
+         gG6PMQIq1yCDlSpOFJqTbRwGuaHqi4NBsDeij5PHYLdqqBG1txBmVnnfuVsIEvwnW3ZL
+         qV4y3xiXseZ/JGB+NIpZLTyRC+0SYpkFkFQDu9pRlQJrhNVLFwNxc6vczwNTmJb7dlf1
+         thQOnjKhR83LyLLFoZcEUmCimKclCXoJmG0COBS+sVshkiAT7xs/NFgbk2kLf/zpiMBR
+         JIfG2xgxuac+KpO0LVdJ9dvK8pMAr98ttvMLuRxIlJVLfUpkerbnLI0/q2Bxx4p6Rq9v
+         X6qA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:sender:date:from:to:cc:subject:message-id
+         :references:mime-version:content-disposition:in-reply-to;
+        bh=rIB4RavRgXcRDUTdHan5IBjQWDQ5rtleRcIK4BBeq24=;
+        b=lULWre9tTCm5N8cxKwia8hj5QMQ3m9iVZW7kvhRtRXljr08FH6+04p1naUrqObJdSu
+         Lc3RXzvmMnVh39ENqJaPDd69Btx2RQvY/Az8l+7xm1CmRpj6Gr02QV2gBvB8I4TQQ8Vs
+         rlWLU80T15l2cL/wN8yHbZTfX1VP0mmMtIxHnf2mTSzpzSNt7QHfMj7oHbcep2ReV59a
+         xJuRKYI3QNyu2cwULoMJ6zT/Cl5KFFP8YgZnxSlhaJeviWQcMK0Es3gaNQeqhEl8M9i3
+         qnJv2E5QbgvQPlHjxxDx8jDusXGtz95qzKguA98o2Td6DRjrggoJLt0x0kt3t4cQ718K
+         LoZg==
+X-Gm-Message-State: AOAM532lWRhEQxc06aTWtr9ifnCWvdbgmQjFZ2+VwtF2QCcSS4cXIkG2
+	pvsPiB0ZZETmWYJNopINY8g=
+X-Google-Smtp-Source: ABdhPJwALo6nxYWT/V1hWLI4mzfR05GZFNtQBPWFfux4F1VqxpYZSced0Qcn1LIJDg/X5wvpMwaUFQ==
+X-Received: by 2002:a05:6a00:216f:b0:44b:6212:4967 with SMTP id r15-20020a056a00216f00b0044b62124967mr311110pff.23.1634747734135;
+        Wed, 20 Oct 2021 09:35:34 -0700 (PDT)
+Received: from localhost (2603-800c-1a02-1bae-e24f-43ff-fee6-449f.res6.spectrum.com. [2603:800c:1a02:1bae:e24f:43ff:fee6:449f])
+        by smtp.gmail.com with ESMTPSA id z24sm3175655pfr.141.2021.10.20.09.35.33
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 20 Oct 2021 09:35:33 -0700 (PDT)
+Sender: Tejun Heo <htejun@gmail.com>
+Date: Wed, 20 Oct 2021 06:35:32 -1000
+From: Tejun Heo <tj@kernel.org>
+To: Pratik Sampat <psampat@linux.ibm.com>
 Cc: Christian Brauner <christian.brauner@ubuntu.com>, bristot@redhat.com,
-        christian@brauner.io, ebiederm@xmission.com, lizefan.x@bytedance.com,
-        hannes@cmpxchg.org, mingo@kernel.org, juri.lelli@redhat.com,
-        linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        cgroups@vger.kernel.org, containers@lists.linux.dev,
-        containers@lists.linux-foundation.org, pratik.r.sampat@gmail.com
+	christian@brauner.io, ebiederm@xmission.com,
+	lizefan.x@bytedance.com, hannes@cmpxchg.org, mingo@kernel.org,
+	juri.lelli@redhat.com, linux-kernel@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org,
+	containers@lists.linux.dev, containers@lists.linux-foundation.org,
+	pratik.r.sampat@gmail.com
+Subject: Re: [RFC 0/5] kernel: Introduce CPU Namespace
+Message-ID: <YXBFVCc61nCG5rto@slm.duckdns.org>
 References: <20211009151243.8825-1-psampat@linux.ibm.com>
  <20211011101124.d5mm7skqfhe5g35h@wittgenstein>
  <a0f9ed06-1e5d-d3d0-21a5-710c8e27749c@linux.ibm.com>
  <YWirxCjschoRJQ14@slm.duckdns.org>
  <b5f8505c-38d5-af6f-0de7-4f9df7ae9b9b@linux.ibm.com>
  <YW2g73Lwmrhjg/sv@slm.duckdns.org>
-From: Pratik Sampat <psampat@linux.ibm.com>
-In-Reply-To: <YW2g73Lwmrhjg/sv@slm.duckdns.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: qofvCjSGBUthVgmc6TULavD9beXS2nWn
-X-Proofpoint-GUID: BVgdVM-XcBH6D1Jw3sM_tkPAuXMRp7Sv
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.182.1,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.0.607.475
- definitions=2021-10-20_04,2021-10-20_01,2020-04-07_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 impostorscore=0
- malwarescore=0 adultscore=0 bulkscore=0 phishscore=0 lowpriorityscore=0
- clxscore=1015 spamscore=0 priorityscore=1501 mlxscore=0 mlxlogscore=999
- suspectscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2109230001 definitions=main-2110200060
+ <77854748-081f-46c7-df51-357ca78b83b3@linux.ibm.com>
+Precedence: bulk
+X-Mailing-List: containers@lists.linux.dev
+List-Id: <containers.lists.linux.dev>
+List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
+List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <77854748-081f-46c7-df51-357ca78b83b3@linux.ibm.com>
 
+Hello,
 
+On Wed, Oct 20, 2021 at 04:14:25PM +0530, Pratik Sampat wrote:
+> As you have elucidated, it doesn't like an easy feat to
+> define metrics like ballpark numbers as there are many variables
+> involved.
 
-On 18/10/21 9:59 pm, Tejun Heo wrote:
-> (cc'ing Johannes for memory sizing part)
->
-> Hello,
->
-> On Mon, Oct 18, 2021 at 08:59:16PM +0530, Pratik Sampat wrote:
-> ...
->> Also, I agree with your point about variability of requirements. If the
->> interface we give even though it is in conjunction with the limits set,
->> if the applications have to derive metrics from this or from other
->> kernel information regardless; then the interface would not be useful.
->> If the solution to this problem lies in userspace, then I'm all for it
->> as well. However, the intention is to probe if this could potentially be
->> solved in cleanly in the kernel.
-> Just to be clear, avoiding application changes would have to involve
-> userspace (at least parameterization from it), and I think to set that as a
-> goal for kernel would be more of a distraction. Please note that we should
-> definitely provide metrics which actually capture what's going on in terms
-> of resource availability in a way which can be used to size workloads
-> automatically.
->
->> Yes, these shortcomings exist even without containerization, on a
->> dynamically loaded multi-tenant system it becomes very difficult to
->> determine what is the maximum amount resource that can be requested
->> before we hurt our own performance.
-> As I mentioned before, feedback loop on PSI can work really well in finding
-> the saturation points for cpu/mem/io and regulating workload size
-> automatically and dynamically. While such dynamic sizing can work without
-> any other inputs, it sucks to have to probe the entire range each time and
-> it'd be really useful if the kernel can provide ballpark numbers that are
-> needed to estimate the saturation points.
->
-> What gets challenging is that there doesn't seem to be a good way to
-> consistently describe availability for each of the three resources and the
-> different distribution rules they may be under.
->
-> e.g. For CPU, the affinity restrictions from cpuset determines the maximum
-> number of threads that a workload would need to saturate the available CPUs.
-> However, conveying the results of cpu.max and cpu.weight controls isn't as
-> straight-fowrads.
->
-> For memory, it's even trickier because in a lot of cases it's impossible to
-> tell how much memory is actually available without trying to use them as
-> active workingset can only be learned by trying to reclaim memory.
->
-> IO is in somewhat similar boat as CPU in that there are both io.max and
-> io.weight. However, if io.cost is in use and configured according to the
-> hardware, we can map those two in terms iocost.
->
-> Another thing is that the dynamic nature of these control mechanisms means
-> that the numbers can keep changing moment to moment and we'd need to provide
-> some time averaged numbers. We can probably take the same approach as PSI
-> and load-avgs and provide running avgs of a few time intervals.
+Yeah, it gets tricky and we want to get the basics right from the get go.
 
-As you have elucidated, it doesn't like an easy feat to
-define metrics like ballpark numbers as there are many variables
-involved.
+> For the CPU example, cpusets control the resource space whereas
+> period-quota control resource time. These seem like two vectors on
+> different axes.
+> Conveying these restrictions in one metric doesn't seem easy. Some
+> container runtime convert the period-quota time dimension to X CPUs
+> worth of runtime space dimension. However, we need to carefully model
+> what a ballpark metric in this sense would be and provide clearer
+> constraints as both of these restrictions can be active at a given
+> point in time and can influence how something is run.
 
-For the CPU example, cpusets control the resource space whereas
-period-quota control resource time. These seem like two vectors on
-different axes.
-Conveying these restrictions in one metric doesn't seem easy. Some
-container runtime convert the period-quota time dimension to X CPUs
-worth of runtime space dimension. However, we need to carefully model
-what a ballpark metric in this sense would be and provide clearer
-constraints as both of these restrictions can be active at a given
-point in time and can influence how something is run.
+So, for CPU, the important functional number is the number of threads needed
+to saturate available resources and that one is pretty easy. The other
+metric would be the maximum available fractions of CPUs available to the
+cgroup subtree if the cgroup stays saturating. This number is trickier as it
+has to consider how much others are using but would be determined by the
+smaller of what would be available through cpu.weight and cpu.max.
 
-Restrictions for memory are even more complicated to model as you have
-pointed out as well.
+IO likely is in a similar boat. We can calculate metrics showing the
+rbps/riops/wbps/wiops available to a given cgroup subtree. This would factor
+in the limits from io.max and the resulting distribution from io.weight in
+iocost's case (iocost will give a % number but we can translate that to
+bps/iops numbers).
 
-I would also request using this mail thread to suggest if there are
-more such metrics which would be useful to expose from the kernel?
-This would probably not solve the coherency problem but maybe it could
-help entice the userspace applications to look at the cgroup interface
-as there could be more relevant metrics that would help them tune for
-performance.
+> Restrictions for memory are even more complicated to model as you have
+> pointed out as well.
 
->
->> The question that I have essentially tries to understand the
->> implications of overloading existing interface's definitions to be
->> context sensitive.
->> The way that the prototype works today is that it does not interfere
->> with the information when the system boots or even when it is run in a
->> new namespace.
->> The effects are only observed when restrictions are applied to it.
->> Therefore, what would potentially break if interfaces like these are
->> made to divulge information based on restrictions rather than the whole
->> system view?
-> I don't think the problem is that something would necessarily break by doing
-> that. It's more that it's a dead-end approach which won't get us far for all
-> the reasons that have been discussed so far. It'd be more productive to
-> focus on long term solutions and leave backward compatibility to the domains
-> where they can actually be solved by applying the necessary local knoweldge
-> to emulate and fake whatever necessary numbers.
+Yeah, this one is the most challenging.
 
-Sure, understood. If the only goal is backward compatibility then its
-best to let existing solutions help emulate and/or fake this
-information to the applications.
+Thanks.
 
-Thank you again for all the feedback.
-
+-- 
+tejun
