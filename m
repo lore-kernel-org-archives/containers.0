@@ -1,106 +1,247 @@
-Received: from out01.mta.xmission.com (out01.mta.xmission.com [166.70.13.231])
+Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5EBFC2C81
-	for <containers@lists.linux.dev>; Thu, 21 Oct 2021 18:01:11 +0000 (UTC)
-Received: from in02.mta.xmission.com ([166.70.13.52]:37160)
-	by out01.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1mdbf9-000AMa-Iy; Thu, 21 Oct 2021 11:15:31 -0600
-Received: from ip68-227-160-95.om.om.cox.net ([68.227.160.95]:57708 helo=email.xmission.com)
-	by in02.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1mdbf8-004CFX-64; Thu, 21 Oct 2021 11:15:31 -0600
-From: ebiederm@xmission.com (Eric W. Biederman)
-To: Pratik Sampat <psampat@linux.ibm.com>
-Cc: Tejun Heo <tj@kernel.org>,
- Christian Brauner <christian.brauner@ubuntu.com>,  bristot@redhat.com,
- christian@brauner.io,  lizefan.x@bytedance.com,  hannes@cmpxchg.org,
- mingo@kernel.org,  juri.lelli@redhat.com,
- linux-kernel@vger.kernel.org,  linux-fsdevel@vger.kernel.org,
- cgroups@vger.kernel.org,  containers@lists.linux.dev,
- containers@lists.linux-foundation.org,  pratik.r.sampat@gmail.com,
- Alexey Gladkov <legion@kernel.org> 
-References: <20211009151243.8825-1-psampat@linux.ibm.com>
-	<20211011101124.d5mm7skqfhe5g35h@wittgenstein>
-	<a0f9ed06-1e5d-d3d0-21a5-710c8e27749c@linux.ibm.com>
-	<YWirxCjschoRJQ14@slm.duckdns.org>
-	<b5f8505c-38d5-af6f-0de7-4f9df7ae9b9b@linux.ibm.com>
-	<YW2g73Lwmrhjg/sv@slm.duckdns.org>
-	<77854748-081f-46c7-df51-357ca78b83b3@linux.ibm.com>
-Date: Thu, 21 Oct 2021 12:15:22 -0500
-In-Reply-To: <77854748-081f-46c7-df51-357ca78b83b3@linux.ibm.com> (Pratik
-	Sampat's message of "Wed, 20 Oct 2021 16:14:25 +0530")
-Message-ID: <87tuha7105.fsf@disp2133>
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/26.1 (gnu/linux)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6F0A32C81
+	for <containers@lists.linux.dev>; Thu, 28 Oct 2021 10:32:18 +0000 (UTC)
+Received: by mail.kernel.org (Postfix) with ESMTPSA id AD51560F9D;
+	Thu, 28 Oct 2021 10:32:14 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1635417137;
+	bh=r9gquzTWxRrZquZRFuRIDUUj/Icze5kkfGbuFZYknuc=;
+	h=From:To:Cc:Subject:Date:From;
+	b=czcCfnQzKwcvEfpl0hAyZkXtiHuLx6ylFXX1UczXcSR/YPg8Kotb5/QS0f3ohEEsq
+	 DRGQ9taKcyleTp+TvomimCv5Pxk2qzuvUVw1pOeO92ms+ulmU6czm+6byyDRdzztro
+	 NZJNQgOUmbSlcn8rvLGj0zrO3SwKDPmu3JAH401LJ+UbK366jUMz5Z2g22/8tEHj15
+	 Hh+LR2ONWrULqq7dYQ01lDAZ4rW7FVHHb2SCCRQ23DJWFI5uGkJhXtUYHEyAZSRDX5
+	 4IexgVJwIePC9SZvhxtM+uSK5p/+rsmHIhbH78ooDaF0RbavMm72U2g3vfe9ohCCGE
+	 KNOGcOrK0iEOg==
+From: Christian Brauner <brauner@kernel.org>
+To: Al Viro <viro@zeniv.linux.org.uk>
+Cc: Christoph Hellwig <hch@lst.de>,
+	Kees Cook <keescook@chromium.org>,
+	Sargun Dhillon <sargun@sargun.me>,
+	Serge Hallyn <serge@hallyn.com>,
+	Jann Horn <jannh@google.com>,
+	Henning Schild <henning.schild@siemens.com>,
+	Andrei Vagin <avagin@gmail.com>,
+	Laurent Vivier <laurent@vivier.eu>,
+	Matthew Bobrowski <repnop@google.com>,
+	linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-api@vger.kernel.org,
+	containers@lists.linux.dev,
+	Christian Brauner <christian.brauner@ubuntu.com>
+Subject: [PATCH 1/2] binfmt_misc: cleanup on filesystem umount
+Date: Thu, 28 Oct 2021 12:31:13 +0200
+Message-Id: <20211028103114.2849140-1-brauner@kernel.org>
+X-Mailer: git-send-email 2.30.2
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain
-X-XM-SPF: eid=1mdbf8-004CFX-64;;;mid=<87tuha7105.fsf@disp2133>;;;hst=in02.mta.xmission.com;;;ip=68.227.160.95;;;frm=ebiederm@xmission.com;;;spf=neutral
-X-XM-AID: U2FsdGVkX1+k81XzcFL3nUOkF05szMGteN8T3vDwHqg=
-X-SA-Exim-Connect-IP: 68.227.160.95
-X-SA-Exim-Mail-From: ebiederm@xmission.com
-X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on sa05.xmission.com
-X-Spam-Level: *
-X-Spam-Status: No, score=1.3 required=8.0 tests=ALL_TRUSTED,BAYES_50,
-	DCC_CHECK_NEGATIVE,T_TM2_M_HEADER_IN_MSG,XMNoVowels autolearn=disabled
-	version=3.4.2
-X-Spam-Report: 
-	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
-	*  0.8 BAYES_50 BODY: Bayes spam probability is 40 to 60%
-	*      [score: 0.4940]
-	*  1.5 XMNoVowels Alpha-numberic number with no vowels
-	*  0.0 T_TM2_M_HEADER_IN_MSG BODY: No description available.
-	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
-	*      [sa05 1397; Body=1 Fuz1=1 Fuz2=1]
-X-Spam-DCC: XMission; sa05 1397; Body=1 Fuz1=1 Fuz2=1 
-X-Spam-Combo: *;Pratik Sampat <psampat@linux.ibm.com>
-X-Spam-Relay-Country: 
-X-Spam-Timing: total 387 ms - load_scoreonly_sql: 0.03 (0.0%),
-	signal_user_changed: 14 (3.5%), b_tie_ro: 12 (3.0%), parse: 1.39
-	(0.4%), extract_message_metadata: 4.4 (1.1%), get_uri_detail_list:
-	1.49 (0.4%), tests_pri_-1000: 6 (1.6%), tests_pri_-950: 1.85 (0.5%),
-	tests_pri_-900: 1.45 (0.4%), tests_pri_-90: 120 (31.0%), check_bayes:
-	118 (30.4%), b_tokenize: 8 (2.1%), b_tok_get_all: 7 (1.8%),
-	b_comp_prob: 2.6 (0.7%), b_tok_touch_all: 96 (24.9%), b_finish: 1.14
-	(0.3%), tests_pri_0: 211 (54.6%), check_dkim_signature: 0.71 (0.2%),
-	check_dkim_adsp: 3.1 (0.8%), poll_dns_idle: 0.58 (0.2%), tests_pri_10:
-	4.0 (1.0%), tests_pri_500: 11 (2.9%), rewrite_mail: 0.00 (0.0%)
-Subject: Re: [RFC 0/5] kernel: Introduce CPU Namespace
-X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
-X-SA-Exim-Scanned: Yes (on in02.mta.xmission.com)
+Content-Transfer-Encoding: 8bit
 
-Pratik Sampat <psampat@linux.ibm.com> writes:
+From: Christian Brauner <christian.brauner@ubuntu.com>
 
-> On 18/10/21 9:59 pm, Tejun Heo wrote:
->> (cc'ing Johannes for memory sizing part)
->>
->> For memory, it's even trickier because in a lot of cases it's impossible to
->> tell how much memory is actually available without trying to use them as
->> active workingset can only be learned by trying to reclaim memory.
->
-> Restrictions for memory are even more complicated to model as you have
-> pointed out as well.
+Currently, registering a new binary type pins the binfmt_misc
+filesystem. Specifically, this means that as long as there is at least
+one binary type registered the binfmt_misc filesystem survives all
+umounts, i.e. the superblock is not destroyed. Meaning that a umount
+followed by another mount will end up with the same superblock and the
+same binary type handlers. This is a behavior we tend to discourage for
+any new filesystems (apart from a few special filesystems such as e.g.
+configfs or debugfs). A umount operation without the filesystem being
+pinned - by e.g. someone holding a file descriptor to an open file -
+should usually result in the destruction of the superblock and all
+associated resources. This makes introspection easier and leads to
+clearly defined, simple and clean semantics. An administrator can rely
+on the fact that a umount will guarantee a clean slate making it
+possible to reinitialize a filesystem. Right now all binary types would
+need to be explicitly deleted before that can happen.
 
-For memory sizing we currently have MemAvailable in /proc/meminfo which
-makes a global guess at that.
+This allows us to remove the heavy-handed calls to simple_pin_fs() and
+simple_release_fs() when creating and deleting binary types. This in
+turn allows us to replace the current brittle pinning mechanism abusing
+dget() which has caused a range of bugs judging from prior fixes in [2]
+and [3]. The additional dget() in load_misc_binary() pins the dentry but
+only does so for the sake to prevent ->evict_inode() from freeing the
+node when a user removes the binary type and kill_node() is run. Which
+would mean ->interpreter and ->interp_file would be freed causing a UAF.
 
-We still need roughly that same approximation from an applications
-perspective that takes cgroups into account.
+This isn't really nicely documented nor is it very clean because it
+relies on simple_pin_fs() pinning the filesystem as long as at least one
+binary type exists. Otherwise it would cause load_misc_binary() to hold
+on to a dentry belonging to a superblock that has been shutdown.
+Replace that implicit pinning with a clean and simple per-node refcount
+and get rid of the ugly dget() pinning. A similar mechanism exists for
+e.g. binderfs (cf. [4]). All the cleanup work can now be done in
+->evict_inode().
 
-There was another conversation not too long ago and it was tenatively
-agreed that it could make sense to provide such a number.  However it
-was very much requested that an application that would actually use
-that number be found so it would be possible to tell what makes a
-difference in practice rather than what makes a difference in theory.
+In a follow-up patch we will make it possible to use binfmt_misc in
+sandboxes. We will use the cleaner semantics where a umount for the
+filesystem will cause the superblock and all resources to be
+deallocated. In preparation for this apply the same semantics to the
+initial binfmt_misc mount. Note, that this is a user-visible change and
+as such a uapi change but one that we can reasonably risk. We've
+discussed this in earlier versions of this patchset (cf. [1]).
 
-Eric
+The main user and provider of binfmt_misc is systemd. Systemd provides
+binfmt_misc via autofs since it is configurable as a kernel module and
+is used by a few exotic packages and users. As such a binfmt_misc mount
+is triggered when /proc/sys/fs/binfmt_misc is accessed and is only
+provided on demand. Other autofs on demand filesystems include EFI ESP
+which systemd umounts if the mountpoint stays idle for a certain amount
+of time. This doesn't apply to the binfmt_misc autofs mount which isn't
+touched once it is mounted meaning this change can't accidently wipe
+binary type handlers without someone having explicitly unmounted
+binfmt_misc. After speaking to systemd folks they don't expect this
+change to affect them.
 
+In line with our general policy, if we see a regression for systemd or
+other users with this change we will switch back to the old behavior for
+the initial binfmt_misc mount and have binary types pin the filesystem
+again. But while we touch this code let's take the chance and let's
+improve on the status quo.
 
+[1]: https://lore.kernel.org/r/20191216091220.465626-2-laurent@vivier.eu
+[2]: commit 43a4f2619038 ("exec: binfmt_misc: fix race between load_misc_binary() and kill_node()"
+[3]: commit 83f918274e4b ("exec: binfmt_misc: shift filp_close(interp_file) from kill_node() to bm_evict_inode()")
+[4]: commit f0fe2c0f050d ("binder: prevent UAF for binderfs devices II")
+Cc: Sargun Dhillon <sargun@sargun.me>
+Cc: Serge Hallyn <serge@hallyn.com>
+Cc: Jann Horn <jannh@google.com>
+Cc: Henning Schild <henning.schild@siemens.com>
+Cc: Andrei Vagin <avagin@gmail.com>
+Cc: Al Viro <viro@zeniv.linux.org.uk>
+Cc: Laurent Vivier <laurent@vivier.eu>
+Cc: linux-fsdevel@vger.kernel.org
+Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
+---
+ fs/binfmt_misc.c | 56 +++++++++++++++++++++++++++++++-----------------
+ 1 file changed, 36 insertions(+), 20 deletions(-)
+
+diff --git a/fs/binfmt_misc.c b/fs/binfmt_misc.c
+index e1eae7ea823a..5a9d5e44c750 100644
+--- a/fs/binfmt_misc.c
++++ b/fs/binfmt_misc.c
+@@ -60,12 +60,11 @@ typedef struct {
+ 	char *name;
+ 	struct dentry *dentry;
+ 	struct file *interp_file;
++	refcount_t ref;
+ } Node;
+ 
+ static DEFINE_RWLOCK(entries_lock);
+ static struct file_system_type bm_fs_type;
+-static struct vfsmount *bm_mnt;
+-static int entry_count;
+ 
+ /*
+  * Max length of the register string.  Determined by:
+@@ -126,6 +125,16 @@ static Node *check_file(struct linux_binprm *bprm)
+ 	return NULL;
+ }
+ 
++/* Free node if we are sure load_misc_binary() is done with it. */
++static void put_node(Node *e)
++{
++	if (refcount_dec_and_test(&e->ref)) {
++		if (e->flags & MISC_FMT_OPEN_FILE)
++			filp_close(e->interp_file, NULL);
++		kfree(e);
++	}
++}
++
+ /*
+  * the loader itself
+  */
+@@ -142,8 +151,9 @@ static int load_misc_binary(struct linux_binprm *bprm)
+ 	/* to keep locking time low, we copy the interpreter string */
+ 	read_lock(&entries_lock);
+ 	fmt = check_file(bprm);
++	/* Make sure the node isn't freed behind our back. */
+ 	if (fmt)
+-		dget(fmt->dentry);
++		refcount_inc(&fmt->ref);
+ 	read_unlock(&entries_lock);
+ 	if (!fmt)
+ 		return retval;
+@@ -198,7 +208,16 @@ static int load_misc_binary(struct linux_binprm *bprm)
+ 
+ 	retval = 0;
+ ret:
+-	dput(fmt->dentry);
++
++	/*
++	 * If we actually put the node here all concurrent calls to
++	 * load_misc_binary() will have finished. We also know
++	 * that for the refcount to be zero ->evict_inode() must have removed
++	 * the node to be deleted from the list. All that is left for us is to
++	 * close and free.
++	 */
++	put_node(fmt);
++
+ 	return retval;
+ }
+ 
+@@ -557,26 +576,29 @@ static void bm_evict_inode(struct inode *inode)
+ {
+ 	Node *e = inode->i_private;
+ 
+-	if (e && e->flags & MISC_FMT_OPEN_FILE)
+-		filp_close(e->interp_file, NULL);
+-
+ 	clear_inode(inode);
+-	kfree(e);
++
++	if (e) {
++		write_lock(&entries_lock);
++		list_del_init(&e->list);
++		write_unlock(&entries_lock);
++		put_node(e);
++	}
+ }
+ 
+ static void kill_node(Node *e)
+ {
+ 	struct dentry *dentry;
+ 
+-	write_lock(&entries_lock);
+-	list_del_init(&e->list);
+-	write_unlock(&entries_lock);
+-
++	/*
++	 * It's fine to unconditionally drop the dentry since ->evict_inode()
++	 * will check the refcount before freeing the node and so it can't go
++	 * away behind load_misc_binary()'s back.
++	 */
+ 	dentry = e->dentry;
+ 	drop_nlink(d_inode(dentry));
+ 	d_drop(dentry);
+ 	dput(dentry);
+-	simple_release_fs(&bm_mnt, &entry_count);
+ }
+ 
+ /* /<entry> */
+@@ -683,13 +705,7 @@ static ssize_t bm_register_write(struct file *file, const char __user *buffer,
+ 	if (!inode)
+ 		goto out2;
+ 
+-	err = simple_pin_fs(&bm_fs_type, &bm_mnt, &entry_count);
+-	if (err) {
+-		iput(inode);
+-		inode = NULL;
+-		goto out2;
+-	}
+-
++	refcount_set(&e->ref, 1);
+ 	e->dentry = dget(dentry);
+ 	inode->i_private = e;
+ 	inode->i_fop = &bm_entry_operations;
+
+base-commit: 3906fe9bb7f1a2c8667ae54e967dc8690824f4ea
+-- 
+2.30.2
 
