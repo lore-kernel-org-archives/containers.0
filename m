@@ -1,124 +1,126 @@
-Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
+Received: from out02.mta.xmission.com (out02.mta.xmission.com [166.70.13.232])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 30E7B2C81
-	for <containers@lists.linux.dev>; Thu, 18 Nov 2021 19:36:38 +0000 (UTC)
-Received: from gandalf.local.home (cpe-66-24-58-225.stny.res.rr.com [66.24.58.225])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id 7C1EC61507;
-	Thu, 18 Nov 2021 19:36:36 +0000 (UTC)
-Date: Thu, 18 Nov 2021 14:36:34 -0500
-From: Steven Rostedt <rostedt@goodmis.org>
-To: ebiederm@xmission.com (Eric W. Biederman)
-Cc: "Yordan Karadzhov \(VMware\)" <y.karadz@gmail.com>,
- linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- viro@zeniv.linux.org.uk, mingo@redhat.com, hagen@jauu.net, rppt@kernel.org,
- James.Bottomley@HansenPartnership.com, akpm@linux-foundation.org,
- vvs@virtuozzo.com, shakeelb@google.com, christian.brauner@ubuntu.com,
- mkoutny@suse.com, Linux Containers <containers@lists.linux.dev>
-Subject: Re: [RFC PATCH 0/4] namespacefs: Proof-of-Concept
-Message-ID: <20211118143634.3f7d43e9@gandalf.local.home>
-In-Reply-To: <87pmqxuv4n.fsf@email.froward.int.ebiederm.org>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 13DE12C81
+	for <containers@lists.linux.dev>; Thu, 18 Nov 2021 19:38:53 +0000 (UTC)
+Received: from in01.mta.xmission.com ([166.70.13.51]:36828)
+	by out02.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.93)
+	(envelope-from <ebiederm@xmission.com>)
+	id 1mnmZ7-00Dk1O-1D; Thu, 18 Nov 2021 11:55:21 -0700
+Received: from ip68-227-160-95.om.om.cox.net ([68.227.160.95]:47584 helo=email.froward.int.ebiederm.org.xmission.com)
+	by in01.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.93)
+	(envelope-from <ebiederm@xmission.com>)
+	id 1mnmZ5-003dsG-1S; Thu, 18 Nov 2021 11:55:19 -0700
+From: ebiederm@xmission.com (Eric W. Biederman)
+To: "Yordan Karadzhov \(VMware\)" <y.karadz@gmail.com>
+Cc: linux-kernel@vger.kernel.org,  linux-fsdevel@vger.kernel.org,
+ viro@zeniv.linux.org.uk,  rostedt@goodmis.org,  mingo@redhat.com,
+ hagen@jauu.net,  rppt@kernel.org,
+ James.Bottomley@HansenPartnership.com,  akpm@linux-foundation.org,
+ vvs@virtuozzo.com,  shakeelb@google.com,
+ christian.brauner@ubuntu.com,  mkoutny@suse.com,
+ Linux Containers <containers@lists.linux.dev> 
+In-Reply-To: <20211118181210.281359-1-y.karadz@gmail.com> (Yordan Karadzhov's
+	message of "Thu, 18 Nov 2021 20:12:06 +0200")
 References: <20211118181210.281359-1-y.karadz@gmail.com>
-	<87a6i1xpis.fsf@email.froward.int.ebiederm.org>
-	<20211118140211.7d7673fb@gandalf.local.home>
-	<87pmqxuv4n.fsf@email.froward.int.ebiederm.org>
-X-Mailer: Claws Mail 3.17.8 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
+User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/26.1 (gnu/linux)
+Date: Thu, 18 Nov 2021 12:55:07 -0600
+Message-ID: <87a6i1xpis.fsf@email.froward.int.ebiederm.org>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain
+X-XM-SPF: eid=1mnmZ5-003dsG-1S;;;mid=<87a6i1xpis.fsf@email.froward.int.ebiederm.org>;;;hst=in01.mta.xmission.com;;;ip=68.227.160.95;;;frm=ebiederm@xmission.com;;;spf=neutral
+X-XM-AID: U2FsdGVkX19CHNrH0EbIYtS7glLiHudcKRXMiScCSek=
+X-SA-Exim-Connect-IP: 68.227.160.95
+X-SA-Exim-Mail-From: ebiederm@xmission.com
+X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on sa01.xmission.com
+X-Spam-Level: *
+X-Spam-Status: No, score=1.3 required=8.0 tests=ALL_TRUSTED,BAYES_50,
+	DCC_CHECK_NEGATIVE,T_TM2_M_HEADER_IN_MSG,T_TooManySym_01,XMNoVowels
+	autolearn=disabled version=3.4.2
+X-Spam-Virus: No
+X-Spam-Report: 
+	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
+	*  0.8 BAYES_50 BODY: Bayes spam probability is 40 to 60%
+	*      [score: 0.4835]
+	*  1.5 XMNoVowels Alpha-numberic number with no vowels
+	*  0.0 T_TM2_M_HEADER_IN_MSG BODY: No description available.
+	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
+	*      [sa01 1397; Body=1 Fuz1=1 Fuz2=1]
+	*  0.0 T_TooManySym_01 4+ unique symbols in subject
+X-Spam-DCC: XMission; sa01 1397; Body=1 Fuz1=1 Fuz2=1 
+X-Spam-Combo: *;"Yordan Karadzhov \(VMware\)" <y.karadz@gmail.com>
+X-Spam-Relay-Country: 
+X-Spam-Timing: total 443 ms - load_scoreonly_sql: 0.03 (0.0%),
+	signal_user_changed: 4.0 (0.9%), b_tie_ro: 2.8 (0.6%), parse: 0.68
+	(0.2%), extract_message_metadata: 8 (1.8%), get_uri_detail_list: 1.26
+	(0.3%), tests_pri_-1000: 11 (2.4%), tests_pri_-950: 1.07 (0.2%),
+	tests_pri_-900: 0.85 (0.2%), tests_pri_-90: 128 (28.9%), check_bayes:
+	127 (28.7%), b_tokenize: 6 (1.3%), b_tok_get_all: 9 (1.9%),
+	b_comp_prob: 1.74 (0.4%), b_tok_touch_all: 108 (24.4%), b_finish: 0.73
+	(0.2%), tests_pri_0: 280 (63.1%), check_dkim_signature: 0.38 (0.1%),
+	check_dkim_adsp: 1.57 (0.4%), poll_dns_idle: 0.28 (0.1%),
+	tests_pri_10: 1.79 (0.4%), tests_pri_500: 6 (1.3%), rewrite_mail: 0.00
+	(0.0%)
+Subject: Re: [RFC PATCH 0/4] namespacefs: Proof-of-Concept
+X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
+X-SA-Exim-Scanned: Yes (on in01.mta.xmission.com)
 
-On Thu, 18 Nov 2021 13:22:16 -0600
-ebiederm@xmission.com (Eric W. Biederman) wrote:
 
-> Steven Rostedt <rostedt@goodmis.org> writes:
+Adding the containers mailing list which is for discussions like this.
 
-> > 
-> I am refreshing my nack on the concept.  My nack has been in place for
-> good technical reasons since about 2006.
+"Yordan Karadzhov (VMware)" <y.karadz@gmail.com> writes:
 
-I'll admit, we are new to this, as we are now trying to add more visibility
-into the workings of things like kubernetes. And having a way of knowing
-what containers are running and how to monitor them is needed, and we need
-to do this for all container infrastructures.
+> We introduce a simple read-only virtual filesystem that provides
+> direct mechanism for examining the existing hierarchy of namespaces
+> on the system. For the purposes of this PoC, we tried to keep the
+> implementation of the pseudo filesystem as simple as possible. Only
+> two namespace types (PID and UTS) are coupled to it for the moment.
+> Nevertheless, we do not expect having significant problems when
+> adding all other namespace types.
+>
+> When fully functional, 'namespacefs' will allow the user to see all
+> namespaces that are active on the system and to easily retrieve the
+> specific data, managed by each namespace. For example the PIDs of
+> all tasks enclosed in the individual PID namespaces. Any existing
+> namespace on the system will be represented by its corresponding
+> directory in namespacesfs. When a namespace is created a directory
+> will be added. When a namespace is destroyed, its corresponding
+> directory will be removed. The hierarchy of the directories will
+> follow the hierarchy of the namespaces.
 
-> 
-> I see no way forward.  I do not see a compelling use case.
+It is not correct to use inode numbers as the actual names for
+namespaces.
 
-What do you use to debug issues in a kubernetes cluster of hundreds of
-machines running thousands of containers? Currently, if something is amiss,
-a node is restarted in the hopes that the issue does not appear again. But
-we would like to add infrastructure that takes advantage of tracing and
-profiling to be able to narrow that down. But to do so, we need to
-understand what tasks belong to what containers.
+I can not see anything else you can possibly uses as names for
+namespaces.
 
-> 
-> There have been many conversations in the past attempt to implement
-> something that requires a namespace of namespaces and they have never
-> gotten anywhere.
+To allow container migration between machines and similar things
+the you wind up needing a namespace for your names of namespaces.
 
-We are not asking about a "namespace" of namespaces, but a filesystem (one,
-not a namespace of one), that holds the information at the system scale,
-not a container view.
+Further you talk about hierarchy and you have not added support for the
+user namespace.  Without the user namespace there is not hierarchy with
+any namespace but the pid namespace. There is definitely no meaningful
+hierarchy without the user namespace.
 
-I would be happy to implement something that makes a container having this
-file system available "special" as most containers do not need this.
+As far as I can tell merging this will break CRIU and container
+migration in general (as the namespace of namespaces problem is not
+solved).
 
-> 
-> I see no attempt a due diligence or of actually understanding what
-> hierarchy already exists in namespaces.
+Since you are not solving the problem of a namespace for namespaces,
+yet implementing something that requires it.
 
-This is not trivial. What did we miss?
+Since you are implementing hierarchy and ignoring the user namespace
+which gives structure and hierarchy to the namespaces.
 
-> 
-> I don't mean to be nasty but I do mean to be clear.  Without a
-> compelling new idea in this space I see no hope of an implementation.
-> 
-> What they are attempting to do makes it impossible to migrate a set of
-> process that uses this feature from one machine to another.  AKA this
-> would be a breaking change and a regression if merged.
+Since this breaks existing use cases without giving a solution.
 
-The point of this is not to allow that migration. I'd be happy to add that
-if a container has access to this file system, it is pinned to the system
-and can not be migrated. The whole point of this file system is to monitor
-all containers no the system, and it makes no sense in migrating it.
+Nacked-by: "Eric W. Biederman" <ebiederm@xmission.com>
 
-We would duplicate it over several systems, but there's no reason to move
-it once it is running.
-
-> 
-> The breaking and regression are caused by assigning names to namespaces
-> without putting those names into a namespace of their own.   That
-> appears fundamental to the concept not to the implementation.
-
-If you think this should be migrated then yes, it is broken. But we don't
-want this to work across migrations. That defeats the purpose of this work.
-
-> 
-> Since the concept if merged would cause a regression it qualifies for
-> a nack.
-> 
-> We can explore what problems they are trying to solve with this and
-> explore other ways to solve those problems.  All I saw was a comment
-> about monitoring tools and wanting a global view.  I did not see
-> any comments about dealing with all of the reasons why a global view
-> tends to be a bad idea.
-
-If you only care about a working environment of the system that runs a set
-of containers, how is that a bad idea. Again, I'm happy with implementing
-something that makes having this file system prevent it from being
-migrated. A pinned privileged container.
-
-> 
-> I should have added that we have to some extent a way to walk through
-> namespaces using ioctls on nsfs inodes.
-
-How robust is this? And is there a library or tooling around it?
-
--- Steve
+Eric
