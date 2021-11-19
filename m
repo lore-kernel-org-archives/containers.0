@@ -1,51 +1,97 @@
-Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
+Received: from bedivere.hansenpartnership.com (bedivere.hansenpartnership.com [96.44.175.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AAC912C82
-	for <containers@lists.linux.dev>; Fri, 19 Nov 2021 17:22:55 +0000 (UTC)
-Received: from gandalf.local.home (cpe-66-24-58-225.stny.res.rr.com [66.24.58.225])
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B84F072
+	for <containers@lists.linux.dev>; Fri, 19 Nov 2021 23:08:11 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+	d=hansenpartnership.com; s=20151216; t=1637363290;
+	bh=laxDKxmG+P97wO7dtGHj+3jiOfUeKS0Sn2sT1b7ShXc=;
+	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:From;
+	b=v/KNMjzPZToYdSq6Qudjqu60hXcUBlQdtSCE59nfxb4a+uLsT+IwwytrBV9fDwBnl
+	 oO5fQi29ydnMW8B08V6QiHGifiU1A27fSMBFDLIHVbchf8yG2SHhPcdqSdF4/GHzly
+	 JLViMwja6ECLOnB1BEoS3hZ19aD0BgdHuryzTgGg=
+Received: from localhost (localhost [127.0.0.1])
+	by bedivere.hansenpartnership.com (Postfix) with ESMTP id A63261280D24;
+	Fri, 19 Nov 2021 18:08:10 -0500 (EST)
+Received: from bedivere.hansenpartnership.com ([127.0.0.1])
+	by localhost (bedivere.hansenpartnership.com [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id 3c7umqUnNlQ9; Fri, 19 Nov 2021 18:08:10 -0500 (EST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+	d=hansenpartnership.com; s=20151216; t=1637363290;
+	bh=laxDKxmG+P97wO7dtGHj+3jiOfUeKS0Sn2sT1b7ShXc=;
+	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:From;
+	b=v/KNMjzPZToYdSq6Qudjqu60hXcUBlQdtSCE59nfxb4a+uLsT+IwwytrBV9fDwBnl
+	 oO5fQi29ydnMW8B08V6QiHGifiU1A27fSMBFDLIHVbchf8yG2SHhPcdqSdF4/GHzly
+	 JLViMwja6ECLOnB1BEoS3hZ19aD0BgdHuryzTgGg=
+Received: from jarvis.int.hansenpartnership.com (unknown [IPv6:2601:5c4:4300:c551::c447])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id AE66561A89;
-	Fri, 19 Nov 2021 17:22:53 +0000 (UTC)
-Date: Fri, 19 Nov 2021 12:22:52 -0500
-From: Steven Rostedt <rostedt@goodmis.org>
-To: Yordan Karadzhov <y.karadz@gmail.com>
-Cc: James Bottomley <James.Bottomley@HansenPartnership.com>,
- linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- viro@zeniv.linux.org.uk, mingo@redhat.com, hagen@jauu.net, rppt@kernel.org,
- akpm@linux-foundation.org, vvs@virtuozzo.com, shakeelb@google.com,
- christian.brauner@ubuntu.com, mkoutny@suse.com, Linux Containers
- <containers@lists.linux.dev>, "Eric W. Biederman" <ebiederm@xmission.com>
+	by bedivere.hansenpartnership.com (Postfix) with ESMTPSA id 4B1151280D14;
+	Fri, 19 Nov 2021 18:08:09 -0500 (EST)
+Message-ID: <cc6783315193be5acb0e2e478e2827d1ad76ba2a.camel@HansenPartnership.com>
 Subject: Re: [RFC PATCH 0/4] namespacefs: Proof-of-Concept
-Message-ID: <20211119122252.2eca350a@gandalf.local.home>
-In-Reply-To: <de336e53-68e1-1d4b-7f71-e276b5363b7c@gmail.com>
+From: James Bottomley <James.Bottomley@HansenPartnership.com>
+To: Steven Rostedt <rostedt@goodmis.org>
+Cc: "Yordan Karadzhov (VMware)" <y.karadz@gmail.com>, 
+ linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+ viro@zeniv.linux.org.uk, mingo@redhat.com, hagen@jauu.net, rppt@kernel.org,
+  akpm@linux-foundation.org, vvs@virtuozzo.com, shakeelb@google.com, 
+ christian.brauner@ubuntu.com, mkoutny@suse.com, Linux Containers
+ <containers@lists.linux.dev>, Steven Rostedt <rostedt@goodmis.org>, "Eric
+ W. Biederman" <ebiederm@xmission.com>
+Date: Fri, 19 Nov 2021 18:08:08 -0500
+In-Reply-To: <20211119114910.177c80d6@gandalf.local.home>
 References: <20211118181210.281359-1-y.karadz@gmail.com>
-	<87a6i1xpis.fsf@email.froward.int.ebiederm.org>
-	<20211118142440.31da20b3@gandalf.local.home>
-	<1349346e1d5daca991724603d1495ec311cac058.camel@HansenPartnership.com>
-	<20211119092758.1012073e@gandalf.local.home>
-	<47bf8da26b5ec71f98b9bc736dbca2d8277417f2.camel@HansenPartnership.com>
-	<de336e53-68e1-1d4b-7f71-e276b5363b7c@gmail.com>
-X-Mailer: Claws Mail 3.17.8 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
+	 <87a6i1xpis.fsf@email.froward.int.ebiederm.org>
+	 <20211118142440.31da20b3@gandalf.local.home>
+	 <1349346e1d5daca991724603d1495ec311cac058.camel@HansenPartnership.com>
+	 <20211119092758.1012073e@gandalf.local.home>
+	 <f6ca1f5bdb3b516688f291d9685a6a59f49f1393.camel@HansenPartnership.com>
+	 <20211119114736.5d9dcf6c@gandalf.local.home>
+	 <20211119114910.177c80d6@gandalf.local.home>
+Content-Type: text/plain; charset="UTF-8"
+User-Agent: Evolution 3.34.4 
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
 
-On Fri, 19 Nov 2021 19:14:08 +0200
-Yordan Karadzhov <y.karadz@gmail.com> wrote:
+[trying to reconstruct cc list, since the cc: field is bust again]
+> On Fri, 19 Nov 2021 11:47:36 -0500
+> Steven Rostedt <rostedt@goodmis.org> wrote:
+> 
+> > > Can we back up and ask what problem you're trying to solve before
+> > > we start introducing new objects like namespace name?
+> 
+> TL;DR; verison:
+> 
+> We want to be able to install a container on a machine that will let
+> us view all namespaces currently defined on that machine and which
+> tasks are associated with them.
+> 
+> That's basically it.
 
->  And you need to add just few more lines of code 
-> in order to make it start tracing a selected container.
+So you mentioned kubernetes.  Have you tried
 
-I would like to add that this is not just about tracing a single container,
-but could be tracing several containers and seeing how they interact, and
-analyze the contention between them on shared resources. Just to name an
-example of what could be done.
+kubectl get pods --all-namespaces
 
--- Steve
+?
+
+The point is that orchestration systems usually have interfaces to get
+this information, even if the kernel doesn't.  In fact, userspace is
+almost certainly the best place to construct this from.
+
+To look at this another way, what if you were simply proposing the
+exact same thing but for the process tree.  The push back would be that
+we can get that all in userspace and there's even a nice tool (pstree)
+to do it which simply walks the /proc interface.  Why, then, do we have
+to do nstree in the kernel when we can get all the information in
+exactly the same way (walking the process tree)?
+
+James
+
+
+
