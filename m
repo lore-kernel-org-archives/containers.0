@@ -1,148 +1,142 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
+Received: from bedivere.hansenpartnership.com (bedivere.hansenpartnership.com [96.44.175.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DFA0F2C81
-	for <containers@lists.linux.dev>; Mon, 29 Nov 2021 14:30:12 +0000 (UTC)
-Received: from pps.filterd (m0187473.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 1ATENT8W024172;
-	Mon, 29 Nov 2021 14:30:04 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
- subject : to : cc : references : from : in-reply-to : content-type :
- content-transfer-encoding : mime-version; s=pp1;
- bh=tSGHmS/RKX0Rx86SdmeCaFjCXS2oDYNxqtu714BHocg=;
- b=GptmoWDijskXe+fb3vF+8KLdmKdmCivt1OVRPbkNfUC7QyJt2J5brvrwoxd+Ly1rTOjv
- lTYtGMBYLlvRusEaslF9M3qAkYLyylSmrnmJmodXtgr/EKJarcPpDkJD0cJftv/RMwlF
- g9JM7QvPkEg83bJgVgEj7/2X2TBb+1Ak2rk1mlb86jQ8WpCYwMqdhY9g83IiJRGdqfil
- WIbkjuidwYSeFsaLAVRqNAl04OIj4SslcitILDyOsrTbWTgq6SODn0ZpDhuuG2B64GmP
- JJBVS3lkoTE3Btn6uJwxC8ZW6VfzoCqDolBt0oww3NWwBgIsSQsjJdYKdhub7c2Gd1Gb Ag== 
-Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3cn0k503kt-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 29 Nov 2021 14:30:04 +0000
-Received: from m0187473.ppops.net (m0187473.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 1ATEU39C006644;
-	Mon, 29 Nov 2021 14:30:03 GMT
-Received: from ppma04wdc.us.ibm.com (1a.90.2fa9.ip4.static.sl-reverse.com [169.47.144.26])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3cn0k503js-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 29 Nov 2021 14:30:03 +0000
-Received: from pps.filterd (ppma04wdc.us.ibm.com [127.0.0.1])
-	by ppma04wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 1ATERRto025501;
-	Mon, 29 Nov 2021 14:30:02 GMT
-Received: from b01cxnp23032.gho.pok.ibm.com (b01cxnp23032.gho.pok.ibm.com [9.57.198.27])
-	by ppma04wdc.us.ibm.com with ESMTP id 3ckcaak54m-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 29 Nov 2021 14:30:01 +0000
-Received: from b01ledav004.gho.pok.ibm.com (b01ledav004.gho.pok.ibm.com [9.57.199.109])
-	by b01cxnp23032.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 1ATEU01w60228008
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Mon, 29 Nov 2021 14:30:00 GMT
-Received: from b01ledav004.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 8BB2411206B;
-	Mon, 29 Nov 2021 14:30:00 +0000 (GMT)
-Received: from b01ledav004.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 522BE112069;
-	Mon, 29 Nov 2021 14:30:00 +0000 (GMT)
-Received: from [9.47.158.152] (unknown [9.47.158.152])
-	by b01ledav004.gho.pok.ibm.com (Postfix) with ESMTP;
-	Mon, 29 Nov 2021 14:30:00 +0000 (GMT)
-Message-ID: <1402f334-8072-48d1-b30b-2c2cdd4869dd@linux.ibm.com>
-Date: Mon, 29 Nov 2021 09:30:00 -0500
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.2.0
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D4E7B2C81
+	for <containers@lists.linux.dev>; Mon, 29 Nov 2021 14:46:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+	d=hansenpartnership.com; s=20151216; t=1638197218;
+	bh=NS3dcvMtXFtau0X4BYh03gxK9rHBvkiPP3WisweRvm8=;
+	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:From;
+	b=WsRrEOGrYMMnkEZA+LXlMbC9oSrXiJ4brLgKXpn1QWku+oE67E3PJCN+qWV3EF9hg
+	 0WJpHKfOSePZHqarMkdjRF+ecdWswjRUdHYvb/lSNdbHMzEjj1ElSx345finGy4OPu
+	 ZnkgxflE4fZveKXiOWq/iI1uuhPSX9NxWEJUm8xM=
+Received: from localhost (localhost [127.0.0.1])
+	by bedivere.hansenpartnership.com (Postfix) with ESMTP id 3B89912804CF;
+	Mon, 29 Nov 2021 09:46:58 -0500 (EST)
+Received: from bedivere.hansenpartnership.com ([127.0.0.1])
+	by localhost (bedivere.hansenpartnership.com [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id 39h086_xX76D; Mon, 29 Nov 2021 09:46:58 -0500 (EST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+	d=hansenpartnership.com; s=20151216; t=1638197218;
+	bh=NS3dcvMtXFtau0X4BYh03gxK9rHBvkiPP3WisweRvm8=;
+	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:From;
+	b=WsRrEOGrYMMnkEZA+LXlMbC9oSrXiJ4brLgKXpn1QWku+oE67E3PJCN+qWV3EF9hg
+	 0WJpHKfOSePZHqarMkdjRF+ecdWswjRUdHYvb/lSNdbHMzEjj1ElSx345finGy4OPu
+	 ZnkgxflE4fZveKXiOWq/iI1uuhPSX9NxWEJUm8xM=
+Received: from jarvis.int.hansenpartnership.com (unknown [IPv6:2601:5c4:4300:c551::c447])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by bedivere.hansenpartnership.com (Postfix) with ESMTPSA id CDE2512803C3;
+	Mon, 29 Nov 2021 09:46:56 -0500 (EST)
+Message-ID: <afee2f0483271a6cdb1bc7b48b819a3ca2c4ceda.camel@HansenPartnership.com>
 Subject: Re: [RFC 3/3] ima: make the integrity inode cache per namespace
-Content-Language: en-US
-To: James Bottomley <James.Bottomley@HansenPartnership.com>,
-        "Serge E. Hallyn" <serge@hallyn.com>
-Cc: linux-integrity@vger.kernel.org, containers@lists.linux.dev,
-        Mimi Zohar <zohar@linux.ibm.com>,
-        Dmitry Kasatkin
- <dmitry.kasatkin@gmail.com>,
-        "Eric W . Biederman" <ebiederm@xmission.com>,
-        krzysztof.struczynski@huawei.com,
-        Roberto Sassu <roberto.sassu@huawei.com>,
-        Michael Peters <mpeters@redhat.com>, Luke Hinds <lhinds@redhat.com>,
-        Lily Sturmann <lsturman@redhat.com>,
-        Patrick Uiterwijk
- <puiterwi@redhat.com>,
-        Christian Brauner <christian@brauner.io>
+From: James Bottomley <James.Bottomley@HansenPartnership.com>
+To: Christian Brauner <christian.brauner@ubuntu.com>
+Cc: Stefan Berger <stefanb@linux.ibm.com>, "Serge E. Hallyn"
+ <serge@hallyn.com>,  linux-integrity@vger.kernel.org,
+ containers@lists.linux.dev, Mimi Zohar <zohar@linux.ibm.com>, Dmitry
+ Kasatkin <dmitry.kasatkin@gmail.com>, "Eric W . Biederman"
+ <ebiederm@xmission.com>, krzysztof.struczynski@huawei.com, Roberto Sassu
+ <roberto.sassu@huawei.com>, Michael Peters <mpeters@redhat.com>, Luke Hinds
+ <lhinds@redhat.com>, Lily Sturmann <lsturman@redhat.com>, Patrick Uiterwijk
+ <puiterwi@redhat.com>, Christian Brauner <christian@brauner.io>
+Date: Mon, 29 Nov 2021 09:46:55 -0500
+In-Reply-To: <20211129142235.hez3ovtuj3rpscgm@wittgenstein>
 References: <20211127164549.2571457-1-James.Bottomley@HansenPartnership.com>
- <20211127164549.2571457-4-James.Bottomley@HansenPartnership.com>
- <20211129045834.GB20606@mail.hallyn.com>
- <755446b10c8415fd469b814535c4a12964af3264.camel@HansenPartnership.com>
- <70b81e62-46af-9d39-3dcb-4cfbae645175@linux.ibm.com>
- <a74b18c1aee2b14426cc12e2fd336716c447f070.camel@HansenPartnership.com>
-From: Stefan Berger <stefanb@linux.ibm.com>
-In-Reply-To: <a74b18c1aee2b14426cc12e2fd336716c447f070.camel@HansenPartnership.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: WaMH4KKwko9ZQ7tLFAvxxCXMeCrZSbEY
-X-Proofpoint-GUID: KBjpraKQWZaa9U7HqqQhiEQx1GIysd4A
-Content-Transfer-Encoding: 8bit
-X-Proofpoint-UnRewURL: 0 URL was un-rewritten
+	 <20211127164549.2571457-4-James.Bottomley@HansenPartnership.com>
+	 <20211129045834.GB20606@mail.hallyn.com>
+	 <755446b10c8415fd469b814535c4a12964af3264.camel@HansenPartnership.com>
+	 <70b81e62-46af-9d39-3dcb-4cfbae645175@linux.ibm.com>
+	 <a74b18c1aee2b14426cc12e2fd336716c447f070.camel@HansenPartnership.com>
+	 <20211129142235.hez3ovtuj3rpscgm@wittgenstein>
+Content-Type: text/plain; charset="UTF-8"
+User-Agent: Evolution 3.34.4 
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.205,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.0.607.475
- definitions=2021-11-29_08,2021-11-28_01,2020-04-07_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 mlxscore=0 bulkscore=0
- malwarescore=0 suspectscore=0 mlxlogscore=999 clxscore=1015
- impostorscore=0 adultscore=0 phishscore=0 lowpriorityscore=0
- priorityscore=1501 spamscore=0 classifier=spam adjust=0 reason=mlx
- scancount=1 engine=8.12.0-2110150000 definitions=main-2111290071
+Content-Transfer-Encoding: 7bit
 
+On Mon, 2021-11-29 at 15:22 +0100, Christian Brauner wrote:
+> On Mon, Nov 29, 2021 at 09:10:29AM -0500, James Bottomley wrote:
+> > On Mon, 2021-11-29 at 08:53 -0500, Stefan Berger wrote:
+> > > On 11/29/21 07:50, James Bottomley wrote:
+> > > > On Sun, 2021-11-28 at 22:58 -0600, Serge E. Hallyn wrote:
+> > > > > On Sat, Nov 27, 2021 at 04:45:49PM +0000, James Bottomley
+> > > > > wrote:
+> > > > > > Currently we get one entry in the IMA log per unique file
+> > > > > > event.  So, if you have a measurement policy and it
+> > > > > > measures a particular binary it will not get measured again
+> > > > > > if it is subsequently executed. For Namespaced IMA, the
+> > > > > > correct behaviour seems to be to log once per inode per
+> > > > > > namespace (so every unique execution in a namespace gets a
+> > > > > > separate log entry).  Since logging once per inode per
+> > > > > > namespace is
+> > > > > I suspect I'll need to do a more in depth reading of the
+> > > > > existing code, but I'll ask the lazy question anyway (since
+> > > > > you say "the correct behavior seems to be") - is it actually
+> > > > > important that files which were appraised under a parent
+> > > > > namespace's policy already should be logged again?
+> > > > I think so.  For a couple of reasons, assuming the namespace
+> > > > eventually gets its own log entries, which the next incremental
+> > > > patch proposed to do by virtualizing the securityfs
+> > > > entries.  If you don't do this:
+> > > 
+> > > To avoid duplicate efforts, an implementation of a virtualized 
+> > > securityfs is in this series here:
+> > > 
+> > > https://github.com/stefanberger/linux-ima-namespaces/commits/v5.15%2Bimans.20211119.v3
+> > > 
+> > > It starts with 'securityfs: Prefix global variables with
+> > > secruityfs_'
+> > 
+> > That's quite a big patch series.  I already actually implemented
+> > this as part of the RFC for getting the per namespace measurement
+> > log.  The attached is basically what I did.
+> > 
+> > Most of the time we don't require namespacing the actual virtualfs
+> > file, because it's world readable.  IMA has a special requirement
+> > in this regard because the IMA files should be readable (and
+> > writeable when we get around to policy updates) by the admin of the
+> > namespace but their protection is 0640 or 0440.  I thought the
+> > simplest solution would be to make an additional flag that coped
+> > with the permissions and a per-inode flag way of making the file as
+> > "accessible by userns admin".  Doing something simple like this
+> > gives a much smaller diffstat:
+> 
+> That's a NAK from me. Stefan's series might be bigger but it does
+> things correctly. I appreciate the keep it simple attitude but no. I
+> won't speciale-case securityfs or similar stuff in core vfs helpers.
 
-On 11/29/21 09:10, James Bottomley wrote:
-> On Mon, 2021-11-29 at 08:53 -0500, Stefan Berger wrote:
->> On 11/29/21 07:50, James Bottomley wrote:
->>> On Sun, 2021-11-28 at 22:58 -0600, Serge E. Hallyn wrote:
->>>> On Sat, Nov 27, 2021 at 04:45:49PM +0000, James Bottomley wrote:
->>>>> Currently we get one entry in the IMA log per unique file
->>>>> event.  So, if you have a measurement policy and it measures a
->>>>> particular binary it will not get measured again if it is
->>>>> subsequently executed. For Namespaced IMA, the correct
->>>>> behaviour
->>>>> seems to be to log once per inode per namespace (so every
->>>>> unique
->>>>> execution in a namespace gets a separate log entry).  Since
->>>>> logging
->>>>> once per inode per namespace is
->>>> I suspect I'll need to do a more in depth reading of the existing
->>>> code, but I'll ask the lazy question anyway (since you say "the
->>>> correct behavior seems to be") - is it actually important that
->>>> files which were appraised under a parent namespace's policy
->>>> already
->>>> should be logged again?
->>> I think so.  For a couple of reasons, assuming the namespace
->>> eventually
->>> gets its own log entries, which the next incremental patch proposed
->>> to
->>> do by virtualizing the securityfs entries.  If you don't do this:
->> To avoid duplicate efforts, an implementation of a virtualized
->> securityfs is in this series here:
->>
->> https://github.com/stefanberger/linux-ima-namespaces/commits/v5.15%2Bimans.20211119.v3
->>
->> It starts with 'securityfs: Prefix global variables with secruityfs_'
-> That's quite a big patch series.  I already actually implemented this
-> as part of the RFC for getting the per namespace measurement log.  The
-> attached is basically what I did.
+Well, there's a reason it's an unpublished patch.  However, the more
+important point is that namespacing IMA requires discussion of certain
+points that we never seem to drive to a conclusion.  Using the akpm
+method, I propose simple patches that drive the discussion.  I think
+the points are:
 
-I know it's big. I tried to avoid having to bind-mount the system-wide 
-single securityfs into the container and inherit all the other security 
-subsystems' files and directories (evm, TPM, safesetid, apparmor, tomoyo 
-[ https://elixir.bootlin.com/linux/latest/C/ident/securityfs_create_dir 
-]) and instead have a  'view' that is a bit more restricted to those 
-subsystems that are namespaced. The securityfs_ns I created can be 
-mounted into each user namespace individually and only shows what you're 
-supposed to see without other filesystem tricks to hide files or so. It 
-should be future-extensible for other subsystem to register themselves 
-there if they have something to show to the user.
+   1. Should IMA be its own namespace or tied to the user namespace?  The
+      previous patches all took the separate Namespace approach, but I
+      think that should be reconsidered now keyrings are in the user
+      namespace.
+   2. How do we get a unique id for the IMA namespace to use in the log?
+   3. how should we virtualize securityfs for IMA given the need of the
+      namespace admin to read and write the IMA files?
 
-    Stefan
+And, of course, the fun ones we're coming to.
+
+   1. Given that the current keyring namespacing doesn't give access to
+      the system keyrings, how do we get per-namespace access for
+      .ima/_ima system keyrings given that the namespace admin is going to
+      want to set their own key for appraisal?
+   2. What mechanism should we use for .ima/_ima key setting?  The current
+      mechanism is must be signed by a key in the system keyrings sounds
+      appropriate, but is problematic given most system owners don't
+      actually have any private keys for keys in the system keyrings. 
+      Hopefully the MoK keyring patches will help us have an easier
+      approach to this.
+
+James
 
 
