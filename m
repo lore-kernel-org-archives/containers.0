@@ -1,138 +1,177 @@
-Received: from bedivere.hansenpartnership.com (bedivere.hansenpartnership.com [96.44.175.130])
+Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 305EC72
-	for <containers@lists.linux.dev>; Mon, 29 Nov 2021 16:44:38 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-	d=hansenpartnership.com; s=20151216; t=1638204277;
-	bh=D63MuVTlcyWR7tJ8LjFr7KsXPx3ERPscNz6EFGrQWTQ=;
-	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:From;
-	b=PJLmwxPWh56RNSLJrFEN+syzcGHectLHdLWykinUeMvP7E+dv2FjcBc6AbtW+GvzC
-	 yFNnRY+5CAa7BsZ+TAN07EtlI/cfWI1ywFARYFyrMAfHcZLGTnbI5KibXv0AevhVm1
-	 5QfB0lST2orNNLF56ARt+B0YEO1JVAjGKFdS+cJw=
-Received: from localhost (localhost [127.0.0.1])
-	by bedivere.hansenpartnership.com (Postfix) with ESMTP id A2C4112803C3;
-	Mon, 29 Nov 2021 11:44:37 -0500 (EST)
-Received: from bedivere.hansenpartnership.com ([127.0.0.1])
-	by localhost (bedivere.hansenpartnership.com [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id MZ2jVXedFSow; Mon, 29 Nov 2021 11:44:37 -0500 (EST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-	d=hansenpartnership.com; s=20151216; t=1638204277;
-	bh=D63MuVTlcyWR7tJ8LjFr7KsXPx3ERPscNz6EFGrQWTQ=;
-	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:From;
-	b=PJLmwxPWh56RNSLJrFEN+syzcGHectLHdLWykinUeMvP7E+dv2FjcBc6AbtW+GvzC
-	 yFNnRY+5CAa7BsZ+TAN07EtlI/cfWI1ywFARYFyrMAfHcZLGTnbI5KibXv0AevhVm1
-	 5QfB0lST2orNNLF56ARt+B0YEO1JVAjGKFdS+cJw=
-Received: from jarvis.int.hansenpartnership.com (unknown [IPv6:2601:5c4:4300:c551::c447])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by bedivere.hansenpartnership.com (Postfix) with ESMTPSA id 4A0E312802FC;
-	Mon, 29 Nov 2021 11:44:36 -0500 (EST)
-Message-ID: <16e27be21e2886ba17298d94fdaff39236667890.camel@HansenPartnership.com>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9F1AB72
+	for <containers@lists.linux.dev>; Mon, 29 Nov 2021 17:05:57 +0000 (UTC)
+Received: from pps.filterd (m0098414.ppops.net [127.0.0.1])
+	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 1ATGHWXM003331;
+	Mon, 29 Nov 2021 17:05:47 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
+ subject : to : cc : references : from : in-reply-to : content-type :
+ content-transfer-encoding : mime-version; s=pp1;
+ bh=yc5kWkkyRApb2Rb2ytJCmjxRn8OdoD8YkqP5MFJObd8=;
+ b=Oe0m6U7kK7VXG9Mfc3TOfbIM4nRW0/cueESreILe4hPEcnwSQY1byisTvAHnIUcNMrq5
+ iA4DEcVcBY9bEoe0WY9q80s0KtSnXsPhl0OJJzZgMtBT884mEZQ/hCyqtZHTwzSN7fNj
+ oD/jAIW75SPexQ+tHwhJ8+jwFI1P6L4Jkp1RTXi3UPCyOgThqBgY7D62ebFomnJkR3FH
+ VXNfxLnOs/qCMitLVoM1HV/SYroLTDb5i33ddsXXzd+FEhTN7VaDvW8AIW1sEi731lYc
+ Bepo3BH80y2COHcpNYVF6B0oM2yG56UXOmp3azDnRGX8XOq4FzTOUxYPhsgabnFRwvIT Mw== 
+Received: from pps.reinject (localhost [127.0.0.1])
+	by mx0b-001b2d01.pphosted.com with ESMTP id 3cn28p970k-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Mon, 29 Nov 2021 17:05:47 +0000
+Received: from m0098414.ppops.net (m0098414.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 1ATGId7Y007479;
+	Mon, 29 Nov 2021 17:05:47 GMT
+Received: from ppma04wdc.us.ibm.com (1a.90.2fa9.ip4.static.sl-reverse.com [169.47.144.26])
+	by mx0b-001b2d01.pphosted.com with ESMTP id 3cn28p9706-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Mon, 29 Nov 2021 17:05:47 +0000
+Received: from pps.filterd (ppma04wdc.us.ibm.com [127.0.0.1])
+	by ppma04wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 1ATGvTbU031053;
+	Mon, 29 Nov 2021 17:05:46 GMT
+Received: from b01cxnp22033.gho.pok.ibm.com (b01cxnp22033.gho.pok.ibm.com [9.57.198.23])
+	by ppma04wdc.us.ibm.com with ESMTP id 3ckcaapwvf-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Mon, 29 Nov 2021 17:05:45 +0000
+Received: from b01ledav002.gho.pok.ibm.com (b01ledav002.gho.pok.ibm.com [9.57.199.107])
+	by b01cxnp22033.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 1ATH4UhA51577118
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Mon, 29 Nov 2021 17:04:30 GMT
+Received: from b01ledav002.gho.pok.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id F151B124055;
+	Mon, 29 Nov 2021 17:04:29 +0000 (GMT)
+Received: from b01ledav002.gho.pok.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 9E4B012406C;
+	Mon, 29 Nov 2021 17:04:29 +0000 (GMT)
+Received: from [9.47.158.152] (unknown [9.47.158.152])
+	by b01ledav002.gho.pok.ibm.com (Postfix) with ESMTP;
+	Mon, 29 Nov 2021 17:04:29 +0000 (GMT)
+Message-ID: <c73dd2cc-7915-9343-5ad0-e53c762e29a3@linux.ibm.com>
+Date: Mon, 29 Nov 2021 12:04:29 -0500
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.2.0
 Subject: Re: [RFC 3/3] ima: make the integrity inode cache per namespace
-From: James Bottomley <James.Bottomley@HansenPartnership.com>
-To: "Serge E. Hallyn" <serge@hallyn.com>
-Cc: Christian Brauner <christian.brauner@ubuntu.com>, Stefan Berger
- <stefanb@linux.ibm.com>, linux-integrity@vger.kernel.org, 
- containers@lists.linux.dev, Mimi Zohar <zohar@linux.ibm.com>, Dmitry
- Kasatkin <dmitry.kasatkin@gmail.com>, "Eric W . Biederman"
- <ebiederm@xmission.com>,  krzysztof.struczynski@huawei.com, Roberto Sassu
- <roberto.sassu@huawei.com>,  Michael Peters <mpeters@redhat.com>, Luke
- Hinds <lhinds@redhat.com>, Lily Sturmann <lsturman@redhat.com>,  Patrick
- Uiterwijk <puiterwi@redhat.com>, Christian Brauner <christian@brauner.io>
-Date: Mon, 29 Nov 2021 11:44:35 -0500
-In-Reply-To: <20211129153539.GA26325@mail.hallyn.com>
+Content-Language: en-US
+To: Christian Brauner <christian.brauner@ubuntu.com>,
+        "Serge E. Hallyn" <serge@hallyn.com>
+Cc: James Bottomley <James.Bottomley@HansenPartnership.com>,
+        linux-integrity@vger.kernel.org, containers@lists.linux.dev,
+        Mimi Zohar <zohar@linux.ibm.com>,
+        Dmitry Kasatkin
+ <dmitry.kasatkin@gmail.com>,
+        "Eric W . Biederman" <ebiederm@xmission.com>,
+        krzysztof.struczynski@huawei.com,
+        Roberto Sassu <roberto.sassu@huawei.com>,
+        Michael Peters <mpeters@redhat.com>, Luke Hinds <lhinds@redhat.com>,
+        Lily Sturmann <lsturman@redhat.com>,
+        Patrick Uiterwijk
+ <puiterwi@redhat.com>,
+        Christian Brauner <christian@brauner.io>
 References: <20211127164549.2571457-1-James.Bottomley@HansenPartnership.com>
-	 <20211127164549.2571457-4-James.Bottomley@HansenPartnership.com>
-	 <20211129045834.GB20606@mail.hallyn.com>
-	 <755446b10c8415fd469b814535c4a12964af3264.camel@HansenPartnership.com>
-	 <70b81e62-46af-9d39-3dcb-4cfbae645175@linux.ibm.com>
-	 <a74b18c1aee2b14426cc12e2fd336716c447f070.camel@HansenPartnership.com>
-	 <20211129142235.hez3ovtuj3rpscgm@wittgenstein>
-	 <afee2f0483271a6cdb1bc7b48b819a3ca2c4ceda.camel@HansenPartnership.com>
-	 <20211129153539.GA26325@mail.hallyn.com>
-Content-Type: text/plain; charset="UTF-8"
-User-Agent: Evolution 3.34.4 
+ <20211127164549.2571457-4-James.Bottomley@HansenPartnership.com>
+ <20211129045834.GB20606@mail.hallyn.com>
+ <755446b10c8415fd469b814535c4a12964af3264.camel@HansenPartnership.com>
+ <70b81e62-46af-9d39-3dcb-4cfbae645175@linux.ibm.com>
+ <a74b18c1aee2b14426cc12e2fd336716c447f070.camel@HansenPartnership.com>
+ <20211129142235.hez3ovtuj3rpscgm@wittgenstein>
+ <afee2f0483271a6cdb1bc7b48b819a3ca2c4ceda.camel@HansenPartnership.com>
+ <20211129153539.GA26325@mail.hallyn.com>
+ <20211129161650.dtcvh2ozgquz6rli@wittgenstein>
+From: Stefan Berger <stefanb@linux.ibm.com>
+In-Reply-To: <20211129161650.dtcvh2ozgquz6rli@wittgenstein>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+X-TM-AS-GCONF: 00
+X-Proofpoint-GUID: N23SCsPjt86ZyCV1TMgZo4dEBLFwAknz
+X-Proofpoint-ORIG-GUID: _uHkz7cXTpMN6reHcXe2n2BvVvnhNZnz
+Content-Transfer-Encoding: 8bit
+X-Proofpoint-UnRewURL: 0 URL was un-rewritten
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.205,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.0.607.475
+ definitions=2021-11-29_10,2021-11-28_01,2020-04-07_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 spamscore=0
+ lowpriorityscore=0 mlxlogscore=999 adultscore=0 priorityscore=1501
+ mlxscore=0 phishscore=0 bulkscore=0 malwarescore=0 clxscore=1015
+ impostorscore=0 suspectscore=0 classifier=spam adjust=0 reason=mlx
+ scancount=1 engine=8.12.0-2110150000 definitions=main-2111290081
 
-On Mon, 2021-11-29 at 09:35 -0600, Serge E. Hallyn wrote:
-> On Mon, Nov 29, 2021 at 09:46:55AM -0500, James Bottomley wrote:
-[...]
-> > Well, there's a reason it's an unpublished patch.  However, the
-> > more important point is that namespacing IMA requires discussion of
-> > certain points that we never seem to drive to a conclusion.  Using
-> > the akpm method, I propose simple patches that drive the
-> > discussion.  I think the points are:
-> > 
-> >    1. Should IMA be its own namespace or tied to the user
-> > namespace?  The previous patches all took the separate Namespace
-> > approach, but I think that should be reconsidered now keyrings are
-> > in the user namespace.
-> 
-> Well that purely depends on the needed scope.
-> 
-> The audit container identifier is a neat thing.  But it absolutely
-> must be settable, so seems to conflict with your needs.
 
-I think not allowing duplicate entries for the lifetime of the log is
-required, which causes a problem since namespaces can die before this
-lifetime ends.  I think there is a nice security benefit in making it
-not user settable, but I don't think that's necessarily a requirement.
+On 11/29/21 11:16, Christian Brauner wrote:
+> On Mon, Nov 29, 2021 at 09:35:39AM -0600, Serge Hallyn wrote:
+>> On Mon, Nov 29, 2021 at 09:46:55AM -0500, James Bottomley wrote:
+>>> On Mon, 2021-11-29 at 15:22 +0100, Christian Brauner wrote:
+>>>> On Mon, Nov 29, 2021 at 09:10:29AM -0500, James Bottomley wrote:
+>>>>
+> I kept thinking about this question while I was out running and while I
+> admittedly have reacted poorly to CLONE_NEWIMA patches before it feels
+> to me that this is the right approach after all. Making it part of
+> userns at least in this form isn't clean.
+>
+> I think attaching a uuid to a userns alone for the sake of IMA is wrong.
+> Additionally, I think a uuid only for the userns is too limited. This is
+> similar to the problem of the audit container id. If we have some sort
+> of uuid for ima it will automatically evolve into something like a
+> container id (I'm not even arguing that this is necessarily wrong.).
+> We also have the issue that we then have the container audit id thing -
+> if this ever lands and the ima userns uuid. All that makes it quite
+> messy.
+>
+> I think CLONE_NEWIMA is ultimately nicer and allows the implementation
+> to be decoupled from the userns and self-contained as possible. This
+> also means that ima ns works for privileged containers which sure is a
+> valid use-case.
 
-> Your patch puts an identifier on the user_namespace.  I'm not quite
-> sure, does that satisfy Stefan's needs?  A new ima ns if and only if
-> there is a new user ns?
+The thing is that piggy backing on the user namespace at least allows us 
+to 'always see' where IMA's keyring is (across setns()). If we were 
+using an independent IMA namespace how would we guarantee that the user 
+sees the keyring for IMA appraisal? We would at least have to take a 
+reference (as in get_user_ns()) to the user namespace when the IMA 
+namespace is created so that it at least the association of IMA 
+namespace to user namespace remains a constant and the keyring IMA is 
+using (and are held by the user namespace) is also constant across 
+setns()'s. Otherwise it is possible that the user could do setns() to a 
+different user namespace and be confused about the keys IMA is using. So 
+at least by piggy backing we have them together. The aspect here may be 
+'usability'.
 
-Part of the problem is that IMA needs an admin user ... to be able to
-read the log and set the policy and, when we get to appraisal, set and
-read the keyrings.  IMA NS iff user ns satisfies this, but the
-minimalist in me then asks why not make them the same thing?
+I am somewhat sold on the USER namespace piggy backing thing... as 
+suggested by James.
 
-> I think you two need to get together and discuss the requirements,
-> and come back with a brief but very precise document explaining what
-> you need.
 
-> Are you both looking at the same use case?  Who is consuming the
-> audit log, and to what end?  Container administrators?  Any time they
-> log in? How do they assure themselves that the securityfs file
-> they're reading hasn't been overmounted?
+> It will also make securityfs namespacing easier as it can be a keyed
+> super where the key is the ima ns (similar to how we deal with e.g.
+> mqueue).
 
-There are several different use cases.  I'm asking how I would use the
-IMA namespace for the unprivileged containers I usually set up by
-hand.  Stefan is looking at how docker/kubernetes would do it.  There's
-also the Huawei use case which is a sort of attestation for function as
-a service and there's the Red Hat use case for OpenShift.
+Yes, mqueue is where I got the (API usage) idea from how to switch out 
+the reference to the user namespace needed for the 'keyed' approach.
 
-However, the common denominator in all of these is they require a way
-to uniquely distinguish the containers, which is why the patch series I
-sent as an RFC starts that way.  If we can start with the common
-elements, we can build towards something that satisfies all the use
-cases ... and allow consensus to emerge as further patches are
-discussed.
+I will massage my 20 patch-series a bit more and then post it (for 
+reference....). It does have 'somewhat dramatic' things in there that 
+stem from virtualizing securityfs for example and IMA being a dependent 
+of the user namespace and taking one more reference to the user 
+namespace (it is a dependent of) and then the user namespace not being 
+able to easily delete:
 
-Part of my problem is I don't really know what I need, I just want IMA
-namespaces to work easily for the unprivileged use case and I'll figure
-it out as I play with it ... but to do that I need something to start
-playing with.
+It's this here to help with an early tear-down to decrease the reference 
+counter.
 
-> I need to find a document to read about IMA's usage of PCRs.  For
-> namespacing, are you expecting each container to be hooked up to a
-> swtmp instance so they have their own PCR they can use?
+- 
+https://github.com/stefanberger/linux-ima-namespaces/commit/1a5d7f2598764ca6f1a8c5a391672543fef83f2c
 
-That's one of the most complicated things of all: trying to attach a
-vTPM to store the local extensions and quote the IMA log in the
-namespace.  The Huawei patch doesn't have it, because they don't really
-need it (they just want global attestation to work), the IBM patches
-do.  I think there are many ways of attesting to the subset of the log
-in the namespace, so I don't think a vTPM is required.  I do, however,
-think it should be supported for the use cases that need it.
+- 
+https://github.com/stefanberger/linux-ima-namespaces/commit/d246f501f977e64333ecbd8bb79994e23b552b9b
 
-James
+- 
+https://github.com/stefanberger/linux-ima-namespaces/commit/3b82058936862d7623b3a06bc1749d5efc018ab1#diff-99458ca9139231ac3811dbb0c0fced442c46c7cfdb94e86e4553fc0329d3a79bR647-R651
+
+The teardown variable makes this a controlled process but ... is it 
+acceptable?
+
+    Stefan
 
 
