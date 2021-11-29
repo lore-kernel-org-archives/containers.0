@@ -1,47 +1,47 @@
 Received: from bedivere.hansenpartnership.com (bedivere.hansenpartnership.com [96.44.175.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6349529CA
-	for <containers@lists.linux.dev>; Mon, 29 Nov 2021 16:23:49 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 305EC72
+	for <containers@lists.linux.dev>; Mon, 29 Nov 2021 16:44:38 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-	d=hansenpartnership.com; s=20151216; t=1638203028;
-	bh=xPNipZt/4wQBEActY1Dd9mBHUhc6/PCR2MJmoxfAE0Y=;
+	d=hansenpartnership.com; s=20151216; t=1638204277;
+	bh=D63MuVTlcyWR7tJ8LjFr7KsXPx3ERPscNz6EFGrQWTQ=;
 	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:From;
-	b=cafs1KVuEdavSLF40QBBPMYAo5T3Yj/V0JVpUdoVlEM8FZYJNK0DGaVblvhkeFL1H
-	 kQoCy63uZeymBtRdZ7kCOTaBuDMvv2jr1VcEGx1GOS6ba4kpe3FneyV+3eCtejB3+9
-	 2M3AtPf/bR+/r6fdh2uyeTX2/Hrg0k4PXUmBJoeM=
+	b=PJLmwxPWh56RNSLJrFEN+syzcGHectLHdLWykinUeMvP7E+dv2FjcBc6AbtW+GvzC
+	 yFNnRY+5CAa7BsZ+TAN07EtlI/cfWI1ywFARYFyrMAfHcZLGTnbI5KibXv0AevhVm1
+	 5QfB0lST2orNNLF56ARt+B0YEO1JVAjGKFdS+cJw=
 Received: from localhost (localhost [127.0.0.1])
-	by bedivere.hansenpartnership.com (Postfix) with ESMTP id DF8B41280975;
-	Mon, 29 Nov 2021 11:23:48 -0500 (EST)
+	by bedivere.hansenpartnership.com (Postfix) with ESMTP id A2C4112803C3;
+	Mon, 29 Nov 2021 11:44:37 -0500 (EST)
 Received: from bedivere.hansenpartnership.com ([127.0.0.1])
 	by localhost (bedivere.hansenpartnership.com [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id SE6fwn6yX7hq; Mon, 29 Nov 2021 11:23:48 -0500 (EST)
+	with ESMTP id MZ2jVXedFSow; Mon, 29 Nov 2021 11:44:37 -0500 (EST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-	d=hansenpartnership.com; s=20151216; t=1638203028;
-	bh=xPNipZt/4wQBEActY1Dd9mBHUhc6/PCR2MJmoxfAE0Y=;
+	d=hansenpartnership.com; s=20151216; t=1638204277;
+	bh=D63MuVTlcyWR7tJ8LjFr7KsXPx3ERPscNz6EFGrQWTQ=;
 	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:From;
-	b=cafs1KVuEdavSLF40QBBPMYAo5T3Yj/V0JVpUdoVlEM8FZYJNK0DGaVblvhkeFL1H
-	 kQoCy63uZeymBtRdZ7kCOTaBuDMvv2jr1VcEGx1GOS6ba4kpe3FneyV+3eCtejB3+9
-	 2M3AtPf/bR+/r6fdh2uyeTX2/Hrg0k4PXUmBJoeM=
+	b=PJLmwxPWh56RNSLJrFEN+syzcGHectLHdLWykinUeMvP7E+dv2FjcBc6AbtW+GvzC
+	 yFNnRY+5CAa7BsZ+TAN07EtlI/cfWI1ywFARYFyrMAfHcZLGTnbI5KibXv0AevhVm1
+	 5QfB0lST2orNNLF56ARt+B0YEO1JVAjGKFdS+cJw=
 Received: from jarvis.int.hansenpartnership.com (unknown [IPv6:2601:5c4:4300:c551::c447])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by bedivere.hansenpartnership.com (Postfix) with ESMTPSA id 71A3C128096D;
-	Mon, 29 Nov 2021 11:23:47 -0500 (EST)
-Message-ID: <0d882e9cb371485c506d73a9b702a2cc398125af.camel@HansenPartnership.com>
+	by bedivere.hansenpartnership.com (Postfix) with ESMTPSA id 4A0E312802FC;
+	Mon, 29 Nov 2021 11:44:36 -0500 (EST)
+Message-ID: <16e27be21e2886ba17298d94fdaff39236667890.camel@HansenPartnership.com>
 Subject: Re: [RFC 3/3] ima: make the integrity inode cache per namespace
 From: James Bottomley <James.Bottomley@HansenPartnership.com>
-To: Stefan Berger <stefanb@linux.ibm.com>, Christian Brauner
-	 <christian.brauner@ubuntu.com>
-Cc: "Serge E. Hallyn" <serge@hallyn.com>, linux-integrity@vger.kernel.org, 
+To: "Serge E. Hallyn" <serge@hallyn.com>
+Cc: Christian Brauner <christian.brauner@ubuntu.com>, Stefan Berger
+ <stefanb@linux.ibm.com>, linux-integrity@vger.kernel.org, 
  containers@lists.linux.dev, Mimi Zohar <zohar@linux.ibm.com>, Dmitry
  Kasatkin <dmitry.kasatkin@gmail.com>, "Eric W . Biederman"
  <ebiederm@xmission.com>,  krzysztof.struczynski@huawei.com, Roberto Sassu
  <roberto.sassu@huawei.com>,  Michael Peters <mpeters@redhat.com>, Luke
  Hinds <lhinds@redhat.com>, Lily Sturmann <lsturman@redhat.com>,  Patrick
  Uiterwijk <puiterwi@redhat.com>, Christian Brauner <christian@brauner.io>
-Date: Mon, 29 Nov 2021 11:23:46 -0500
-In-Reply-To: <3e609b60-221a-8b9b-5f55-ab7081a83786@linux.ibm.com>
+Date: Mon, 29 Nov 2021 11:44:35 -0500
+In-Reply-To: <20211129153539.GA26325@mail.hallyn.com>
 References: <20211127164549.2571457-1-James.Bottomley@HansenPartnership.com>
 	 <20211127164549.2571457-4-James.Bottomley@HansenPartnership.com>
 	 <20211129045834.GB20606@mail.hallyn.com>
@@ -50,7 +50,7 @@ References: <20211127164549.2571457-1-James.Bottomley@HansenPartnership.com>
 	 <a74b18c1aee2b14426cc12e2fd336716c447f070.camel@HansenPartnership.com>
 	 <20211129142235.hez3ovtuj3rpscgm@wittgenstein>
 	 <afee2f0483271a6cdb1bc7b48b819a3ca2c4ceda.camel@HansenPartnership.com>
-	 <3e609b60-221a-8b9b-5f55-ab7081a83786@linux.ibm.com>
+	 <20211129153539.GA26325@mail.hallyn.com>
 Content-Type: text/plain; charset="UTF-8"
 User-Agent: Evolution 3.34.4 
 Precedence: bulk
@@ -61,94 +61,77 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 
-On Mon, 2021-11-29 at 10:27 -0500, Stefan Berger wrote:
-> On 11/29/21 09:46, James Bottomley wrote:
+On Mon, 2021-11-29 at 09:35 -0600, Serge E. Hallyn wrote:
+> On Mon, Nov 29, 2021 at 09:46:55AM -0500, James Bottomley wrote:
 [...]
-> > And, of course, the fun ones we're coming to.
+> > Well, there's a reason it's an unpublished patch.  However, the
+> > more important point is that namespacing IMA requires discussion of
+> > certain points that we never seem to drive to a conclusion.  Using
+> > the akpm method, I propose simple patches that drive the
+> > discussion.  I think the points are:
 > > 
-> >     1. Given that the current keyring namespacing doesn't give
-> > access to the system keyrings, how do we get per-namespace access
-> > for .ima/_ima system keyrings given that the namespace admin is
-> > going to want to set their own key for appraisal?
-> >     2. What mechanism should we use for .ima/_ima key setting?  The
-> > current mechanism is must be signed by a key in the system keyrings
-> > sounds appropriate, but is problematic given most system owners
-> > don't actually have any private keys for keys in the system
-> > keyrings. Hopefully the MoK keyring patches will help us have an
-> > easier approach to this.
+> >    1. Should IMA be its own namespace or tied to the user
+> > namespace?  The previous patches all took the separate Namespace
+> > approach, but I think that should be reconsidered now keyrings are
+> > in the user namespace.
 > 
-> The approach we took in the previous implementation was to support
-> BYOK (bring your own key) for every container. The (trusted)
-> container runtime has to do what dracut would typically do, namely
-> create the keyrings and load the keys onto it.
-
-Right, that's why I think the staged approach is the right way to do
-this.  Let's first of all try to get an IMA namespace that can be used
-to measure things and then worry about trying to add appraisal to the
-namespace later, since it's a separable use case.  I think they how of
-appraisal is one of the more complex issues, but it shouldn't hold up
-actually starting to get an IMA namespace upstream and encouraging use
-cases.
-
-> The container runtime would
+> Well that purely depends on the needed scope.
 > 
-> 1a) expect keys to be found inside a container's filesystem at the
-> usual location (/etc/keys/ima) but then also allow for a CA key that
-> is used to verify the signature of those keys; that CA key is
-> typically baked  into the Linux kernel when .ima is to be used, but
-> for containers and BYOK it's an additional file in the container's
-> filesystem
-> 
-> 1b) passing in keys via command line should be possible as well but 
-> that's an implementation detail
+> The audit container identifier is a neat thing.  But it absolutely
+> must be settable, so seems to conflict with your needs.
 
-I do think the namespace should use a mechanism that's as close as
-possible to the one on the physical system, so it shouldn't depend on
-the orchestration system doing anything (there might not even be one).
+I think not allowing duplicate entries for the lifetime of the log is
+required, which causes a problem since namespaces can die before this
+lifetime ends.  I think there is a nice security benefit in making it
+not user settable, but I don't think that's necessarily a requirement.
 
-The current way you install a new ima key is by adding it as root to
-_ima or by adding one signed by a key on the system keyring to .ima; I
-think this mechanism should be usable inside the namespace as well ...
-that's not to say there can't be other mechanisms, but mirroring the
-existing mechanism should be part of this.
+> Your patch puts an identifier on the user_namespace.  I'm not quite
+> sure, does that satisfy Stefan's needs?  A new ima ns if and only if
+> there is a new user ns?
 
-> 2) container runtime sets up either a restricted keyring [ 
-> https://elixir.bootlin.com/linux/latest/source/Documentation/crypto/asymmetric-keys.rst#L359 
-> ] if that CA key is found in the filesystem or a 'normal' keyring.
-> The container runtime then loads the keys onto that keyring; call
-> that keyring '.ima' or '_ima' for as long as the kernel knows what
-> keyring to search for.
+Part of the problem is that IMA needs an admin user ... to be able to
+read the log and set the policy and, when we get to appraisal, set and
+read the keyrings.  IMA NS iff user ns satisfies this, but the
+minimalist in me then asks why not make them the same thing?
 
-and this keyring should be owned by the admin of the IMA namespace.
+> I think you two need to get together and discuss the requirements,
+> and come back with a brief but very precise document explaining what
+> you need.
 
->  We created that keyring under a session keyring. With
-> the user namespace isolation and keyrings support in the user
-> namespace the  isolation of the IMA related keyrings between
-> different user namespaces should be possible.
+> Are you both looking at the same use case?  Who is consuming the
+> audit log, and to what end?  Container administrators?  Any time they
+> log in? How do they assure themselves that the securityfs file
+> they're reading hasn't been overmounted?
 
-Yes, I think so.  Really system keyrings are keyrings root can't create
-but which are owned by root, so it can see them.  This mechanism should
-carry over to the admin of the IMA namespace, so I see no reason why we
-can't set up mirrors of .ima/_ima in the keyring (user) namespace.
+There are several different use cases.  I'm asking how I would use the
+IMA namespace for the unprivileged containers I usually set up by
+hand.  Stefan is looking at how docker/kubernetes would do it.  There's
+also the Huawei use case which is a sort of attestation for function as
+a service and there's the Red Hat use case for OpenShift.
 
-Part of the reason why I think using the user namespace for the IMA
-namespace is because this will have to be done on first create of a new
-IMA namespace, so it's much easier if the keyring and IMA namespaces
-are the same namespace.
+However, the common denominator in all of these is they require a way
+to uniquely distinguish the containers, which is why the patch series I
+sent as an RFC starts that way.  If we can start with the common
+elements, we can build towards something that satisfies all the use
+cases ... and allow consensus to emerge as further patches are
+discussed.
 
-> The same would be done for the IMA policy where the container
-> runtime also needs to do some work that usually dracut would do:
-> 
-> - expect the IMA policy for the container at the usual location 
-> (/etc/ima/ima-policy) and load it into the container's 'securityfs' 
-> policy file
+Part of my problem is I don't really know what I need, I just want IMA
+namespaces to work easily for the unprivileged use case and I'll figure
+it out as I play with it ... but to do that I need something to start
+playing with.
 
-Right, since non system containers don't boot, we discount the kernel
-command line option.  Once we have the securityfs namespaced for the
-IMA files, doing the policy write should be trivial.  The next question
-would be how to process it so that we don't cause a security breach
-(like turn of measurement on a filesystem where the original policy
-required it).
+> I need to find a document to read about IMA's usage of PCRs.  For
+> namespacing, are you expecting each container to be hooked up to a
+> swtmp instance so they have their own PCR they can use?
+
+That's one of the most complicated things of all: trying to attach a
+vTPM to store the local extensions and quote the IMA log in the
+namespace.  The Huawei patch doesn't have it, because they don't really
+need it (they just want global attestation to work), the IBM patches
+do.  I think there are many ways of attesting to the subset of the log
+in the namespace, so I don't think a vTPM is required.  I do, however,
+think it should be supported for the use cases that need it.
 
 James
 
