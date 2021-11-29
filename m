@@ -1,98 +1,132 @@
-Received: from bedivere.hansenpartnership.com (bedivere.hansenpartnership.com [96.44.175.130])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C405A68
-	for <containers@lists.linux.dev>; Mon, 29 Nov 2021 12:50:55 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-	d=hansenpartnership.com; s=20151216; t=1638190254;
-	bh=p51CiI6kvkB7i3xNd9hwj5ti8bRYeypYxaIDHt2VT6g=;
-	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:From;
-	b=h1n5K2mU9XRvKCiCOjUYqS78hwhAYk5xyGdlXik45XNXdxToIs1ePTn6OvZNFLTrs
-	 gJH/CZm4TXEchNp/U36ABYkEc8eSMELJky+GG0BXiLqzpx8Y+yeI6iHeIXGFcpo5Qm
-	 UMpY2BJktGDAbIyyLX449ECqAQdOZRqd5NB0bSCk=
-Received: from localhost (localhost [127.0.0.1])
-	by bedivere.hansenpartnership.com (Postfix) with ESMTP id C344F1280636;
-	Mon, 29 Nov 2021 07:50:54 -0500 (EST)
-Received: from bedivere.hansenpartnership.com ([127.0.0.1])
-	by localhost (bedivere.hansenpartnership.com [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 35x5n_PyVwyX; Mon, 29 Nov 2021 07:50:54 -0500 (EST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-	d=hansenpartnership.com; s=20151216; t=1638190254;
-	bh=p51CiI6kvkB7i3xNd9hwj5ti8bRYeypYxaIDHt2VT6g=;
-	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:From;
-	b=h1n5K2mU9XRvKCiCOjUYqS78hwhAYk5xyGdlXik45XNXdxToIs1ePTn6OvZNFLTrs
-	 gJH/CZm4TXEchNp/U36ABYkEc8eSMELJky+GG0BXiLqzpx8Y+yeI6iHeIXGFcpo5Qm
-	 UMpY2BJktGDAbIyyLX449ECqAQdOZRqd5NB0bSCk=
-Received: from [IPv6:2601:5c4:4300:c551::c447] (unknown [IPv6:2601:5c4:4300:c551::c447])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by bedivere.hansenpartnership.com (Postfix) with ESMTPSA id 81C841280518;
-	Mon, 29 Nov 2021 07:50:53 -0500 (EST)
-Message-ID: <755446b10c8415fd469b814535c4a12964af3264.camel@HansenPartnership.com>
-Subject: Re: [RFC 3/3] ima: make the integrity inode cache per namespace
-From: James Bottomley <James.Bottomley@HansenPartnership.com>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C455768
+	for <containers@lists.linux.dev>; Mon, 29 Nov 2021 12:55:34 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A5832C004E1;
+	Mon, 29 Nov 2021 12:55:30 +0000 (UTC)
+Date: Mon, 29 Nov 2021 13:55:27 +0100
+From: Christian Brauner <christian.brauner@ubuntu.com>
 To: "Serge E. Hallyn" <serge@hallyn.com>
-Cc: linux-integrity@vger.kernel.org, containers@lists.linux.dev, Mimi Zohar
- <zohar@linux.ibm.com>, Dmitry Kasatkin <dmitry.kasatkin@gmail.com>, Stefan
- Berger <stefanb@linux.ibm.com>, "Eric W . Biederman"
- <ebiederm@xmission.com>,  krzysztof.struczynski@huawei.com, Roberto Sassu
- <roberto.sassu@huawei.com>,  Michael Peters <mpeters@redhat.com>, Luke
- Hinds <lhinds@redhat.com>, Lily Sturmann <lsturman@redhat.com>,  Patrick
- Uiterwijk <puiterwi@redhat.com>, Christian Brauner <christian@brauner.io>
-Date: Mon, 29 Nov 2021 07:50:52 -0500
-In-Reply-To: <20211129045834.GB20606@mail.hallyn.com>
-References: <20211127164549.2571457-1-James.Bottomley@HansenPartnership.com>
-	 <20211127164549.2571457-4-James.Bottomley@HansenPartnership.com>
-	 <20211129045834.GB20606@mail.hallyn.com>
-Content-Type: text/plain; charset="UTF-8"
-User-Agent: Evolution 3.34.4 
+Cc: Christian Brauner <brauner@kernel.org>,
+	Al Viro <viro@zeniv.linux.org.uk>, Christoph Hellwig <hch@lst.de>,
+	Kees Cook <keescook@chromium.org>,
+	Sargun Dhillon <sargun@sargun.me>, Jann Horn <jannh@google.com>,
+	Henning Schild <henning.schild@siemens.com>,
+	Andrei Vagin <avagin@gmail.com>, Laurent Vivier <laurent@vivier.eu>,
+	Matthew Bobrowski <repnop@google.com>,
+	linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+	linux-api@vger.kernel.org, containers@lists.linux.dev
+Subject: Re: [PATCH 2/2] binfmt_misc: enable sandboxed mounts
+Message-ID: <20211129125527.fcljhmg4hfpdnseu@wittgenstein>
+References: <20211028103114.2849140-1-brauner@kernel.org>
+ <20211028103114.2849140-2-brauner@kernel.org>
+ <20211105043000.GA25244@mail.hallyn.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+In-Reply-To: <20211105043000.GA25244@mail.hallyn.com>
 
-On Sun, 2021-11-28 at 22:58 -0600, Serge E. Hallyn wrote:
-> On Sat, Nov 27, 2021 at 04:45:49PM +0000, James Bottomley wrote:
-> > Currently we get one entry in the IMA log per unique file
-> > event.  So, if you have a measurement policy and it measures a
-> > particular binary it will not get measured again if it is
-> > subsequently executed. For Namespaced IMA, the correct behaviour
-> > seems to be to log once per inode per namespace (so every unique
-> > execution in a namespace gets a separate log entry).  Since logging
-> > once per inode per namespace is
+On Thu, Nov 04, 2021 at 11:30:00PM -0500, Serge Hallyn wrote:
+> On Thu, Oct 28, 2021 at 12:31:14PM +0200, Christian Brauner wrote:
+> > From: Laurent Vivier <laurent@vivier.eu>
+> > 
+> > Enable unprivileged sandboxes to create their own binfmt_misc mounts.
+> > This is based on Laurent's work in [1] but has been significantly
+> > reworked to fix various issues we identified in earlier versions.
+> > 
+> > While binfmt_misc can currently only be mounted in the initial user
+> > namespace, binary types registered in this binfmt_misc instance are
+> > available to all sandboxes (Either by having them installed in the
+> > sandbox or by registering the binary type with the F flag causing the
+> > interpreter to be opened right away). So binfmt_misc binary types are
+> > already delegated to sandboxes implicitly.
+> > 
+> > However, while a sandbox has access to all registered binary types in
+> > binfmt_misc a sandbox cannot currently register its own binary types
+> > in binfmt_misc. This has prevented various use-cases some of which were
+> > already outlined in [1] but we have a range of issues associated with
+> > this (cf. [3]-[5] below which are just a small sample).
+> > 
+> > Extend binfmt_misc to be mountable in non-initial user namespaces.
+> > Similar to other filesystem such as nfsd, mqueue, and sunrpc we use
+> > keyed superblock management. The key determines whether we need to
+> > create a new superblock or can reuse an already existing one. We use the
+> > user namespace of the mount as key. This means a new binfmt_misc
+> > superblock is created once per user namespace creation. Subsequent
+> > mounts of binfmt_misc in the same user namespace will mount the same
+> > binfmt_misc instance. We explicitly do not create a new binfmt_misc
+> > superblock on every binfmt_misc mount as the semantics for
+> > load_misc_binary() line up with the keying model. This also allows us to
+> > retrieve the relevant binfmt_misc instance based on the caller's user
+> > namespace which can be done in a simple (bounded to 32 levels) loop.
+> > 
+> > Similar to the current binfmt_misc semantics allowing access to the
+> > binary types in the initial binfmt_misc instance we do allow sandboxes
+> > access to their parent's binfmt_misc mounts if they do not have created
+> > a separate binfmt_misc instance.
+> > 
+> > Overall, this will unblock the use-cases mentioned below and in general
+> > will also allow to support and harden execution of another
+> > architecture's binaries in tight sandboxes. For instance, using the
+> > unshare binary it possible to start a chroot of another architecture and
+> > configure the binfmt_misc interpreter without being root to run the
+> > binaries in this chroot and without requiring the host to modify its
+> > binary type handlers.
+> > 
+> > Henning had already posted a few experiments in the cover letter at [1].
+> > But here's an additional example where an unprivileged container
+> > registers qemu-user-static binary handlers for various binary types in
+> > its separate binfmt_misc mount and is then seamlessly able to start
+> > containers with a different architecture without affecting the host:
+> > 
+> > [lxc monitor] /var/lib/lxc imp2
+> >  \_ /sbin/init
+> >      \_ /lib/systemd/systemd-journald
+> >      \_ /lib/systemd/systemd-udevd
+> >      \_ /lib/systemd/systemd-networkd
+> >      \_ /usr/sbin/cron -f -P
+> >      \_ @dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only
+> >      \_ /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
+> >      \_ /usr/sbin/rsyslogd -n -iNONE
+> >      \_ /lib/systemd/systemd-logind
+> >      \_ /lib/systemd/systemd-resolved
+> >      \_ dnsmasq --conf-file=/dev/null -u lxc-dnsmasq --strict-order --bind-interfaces --pid-file=/run/lxc/dnsmasq.pid --liste
+> >      \_ /sbin/agetty -o -p -- \u --noclear --keep-baud console 115200,38400,9600 vt220
+> >      \_ /sbin/agetty -o -p -- \u --noclear --keep-baud pts/0 115200,38400,9600 vt220
+> >      \_ /sbin/agetty -o -p -- \u --noclear --keep-baud pts/1 115200,38400,9600 vt220
+> >      \_ /sbin/agetty -o -p -- \u --noclear --keep-baud pts/2 115200,38400,9600 vt220
+> >      \_ /sbin/agetty -o -p -- \u --noclear --keep-baud pts/3 115200,38400,9600 vt220
+> >      \_ [lxc monitor] /var/lib/lxc alp1
+> >          \_ /usr/libexec/qemu-binfmt/ppc64le-binfmt-P /sbin/init /sbin/init
+> >              \_ /usr/libexec/qemu-binfmt/ppc64le-binfmt-P /lib/systemd/systemd-journald /lib/systemd/systemd-journald
+> >              \_ /usr/libexec/qemu-binfmt/ppc64le-binfmt-P /lib/systemd/systemd-udevd /lib/systemd/systemd-udevd
+> >              \_ /usr/libexec/qemu-binfmt/ppc64le-binfmt-P /usr/sbin/cron /usr/sbin/cron -f -P
+> >              \_ /usr/libexec/qemu-binfmt/ppc64le-binfmt-P /lib/systemd/systemd-resolved /lib/systemd/systemd-resolved
+> >              \_ /usr/libexec/qemu-binfmt/ppc64le-binfmt-P /lib/systemd/systemd-logind /lib/systemd/systemd-logind
+> > 
+> > Link: https://lore.kernel.org/r/20191216091220.465626-2-laurent@vivier.eu
+> > [1]: https://lore.kernel.org/all/20191216091220.465626-1-laurent@vivier.eu
+> > [2]: https://discuss.linuxcontainers.org/t/binfmt-misc-permission-denied
+> > [3]: https://discuss.linuxcontainers.org/t/lxd-binfmt-support-for-qemu-static-interpreters
+> > [4]: https://discuss.linuxcontainers.org/t/3-1-0-binfmt-support-service-in-unprivileged-guest-requires-write-access-on-hosts-proc-sys-fs-binfmt-misc
+> > [5]: https://discuss.linuxcontainers.org/t/qemu-user-static-not-working-4-11
+> > Cc: Sargun Dhillon <sargun@sargun.me>
+> > Cc: Serge Hallyn <serge@hallyn.com>
 > 
-> I suspect I'll need to do a more in depth reading of the existing
-> code, but I'll ask the lazy question anyway (since you say "the
-> correct behavior seems to be") - is it actually important that
-> files which were appraised under a parent namespace's policy already
-> should be logged again?
+> I *think* this is ok.  I'm still trying to convince myself that there is
+> no way for evict_inode() to run after the kfree(ns->binfmt_misc), but
+> it doesn't look like there is.
+> 
+> Does this memory (as the number of register entries grows) need to be
+> accounted for and/or limited ?
 
-I think so.  For a couple of reasons, assuming the namespace eventually
-gets its own log entries, which the next incremental patch proposed to
-do by virtualizing the securityfs entries.  If you don't do this:
+Good point. We should pass GFP_KERNEL_ACCOUNT andor use a cache with
+SLAB_ACCOUNT. I'll fix that up.
 
-   1. The namespace log will be incomplete in a random way depending on
-      what execution preceded it.  This violates the principle of least
-      surprise, because you at least expect the IMA log to be consistent
-      per set of executions.
-   2. A malicious namespace owner can use the missing information in their
-      log to infer the execution of others, which is an information leak
-      IMA tries to prevent by keeping the log readable only by root.
-
->   Since you used the word "log" I'm assuming this isn't building a
-> running hash like a tpm pcr where skipping one would invalidate
-> rmeote attestation?
-
-Their is only one IMA log, so each entry must be extended through the
-PCR to keep the quote correct.  That means each per namespace entry
-does extend the PCR.  However, since the entire entry is logged and the
-namespace uuid is part of the entry, the entry hash is different for
-each, so the IMA rule about duplicate log entries doesn't apply, if
-that was the worry?
-
-James
-
-
+Christian
