@@ -1,27 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C455768
-	for <containers@lists.linux.dev>; Mon, 29 Nov 2021 12:55:34 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A5832C004E1;
-	Mon, 29 Nov 2021 12:55:30 +0000 (UTC)
-Date: Mon, 29 Nov 2021 13:55:27 +0100
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D107768
+	for <containers@lists.linux.dev>; Mon, 29 Nov 2021 13:13:01 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id D0AABC004E1;
+	Mon, 29 Nov 2021 13:12:57 +0000 (UTC)
+Date: Mon, 29 Nov 2021 14:12:54 +0100
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: "Serge E. Hallyn" <serge@hallyn.com>
-Cc: Christian Brauner <brauner@kernel.org>,
-	Al Viro <viro@zeniv.linux.org.uk>, Christoph Hellwig <hch@lst.de>,
-	Kees Cook <keescook@chromium.org>,
-	Sargun Dhillon <sargun@sargun.me>, Jann Horn <jannh@google.com>,
-	Henning Schild <henning.schild@siemens.com>,
-	Andrei Vagin <avagin@gmail.com>, Laurent Vivier <laurent@vivier.eu>,
-	Matthew Bobrowski <repnop@google.com>,
-	linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-api@vger.kernel.org, containers@lists.linux.dev
-Subject: Re: [PATCH 2/2] binfmt_misc: enable sandboxed mounts
-Message-ID: <20211129125527.fcljhmg4hfpdnseu@wittgenstein>
-References: <20211028103114.2849140-1-brauner@kernel.org>
- <20211028103114.2849140-2-brauner@kernel.org>
- <20211105043000.GA25244@mail.hallyn.com>
+Cc: James Bottomley <James.Bottomley@HansenPartnership.com>,
+	linux-integrity@vger.kernel.org, containers@lists.linux.dev,
+	Mimi Zohar <zohar@linux.ibm.com>,
+	Dmitry Kasatkin <dmitry.kasatkin@gmail.com>,
+	Stefan Berger <stefanb@linux.ibm.com>,
+	"Eric W . Biederman" <ebiederm@xmission.com>,
+	krzysztof.struczynski@huawei.com,
+	Roberto Sassu <roberto.sassu@huawei.com>,
+	Michael Peters <mpeters@redhat.com>, Luke Hinds <lhinds@redhat.com>,
+	Lily Sturmann <lsturman@redhat.com>,
+	Patrick Uiterwijk <puiterwi@redhat.com>,
+	Christian Brauner <christian@brauner.io>
+Subject: Re: [RFC 1/3] userns: add uuid field
+Message-ID: <20211129131254.sfr7gy7mc25tclri@wittgenstein>
+References: <20211127164549.2571457-1-James.Bottomley@HansenPartnership.com>
+ <20211127164549.2571457-2-James.Bottomley@HansenPartnership.com>
+ <20211128044558.GA11794@mail.hallyn.com>
+ <2e32a6897877ed600de64b3d664dc6014389dbe4.camel@HansenPartnership.com>
+ <20211128151805.GA15306@mail.hallyn.com>
+ <60c99d461368593dfd51765c527b01c6bf0a9fea.camel@HansenPartnership.com>
+ <20211128204715.GA17707@mail.hallyn.com>
+ <e1b36c9c36f0f6d3262de6141ad67e8044cfeade.camel@HansenPartnership.com>
+ <20211128214906.GA18470@mail.hallyn.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
@@ -30,103 +39,119 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20211105043000.GA25244@mail.hallyn.com>
+In-Reply-To: <20211128214906.GA18470@mail.hallyn.com>
 
-On Thu, Nov 04, 2021 at 11:30:00PM -0500, Serge Hallyn wrote:
-> On Thu, Oct 28, 2021 at 12:31:14PM +0200, Christian Brauner wrote:
-> > From: Laurent Vivier <laurent@vivier.eu>
+On Sun, Nov 28, 2021 at 03:49:06PM -0600, Serge Hallyn wrote:
+> On Sun, Nov 28, 2021 at 04:21:29PM -0500, James Bottomley wrote:
+> > On Sun, 2021-11-28 at 14:47 -0600, Serge E. Hallyn wrote:
+> > > On Sun, Nov 28, 2021 at 01:00:28PM -0500, James Bottomley wrote:
+> > > > On Sun, 2021-11-28 at 09:18 -0600, Serge E. Hallyn wrote:
+> > > > > On Sun, Nov 28, 2021 at 08:29:21AM -0500, James Bottomley wrote:
+> > > > > > On Sat, 2021-11-27 at 22:45 -0600, Serge E. Hallyn wrote:
+> > > > > > > On Sat, Nov 27, 2021 at 04:45:47PM +0000, James Bottomley
+> > > > > > > wrote:
+> > > > > > > > As a precursor to namespacing IMA a way of uniquely
+> > > > > > > > identifying the namespace to appear in the IMA log is
+> > > > > > > > needed.  This log may be transported away from the running
+> > > > > > > > system and may be analyzed even after the system has been
+> > > > > > > > rebooted.  Thus we need a way of identifying namespaces in
+> > > > > > > > the log which is unique.  UUID, being designed
+> > > > > > > > probabilistically never to repeat, fits this bill
+> > > > > > > > so add it to the user_namespace which we'll also use for
+> > > > > > > > namespacing IMA.
+> > > > > > > 
+> > > > > > > If the logs run across 5 boots, is it important to you that
+> > > > > > > the uuid be unique across all 5 boots?  Would it suffice to
+> > > > > > > have a per-boot unique count and report that plus some
+> > > > > > > indicator of the current boot (like boot time in jiffies)?
+> > > > > > 
+> > > > > > For the purposes of IMA it's only really important to have the
+> > > > > > uuid be unique within the particular log ... i.e. unique per
+> > > > > > boot.  However, given the prevalence of uuids elsewhere and the
+> > > > > > fact we have no current per-boot unique label for the namespace
+> > > > > > (the inode number could repeat), it seemed reasonable to employ
+> > > > > > uuids for this rather than invent a different identifier.  Plus
+> > > > > > IMA isn't going to complain if we have a globally unique
+> > > > > > identifier
+> > > > > > ...
+> > > > > 
+> > > > > Ok - Note I'm not saying I heavily object, but I'm mildly
+> > > > > concerned about users who happen to spin off a lot of user
+> > > > > namespaces for quick jobs being penalized.
+> > > > 
+> > > > Well, that's why I use the uuid_gen coupled to prandom ... there
+> > > > shouldn't be a measurable overhead generating it.
+> > > 
+> > > Does prandom have *no*, or just little effect on the entopy pool?
+> > > Tried briefly looking at prandom_u32, not quite getting how it's
+> > > using net_rand_state - it reads it and uses it but doesn't make
+> > > any changes to it?
 > > 
-> > Enable unprivileged sandboxes to create their own binfmt_misc mounts.
-> > This is based on Laurent's work in [1] but has been significantly
-> > reworked to fix various issues we identified in earlier versions.
-> > 
-> > While binfmt_misc can currently only be mounted in the initial user
-> > namespace, binary types registered in this binfmt_misc instance are
-> > available to all sandboxes (Either by having them installed in the
-> > sandbox or by registering the binary type with the F flag causing the
-> > interpreter to be opened right away). So binfmt_misc binary types are
-> > already delegated to sandboxes implicitly.
-> > 
-> > However, while a sandbox has access to all registered binary types in
-> > binfmt_misc a sandbox cannot currently register its own binary types
-> > in binfmt_misc. This has prevented various use-cases some of which were
-> > already outlined in [1] but we have a range of issues associated with
-> > this (cf. [3]-[5] below which are just a small sample).
-> > 
-> > Extend binfmt_misc to be mountable in non-initial user namespaces.
-> > Similar to other filesystem such as nfsd, mqueue, and sunrpc we use
-> > keyed superblock management. The key determines whether we need to
-> > create a new superblock or can reuse an already existing one. We use the
-> > user namespace of the mount as key. This means a new binfmt_misc
-> > superblock is created once per user namespace creation. Subsequent
-> > mounts of binfmt_misc in the same user namespace will mount the same
-> > binfmt_misc instance. We explicitly do not create a new binfmt_misc
-> > superblock on every binfmt_misc mount as the semantics for
-> > load_misc_binary() line up with the keying model. This also allows us to
-> > retrieve the relevant binfmt_misc instance based on the caller's user
-> > namespace which can be done in a simple (bounded to 32 levels) loop.
-> > 
-> > Similar to the current binfmt_misc semantics allowing access to the
-> > binary types in the initial binfmt_misc instance we do allow sandboxes
-> > access to their parent's binfmt_misc mounts if they do not have created
-> > a separate binfmt_misc instance.
-> > 
-> > Overall, this will unblock the use-cases mentioned below and in general
-> > will also allow to support and harden execution of another
-> > architecture's binaries in tight sandboxes. For instance, using the
-> > unshare binary it possible to start a chroot of another architecture and
-> > configure the binfmt_misc interpreter without being root to run the
-> > binaries in this chroot and without requiring the host to modify its
-> > binary type handlers.
-> > 
-> > Henning had already posted a few experiments in the cover letter at [1].
-> > But here's an additional example where an unprivileged container
-> > registers qemu-user-static binary handlers for various binary types in
-> > its separate binfmt_misc mount and is then seamlessly able to start
-> > containers with a different architecture without affecting the host:
-> > 
-> > [lxc monitor] /var/lib/lxc imp2
-> >  \_ /sbin/init
-> >      \_ /lib/systemd/systemd-journald
-> >      \_ /lib/systemd/systemd-udevd
-> >      \_ /lib/systemd/systemd-networkd
-> >      \_ /usr/sbin/cron -f -P
-> >      \_ @dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only
-> >      \_ /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
-> >      \_ /usr/sbin/rsyslogd -n -iNONE
-> >      \_ /lib/systemd/systemd-logind
-> >      \_ /lib/systemd/systemd-resolved
-> >      \_ dnsmasq --conf-file=/dev/null -u lxc-dnsmasq --strict-order --bind-interfaces --pid-file=/run/lxc/dnsmasq.pid --liste
-> >      \_ /sbin/agetty -o -p -- \u --noclear --keep-baud console 115200,38400,9600 vt220
-> >      \_ /sbin/agetty -o -p -- \u --noclear --keep-baud pts/0 115200,38400,9600 vt220
-> >      \_ /sbin/agetty -o -p -- \u --noclear --keep-baud pts/1 115200,38400,9600 vt220
-> >      \_ /sbin/agetty -o -p -- \u --noclear --keep-baud pts/2 115200,38400,9600 vt220
-> >      \_ /sbin/agetty -o -p -- \u --noclear --keep-baud pts/3 115200,38400,9600 vt220
-> >      \_ [lxc monitor] /var/lib/lxc alp1
-> >          \_ /usr/libexec/qemu-binfmt/ppc64le-binfmt-P /sbin/init /sbin/init
-> >              \_ /usr/libexec/qemu-binfmt/ppc64le-binfmt-P /lib/systemd/systemd-journald /lib/systemd/systemd-journald
-> >              \_ /usr/libexec/qemu-binfmt/ppc64le-binfmt-P /lib/systemd/systemd-udevd /lib/systemd/systemd-udevd
-> >              \_ /usr/libexec/qemu-binfmt/ppc64le-binfmt-P /usr/sbin/cron /usr/sbin/cron -f -P
-> >              \_ /usr/libexec/qemu-binfmt/ppc64le-binfmt-P /lib/systemd/systemd-resolved /lib/systemd/systemd-resolved
-> >              \_ /usr/libexec/qemu-binfmt/ppc64le-binfmt-P /lib/systemd/systemd-logind /lib/systemd/systemd-logind
-> > 
-> > Link: https://lore.kernel.org/r/20191216091220.465626-2-laurent@vivier.eu
-> > [1]: https://lore.kernel.org/all/20191216091220.465626-1-laurent@vivier.eu
-> > [2]: https://discuss.linuxcontainers.org/t/binfmt-misc-permission-denied
-> > [3]: https://discuss.linuxcontainers.org/t/lxd-binfmt-support-for-qemu-static-interpreters
-> > [4]: https://discuss.linuxcontainers.org/t/3-1-0-binfmt-support-service-in-unprivileged-guest-requires-write-access-on-hosts-proc-sys-fs-binfmt-misc
-> > [5]: https://discuss.linuxcontainers.org/t/qemu-user-static-not-working-4-11
-> > Cc: Sargun Dhillon <sargun@sargun.me>
-> > Cc: Serge Hallyn <serge@hallyn.com>
+> > It has a first use effect to get the seed but once that happens it has
+> > no further effect on the entropy pool.
 > 
-> I *think* this is ok.  I'm still trying to convince myself that there is
-> no way for evict_inode() to run after the kfree(ns->binfmt_misc), but
-> it doesn't look like there is.
+> Gotcha - thanks.
 > 
-> Does this memory (as the number of register entries grows) need to be
-> accounted for and/or limited ?
+> > > > >   I suspect Eric will also worry about the namespacing
+> > > > > implications - i.e. people *will* want to start restoring user
+> > > > > namespaces with a previously used uuid.
+> > > > 
+> > > > So this is a problem I tried to address in the last paragraph.  If
+> > > > I put any marker on a namespace, people are potentially going to
+> > > > want to save and restore it. The bottom line is that ima logs are
+> > > > add only.  You can't save and restore them so we're already dealing
+> > > > with something that can't be CRIU transported.  I had hoped that it
+> > > > would be obvious that a randomly generated uuid, whose uniqueness
+> > > > depends on random generation likewise can't be saved and restored
+> > > > because we'd have no way to prevent a clash.
+> > > 
+> > > Yes but you're making this a general user_namespace struct member.
+> > > So once that's there people will want to export it, use it for
+> > > things other than ima.
+> > 
+> > Yes, that's why I did it.  However, the property of uniqueness for all
+> > uuid type things depends on randomness, so ipso facto, they can never
+> > be settable.
+> > 
+> > > > > So given that 'unique per boot' is sufficient, what would be the
+> > > > > problem with simply adding a simple ever-increasing unique atomix
+> > > > > count to the struct user_namespace?
+> > > > 
+> > > > I don't think there is any ... but I equally don't see why people
+> > > > would want to save and restore the uuid but not the new monotonic
+> > > > identifier ... because it's still just a marker on a namespace.
+> > > 
+> > > But you've called it "the namespace uuid".  I'm not even really
+> > > thinking of checkpoint/restart, just stopping and restarting a
+> > > container.  I'm convinced people will want to start using it because,
+> > > well, it is a nice feature.
+> > 
+> > Right, but the uniqueness property depends on you not being able to set
+> > it.  If you just want a namespace label, you can have that, but
+> > anything a user can set is either a pain to guarantee uniqueness (have
+> > to check all the other objects) or is simply a non-unique label.
+> > 
+> > If you want to label a container, which could have many namespaces and
+> > be stopped and restarted many times, it does sound like you want a non-
+> > unique settable label.  However, IMA definitely needs a guaranteed per
+> > namespace unique label.
+> > 
+> > Is the objection simply you think a UUID sound like it should be
+> 
+> Objection is too strong.  Concern.
+> 
+> But yes, to me a uuid (a) feels like it should be generally useful
+> including being settable and (b) not super duper 100% absolutely
+> guaranteed to always be unique per boot, as an incremented counter
+> would be.
 
-Good point. We should pass GFP_KERNEL_ACCOUNT andor use a cache with
-SLAB_ACCOUNT. I'll fix that up.
+I don't have strong feelings about uuid or counter. In something like an
+IMA log a uuid might be better but idk. I don't know enough about IMA to
+judge that.
+I see the problem you're getting at though. Making this a member of
+struct user_namespace will give the impression that is a generic
+identifier. I'd rather make it clear that this is an IMA-only thing.
+Ideally by not having it be a member of struct user_namespace at all or
+at least by naming it ima_uuid or similar.
 
 Christian
