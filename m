@@ -1,114 +1,68 @@
-Received: from bedivere.hansenpartnership.com (bedivere.hansenpartnership.com [96.44.175.130])
+Received: from us-smtp-delivery-44.mimecast.com (us-smtp-delivery-44.mimecast.com [205.139.111.44])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B6AB172
-	for <containers@lists.linux.dev>; Mon, 29 Nov 2021 17:29:04 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-	d=hansenpartnership.com; s=20151216; t=1638206943;
-	bh=tr0JLk6qKvAnEjWDEXB82mOEdfU6Wn/gr7hw226U6xg=;
-	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:From;
-	b=I+qldLTbuZVtzS23cHM7po6s6S8lCiFnm6llODhKLDzUPGns7Q7nmftEt+D87fHOH
-	 /q+pazW1OEjCjMuVxTjqB38WPdHcml2Cd5E8FLUHCmbqZ88xkYnn9aIydgEZywNj5N
-	 r8lpGIC+ItvSszwGYdONLpf+zq3OblazKLJxmqHw=
-Received: from localhost (localhost [127.0.0.1])
-	by bedivere.hansenpartnership.com (Postfix) with ESMTP id EDA4112808E1;
-	Mon, 29 Nov 2021 12:29:03 -0500 (EST)
-Received: from bedivere.hansenpartnership.com ([127.0.0.1])
-	by localhost (bedivere.hansenpartnership.com [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id uriTwyl-_eyu; Mon, 29 Nov 2021 12:29:03 -0500 (EST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-	d=hansenpartnership.com; s=20151216; t=1638206943;
-	bh=tr0JLk6qKvAnEjWDEXB82mOEdfU6Wn/gr7hw226U6xg=;
-	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:From;
-	b=I+qldLTbuZVtzS23cHM7po6s6S8lCiFnm6llODhKLDzUPGns7Q7nmftEt+D87fHOH
-	 /q+pazW1OEjCjMuVxTjqB38WPdHcml2Cd5E8FLUHCmbqZ88xkYnn9aIydgEZywNj5N
-	 r8lpGIC+ItvSszwGYdONLpf+zq3OblazKLJxmqHw=
-Received: from jarvis.int.hansenpartnership.com (unknown [IPv6:2601:5c4:4300:c551::c447])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9791E68
+	for <containers@lists.linux.dev>; Mon, 29 Nov 2021 20:38:30 +0000 (UTC)
+Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
+ [209.132.183.4]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ us-mta-258-lM7yZ2ULPMyyCWsW7VrROA-1; Mon, 29 Nov 2021 15:38:19 -0500
+X-MC-Unique: lM7yZ2ULPMyyCWsW7VrROA-1
+Received: from smtp.corp.redhat.com (int-mx07.intmail.prod.int.phx2.redhat.com [10.5.11.22])
+	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
 	(No client certificate requested)
-	by bedivere.hansenpartnership.com (Postfix) with ESMTPSA id 8F52E12806D9;
-	Mon, 29 Nov 2021 12:29:02 -0500 (EST)
-Message-ID: <06ac5a1b4186097b827ce9886d28ad0a3cfe5c1e.camel@HansenPartnership.com>
-Subject: Re: [RFC 3/3] ima: make the integrity inode cache per namespace
-From: James Bottomley <James.Bottomley@HansenPartnership.com>
-To: Stefan Berger <stefanb@linux.ibm.com>, Christian Brauner
-	 <christian.brauner@ubuntu.com>, "Serge E. Hallyn" <serge@hallyn.com>
-Cc: linux-integrity@vger.kernel.org, containers@lists.linux.dev, Mimi Zohar
- <zohar@linux.ibm.com>, Dmitry Kasatkin <dmitry.kasatkin@gmail.com>, "Eric W
- . Biederman" <ebiederm@xmission.com>, krzysztof.struczynski@huawei.com,
- Roberto Sassu <roberto.sassu@huawei.com>, Michael Peters
- <mpeters@redhat.com>, Luke Hinds <lhinds@redhat.com>, Lily Sturmann
- <lsturman@redhat.com>, Patrick Uiterwijk <puiterwi@redhat.com>, Christian
- Brauner <christian@brauner.io>
-Date: Mon, 29 Nov 2021 12:29:01 -0500
-In-Reply-To: <c73dd2cc-7915-9343-5ad0-e53c762e29a3@linux.ibm.com>
-References: <20211127164549.2571457-1-James.Bottomley@HansenPartnership.com>
-	 <20211127164549.2571457-4-James.Bottomley@HansenPartnership.com>
-	 <20211129045834.GB20606@mail.hallyn.com>
-	 <755446b10c8415fd469b814535c4a12964af3264.camel@HansenPartnership.com>
-	 <70b81e62-46af-9d39-3dcb-4cfbae645175@linux.ibm.com>
-	 <a74b18c1aee2b14426cc12e2fd336716c447f070.camel@HansenPartnership.com>
-	 <20211129142235.hez3ovtuj3rpscgm@wittgenstein>
-	 <afee2f0483271a6cdb1bc7b48b819a3ca2c4ceda.camel@HansenPartnership.com>
-	 <20211129153539.GA26325@mail.hallyn.com>
-	 <20211129161650.dtcvh2ozgquz6rli@wittgenstein>
-	 <c73dd2cc-7915-9343-5ad0-e53c762e29a3@linux.ibm.com>
-Content-Type: text/plain; charset="UTF-8"
-User-Agent: Evolution 3.34.4 
+	by mimecast-mx01.redhat.com (Postfix) with ESMTPS id A9A571853028;
+	Mon, 29 Nov 2021 20:38:18 +0000 (UTC)
+Received: from comp-core-i7-2640m-0182e6.redhat.com (unknown [10.36.110.3])
+	by smtp.corp.redhat.com (Postfix) with ESMTP id 3B5C410013D6;
+	Mon, 29 Nov 2021 20:38:17 +0000 (UTC)
+From: Alexey Gladkov <legion@kernel.org>
+To: LKML <linux-kernel@vger.kernel.org>,
+	Linux Containers <containers@lists.linux.dev>
+Cc: 0day robot <lkp@intel.com>,
+	"Eric W . Biederman" <ebiederm@xmission.com>,
+	lkp@lists.01.org
+Subject: [PATCH v2 0/2] ucounts: Fix rlimit max values check
+Date: Mon, 29 Nov 2021 21:37:24 +0100
+Message-Id: <cover.1638218242.git.legion@kernel.org>
+In-Reply-To: <20211129074730.GB18483@xsang-OptiPlex-9020>
+References: <20211129074730.GB18483@xsang-OptiPlex-9020>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
+X-Scanned-By: MIMEDefang 2.84 on 10.5.11.22
+Authentication-Results: relay.mimecast.com;
+	auth=pass smtp.auth=CUSA124A263 smtp.mailfrom=legion@kernel.org
+X-Mimecast-Spam-Score: 0
+X-Mimecast-Originator: kernel.org
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=WINDOWS-1252
 
-On Mon, 2021-11-29 at 12:04 -0500, Stefan Berger wrote:
-> On 11/29/21 11:16, Christian Brauner wrote:
-[...]
-> > I kept thinking about this question while I was out running and
-> > while I admittedly have reacted poorly to CLONE_NEWIMA patches
-> > before it feels to me that this is the right approach after all.
-> > Making it part of userns at least in this form isn't clean.
-> > 
-> > I think attaching a uuid to a userns alone for the sake of IMA is
-> > wrong. Additionally, I think a uuid only for the userns is too
-> > limited. This is similar to the problem of the audit container id.
-> > If we have some sort of uuid for ima it will automatically evolve
-> > into something like a container id (I'm not even arguing that this
-> > is necessarily wrong.). We also have the issue that we then have
-> > the container audit id thing - if this ever lands and the ima
-> > userns uuid. All that makes it quite messy.
-> > 
-> > I think CLONE_NEWIMA is ultimately nicer and allows the
-> > implementation to be decoupled from the userns and self-contained
-> > as possible.  This also means that ima ns works for privileged
-> > containers which sure is a valid use-case.
-> 
-> The thing is that piggy backing on the user namespace at least allows
-> us to 'always see' where IMA's keyring is (across setns()). If we
-> were  using an independent IMA namespace how would we guarantee that
-> the user sees the keyring for IMA appraisal? We would at least have
-> to take a  reference (as in get_user_ns()) to the user namespace when
-> the IMA namespace is created so that it at least the association of
-> IMA namespace to user namespace remains a constant and the keyring
-> IMA is using (and are held by the user namespace) is also constant
-> across setns()'s. Otherwise it is possible that the user could do
-> setns() to a different user namespace and be confused about the keys
-> IMA is using. So at least by piggy backing we have them together. The
-> aspect here may be 'usability'.
-> 
-> I am somewhat sold on the USER namespace piggy backing thing... as 
-> suggested by James.
+Checking the rlimit value specified in init_user_ns from the created userns=
+ does
+not work properly. The issue is that the maximum value is taken by the same
+rules as for ucounts. Because of this, we check the current rlimit counter =
+value
+with RLIM_INFINITY in init_user_ns.
 
-And to be clear, I don't think a separate IMA namespace is necessarily
-wrong a priori.  However, all the original patch sets had the separate
-namespace approach and I worry that the keyring namespace in user
-namespace has forced our hand somewhat, so I wanted at least to post a
-semi-usable patch set showing what would happen if the IMA namespace
-were the user namespace for illustration so it would serve as a basis
-for discussion.
+v2:
+- Fix a bug that was found by the lkp project.
 
-James
+--
 
+Alexey Gladkov (2):
+  ucounts: Fix rlimit max values check
+  ucounts: Move rlimit max values from ucounts max
+
+ include/linux/user_namespace.h | 17 ++++++++++++-----
+ kernel/fork.c                  | 10 +++++-----
+ kernel/ucount.c                | 19 +++++++++----------
+ kernel/user_namespace.c        | 10 +++++-----
+ 4 files changed, 31 insertions(+), 25 deletions(-)
+
+--=20
+2.33.0
 
