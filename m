@@ -1,51 +1,51 @@
 Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5439A2CA3
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 901E62CA8
 	for <containers@lists.linux.dev>; Tue, 30 Nov 2021 16:07:32 +0000 (UTC)
 Received: from pps.filterd (m0098396.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 1AUFkTfn019632;
-	Tue, 30 Nov 2021 16:07:16 GMT
+	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 1AUFkTUG019631;
+	Tue, 30 Nov 2021 16:07:19 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=pp1;
- bh=VYTWPfSyYwFG1xQaOzLT/ijBvyXA7xomQX6MzJY2mjU=;
- b=UyoJ09uWom/qA0ijXuLPbE8tOpIiHtXj8t3lZDhLQaV+5myL8hccDRUgPLBplitddYF+
- an3h+N2Im4juRtEXgmto3saWj8R4TZ9OYNIm7Q+0rgW4rDn7bitMoOi1mtw65Zno5Cgn
- /5W3MsdUnJwE0gg7eAwVoKij+Hp2f22WWtDSDg+zd6EwHxwAFGJlXP1NDutJSLFRtx4G
- YxsY08EsKTghJlplmKwxRJBU6uxNVyGUKvscq+VGI8hhL5MU2LNQEZdSEJhKQLIW9l7A
- yy6h8rArRXMLC3dy/7q/6aekfKS9oh3jOZ+rdYQ7rkVHYduA1KRyrFNn5/n1cqYesCCl 8Q== 
+ bh=HvSIr4/cE/ykM+BOl8ggkrbIKLz5U1uXYA78J57ufog=;
+ b=NQVHtdu3D0Bd2RiDaNXboEk+ZgdAZ4q9k3CmSiYrYl8nsi8n9btCrXABASIi+SOZrEOb
+ /rcUdNi7y1oyfZJT7c8mepu6GSbCv+jYUiOGpQsnsfwWhD+4g784trIxGTRHPr/1QBiD
+ LRfsbEhSRm6Xnp3DtYlumuLGV71ChTO5NGW/ckUa/tnGKuaLyP1bHzZEUG+4bVZkezds
+ yIar4cdPlFwUsoIjHO8xnugwoEKKlnfoBoZ3dmAURfUajeQ6saS82TXCkaUPLRaQWUrm
+ nGWlWiv/Dm0HjG2CALMuHUGXKBjp9jNVIkkQR62rY2tLFnhLXC3mPx5v/xMM80PVpyZ0 9g== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3cnpw4ghu2-1
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3cnpw4ghv3-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 30 Nov 2021 16:07:17 +0000
+Received: from m0098396.ppops.net (m0098396.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 1AUFl0Br023444;
+	Tue, 30 Nov 2021 16:07:16 GMT
+Received: from ppma02dal.us.ibm.com (a.bd.3ea9.ip4.static.sl-reverse.com [169.62.189.10])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3cnpw4ghud-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Tue, 30 Nov 2021 16:07:16 +0000
-Received: from m0098396.ppops.net (m0098396.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 1AUFkern020776;
+Received: from pps.filterd (ppma02dal.us.ibm.com [127.0.0.1])
+	by ppma02dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 1AUG4NH5023605;
 	Tue, 30 Nov 2021 16:07:15 GMT
-Received: from ppma04dal.us.ibm.com (7a.29.35a9.ip4.static.sl-reverse.com [169.53.41.122])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3cnpw4ghtf-1
+Received: from b01cxnp22035.gho.pok.ibm.com (b01cxnp22035.gho.pok.ibm.com [9.57.198.25])
+	by ppma02dal.us.ibm.com with ESMTP id 3cn5ey2839-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Tue, 30 Nov 2021 16:07:15 +0000
-Received: from pps.filterd (ppma04dal.us.ibm.com [127.0.0.1])
-	by ppma04dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 1AUG2paM024665;
-	Tue, 30 Nov 2021 16:07:14 GMT
-Received: from b01cxnp22034.gho.pok.ibm.com (b01cxnp22034.gho.pok.ibm.com [9.57.198.24])
-	by ppma04dal.us.ibm.com with ESMTP id 3cnne1b9u1-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 30 Nov 2021 16:07:14 +0000
 Received: from b01ledav003.gho.pok.ibm.com (b01ledav003.gho.pok.ibm.com [9.57.199.108])
-	by b01cxnp22034.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 1AUG7CVs49348926
+	by b01cxnp22035.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 1AUG7DFo18481582
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Tue, 30 Nov 2021 16:07:12 GMT
+	Tue, 30 Nov 2021 16:07:13 GMT
 Received: from b01ledav003.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 16271B2066;
-	Tue, 30 Nov 2021 16:07:12 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 506BDB209A;
+	Tue, 30 Nov 2021 16:07:13 +0000 (GMT)
 Received: from b01ledav003.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 03785B208D;
-	Tue, 30 Nov 2021 16:07:12 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 34878B2091;
+	Tue, 30 Nov 2021 16:07:13 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by b01ledav003.gho.pok.ibm.com (Postfix) with ESMTP;
-	Tue, 30 Nov 2021 16:07:11 +0000 (GMT)
+	Tue, 30 Nov 2021 16:07:13 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
@@ -55,10 +55,10 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
         lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
         jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
-        jmorris@namei.org, Stefan Berger <stefanb@linux.ibm.com>
-Subject: [RFC 09/20] ima: Only accept AUDIT rules for IMA non-init_ima_ns namespaces for now
-Date: Tue, 30 Nov 2021 11:06:43 -0500
-Message-Id: <20211130160654.1418231-10-stefanb@linux.ibm.com>
+        jmorris@namei.org, Denis Semakin <denis.semakin@huawei.com>
+Subject: [RFC 17/20] ima: Use integrity_admin_ns_capable() to check corresponding capability
+Date: Tue, 30 Nov 2021 11:06:51 -0500
+Message-Id: <20211130160654.1418231-18-stefanb@linux.ibm.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20211130160654.1418231-1-stefanb@linux.ibm.com>
 References: <20211130160654.1418231-1-stefanb@linux.ibm.com>
@@ -70,46 +70,41 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: b8H8dcfk5eYtv4zzaqlVmaKST0LR6vLs
-X-Proofpoint-ORIG-GUID: RWm9cdsZnXOupI1zgprMl9H67BC9ecPA
+X-Proofpoint-GUID: s2aGokf7_edb40E58NOr039WG-427ibL
+X-Proofpoint-ORIG-GUID: bO9JnrnDA_K5u2L7k0F-whjc2HbLO096
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.0.607.475
  definitions=2021-11-30_09,2021-11-28_01,2020-04-07_01
 X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 priorityscore=1501 mlxscore=0
- bulkscore=0 mlxlogscore=999 lowpriorityscore=0 clxscore=1015
+ bulkscore=0 mlxlogscore=831 lowpriorityscore=0 clxscore=1015
  malwarescore=0 phishscore=0 adultscore=0 impostorscore=0 spamscore=0
  suspectscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.12.0-2110150000 definitions=main-2111300084
 
-Only accept AUDIT rules for non-init_ima_ns namespaces rejecting all rules
-that require support for measuring, appraisal, and hashing.
+From: Denis Semakin <denis.semakin@huawei.com>
 
-Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
+Use integrity_admin_ns_capable() to check corresponding capability to
+allow read/write IMA policy without CAP_SYS_ADMIN but with
+CAP_INTEGRITY_ADMIN.
+
+Signed-off-by: Denis Semakin <denis.semakin@huawei.com>
 ---
- security/integrity/ima/ima_policy.c | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ security/integrity/ima/ima_fs.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
-index 96e7d63167e8..02e96da2faff 100644
---- a/security/integrity/ima/ima_policy.c
-+++ b/security/integrity/ima/ima_policy.c
-@@ -1785,6 +1785,16 @@ static int ima_parse_rule(struct ima_namespace *ns,
- 			result = -EINVAL;
- 			break;
- 		}
-+
-+		/* IMA namespace only accepts AUDIT rules */
-+		if (ns != &init_ima_ns) {
-+			switch (entry->action) {
-+			case MEASURE:
-+			case APPRAISE:
-+			case HASH:
-+				result = -EINVAL;
-+			}
-+		}
- 	}
- 	if (!result && !ima_validate_rule(entry))
- 		result = -EINVAL;
+diff --git a/security/integrity/ima/ima_fs.c b/security/integrity/ima/ima_fs.c
+index fd2798f2d224..6766bb8262f2 100644
+--- a/security/integrity/ima/ima_fs.c
++++ b/security/integrity/ima/ima_fs.c
+@@ -393,7 +393,7 @@ static int ima_open_policy(struct inode *inode, struct file *filp)
+ #else
+ 		if ((filp->f_flags & O_ACCMODE) != O_RDONLY)
+ 			return -EACCES;
+-		if (!ns_capable(ns->user_ns, CAP_SYS_ADMIN))
++		if (!integrity_admin_ns_capable(ns->user_ns))
+ 			return -EPERM;
+ 		return seq_open(filp, &ima_policy_seqops);
+ #endif
 -- 
 2.31.1
 
