@@ -1,162 +1,165 @@
-Received: from us-smtp-delivery-44.mimecast.com (us-smtp-delivery-44.mimecast.com [207.211.30.44])
+Received: from mail.hallyn.com (mail.hallyn.com [178.63.66.53])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0D7EF2C82
-	for <containers@lists.linux.dev>; Mon, 29 Nov 2021 20:38:32 +0000 (UTC)
-Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
- [209.132.183.4]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-521-s2Uu8ETyOfGySDXfP6ivvQ-1; Mon, 29 Nov 2021 15:38:22 -0500
-X-MC-Unique: s2Uu8ETyOfGySDXfP6ivvQ-1
-Received: from smtp.corp.redhat.com (int-mx07.intmail.prod.int.phx2.redhat.com [10.5.11.22])
-	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	by mimecast-mx01.redhat.com (Postfix) with ESMTPS id C3E9F1853022;
-	Mon, 29 Nov 2021 20:38:20 +0000 (UTC)
-Received: from comp-core-i7-2640m-0182e6.redhat.com (unknown [10.36.110.3])
-	by smtp.corp.redhat.com (Postfix) with ESMTP id 1721F10013D6;
-	Mon, 29 Nov 2021 20:38:18 +0000 (UTC)
-From: Alexey Gladkov <legion@kernel.org>
-To: LKML <linux-kernel@vger.kernel.org>,
-	Linux Containers <containers@lists.linux.dev>
-Cc: 0day robot <lkp@intel.com>,
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 83D1968
+	for <containers@lists.linux.dev>; Tue, 30 Nov 2021 04:42:26 +0000 (UTC)
+Received: by mail.hallyn.com (Postfix, from userid 1001)
+	id 4D9FD774; Mon, 29 Nov 2021 22:42:24 -0600 (CST)
+Date: Mon, 29 Nov 2021 22:42:24 -0600
+From: "Serge E. Hallyn" <serge@hallyn.com>
+To: Stefan Berger <stefanb@linux.ibm.com>
+Cc: "Serge E. Hallyn" <serge@hallyn.com>,
+	James Bottomley <James.Bottomley@HansenPartnership.com>,
+	Christian Brauner <christian.brauner@ubuntu.com>,
+	linux-integrity@vger.kernel.org, containers@lists.linux.dev,
+	Mimi Zohar <zohar@linux.ibm.com>,
+	Dmitry Kasatkin <dmitry.kasatkin@gmail.com>,
 	"Eric W . Biederman" <ebiederm@xmission.com>,
-	lkp@lists.01.org,
-	Gleb Fotengauer-Malinovskiy <glebfm@altlinux.org>
-Subject: [PATCH v2 1/2] ucounts: Fix rlimit max values check
-Date: Mon, 29 Nov 2021 21:37:25 +0100
-Message-Id: <024ec805f6e16896f0b23e094773790d171d2c1c.1638218242.git.legion@kernel.org>
-In-Reply-To: <cover.1638218242.git.legion@kernel.org>
-References: <cover.1638218242.git.legion@kernel.org>
+	krzysztof.struczynski@huawei.com,
+	Roberto Sassu <roberto.sassu@huawei.com>,
+	Michael Peters <mpeters@redhat.com>, Luke Hinds <lhinds@redhat.com>,
+	Lily Sturmann <lsturman@redhat.com>,
+	Patrick Uiterwijk <puiterwi@redhat.com>,
+	Christian Brauner <christian@brauner.io>
+Subject: Re: [RFC 3/3] ima: make the integrity inode cache per namespace
+Message-ID: <20211130044224.GA32444@mail.hallyn.com>
+References: <20211127164549.2571457-1-James.Bottomley@HansenPartnership.com>
+ <20211127164549.2571457-4-James.Bottomley@HansenPartnership.com>
+ <20211129045834.GB20606@mail.hallyn.com>
+ <755446b10c8415fd469b814535c4a12964af3264.camel@HansenPartnership.com>
+ <70b81e62-46af-9d39-3dcb-4cfbae645175@linux.ibm.com>
+ <a74b18c1aee2b14426cc12e2fd336716c447f070.camel@HansenPartnership.com>
+ <20211129142235.hez3ovtuj3rpscgm@wittgenstein>
+ <afee2f0483271a6cdb1bc7b48b819a3ca2c4ceda.camel@HansenPartnership.com>
+ <20211129153539.GA26325@mail.hallyn.com>
+ <2ce561d8-be86-1d49-23a4-720c13ada92d@linux.ibm.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-X-Scanned-By: MIMEDefang 2.84 on 10.5.11.22
-Authentication-Results: relay.mimecast.com;
-	auth=pass smtp.auth=CUSA124A263 smtp.mailfrom=legion@kernel.org
-X-Mimecast-Spam-Score: 0
-X-Mimecast-Originator: kernel.org
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset=WINDOWS-1252
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <2ce561d8-be86-1d49-23a4-720c13ada92d@linux.ibm.com>
+User-Agent: Mutt/1.9.4 (2018-02-28)
 
-The semantics of the rlimit max values differs from ucounts itself. When
-creating a new userns, we store the current rlimit of the process in
-ucount_max. Thus, the value of the limit in the parent userns is saved
-in the created one.
+On Mon, Nov 29, 2021 at 11:07:18AM -0500, Stefan Berger wrote:
+> 
+> On 11/29/21 10:35, Serge E. Hallyn wrote:
+> > On Mon, Nov 29, 2021 at 09:46:55AM -0500, James Bottomley wrote:
+> > > On Mon, 2021-11-29 at 15:22 +0100, Christian Brauner wrote:
+> > > > On Mon, Nov 29, 2021 at 09:10:29AM -0500, James Bottomley wrote:
+> > > > > On Mon, 2021-11-29 at 08:53 -0500, Stefan Berger wrote:
+> > > > > > On 11/29/21 07:50, James Bottomley wrote:
+> > > > > > > On Sun, 2021-11-28 at 22:58 -0600, Serge E. Hallyn wrote:
+> > > > > > > > On Sat, Nov 27, 2021 at 04:45:49PM +0000, James Bottomley
+> > > > > > > > wrote:
+> > > > > > > > > Currently we get one entry in the IMA log per unique file
+> > > > > > > > > event.  So, if you have a measurement policy and it
+> > > > > > > > > measures a particular binary it will not get measured again
+> > > > > > > > > if it is subsequently executed. For Namespaced IMA, the
+> > > > > > > > > correct behaviour seems to be to log once per inode per
+> > > > > > > > > namespace (so every unique execution in a namespace gets a
+> > > > > > > > > separate log entry).  Since logging once per inode per
+> > > > > > > > > namespace is
+> > > > > > > > I suspect I'll need to do a more in depth reading of the
+> > > > > > > > existing code, but I'll ask the lazy question anyway (since
+> > > > > > > > you say "the correct behavior seems to be") - is it actually
+> > > > > > > > important that files which were appraised under a parent
+> > > > > > > > namespace's policy already should be logged again?
+> > > > > > > I think so.  For a couple of reasons, assuming the namespace
+> > > > > > > eventually gets its own log entries, which the next incremental
+> > > > > > > patch proposed to do by virtualizing the securityfs
+> > > > > > > entries.  If you don't do this:
+> > > > > > To avoid duplicate efforts, an implementation of a virtualized
+> > > > > > securityfs is in this series here:
+> > > > > > 
+> > > > > > https://github.com/stefanberger/linux-ima-namespaces/commits/v5.15%2Bimans.20211119.v3
+> > > > > > 
+> > > > > > It starts with 'securityfs: Prefix global variables with
+> > > > > > secruityfs_'
+> > > > > That's quite a big patch series.  I already actually implemented
+> > > > > this as part of the RFC for getting the per namespace measurement
+> > > > > log.  The attached is basically what I did.
+> > > > > 
+> > > > > Most of the time we don't require namespacing the actual virtualfs
+> > > > > file, because it's world readable.  IMA has a special requirement
+> > > > > in this regard because the IMA files should be readable (and
+> > > > > writeable when we get around to policy updates) by the admin of the
+> > > > > namespace but their protection is 0640 or 0440.  I thought the
+> > > > > simplest solution would be to make an additional flag that coped
+> > > > > with the permissions and a per-inode flag way of making the file as
+> > > > > "accessible by userns admin".  Doing something simple like this
+> > > > > gives a much smaller diffstat:
+> > > > That's a NAK from me. Stefan's series might be bigger but it does
+> > > > things correctly. I appreciate the keep it simple attitude but no. I
+> > > > won't speciale-case securityfs or similar stuff in core vfs helpers.
+> > > Well, there's a reason it's an unpublished patch.  However, the more
+> > > important point is that namespacing IMA requires discussion of certain
+> > > points that we never seem to drive to a conclusion.  Using the akpm
+> > > method, I propose simple patches that drive the discussion.  I think
+> > > the points are:
+> > > 
+> > >     1. Should IMA be its own namespace or tied to the user namespace?  The
+> > >        previous patches all took the separate Namespace approach, but I
+> > >        think that should be reconsidered now keyrings are in the user
+> > >        namespace.
+> > Well that purely depends on the needed scope.
+> > 
+> > The audit container identifier is a neat thing.  But it absolutely must
+> > be settable, so seems to conflict with your needs.
+> > 
+> > Your patch puts an identifier on the user_namespace.  I'm not quite sure,
+> > does that satisfy Stefan's needs?  A new ima ns if and only if there is a
+> > new user ns?
+> > 
+> > I think you two need to get together and discuss the requirements, and come
+> > back with a brief but very precise document explaining what you need.
+> 
+> What would those want who look at audit messages? [Idk] Would they want a
 
-The problem is that now we are taking the maximum value for counter from
-the same userns. So for init_user_ns it will always be RLIM_INFINITY.
+Oh, I think you may have misunderstood me.  I meant you and James.  I
+didn't mean that you shoule have a common implementation with the
+container-audit patchset.
 
-To fix the problem we need to check the counter value with the max value
-stored in userns.
-
-Reproducer:
-
-su - test -c "ulimit -u 3; sleep 5 & sleep 6 & unshare -U --map-root-user s=
-h -c 'sleep 7 & sleep 8 & date; wait'"
-
-Before:
-
-[1] 175
-[2] 176
-Fri Nov 26 13:48:20 UTC 2021
-[1]-  Done                    sleep 5
-[2]+  Done                    sleep 6
-
-After:
-
-[1] 167
-[2] 168
-sh: fork: retry: Resource temporarily unavailable
-sh: fork: retry: Resource temporarily unavailable
-sh: fork: retry: Resource temporarily unavailable
-sh: fork: retry: Resource temporarily unavailable
-sh: fork: retry: Resource temporarily unavailable
-sh: fork: retry: Resource temporarily unavailable
-sh: fork: retry: Resource temporarily unavailable
-sh: fork: Interrupted system call
-[1]-  Done                    sleep 5
-[2]+  Done                    sleep 6
-
-Fixes: c54b245d0118 ("Merge branch 'for-linus' of git://git.kernel.org/pub/=
-scm/linux/kernel/git/ebiederm/user-namespace")
-Reported-by: Gleb Fotengauer-Malinovskiy <glebfm@altlinux.org>
-Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
-Signed-off-by: Alexey Gladkov <legion@kernel.org>
----
- kernel/ucount.c | 15 +++++++++------
- 1 file changed, 9 insertions(+), 6 deletions(-)
-
-diff --git a/kernel/ucount.c b/kernel/ucount.c
-index 4f5613dac227..7b32c356ebc5 100644
---- a/kernel/ucount.c
-+++ b/kernel/ucount.c
-@@ -264,15 +264,16 @@ void dec_ucount(struct ucounts *ucounts, enum ucount_=
-type type)
- long inc_rlimit_ucounts(struct ucounts *ucounts, enum ucount_type type, lo=
-ng v)
- {
- =09struct ucounts *iter;
-+=09long max =3D LONG_MAX;
- =09long ret =3D 0;
-=20
- =09for (iter =3D ucounts; iter; iter =3D iter->ns->ucounts) {
--=09=09long max =3D READ_ONCE(iter->ns->ucount_max[type]);
- =09=09long new =3D atomic_long_add_return(v, &iter->ucount[type]);
- =09=09if (new < 0 || new > max)
- =09=09=09ret =3D LONG_MAX;
- =09=09else if (iter =3D=3D ucounts)
- =09=09=09ret =3D new;
-+=09=09max =3D READ_ONCE(iter->ns->ucount_max[type]);
- =09}
- =09return ret;
- }
-@@ -312,15 +313,16 @@ long inc_rlimit_get_ucounts(struct ucounts *ucounts, =
-enum ucount_type type)
- {
- =09/* Caller must hold a reference to ucounts */
- =09struct ucounts *iter;
-+=09long max =3D LONG_MAX;
- =09long dec, ret =3D 0;
-=20
- =09for (iter =3D ucounts; iter; iter =3D iter->ns->ucounts) {
--=09=09long max =3D READ_ONCE(iter->ns->ucount_max[type]);
- =09=09long new =3D atomic_long_add_return(1, &iter->ucount[type]);
- =09=09if (new < 0 || new > max)
- =09=09=09goto unwind;
- =09=09if (iter =3D=3D ucounts)
- =09=09=09ret =3D new;
-+=09=09max =3D READ_ONCE(iter->ns->ucount_max[type]);
- =09=09/*
- =09=09 * Grab an extra ucount reference for the caller when
- =09=09 * the rlimit count was previously 0.
-@@ -339,15 +341,16 @@ long inc_rlimit_get_ucounts(struct ucounts *ucounts, =
-enum ucount_type type)
- =09return 0;
- }
-=20
--bool is_ucounts_overlimit(struct ucounts *ucounts, enum ucount_type type, =
-unsigned long max)
-+bool is_ucounts_overlimit(struct ucounts *ucounts, enum ucount_type type, =
-unsigned long rlimit)
- {
- =09struct ucounts *iter;
--=09if (get_ucounts_value(ucounts, type) > max)
--=09=09return true;
-+=09long max =3D rlimit;
-+=09if (rlimit > LONG_MAX)
-+=09=09max =3D LONG_MAX;
- =09for (iter =3D ucounts; iter; iter =3D iter->ns->ucounts) {
--=09=09max =3D READ_ONCE(iter->ns->ucount_max[type]);
- =09=09if (get_ucounts_value(iter, type) > max)
- =09=09=09return true;
-+=09=09max =3D READ_ONCE(iter->ns->ucount_max[type]);
- =09}
- =09return false;
- }
---=20
-2.33.0
-
+> constant identifier for IMA audit messages in the audit log across all
+> restarts of a container? Presumably that would make quick queries across
+> restarts much easier. Or could they live with an audit message emitted from
+> the container runtime indicating that this time the (IMA) audit messages
+> from this container will have this UUID here?
+> 
+> I guess both would 'work.'
+> 
+> > 
+> > Are you both looking at the same use case?  Who is consuming the audit
+> > log, and to what end?  Container administrators?  Any time they log in?
+> > How do they assure themselves that the securityfs file they're reading
+> > hasn't been overmounted?
+> 
+> The question is also should there only be one identifier or can there be two
+> different one (one from audit patch series and uuid of user namespace).
+> 
+> 
+> > 
+> > I need to find a document to read about IMA's usage of PCRs.  For
+> > namespacing, are you expecting each container to be hooked up to a
+> > swtmp instance so they have their own PCR they can use?
+> 
+> It's complicated and there's a bit more to this... I would try to architect
+> it in a way that the IMA system policy can cover what's going on inside IMA
+> namespaces, i.e., audit and measure and appraise file accesses occurring in
+> those namespace. We call it hierarchical processing ( https://github.com/stefanberger/linux-ima-namespaces/commit/e88dc84ec97753fd65d302ee1bf03951001ab48f
+> ) where file access are evaluated against the current namespace's policy and
+> then also evaluated against those of parent namespaces back to the
+> init_ima_ns. The goal is to avoid evasion of measurements etc. by the user
+> just by spawning new IMA namespaces. I think logging into the IMA system log
+> will not scale well if there are hundreds of containers on the system using
+> IMA and logging into the system log and hammering the TPM. So, the answer
+> then is write your policy in such a way that it doesn't cover the IMA/user
+> namespaces (containers) and have each container have its own IMA policy and
+> IMA log and and an optional vTPM. So my answer would be 'optional swtpm.'
+> 
+>    Stefan
+> 
