@@ -1,147 +1,172 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+Received: from bedivere.hansenpartnership.com (bedivere.hansenpartnership.com [96.44.175.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8023B2C9D
-	for <containers@lists.linux.dev>; Tue, 30 Nov 2021 11:56:15 +0000 (UTC)
-Received: from pps.filterd (m0098416.ppops.net [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 1AUBlNL8025105;
-	Tue, 30 Nov 2021 11:55:55 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
- mime-version : subject : to : cc : references : from : in-reply-to :
- content-type : content-transfer-encoding; s=pp1;
- bh=uIZAjevreFQmW522hR9rWhA8J4q1gu1y06hXqfBlV2Y=;
- b=QeFRaR5DaoMGlKuYpfbqlCtNVeTUbxT8huTwU6HVwfDYuaihSOIMXWSZEH+/KW9ZcR/C
- OXNMapZHWrARKcTOTWfNB1I20nuZNGhOPVC0354mqEbSPcPV91pkmw8JXIeZzuGD4gVe
- X+N1AoqyXa93ab80WCj2qCWm+m5f2VfR0vdfkKa4l7w6Ke/evts8bjkI37i9YQPieHoZ
- hmTZN6NrsJvWggcNqR350vj4goHpwMMWUVhJF4Ezm2NDJhLM/ljqtnHORMosr0Uv5xEw
- jVMRgnwAzgiQWUYH/ez31O5edLswgeC22jzSdZLS2UbHdkqfZxkR3jU3SlTpmVh/3Te+ uw== 
-Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3cnkd2849h-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 30 Nov 2021 11:55:55 +0000
-Received: from m0098416.ppops.net (m0098416.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 1AUBqZXM010526;
-	Tue, 30 Nov 2021 11:55:54 GMT
-Received: from ppma03dal.us.ibm.com (b.bd.3ea9.ip4.static.sl-reverse.com [169.62.189.11])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3cnkd28494-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 30 Nov 2021 11:55:54 +0000
-Received: from pps.filterd (ppma03dal.us.ibm.com [127.0.0.1])
-	by ppma03dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 1AUBs2ii010233;
-	Tue, 30 Nov 2021 11:55:54 GMT
-Received: from b03cxnp07028.gho.boulder.ibm.com (b03cxnp07028.gho.boulder.ibm.com [9.17.130.15])
-	by ppma03dal.us.ibm.com with ESMTP id 3ckcab8xy8-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 30 Nov 2021 11:55:53 +0000
-Received: from b03ledav005.gho.boulder.ibm.com (b03ledav005.gho.boulder.ibm.com [9.17.130.236])
-	by b03cxnp07028.gho.boulder.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 1AUBtqYC21562020
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Tue, 30 Nov 2021 11:55:52 GMT
-Received: from b03ledav005.gho.boulder.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id B645CBE05F;
-	Tue, 30 Nov 2021 11:55:52 +0000 (GMT)
-Received: from b03ledav005.gho.boulder.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id C64C1BE05A;
-	Tue, 30 Nov 2021 11:55:51 +0000 (GMT)
-Received: from [9.47.158.152] (unknown [9.47.158.152])
-	by b03ledav005.gho.boulder.ibm.com (Postfix) with ESMTP;
-	Tue, 30 Nov 2021 11:55:51 +0000 (GMT)
-Message-ID: <2246a547-3971-8b92-47a4-589a59a33db7@linux.ibm.com>
-Date: Tue, 30 Nov 2021 06:55:51 -0500
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 030B52C82
+	for <containers@lists.linux.dev>; Tue, 30 Nov 2021 13:00:12 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+	d=hansenpartnership.com; s=20151216; t=1638277212;
+	bh=WbsCwODG0tNAwrCQWZwzuygwhfVc3PiURHXWEcl7deM=;
+	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:From;
+	b=jPLotuYDw6KAoOGuwaPiJ6WQzURAwTXQc2I8IEsoSX1sZfjKQL9b6xTytPYZRHdww
+	 43LM/kW95mkWnvsqSFSp8hxIGvmcMvmyoyKR3sP1HzkWMdnMDIuV5WDnXALDStnTZ8
+	 lfh74Un6igD9/3DB88luFgCz1gsvUKRZi07v9lMs=
+Received: from localhost (localhost [127.0.0.1])
+	by bedivere.hansenpartnership.com (Postfix) with ESMTP id 09A3312805E5;
+	Tue, 30 Nov 2021 08:00:12 -0500 (EST)
+Received: from bedivere.hansenpartnership.com ([127.0.0.1])
+	by localhost (bedivere.hansenpartnership.com [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id CpEad8vbMWiH; Tue, 30 Nov 2021 08:00:11 -0500 (EST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+	d=hansenpartnership.com; s=20151216; t=1638277211;
+	bh=WbsCwODG0tNAwrCQWZwzuygwhfVc3PiURHXWEcl7deM=;
+	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:From;
+	b=Si7cZMPos35C7+Tbd5HHVXRsWEZRCxGYFDXp4du+nzwYJYR5kwC+gI+w7Xss70Xkx
+	 dVWZDOQofvNzu3bvO8VxdadecxZ04KIcmU8bA+nwu7Y5+/fHrADDAgvWpDbfawat+E
+	 ix4r0jn7Ub5ER2vRg20E6gsWIE2QrnheHBTku7PY=
+Received: from jarvis.int.hansenpartnership.com (unknown [IPv6:2601:5c4:4300:c551::527])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by bedivere.hansenpartnership.com (Postfix) with ESMTPSA id BE50512804CF;
+	Tue, 30 Nov 2021 08:00:10 -0500 (EST)
+Message-ID: <c6c6f2ebf37b88cb66189bbac16feb611ae2b9ab.camel@HansenPartnership.com>
+Subject: Re: [RFC 3/3] ima: make the integrity inode cache per namespace
+From: James Bottomley <James.Bottomley@HansenPartnership.com>
+To: "Serge E. Hallyn" <serge@hallyn.com>
+Cc: Christian Brauner <christian.brauner@ubuntu.com>, Stefan Berger
+ <stefanb@linux.ibm.com>, linux-integrity@vger.kernel.org, 
+ containers@lists.linux.dev, Mimi Zohar <zohar@linux.ibm.com>, Dmitry
+ Kasatkin <dmitry.kasatkin@gmail.com>, "Eric W . Biederman"
+ <ebiederm@xmission.com>,  krzysztof.struczynski@huawei.com, Roberto Sassu
+ <roberto.sassu@huawei.com>,  Michael Peters <mpeters@redhat.com>, Luke
+ Hinds <lhinds@redhat.com>, Lily Sturmann <lsturman@redhat.com>,  Patrick
+ Uiterwijk <puiterwi@redhat.com>, Christian Brauner <christian@brauner.io>
+Date: Tue, 30 Nov 2021 08:00:09 -0500
+In-Reply-To: <20211130045904.GB32444@mail.hallyn.com>
+References: <20211127164549.2571457-1-James.Bottomley@HansenPartnership.com>
+	 <20211127164549.2571457-4-James.Bottomley@HansenPartnership.com>
+	 <20211129045834.GB20606@mail.hallyn.com>
+	 <755446b10c8415fd469b814535c4a12964af3264.camel@HansenPartnership.com>
+	 <70b81e62-46af-9d39-3dcb-4cfbae645175@linux.ibm.com>
+	 <a74b18c1aee2b14426cc12e2fd336716c447f070.camel@HansenPartnership.com>
+	 <20211129142235.hez3ovtuj3rpscgm@wittgenstein>
+	 <afee2f0483271a6cdb1bc7b48b819a3ca2c4ceda.camel@HansenPartnership.com>
+	 <20211129153539.GA26325@mail.hallyn.com>
+	 <16e27be21e2886ba17298d94fdaff39236667890.camel@HansenPartnership.com>
+	 <20211130045904.GB32444@mail.hallyn.com>
+Content-Type: text/plain; charset="UTF-8"
+User-Agent: Evolution 3.34.4 
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.2.0
-Subject: Re: [RFC 3/3] ima: make the integrity inode cache per namespace
-Content-Language: en-US
-To: "Serge E. Hallyn" <serge@hallyn.com>
-Cc: Christian Brauner <christian.brauner@ubuntu.com>,
-        James Bottomley <James.Bottomley@HansenPartnership.com>,
-        linux-integrity@vger.kernel.org, containers@lists.linux.dev,
-        Mimi Zohar <zohar@linux.ibm.com>,
-        Dmitry Kasatkin
- <dmitry.kasatkin@gmail.com>,
-        "Eric W . Biederman" <ebiederm@xmission.com>,
-        krzysztof.struczynski@huawei.com,
-        Roberto Sassu <roberto.sassu@huawei.com>,
-        Michael Peters <mpeters@redhat.com>, Luke Hinds <lhinds@redhat.com>,
-        Lily Sturmann <lsturman@redhat.com>,
-        Patrick Uiterwijk
- <puiterwi@redhat.com>,
-        Christian Brauner <christian@brauner.io>
-References: <20211127164549.2571457-4-James.Bottomley@HansenPartnership.com>
- <20211129045834.GB20606@mail.hallyn.com>
- <755446b10c8415fd469b814535c4a12964af3264.camel@HansenPartnership.com>
- <70b81e62-46af-9d39-3dcb-4cfbae645175@linux.ibm.com>
- <a74b18c1aee2b14426cc12e2fd336716c447f070.camel@HansenPartnership.com>
- <20211129142235.hez3ovtuj3rpscgm@wittgenstein>
- <afee2f0483271a6cdb1bc7b48b819a3ca2c4ceda.camel@HansenPartnership.com>
- <20211129153539.GA26325@mail.hallyn.com>
- <20211129161650.dtcvh2ozgquz6rli@wittgenstein>
- <c73dd2cc-7915-9343-5ad0-e53c762e29a3@linux.ibm.com>
- <20211130050316.GC32444@mail.hallyn.com>
-From: Stefan Berger <stefanb@linux.ibm.com>
-In-Reply-To: <20211130050316.GC32444@mail.hallyn.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
-X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: KPncAg3FQE3e0faVS3zF97wrRIIWIcuz
-X-Proofpoint-ORIG-GUID: romtJ-TP0pSdOaaIVHLQq4cToFerABo_
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.205,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.0.607.475
- definitions=2021-11-30_07,2021-11-28_01,2020-04-07_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 lowpriorityscore=0
- spamscore=0 malwarescore=0 priorityscore=1501 adultscore=0 mlxlogscore=999
- phishscore=0 suspectscore=0 bulkscore=0 clxscore=1015 impostorscore=0
- mlxscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2110150000 definitions=main-2111300066
 
+On Mon, 2021-11-29 at 22:59 -0600, Serge E. Hallyn wrote:
+> On Mon, Nov 29, 2021 at 11:44:35AM -0500, James Bottomley wrote:
+> > On Mon, 2021-11-29 at 09:35 -0600, Serge E. Hallyn wrote:
+> > > On Mon, Nov 29, 2021 at 09:46:55AM -0500, James Bottomley wrote:
+> > [...]
+> > > > Well, there's a reason it's an unpublished patch.  However, the
+> > > > more important point is that namespacing IMA requires
+> > > > discussion of certain points that we never seem to drive to a
+> > > > conclusion.  Using the akpm method, I propose simple patches
+> > > > that drive the discussion.  I think the points are:
+> > > > 
+> > > >    1. Should IMA be its own namespace or tied to the user
+> > > > namespace?  The previous patches all took the separate
+> > > > Namespace approach, but I think that should be reconsidered now
+> > > > keyrings are in the user namespace.
+> > > 
+> > > Well that purely depends on the needed scope.
+> > > 
+> > > The audit container identifier is a neat thing.  But it
+> > > absolutely must be settable, so seems to conflict with your
+> > > needs.
+> > 
+> > I think not allowing duplicate entries for the lifetime of the log
+> > is required, which causes a problem since namespaces can die before
+> > this lifetime ends.  I think there is a nice security benefit in
+> > making it not user settable, but I don't think that's necessarily a
+> > requirement.
+> > 
+> > > Your patch puts an identifier on the user_namespace.  I'm not
+> > > quite sure, does that satisfy Stefan's needs?  A new ima ns if
+> > > and only if there is a new user ns?
+> > 
+> > Part of the problem is that IMA needs an admin user ... to be able
+> > to read the log and set the policy and, when we get to appraisal,
+> > set and read the keyrings.  IMA NS iff user ns satisfies this, but
+> > the minimalist in me then asks why not make them the same thing?
+> > 
+> > > I think you two need to get together and discuss the
+> > > requirements, and come back with a brief but very precise
+> > > document explaining what you need. Are you both looking at the
+> > > same use case?  Who is consuming the audit log, and to what
+> > > end?  Container administrators?  Any time they log in? How do
+> > > they assure themselves that the securityfs file they're reading
+> > > hasn't been overmounted?
+> > 
+> > There are several different use cases.  I'm asking how I would use
+> > the IMA namespace for the unprivileged containers I usually set up
+> > by hand.  Stefan is looking at how docker/kubernetes would do
+> > it.  There's also the Huawei use case which is a sort of
+> > attestation for function as a service and there's the Red Hat use
+> > case for OpenShift.
+> > 
+> > However, the common denominator in all of these is they require a
+> > way to uniquely distinguish the containers, which is why the patch
+> > series I sent as an RFC starts that way.  If we can start with the
+> > common elements, we can build towards something that satisfies all
+> > the use cases ... and allow consensus to emerge as further patches
+> > are discussed.
+> 
+> The reason I asked this question in response to this patch is because
+> here I'm not picking at the userns->uuid, but rather it's the new
+> linked lists for the inode that feel wrong.
 
-On 11/30/21 00:03, Serge E. Hallyn wrote:
-> On Mon, Nov 29, 2021 at 12:04:29PM -0500, Stefan Berger wrote:
->> On 11/29/21 11:16, Christian Brauner wrote:
->>> On Mon, Nov 29, 2021 at 09:35:39AM -0600, Serge Hallyn wrote:
->>>> On Mon, Nov 29, 2021 at 09:46:55AM -0500, James Bottomley wrote:
->>>>> On Mon, 2021-11-29 at 15:22 +0100, Christian Brauner wrote:
->>>>>> On Mon, Nov 29, 2021 at 09:10:29AM -0500, James Bottomley wrote:
->>>>>>
->>> I kept thinking about this question while I was out running and while I
->>> admittedly have reacted poorly to CLONE_NEWIMA patches before it feels
->>> to me that this is the right approach after all. Making it part of
->>> userns at least in this form isn't clean.
->>>
->>> I think attaching a uuid to a userns alone for the sake of IMA is wrong.
->>> Additionally, I think a uuid only for the userns is too limited. This is
->>> similar to the problem of the audit container id. If we have some sort
->>> of uuid for ima it will automatically evolve into something like a
->>> container id (I'm not even arguing that this is necessarily wrong.).
->>> We also have the issue that we then have the container audit id thing -
->>> if this ever lands and the ima userns uuid. All that makes it quite
->>> messy.
->>>
->>> I think CLONE_NEWIMA is ultimately nicer and allows the implementation
->>> to be decoupled from the userns and self-contained as possible. This
->>> also means that ima ns works for privileged containers which sure is a
->>> valid use-case.
->> The thing is that piggy backing on the user namespace at least allows us to
->> 'always see' where IMA's keyring is (across setns()). If we were using an
->> independent IMA namespace how would we guarantee that the user sees the
->> keyring for IMA appraisal? We would at least have to take a reference (as in
->> get_user_ns()) to the user namespace when the IMA namespace is created so
->> that it at least the association of IMA namespace to user namespace remains
-> Maybe we pull they keyring info into a new struct which is referred
-> to and pinned by both user_ns and ima_ns?  (But I actually am ignorant
-> of how ima is using the keyrings, so again I need to go do some reading.)
->
-> More moving parts isn't my first choice.  But if you need namespaced IMA
-> for containers that aren't doing CLONE_NEWUSER, then a separate ima_ns is
-> your only option.  Is that a requirement for you?
+Well that one's fully separable.  The first two patches could be
+complete for this round.  However, if you believe there has to be one
+entry per inode per namespace then the iint cache needs to accommodate
+that.  The measurement is a function of the inode alone: if the inode
+doesn't change that value is the same regardless of namespace.  it's
+only whether it's been logged that's really per namespace, hence the
+namespace list hanging off the iint entry ... if there were a huge
+number of namespaces, perhaps it should be a btree instead of a list,
+but it needs to be some type of two level thing, I think?
 
-I cannot think of a scenario where a user wouldn't want/refuse to open a 
-user namespace to get an IMA namespace...
+The design of patch 3 is mostly to get people to think about what
+should be in the per namespace log.
+
+>   So if you can get what you need some other way - maybe just "we
+> opened all these files and got no integrity failure messages", or a
+> hash table keyed on (userns *, inode *) instead of the linked lists
+> to look up whether an inode has been measured, or some userspace
+> daemon to resubmit already logged approvals, which I gather won't
+> work for unpriv containers - that would be nice.
+
+I could do a separate (userns *, inode *) btree for the measured part,
+but we'd still have to have the per inode store of the measurement
+because that's namespace blind.  Given this, it seems inefficient not
+to make use of the tie between the two.
+
+> > Part of my problem is I don't really know what I need, I just want
+> > IMA namespaces to work easily for the unprivileged use case and
+> > I'll figure it out as I play with it ... but to do that I need
+> > something to start playing with.
+> 
+> But for that kind of research you use an out of tree patchset, not
+> speculative infrastructure in the kernel.  If that's what this
+> patchset is, then I'll (feel a little silly and) look over it with a
+> different set of eyes :)
+
+Well, no, you're looking with the right set of eyes.  The design of
+this patch set is to begin incrementally with the pieces everyone can
+agree on, so start as small as it can be: the namespace and a label as
+a trial balloon.  If everyone had agreed it looked OK, there would be
+no reason not to put it upstream and start on the next step.
+
+James
 
 
