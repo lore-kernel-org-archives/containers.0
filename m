@@ -1,98 +1,172 @@
-Received: from sonic306-27.consmr.mail.ne1.yahoo.com (sonic306-27.consmr.mail.ne1.yahoo.com [66.163.189.89])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from bedivere.hansenpartnership.com (bedivere.hansenpartnership.com [96.44.175.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8D83F2C80
-	for <containers@lists.linux.dev>; Tue, 30 Nov 2021 17:50:24 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yahoo.com; s=s2048; t=1638294623; bh=vsHKDybZ2jrlosXiNEXb9J9i2f57wfoYS/tTO/wPOzs=; h=Date:Subject:To:Cc:References:From:In-Reply-To:From:Subject:Reply-To; b=F8xLb7ZJrBUKw4Z/mH8dcR2q/uZKOSjVp6WuCJqWyYuPQrFtNCalzFD9gzTLHl+X2NUZ/N5tPRC1fJaC6xzvoY+jdKZNvKeBogy521YOgK3OMkvYU+mYB6vHftBf99sqt1ZnLQnUw26ZsWK+QdnThiPK8nr8QKPsggPrgYQ8j3Y/t9O0A9XdelpSsSj5wteAP7SID2ALL5ZgiLiY8wKGW+Cf/wggWVYyZ/pfxuxgTP3YhYPV9RgiLdgvQhwfOE7fJRbikXUvIrz9hAXvyyQrtFEwG5nQ8U3wobzSyM3oo71mugCq5SKC21O8Q9LonKOKldkIysSVxrtB2fKLekuU/A==
-X-SONIC-DKIM-SIGN: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yahoo.com; s=s2048; t=1638294623; bh=qi3mSy+twszzFxDrkUBLz/jnPjlyvDoBFOZSeBTfOK5=; h=X-Sonic-MF:Date:Subject:To:From:From:Subject; b=pJ+4AHAcpa4kbY4lsAE0j6T+VvMYKbfzT3XRnR36B8BWLMYFJ7+NP7LTkuXGepPw4rl3P9jyyqbSmpwrATvc6eGKwzQdHPRo8KIv1kWpz/dCantknO7WzDER1+CTHrYlZBJ9BpllLc8TZyy58MnrIVQ2/Pn7aVBEe1Lbs9npj+1wrlsqEosgVZvYkCVN0BCRHL8UW8+7zVt7wBV54U9YkBnhD9m8fTuTBgZ/zLDz63HypL5rHvmVVEDXkfD4Wccu9CKdSBBn6LQ2te6HWxVOor5K0Ss+5H3pV+tbGV1gQBdqSrtdlWIbZwiqig0V/CLwha92584z/RSvhRgiNaEccw==
-X-YMail-OSG: JrOYuDIVM1kEVlj1bhV4sfQzsrstJ8PDyEmLySnsrphzrMXQ2zHd2SCZOJcQO8n
- iK._XGiSuCUSppRL_Xhx3ygQMaYVTUlEJr5DBqodUz5TKKN.ICJ38Z0IzLYVwQM3L64IRbYojFNw
- LffrIv1WCuaA3H8Cre_OzqNvNG9toDQ.Wkv2PQ0rytrL7c0EOv3iSbmM96imh_CQwRfxc3VdJp5j
- eNkGbPzeQl8UK3Ml0w3jXC847NgM__L.on1HaWgZVne15U2f3wvZQIdl_nbEBEral.b17j53acZT
- krya5VVfUcQAWfzcA12hjZ68MzXRJvIzJnMc14mSlugd938D._fchL2RCb59Huit1lQCxnKxAwz0
- OJxbQ8ZbpagbNn9rbUrz5IBzZ8NSxl8G4s6J7S_EiA5nvYMCiKHUtiZ0OxUHUT4gY4KeUSycoqRv
- byKroqB9x6jLPBnjmYUwGcAQYB0wKwxbtucoqwn8n0gWbRZE3pUrBaakehYo8cqLUnEoMhGDfUfQ
- 588hCmp.gTQBM2uPSr0RKCVOQGQfv1qzQAjINeEcCV0xNvGVHLgME1S0HBt7.67VB530tMiptscW
- 1Nj3hp_Y7mVHnTMn16F59oiW.XhE6ku0oWoCo3Bi2wS.6N3Ju.FAsOm0guHQtIW03df5u0BMd0rM
- _k3tpBxh8n05Ul1KKp_PTDFcoPtYLpYu4kCsMy.BzhC3y8fKUIpUovQiE8Ub_1Jk0kWHo6emKhOJ
- 0S8q42X7x7fhM62B5nquIiM9RA2coYVSoIMAwUXJrlrlw9zDd5njxXSETLPV0psjeWPHbK0nzOvL
- MGuZaEFjw6RGZFxix9NWLBcnbMWi.SvhwQkVb.loLO0jFK1OGvI7zcImb6fNAmfFU0n1y7JO5cGh
- qtfOdTpl2XZmfGVcUI975WRO4.0J1p1yHEzw0CNALuayQd_2iQBl2ItHGFpxzUa7C5sdJFEQ2WDX
- DNtUxH5SaaaWy22eKB49UDEyMF4pGt.t5EJqG_eP3KSp8RewFHERNH2Xr50kyx8SpjA7r3I_s2js
- i.O0ZPq.w9Hl0UB.lnC_eDvwJNiiY76enlq_ZM0Z7zTwdyhddpRyxQafXZlJmHNPKgWYmdHDluDK
- wuC2y77PHG8Ul0S3.r_ttDRh7O9mSs1_rnTbK96n1ul4tu1elotVpS3oGWHlDrH9GDFQ_0hOhHmv
- QZ5zpozYEnFCWKZVO.ofOyxH90JdTYjDsxFBtwOyElcruFJJ2ZzD5xOMYQDTILGRB.uZ4dc0m1Yf
- 2.sqckbCqpGHlugZ5SgIIgw.IgvcS6BGEM16fsHBabJNNPJR3eMWiMTkmHLY0Bn.dd0OO4SGn4bW
- PuP_ZMgQfU1milqZE_8n3ELRMmJUU32G8X0qR4ZNVA6jkMAFj9rd3_kScJPUMHV1HmA04XEG2iP.
- 6nPFn76RqHckHDcabgfV2oMSfQBok_JmhBqT1HzfuVQ57NbD3Kpndmhn5trlp8mNY6eOR9lqfmyu
- .nWezuhNyKfzqbPiT381SQl5xTnBXBQfyF7LOeR58ZLmr8iLuW0kFE7E04phU2YFN52..beGNo2f
- KbjgeLpr523qBuMTLaKWqmV79yJHBFx4qOc8PA5zQT3rAjumzsc7W1PQzAhehpQcse4UPrYUpYur
- HX3b482MVNTRT3sxmc1u_ul6m9kSsLwiVLAQMfRXxxZ817OhgQWOFVYw6Gv2yY2__NVpMVjSg2Mc
- gHIUk84oXK_xcEHwUTihAWXJWDPjKvrIX.RYlKPLYFqkP5Psf8EMMOUL8PbRIir6rHBt7BCvv_YB
- Cx1VhHLfXjs0yQXyjMpbBUnRan7GcNXNZ57c1sCkmY5_C4opOmnRfiUURgZGSVsHJZ3J7KCj3WxM
- iG9_qayiz2525nZySOd5DNsnpi7Y1Fl4mTGnHAc77U4Oht84k6JQSmHOEFfB.DBboy29.uGS3cc_
- B7oqjJ1KflDfMedKvebaAkTV8OcXzA7H6T8YJPv5f41XbXfep7JvTDGVRLE6un0bycVyaypx6SHh
- LYn4RIuwPzCmtchAF8uXrO_g31bfbSAKnMvo4H8CEhl6pQv73ektBN89kUgMGe8LCQgqaGTWL2PP
- 1qWHsRCBSx.OLXF1rjCL8jooKPq2RHWLEH7e8zswCTpbLUNCKJya6h_a9w93upa46wnISuG7.QTH
- 85GfmoskM7iYmovf_L.VT0FFba55uPM2Bx6V9fGDlwpdQ.saxv_N0Z8wiKYKrN7V4pE9xl2p1LTa
- r9yAvSwfLqIlV8PdjfmMEl5sUeqA.wQ--
-X-Sonic-MF: <casey@schaufler-ca.com>
-Received: from sonic.gate.mail.ne1.yahoo.com by sonic306.consmr.mail.ne1.yahoo.com with HTTP; Tue, 30 Nov 2021 17:50:23 +0000
-Received: by kubenode542.mail-prod1.omega.bf1.yahoo.com (VZM Hermes SMTP Server) with ESMTPA ID da9e10bd5721b37c7f2ee8a0729d408b;
-          Tue, 30 Nov 2021 17:50:17 +0000 (UTC)
-Message-ID: <ad6a83da-f99f-a27f-6a22-712e530cfa2a@schaufler-ca.com>
-Date: Tue, 30 Nov 2021 09:50:14 -0800
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BFA6168
+	for <containers@lists.linux.dev>; Wed,  1 Dec 2021 13:21:01 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+	d=hansenpartnership.com; s=20151216; t=1638364860;
+	bh=TEUbT8YAZQdRQS5d9YMYuRhKTaAeqsYeGDHBuzE0N3g=;
+	h=From:To:Subject:Date:Message-Id:From;
+	b=UwTArRZfauO6hNOXvoyOJfW1v8ek0HZNjWUNx+ioJ9vnjXANkveq/7MHlOkGzE3pE
+	 fL8NmK2Dm8yR0DPwXZ/GQYaAH7QILX1YM/xyVT4jZuQrA8hLynEzSNGfblbDhFlAg9
+	 JzXI2hIVIvFpbqYxkQ2lYB5UdqVX8bG/j4fwBiLc=
+Received: from localhost (localhost [127.0.0.1])
+	by bedivere.hansenpartnership.com (Postfix) with ESMTP id CB4251280403;
+	Wed,  1 Dec 2021 08:21:00 -0500 (EST)
+Received: from bedivere.hansenpartnership.com ([127.0.0.1])
+	by localhost (bedivere.hansenpartnership.com [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id 3maekpuAqkZP; Wed,  1 Dec 2021 08:21:00 -0500 (EST)
+Received: from rainbow.int.hansenpartnership.com (unknown [153.66.140.204])
+	by bedivere.hansenpartnership.com (Postfix) with ESMTP id 7454C12803C3;
+	Wed,  1 Dec 2021 08:20:59 -0500 (EST)
+From: James Bottomley <James.Bottomley@HansenPartnership.com>
+To: linux-integrity@vger.kernel.org
+Cc: containers@lists.linux.dev,
+	Mimi Zohar <zohar@linux.ibm.com>,
+	Dmitry Kasatkin <dmitry.kasatkin@gmail.com>,
+	Stefan Berger <stefanb@linux.ibm.com>,
+	"Eric W . Biederman" <ebiederm@xmission.com>,
+	krzysztof.struczynski@huawei.com,
+	Roberto Sassu <roberto.sassu@huawei.com>,
+	"Serge E . Hallyn" <serge@hallyn.com>,
+	Michael Peters <mpeters@redhat.com>,
+	Luke Hinds <lhinds@redhat.com>,
+	Lily Sturmann <lsturman@redhat.com>,
+	Patrick Uiterwijk <puiterwi@redhat.com>,
+	Christian Brauner <christian@brauner.io>
+Subject: [RFC v2 0/3] Namespace IMA log entries
+Date: Wed,  1 Dec 2021 13:20:41 +0000
+Message-Id: <20211201132044.566371-1-James.Bottomley@HansenPartnership.com>
+X-Mailer: git-send-email 2.33.0
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101
- Thunderbird/91.3.2
-Subject: Re: [RFC 15/20] capabilities: Introduce CAP_INTEGRITY_ADMIN
-Content-Language: en-US
-To: Stefan Berger <stefanb@linux.ibm.com>, linux-integrity@vger.kernel.org
-Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
- containers@lists.linux.dev, dmitry.kasatkin@gmail.com,
- ebiederm@xmission.com, krzysztof.struczynski@huawei.com,
- roberto.sassu@huawei.com, mpeters@redhat.com, lhinds@redhat.com,
- lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
- jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
- rgb@redhat.com, linux-security-module@vger.kernel.org, jmorris@namei.org,
- Denis Semakin <denis.semakin@huawei.com>,
- Casey Schaufler <casey@schaufler-ca.com>
-References: <20211130160654.1418231-1-stefanb@linux.ibm.com>
- <20211130160654.1418231-16-stefanb@linux.ibm.com>
- <e482c499-8bff-72c8-bbda-1ecc5a7f3452@schaufler-ca.com>
- <957f65ce-df0e-5980-57c3-57c05291ccc6@linux.ibm.com>
-From: Casey Schaufler <casey@schaufler-ca.com>
-In-Reply-To: <957f65ce-df0e-5980-57c3-57c05291ccc6@linux.ibm.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-Mailer: WebService/1.1.19306 mail.backend.jedi.jws.acl:role.jedi.acl.token.atz.jws.hermes.yahoo
 
-On 11/30/2021 9:41 AM, Stefan Berger wrote:
->
-> On 11/30/21 12:27, Casey Schaufler wrote:
->> On 11/30/2021 8:06 AM, Stefan Berger wrote:
->>> From: Denis Semakin <denis.semakin@huawei.com>
->>>
->>> This patch introduces CAP_INTEGRITY_ADMIN, a new capability that allows
->>> to setup IMA (Integrity Measurement Architecture) policies per container
->>> for non-root users.
->>
->> Why not use CAP_MAC_ADMIN? IMA is a mandatory policy. The scope
->> is system security administration. It seems to fit your needs.
->> I introduced CAP_MAC_ADMIN for Smack, and believe that IMA using
->> it would be completely appropriate.
->
-> Fine by me. I suppose we could be reusing it later on also for setting file extended attributes for IMA?
+v2: drop the user namespace uuid and instead add an IMA specific label
+(residing in an opaque IMA structure pointed to by the user_ns) that
+is settable once before use, but if not set reverts to a randomly
+generated uuid.
 
-Yes. That would be completely consistent with the intention and the
-Smack implementation.
+Over the past five years there have been several attempts to namespace
+IMA [1,2,3].  All of them were eventually fairly huge patch series,
+which try to solve every issue and potential issue all at once, making
+them incredibly difficult to review and highly dependent on an array
+of non-IMA features which causes huge upporting difficulty as the
+patch progresses.  Given this, I thought we'd try a different way:
+introduce a minimal namespacing of IMA and try to build on it in
+subsequent patches.
 
->
->    Stefan
->
->
+This first patch set namespaces IMA by tying it to the user
+namespace. We're still discussing whether this is a good idea, so I'll
+pass on the justification and note that the only addition is a
+ima_ns_info pointer which points to a structure that has a lifetime
+longer than the namespace, so the whole machinery for managing this
+could be transferred to a different namespace.  Within this pointer is
+a label for the IMA namespace, which has a set API (but no exposure in
+the current patch se) and if the label isn't set before the namespace
+causes an IMA log entry, a uuid is placed into the label.
+
+All this patch set does is add a new template 'ima-ns' which includes
+the namespace label (added by the first patch) in the IMA log.  Using
+uuids gives us probabalistically unique identifiers for all namespaces
+without having to check them for uniqueness.
+
+Once we have the container being logged, it stands to reason that the
+ima inode cache needs to record one event per namespace per inode
+instead of the one global event per inode, so if I enter the ima
+namespace and execute the same measured command, it will log again
+with the new namespace uuid even if the hash is the same:
+
+ > ls
+ > grep ls /sys/kernel/security/integrity/ima/ascii_runtime_measurements
+10 c70c7b851f83c8c71ee7b508c8468383c0d2c154 ima-ns sha256:1f7f27ef1052e33731c9ff56a36ac3af4437e3f95ad55f6813c320b087b5d356 /usr/bin/ls 6582e360-1354-42b9-a6ef-ee1993d982da
+ > unshare --user -r
+ # ls
+ # exit
+ > grep ls /sys/kernel/security/integrity/ima/ascii_runtime_measurements
+ 10 c70c7b851f83c8c71ee7b508c8468383c0d2c154 ima-ns sha256:1f7f27ef1052e33731c9ff56a36ac3af4437e3f95ad55f6813c320b087b5d356 /usr/bin/ls 6582e360-1354-42b9-a6ef-ee1993d982da
+10 144a73d85e9cf999c4abbc99f3c41e9422c8016e ima-ns sha256:1f7f27ef1052e33731c9ff56a36ac3af4437e3f95ad55f6813c320b087b5d356 /usr/bin/ls e496e384-4133-4d57-b93a-1812b83badf2
+
+Note that this namespacing if the iint cache is in the third patch and
+could be dropped if there's huge opposition.
+
+Some things to note are that the IMA securityfs entries aren't
+virtualized.  This is planned for a follow up patch (so currently the
+admin can't even view the ima log in the container).  Everything
+that's logged goes through the main IMA log and the physical TPM.
+This means that the admin of the physical system can attest to the
+log, but the containers would have to trust the admins attestation of
+their log pieces.  The initial IMA policy is also inherited from the
+physical system and can't currently be changed.
+
+The rough plan of action for follow up patches is
+
+1. Namespace securityfs so container admin can read the IMA files like
+   log which would only show entries related to the container (so only
+   entries generated by the current and all child namespaces) and
+   policy.
+
+2. Add per namespace policies by writing to the policy file in the
+   container.  Obviously implementation of this would have to preserve
+   the security of the system, so the new namespace couldn't stop
+   logging something the physical host required to be logged, but it
+   could add additional classes of things to log.
+
+3. Add the ima keyrings and the ability to appraise inside the container.
+
+There could be other phases beyond this, including possibly optionally
+attaching a vtpm to the container to provide local quotes but this
+should be need driven.
+
+Some non problems of this approach are:
+
+* The continuous growth of the IMA log.  This is already a problem
+  with non-namespaced IMA.  One can argue that the above
+  implementation makes the problem worse, but it is unarguable that if
+  the problem were solved generally it would no logner be an issue for
+  containers.
+
+* attesting to the in-container IMA log.  Given it's being logged
+  through the physical TPM, the physical system owner will have to
+  publish a mechanism for attesting to particular container entries of
+  the log.
+
+[1] https://lore.kernel.org/all/20200818152037.11869-1-krzysztof.struczynski@huawei.com
+[2] https://lore.kernel.org/all/20180511144230.75384-1-stefanb@linux.vnet.ibm.com
+[3] https://lore.kernel.org/all/1494511203-8397-1-git-send-email-guilherme.magalhaes@hpe.com
+
+James
+
+---
+
+James Bottomley (3):
+  userns: add ima_ns_info field containing a settable namespace label
+  ima: show the namespace label in the ima-ns template
+  ima: make the integrity inode cache per namespace
+
+ include/linux/ima.h                       |  15 +-
+ include/linux/user_namespace.h            |   7 +
+ kernel/user.c                             |   1 +
+ kernel/user_namespace.c                   |   6 +
+ security/integrity/iint.c                 |   4 +-
+ security/integrity/ima/Kconfig            |   6 +-
+ security/integrity/ima/Makefile           |   2 +-
+ security/integrity/ima/ima.h              |  26 +++-
+ security/integrity/ima/ima_api.c          |   7 +-
+ security/integrity/ima/ima_main.c         |  21 +--
+ security/integrity/ima/ima_ns.c           | 169 ++++++++++++++++++++++
+ security/integrity/ima/ima_policy.c       |   2 +-
+ security/integrity/ima/ima_template.c     |   6 +-
+ security/integrity/ima/ima_template_lib.c |  17 +++
+ security/integrity/ima/ima_template_lib.h |   4 +
+ security/integrity/integrity.h            |  11 +-
+ 16 files changed, 284 insertions(+), 20 deletions(-)
+ create mode 100644 security/integrity/ima/ima_ns.c
+
+-- 
+2.33.0
+
