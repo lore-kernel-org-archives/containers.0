@@ -1,29 +1,22 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 896F62C9E
-	for <containers@lists.linux.dev>; Fri,  3 Dec 2021 13:57:43 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 97A57C53FAD;
-	Fri,  3 Dec 2021 13:57:41 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1638539863;
-	bh=GkZK7CjGJ62tcATLLT9E8sNeTIf3fZA3Xl+jf6Wf6y4=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=WQcyp4Hmmn/oUjF10ZQdW/iRg9E+SCbUq63s7GI0c0tKXyPuWzcna3+0r8HcrNn4c
-	 H/rg4Ca+tS6XaNSTrhyquSK3HJAPHVyb7sgkZLoU/DwLCsiC9HP2X5YXvMsMyCvgUB
-	 c4bBsYkksDuQYdUzaphPUcsfTKcXjEkSKSGy5pVeE9mrQ5vDqMu9J9gVY5lKHzAAlt
-	 DWne3eO4cWHd4AFgYBDqnY9lfH9u21lJ0jTjOpzUFHAbIgvrg1ABzEIpP/sH3vmAYA
-	 6CdQPo1rjeLpTcumMCocOz5Qs+wEu5INrU4geZqMKp7Rf1xu9Bck2G+aZ5EJtphMpY
-	 Ae8mFGalKmS+w==
-Date: Fri, 3 Dec 2021 14:57:38 +0100
-From: Alexey Gladkov <legion@kernel.org>
+Received: from vmicros1.altlinux.org (vmicros1.altlinux.org [194.107.17.57])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id CABA92C9E
+	for <containers@lists.linux.dev>; Fri,  3 Dec 2021 14:01:07 +0000 (UTC)
+Received: from imap.altlinux.org (imap.altlinux.org [194.107.17.38])
+	by vmicros1.altlinux.org (Postfix) with ESMTP id C412872C8DC;
+	Fri,  3 Dec 2021 16:54:54 +0300 (MSK)
+Received: from example.org (ip-78-45-37-102.net.upcbroadband.cz [78.45.37.102])
+	by imap.altlinux.org (Postfix) with ESMTPSA id 045C74A46EA;
+	Fri,  3 Dec 2021 16:54:53 +0300 (MSK)
+Date: Fri, 3 Dec 2021 14:54:53 +0100
+From: Alexey Gladkov <legion@altlinux.ru>
 To: Dan Carpenter <dan.carpenter@oracle.com>
-Cc: kbuild@lists.01.org, LKML <linux-kernel@vger.kernel.org>,
+Cc: kbuild@lists.01.org, Alexey Gladkov <legion@kernel.org>,
+	LKML <linux-kernel@vger.kernel.org>,
 	Linux Containers <containers@lists.linux.dev>, lkp@intel.com,
 	kbuild-all@lists.01.org,
 	"Eric W . Biederman" <ebiederm@xmission.com>
 Subject: Re: [PATCH v1 2/2] ucounts: Move rlimit max values from ucounts max
-Message-ID: <20211203135738.ywxjw63ljskzfp2e@example.org>
+Message-ID: <20211203135453.ld2jblkd3xtlbgrv@example.org>
 References: <bcc85eae4f5e3799f9efdf2d73572bb88616ebac.1637934917.git.legion@kernel.org>
  <202111280022.ugxpiKpA-lkp@intel.com>
 Precedence: bulk
