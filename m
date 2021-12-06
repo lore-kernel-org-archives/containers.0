@@ -1,50 +1,51 @@
 Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CF5582CB1
-	for <containers@lists.linux.dev>; Mon,  6 Dec 2021 17:26:19 +0000 (UTC)
-Received: from pps.filterd (m0098399.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 1B6FjRtr005534;
-	Mon, 6 Dec 2021 17:26:11 GMT
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A65992CB8
+	for <containers@lists.linux.dev>; Mon,  6 Dec 2021 17:26:21 +0000 (UTC)
+Received: from pps.filterd (m0098409.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 1B6GkXpp027708;
+	Mon, 6 Dec 2021 17:26:12 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
- : date : message-id : content-transfer-encoding : mime-version; s=pp1;
- bh=5dAPaPlMd5CJ+2PVoXw4RIyM0HE+Jr/GDRtytyJkbac=;
- b=SBIIMeiWKna2Sgm1VQboWNvF+76TqtbWUIk5al49zZ/pq0gPCYygUpM6FzNrmWR5Q78w
- ClMW+dCjfm1MxUSX5++Pfp4ugWXzwDpSHwMroFg7kfmflR9n3GtLyfGNR1VGXYKymBIA
- fbg5KZbbTRllvUMkX3mlqRUEXGW0VoawfM/y8yHSzttgIzLQL0TXa6Wiev30oRtJHiau
- ys3+QBbgw5JLeWZgWriXmeqp/9yegiVKt1qW5AdwIEUje+uBK7XmKXDKTjnq/Q5oNZ4O
- ORl0OHdqEgKxxj2cbnA1yQdKiuaIDZ3yl+UbU8xnDqvHz3vQ9PSDbKb3fkLYNcft7SqY 7g== 
+ : date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding; s=pp1;
+ bh=PM0gndEpvTn46PA3+JRUPlIWFGwWfyFTTuOLVtbS4rY=;
+ b=fKO/K3MrdDZm1PB4SIyEx+FKeAXCEAoRaJSM/di42ALPXak2vHQTjfe/t+kp1Pzi6ckv
+ bhe0hqp9nUjhcK83mzWnjEsQ1vkD3AOn+FPRnNrxkvQQuXerKOkkYn5gUceoqmGq0pGu
+ 5Oo86Csx+HD1z4n8XocoNU/q+hyTyeSxLhKbnlqxR6/kqxz08g/MbE3HcENKq7TkLS87
+ 9aJcJYmvKSkEHLe45oNH0w7ew7T/URzFm8l2vVkPvZVKtkdHjHVD2LXvZzGcxXtiZgIO
+ +RPPPCdPFHt5lGX4WWUdiO8gkkqQWaXFy5ZDbCdLyFmQ3YDLmq57jK5jRm3ElsN6/7p0 uQ== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3csmnekdah-1
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3cspb98u82-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 06 Dec 2021 17:26:11 +0000
-Received: from m0098399.ppops.net (m0098399.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 1B6H91PE031387;
+	Mon, 06 Dec 2021 17:26:12 +0000
+Received: from m0098409.ppops.net (m0098409.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 1B6Gnlmr008485;
+	Mon, 6 Dec 2021 17:26:12 GMT
+Received: from ppma02wdc.us.ibm.com (aa.5b.37a9.ip4.static.sl-reverse.com [169.55.91.170])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3cspb98u7c-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Mon, 06 Dec 2021 17:26:12 +0000
+Received: from pps.filterd (ppma02wdc.us.ibm.com [127.0.0.1])
+	by ppma02wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 1B6HDi2R029870;
 	Mon, 6 Dec 2021 17:26:10 GMT
-Received: from ppma03dal.us.ibm.com (b.bd.3ea9.ip4.static.sl-reverse.com [169.62.189.11])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3csmnekda7-1
+Received: from b01cxnp23032.gho.pok.ibm.com (b01cxnp23032.gho.pok.ibm.com [9.57.198.27])
+	by ppma02wdc.us.ibm.com with ESMTP id 3cqyy9tc1n-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Mon, 06 Dec 2021 17:26:10 +0000
-Received: from pps.filterd (ppma03dal.us.ibm.com [127.0.0.1])
-	by ppma03dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 1B6HDicY029393;
-	Mon, 6 Dec 2021 17:26:09 GMT
-Received: from b01cxnp23034.gho.pok.ibm.com (b01cxnp23034.gho.pok.ibm.com [9.57.198.29])
-	by ppma03dal.us.ibm.com with ESMTP id 3cqyya2my3-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 06 Dec 2021 17:26:08 +0000
 Received: from b01ledav001.gho.pok.ibm.com (b01ledav001.gho.pok.ibm.com [9.57.199.106])
-	by b01cxnp23034.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 1B6HQ7VS50594172
+	by b01cxnp23032.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 1B6HQ92442729750
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Mon, 6 Dec 2021 17:26:07 GMT
+	Mon, 6 Dec 2021 17:26:09 GMT
 Received: from b01ledav001.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 3ACDF2805C;
-	Mon,  6 Dec 2021 17:26:07 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 028B828064;
+	Mon,  6 Dec 2021 17:26:09 +0000 (GMT)
 Received: from b01ledav001.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 18C9C28059;
-	Mon,  6 Dec 2021 17:26:07 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id D937928059;
+	Mon,  6 Dec 2021 17:26:08 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by b01ledav001.gho.pok.ibm.com (Postfix) with ESMTP;
-	Mon,  6 Dec 2021 17:26:07 +0000 (GMT)
+	Mon,  6 Dec 2021 17:26:08 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
@@ -54,171 +55,188 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
         lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
         jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
-        jmorris@namei.org, Stefan Berger <stefanb@linux.ibm.com>
-Subject: [PATCH v3 00/16] ima: Namespace IMA with audit support in IMA-ns
-Date: Mon,  6 Dec 2021 12:25:44 -0500
-Message-Id: <20211206172600.1495968-1-stefanb@linux.ibm.com>
+        jmorris@namei.org, Stefan Berger <stefanb@linux.ibm.com>,
+        James Bottomley <James.Bottomley@HansenPartnership.com>
+Subject: [PATCH v3 12/16] securityfs: Extend securityfs with namespacing support
+Date: Mon,  6 Dec 2021 12:25:56 -0500
+Message-Id: <20211206172600.1495968-13-stefanb@linux.ibm.com>
 X-Mailer: git-send-email 2.31.1
-X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: 5hh1xSrf9rJIa-dDyinvb_GP3VkB77ia
-X-Proofpoint-GUID: oVt0Fj-k5zrg5eMXdwQko2VVQ83tIug_
-Content-Transfer-Encoding: 8bit
-X-Proofpoint-UnRewURL: 0 URL was un-rewritten
+In-Reply-To: <20211206172600.1495968-1-stefanb@linux.ibm.com>
+References: <20211206172600.1495968-1-stefanb@linux.ibm.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+X-TM-AS-GCONF: 00
+X-Proofpoint-GUID: FZ6rGAmi7e69kOK97EIyxdQZ0KctKQ2x
+X-Proofpoint-ORIG-GUID: WKP_zGG8wDGTMkBFimuplVlz4CrU7OwK
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.11.62.513
  definitions=2021-12-06_06,2021-12-06_02,2021-12-02_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 adultscore=0 spamscore=0
- lowpriorityscore=0 mlxscore=0 priorityscore=1501 phishscore=0
- suspectscore=0 impostorscore=0 malwarescore=0 bulkscore=0 clxscore=1015
- mlxlogscore=999 classifier=spam adjust=0 reason=mlx scancount=1
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 phishscore=0 malwarescore=0
+ adultscore=0 lowpriorityscore=0 suspectscore=0 mlxlogscore=999
+ priorityscore=1501 clxscore=1015 spamscore=0 impostorscore=0 bulkscore=0
+ mlxscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.12.0-2110150000 definitions=main-2112060104
 
-The goal of this series of patches is to start with the namespacing of
-IMA and support auditing within an IMA namespace (IMA-ns) as the first
-step.
+Extend 'securityfs' for support of IMA namespacing so that each
+IMA (user) namespace can have its own front-end for showing the currently
+active policy, the measurement list, number of violations and so on.
 
-In this series the IMA namespace is piggy backing on the user namespace
-and therefore an IMA namespace gets created when a user namespace is
-created. The advantage of this is that the user namespace can provide
-the keys infrastructure that IMA appraisal support will need later on.
+The filesystem can be mounted to the usual securityfs mount point like
+this:
 
-We chose the goal of supporting auditing within an IMA namespace since it
-requires the least changes to IMA. Following this series, auditing within
-an IMA namespace can be activated by a user running the following lines
-that rely on a statically linked busybox to be installed on the host for
-execution within the minimal container environment:
+mount -t securityfs /sys/kernel/security /sys/kernel/security
 
-mkdir -p rootfs/{bin,mnt,proc}
-cp /sbin/busybox rootfs/bin
-PATH=/bin unshare --user --map-root-user --mount-proc --pid --fork \
-  --root rootfs busybox sh -c \
- "busybox mount -t securityfs /mnt /mnt; \
-  busybox echo 'audit func=BPRM_CHECK mask=MAY_EXEC' > /mnt/ima/policy; \
-  busybox cat /mnt/ima/policy"
+Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
+Signed-off-by: James Bottomley <James.Bottomley@HansenPartnership.com>
+---
+ include/linux/security.h       |  8 +++++
+ include/linux/user_namespace.h |  1 +
+ security/inode.c               | 58 ++++++++++++++++++++++++++++++++--
+ 3 files changed, 65 insertions(+), 2 deletions(-)
 
-Following the audit log on the host the last line cat'ing the IMA policy
-inside the namespace would have been audited. Unfortunately the auditing
-line is not distinguishable from one stemming from actions on the host.
-The hope here is that Richard Brigg's container id support for auditing
-would help resolve the problem.
-
-The following lines added to a suitable IMA policy on the host would
-cause the execution of the commands inside the container (by uid 1000)
-to be measured and audited as well on the host, thus leading to two
-auditing messages for the 'busybox cat' above and log entries in IMA's
-system log.
-
-echo -e "measure func=BPRM_CHECK mask=MAY_EXEC uid=1000\n" \
-        "audit func=BPRM_CHECK mask=MAY_EXEC uid=1000\n" \
-    > /sys/kernel/security/ima/policy
-
-The goal of supporting measurement and auditing by the host, of actions
-occurring within IMA namespaces, is that users, particularly root,
-should not be able to evade the host's IMA policy just by spawning
-new IMA namespaces, running programs there, and discarding the namespaces
-again. This is achieved through 'hierarchical processing' of file
-accesses that are evaluated against the policy of the namespace where
-the action occurred and against all namespaces' and their policies leading
-back to the root IMA namespace (init_ima_ns).
-
-The patch series adds support for a virtualized SecurityFS with a few
-new API calls that are used by IMA namespacing. Only the data relevant
-to the IMA namespace are shown. The files and directories of other
-security subsystems (TPM, evm, Tomoyo, safesetid) are not showing
-up when secruityfs is mounted inside a user namespace.
-
-Much of the code leading up to the virtualization of SecurityFS deals
-with moving IMA's variables from various files into the IMA namespace
-structure called 'ima_namespace'. When it comes to determining the
-current IMA namespace I took the approach to get the current IMA
-namespace (get_current_ns()) on the top level and pass the pointer all
-the way down to those functions that now need access to the ima_namespace
-to get to their variables. This later on comes in handy once hierarchical
-processing is implemented in this series where we walk the list of
-namespaces backwards and again need to pass the pointer into functions.
-
-This patch also introduces usage of CAP_MAC_ADMIN to allow access to the
-IMA policy via reduced capabilities. We would again later on use this
-capability to allow users to set file extended attributes for IMA appraisal
-support.
-
-The basis for this series of patches is Linux v5.15.
-My tree with these patches is here:
-https://github.com/stefanberger/linux-ima-namespaces/tree/v5.15%2Bimans.v3.public
-
-Regards,
-   Stefan
-
-v3:
- - Further modifications to virtualized SecurityFS following James's posted patch
- - Dropping of early teardown for user_namespaces since not needed anymore
-
-v2:
- - Folllwed Christian's suggestion to virtualize securitytfs; no more securityfs_ns
- - Followed James's advice for late 'population' of securityfs for IMA namespaces
- - Squashed 2 patches dealing with capabilities
- - Added missing 'depends on USER_NS' to Kconfig
- - Added missing 'static' to several functions
-
-
-*** BLURB HERE ***
-
-Mehmet Kayaalp (2):
-  ima: Define ns_status for storing namespaced iint data
-  ima: Namespace audit status flags
-
-Stefan Berger (14):
-  ima: Add IMA namespace support
-  ima: Move delayed work queue and variables into ima_namespace
-  ima: Move IMA's keys queue related variables into ima_namespace
-  ima: Move policy related variables into ima_namespace
-  ima: Move ima_htable into ima_namespace
-  ima: Move measurement list related variables into ima_namespace
-  ima: Only accept AUDIT rules for IMA non-init_ima_ns namespaces for
-    now
-  ima: Implement hierarchical processing of file accesses
-  securityfs: Move vfsmount into user_namespace
-  securityfs: Extend securityfs with namespacing support
-  ima: Move some IMA policy and filesystem related variables into
-    ima_namespace
-  ima: Use mac_admin_ns_capable() to check corresponding capability
-  ima: Move dentries into ima_namespace
-  ima: Setup securityfs for IMA namespace
-
- include/linux/capability.h                   |   6 +
- include/linux/ima.h                          | 126 ++++++++++++++
- include/linux/security.h                     |   8 +
- include/linux/user_namespace.h               |   8 +
- init/Kconfig                                 |  13 ++
- kernel/user.c                                |   9 +-
- kernel/user_namespace.c                      |  16 ++
- security/inode.c                             |  83 +++++++--
- security/integrity/ima/Makefile              |   4 +-
- security/integrity/ima/ima.h                 | 145 ++++++++++------
- security/integrity/ima/ima_api.c             |  33 ++--
- security/integrity/ima/ima_appraise.c        |  26 +--
- security/integrity/ima/ima_asymmetric_keys.c |   8 +-
- security/integrity/ima/ima_fs.c              | 170 ++++++++++++-------
- security/integrity/ima/ima_init.c            |  22 +--
- security/integrity/ima/ima_init_ima_ns.c     |  73 ++++++++
- security/integrity/ima/ima_main.c            | 128 +++++++++-----
- security/integrity/ima/ima_ns.c              | 111 ++++++++++++
- security/integrity/ima/ima_ns_status.c       | 132 ++++++++++++++
- security/integrity/ima/ima_policy.c          | 142 +++++++++-------
- security/integrity/ima/ima_queue.c           |  75 ++++----
- security/integrity/ima/ima_queue_keys.c      |  73 +++-----
- security/integrity/ima/ima_template.c        |   4 +-
- 23 files changed, 1075 insertions(+), 340 deletions(-)
- create mode 100644 security/integrity/ima/ima_init_ima_ns.c
- create mode 100644 security/integrity/ima/ima_ns.c
- create mode 100644 security/integrity/ima/ima_ns_status.c
-
+diff --git a/include/linux/security.h b/include/linux/security.h
+index 7e0ba63b5dde..b5266bedef3f 100644
+--- a/include/linux/security.h
++++ b/include/linux/security.h
+@@ -1929,6 +1929,14 @@ struct dentry *securityfs_create_symlink(const char *name,
+ 					 const struct inode_operations *iops);
+ extern void securityfs_remove(struct dentry *dentry);
+ 
++enum {
++	SECURITYFS_NS_ADD,
++	SECURITYFS_NS_REMOVE,
++};
++
++extern int securityfs_register_ns_notifier(struct notifier_block *nb);
++extern int securityfs_unregister_ns_notifier(struct notifier_block *nb);
++
+ #else /* CONFIG_SECURITYFS */
+ 
+ static inline struct dentry *securityfs_create_dir(const char *name,
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index 89663e6e0e85..6b8bd060d8c4 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -105,6 +105,7 @@ struct user_namespace {
+ #endif
+ #ifdef CONFIG_SECURITYFS
+ 	struct vfsmount		*securityfs_mount;
++	bool			securityfs_notifier_sent;
+ #endif
+ } __randomize_layout;
+ 
+diff --git a/security/inode.c b/security/inode.c
+index f1006cec6ce6..45211845fc31 100644
+--- a/security/inode.c
++++ b/security/inode.c
+@@ -18,6 +18,7 @@
+ #include <linux/pagemap.h>
+ #include <linux/init.h>
+ #include <linux/namei.h>
++#include <linux/notifier.h>
+ #include <linux/security.h>
+ #include <linux/lsm_hooks.h>
+ #include <linux/magic.h>
+@@ -25,6 +26,8 @@
+ 
+ static int securityfs_mount_count;
+ 
++static BLOCKING_NOTIFIER_HEAD(securityfs_ns_notifier);
++
+ static void securityfs_free_inode(struct inode *inode)
+ {
+ 	if (S_ISLNK(inode->i_mode))
+@@ -37,6 +40,32 @@ static const struct super_operations securityfs_super_operations = {
+ 	.free_inode	= securityfs_free_inode,
+ };
+ 
++static struct file_system_type fs_type;
++
++static void securityfs_free_context(struct fs_context *fc)
++{
++	struct user_namespace *ns = fc->user_ns;
++
++	if (ns == &init_user_ns ||
++	    ns->securityfs_notifier_sent)
++		return;
++
++	ns->securityfs_notifier_sent = true;
++
++	ns->securityfs_mount = vfs_kern_mount(&fs_type, SB_KERNMOUNT,
++					      fs_type.name, NULL);
++	if (IS_ERR(ns->securityfs_mount)) {
++		printk(KERN_ERR "kern mount on securityfs ERROR: %ld\n",
++		       PTR_ERR(ns->securityfs_mount));
++		ns->securityfs_mount = NULL;
++		return;
++	}
++
++	blocking_notifier_call_chain(&securityfs_ns_notifier,
++				     SECURITYFS_NS_ADD, fc->user_ns);
++	mntput(ns->securityfs_mount);
++}
++
+ static int securityfs_fill_super(struct super_block *sb, struct fs_context *fc)
+ {
+ 	static const struct tree_descr files[] = {{""}};
+@@ -53,11 +82,12 @@ static int securityfs_fill_super(struct super_block *sb, struct fs_context *fc)
+ 
+ static int securityfs_get_tree(struct fs_context *fc)
+ {
+-	return get_tree_single(fc, securityfs_fill_super);
++	return get_tree_keyed(fc, securityfs_fill_super, fc->user_ns);
+ }
+ 
+ static const struct fs_context_operations securityfs_context_ops = {
+ 	.get_tree	= securityfs_get_tree,
++	.free		= securityfs_free_context,
+ };
+ 
+ static int securityfs_init_fs_context(struct fs_context *fc)
+@@ -66,13 +96,37 @@ static int securityfs_init_fs_context(struct fs_context *fc)
+ 	return 0;
+ }
+ 
++static void securityfs_kill_super(struct super_block *sb)
++{
++	struct user_namespace *ns = sb->s_fs_info;
++
++	if (ns != &init_user_ns)
++		blocking_notifier_call_chain(&securityfs_ns_notifier,
++					     SECURITYFS_NS_REMOVE,
++					     sb->s_fs_info);
++	ns->securityfs_notifier_sent = false;
++	ns->securityfs_mount = NULL;
++	kill_litter_super(sb);
++}
++
+ static struct file_system_type fs_type = {
+ 	.owner =	THIS_MODULE,
+ 	.name =		"securityfs",
+ 	.init_fs_context = securityfs_init_fs_context,
+-	.kill_sb =	kill_litter_super,
++	.kill_sb =	securityfs_kill_super,
++	.fs_flags =	FS_USERNS_MOUNT,
+ };
+ 
++int securityfs_register_ns_notifier(struct notifier_block *nb)
++{
++	return blocking_notifier_chain_register(&securityfs_ns_notifier, nb);
++}
++
++int securityfs_unregister_ns_notifier(struct notifier_block *nb)
++{
++	return blocking_notifier_chain_unregister(&securityfs_ns_notifier, nb);
++}
++
+ /**
+  * securityfs_create_dentry - create a dentry in the securityfs filesystem
+  *
 -- 
 2.31.1
 
