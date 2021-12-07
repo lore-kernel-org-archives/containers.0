@@ -1,51 +1,51 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C12592CAF
-	for <containers@lists.linux.dev>; Tue,  7 Dec 2021 20:22:11 +0000 (UTC)
-Received: from pps.filterd (m0098420.ppops.net [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 1B7JfHmj012849;
-	Tue, 7 Dec 2021 20:22:00 GMT
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6875A2CAF
+	for <containers@lists.linux.dev>; Tue,  7 Dec 2021 20:22:14 +0000 (UTC)
+Received: from pps.filterd (m0098394.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 1B7Jbe8L027296;
+	Tue, 7 Dec 2021 20:22:09 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=pp1;
- bh=n29Af/SeAT4kB/5tQUZrbIaCIYhKWtgPgf/bzQFWBmM=;
- b=EHGZoC5AaR9x6xdVKUoO9XWPKIM0d4gUxVieap1KXn1+3daK64Tegn7fnqsXcocSQexU
- wgviUfdoI2J/hAM8W6SHtl/Td/87uvoHCjwJ1uZC0SwdFDrDqaGudLxwcMsyomX66bHn
- toDWO2R06tyq6u0xoIF1BsBO3klVGzNzTCxvvU7lsZWYa3K9j7J/UXJU6no/VwpVVXVS
- J8L959y/rLDV8J0BsXxRAFbMGsaQYrS9Ezd5AixL8Z+o937TOEHRH15yCCazzqJB8AP3
- 9+U2lcgUkxbyg881IKyTZIlC5Kt0T5m8TLzqGpwpRPcJrwIN1IWeb/QxW25o/imfK5da YQ== 
+ bh=kam4NmZjtyntuJGkgmwzdj/JA5LKy1TUmOTyLXzHXhc=;
+ b=NObkcQ2rDXkQQIT1EFTKL0cy4XWLA6LJuB6qQRqGfvpc204VhjcaYv8gI6flOJUUWPJ+
+ liPVqz3u5jEwhbHIHSUDE4r+BBuquSpS8PjHoZYUDMwYCDlmANgQc2lcKz89nnp94JbM
+ 7eFD4SaxOjimBpl/FxZKkqn/eyVnvaZ8aayB7BKJsQLGsqvRsFoawh950wVLpBDRDfG9
+ wbR/I7BEWuscj5mWpD+7LhCMPPvYh23yXQs/4Qn9+eqbBymFa2xRN7VQzfj9KEPzjtDU
+ ASFQX/JrGGS8DDFAn3xcJVTeKu2ofn5nwLK9WH7ttHmi6hKr9A2Lx+XY8Sk/FO9zBqQX Ng== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3ctanb5evg-1
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3ctdqf925q-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 07 Dec 2021 20:21:59 +0000
-Received: from m0098420.ppops.net (m0098420.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 1B7K1fHK014353;
-	Tue, 7 Dec 2021 20:21:59 GMT
-Received: from ppma04dal.us.ibm.com (7a.29.35a9.ip4.static.sl-reverse.com [169.53.41.122])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3ctanb5ev6-1
+	Tue, 07 Dec 2021 20:22:08 +0000
+Received: from m0098394.ppops.net (m0098394.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 1B7KGfhK018712;
+	Tue, 7 Dec 2021 20:22:08 GMT
+Received: from ppma01dal.us.ibm.com (83.d6.3fa9.ip4.static.sl-reverse.com [169.63.214.131])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3ctdqf925e-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 07 Dec 2021 20:21:59 +0000
-Received: from pps.filterd (ppma04dal.us.ibm.com [127.0.0.1])
-	by ppma04dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 1B7K7xSc020244;
-	Tue, 7 Dec 2021 20:21:58 GMT
-Received: from b03cxnp07029.gho.boulder.ibm.com (b03cxnp07029.gho.boulder.ibm.com [9.17.130.16])
-	by ppma04dal.us.ibm.com with ESMTP id 3cqyyataqd-1
+	Tue, 07 Dec 2021 20:22:08 +0000
+Received: from pps.filterd (ppma01dal.us.ibm.com [127.0.0.1])
+	by ppma01dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 1B7K7p4S030654;
+	Tue, 7 Dec 2021 20:22:07 GMT
+Received: from b03cxnp07027.gho.boulder.ibm.com (b03cxnp07027.gho.boulder.ibm.com [9.17.130.14])
+	by ppma01dal.us.ibm.com with ESMTP id 3cqyyc2df8-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 07 Dec 2021 20:21:58 +0000
+	Tue, 07 Dec 2021 20:22:06 +0000
 Received: from b03ledav002.gho.boulder.ibm.com (b03ledav002.gho.boulder.ibm.com [9.17.130.233])
-	by b03cxnp07029.gho.boulder.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 1B7KLusM62128414
+	by b03cxnp07027.gho.boulder.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 1B7KM5LB16449862
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Tue, 7 Dec 2021 20:21:56 GMT
+	Tue, 7 Dec 2021 20:22:05 GMT
 Received: from b03ledav002.gho.boulder.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 980F113605D;
-	Tue,  7 Dec 2021 20:21:56 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 4B698136060;
+	Tue,  7 Dec 2021 20:22:05 +0000 (GMT)
 Received: from b03ledav002.gho.boulder.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id E0468136066;
-	Tue,  7 Dec 2021 20:21:53 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id A48A7136061;
+	Tue,  7 Dec 2021 20:22:02 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by b03ledav002.gho.boulder.ibm.com (Postfix) with ESMTP;
-	Tue,  7 Dec 2021 20:21:53 +0000 (GMT)
+	Tue,  7 Dec 2021 20:22:02 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
@@ -55,11 +55,10 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
         lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
         jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
-        jmorris@namei.org, Mehmet Kayaalp <mkayaalp@linux.vnet.ibm.com>,
-        Stefan Berger <stefanb@linux.ibm.com>
-Subject: [PATCH v4 02/16] ima: Define ns_status for storing namespaced iint data
-Date: Tue,  7 Dec 2021 15:21:13 -0500
-Message-Id: <20211207202127.1508689-3-stefanb@linux.ibm.com>
+        jmorris@namei.org, Stefan Berger <stefanb@linux.ibm.com>
+Subject: [PATCH v4 05/16] ima: Move IMA's keys queue related variables into ima_namespace
+Date: Tue,  7 Dec 2021 15:21:16 -0500
+Message-Id: <20211207202127.1508689-6-stefanb@linux.ibm.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20211207202127.1508689-1-stefanb@linux.ibm.com>
 References: <20211207202127.1508689-1-stefanb@linux.ibm.com>
@@ -71,284 +70,229 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: _I5-C0oBcSN-AQLP-2jq9krZCFIpHDap
-X-Proofpoint-ORIG-GUID: R3ovpNADQlOBUWI1R-9UE3ZK509sU6qi
+X-Proofpoint-GUID: kMEfnCMG3Mn237noUbQvm7LgDzHtvW1m
+X-Proofpoint-ORIG-GUID: zaX5pFULBAx46zjEzB6LAzMfNjxesF4d
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.11.62.513
  definitions=2021-12-07_08,2021-12-06_02,2021-12-02_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 mlxscore=0 adultscore=0
- spamscore=0 bulkscore=0 lowpriorityscore=0 suspectscore=0 mlxlogscore=999
- impostorscore=0 phishscore=0 malwarescore=0 priorityscore=1501
- clxscore=1015 classifier=spam adjust=0 reason=mlx scancount=1
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 adultscore=0 mlxlogscore=999
+ mlxscore=0 clxscore=1015 impostorscore=0 malwarescore=0 bulkscore=0
+ lowpriorityscore=0 spamscore=0 suspectscore=0 priorityscore=1501
+ phishscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.12.0-2110150000 definitions=main-2112070125
 
-From: Mehmet Kayaalp <mkayaalp@linux.vnet.ibm.com>
+Move variables from keys queue into ima_namespace.
 
-This patch adds an rbtree to the IMA namespace structure that stores a
-namespaced version of iint->flags in ns_status struct. Similar to the
-integrity_iint_cache, both the iint ns_struct are looked up using the
-inode pointer value. The lookup, allocate, and insertion code is also
-similar, except ns_struct is not free'd when the inode is free'd.
-Instead, the lookup verifies the i_ino and i_generation fields are also a
-match.
+Some variables have to be initialized before ima_init() runs, so statically
+initialize them for the init_ima_ns.
 
-Signed-off-by: Mehmet Kayaalp <mkayaalp@linux.vnet.ibm.com>
+Since only init_ima_ns uses the queued keys there's no need to free the
+list of queued keys when tearing down IMA namespaces.
+
 Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-
-Changelog:
-v2:
- * fixed tree traversal in __ima_ns_status_find()
 ---
- include/linux/ima.h                      |   3 +
- security/integrity/ima/Makefile          |   1 +
- security/integrity/ima/ima.h             |  24 +++++
- security/integrity/ima/ima_init_ima_ns.c |   9 ++
- security/integrity/ima/ima_ns.c          |   1 +
- security/integrity/ima/ima_ns_status.c   | 132 +++++++++++++++++++++++
- 6 files changed, 170 insertions(+)
- create mode 100644 security/integrity/ima/ima_ns_status.c
+ include/linux/ima.h                          | 11 ++++++
+ security/integrity/ima/ima.h                 |  9 ++---
+ security/integrity/ima/ima_asymmetric_keys.c |  5 +--
+ security/integrity/ima/ima_init_ima_ns.c     |  5 +++
+ security/integrity/ima/ima_ns.c              |  6 ++++
+ security/integrity/ima/ima_queue_keys.c      | 37 +++++++-------------
+ 6 files changed, 43 insertions(+), 30 deletions(-)
 
 diff --git a/include/linux/ima.h b/include/linux/ima.h
-index 86d126b9ff2f..cc0e8c509fa2 100644
+index 4b5dada581e4..977df9155cde 100644
 --- a/include/linux/ima.h
 +++ b/include/linux/ima.h
-@@ -214,6 +214,9 @@ static inline int ima_inode_removexattr(struct dentry *dentry,
- struct ima_namespace {
- 	struct kref kref;
- 	struct user_namespace *user_ns;
-+	struct rb_root ns_status_tree;
-+	rwlock_t ns_status_lock;
-+	struct kmem_cache *ns_status_cache;
- };
+@@ -219,6 +219,17 @@ struct ima_namespace {
+ 	struct kmem_cache *ns_status_cache;
  
- extern struct ima_namespace init_ima_ns;
-diff --git a/security/integrity/ima/Makefile b/security/integrity/ima/Makefile
-index b86a35fbed60..78c84214e109 100644
---- a/security/integrity/ima/Makefile
-+++ b/security/integrity/ima/Makefile
-@@ -10,6 +10,7 @@ ima-y := ima_fs.o ima_queue.o ima_init.o ima_main.o ima_crypto.o ima_api.o \
- 	 ima_policy.o ima_template.o ima_template_lib.o ima_init_ima_ns.o
- ima-$(CONFIG_IMA_APPRAISE) += ima_appraise.o
- ima-$(CONFIG_IMA_APPRAISE_MODSIG) += ima_modsig.o
-+ima-$(CONFIG_IMA_NS) += ima_ns.o ima_ns_status.o
- ima-$(CONFIG_HAVE_IMA_KEXEC) += ima_kexec.o
- ima-$(CONFIG_IMA_BLACKLIST_KEYRING) += ima_mok.o
- ima-$(CONFIG_IMA_MEASURE_ASYMMETRIC_KEYS) += ima_asymmetric_keys.o
+ #ifdef CONFIG_IMA_QUEUE_EARLY_BOOT_KEYS
++	/*
++	 * Flag to indicate whether a key can be processed
++	 * right away or should be queued for processing later.
++	 */
++	bool ima_process_keys;
++
++	/*
++	 * To synchronize access to the list of keys that need to be measured
++	 */
++	struct mutex ima_keys_lock;
++	struct list_head ima_keys;
+ 	/*
+ 	 * If custom IMA policy is not loaded then keys queued up
+ 	 * for measurement should be freed. This worker is used
 diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
-index 2f8adf383054..28896d256e36 100644
+index 9edab9050dc7..97eb03376855 100644
 --- a/security/integrity/ima/ima.h
 +++ b/security/integrity/ima/ima.h
-@@ -133,6 +133,14 @@ static inline void ima_load_kexec_buffer(void) {}
-  */
- extern bool ima_canonical_fmt;
+@@ -250,14 +250,15 @@ struct ima_key_entry {
+ 	char *keyring_name;
+ };
+ void ima_init_key_queue(struct ima_namespace *ns);
+-bool ima_should_queue_key(void);
+-bool ima_queue_key(struct key *keyring, const void *payload,
++bool ima_should_queue_key(struct ima_namespace *ns);
++bool ima_queue_key(struct ima_namespace *ns, struct key *keyring, const void *payload,
+ 		   size_t payload_len);
+ void ima_process_queued_keys(struct ima_namespace *ns);
+ void ima_keys_handler(struct work_struct *work);
+ #else
+-static inline bool ima_should_queue_key(void) { return false; }
+-static inline bool ima_queue_key(struct key *keyring,
++static inline bool ima_should_queue_key(struct ima_namespace *ns) { return false; }
++static inline bool ima_queue_key(struct ima_namespace *ns,
++				 struct key *keyring,
+ 				 const void *payload,
+ 				 size_t payload_len) { return false; }
+ static inline void ima_process_queued_keys(struct ima_namespace *ns) {}
+diff --git a/security/integrity/ima/ima_asymmetric_keys.c b/security/integrity/ima/ima_asymmetric_keys.c
+index f6aa0b47a772..b20e82eda8f4 100644
+--- a/security/integrity/ima/ima_asymmetric_keys.c
++++ b/security/integrity/ima/ima_asymmetric_keys.c
+@@ -30,6 +30,7 @@ void ima_post_key_create_or_update(struct key *keyring, struct key *key,
+ 				   const void *payload, size_t payload_len,
+ 				   unsigned long flags, bool create)
+ {
++	struct ima_namespace *ns = get_current_ns();
+ 	bool queued = false;
  
-+struct ns_status {
-+	struct rb_node rb_node;
-+	struct inode *inode;
-+	ino_t i_ino;
-+	u32 i_generation;
-+	unsigned long flags;
-+};
-+
- /* Internal IMA function definitions */
- int ima_init(void);
- int ima_fs_init(void);
-@@ -422,6 +430,22 @@ int ima_ns_init(void);
- struct ima_namespace;
- int ima_init_namespace(struct ima_namespace *ns);
+ 	/* Only asymmetric keys are handled by this hook. */
+@@ -39,8 +40,8 @@ void ima_post_key_create_or_update(struct key *keyring, struct key *key,
+ 	if (!payload || (payload_len == 0))
+ 		return;
  
-+#ifdef CONFIG_IMA_NS
-+struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
-+				    struct inode *inode);
-+
-+void free_ns_status_cache(struct ima_namespace *ns);
-+
-+#else
-+
-+static inline struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
-+						  struct inode *inode)
-+{
-+	return NULL;
-+}
-+
-+#endif /* CONFIG_IMA_NS */
-+
- /* LSM based policy rules require audit */
- #ifdef CONFIG_IMA_LSM_RULES
+-	if (ima_should_queue_key())
+-		queued = ima_queue_key(keyring, payload, payload_len);
++	if (ima_should_queue_key(ns))
++		queued = ima_queue_key(ns, keyring, payload, payload_len);
  
+ 	if (queued)
+ 		return;
 diff --git a/security/integrity/ima/ima_init_ima_ns.c b/security/integrity/ima/ima_init_ima_ns.c
-index 12723d77fe17..1a44963e8ba9 100644
+index 3bc2d3611739..7b66fe598789 100644
 --- a/security/integrity/ima/ima_init_ima_ns.c
 +++ b/security/integrity/ima/ima_init_ima_ns.c
-@@ -14,9 +14,18 @@
- #include <linux/user_namespace.h>
- #include <linux/ima.h>
- #include <linux/proc_ns.h>
-+#include <linux/slab.h>
-+
-+#include "ima.h"
- 
- int ima_init_namespace(struct ima_namespace *ns)
- {
-+	ns->ns_status_tree = RB_ROOT;
-+	rwlock_init(&ns->ns_status_lock);
-+	ns->ns_status_cache = KMEM_CACHE(ns_status, SLAB_PANIC);
-+	if (!ns->ns_status_cache)
-+		return -ENOMEM;
-+
- 	return 0;
- }
- 
+@@ -45,5 +45,10 @@ int __init ima_ns_init(void)
+ struct ima_namespace init_ima_ns = {
+ 	.kref = KREF_INIT(1),
+ 	.user_ns = &init_user_ns,
++#ifdef CONFIG_IMA_QUEUE_EARLY_BOOT_KEYS
++	.ima_process_keys = false,
++	.ima_keys_lock = __MUTEX_INITIALIZER(init_ima_ns.ima_keys_lock),
++	.ima_keys = LIST_HEAD_INIT(init_ima_ns.ima_keys),
++#endif
+ };
+ EXPORT_SYMBOL(init_ima_ns);
 diff --git a/security/integrity/ima/ima_ns.c b/security/integrity/ima/ima_ns.c
-index 9a782c08c34e..566e59524958 100644
+index 1fe1d910996b..11e0343f1f55 100644
 --- a/security/integrity/ima/ima_ns.c
 +++ b/security/integrity/ima/ima_ns.c
-@@ -61,6 +61,7 @@ struct ima_namespace *copy_ima_ns(struct ima_namespace *old_ns,
- static void destroy_ima_ns(struct ima_namespace *ns)
- {
- 	pr_debug("DESTROY ima_ns: 0x%p\n", ns);
-+	free_ns_status_cache(ns);
- 	kmem_cache_free(imans_cachep, ns);
+@@ -38,6 +38,12 @@ static struct ima_namespace *create_ima_ns(struct user_namespace *user_ns)
+ 	if (err)
+ 		goto fail_free;
+ 
++#ifdef CONFIG_IMA_QUEUE_EARLY_BOOT_KEYS
++	ns->ima_process_keys = false;
++	mutex_init(&ns->ima_keys_lock);
++	INIT_LIST_HEAD(&ns->ima_keys);
++#endif
++
+ 	return ns;
+ 
+ fail_free:
+diff --git a/security/integrity/ima/ima_queue_keys.c b/security/integrity/ima/ima_queue_keys.c
+index fcaa1645dba3..9e5e9a178253 100644
+--- a/security/integrity/ima/ima_queue_keys.c
++++ b/security/integrity/ima/ima_queue_keys.c
+@@ -14,17 +14,6 @@
+ #include <keys/asymmetric-type.h>
+ #include "ima.h"
+ 
+-/*
+- * Flag to indicate whether a key can be processed
+- * right away or should be queued for processing later.
+- */
+-static bool ima_process_keys;
+-
+-/*
+- * To synchronize access to the list of keys that need to be measured
+- */
+-static DEFINE_MUTEX(ima_keys_lock);
+-static LIST_HEAD(ima_keys);
+ 
+ /*
+  * This worker function frees keys that may still be
+@@ -95,7 +84,7 @@ static struct ima_key_entry *ima_alloc_key_entry(struct key *keyring,
+ 	return entry;
  }
  
-diff --git a/security/integrity/ima/ima_ns_status.c b/security/integrity/ima/ima_ns_status.c
-new file mode 100644
-index 000000000000..807dfaecdb5e
---- /dev/null
-+++ b/security/integrity/ima/ima_ns_status.c
-@@ -0,0 +1,132 @@
-+// SPDX-License-Identifier: GPL-2.0-only
-+/*
-+ * Copyright (C) 2016-2021 IBM Corporation
-+ * Author:
-+ *  Yuqiong Sun <suny@us.ibm.com>
-+ *  Stefan Berger <stefanb@linux.vnet.ibm.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation, version 2 of the License.
-+ */
-+
-+#include <linux/user_namespace.h>
-+#include <linux/proc_ns.h>
-+#include <linux/ima.h>
-+
-+#include "ima.h"
-+
-+void free_ns_status_cache(struct ima_namespace *ns)
-+{
-+	struct ns_status *status, *next;
-+
-+	write_lock(&ns->ns_status_lock);
-+	rbtree_postorder_for_each_entry_safe(status, next,
-+					     &ns->ns_status_tree, rb_node)
-+		kmem_cache_free(ns->ns_status_cache, status);
-+	ns->ns_status_tree = RB_ROOT;
-+	write_unlock(&ns->ns_status_lock);
-+	kmem_cache_destroy(ns->ns_status_cache);
-+}
-+
-+/*
-+ * __ima_ns_status_find - return the ns_status associated with an inode
-+ */
-+static struct ns_status *__ima_ns_status_find(struct ima_namespace *ns,
-+					      struct inode *inode)
-+{
-+	struct ns_status *status;
-+	struct rb_node *n = ns->ns_status_tree.rb_node;
-+
-+	while (n) {
-+		status = rb_entry(n, struct ns_status, rb_node);
-+
-+		if (inode < status->inode)
-+			n = n->rb_left;
-+		else if (inode > status->inode)
-+			n = n->rb_right;
-+		else
-+			break;
-+	}
-+	if (!n)
-+		return NULL;
-+
-+	return status;
-+}
-+
-+/*
-+ * ima_ns_status_find - return the ns_status associated with an inode
-+ */
-+static struct ns_status *ima_ns_status_find(struct ima_namespace *ns,
-+					    struct inode *inode)
-+{
-+	struct ns_status *status;
-+
-+	read_lock(&ns->ns_status_lock);
-+	status = __ima_ns_status_find(ns, inode);
-+	read_unlock(&ns->ns_status_lock);
-+
-+	return status;
-+}
-+
-+static void insert_ns_status(struct ima_namespace *ns, struct inode *inode,
-+			     struct ns_status *status)
-+{
-+	struct rb_node **p;
-+	struct rb_node *node, *parent = NULL;
-+	struct ns_status *test_status;
-+
-+	p = &ns->ns_status_tree.rb_node;
-+	while (*p) {
-+		parent = *p;
-+		test_status = rb_entry(parent, struct ns_status, rb_node);
-+		if (inode < test_status->inode)
-+			p = &(*p)->rb_left;
-+		else
-+			p = &(*p)->rb_right;
-+	}
-+	node = &status->rb_node;
-+	rb_link_node(node, parent, p);
-+	rb_insert_color(node, &ns->ns_status_tree);
-+}
-+
-+struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
-+				    struct inode *inode)
-+{
-+	struct ns_status *status;
-+	int skip_insert = 0;
-+
-+	status = ima_ns_status_find(ns, inode);
-+	if (status) {
-+		/*
-+		 * Unlike integrity_iint_cache we are not free'ing the
-+		 * ns_status data when the inode is free'd. So, in addition to
-+		 * checking the inode pointer, we need to make sure the
-+		 * (i_generation, i_ino) pair matches as well.
-+		 */
-+		if (inode->i_ino == status->i_ino &&
-+		    inode->i_generation == status->i_generation)
-+			return status;
-+
-+		/* Same inode number is reused, overwrite the ns_status */
-+		skip_insert = 1;
-+	} else {
-+		status = kmem_cache_alloc(ns->ns_status_cache, GFP_NOFS);
-+		if (!status)
-+			return ERR_PTR(-ENOMEM);
-+	}
-+
-+	write_lock(&ns->ns_status_lock);
-+
-+	if (!skip_insert)
-+		insert_ns_status(ns, inode, status);
-+
-+	status->inode = inode;
-+	status->i_ino = inode->i_ino;
-+	status->i_generation = inode->i_generation;
-+	status->flags = 0UL;
-+
-+	write_unlock(&ns->ns_status_lock);
-+
-+	return status;
-+}
+-bool ima_queue_key(struct key *keyring, const void *payload,
++bool ima_queue_key(struct ima_namespace *ns, struct key *keyring, const void *payload,
+ 		   size_t payload_len)
+ {
+ 	bool queued = false;
+@@ -105,12 +94,12 @@ bool ima_queue_key(struct key *keyring, const void *payload,
+ 	if (!entry)
+ 		return false;
+ 
+-	mutex_lock(&ima_keys_lock);
+-	if (!ima_process_keys) {
+-		list_add_tail(&entry->list, &ima_keys);
++	mutex_lock(&ns->ima_keys_lock);
++	if (!ns->ima_process_keys) {
++		list_add_tail(&entry->list, &ns->ima_keys);
+ 		queued = true;
+ 	}
+-	mutex_unlock(&ima_keys_lock);
++	mutex_unlock(&ns->ima_keys_lock);
+ 
+ 	if (!queued)
+ 		ima_free_key_entry(entry);
+@@ -129,7 +118,7 @@ void ima_process_queued_keys(struct ima_namespace *ns)
+ 	struct ima_key_entry *entry, *tmp;
+ 	bool process = false;
+ 
+-	if (ima_process_keys)
++	if (ns->ima_process_keys)
+ 		return;
+ 
+ 	/*
+@@ -138,12 +127,12 @@ void ima_process_queued_keys(struct ima_namespace *ns)
+ 	 * First one setting the ima_process_keys flag to true will
+ 	 * process the queued keys.
+ 	 */
+-	mutex_lock(&ima_keys_lock);
+-	if (!ima_process_keys) {
+-		ima_process_keys = true;
++	mutex_lock(&ns->ima_keys_lock);
++	if (!ns->ima_process_keys) {
++		ns->ima_process_keys = true;
+ 		process = true;
+ 	}
+-	mutex_unlock(&ima_keys_lock);
++	mutex_unlock(&ns->ima_keys_lock);
+ 
+ 	if (!process)
+ 		return;
+@@ -151,7 +140,7 @@ void ima_process_queued_keys(struct ima_namespace *ns)
+ 	if (!ns->timer_expired)
+ 		cancel_delayed_work_sync(&ns->ima_keys_delayed_work);
+ 
+-	list_for_each_entry_safe(entry, tmp, &ima_keys, list) {
++	list_for_each_entry_safe(entry, tmp, &ns->ima_keys, list) {
+ 		if (!ns->timer_expired)
+ 			process_buffer_measurement(&init_user_ns, NULL,
+ 						   entry->payload,
+@@ -165,7 +154,7 @@ void ima_process_queued_keys(struct ima_namespace *ns)
+ 	}
+ }
+ 
+-inline bool ima_should_queue_key(void)
++inline bool ima_should_queue_key(struct ima_namespace *ns)
+ {
+-	return !ima_process_keys;
++	return !ns->ima_process_keys;
+ }
 -- 
 2.31.1
 
