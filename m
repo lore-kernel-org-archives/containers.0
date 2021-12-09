@@ -1,22 +1,22 @@
 Received: from frasgout.his.huawei.com (frasgout.his.huawei.com [185.176.79.56])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 15D41173
-	for <containers@lists.linux.dev>; Thu,  9 Dec 2021 07:22:36 +0000 (UTC)
-Received: from fraeml709-chm.china.huawei.com (unknown [172.18.147.206])
-	by frasgout.his.huawei.com (SkyGuard) with ESMTP id 4J8lnm3T3Kz67yRx;
-	Thu,  9 Dec 2021 15:21:16 +0800 (CST)
-Received: from lhreml727-chm.china.huawei.com (10.201.108.78) by
- fraeml709-chm.china.huawei.com (10.206.15.37) with Microsoft SMTP Server
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 42C42173
+	for <containers@lists.linux.dev>; Thu,  9 Dec 2021 08:09:24 +0000 (UTC)
+Received: from fraeml743-chm.china.huawei.com (unknown [172.18.147.206])
+	by frasgout.his.huawei.com (SkyGuard) with ESMTP id 4J8mmL3cVhz685x5;
+	Thu,  9 Dec 2021 16:05:06 +0800 (CST)
+Received: from lhreml732-chm.china.huawei.com (10.201.108.83) by
+ fraeml743-chm.china.huawei.com (10.206.15.224) with Microsoft SMTP Server
  (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.2308.20; Thu, 9 Dec 2021 08:22:28 +0100
+ 15.1.2308.20; Thu, 9 Dec 2021 09:09:21 +0100
 Received: from lhreml738-chm.china.huawei.com (10.201.108.188) by
- lhreml727-chm.china.huawei.com (10.201.108.78) with Microsoft SMTP Server
+ lhreml732-chm.china.huawei.com (10.201.108.83) with Microsoft SMTP Server
  (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.2308.20; Thu, 9 Dec 2021 07:22:27 +0000
+ 15.1.2308.20; Thu, 9 Dec 2021 08:09:20 +0000
 Received: from lhreml738-chm.china.huawei.com ([10.201.108.188]) by
  lhreml738-chm.china.huawei.com ([10.201.108.188]) with mapi id
- 15.01.2308.020; Thu, 9 Dec 2021 07:22:27 +0000
+ 15.01.2308.020; Thu, 9 Dec 2021 08:09:20 +0000
 From: Denis Semakin <denis.semakin@huawei.com>
 To: Stefan Berger <stefanb@linux.ibm.com>, "linux-integrity@vger.kernel.org"
 	<linux-integrity@vger.kernel.org>
@@ -39,12 +39,11 @@ Subject: RE: [PATCH v5 14/16] ima: Use mac_admin_ns_capable() to check
  corresponding capability
 Thread-Topic: [PATCH v5 14/16] ima: Use mac_admin_ns_capable() to check
  corresponding capability
-Thread-Index: AQHX7IGL3eM2VvpvvUagKdVUk4BPk6wpv2mA
-Date: Thu, 9 Dec 2021 07:22:27 +0000
-Message-ID: <0299fefc764b453a9449b0df2ca06dc7@huawei.com>
+Thread-Index: AQHX7IGL3eM2VvpvvUagKdVUk4BPk6wpv2mAgAAOKDA=
+Date: Thu, 9 Dec 2021 08:09:20 +0000
+Message-ID: <cde301002f884f43bcb7fa244b1c6b84@huawei.com>
 References: <20211208221818.1519628-1-stefanb@linux.ibm.com>
- <20211208221818.1519628-15-stefanb@linux.ibm.com>
-In-Reply-To: <20211208221818.1519628-15-stefanb@linux.ibm.com>
+ <20211208221818.1519628-15-stefanb@linux.ibm.com> 
 Accept-Language: en-US
 Content-Language: en-US
 X-MS-Has-Attach:
@@ -60,11 +59,35 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 X-CFilter-Loop: Reflected
 
+Following that thoughts...
+Will it be so incorrectly to unbound IMA-ns from USER-ns?
+I realize that it could lead a lot of problems but it is still unclear will=
+ current IMA-ns will be useful for Kuber...
+How userland supposed to use current IMA-ns implementation?
+
+Br,
+Denis
+
+-----Original Message-----
+From: Denis Semakin=20
+Sent: Thursday, December 9, 2021 10:22 AM
+To: 'Stefan Berger' <stefanb@linux.ibm.com>; linux-integrity@vger.kernel.or=
+g
+Cc: zohar@linux.ibm.com; serge@hallyn.com; christian.brauner@ubuntu.com; co=
+ntainers@lists.linux.dev; dmitry.kasatkin@gmail.com; ebiederm@xmission.com;=
+ Krzysztof Struczynski <krzysztof.struczynski@huawei.com>; Roberto Sassu <r=
+oberto.sassu@huawei.com>; mpeters@redhat.com; lhinds@redhat.com; lsturman@r=
+edhat.com; puiterwi@redhat.com; jejb@linux.ibm.com; jamjoom@us.ibm.com; lin=
+ux-kernel@vger.kernel.org; paul@paul-moore.com; rgb@redhat.com; linux-secur=
+ity-module@vger.kernel.org; jmorris@namei.org
+Subject: RE: [PATCH v5 14/16] ima: Use mac_admin_ns_capable() to check corr=
+esponding capability
+
 Hi.=20
 My question won't be about capabilities. I'm wondering how IMA-ns which is =
-associated with USER-ns and is created during USER-ns creation
-would be used by some namespaces orchestration systems, e.g. Kubernetes?.. =
-It seems that it can be run without any user namespaces...=20
+associated with USER-ns and is created during USER-ns creation would be use=
+d by some namespaces orchestration systems, e.g. Kubernetes?.. It seems tha=
+t it can be run without any user namespaces...=20
 Their community just discuss this opportunity to support User namespaces. (=
 see https://github.com/kubernetes/enhancements/pull/2101)
 Looks like currently IMA-ns will not be applicable for Kubernetes.
@@ -73,7 +96,7 @@ Br,
 Denis
 
 -----Original Message-----
-From: Stefan Berger [mailto:stefanb@linux.ibm.com]=20
+From: Stefan Berger [mailto:stefanb@linux.ibm.com]
 Sent: Thursday, December 9, 2021 1:18 AM
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com; serge@hallyn.com; christian.brauner@ubuntu.com; co=
