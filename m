@@ -1,91 +1,131 @@
-Received: from mga06.intel.com (mga06.intel.com [134.134.136.31])
+Received: from frasgout.his.huawei.com (frasgout.his.huawei.com [185.176.79.56])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0C50E29CA
-	for <containers@lists.linux.dev>; Thu,  9 Dec 2021 04:41:11 +0000 (UTC)
-X-IronPort-AV: E=McAfee;i="6200,9189,10192"; a="298805415"
-X-IronPort-AV: E=Sophos;i="5.88,191,1635231600"; 
-   d="scan'208";a="298805415"
-Received: from fmsmga006.fm.intel.com ([10.253.24.20])
-  by orsmga104.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 08 Dec 2021 20:41:11 -0800
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="5.88,191,1635231600"; 
-   d="scan'208";a="750221147"
-Received: from lkp-server02.sh.intel.com (HELO 9e1e9f9b3bcb) ([10.239.97.151])
-  by fmsmga006.fm.intel.com with ESMTP; 08 Dec 2021 20:41:07 -0800
-Received: from kbuild by 9e1e9f9b3bcb with local (Exim 4.92)
-	(envelope-from <lkp@intel.com>)
-	id 1mvBEx-0001UL-5o; Thu, 09 Dec 2021 04:41:07 +0000
-Date: Thu, 9 Dec 2021 12:40:31 +0800
-From: kernel test robot <lkp@intel.com>
-To: Stefan Berger <stefanb@linux.ibm.com>, linux-integrity@vger.kernel.org
-Cc: kbuild-all@lists.01.org, zohar@linux.ibm.com, serge@hallyn.com,
-	christian.brauner@ubuntu.com, containers@lists.linux.dev,
-	dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
-	krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
-	mpeters@redhat.com
-Subject: Re: [PATCH v5 01/16] ima: Add IMA namespace support
-Message-ID: <202112091252.hCpFK6H4-lkp@intel.com>
-References: <20211208221818.1519628-2-stefanb@linux.ibm.com>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 15D41173
+	for <containers@lists.linux.dev>; Thu,  9 Dec 2021 07:22:36 +0000 (UTC)
+Received: from fraeml709-chm.china.huawei.com (unknown [172.18.147.206])
+	by frasgout.his.huawei.com (SkyGuard) with ESMTP id 4J8lnm3T3Kz67yRx;
+	Thu,  9 Dec 2021 15:21:16 +0800 (CST)
+Received: from lhreml727-chm.china.huawei.com (10.201.108.78) by
+ fraeml709-chm.china.huawei.com (10.206.15.37) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.1.2308.20; Thu, 9 Dec 2021 08:22:28 +0100
+Received: from lhreml738-chm.china.huawei.com (10.201.108.188) by
+ lhreml727-chm.china.huawei.com (10.201.108.78) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.1.2308.20; Thu, 9 Dec 2021 07:22:27 +0000
+Received: from lhreml738-chm.china.huawei.com ([10.201.108.188]) by
+ lhreml738-chm.china.huawei.com ([10.201.108.188]) with mapi id
+ 15.01.2308.020; Thu, 9 Dec 2021 07:22:27 +0000
+From: Denis Semakin <denis.semakin@huawei.com>
+To: Stefan Berger <stefanb@linux.ibm.com>, "linux-integrity@vger.kernel.org"
+	<linux-integrity@vger.kernel.org>
+CC: "zohar@linux.ibm.com" <zohar@linux.ibm.com>, "serge@hallyn.com"
+	<serge@hallyn.com>, "christian.brauner@ubuntu.com"
+	<christian.brauner@ubuntu.com>, "containers@lists.linux.dev"
+	<containers@lists.linux.dev>, "dmitry.kasatkin@gmail.com"
+	<dmitry.kasatkin@gmail.com>, "ebiederm@xmission.com" <ebiederm@xmission.com>,
+	Krzysztof Struczynski <krzysztof.struczynski@huawei.com>, Roberto Sassu
+	<roberto.sassu@huawei.com>, "mpeters@redhat.com" <mpeters@redhat.com>,
+	"lhinds@redhat.com" <lhinds@redhat.com>, "lsturman@redhat.com"
+	<lsturman@redhat.com>, "puiterwi@redhat.com" <puiterwi@redhat.com>,
+	"jejb@linux.ibm.com" <jejb@linux.ibm.com>, "jamjoom@us.ibm.com"
+	<jamjoom@us.ibm.com>, "linux-kernel@vger.kernel.org"
+	<linux-kernel@vger.kernel.org>, "paul@paul-moore.com" <paul@paul-moore.com>,
+	"rgb@redhat.com" <rgb@redhat.com>, "linux-security-module@vger.kernel.org"
+	<linux-security-module@vger.kernel.org>, "jmorris@namei.org"
+	<jmorris@namei.org>
+Subject: RE: [PATCH v5 14/16] ima: Use mac_admin_ns_capable() to check
+ corresponding capability
+Thread-Topic: [PATCH v5 14/16] ima: Use mac_admin_ns_capable() to check
+ corresponding capability
+Thread-Index: AQHX7IGL3eM2VvpvvUagKdVUk4BPk6wpv2mA
+Date: Thu, 9 Dec 2021 07:22:27 +0000
+Message-ID: <0299fefc764b453a9449b0df2ca06dc7@huawei.com>
+References: <20211208221818.1519628-1-stefanb@linux.ibm.com>
+ <20211208221818.1519628-15-stefanb@linux.ibm.com>
+In-Reply-To: <20211208221818.1519628-15-stefanb@linux.ibm.com>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach:
+X-MS-TNEF-Correlator:
+x-originating-ip: [10.122.133.14]
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20211208221818.1519628-2-stefanb@linux.ibm.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+X-CFilter-Loop: Reflected
 
-Hi Stefan,
+Hi.=20
+My question won't be about capabilities. I'm wondering how IMA-ns which is =
+associated with USER-ns and is created during USER-ns creation
+would be used by some namespaces orchestration systems, e.g. Kubernetes?.. =
+It seems that it can be run without any user namespaces...=20
+Their community just discuss this opportunity to support User namespaces. (=
+see https://github.com/kubernetes/enhancements/pull/2101)
+Looks like currently IMA-ns will not be applicable for Kubernetes.
 
-Thank you for the patch! Perhaps something to improve:
+Br,
+Denis
 
-[auto build test WARNING on zohar-integrity/next-integrity]
-[also build test WARNING on linux/master linus/master v5.16-rc4 next-20211208]
-[cannot apply to jmorris-security/next-testing]
-[If your patch is applied to the wrong git tree, kindly drop us a note.
-And when submitting patch, we suggest to use '--base' as documented in
-https://git-scm.com/docs/git-format-patch]
+-----Original Message-----
+From: Stefan Berger [mailto:stefanb@linux.ibm.com]=20
+Sent: Thursday, December 9, 2021 1:18 AM
+To: linux-integrity@vger.kernel.org
+Cc: zohar@linux.ibm.com; serge@hallyn.com; christian.brauner@ubuntu.com; co=
+ntainers@lists.linux.dev; dmitry.kasatkin@gmail.com; ebiederm@xmission.com;=
+ Krzysztof Struczynski <krzysztof.struczynski@huawei.com>; Roberto Sassu <r=
+oberto.sassu@huawei.com>; mpeters@redhat.com; lhinds@redhat.com; lsturman@r=
+edhat.com; puiterwi@redhat.com; jejb@linux.ibm.com; jamjoom@us.ibm.com; lin=
+ux-kernel@vger.kernel.org; paul@paul-moore.com; rgb@redhat.com; linux-secur=
+ity-module@vger.kernel.org; jmorris@namei.org; Stefan Berger <stefanb@linux=
+.ibm.com>; Denis Semakin <denis.semakin@huawei.com>
+Subject: [PATCH v5 14/16] ima: Use mac_admin_ns_capable() to check correspo=
+nding capability
 
-url:    https://github.com/0day-ci/linux/commits/Stefan-Berger/ima-Namespace-IMA-with-audit-support-in-IMA-ns/20211209-062017
-base:   https://git.kernel.org/pub/scm/linux/kernel/git/zohar/linux-integrity.git next-integrity
-config: um-i386_defconfig (https://download.01.org/0day-ci/archive/20211209/202112091252.hCpFK6H4-lkp@intel.com/config)
-compiler: gcc-9 (Debian 9.3.0-22) 9.3.0
-reproduce (this is a W=1 build):
-        # https://github.com/0day-ci/linux/commit/0e5d16c2da02e9c61692836edf0b6f7f227e1867
-        git remote add linux-review https://github.com/0day-ci/linux
-        git fetch --no-tags linux-review Stefan-Berger/ima-Namespace-IMA-with-audit-support-in-IMA-ns/20211209-062017
-        git checkout 0e5d16c2da02e9c61692836edf0b6f7f227e1867
-        # save the config file to linux build tree
-        mkdir build_dir
-        make W=1 O=build_dir ARCH=um SUBARCH=i386 SHELL=/bin/bash
+Use mac_admin_ns_capable() to check corresponding capability to allow read/=
+write IMA policy without CAP_SYS_ADMIN but with CAP_MAC_ADMIN.
 
-If you fix the issue, kindly add following tag as appropriate
-Reported-by: kernel test robot <lkp@intel.com>
-
-All warnings (new ones prefixed by >>):
-
-   In file included from fs/open.c:32:
-   include/linux/ima.h: In function 'create_ima_ns':
->> include/linux/ima.h:263:5: warning: "CONFIG_IMA" is not defined, evaluates to 0 [-Wundef]
-     263 | #if CONFIG_IMA
-         |     ^~~~~~~~~~
-
-
-vim +/CONFIG_IMA +263 include/linux/ima.h
-
-   260	
-   261	static inline int create_ima_ns(struct user_namespace *user_ns)
-   262	{
- > 263	#if CONFIG_IMA
-   264		user_ns->ima_ns = get_ima_ns(&init_ima_ns);
-   265	#endif
-   266		return 0;
-   267	}
-   268	
-
+Signed-off-by: Denis Semakin <denis.semakin@huawei.com>
+Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
 ---
-0-DAY CI Kernel Test Service, Intel Corporation
-https://lists.01.org/hyperkitty/list/kbuild-all@lists.01.org
+ include/linux/capability.h      | 6 ++++++
+ security/integrity/ima/ima_fs.c | 2 +-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/include/linux/capability.h b/include/linux/capability.h index =
+65efb74c3585..991579178f32 100644
+--- a/include/linux/capability.h
++++ b/include/linux/capability.h
+@@ -270,6 +270,12 @@ static inline bool checkpoint_restore_ns_capable(struc=
+t user_namespace *ns)
+ 		ns_capable(ns, CAP_SYS_ADMIN);
+ }
+=20
++static inline bool mac_admin_ns_capable(struct user_namespace *ns) {
++	return ns_capable(ns, CAP_MAC_ADMIN) ||
++		ns_capable(ns, CAP_SYS_ADMIN);
++}
++
+ /* audit system wants to get cap info from files as well */  int get_vfs_c=
+aps_from_disk(struct user_namespace *mnt_userns,
+ 			   const struct dentry *dentry,
+diff --git a/security/integrity/ima/ima_fs.c b/security/integrity/ima/ima_f=
+s.c index 0e582ceecc7f..a749a3e79304 100644
+--- a/security/integrity/ima/ima_fs.c
++++ b/security/integrity/ima/ima_fs.c
+@@ -394,7 +394,7 @@ static int ima_open_policy(struct inode *inode, struct =
+file *filp)  #else
+ 		if ((filp->f_flags & O_ACCMODE) !=3D O_RDONLY)
+ 			return -EACCES;
+-		if (!capable(CAP_SYS_ADMIN))
++		if (!mac_admin_ns_capable(ns->user_ns))
+ 			return -EPERM;
+ 		return seq_open(filp, &ima_policy_seqops);  #endif
+--
+2.31.1
+
