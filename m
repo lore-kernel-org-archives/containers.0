@@ -1,298 +1,127 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
+Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7E6832CA9
-	for <containers@lists.linux.dev>; Fri, 10 Dec 2021 19:48:01 +0000 (UTC)
-Received: from pps.filterd (m0098394.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 1BAI8KQW012860;
-	Fri, 10 Dec 2021 19:47:42 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
- : date : message-id : in-reply-to : references : mime-version :
- content-transfer-encoding; s=pp1;
- bh=N/0Wp5GJail43pfcaRX3jP2LFfrcuRlW+4P5TwZnAsY=;
- b=UJgN47jLV1S84eCY1XoGS55w6FASx1pPjOlHWyea1vpzTlkccqgHgUc61/s1atd3YsWG
- IoOADA5cY21Okphom9mGdLmKCBv6ZYgc5X4JlV3FJCw+8O3VkQQztQu/0huZ3rCpBz6Y
- HigAPV1hIM84xx23EEE9MSK0dA1D5zlkiD4pK+I6hRk/3VAmxXGcrJ2JLWQtU7Eiyf8t
- gP1GZEdx66la5dtMmj0qbsw7Nt5lbg1o8fls66gFpQKVtLzEvbUQY+99tB/eCFgvyea6
- FtW0WOc62mFGV+ugee0yJ8H9VrY7+pXdC/7oTzd6RHu3Kzeg3llQpGsQ2r2GcaFmz3hX Sg== 
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5AD7729CA
+	for <containers@lists.linux.dev>; Fri, 10 Dec 2021 20:08:38 +0000 (UTC)
+Received: from pps.filterd (m0098416.ppops.net [127.0.0.1])
+	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 1BAJRiBp021062;
+	Fri, 10 Dec 2021 20:08:32 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
+ mime-version : subject : to : cc : references : from : in-reply-to :
+ content-type : content-transfer-encoding; s=pp1;
+ bh=ogkJ3lXGwhQIYiOFOEOgjHKquhZLwTAW9+pxfmkSEpk=;
+ b=nXm75KoUj8iHLIq2FHWzO3/3h9nuJuYWl9ET2b1Am9imf5X71KbGXEcYHeerw3a3GjLk
+ fiOdJPAzO+sPhQohGGY1xNOY2zusHZGTjXDl9ZN22nJzSGJ2ou0k+safFRdb9Gxs/h/R
+ hXNAi874WQFZk5Ea8jOczORFFOdpUMkn11iIXsdllAcMdAZcZ0YfWIp3fD0SJc9RTjQ3
+ RMiAqvx78queE7zShA4qR/tAIn0X/h5E0F8ufnuKnaxjkbQ+R/swSkABUCQjFgbOS5vk
+ XD6i9cF6rYhwMkl11AgJ164HLsharZEi6FVKQCbzaqEkrTxpeXZGp9jQUwxsgCU7631y mw== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3cvbatjcd0-1
+	by mx0b-001b2d01.pphosted.com with ESMTP id 3cvd2u8p0e-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 10 Dec 2021 19:47:41 +0000
-Received: from m0098394.ppops.net (m0098394.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 1BAIkwIs005293;
-	Fri, 10 Dec 2021 19:47:40 GMT
-Received: from ppma02wdc.us.ibm.com (aa.5b.37a9.ip4.static.sl-reverse.com [169.55.91.170])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3cvbatjccb-1
+	Fri, 10 Dec 2021 20:08:32 +0000
+Received: from m0098416.ppops.net (m0098416.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 1BAJifMF026703;
+	Fri, 10 Dec 2021 20:08:31 GMT
+Received: from ppma05wdc.us.ibm.com (1b.90.2fa9.ip4.static.sl-reverse.com [169.47.144.27])
+	by mx0b-001b2d01.pphosted.com with ESMTP id 3cvd2u8p05-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 10 Dec 2021 19:47:40 +0000
-Received: from pps.filterd (ppma02wdc.us.ibm.com [127.0.0.1])
-	by ppma02wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 1BAJcKxs016563;
-	Fri, 10 Dec 2021 19:47:39 GMT
-Received: from b01cxnp23034.gho.pok.ibm.com (b01cxnp23034.gho.pok.ibm.com [9.57.198.29])
-	by ppma02wdc.us.ibm.com with ESMTP id 3cqyycnqgg-1
+	Fri, 10 Dec 2021 20:08:31 +0000
+Received: from pps.filterd (ppma05wdc.us.ibm.com [127.0.0.1])
+	by ppma05wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 1BAK3wSx006265;
+	Fri, 10 Dec 2021 20:08:30 GMT
+Received: from b03cxnp07027.gho.boulder.ibm.com (b03cxnp07027.gho.boulder.ibm.com [9.17.130.14])
+	by ppma05wdc.us.ibm.com with ESMTP id 3cqyycp6q2-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 10 Dec 2021 19:47:39 +0000
-Received: from b01ledav005.gho.pok.ibm.com (b01ledav005.gho.pok.ibm.com [9.57.199.110])
-	by b01cxnp23034.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 1BAJlcdu25559488
+	Fri, 10 Dec 2021 20:08:30 +0000
+Received: from b03ledav003.gho.boulder.ibm.com (b03ledav003.gho.boulder.ibm.com [9.17.130.234])
+	by b03cxnp07027.gho.boulder.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 1BAK8TMe32440758
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Fri, 10 Dec 2021 19:47:38 GMT
-Received: from b01ledav005.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 79244AE060;
-	Fri, 10 Dec 2021 19:47:38 +0000 (GMT)
-Received: from b01ledav005.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 5BE7FAE05F;
-	Fri, 10 Dec 2021 19:47:38 +0000 (GMT)
-Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
-	by b01ledav005.gho.pok.ibm.com (Postfix) with ESMTP;
-	Fri, 10 Dec 2021 19:47:38 +0000 (GMT)
-From: Stefan Berger <stefanb@linux.ibm.com>
-To: linux-integrity@vger.kernel.org
-Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
-        containers@lists.linux.dev, dmitry.kasatkin@gmail.com,
-        ebiederm@xmission.com, krzysztof.struczynski@huawei.com,
-        roberto.sassu@huawei.com, mpeters@redhat.com, lhinds@redhat.com,
-        lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
-        jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
-        rgb@redhat.com, linux-security-module@vger.kernel.org,
-        jmorris@namei.org, Stefan Berger <stefanb@linux.ibm.com>
-Subject: [PATCH v6 05/17] ima: Move IMA's keys queue related variables into ima_namespace
-Date: Fri, 10 Dec 2021 14:47:24 -0500
-Message-Id: <20211210194736.1538863-6-stefanb@linux.ibm.com>
-X-Mailer: git-send-email 2.31.1
-In-Reply-To: <20211210194736.1538863-1-stefanb@linux.ibm.com>
-References: <20211210194736.1538863-1-stefanb@linux.ibm.com>
+	Fri, 10 Dec 2021 20:08:29 GMT
+Received: from b03ledav003.gho.boulder.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 42B336A051;
+	Fri, 10 Dec 2021 20:08:29 +0000 (GMT)
+Received: from b03ledav003.gho.boulder.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id CA7B26A054;
+	Fri, 10 Dec 2021 20:08:27 +0000 (GMT)
+Received: from [9.47.158.152] (unknown [9.47.158.152])
+	by b03ledav003.gho.boulder.ibm.com (Postfix) with ESMTP;
+	Fri, 10 Dec 2021 20:08:27 +0000 (GMT)
+Message-ID: <8b5eaf38-2e7b-1c82-a715-50f0ffd4d1ff@linux.ibm.com>
+Date: Fri, 10 Dec 2021 15:08:27 -0500
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.2.0
+Subject: Re: [PATCH v5 13/16] ima: Move some IMA policy and filesystem related
+ variables into ima_namespace
+Content-Language: en-US
+To: Christian Brauner <christian.brauner@ubuntu.com>
+Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
+        containers@lists.linux.dev, dmitry.kasatkin@gmail.com,
+        ebiederm@xmission.com, krzysztof.struczynski@huawei.com,
+        roberto.sassu@huawei.com, mpeters@redhat.com, lhinds@redhat.com,
+        lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
+        jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
+        rgb@redhat.com, linux-security-module@vger.kernel.org,
+        jmorris@namei.org
+References: <20211208221818.1519628-1-stefanb@linux.ibm.com>
+ <20211208221818.1519628-14-stefanb@linux.ibm.com>
+ <20211209191109.o3x7nynnm52zhygz@wittgenstein>
+ <0ab33fbc-8438-27b6-ff4c-0321bfc73855@linux.ibm.com>
+ <20211210113244.odv2ibrifz2jzft5@wittgenstein>
+From: Stefan Berger <stefanb@linux.ibm.com>
+In-Reply-To: <20211210113244.odv2ibrifz2jzft5@wittgenstein>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: ohW5Pc-TLuXnYuoRt7PJFBgOtx5xfc8w
-X-Proofpoint-GUID: X6YGMrcct8A6UDMLZ-tuzw5Bhnd767zA
+X-Proofpoint-GUID: CIZ0onRIN-GaxJLQEESf7-o55-uuOpHn
+X-Proofpoint-ORIG-GUID: hWpn7xvf4NgfNIlu6iOyhji_I49YfGYG
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.11.62.513
- definitions=2021-12-10_07,2021-12-10_01,2021-12-02_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 impostorscore=0
- malwarescore=0 phishscore=0 spamscore=0 suspectscore=0 mlxscore=0
- lowpriorityscore=0 bulkscore=0 priorityscore=1501 clxscore=1015
- adultscore=0 mlxlogscore=999 classifier=spam adjust=0 reason=mlx
- scancount=1 engine=8.12.0-2110150000 definitions=main-2112100106
+ definitions=2021-12-10_08,2021-12-10_01,2021-12-02_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 clxscore=1015 suspectscore=0
+ phishscore=0 priorityscore=1501 spamscore=0 mlxscore=0 lowpriorityscore=0
+ malwarescore=0 impostorscore=0 mlxlogscore=999 adultscore=0 bulkscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2110150000
+ definitions=main-2112100110
 
-Move variables from keys queue into ima_namespace.
 
-Some variables have to be initialized before ima_init() runs, so statically
-initialize them for the init_ima_ns.
+On 12/10/21 06:32, Christian Brauner wrote:
+>  From ecf25d6b2b5895005d4103169bdb55d970e7a865 Mon Sep 17 00:00:00 2001
+> From: Christian Brauner<christian.brauner@ubuntu.com>
+> Date: Fri, 10 Dec 2021 11:56:25 +0100
+> Subject: [PATCH 2/2] !!!! HERE BE DRAGONS - COMPLETELY UNTESTED !!!!
+>
+> securityfs: don't allow mounting from outside the filesystem's userns
+>
+> If we ever need to allow that we should revisit the semantics.
+> ---
+>   security/inode.c | 5 ++++-
+>   1 file changed, 4 insertions(+), 1 deletion(-)
+>
+> diff --git a/security/inode.c b/security/inode.c
+> index eaccba7017d9..71f9634228f3 100644
+> --- a/security/inode.c
+> +++ b/security/inode.c
+> @@ -43,7 +43,10 @@ static int securityfs_fill_super(struct super_block *sb, struct fs_context *fc)
+>   {
+>   	static const struct tree_descr files[] = {{""}};
+>   	struct user_namespace *ns = fc->user_ns;
+> -	int error;
+> +	int error = -EINVAL;
+> +
+> +	if (WARN_ON(ns != current_user_ns()))
+> +		return error;
+>   
+>   	error = simple_fill_super(sb, SECURITYFS_MAGIC, files);
+>   	if (error)
 
-Since only init_ima_ns uses the queued keys there's no need to free the
-list of queued keys when tearing down IMA namespaces.
 
-Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
----
- include/linux/ima.h                          | 11 ++++++
- security/integrity/ima/ima.h                 |  9 ++---
- security/integrity/ima/ima_asymmetric_keys.c |  5 +--
- security/integrity/ima/ima_init_ima_ns.c     |  5 +++
- security/integrity/ima/ima_ns.c              |  6 ++++
- security/integrity/ima/ima_queue_keys.c      | 37 +++++++-------------
- 6 files changed, 43 insertions(+), 30 deletions(-)
+Oops, I hadn't seen this patch. How can one 'mount from outside the 
+filesystem's userns'?
 
-diff --git a/include/linux/ima.h b/include/linux/ima.h
-index 5540ddd39eab..41b6d7d4c312 100644
---- a/include/linux/ima.h
-+++ b/include/linux/ima.h
-@@ -217,6 +217,17 @@ struct ima_namespace {
- 	struct kmem_cache *ns_status_cache;
- 
- #ifdef CONFIG_IMA_QUEUE_EARLY_BOOT_KEYS
-+	/*
-+	 * Flag to indicate whether a key can be processed
-+	 * right away or should be queued for processing later.
-+	 */
-+	bool ima_process_keys;
-+
-+	/*
-+	 * To synchronize access to the list of keys that need to be measured
-+	 */
-+	struct mutex ima_keys_lock;
-+	struct list_head ima_keys;
- 	/*
- 	 * If custom IMA policy is not loaded then keys queued up
- 	 * for measurement should be freed. This worker is used
-diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
-index 9edab9050dc7..97eb03376855 100644
---- a/security/integrity/ima/ima.h
-+++ b/security/integrity/ima/ima.h
-@@ -250,14 +250,15 @@ struct ima_key_entry {
- 	char *keyring_name;
- };
- void ima_init_key_queue(struct ima_namespace *ns);
--bool ima_should_queue_key(void);
--bool ima_queue_key(struct key *keyring, const void *payload,
-+bool ima_should_queue_key(struct ima_namespace *ns);
-+bool ima_queue_key(struct ima_namespace *ns, struct key *keyring, const void *payload,
- 		   size_t payload_len);
- void ima_process_queued_keys(struct ima_namespace *ns);
- void ima_keys_handler(struct work_struct *work);
- #else
--static inline bool ima_should_queue_key(void) { return false; }
--static inline bool ima_queue_key(struct key *keyring,
-+static inline bool ima_should_queue_key(struct ima_namespace *ns) { return false; }
-+static inline bool ima_queue_key(struct ima_namespace *ns,
-+				 struct key *keyring,
- 				 const void *payload,
- 				 size_t payload_len) { return false; }
- static inline void ima_process_queued_keys(struct ima_namespace *ns) {}
-diff --git a/security/integrity/ima/ima_asymmetric_keys.c b/security/integrity/ima/ima_asymmetric_keys.c
-index f6aa0b47a772..b20e82eda8f4 100644
---- a/security/integrity/ima/ima_asymmetric_keys.c
-+++ b/security/integrity/ima/ima_asymmetric_keys.c
-@@ -30,6 +30,7 @@ void ima_post_key_create_or_update(struct key *keyring, struct key *key,
- 				   const void *payload, size_t payload_len,
- 				   unsigned long flags, bool create)
- {
-+	struct ima_namespace *ns = get_current_ns();
- 	bool queued = false;
- 
- 	/* Only asymmetric keys are handled by this hook. */
-@@ -39,8 +40,8 @@ void ima_post_key_create_or_update(struct key *keyring, struct key *key,
- 	if (!payload || (payload_len == 0))
- 		return;
- 
--	if (ima_should_queue_key())
--		queued = ima_queue_key(keyring, payload, payload_len);
-+	if (ima_should_queue_key(ns))
-+		queued = ima_queue_key(ns, keyring, payload, payload_len);
- 
- 	if (queued)
- 		return;
-diff --git a/security/integrity/ima/ima_init_ima_ns.c b/security/integrity/ima/ima_init_ima_ns.c
-index be31d696bdd3..d2a36b5251cd 100644
---- a/security/integrity/ima/ima_init_ima_ns.c
-+++ b/security/integrity/ima/ima_init_ima_ns.c
-@@ -43,5 +43,10 @@ int __init ima_ns_init(void)
- }
- 
- struct ima_namespace init_ima_ns = {
-+#ifdef CONFIG_IMA_QUEUE_EARLY_BOOT_KEYS
-+	.ima_process_keys = false,
-+	.ima_keys_lock = __MUTEX_INITIALIZER(init_ima_ns.ima_keys_lock),
-+	.ima_keys = LIST_HEAD_INIT(init_ima_ns.ima_keys),
-+#endif
- };
- EXPORT_SYMBOL(init_ima_ns);
-diff --git a/security/integrity/ima/ima_ns.c b/security/integrity/ima/ima_ns.c
-index 472535cd7126..155126038809 100644
---- a/security/integrity/ima/ima_ns.c
-+++ b/security/integrity/ima/ima_ns.c
-@@ -35,6 +35,12 @@ int create_ima_ns(struct user_namespace *user_ns)
- 	if (err)
- 		goto fail_free;
- 
-+#ifdef CONFIG_IMA_QUEUE_EARLY_BOOT_KEYS
-+	ns->ima_process_keys = false;
-+	mutex_init(&ns->ima_keys_lock);
-+	INIT_LIST_HEAD(&ns->ima_keys);
-+#endif
-+
- 	user_ns->ima_ns = ns;
- 
- 	return 0;
-diff --git a/security/integrity/ima/ima_queue_keys.c b/security/integrity/ima/ima_queue_keys.c
-index fcaa1645dba3..9e5e9a178253 100644
---- a/security/integrity/ima/ima_queue_keys.c
-+++ b/security/integrity/ima/ima_queue_keys.c
-@@ -14,17 +14,6 @@
- #include <keys/asymmetric-type.h>
- #include "ima.h"
- 
--/*
-- * Flag to indicate whether a key can be processed
-- * right away or should be queued for processing later.
-- */
--static bool ima_process_keys;
--
--/*
-- * To synchronize access to the list of keys that need to be measured
-- */
--static DEFINE_MUTEX(ima_keys_lock);
--static LIST_HEAD(ima_keys);
- 
- /*
-  * This worker function frees keys that may still be
-@@ -95,7 +84,7 @@ static struct ima_key_entry *ima_alloc_key_entry(struct key *keyring,
- 	return entry;
- }
- 
--bool ima_queue_key(struct key *keyring, const void *payload,
-+bool ima_queue_key(struct ima_namespace *ns, struct key *keyring, const void *payload,
- 		   size_t payload_len)
- {
- 	bool queued = false;
-@@ -105,12 +94,12 @@ bool ima_queue_key(struct key *keyring, const void *payload,
- 	if (!entry)
- 		return false;
- 
--	mutex_lock(&ima_keys_lock);
--	if (!ima_process_keys) {
--		list_add_tail(&entry->list, &ima_keys);
-+	mutex_lock(&ns->ima_keys_lock);
-+	if (!ns->ima_process_keys) {
-+		list_add_tail(&entry->list, &ns->ima_keys);
- 		queued = true;
- 	}
--	mutex_unlock(&ima_keys_lock);
-+	mutex_unlock(&ns->ima_keys_lock);
- 
- 	if (!queued)
- 		ima_free_key_entry(entry);
-@@ -129,7 +118,7 @@ void ima_process_queued_keys(struct ima_namespace *ns)
- 	struct ima_key_entry *entry, *tmp;
- 	bool process = false;
- 
--	if (ima_process_keys)
-+	if (ns->ima_process_keys)
- 		return;
- 
- 	/*
-@@ -138,12 +127,12 @@ void ima_process_queued_keys(struct ima_namespace *ns)
- 	 * First one setting the ima_process_keys flag to true will
- 	 * process the queued keys.
- 	 */
--	mutex_lock(&ima_keys_lock);
--	if (!ima_process_keys) {
--		ima_process_keys = true;
-+	mutex_lock(&ns->ima_keys_lock);
-+	if (!ns->ima_process_keys) {
-+		ns->ima_process_keys = true;
- 		process = true;
- 	}
--	mutex_unlock(&ima_keys_lock);
-+	mutex_unlock(&ns->ima_keys_lock);
- 
- 	if (!process)
- 		return;
-@@ -151,7 +140,7 @@ void ima_process_queued_keys(struct ima_namespace *ns)
- 	if (!ns->timer_expired)
- 		cancel_delayed_work_sync(&ns->ima_keys_delayed_work);
- 
--	list_for_each_entry_safe(entry, tmp, &ima_keys, list) {
-+	list_for_each_entry_safe(entry, tmp, &ns->ima_keys, list) {
- 		if (!ns->timer_expired)
- 			process_buffer_measurement(&init_user_ns, NULL,
- 						   entry->payload,
-@@ -165,7 +154,7 @@ void ima_process_queued_keys(struct ima_namespace *ns)
- 	}
- }
- 
--inline bool ima_should_queue_key(void)
-+inline bool ima_should_queue_key(struct ima_namespace *ns)
- {
--	return !ima_process_keys;
-+	return !ns->ima_process_keys;
- }
--- 
-2.31.1
 
