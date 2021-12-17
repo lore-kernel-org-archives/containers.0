@@ -1,204 +1,389 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from us-smtp-delivery-44.mimecast.com (us-smtp-delivery-44.mimecast.com [207.211.30.44])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D1A7D2C9D
-	for <containers@lists.linux.dev>; Fri, 17 Dec 2021 10:25:18 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E8067C36AE5;
-	Fri, 17 Dec 2021 10:25:13 +0000 (UTC)
-Date: Fri, 17 Dec 2021 11:25:11 +0100
-From: Christian Brauner <christian.brauner@ubuntu.com>
-To: Stefan Berger <stefanb@linux.ibm.com>
-Cc: Stefan Berger <stefanb@linux.vnet.ibm.com>,
-	linux-integrity@vger.kernel.org, zohar@linux.ibm.com,
-	serge@hallyn.com, containers@lists.linux.dev,
-	dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
-	krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
-	mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
-	puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
-	linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
-	linux-security-module@vger.kernel.org, jmorris@namei.org
-Subject: Re: [PATCH v7 00/14] ima: Namespace IMA with audit support in IMA-ns
-Message-ID: <20211217102511.br4phodpz5brkuoq@wittgenstein>
-References: <20211216054323.1707384-1-stefanb@linux.vnet.ibm.com>
- <20211216125027.fte6625wu5vxkjpi@wittgenstein>
- <20211216133148.aw3xs4sxuebkampb@wittgenstein>
- <daccd334-7f8a-41a1-fedd-05c39c504b5b@linux.ibm.com>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3D07C168
+	for <containers@lists.linux.dev>; Fri, 17 Dec 2021 14:55:02 +0000 (UTC)
+Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
+ [209.132.183.4]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ us-mta-288-JQaji_b5MMaSeEWf3zYr9w-1; Fri, 17 Dec 2021 09:48:32 -0500
+X-MC-Unique: JQaji_b5MMaSeEWf3zYr9w-1
+Received: from smtp.corp.redhat.com (int-mx07.intmail.prod.int.phx2.redhat.com [10.5.11.22])
+	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	by mimecast-mx01.redhat.com (Postfix) with ESMTPS id C48468DD87E;
+	Fri, 17 Dec 2021 14:48:29 +0000 (UTC)
+Received: from comp-core-i7-2640m-0182e6.redhat.com (unknown [10.36.110.2])
+	by smtp.corp.redhat.com (Postfix) with ESMTP id EAC731037F5B;
+	Fri, 17 Dec 2021 14:48:27 +0000 (UTC)
+From: Alexey Gladkov <legion@kernel.org>
+To: LKML <linux-kernel@vger.kernel.org>,
+	Linux Containers <containers@lists.linux.dev>
+Cc: 0day robot <lkp@intel.com>,
+	"Eric W . Biederman" <ebiederm@xmission.com>,
+	lkp@lists.01.org,
+	kernel test robot <oliver.sang@intel.com>
+Subject: [PATCH v3] ucounts: Split rlimit and ucount values and max values
+Date: Fri, 17 Dec 2021 15:48:23 +0100
+Message-Id: <73ea569042babda5cee2092423da85027ceb471f.1639752364.git.legion@kernel.org>
+In-Reply-To: <87tufc1p2i.fsf@email.froward.int.ebiederm.org>
+References: <87tufc1p2i.fsf@email.froward.int.ebiederm.org>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <daccd334-7f8a-41a1-fedd-05c39c504b5b@linux.ibm.com>
+X-Scanned-By: MIMEDefang 2.84 on 10.5.11.22
+Authentication-Results: relay.mimecast.com;
+	auth=pass smtp.auth=CUSA124A263 smtp.mailfrom=legion@kernel.org
+X-Mimecast-Spam-Score: 0
+X-Mimecast-Originator: kernel.org
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=WINDOWS-1252
 
-On Thu, Dec 16, 2021 at 04:27:24PM -0500, Stefan Berger wrote:
-> 
-> On 12/16/21 08:31, Christian Brauner wrote:
-> > On Thu, Dec 16, 2021 at 01:50:27PM +0100, Christian Brauner wrote:
-> > > On Thu, Dec 16, 2021 at 12:43:09AM -0500, Stefan Berger wrote:
-> > > 
-> > > > This patch also introduces usage of CAP_MAC_ADMIN to allow access to the
-> > > > IMA policy via reduced capabilities. We would again later on use this
-> > > > capability to allow users to set file extended attributes for IMA appraisal
-> > > > support.
-> > > > 
-> > > > My tree with these patches is here:
-> > > > 
-> > > > git fetch https://github.com/stefanberger/linux-ima-namespaces v5.15+imans.v7.posted
-> > > > 
-> > > > Regards,
-> > > >     Stefan
-> > > > 
-> > > > v7:
-> > > >   - Dropped 2 patches related to key queues; using &init_ima_ns for all calls
-> > > >     from functions related to key queues where calls need ima_namespace
-> > > >   - Moved ima_namespace to security/integrity/ima/ima.h
-> > > >   - Extended API descriptions with ns parameter where needed
-> > > >   - Using init_ima_ns in functions related to appraisal and xattrs
-> > > >   - SecurityFS: Using ima_ns_from_file() to get ns pointer
-> > > >   - Reformatted to 80 columns per line
-> > > Since we're starting to be fairly along I would ask you to please write
-> > > detailed commit messages for the next revision.
-> > > 
-> > > I would also like to see all links for prior versions of this patchset
-> > > in the commit message since the discussion has been fairly extensive so
-> > > for this series it makes a lot of sense. So something like:
-> > > 
-> > > Link: https://lore.kernel.org/r/$MSGID (v1)
-> > > Link: https://lore.kernel.org/r/$MSGID (v2)
-> > > Link: https://lore.kernel.org/r/$MSGID (v3)
-> > > Link: https://lore.kernel.org/r/$MSGID (v4)
-> > > Link: https://lore.kernel.org/r/$MSGID (v5)
-> > > Link: https://lore.kernel.org/r/$MSGID (v6)
-> > > Link: https://lore.kernel.org/r/$MSGID (v7)
-> > > Signed-off-by: meh
-> > > Signed-off-by: mih
-> > > Signed-off-by: muh
-> > > 
-> > > I find that extremely pleasant in case we need to revisit things later.
-> > > (Technically you can get the same by searching lore via the final link
-> > > but I find it be pretty pleasing to just copy+paste directly from the
-> > > commit message to the discussion for the earlier patch.)
-> > So I looked through the series from a high-level view for once and I
-> > would like to change how it is currently structured.
-> > 
-> > Currently, it looks a lot like you end up with a half-namespaced ima if
-> > you compile and run a kernel in the middle of this patch series. Not
-> > just is this asking for semantic chaos if we need to debug something it
-> > also makes bisection a giant pain later.
-> > 
-> > In addition, the fact that you need a hack like
-> > 
-> > > +struct ima_namespace {
-> > > +	int avoid_zero_size;
-> > in the first patch is another good sign that this should be restructured.
-> > 
-> > Here's how I would prefer to see this done. I think we should organize
-> > this in three big chunks (bullet points are not meant to signify
-> > individual patches):
-> > 
-> > 1. namespace securityfs
-> >     This patch is thematically standalone and should move to the
-> >     beginning of the series.
-> >     I would strongly recommend to fold patch 9 and 10 into a single patch
-> >     and add a lengthy explanation. You should be able to recycle a lof of
-> >     stuff I wrote in earlier reviews.
-> > 
-> > 2. Introduce struct ima_namespace and pass it through to all callers:
-> >     - introduce struct ima_namespace
-> >     - move all the relevant things into this structure (this also avoids
-> >       the "avoid_zero_size" hack).
-> 
-> Before I start any move and don't get it right:
-> 
-> Is this to be done like in the current set of patches in those steps where
-> one thing is moved after another?
+Since the semantics of maximum rlimit values are different, it would be
+better not to mix ucount and rlimit values. This will prevent the error
+of using inc_count/dec_ucount for rlimit parameters.
 
-Yeah, I think that's perfectly fine and I liked that part of your
-series.
-I would introduce struct ima_namespace together with a first or
-multiple easy member(s) to move into as one patch. And then individual
-patches for other, larger members as you did.
+This patch also renames the functions to emphasize the lack of
+connection between rlimit and ucount.
 
-> 
-> 
-> >     - define, setup, and expose init_ima_ns
-> 
-> 
-> We do this alongside the move of the individual pieces into ima_namesapce as
-> is done across the patches now? Most of those 'move' patches haven't
+v2:
+- Fix the array-index-out-of-bounds that was found by the lkp project.
 
-- One patch to introduce struct ima_namespace including init_ima_ns and
-  a single member that can be moved into it converting all accesses to
-  that member to access it via struct ima_namespace.
-- Individual patches for other members as you did now.
+Reported-by: kernel test robot <oliver.sang@intel.com>
+Signed-off-by: Alexey Gladkov <legion@kernel.org>
+---
+ fs/exec.c                      |  2 +-
+ fs/proc/array.c                |  2 +-
+ include/linux/user_namespace.h | 35 +++++++++++++++++++++-------------
+ kernel/fork.c                  | 12 ++++++------
+ kernel/sys.c                   |  2 +-
+ kernel/ucount.c                | 24 ++++++++++-------------
+ kernel/user_namespace.c        | 10 +++++-----
+ 7 files changed, 46 insertions(+), 41 deletions(-)
 
-> received much feedback so far.
-> 
-> 
-> >     - introduce get_current_ns() and always have it return &init_ima_ns for now
-> >     - replace all accesses to global variables to go through &init_ima_ns
-> 
-> And not pass get_current_ns() down from the top level and access the right
-> away via ns->foobar but use init_ima_ns.foobar instead?
+diff --git a/fs/exec.c b/fs/exec.c
+index 537d92c41105..d3f769837058 100644
+--- a/fs/exec.c
++++ b/fs/exec.c
+@@ -1877,7 +1877,7 @@ static int do_execveat_common(int fd, struct filename=
+ *filename,
+ =09 * whether NPROC limit is still exceeded.
+ =09 */
+ =09if ((current->flags & PF_NPROC_EXCEEDED) &&
+-=09    is_ucounts_overlimit(current_ucounts(), UCOUNT_RLIMIT_NPROC, rlimit=
+(RLIMIT_NPROC))) {
++=09    is_rlimit_overlimit(current_ucounts(), UCOUNT_RLIMIT_NPROC, rlimit(=
+RLIMIT_NPROC))) {
+ =09=09retval =3D -EAGAIN;
+ =09=09goto out_ret;
+ =09}
+diff --git a/fs/proc/array.c b/fs/proc/array.c
+index ff869a66b34e..d3fa539c755e 100644
+--- a/fs/proc/array.c
++++ b/fs/proc/array.c
+@@ -274,7 +274,7 @@ static inline void task_sig(struct seq_file *m, struct =
+task_struct *p)
+ =09=09collect_sigign_sigcatch(p, &ignored, &caught);
+ =09=09num_threads =3D get_nr_threads(p);
+ =09=09rcu_read_lock();  /* FIXME: is this correct? */
+-=09=09qsize =3D get_ucounts_value(task_ucounts(p), UCOUNT_RLIMIT_SIGPENDIN=
+G);
++=09=09qsize =3D get_rlimit_value(task_ucounts(p), UCOUNT_RLIMIT_SIGPENDING=
+);
+ =09=09rcu_read_unlock();
+ =09=09qlim =3D task_rlimit(p, RLIMIT_SIGPENDING);
+ =09=09unlock_task_sighand(p, &flags);
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.=
+h
+index 33a4240e6a6f..45f09bec02c4 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -54,15 +54,17 @@ enum ucount_type {
+ =09UCOUNT_FANOTIFY_GROUPS,
+ =09UCOUNT_FANOTIFY_MARKS,
+ #endif
++=09UCOUNT_COUNTS,
++};
++
++enum rlimit_type {
+ =09UCOUNT_RLIMIT_NPROC,
+ =09UCOUNT_RLIMIT_MSGQUEUE,
+ =09UCOUNT_RLIMIT_SIGPENDING,
+ =09UCOUNT_RLIMIT_MEMLOCK,
+-=09UCOUNT_COUNTS,
++=09UCOUNT_RLIMIT_COUNTS,
+ };
+=20
+-#define MAX_PER_NAMESPACE_UCOUNTS UCOUNT_RLIMIT_NPROC
+-
+ struct user_namespace {
+ =09struct uid_gid_map=09uid_map;
+ =09struct uid_gid_map=09gid_map;
+@@ -99,6 +101,7 @@ struct user_namespace {
+ #endif
+ =09struct ucounts=09=09*ucounts;
+ =09long ucount_max[UCOUNT_COUNTS];
++=09long rlimit_max[UCOUNT_RLIMIT_COUNTS];
+ } __randomize_layout;
+=20
+ struct ucounts {
+@@ -107,6 +110,7 @@ struct ucounts {
+ =09kuid_t uid;
+ =09atomic_t count;
+ =09atomic_long_t ucount[UCOUNT_COUNTS];
++=09atomic_long_t rlimit[UCOUNT_RLIMIT_COUNTS];
+ };
+=20
+ extern struct user_namespace init_user_ns;
+@@ -120,21 +124,26 @@ struct ucounts *alloc_ucounts(struct user_namespace *=
+ns, kuid_t uid);
+ struct ucounts * __must_check get_ucounts(struct ucounts *ucounts);
+ void put_ucounts(struct ucounts *ucounts);
+=20
+-static inline long get_ucounts_value(struct ucounts *ucounts, enum ucount_=
+type type)
++static inline long get_rlimit_value(struct ucounts *ucounts, enum rlimit_t=
+ype type)
+ {
+-=09return atomic_long_read(&ucounts->ucount[type]);
++=09return atomic_long_read(&ucounts->rlimit[type]);
+ }
+=20
+-long inc_rlimit_ucounts(struct ucounts *ucounts, enum ucount_type type, lo=
+ng v);
+-bool dec_rlimit_ucounts(struct ucounts *ucounts, enum ucount_type type, lo=
+ng v);
+-long inc_rlimit_get_ucounts(struct ucounts *ucounts, enum ucount_type type=
+);
+-void dec_rlimit_put_ucounts(struct ucounts *ucounts, enum ucount_type type=
+);
+-bool is_ucounts_overlimit(struct ucounts *ucounts, enum ucount_type type, =
+unsigned long max);
++long inc_rlimit_ucounts(struct ucounts *ucounts, enum rlimit_type type, lo=
+ng v);
++bool dec_rlimit_ucounts(struct ucounts *ucounts, enum rlimit_type type, lo=
+ng v);
++long inc_rlimit_get_ucounts(struct ucounts *ucounts, enum rlimit_type type=
+);
++void dec_rlimit_put_ucounts(struct ucounts *ucounts, enum rlimit_type type=
+);
++bool is_rlimit_overlimit(struct ucounts *ucounts, enum rlimit_type type, u=
+nsigned long max);
++
++static inline long get_userns_rlimit_max(struct user_namespace *ns, enum r=
+limit_type type)
++{
++=09return READ_ONCE(ns->rlimit_max[type]);
++}
+=20
+-static inline void set_rlimit_ucount_max(struct user_namespace *ns,
+-=09=09enum ucount_type type, unsigned long max)
++static inline void set_userns_rlimit_max(struct user_namespace *ns,
++=09=09enum rlimit_type type, unsigned long max)
+ {
+-=09ns->ucount_max[type] =3D max <=3D LONG_MAX ? max : LONG_MAX;
++=09ns->rlimit_max[type] =3D max <=3D LONG_MAX ? max : LONG_MAX;
+ }
+=20
+ #ifdef CONFIG_USER_NS
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 3244cc56b697..fb68d56bcd7e 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -836,13 +836,13 @@ void __init fork_init(void)
+ =09init_task.signal->rlim[RLIMIT_SIGPENDING] =3D
+ =09=09init_task.signal->rlim[RLIMIT_NPROC];
+=20
+-=09for (i =3D 0; i < MAX_PER_NAMESPACE_UCOUNTS; i++)
++=09for (i =3D 0; i < UCOUNT_COUNTS; i++)
+ =09=09init_user_ns.ucount_max[i] =3D max_threads/2;
+=20
+-=09set_rlimit_ucount_max(&init_user_ns, UCOUNT_RLIMIT_NPROC,      RLIM_INF=
+INITY);
+-=09set_rlimit_ucount_max(&init_user_ns, UCOUNT_RLIMIT_MSGQUEUE,   RLIM_INF=
+INITY);
+-=09set_rlimit_ucount_max(&init_user_ns, UCOUNT_RLIMIT_SIGPENDING, RLIM_INF=
+INITY);
+-=09set_rlimit_ucount_max(&init_user_ns, UCOUNT_RLIMIT_MEMLOCK,    RLIM_INF=
+INITY);
++=09set_userns_rlimit_max(&init_user_ns, UCOUNT_RLIMIT_NPROC,      RLIM_INF=
+INITY);
++=09set_userns_rlimit_max(&init_user_ns, UCOUNT_RLIMIT_MSGQUEUE,   RLIM_INF=
+INITY);
++=09set_userns_rlimit_max(&init_user_ns, UCOUNT_RLIMIT_SIGPENDING, RLIM_INF=
+INITY);
++=09set_userns_rlimit_max(&init_user_ns, UCOUNT_RLIMIT_MEMLOCK,    RLIM_INF=
+INITY);
+=20
+ #ifdef CONFIG_VMAP_STACK
+ =09cpuhp_setup_state(CPUHP_BP_PREPARE_DYN, "fork:vm_stack_cache",
+@@ -2053,7 +2053,7 @@ static __latent_entropy struct task_struct *copy_proc=
+ess(
+ =09DEBUG_LOCKS_WARN_ON(!p->softirqs_enabled);
+ #endif
+ =09retval =3D -EAGAIN;
+-=09if (is_ucounts_overlimit(task_ucounts(p), UCOUNT_RLIMIT_NPROC, rlimit(R=
+LIMIT_NPROC))) {
++=09if (is_rlimit_overlimit(task_ucounts(p), UCOUNT_RLIMIT_NPROC, rlimit(RL=
+IMIT_NPROC))) {
+ =09=09if (p->real_cred->user !=3D INIT_USER &&
+ =09=09    !capable(CAP_SYS_RESOURCE) && !capable(CAP_SYS_ADMIN))
+ =09=09=09goto bad_fork_free;
+diff --git a/kernel/sys.c b/kernel/sys.c
+index 8fdac0d90504..2c86d245acd6 100644
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -479,7 +479,7 @@ static int set_user(struct cred *new)
+ =09 * for programs doing set*uid()+execve() by harmlessly deferring the
+ =09 * failure to the execve() stage.
+ =09 */
+-=09if (is_ucounts_overlimit(new->ucounts, UCOUNT_RLIMIT_NPROC, rlimit(RLIM=
+IT_NPROC)) &&
++=09if (is_rlimit_overlimit(new->ucounts, UCOUNT_RLIMIT_NPROC, rlimit(RLIMI=
+T_NPROC)) &&
+ =09=09=09new_user !=3D INIT_USER &&
+ =09=09=09!capable(CAP_SYS_RESOURCE) && !capable(CAP_SYS_ADMIN))
+ =09=09current->flags |=3D PF_NPROC_EXCEEDED;
+diff --git a/kernel/ucount.c b/kernel/ucount.c
+index 7b32c356ebc5..22070f004e97 100644
+--- a/kernel/ucount.c
++++ b/kernel/ucount.c
+@@ -87,10 +87,6 @@ static struct ctl_table user_table[] =3D {
+ =09UCOUNT_ENTRY("max_fanotify_groups"),
+ =09UCOUNT_ENTRY("max_fanotify_marks"),
+ #endif
+-=09{ },
+-=09{ },
+-=09{ },
+-=09{ },
+ =09{ }
+ };
+ #endif /* CONFIG_SYSCTL */
+@@ -261,7 +257,7 @@ void dec_ucount(struct ucounts *ucounts, enum ucount_ty=
+pe type)
+ =09put_ucounts(ucounts);
+ }
+=20
+-long inc_rlimit_ucounts(struct ucounts *ucounts, enum ucount_type type, lo=
+ng v)
++long inc_rlimit_ucounts(struct ucounts *ucounts, enum rlimit_type type, lo=
+ng v)
+ {
+ =09struct ucounts *iter;
+ =09long max =3D LONG_MAX;
+@@ -273,12 +269,12 @@ long inc_rlimit_ucounts(struct ucounts *ucounts, enum=
+ ucount_type type, long v)
+ =09=09=09ret =3D LONG_MAX;
+ =09=09else if (iter =3D=3D ucounts)
+ =09=09=09ret =3D new;
+-=09=09max =3D READ_ONCE(iter->ns->ucount_max[type]);
++=09=09max =3D get_userns_rlimit_max(iter->ns, type);
+ =09}
+ =09return ret;
+ }
+=20
+-bool dec_rlimit_ucounts(struct ucounts *ucounts, enum ucount_type type, lo=
+ng v)
++bool dec_rlimit_ucounts(struct ucounts *ucounts, enum rlimit_type type, lo=
+ng v)
+ {
+ =09struct ucounts *iter;
+ =09long new =3D -1; /* Silence compiler warning */
+@@ -292,7 +288,7 @@ bool dec_rlimit_ucounts(struct ucounts *ucounts, enum u=
+count_type type, long v)
+ }
+=20
+ static void do_dec_rlimit_put_ucounts(struct ucounts *ucounts,
+-=09=09=09=09struct ucounts *last, enum ucount_type type)
++=09=09=09=09struct ucounts *last, enum rlimit_type type)
+ {
+ =09struct ucounts *iter, *next;
+ =09for (iter =3D ucounts; iter !=3D last; iter =3D next) {
+@@ -304,12 +300,12 @@ static void do_dec_rlimit_put_ucounts(struct ucounts =
+*ucounts,
+ =09}
+ }
+=20
+-void dec_rlimit_put_ucounts(struct ucounts *ucounts, enum ucount_type type=
+)
++void dec_rlimit_put_ucounts(struct ucounts *ucounts, enum rlimit_type type=
+)
+ {
+ =09do_dec_rlimit_put_ucounts(ucounts, NULL, type);
+ }
+=20
+-long inc_rlimit_get_ucounts(struct ucounts *ucounts, enum ucount_type type=
+)
++long inc_rlimit_get_ucounts(struct ucounts *ucounts, enum rlimit_type type=
+)
+ {
+ =09/* Caller must hold a reference to ucounts */
+ =09struct ucounts *iter;
+@@ -322,7 +318,7 @@ long inc_rlimit_get_ucounts(struct ucounts *ucounts, en=
+um ucount_type type)
+ =09=09=09goto unwind;
+ =09=09if (iter =3D=3D ucounts)
+ =09=09=09ret =3D new;
+-=09=09max =3D READ_ONCE(iter->ns->ucount_max[type]);
++=09=09max =3D get_userns_rlimit_max(iter->ns, type);
+ =09=09/*
+ =09=09 * Grab an extra ucount reference for the caller when
+ =09=09 * the rlimit count was previously 0.
+@@ -341,16 +337,16 @@ long inc_rlimit_get_ucounts(struct ucounts *ucounts, =
+enum ucount_type type)
+ =09return 0;
+ }
+=20
+-bool is_ucounts_overlimit(struct ucounts *ucounts, enum ucount_type type, =
+unsigned long rlimit)
++bool is_rlimit_overlimit(struct ucounts *ucounts, enum rlimit_type type, u=
+nsigned long rlimit)
+ {
+ =09struct ucounts *iter;
+ =09long max =3D rlimit;
+ =09if (rlimit > LONG_MAX)
+ =09=09max =3D LONG_MAX;
+ =09for (iter =3D ucounts; iter; iter =3D iter->ns->ucounts) {
+-=09=09if (get_ucounts_value(iter, type) > max)
++=09=09if (get_rlimit_value(iter, type) > max)
+ =09=09=09return true;
+-=09=09max =3D READ_ONCE(iter->ns->ucount_max[type]);
++=09=09max =3D get_userns_rlimit_max(iter->ns, type);
+ =09}
+ =09return false;
+ }
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 6b2e3ca7ee99..b9f6729b4e5f 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -119,13 +119,13 @@ int create_user_ns(struct cred *new)
+ =09ns->owner =3D owner;
+ =09ns->group =3D group;
+ =09INIT_WORK(&ns->work, free_user_ns);
+-=09for (i =3D 0; i < MAX_PER_NAMESPACE_UCOUNTS; i++) {
++=09for (i =3D 0; i < UCOUNT_COUNTS; i++) {
+ =09=09ns->ucount_max[i] =3D INT_MAX;
+ =09}
+-=09set_rlimit_ucount_max(ns, UCOUNT_RLIMIT_NPROC, rlimit(RLIMIT_NPROC));
+-=09set_rlimit_ucount_max(ns, UCOUNT_RLIMIT_MSGQUEUE, rlimit(RLIMIT_MSGQUEU=
+E));
+-=09set_rlimit_ucount_max(ns, UCOUNT_RLIMIT_SIGPENDING, rlimit(RLIMIT_SIGPE=
+NDING));
+-=09set_rlimit_ucount_max(ns, UCOUNT_RLIMIT_MEMLOCK, rlimit(RLIMIT_MEMLOCK)=
+);
++=09set_userns_rlimit_max(ns, UCOUNT_RLIMIT_NPROC, rlimit(RLIMIT_NPROC));
++=09set_userns_rlimit_max(ns, UCOUNT_RLIMIT_MSGQUEUE, rlimit(RLIMIT_MSGQUEU=
+E));
++=09set_userns_rlimit_max(ns, UCOUNT_RLIMIT_SIGPENDING, rlimit(RLIMIT_SIGPE=
+NDING));
++=09set_userns_rlimit_max(ns, UCOUNT_RLIMIT_MEMLOCK, rlimit(RLIMIT_MEMLOCK)=
+);
+ =09ns->ucounts =3D ucounts;
+=20
+ =09/* Inherit USERNS_SETGROUPS_ALLOWED from our parent */
+--=20
+2.33.0
 
-I would recommend starting to pass down the ima_namespace down right
-away so you don't need to do it later when you actually introduce the
-ima namespace proper. This could probably be done as part of the first
-patch that introduces struct ima_namespace.
-
-If I'm right this will make the actual semantic changes to enable ima
-namespaces proper easier to review as they don't contain the jitter that
-comes with introducing a new argument into functions.
-
-> 
-> 
-> >     - add new infrastructure you'll need later on
-> >     Bonus is that you can extend all the functions that later need access
-> >     to a specific ima namespace to take a struct ima_namespace * argument
-> >     and pass down &init_ima_ns down (retrieved via get_current_ns()). This
-> >     will make the actual namespace patch very easy to follow.
-> 
-> 
-> I am wondering how this new series is going to relate to the existing series
-> and the links you suggest be added on a per patch basis? How much of the
-> existing patches can be preserved?
-
-I answered that in the other mail. Just put them in the cover letter. :)
-
-> 
-> 
-> > 
-> > 3. namespace ima
-> >     - add a new entry for struct ima_namespace to struct user_namespace
-> >     - add creation helpers, kmem cache etc.
-> >     - create files in securityfs per ns
-> > 
-> > This way at all points in the series we have clearly defined semantics
-> > where ima namespacing is either fully working or fully not working and
-> > the switch is atomic in the patch(es) part of 3.
-> 
-> 
-> The existing series tried this by enabling IMA namespacing support when
-> SecurityFS is enabled... Is that also the last step then in what you
-
-It did enable ima namespace support before that. It only wasn't
-reachable from userspace since securityfs couldn't be mounted and a
-custom policy applied.
-But from a pure implementation/development perspective namespacing had
-already taken place in the first patch.
-Say, if I wanted to debug something in the patch series and compiled in
-the middle of the previous patch series then I would have already had to
-deal with per-userns ima namespaces before userspace could do anything
-with them. So the regression and bug potential that comes with that had
-already been fully realized so to speak.
-
-What I want is to have this be one step: namespacing is fully
-implemented and turned on at the same time.
-
-> suggest?
-
-No, securityfs can be mounted and just stay empty until ima starts
-creating files in there in the last patch. I see no harm in that at all.
