@@ -1,53 +1,53 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A59B5168
-	for <containers@lists.linux.dev>; Mon, 27 Dec 2021 17:30:02 +0000 (UTC)
-Received: from pps.filterd (m0098419.ppops.net [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 1BRGfv0N012232;
-	Mon, 27 Dec 2021 17:29:46 GMT
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 53BDC173
+	for <containers@lists.linux.dev>; Mon,  3 Jan 2022 14:27:43 +0000 (UTC)
+Received: from pps.filterd (m0187473.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 203DDart028657;
+	Mon, 3 Jan 2022 14:09:44 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
  mime-version : subject : to : cc : references : from : in-reply-to :
  content-type : content-transfer-encoding; s=pp1;
- bh=eHAnbEje+2RXpyDwqsUtjn5Q13CEzo0k3hqNmbHRXSU=;
- b=adhp57RcGPFlDF8EFfaPeCpfvM3d2Md+wFFRPxmz6elorLHQxW65OIkRrC9zZFeFJ9Sv
- injVbw4RJ9ictBWhuInfA+luh861526L+0jk8uj7etuvYrdu5uuWPWGRD68gyFp9hiyT
- FyzEs9onl7BTaTkAuUdpfxxfh3Tbvex2CEeXK60/hu/e+MBW8nGae6x4GJdWny0iwYC1
- UJRvNGawF4DTcAjucoPdUFNCbHPs3TG3/X24NOU+oM6JgPD9i8oCNd3bca9CfgpMBmla
- LFWaRYic5WBL3HIe0xgsphOFgRdIF1zz73I+gR42PjfsC0Yu+K2tL03mOz3XJInMIV6c Eg== 
+ bh=v2ghILQ+1jhsJwkVkfQ4PDvXvqOTFTxfb49TgDMC0dg=;
+ b=TVs7eLyhQ5pfpRACGjD2c0PDMReATd9YCt6ukUuudUKmv77UH65en0sx1yzLuEzThJ9P
+ I6Lhkt3QccJfVhJK+7yVxJ6eQKzMtiaUq5AXSA4sYkwQDjbdLiHvuuJNzLrwp2XFjWEf
+ ARgJntRz9jzI6ssBXv1wDQE+vnR80e1HCNAPmZiXPhIMyRG11EWPcNkp/IGM5lofg3lK
+ 80T9xIPWYsfM2EIdfdxpOH7tFgo2EtqVtDy1uDZETfUgettaYqxz2EnYuPvF195ng2v6
+ CdPE0CdD0sj8jD9OTtbqcVHkwg7Es0xB99fZZEkqf9WMapLefLdVBGDE579bZMCtvfz1 HA== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3d7h7ugt71-1
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3dc1uf0vcj-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 27 Dec 2021 17:29:45 +0000
-Received: from m0098419.ppops.net (m0098419.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 1BRHSx9H005148;
-	Mon, 27 Dec 2021 17:29:45 GMT
-Received: from ppma04wdc.us.ibm.com (1a.90.2fa9.ip4.static.sl-reverse.com [169.47.144.26])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3d7h7ugt6p-1
+	Mon, 03 Jan 2022 14:09:44 +0000
+Received: from m0187473.ppops.net (m0187473.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 203Dptg6011938;
+	Mon, 3 Jan 2022 14:09:43 GMT
+Received: from ppma04dal.us.ibm.com (7a.29.35a9.ip4.static.sl-reverse.com [169.53.41.122])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3dc1uf0vcb-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 27 Dec 2021 17:29:45 +0000
-Received: from pps.filterd (ppma04wdc.us.ibm.com [127.0.0.1])
-	by ppma04wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 1BRHSfHm015004;
-	Mon, 27 Dec 2021 17:29:44 GMT
-Received: from b01cxnp22033.gho.pok.ibm.com (b01cxnp22033.gho.pok.ibm.com [9.57.198.23])
-	by ppma04wdc.us.ibm.com with ESMTP id 3d70g0vqy1-1
+	Mon, 03 Jan 2022 14:09:43 +0000
+Received: from pps.filterd (ppma04dal.us.ibm.com [127.0.0.1])
+	by ppma04dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 203E8G6X003424;
+	Mon, 3 Jan 2022 14:09:42 GMT
+Received: from b03cxnp07029.gho.boulder.ibm.com (b03cxnp07029.gho.boulder.ibm.com [9.17.130.16])
+	by ppma04dal.us.ibm.com with ESMTP id 3daekahcch-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 27 Dec 2021 17:29:44 +0000
-Received: from b01ledav003.gho.pok.ibm.com (b01ledav003.gho.pok.ibm.com [9.57.199.108])
-	by b01cxnp22033.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 1BRHTh6R31392220
+	Mon, 03 Jan 2022 14:09:42 +0000
+Received: from b03ledav002.gho.boulder.ibm.com (b03ledav002.gho.boulder.ibm.com [9.17.130.233])
+	by b03cxnp07029.gho.boulder.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 203E9fdE36438500
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Mon, 27 Dec 2021 17:29:43 GMT
-Received: from b01ledav003.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 8DAA0B206E;
-	Mon, 27 Dec 2021 17:29:43 +0000 (GMT)
-Received: from b01ledav003.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 2D80FB2064;
-	Mon, 27 Dec 2021 17:29:43 +0000 (GMT)
+	Mon, 3 Jan 2022 14:09:41 GMT
+Received: from b03ledav002.gho.boulder.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 04E9E13605E;
+	Mon,  3 Jan 2022 14:09:41 +0000 (GMT)
+Received: from b03ledav002.gho.boulder.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 88F83136059;
+	Mon,  3 Jan 2022 14:09:38 +0000 (GMT)
 Received: from [9.47.158.152] (unknown [9.47.158.152])
-	by b01ledav003.gho.pok.ibm.com (Postfix) with ESMTP;
-	Mon, 27 Dec 2021 17:29:43 +0000 (GMT)
-Message-ID: <175831be-4c26-bd86-27c1-dd822514f06f@linux.ibm.com>
-Date: Mon, 27 Dec 2021 12:29:42 -0500
+	by b03ledav002.gho.boulder.ibm.com (Postfix) with ESMTP;
+	Mon,  3 Jan 2022 14:09:38 +0000 (GMT)
+Message-ID: <0626de21-d22f-329c-fc64-ecd7eab1331a@linux.ibm.com>
+Date: Mon, 3 Jan 2022 09:09:37 -0500
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
@@ -56,84 +56,97 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
  Thunderbird/91.3.0
-Subject: Re: [PATCH v7 00/14] ima: Namespace IMA with audit support in IMA-ns
+Subject: Re: [PATCH v7 10/14] securityfs: Extend securityfs with namespacing
+ support
 Content-Language: en-US
-To: Christian Brauner <christian.brauner@ubuntu.com>
-Cc: Stefan Berger <stefanb@linux.vnet.ibm.com>,
-        linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
+To: Christian Brauner <christian.brauner@ubuntu.com>,
+        Stefan Berger <stefanb@linux.vnet.ibm.com>
+Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
         containers@lists.linux.dev, dmitry.kasatkin@gmail.com,
         ebiederm@xmission.com, krzysztof.struczynski@huawei.com,
         roberto.sassu@huawei.com, mpeters@redhat.com, lhinds@redhat.com,
         lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
         jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
-        jmorris@namei.org
+        jmorris@namei.org,
+        James Bottomley <James.Bottomley@HansenPartnership.com>
 References: <20211216054323.1707384-1-stefanb@linux.vnet.ibm.com>
- <20211216125027.fte6625wu5vxkjpi@wittgenstein>
- <07c28891-5ac1-3c0d-bb67-cc49aca0aae2@linux.ibm.com>
- <20211217100659.2iah5prshavjk6v6@wittgenstein>
+ <20211216054323.1707384-11-stefanb@linux.vnet.ibm.com>
+ <20211216134027.33sprdmhol2tbctf@wittgenstein>
 From: Stefan Berger <stefanb@linux.ibm.com>
-In-Reply-To: <20211217100659.2iah5prshavjk6v6@wittgenstein>
+In-Reply-To: <20211216134027.33sprdmhol2tbctf@wittgenstein>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: 6DFbx2RFHmnbDm17CXs8OzEzTwTavoQ7
-X-Proofpoint-ORIG-GUID: av2GHDpP0c4hDkUguJNiO-8MRToECKsu
+X-Proofpoint-GUID: jsA1Gn0Zs6K0t0IbxU9x7rtF5PCW93Ws
+X-Proofpoint-ORIG-GUID: uXiAfUfvBh1c5O8bgcGxgWWeD9yraZ7d
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.11.62.513
- definitions=2021-12-27_08,2021-12-24_01,2021-12-02_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 bulkscore=0 malwarescore=0
- phishscore=0 spamscore=0 impostorscore=0 clxscore=1015 priorityscore=1501
- adultscore=0 mlxscore=0 mlxlogscore=999 lowpriorityscore=0 suspectscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2110150000
- definitions=main-2112270080
+ definitions=2022-01-03_05,2022-01-01_01,2021-12-02_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 mlxlogscore=999 mlxscore=0
+ suspectscore=0 bulkscore=0 priorityscore=1501 lowpriorityscore=0
+ phishscore=0 adultscore=0 spamscore=0 clxscore=1015 impostorscore=0
+ malwarescore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2110150000 definitions=main-2201030096
 
 
-On 12/17/21 05:06, Christian Brauner wrote:
-> On Thu, Dec 16, 2021 at 04:00:40PM -0500, Stefan Berger wrote:
+On 12/16/21 08:40, Christian Brauner wrote:
+> On Thu, Dec 16, 2021 at 12:43:19AM -0500, Stefan Berger wrote:
+>> From: Stefan Berger <stefanb@linux.ibm.com>
 >>
->> But that could still mean a lot of contention on iint->mutex since this
->> lock is global, i.e. in this context: for all ima namespaces. You might
->> want to consider coming up with some rough ideas for how to solve this
->> _if_ this becomes a problem in the future.
+>> Extend 'securityfs' for support of IMA namespacing so that each
+>> IMA (user) namespace can have its own front-end for showing the currently
+>> active policy, the measurement list, number of violations and so on.
 >>
->> The plan is that each IMA namespace will have its own rbtree with its own
->> set of iints. We cannot do it all at the same time, so this will take while
->> until things can be completely moved over into a per-IMA namespace rbtree
->> and each IMA namespace becomes fully independent.
-> Ok, good to hear that you have already thought about that.
+>> Drop the addition dentry reference to enable simple cleanup of dentries
+>> upon umount.
+>>
+>> Prevent mounting of an instance of securityfs in another user namespace
+>> than it belongs to. Also, prevent accesses to directories when another
+>> user namespace is active than the one that the instance of securityfs
+>> belongs to.
+>>
+>> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
+>> Signed-off-by: James Bottomley <James.Bottomley@HansenPartnership.com>
+>> ---
+>>   security/inode.c | 37 ++++++++++++++++++++++++++++++++++---
+>>   1 file changed, 34 insertions(+), 3 deletions(-)
+>>
+>> diff --git a/security/inode.c b/security/inode.c
+>> index fee01ff4d831..a0d9f086e3d5 100644
+>> --- a/security/inode.c
+>> +++ b/security/inode.c
+>> @@ -26,6 +26,29 @@
+>>   static struct vfsmount *init_securityfs_mount;
+>>   static int init_securityfs_mount_count;
+>>   
+>> +static int securityfs_permission(struct user_namespace *mnt_userns,
+>> +				 struct inode *inode, int mask)
+>> +{
+>> +	int err;
+>> +
+>> +	err = generic_permission(&init_user_ns, inode, mask);
+>> +	if (!err) {
+>> +		if (inode->i_sb->s_user_ns != current_user_ns())
+>> +			err = -EACCES;
+> I really think the correct semantics is to grant all callers access
+> whose user namespace is the same as or an ancestor of the securityfs
+> userns. It's weird to deny access to callers who are located in an
+> ancestor userns.
+
+Ok, will be using current_in_userns() or the more explicit in_userns() 
+for the check.
 
 
-Well, yes, we thought about it. However, as far as I can look ahead we 
-cannot get rid of the iint->mutex:
-
-Obviously we have to organize the data structures where IMA is recording 
-what it has done with a file/inode in such a way that each namespace can 
-efficiently determine whether it needs to audit/measure/appraise a file 
-or re-audit/re-measure/re-appraise it after file modification. The 
-organization of these data structures also has to reflect the fact that 
-files can be shared between IMA namespaces via setns() on mount 
-namespaces or shared files or shared mount namespaces between containers 
-etc.. So, the first thing we do already is move audit-related flags into 
-what is called the ns_status (namespace status) structure that are kept 
-in a per-IMA namespace rbtree. This allows IMA to remember that a file 
-was already audited and it doesn't need to audit it again. The lookup 
-via rbtree is quick: O(log(n).
-
-Unfortunately the previous series had a bug so that files were not 
-re-audited after they were modified. I fixed this now in the new series 
-(upcoming v8) by connecting each ns_status also to a list. This list 
-starts in the global inode integrity cache (the iint rbtree) where each 
-inode that any IMA namespace accessed has an iint entry today. The lists 
-start on the iint entries representing inodes.  When files are deleted 
-or modified or xattrs are modified then all IMA namespaces need to 
-re-audit/re-measure/re-appraise the file (depending on policy) and for 
-this we have to reset flags across all the IMA namespaces by walking the 
-list of ns_status entries. The organization via iint rbtree and 
-ns_status list allows for quick lookup of the inode where the 
-modification happened and quick reset of the flags: O(log(n)) + O(n). 
-This is better than having to search all namespaces to reset the flags 
-(O(log(n) * n) if there was no list.
-
-
-     Stefan
+>
+> For example, a privileged process on the host should be allowed to setns
+> to the userns of an unprivileged container and inspect its securityfs
+> instance.
+>
+> We're mostly interested to block such as scenarios where two sibling
+> unprivileged containers are created in the initial userns and an fd
+> proxy or something funnels a file descriptor from one sibling container
+> to the another one and the receiving sibling container can use readdir()
+> or openat() on this fd. (I'm not even convinced that this is actually a
+> problem but stricter semantics at the beginning can't hurt. We can
+> always relax this later.)
