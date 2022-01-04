@@ -1,390 +1,292 @@
-Received: from us-smtp-delivery-44.mimecast.com (us-smtp-delivery-44.mimecast.com [205.139.111.44])
+Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5694D2C80
-	for <containers@lists.linux.dev>; Tue,  4 Jan 2022 11:52:02 +0000 (UTC)
-Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
- [209.132.183.4]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-306-P79aPTRFO9GFVAC1xUXF9Q-1; Tue, 04 Jan 2022 06:51:57 -0500
-X-MC-Unique: P79aPTRFO9GFVAC1xUXF9Q-1
-Received: from smtp.corp.redhat.com (int-mx08.intmail.prod.int.phx2.redhat.com [10.5.11.23])
-	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	by mimecast-mx01.redhat.com (Postfix) with ESMTPS id D49EC344AF;
-	Tue,  4 Jan 2022 11:51:55 +0000 (UTC)
-Received: from comp-core-i7-2640m-0182e6.redhat.com (unknown [10.36.110.3])
-	by smtp.corp.redhat.com (Postfix) with ESMTP id 5E7701F466;
-	Tue,  4 Jan 2022 11:51:52 +0000 (UTC)
-From: Alexey Gladkov <legion@kernel.org>
-To: LKML <linux-kernel@vger.kernel.org>,
-	Linux Containers <containers@lists.linux.dev>
-Cc: Alexander Mikhalitsyn <alexander.mikhalitsyn@virtuozzo.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Christian Brauner <christian.brauner@ubuntu.com>,
-	Daniel Walsh <dwalsh@redhat.com>,
-	Davidlohr Bueso <dbueso@suse.de>,
-	"Eric W . Biederman" <ebiederm@xmission.com>,
-	Kirill Tkhai <ktkhai@virtuozzo.com>,
-	Manfred Spraul <manfred@colorfullife.com>,
-	Serge Hallyn <serge@hallyn.com>,
-	Varad Gautam <varad.gautam@suse.com>,
-	Vasily Averin <vvs@virtuozzo.com>,
-	kernel test robot <lkp@intel.com>
-Subject: [PATCH v2] ipc: Store mqueue sysctls in the ipc namespace
-Date: Tue,  4 Jan 2022 12:51:06 +0100
-Message-Id: <792dcae82bc228cd0bec1fa80ed4d2c9340b0f8f.1641296947.git.legion@kernel.org>
-In-Reply-To: <0f0408bb7fbf3187966a9bf19a98642a5d9669fe.1641225760.git.legion@kernel.org>
-References: <0f0408bb7fbf3187966a9bf19a98642a5d9669fe.1641225760.git.legion@kernel.org>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B64D02C80
+	for <containers@lists.linux.dev>; Tue,  4 Jan 2022 17:04:50 +0000 (UTC)
+Received: from pps.filterd (m0098399.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 204G8M9q010780;
+	Tue, 4 Jan 2022 17:04:32 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
+ : date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding; s=pp1;
+ bh=Swuad4YBN8mcX4QCtnV7OKUbrF42DGAD8XoKMbdKTus=;
+ b=TtVeSyR6n2TmMOP9UKQQ3xT3doQUULTmf8UUEeYplDP+UwwsPMHs3JXmOMtJxifRXq1E
+ puiDHuFW5mjYNe4nM1eMJwnjajUavZRexvYEHc6fXBrJgkI87JnWZ4h336D3zbbDBAQA
+ Mhn8+Ehm0LiEqnAuuvBaH+XicQRK6YyF6atUDWxGonalcKFBsjjTBwsdU8Euip6b+Znw
+ f5wvmZId5l0qOscCYExZqlvlUxK2uKsUpc25Toqp65VV+EzonKIl5gzp2qDGtQJSZTtX
+ DdmeGoxzTV8p8bUzgEEVhbC+AZaTY25H1sr1aIUb6D/2980ujEx1Xp+t76+tAqdiMlc2 5Q== 
+Received: from pps.reinject (localhost [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3dcq0rceju-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 04 Jan 2022 17:04:32 +0000
+Received: from m0098399.ppops.net (m0098399.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 204ExLv6020539;
+	Tue, 4 Jan 2022 17:04:31 GMT
+Received: from ppma02dal.us.ibm.com (a.bd.3ea9.ip4.static.sl-reverse.com [169.62.189.10])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3dcq0rcejj-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 04 Jan 2022 17:04:31 +0000
+Received: from pps.filterd (ppma02dal.us.ibm.com [127.0.0.1])
+	by ppma02dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 204H4BKD005249;
+	Tue, 4 Jan 2022 17:04:30 GMT
+Received: from b01cxnp23032.gho.pok.ibm.com (b01cxnp23032.gho.pok.ibm.com [9.57.198.27])
+	by ppma02dal.us.ibm.com with ESMTP id 3daekajeqh-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 04 Jan 2022 17:04:30 +0000
+Received: from b01ledav006.gho.pok.ibm.com (b01ledav006.gho.pok.ibm.com [9.57.199.111])
+	by b01cxnp23032.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 204H4TeR33423672
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Tue, 4 Jan 2022 17:04:29 GMT
+Received: from b01ledav006.gho.pok.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 20CBDAC060;
+	Tue,  4 Jan 2022 17:04:29 +0000 (GMT)
+Received: from b01ledav006.gho.pok.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 0AE87AC05B;
+	Tue,  4 Jan 2022 17:04:29 +0000 (GMT)
+Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
+	by b01ledav006.gho.pok.ibm.com (Postfix) with ESMTP;
+	Tue,  4 Jan 2022 17:04:29 +0000 (GMT)
+From: Stefan Berger <stefanb@linux.vnet.ibm.com>
+To: linux-integrity@vger.kernel.org
+Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
+        containers@lists.linux.dev, dmitry.kasatkin@gmail.com,
+        ebiederm@xmission.com, krzysztof.struczynski@huawei.com,
+        roberto.sassu@huawei.com, mpeters@redhat.com, lhinds@redhat.com,
+        lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
+        jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
+        rgb@redhat.com, linux-security-module@vger.kernel.org,
+        jmorris@namei.org, Stefan Berger <stefanb@linux.ibm.com>,
+        James Bottomley <James.Bottomley@HansenPartnership.com>
+Subject: [PATCH v8 01/19] securityfs: Extend securityfs with namespacing support
+Date: Tue,  4 Jan 2022 12:03:58 -0500
+Message-Id: <20220104170416.1923685-2-stefanb@linux.vnet.ibm.com>
+X-Mailer: git-send-email 2.31.1
+In-Reply-To: <20220104170416.1923685-1-stefanb@linux.vnet.ibm.com>
+References: <20220104170416.1923685-1-stefanb@linux.vnet.ibm.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-X-Scanned-By: MIMEDefang 2.84 on 10.5.11.23
-Authentication-Results: relay.mimecast.com;
-	auth=pass smtp.auth=CUSA124A263 smtp.mailfrom=legion@kernel.org
-X-Mimecast-Spam-Score: 0
-X-Mimecast-Originator: kernel.org
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset=WINDOWS-1252
+Content-Transfer-Encoding: 8bit
+X-TM-AS-GCONF: 00
+X-Proofpoint-GUID: EjH9PSBaUq8b7kW3iCFEtVGtQsiRyHnr
+X-Proofpoint-ORIG-GUID: 4sVBFOnJ570DqiwmCKUCgrpEGyZzuUi3
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.205,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.11.62.513
+ definitions=2022-01-04_08,2022-01-04_01,2021-12-02_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 clxscore=1015
+ lowpriorityscore=0 impostorscore=0 adultscore=0 mlxlogscore=999
+ malwarescore=0 suspectscore=0 spamscore=0 phishscore=0 priorityscore=1501
+ mlxscore=0 bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2110150000 definitions=main-2201040114
 
-Right now, the mqueue sysctls take ipc namespaces into account in a
-rather hacky way. This works in most cases, but does not respect the
-user namespace.
+From: Stefan Berger <stefanb@linux.ibm.com>
 
-Within the user namespace, the user cannot change the /proc/sys/fs/mqueue/*
-parametres. This poses a problem in the rootless containers.
+To prepare for virtualization of SecurityFS, use simple_pin_fs and
+simpe_release_fs only when init_user_ns is active.
 
-To solve this I changed the implementation of the mqueue sysctls just
-like some other sysctls.
+Extend 'securityfs' for support of IMA namespacing so that each
+IMA (user) namespace can have its own front-end for showing the currently
+active policy, the measurement list, number of violations and so on.
 
-Before this change:
+Enable multiple instances of securityfs by keying each instance with a
+pointer to the user namespace it belongs to.
 
-$ echo 5 | unshare -r -U -i tee /proc/sys/fs/mqueue/msg_max
-tee: /proc/sys/fs/mqueue/msg_max: Permission denied
-5
+Drop the additional dentry reference to enable simple cleanup of dentries
+upon umount. Now the dentries do not need to be explicitly freed anymore
+but we can just rely on d_genocide() and the dcache shrinker to do all
+the required work.
 
-After this change:
+Prevent mounting of an instance of securityfs in another user namespace
+than it belongs to. Also, prevent accesses to files and directories by
+a user namespace that it not either the user namespace it belongs to
+or an ancestor of the user namespace that the instance of securityfs
+belongs to. Do not prevent access if securityfs was bind-mounted and the
+init_user_ns is the owning user namespace.
 
-$ echo 5 | unshare -r -U -i tee /proc/sys/fs/mqueue/msg_max
-5
-
-v2:
-* Fixed compilation problem if CONFIG_POSIX_MQUEUE_SYSCTL is not
-  specified.
-
-Reported-by: kernel test robot <lkp@intel.com>
-Signed-off-by: Alexey Gladkov <legion@kernel.org>
+Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
+Signed-off-by: James Bottomley <James.Bottomley@HansenPartnership.com>
 ---
- include/linux/ipc_namespace.h |  18 ++++-
- ipc/mq_sysctl.c               | 137 ++++++++++++++++++++--------------
- ipc/mqueue.c                  |  10 +--
- ipc/namespace.c               |   6 ++
- 4 files changed, 106 insertions(+), 65 deletions(-)
+ security/inode.c | 75 ++++++++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 63 insertions(+), 12 deletions(-)
 
-diff --git a/include/linux/ipc_namespace.h b/include/linux/ipc_namespace.h
-index b75395ec8d52..bcedc86a6f1d 100644
---- a/include/linux/ipc_namespace.h
-+++ b/include/linux/ipc_namespace.h
-@@ -10,6 +10,7 @@
- #include <linux/ns_common.h>
- #include <linux/refcount.h>
- #include <linux/rhashtable-types.h>
-+#include <linux/sysctl.h>
-=20
- struct user_namespace;
-=20
-@@ -63,6 +64,11 @@ struct ipc_namespace {
- =09unsigned int    mq_msg_default;
- =09unsigned int    mq_msgsize_default;
-=20
-+#ifdef CONFIG_POSIX_MQUEUE_SYSCTL
-+=09struct ctl_table_set=09set;
-+=09struct ctl_table_header *sysctls;
-+#endif
+diff --git a/security/inode.c b/security/inode.c
+index 6c326939750d..e525ba960063 100644
+--- a/security/inode.c
++++ b/security/inode.c
+@@ -21,9 +21,37 @@
+ #include <linux/security.h>
+ #include <linux/lsm_hooks.h>
+ #include <linux/magic.h>
++#include <linux/user_namespace.h>
+ 
+-static struct vfsmount *mount;
+-static int mount_count;
++static struct vfsmount *init_securityfs_mount;
++static int init_securityfs_mount_count;
 +
- =09/* user_ns which owns the ipc ns */
- =09struct user_namespace *user_ns;
- =09struct ucounts *ucounts;
-@@ -169,14 +175,18 @@ static inline void put_ipc_ns(struct ipc_namespace *n=
-s)
-=20
- #ifdef CONFIG_POSIX_MQUEUE_SYSCTL
-=20
--struct ctl_table_header;
--extern struct ctl_table_header *mq_register_sysctl_table(void);
-+void retire_mq_sysctls(struct ipc_namespace *ns);
-+bool setup_mq_sysctls(struct ipc_namespace *ns);
-=20
- #else /* CONFIG_POSIX_MQUEUE_SYSCTL */
-=20
--static inline struct ctl_table_header *mq_register_sysctl_table(void)
-+static inline void retire_mq_sysctls(struct ipc_namespace *ns)
- {
--=09return NULL;
++static int securityfs_permission(struct user_namespace *mnt_userns,
++				 struct inode *inode, int mask)
++{
++	int err;
++
++	err = generic_permission(&init_user_ns, inode, mask);
++	if (!err) {
++		/* Unless bind-mounted, deny access if current_user_ns() is not
++		 * ancestor.
++		 */
++		if (inode->i_sb->s_user_ns != &init_user_ns &&
++		    !in_userns(current_user_ns(), inode->i_sb->s_user_ns))
++			err = -EACCES;
++	}
++
++	return err;
 +}
 +
-+static inline bool setup_mq_sysctls(struct ipc_namespace *ns)
-+{
-+=09return true;
++static const struct inode_operations securityfs_dir_inode_operations = {
++	.permission	= securityfs_permission,
++	.lookup		= simple_lookup,
++};
++
++static const struct inode_operations securityfs_file_inode_operations = {
++	.permission	= securityfs_permission,
++};
+ 
+ static void securityfs_free_inode(struct inode *inode)
+ {
+@@ -40,20 +68,25 @@ static const struct super_operations securityfs_super_operations = {
+ static int securityfs_fill_super(struct super_block *sb, struct fs_context *fc)
+ {
+ 	static const struct tree_descr files[] = {{""}};
++	struct user_namespace *ns = fc->user_ns;
+ 	int error;
+ 
++	if (WARN_ON(ns != current_user_ns()))
++		return -EINVAL;
++
+ 	error = simple_fill_super(sb, SECURITYFS_MAGIC, files);
+ 	if (error)
+ 		return error;
+ 
+ 	sb->s_op = &securityfs_super_operations;
++	sb->s_root->d_inode->i_op = &securityfs_dir_inode_operations;
+ 
+ 	return 0;
  }
-=20
- #endif /* CONFIG_POSIX_MQUEUE_SYSCTL */
-diff --git a/ipc/mq_sysctl.c b/ipc/mq_sysctl.c
-index 72a92a08c848..56afb0503296 100644
---- a/ipc/mq_sysctl.c
-+++ b/ipc/mq_sysctl.c
-@@ -9,39 +9,9 @@
- #include <linux/ipc_namespace.h>
- #include <linux/sysctl.h>
-=20
--#ifdef CONFIG_PROC_SYSCTL
--static void *get_mq(struct ctl_table *table)
--{
--=09char *which =3D table->data;
--=09struct ipc_namespace *ipc_ns =3D current->nsproxy->ipc_ns;
--=09which =3D (which - (char *)&init_ipc_ns) + (char *)ipc_ns;
--=09return which;
--}
--
--static int proc_mq_dointvec(struct ctl_table *table, int write,
--=09=09=09    void *buffer, size_t *lenp, loff_t *ppos)
--{
--=09struct ctl_table mq_table;
--=09memcpy(&mq_table, table, sizeof(mq_table));
--=09mq_table.data =3D get_mq(table);
--
--=09return proc_dointvec(&mq_table, write, buffer, lenp, ppos);
--}
--
--static int proc_mq_dointvec_minmax(struct ctl_table *table, int write,
--=09=09void *buffer, size_t *lenp, loff_t *ppos)
--{
--=09struct ctl_table mq_table;
--=09memcpy(&mq_table, table, sizeof(mq_table));
--=09mq_table.data =3D get_mq(table);
--
--=09return proc_dointvec_minmax(&mq_table, write, buffer,
--=09=09=09=09=09lenp, ppos);
--}
--#else
--#define proc_mq_dointvec NULL
--#define proc_mq_dointvec_minmax NULL
--#endif
-+#include <linux/stat.h>
-+#include <linux/capability.h>
-+#include <linux/slab.h>
-=20
- static int msg_max_limit_min =3D MIN_MSGMAX;
- static int msg_max_limit_max =3D HARD_MSGMAX;
-@@ -55,14 +25,14 @@ static struct ctl_table mq_sysctls[] =3D {
- =09=09.data=09=09=3D &init_ipc_ns.mq_queues_max,
- =09=09.maxlen=09=09=3D sizeof(int),
- =09=09.mode=09=09=3D 0644,
--=09=09.proc_handler=09=3D proc_mq_dointvec,
-+=09=09.proc_handler=09=3D proc_dointvec,
- =09},
- =09{
- =09=09.procname=09=3D "msg_max",
- =09=09.data=09=09=3D &init_ipc_ns.mq_msg_max,
- =09=09.maxlen=09=09=3D sizeof(int),
- =09=09.mode=09=09=3D 0644,
--=09=09.proc_handler=09=3D proc_mq_dointvec_minmax,
-+=09=09.proc_handler=09=3D proc_dointvec_minmax,
- =09=09.extra1=09=09=3D &msg_max_limit_min,
- =09=09.extra2=09=09=3D &msg_max_limit_max,
- =09},
-@@ -71,7 +41,7 @@ static struct ctl_table mq_sysctls[] =3D {
- =09=09.data=09=09=3D &init_ipc_ns.mq_msgsize_max,
- =09=09.maxlen=09=09=3D sizeof(int),
- =09=09.mode=09=09=3D 0644,
--=09=09.proc_handler=09=3D proc_mq_dointvec_minmax,
-+=09=09.proc_handler=09=3D proc_dointvec_minmax,
- =09=09.extra1=09=09=3D &msg_maxsize_limit_min,
- =09=09.extra2=09=09=3D &msg_maxsize_limit_max,
- =09},
-@@ -80,7 +50,7 @@ static struct ctl_table mq_sysctls[] =3D {
- =09=09.data=09=09=3D &init_ipc_ns.mq_msg_default,
- =09=09.maxlen=09=09=3D sizeof(int),
- =09=09.mode=09=09=3D 0644,
--=09=09.proc_handler=09=3D proc_mq_dointvec_minmax,
-+=09=09.proc_handler=09=3D proc_dointvec_minmax,
- =09=09.extra1=09=09=3D &msg_max_limit_min,
- =09=09.extra2=09=09=3D &msg_max_limit_max,
- =09},
-@@ -89,32 +59,89 @@ static struct ctl_table mq_sysctls[] =3D {
- =09=09.data=09=09=3D &init_ipc_ns.mq_msgsize_default,
- =09=09.maxlen=09=09=3D sizeof(int),
- =09=09.mode=09=09=3D 0644,
--=09=09.proc_handler=09=3D proc_mq_dointvec_minmax,
-+=09=09.proc_handler=09=3D proc_dointvec_minmax,
- =09=09.extra1=09=09=3D &msg_maxsize_limit_min,
- =09=09.extra2=09=09=3D &msg_maxsize_limit_max,
- =09},
- =09{}
+ 
+ static int securityfs_get_tree(struct fs_context *fc)
+ {
+-	return get_tree_single(fc, securityfs_fill_super);
++	return get_tree_keyed(fc, securityfs_fill_super, fc->user_ns);
+ }
+ 
+ static const struct fs_context_operations securityfs_context_ops = {
+@@ -71,6 +104,7 @@ static struct file_system_type fs_type = {
+ 	.name =		"securityfs",
+ 	.init_fs_context = securityfs_init_fs_context,
+ 	.kill_sb =	kill_litter_super,
++	.fs_flags =	FS_USERNS_MOUNT,
  };
-=20
--static struct ctl_table mq_sysctl_dir[] =3D {
--=09{
--=09=09.procname=09=3D "mqueue",
--=09=09.mode=09=09=3D 0555,
--=09=09.child=09=09=3D mq_sysctls,
--=09},
--=09{}
--};
-+static struct ctl_table_set *
-+set_lookup(struct ctl_table_root *root)
-+{
-+=09return &current->nsproxy->ipc_ns->set;
-+}
-=20
--static struct ctl_table mq_sysctl_root[] =3D {
--=09{
--=09=09.procname=09=3D "fs",
--=09=09.mode=09=09=3D 0555,
--=09=09.child=09=09=3D mq_sysctl_dir,
--=09},
--=09{}
-+static int set_is_seen(struct ctl_table_set *set)
-+{
-+=09return &current->nsproxy->ipc_ns->set =3D=3D set;
-+}
-+
-+static int set_permissions(struct ctl_table_header *head, struct ctl_table=
- *table)
-+{
-+=09struct ipc_namespace *ns =3D container_of(head->set, struct ipc_namespa=
-ce, set);
-+=09int mode;
-+
-+=09/* Allow users with CAP_SYS_RESOURCE unrestrained access */
-+=09if (ns_capable(ns->user_ns, CAP_SYS_RESOURCE))
-+=09=09mode =3D (table->mode & S_IRWXU) >> 6;
-+=09else
-+=09/* Allow all others at most read-only access */
-+=09=09mode =3D table->mode & S_IROTH;
-+=09return (mode << 6) | (mode << 3) | mode;
-+}
-+
-+static struct ctl_table_root set_root =3D {
-+=09.lookup =3D set_lookup,
-+=09.permissions =3D set_permissions,
- };
-=20
--struct ctl_table_header *mq_register_sysctl_table(void)
-+bool setup_mq_sysctls(struct ipc_namespace *ns)
+ 
+ /**
+@@ -109,6 +143,7 @@ static struct dentry *securityfs_create_dentry(const char *name, umode_t mode,
+ 					const struct file_operations *fops,
+ 					const struct inode_operations *iops)
  {
--=09return register_sysctl_table(mq_sysctl_root);
-+=09struct ctl_table *tbl;
-+
-+=09setup_sysctl_set(&ns->set, &set_root, set_is_seen);
-+
-+=09tbl =3D kmemdup(mq_sysctls, sizeof(mq_sysctls), GFP_KERNEL);
-+=09if (tbl) {
-+=09=09int i;
-+
-+=09=09for (i =3D 0; i < ARRAY_SIZE(mq_sysctls); i++) {
-+=09=09=09if (tbl[i].data =3D=3D &init_ipc_ns.mq_queues_max)
-+=09=09=09=09tbl[i].data =3D &ns->mq_queues_max;
-+
-+=09=09=09else if (tbl[i].data =3D=3D &init_ipc_ns.mq_msg_max)
-+=09=09=09=09tbl[i].data =3D &ns->mq_msg_max;
-+
-+=09=09=09else if (tbl[i].data =3D=3D &init_ipc_ns.mq_msgsize_max)
-+=09=09=09=09tbl[i].data =3D &ns->mq_msgsize_max;
-+
-+=09=09=09else if (tbl[i].data =3D=3D &init_ipc_ns.mq_msg_default)
-+=09=09=09=09tbl[i].data =3D &ns->mq_msg_default;
-+
-+=09=09=09else if (tbl[i].data =3D=3D &init_ipc_ns.mq_msgsize_default)
-+=09=09=09=09tbl[i].data =3D &ns->mq_msgsize_default;
-+=09=09=09else
-+=09=09=09=09tbl[i].data =3D NULL;
-+=09=09}
-+
-+=09=09ns->sysctls =3D __register_sysctl_table(&ns->set, "fs/mqueue", tbl);
-+=09}
-+=09if (!ns->sysctls) {
-+=09=09kfree(tbl);
-+=09=09retire_sysctl_set(&ns->set);
-+=09=09return false;
-+=09}
-+
-+=09return true;
-+}
-+
-+void retire_mq_sysctls(struct ipc_namespace *ns)
-+{
-+=09struct ctl_table *tbl;
-+
-+=09tbl =3D ns->sysctls->ctl_table_arg;
-+=09unregister_sysctl_table(ns->sysctls);
-+=09retire_sysctl_set(&ns->set);
-+=09kfree(tbl);
++	struct user_namespace *ns = current_user_ns();
+ 	struct dentry *dentry;
+ 	struct inode *dir, *inode;
+ 	int error;
+@@ -118,12 +153,19 @@ static struct dentry *securityfs_create_dentry(const char *name, umode_t mode,
+ 
+ 	pr_debug("securityfs: creating file '%s'\n",name);
+ 
+-	error = simple_pin_fs(&fs_type, &mount, &mount_count);
+-	if (error)
+-		return ERR_PTR(error);
++	if (ns == &init_user_ns) {
++		error = simple_pin_fs(&fs_type, &init_securityfs_mount,
++				      &init_securityfs_mount_count);
++		if (error)
++			return ERR_PTR(error);
++	}
+ 
+-	if (!parent)
+-		parent = mount->mnt_root;
++	if (!parent) {
++		if (ns == &init_user_ns)
++			parent = init_securityfs_mount->mnt_root;
++		else
++			return ERR_PTR(-EINVAL);
++	}
+ 
+ 	dir = d_inode(parent);
+ 
+@@ -148,7 +190,7 @@ static struct dentry *securityfs_create_dentry(const char *name, umode_t mode,
+ 	inode->i_atime = inode->i_mtime = inode->i_ctime = current_time(inode);
+ 	inode->i_private = data;
+ 	if (S_ISDIR(mode)) {
+-		inode->i_op = &simple_dir_inode_operations;
++		inode->i_op = &securityfs_dir_inode_operations;
+ 		inode->i_fop = &simple_dir_operations;
+ 		inc_nlink(inode);
+ 		inc_nlink(dir);
+@@ -156,10 +198,10 @@ static struct dentry *securityfs_create_dentry(const char *name, umode_t mode,
+ 		inode->i_op = iops ? iops : &simple_symlink_inode_operations;
+ 		inode->i_link = data;
+ 	} else {
++		inode->i_op = &securityfs_file_inode_operations;
+ 		inode->i_fop = fops;
+ 	}
+ 	d_instantiate(dentry, inode);
+-	dget(dentry);
+ 	inode_unlock(dir);
+ 	return dentry;
+ 
+@@ -168,7 +210,9 @@ static struct dentry *securityfs_create_dentry(const char *name, umode_t mode,
+ 	dentry = ERR_PTR(error);
+ out:
+ 	inode_unlock(dir);
+-	simple_release_fs(&mount, &mount_count);
++	if (ns == &init_user_ns)
++		simple_release_fs(&init_securityfs_mount,
++				  &init_securityfs_mount_count);
+ 	return dentry;
  }
-diff --git a/ipc/mqueue.c b/ipc/mqueue.c
-index 5becca9be867..1b4a3be71636 100644
---- a/ipc/mqueue.c
-+++ b/ipc/mqueue.c
-@@ -163,8 +163,6 @@ static void remove_notification(struct mqueue_inode_inf=
-o *info);
-=20
- static struct kmem_cache *mqueue_inode_cachep;
-=20
--static struct ctl_table_header *mq_sysctl_table;
--
- static inline struct mqueue_inode_info *MQUEUE_I(struct inode *inode)
+ 
+@@ -294,22 +338,29 @@ EXPORT_SYMBOL_GPL(securityfs_create_symlink);
+  */
+ void securityfs_remove(struct dentry *dentry)
  {
- =09return container_of(inode, struct mqueue_inode_info, vfs_inode);
-@@ -1713,8 +1711,10 @@ static int __init init_mqueue_fs(void)
- =09if (mqueue_inode_cachep =3D=3D NULL)
- =09=09return -ENOMEM;
-=20
--=09/* ignore failures - they are not fatal */
--=09mq_sysctl_table =3D mq_register_sysctl_table();
-+=09if (!setup_mq_sysctls(&init_ipc_ns)) {
-+=09=09pr_warn("sysctl registration failed\n");
-+=09=09return -ENOMEM;
-+=09}
-=20
- =09error =3D register_filesystem(&mqueue_fs_type);
- =09if (error)
-@@ -1731,8 +1731,6 @@ static int __init init_mqueue_fs(void)
- out_filesystem:
- =09unregister_filesystem(&mqueue_fs_type);
- out_sysctl:
--=09if (mq_sysctl_table)
--=09=09unregister_sysctl_table(mq_sysctl_table);
- =09kmem_cache_destroy(mqueue_inode_cachep);
- =09return error;
++	struct user_namespace *ns;
+ 	struct inode *dir;
+ 
+ 	if (!dentry || IS_ERR(dentry))
+ 		return;
+ 
++	ns = dentry->d_sb->s_user_ns;
++
+ 	dir = d_inode(dentry->d_parent);
+ 	inode_lock(dir);
+ 	if (simple_positive(dentry)) {
++		dget(dentry);
+ 		if (d_is_dir(dentry))
+ 			simple_rmdir(dir, dentry);
+ 		else
+ 			simple_unlink(dir, dentry);
++		d_delete(dentry);
+ 		dput(dentry);
+ 	}
+ 	inode_unlock(dir);
+-	simple_release_fs(&mount, &mount_count);
++	if (ns == &init_user_ns)
++		simple_release_fs(&init_securityfs_mount,
++				  &init_securityfs_mount_count);
  }
-diff --git a/ipc/namespace.c b/ipc/namespace.c
-index ae83f0f2651b..f760243ca685 100644
---- a/ipc/namespace.c
-+++ b/ipc/namespace.c
-@@ -59,6 +59,10 @@ static struct ipc_namespace *create_ipc_ns(struct user_n=
-amespace *user_ns,
- =09if (err)
- =09=09goto fail_put;
-=20
-+=09err =3D -ENOMEM;
-+=09if (!setup_mq_sysctls(ns))
-+=09=09goto fail_put;
-+
- =09sem_init_ns(ns);
- =09msg_init_ns(ns);
- =09shm_init_ns(ns);
-@@ -125,6 +129,8 @@ static void free_ipc_ns(struct ipc_namespace *ns)
- =09msg_exit_ns(ns);
- =09shm_exit_ns(ns);
-=20
-+=09retire_mq_sysctls(ns);
-+
- =09dec_ipc_namespaces(ns->ucounts);
- =09put_user_ns(ns->user_ns);
- =09ns_free_inum(&ns->ns);
---=20
-2.33.0
+ EXPORT_SYMBOL_GPL(securityfs_remove);
+ 
+-- 
+2.31.1
 
