@@ -1,51 +1,51 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 055F32CA4
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 074C22CA6
 	for <containers@lists.linux.dev>; Tue,  4 Jan 2022 17:04:51 +0000 (UTC)
-Received: from pps.filterd (m0098414.ppops.net [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 204FqH18029721;
-	Tue, 4 Jan 2022 17:04:33 GMT
+Received: from pps.filterd (m0127361.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 204GvMmX014603;
+	Tue, 4 Jan 2022 17:04:34 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=pp1;
- bh=hDMPbcdn5pH0FH1d6YzfRfEXRQXTIcVx2qGOC2FnlMI=;
- b=iW+zYVjtIvDyq+cutKIkJ/ykoR2GtgazTKNRFPPnfV0IepnWpSIdmwudAEpr/p8aCSLw
- AWiNOk6Oh49XBxJ+dcn7xgSNgW8VmXWJE2T/Z5fYcj1C40AVIksY6L1UfQGig+xn2wMR
- qu39y2jybySmTZ3tG0f39O0D+1OIKD3GJIYIMT6S+lbwjqQA2dipZgVxj904Q5WQgQTo
- r8LVZCfAcy5zVrLQxmTLso8+fYA373MxITDgtME9a8gwX0R6RmN2QVWFHcjn2ZMxpQ7T
- FadhS9ur1DIPl4+pN1Ku7KYEn0TGqtXdxAMm0jO4wAIqWYdaBEUG69RM6X00B+Dc80LX 6g== 
+ bh=fzd1vpvQ2F15cLbBAIM8JVRlxWq/V1F9Qz6UnRWKWIA=;
+ b=EH3RQGfevP7Nsh8Q/KlWGPhpGbncP+LBSH1NZPZbLr01XtDdKavQiFPHq9SqhstFDd51
+ j3693USWt9SyD0Wowf19TfdQCrGyJwi2+eorfpGLvKGZ4vAGncLq1mcXOd8V0KlVMgdG
+ HJMHbM+TUFAo6kwFgLnQkXLs88LuB/5L265+cpQo9KLgMpIEM05ykhRuj2lRRiBB0kLc
+ +mupEsPPB/qySEiyzWANMHgAcdQehkOafGBwNlXFZTpDqqSOJ7eVRbsnkVcJFYx9TwRT
+ y18+CTsafB8AEnRrIR9W1d6dBnXDUiNtkmwY3JjOStatO+MyCcfjHChfyWiDWxca1zx0 FA== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3dcmt3evts-1
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3dcqu1ba6q-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Tue, 04 Jan 2022 17:04:33 +0000
-Received: from m0098414.ppops.net (m0098414.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 204Guu6V002935;
+Received: from m0127361.ppops.net (m0127361.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 204GAdiV030577;
+	Tue, 4 Jan 2022 17:04:33 GMT
+Received: from ppma02wdc.us.ibm.com (aa.5b.37a9.ip4.static.sl-reverse.com [169.55.91.170])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3dcqu1ba6g-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 04 Jan 2022 17:04:33 +0000
+Received: from pps.filterd (ppma02wdc.us.ibm.com [127.0.0.1])
+	by ppma02wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 204H2jud031207;
 	Tue, 4 Jan 2022 17:04:32 GMT
-Received: from ppma03dal.us.ibm.com (b.bd.3ea9.ip4.static.sl-reverse.com [169.62.189.11])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3dcmt3evtg-1
+Received: from b01cxnp23034.gho.pok.ibm.com (b01cxnp23034.gho.pok.ibm.com [9.57.198.29])
+	by ppma02wdc.us.ibm.com with ESMTP id 3daekaf3n6-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Tue, 04 Jan 2022 17:04:32 +0000
-Received: from pps.filterd (ppma03dal.us.ibm.com [127.0.0.1])
-	by ppma03dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 204H4C3W032766;
-	Tue, 4 Jan 2022 17:04:31 GMT
-Received: from b01cxnp23033.gho.pok.ibm.com (b01cxnp23033.gho.pok.ibm.com [9.57.198.28])
-	by ppma03dal.us.ibm.com with ESMTP id 3daekatd19-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 04 Jan 2022 17:04:31 +0000
 Received: from b01ledav006.gho.pok.ibm.com (b01ledav006.gho.pok.ibm.com [9.57.199.111])
-	by b01cxnp23033.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 204H4Ujp43975100
+	by b01cxnp23034.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 204H4VsT27263306
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Tue, 4 Jan 2022 17:04:30 GMT
+	Tue, 4 Jan 2022 17:04:31 GMT
 Received: from b01ledav006.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 7E47FAC05E;
-	Tue,  4 Jan 2022 17:04:30 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 4756CAC064;
+	Tue,  4 Jan 2022 17:04:31 +0000 (GMT)
 Received: from b01ledav006.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 6CD8EAC059;
-	Tue,  4 Jan 2022 17:04:30 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 35B1AAC05B;
+	Tue,  4 Jan 2022 17:04:31 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by b01ledav006.gho.pok.ibm.com (Postfix) with ESMTP;
-	Tue,  4 Jan 2022 17:04:30 +0000 (GMT)
+	Tue,  4 Jan 2022 17:04:31 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.vnet.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
@@ -56,9 +56,9 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
         jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
         jmorris@namei.org, Stefan Berger <stefanb@linux.ibm.com>
-Subject: [PATCH v8 12/19] userns: Add pointer to ima_namespace to user_namespace
-Date: Tue,  4 Jan 2022 12:04:09 -0500
-Message-Id: <20220104170416.1923685-13-stefanb@linux.vnet.ibm.com>
+Subject: [PATCH v8 18/19] ima: Show owning user namespace's uid and gid when displaying policy
+Date: Tue,  4 Jan 2022 12:04:15 -0500
+Message-Id: <20220104170416.1923685-19-stefanb@linux.vnet.ibm.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20220104170416.1923685-1-stefanb@linux.vnet.ibm.com>
 References: <20220104170416.1923685-1-stefanb@linux.vnet.ibm.com>
@@ -70,106 +70,101 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: PEzQL0DKK7mApvKDLVYEbiwCoZMenG2v
-X-Proofpoint-GUID: lVZ_69bKV-Yxq1gtwThSYGHK6KbsrUot
+X-Proofpoint-ORIG-GUID: LkPiGbKu-mUflMXnXwIjvLtXwfwJIscq
+X-Proofpoint-GUID: 3jcLOzO1vZ6iLa3Y5t2JDYGWp29Ps4Uc
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.11.62.513
  definitions=2022-01-04_08,2022-01-04_01,2021-12-02_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 malwarescore=0 adultscore=0
- mlxlogscore=999 spamscore=0 suspectscore=0 lowpriorityscore=0 mlxscore=0
- impostorscore=0 bulkscore=0 clxscore=1015 phishscore=0 priorityscore=1501
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2110150000
- definitions=main-2201040114
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 mlxscore=0 bulkscore=0
+ spamscore=0 malwarescore=0 lowpriorityscore=0 suspectscore=0 clxscore=1015
+ adultscore=0 mlxlogscore=999 phishscore=0 impostorscore=0
+ priorityscore=1501 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2110150000 definitions=main-2201040114
 
 From: Stefan Berger <stefanb@linux.ibm.com>
 
-Add a pointer to ima_namespace to the user_namespace and initialize
-the init_user_ns with a pointer to init_ima_ns.
+Show the uid and gid values of the owning user namespace when displaying
+the IMA policy rather than the kernel uid and gid values. Now the same uid
+and gid values are shown in the policy as those that were used when the
+policy was set.
 
 Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
 ---
- include/linux/ima.h            | 2 ++
- include/linux/user_namespace.h | 4 ++++
- kernel/user.c                  | 4 ++++
- security/integrity/ima/ima.h   | 8 ++++++++
- 4 files changed, 18 insertions(+)
+ security/integrity/ima/ima_policy.c | 19 +++++++++++++------
+ 1 file changed, 13 insertions(+), 6 deletions(-)
 
-diff --git a/include/linux/ima.h b/include/linux/ima.h
-index fcee2a51bb87..e1d65162d1fb 100644
---- a/include/linux/ima.h
-+++ b/include/linux/ima.h
-@@ -14,6 +14,8 @@
- #include <crypto/hash_info.h>
- struct linux_binprm;
+diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
+index 15c68dc5da9e..b7dbc687b6ff 100644
+--- a/security/integrity/ima/ima_policy.c
++++ b/security/integrity/ima/ima_policy.c
+@@ -1997,6 +1997,7 @@ static void ima_policy_show_appraise_algos(struct seq_file *m,
  
-+extern struct ima_namespace init_ima_ns;
-+
- #ifdef CONFIG_IMA
- extern enum hash_algo ima_get_current_hash_algo(void);
- extern int ima_bprm_check(struct linux_binprm *bprm);
-diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index 33a4240e6a6f..019e8cf7b633 100644
---- a/include/linux/user_namespace.h
-+++ b/include/linux/user_namespace.h
-@@ -36,6 +36,7 @@ struct uid_gid_map { /* 64 bytes -- 1 cache line */
- #define USERNS_INIT_FLAGS USERNS_SETGROUPS_ALLOWED
- 
- struct ucounts;
-+struct ima_namespace;
- 
- enum ucount_type {
- 	UCOUNT_USER_NAMESPACES,
-@@ -99,6 +100,9 @@ struct user_namespace {
- #endif
- 	struct ucounts		*ucounts;
- 	long ucount_max[UCOUNT_COUNTS];
-+#ifdef CONFIG_IMA_NS
-+	struct ima_namespace	*ima_ns;
-+#endif
- } __randomize_layout;
- 
- struct ucounts {
-diff --git a/kernel/user.c b/kernel/user.c
-index e2cf8c22b539..e5d1f4b9b8ba 100644
---- a/kernel/user.c
-+++ b/kernel/user.c
-@@ -19,6 +19,7 @@
- #include <linux/export.h>
- #include <linux/user_namespace.h>
- #include <linux/proc_ns.h>
-+#include <linux/ima.h>
- 
- /*
-  * userns count is 1 for root user, 1 for init_uts_ns,
-@@ -67,6 +68,9 @@ struct user_namespace init_user_ns = {
- 	.keyring_name_list = LIST_HEAD_INIT(init_user_ns.keyring_name_list),
- 	.keyring_sem = __RWSEM_INITIALIZER(init_user_ns.keyring_sem),
- #endif
-+#ifdef CONFIG_IMA_NS
-+	.ima_ns = &init_ima_ns,
-+#endif
- };
- EXPORT_SYMBOL_GPL(init_user_ns);
- 
-diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
-index 1c1e859721ee..f63c6f22b853 100644
---- a/security/integrity/ima/ima.h
-+++ b/security/integrity/ima/ima.h
-@@ -490,6 +490,14 @@ struct user_namespace *ima_user_ns_from_file(const struct file *filp)
- 	return file_inode(filp)->i_sb->s_user_ns;
- }
- 
-+static inline struct ima_namespace
-+*ima_ns_from_user_ns(struct user_namespace *user_ns)
-+{
-+	if (user_ns == &init_user_ns)
-+		return &init_ima_ns;
-+	return NULL;
-+}
-+
- static inline struct ima_namespace *get_current_ns(void)
+ int ima_policy_show(struct seq_file *m, void *v)
  {
- 	return &init_ima_ns;
++	struct user_namespace *user_ns = ima_user_ns_from_file(m->file);
+ 	struct ima_rule_entry *entry = v;
+ 	int i;
+ 	char tbuf[64] = {0,};
+@@ -2074,7 +2075,8 @@ int ima_policy_show(struct seq_file *m, void *v)
+ 	}
+ 
+ 	if (entry->flags & IMA_UID) {
+-		snprintf(tbuf, sizeof(tbuf), "%d", __kuid_val(entry->uid));
++		snprintf(tbuf, sizeof(tbuf),
++			 "%d", from_kuid(user_ns, entry->uid));
+ 		if (entry->uid_op == &uid_gt)
+ 			seq_printf(m, pt(Opt_uid_gt), tbuf);
+ 		else if (entry->uid_op == &uid_lt)
+@@ -2085,7 +2087,8 @@ int ima_policy_show(struct seq_file *m, void *v)
+ 	}
+ 
+ 	if (entry->flags & IMA_EUID) {
+-		snprintf(tbuf, sizeof(tbuf), "%d", __kuid_val(entry->uid));
++		snprintf(tbuf, sizeof(tbuf),
++			 "%d", from_kuid(user_ns, entry->uid));
+ 		if (entry->uid_op == &uid_gt)
+ 			seq_printf(m, pt(Opt_euid_gt), tbuf);
+ 		else if (entry->uid_op == &uid_lt)
+@@ -2096,7 +2099,8 @@ int ima_policy_show(struct seq_file *m, void *v)
+ 	}
+ 
+ 	if (entry->flags & IMA_GID) {
+-		snprintf(tbuf, sizeof(tbuf), "%d", __kgid_val(entry->gid));
++		snprintf(tbuf, sizeof(tbuf),
++			 "%d", from_kgid(user_ns, entry->gid));
+ 		if (entry->gid_op == &gid_gt)
+ 			seq_printf(m, pt(Opt_gid_gt), tbuf);
+ 		else if (entry->gid_op == &gid_lt)
+@@ -2107,7 +2111,8 @@ int ima_policy_show(struct seq_file *m, void *v)
+ 	}
+ 
+ 	if (entry->flags & IMA_EGID) {
+-		snprintf(tbuf, sizeof(tbuf), "%d", __kgid_val(entry->gid));
++		snprintf(tbuf, sizeof(tbuf),
++			 "%d", from_kgid(user_ns, entry->gid));
+ 		if (entry->gid_op == &gid_gt)
+ 			seq_printf(m, pt(Opt_egid_gt), tbuf);
+ 		else if (entry->gid_op == &gid_lt)
+@@ -2118,7 +2123,8 @@ int ima_policy_show(struct seq_file *m, void *v)
+ 	}
+ 
+ 	if (entry->flags & IMA_FOWNER) {
+-		snprintf(tbuf, sizeof(tbuf), "%d", __kuid_val(entry->fowner));
++		snprintf(tbuf, sizeof(tbuf),
++			 "%d", from_kuid(user_ns, entry->fowner));
+ 		if (entry->fowner_op == &uid_gt)
+ 			seq_printf(m, pt(Opt_fowner_gt), tbuf);
+ 		else if (entry->fowner_op == &uid_lt)
+@@ -2129,7 +2135,8 @@ int ima_policy_show(struct seq_file *m, void *v)
+ 	}
+ 
+ 	if (entry->flags & IMA_FGROUP) {
+-		snprintf(tbuf, sizeof(tbuf), "%d", __kgid_val(entry->fgroup));
++		snprintf(tbuf, sizeof(tbuf),
++			 "%d", from_kgid(user_ns, entry->fgroup));
+ 		if (entry->fgroup_op == &gid_gt)
+ 			seq_printf(m, pt(Opt_fgroup_gt), tbuf);
+ 		else if (entry->fgroup_op == &gid_lt)
 -- 
 2.31.1
 
