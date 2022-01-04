@@ -1,51 +1,51 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
+Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E19592CB1
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1F78E2CAD
 	for <containers@lists.linux.dev>; Tue,  4 Jan 2022 17:04:53 +0000 (UTC)
-Received: from pps.filterd (m0098393.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 204EiN7P029608;
-	Tue, 4 Jan 2022 17:04:34 GMT
+Received: from pps.filterd (m0098420.ppops.net [127.0.0.1])
+	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 204Enfm4004395;
+	Tue, 4 Jan 2022 17:04:35 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=pp1;
- bh=LYeN93aLwDBDiALum/fhCLrIPjfNPp6s1waR7Zp0ivY=;
- b=A7hN8Qkw0OkGjkR5DhixPLKMiWVoIkgJLLpPdcrigcU+fzPL8tDoD4H55mhys4AfRaAa
- CftvRzHhG/m4+D60EWdPEbwBlj5IkCS+RSMjr348k9cxDilKxhOCrimbCQsPTIMRlB8c
- UrPY0SJBBG3xOnclA4IFAZQi4dNFhoBarFKY4wnqJhUkm375B7WdNkEhfLOg8rzGhtWe
- n40GH/hg/xEPitI1pNeX13T3OA5rxBVXjmR9QLaCbI4/bBPyhgRMtdCMlVYAMXShN6wj
- Qrwl0ntGn3FnIm98gmMHsH6tMxK8VU3H+BKsYX3a9a9dZCN1ta9RISJKzXmOP/nRRP81 kg== 
+ bh=29DoXfIyP8xt897nTk0juf69RV20kB7+olSryz9Ebx8=;
+ b=dzfzN6164cwFfYQ2dOhrIxyJxidw3Loqom3XqbrENHgsM+wwITEzPZqQdAQg4ORPBLp/
+ imqwx+FeZ0CVotFXkIaH266trHAlh6t6Bxfasblyw0RoUUOGNPolyarfjaa7HgiV7+Wp
+ 9nCmxkzNbeUoha+nVXA1Msnr9ebhX7xFm2OnrLFBYGNhsy+l9UPrvUTHCsPE5iZACnnn
+ C4C4kd2+IYesEeb5K38RNPoC07gJkJ1Wis2cBLrzmkQ0LitXxdjXXyBEpUwY4JkZ8QZe
+ fEnDM08useIFzHmum9xU9KjbBqzxT638yLPK3nImSGE9evy8KlYWkprHanoaxrkrZVlS IQ== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3dcr91arah-1
+	by mx0b-001b2d01.pphosted.com with ESMTP id 3dcrb6jkau-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 04 Jan 2022 17:04:33 +0000
-Received: from m0098393.ppops.net (m0098393.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 204GVNmr012455;
+	Tue, 04 Jan 2022 17:04:34 +0000
+Received: from m0098420.ppops.net (m0098420.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 204GjxQe032684;
+	Tue, 4 Jan 2022 17:04:34 GMT
+Received: from ppma01dal.us.ibm.com (83.d6.3fa9.ip4.static.sl-reverse.com [169.63.214.131])
+	by mx0b-001b2d01.pphosted.com with ESMTP id 3dcrb6jkag-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 04 Jan 2022 17:04:34 +0000
+Received: from pps.filterd (ppma01dal.us.ibm.com [127.0.0.1])
+	by ppma01dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 204H2jhK030187;
 	Tue, 4 Jan 2022 17:04:33 GMT
-Received: from ppma01wdc.us.ibm.com (fd.55.37a9.ip4.static.sl-reverse.com [169.55.85.253])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3dcr91ara5-1
+Received: from b01cxnp23034.gho.pok.ibm.com (b01cxnp23034.gho.pok.ibm.com [9.57.198.29])
+	by ppma01dal.us.ibm.com with ESMTP id 3daekatdpt-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Tue, 04 Jan 2022 17:04:33 +0000
-Received: from pps.filterd (ppma01wdc.us.ibm.com [127.0.0.1])
-	by ppma01wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 204H2eEd008787;
-	Tue, 4 Jan 2022 17:04:32 GMT
-Received: from b01cxnp23034.gho.pok.ibm.com (b01cxnp23034.gho.pok.ibm.com [9.57.198.29])
-	by ppma01wdc.us.ibm.com with ESMTP id 3daekaf11n-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 04 Jan 2022 17:04:32 +0000
 Received: from b01ledav006.gho.pok.ibm.com (b01ledav006.gho.pok.ibm.com [9.57.199.111])
-	by b01cxnp23034.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 204H4VAI31326506
+	by b01cxnp23034.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 204H4V8k27263312
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
 	Tue, 4 Jan 2022 17:04:31 GMT
 Received: from b01ledav006.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id E4B48AC059;
-	Tue,  4 Jan 2022 17:04:30 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 79B7BAC05B;
+	Tue,  4 Jan 2022 17:04:31 +0000 (GMT)
 Received: from b01ledav006.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id D0F8FAC05E;
-	Tue,  4 Jan 2022 17:04:30 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 52F5BAC06A;
+	Tue,  4 Jan 2022 17:04:31 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by b01ledav006.gho.pok.ibm.com (Postfix) with ESMTP;
-	Tue,  4 Jan 2022 17:04:30 +0000 (GMT)
+	Tue,  4 Jan 2022 17:04:31 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.vnet.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
@@ -55,11 +55,10 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
         lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
         jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
-        jmorris@namei.org, Mehmet Kayaalp <mkayaalp@linux.vnet.ibm.com>,
-        Stefan Berger <stefanb@linux.ibm.com>
-Subject: [PATCH v8 15/19] ima: Namespace audit status flags
-Date: Tue,  4 Jan 2022 12:04:12 -0500
-Message-Id: <20220104170416.1923685-16-stefanb@linux.vnet.ibm.com>
+        jmorris@namei.org, Stefan Berger <stefanb@linux.ibm.com>
+Subject: [PATCH v8 19/19] ima: Enable IMA namespaces
+Date: Tue,  4 Jan 2022 12:04:16 -0500
+Message-Id: <20220104170416.1923685-20-stefanb@linux.vnet.ibm.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20220104170416.1923685-1-stefanb@linux.vnet.ibm.com>
 References: <20220104170416.1923685-1-stefanb@linux.vnet.ibm.com>
@@ -71,242 +70,511 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: 0ilCFREcE_-yIDEyDCR9LplVD3F61s2-
-X-Proofpoint-ORIG-GUID: xTb33PC5VZqB0Qp8k9wcom0XjWErG7L1
+X-Proofpoint-ORIG-GUID: Zku6R3aE21TDAQnK5L9Gm_Whg0oy4SY9
+X-Proofpoint-GUID: qVDzUp-w36UfOEkZNbNn_OIPZMbZfynp
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.11.62.513
  definitions=2022-01-04_08,2022-01-04_01,2021-12-02_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 malwarescore=0 suspectscore=0
- impostorscore=0 mlxlogscore=999 mlxscore=0 phishscore=0 adultscore=0
- spamscore=0 lowpriorityscore=0 bulkscore=0 priorityscore=1501
- clxscore=1015 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2110150000 definitions=main-2201040114
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 mlxscore=0 impostorscore=0
+ spamscore=0 mlxlogscore=999 phishscore=0 adultscore=0 lowpriorityscore=0
+ priorityscore=1501 bulkscore=0 clxscore=1015 suspectscore=0 malwarescore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2110150000
+ definitions=main-2201040114
 
-From: Mehmet Kayaalp <mkayaalp@linux.vnet.ibm.com>
+From: Stefan Berger <stefanb@linux.ibm.com>
 
-The iint cache stores whether the file is measured, appraised, audited
-etc. This patch moves the IMA_AUDITED flag into the per-namespace
-ns_status, enabling IMA audit mechanism to audit the same file each time
-it is accessed in a new namespace.
+Introduce the IMA_NS in Kconfig for IMA namespace enablement.
 
-The ns_status is not looked up if the CONFIG_IMA_NS is disabled or if
-none of the IMA_NS_STATUS_ACTIONS (currently only IMA_AUDIT) are enabled.
+Enable the lazy initialization of an IMA namespace when a user mounts
+SecurityFS. Now a user_namespace will get a pointer to an ima_namespace
+and therefore add an implementation of get_current_ns() that returns this
+pointer.
 
-Read and write operations on the iint flags is replaced with function
-calls. For reading, iint_flags() returns the bitwise AND of iint->flags
-and ns_status->flags. The ns_status flags are masked with
-IMA_NS_STATUS_FLAGS (currently only IMA_AUDITED). Similarly
-set_iint_flags() only writes the masked portion to the ns_status flags,
-while the iint flags is set as before. The ns_status parameter added to
-ima_audit_measurement() is used with the above functions to query and
-set the ns_status flags.
+get_current_ns() may now return a NULL pointer for as long as the IMA
+namespace hasn't been created, yet. Therefore, return early from those
+functions that may now get a NULL pointer from this call. The NULL
+pointer can typically be treated similar to not having an IMA policy set
+and simply return early from a function.
 
-Signed-off-by: Mehmet Kayaalp <mkayaalp@linux.vnet.ibm.com>
+Implement ima_ns_from_file() for SecurityFS-related files where we can
+now get the IMA namespace via the user namespace pointer associated
+with the superblock of the SecurityFS filesystem instance. Since
+the functions using ima_ns_from_file() will only be called after an
+ima_namesapce has been allocated they will never get a NULL pointer
+for the ima_namespace.
+
+Switch access to userns->ima_ns to use acquire/release semantics to ensure
+that a newly created ima_namespace structure is fully visible upon access.
+
+Replace usage of current_user_ns() with ima_ns_from_user_ns() that
+implements a method to derive the user_namespace from the given
+ima_namespace. It leads to the same result.
+
 Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
 ---
- security/integrity/ima/ima.h      | 27 ++++++++++++++++++++++++++-
- security/integrity/ima/ima_api.c  |  8 +++++---
- security/integrity/ima/ima_main.c | 26 +++++++++++++++++++-------
- security/integrity/ima/ima_ns.c   | 20 ++++++++++++++++++++
- 4 files changed, 70 insertions(+), 11 deletions(-)
+ include/linux/ima.h                 |  9 ++++++-
+ init/Kconfig                        | 13 ++++++++++
+ kernel/user_namespace.c             |  2 ++
+ security/integrity/ima/ima.h        | 35 ++++++++++++++++++++++-----
+ security/integrity/ima/ima_fs.c     | 37 ++++++++++++++++++++++-------
+ security/integrity/ima/ima_main.c   | 29 ++++++++++++++++------
+ security/integrity/ima/ima_ns.c     |  3 ++-
+ security/integrity/ima/ima_policy.c | 13 +++++-----
+ 8 files changed, 112 insertions(+), 29 deletions(-)
 
+diff --git a/include/linux/ima.h b/include/linux/ima.h
+index 5354e83d1694..7b9713b290ae 100644
+--- a/include/linux/ima.h
++++ b/include/linux/ima.h
+@@ -11,6 +11,7 @@
+ #include <linux/fs.h>
+ #include <linux/security.h>
+ #include <linux/kexec.h>
++#include <linux/user_namespace.h>
+ #include <crypto/hash_info.h>
+ struct linux_binprm;
+ 
+@@ -71,7 +72,13 @@ static inline const char * const *arch_get_ima_policy(void)
+ static inline struct user_namespace
+ *ima_ns_to_user_ns(struct ima_namespace *ns)
+ {
+-	return current_user_ns();
++	struct user_namespace *user_ns;
++
++	user_ns = current_user_ns();
++#ifdef CONFIG_IMA_NS
++	WARN_ON(user_ns->ima_ns != ns);
++#endif
++	return user_ns;
+ }
+ 
+ #else
+diff --git a/init/Kconfig b/init/Kconfig
+index 4b7bac10c72d..e27155e0ddba 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -1247,6 +1247,19 @@ config NET_NS
+ 	  Allow user space to create what appear to be multiple instances
+ 	  of the network stack.
+ 
++config IMA_NS
++	bool "IMA namespace"
++	depends on USER_NS
++	depends on IMA
++	default n
++	help
++	  Allow the creation of an IMA namespace for each user namespace.
++	  Namespaced IMA enables having IMA features work separately
++	  in each IMA namespace.
++	  Currently, only the audit status flags are stored in the namespace,
++	  which allows the same file to be audited each time it is accessed
++	  in a new namespace.
++
+ endif # NAMESPACES
+ 
+ config CHECKPOINT_RESTORE
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 6b2e3ca7ee99..653f8fa83b69 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -20,6 +20,7 @@
+ #include <linux/fs_struct.h>
+ #include <linux/bsearch.h>
+ #include <linux/sort.h>
++#include <linux/ima.h>
+ 
+ static struct kmem_cache *user_ns_cachep __read_mostly;
+ static DEFINE_MUTEX(userns_state_mutex);
+@@ -196,6 +197,7 @@ static void free_user_ns(struct work_struct *work)
+ 			kfree(ns->projid_map.forward);
+ 			kfree(ns->projid_map.reverse);
+ 		}
++		free_ima_ns(ns);
+ 		retire_userns_sysctls(ns);
+ 		key_free_user_ns(ns);
+ 		ns_free_inum(&ns->ns);
 diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
-index e4804be6b524..1d7f140138be 100644
+index 344c8c4bd030..d993655ec796 100644
 --- a/security/integrity/ima/ima.h
 +++ b/security/integrity/ima/ima.h
-@@ -318,7 +318,8 @@ int process_buffer_measurement(struct ima_namespace *ns,
- 			       int pcr, const char *func_data,
- 			       bool buf_hash, u8 *digest, size_t digest_len);
- void ima_audit_measurement(struct integrity_iint_cache *iint,
--			   const unsigned char *filename);
-+			   const unsigned char *filename,
-+			   struct ns_status *status);
- int ima_alloc_init_template(struct ima_event_data *event_data,
- 			    struct ima_template_entry **entry,
- 			    struct ima_template_desc *template_desc);
-@@ -530,6 +531,14 @@ struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
+@@ -509,21 +509,20 @@ struct user_namespace *ima_user_ns_from_file(const struct file *filp)
+ 	return file_inode(filp)->i_sb->s_user_ns;
+ }
+ 
++#ifdef CONFIG_IMA_NS
++
+ static inline struct ima_namespace
+ *ima_ns_from_user_ns(struct user_namespace *user_ns)
+ {
+-	if (user_ns == &init_user_ns)
+-		return &init_ima_ns;
+-	return NULL;
++	/* Pairs with smp_store_releases() in create_ima_ns(). */
++	return smp_load_acquire(&user_ns->ima_ns);
+ }
+ 
+ static inline struct ima_namespace *get_current_ns(void)
+ {
+-	return &init_ima_ns;
++	return ima_ns_from_user_ns(current_user_ns());
+ }
+ 
+-#ifdef CONFIG_IMA_NS
+-
+ struct ima_namespace *create_ima_ns(struct user_namespace *user_ns);
+ 
+ struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
+@@ -532,6 +531,11 @@ struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
  
  void ima_free_ns_status_tree(struct ima_namespace *ns);
  
-+#define IMA_NS_STATUS_ACTIONS   IMA_AUDIT
-+#define IMA_NS_STATUS_FLAGS     IMA_AUDITED
-+
-+unsigned long iint_flags(struct integrity_iint_cache *iint,
-+			 struct ns_status *status);
-+unsigned long set_iint_flags(struct integrity_iint_cache *iint,
-+			     struct ns_status *status, unsigned long flags);
-+
- #else
- 
- static inline struct ima_namespace *
-@@ -546,6 +555,22 @@ static inline struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
- 	return NULL;
- }
- 
-+#define IMA_NS_STATUS_ACTIONS	0
-+
-+static inline unsigned long iint_flags(struct integrity_iint_cache *iint,
-+				       struct ns_status *status)
++static inline struct ima_namespace *ima_ns_from_file(const struct file *filp)
 +{
-+	return iint->flags;
++	return ima_user_ns_from_file(filp)->ima_ns;
 +}
 +
-+static inline unsigned long set_iint_flags(struct integrity_iint_cache *iint,
-+					   struct ns_status *status,
-+					   unsigned long flags)
+ #define IMA_NS_STATUS_ACTIONS   IMA_AUDIT
+ #define IMA_NS_STATUS_FLAGS     IMA_AUDITED
+ 
+@@ -542,6 +546,20 @@ unsigned long set_iint_flags(struct integrity_iint_cache *iint,
+ 
+ #else
+ 
++static inline struct ima_namespace
++*ima_ns_from_user_ns(struct user_namespace *user_ns)
 +{
-+	iint->flags = flags;
-+	return flags;
++	if (user_ns == &init_user_ns)
++		return &init_ima_ns;
++	return NULL;
++}
++
++
++static inline struct ima_namespace *get_current_ns(void)
++{
++	return &init_ima_ns;
++}
++
+ static inline struct ima_namespace *
+ create_ima_ns(struct user_namespace *user_ns)
+ {
+@@ -572,6 +590,11 @@ static inline unsigned long set_iint_flags(struct integrity_iint_cache *iint,
+ 	return flags;
+ }
+ 
++static inline struct ima_namespace *ima_ns_from_file(const struct file *filp)
++{
++	return &init_ima_ns;
 +}
 +
  #endif /* CONFIG_IMA_NS */
  
  #endif /* __LINUX_IMA_H */
-diff --git a/security/integrity/ima/ima_api.c b/security/integrity/ima/ima_api.c
-index bee35ebb3a38..25163d64c057 100644
---- a/security/integrity/ima/ima_api.c
-+++ b/security/integrity/ima/ima_api.c
-@@ -348,14 +348,16 @@ void ima_store_measurement(struct ima_namespace *ns,
+diff --git a/security/integrity/ima/ima_fs.c b/security/integrity/ima/ima_fs.c
+index 468508f6a7e8..ee3af81d1c3e 100644
+--- a/security/integrity/ima/ima_fs.c
++++ b/security/integrity/ima/ima_fs.c
+@@ -49,7 +49,7 @@ static ssize_t ima_show_htable_violations(struct file *filp,
+ 					  char __user *buf,
+ 					  size_t count, loff_t *ppos)
+ {
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct ima_namespace *ns = ima_ns_from_file(filp);
+ 
+ 	return ima_show_htable_value(buf, count, ppos,
+ 				     &ns->ima_htable.violations);
+@@ -64,7 +64,7 @@ static ssize_t ima_show_measurements_count(struct file *filp,
+ 					   char __user *buf,
+ 					   size_t count, loff_t *ppos)
+ {
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct ima_namespace *ns = ima_ns_from_file(filp);
+ 
+ 	return ima_show_htable_value(buf, count, ppos, &ns->ima_htable.len);
+ }
+@@ -77,7 +77,7 @@ static const struct file_operations ima_measurements_count_ops = {
+ /* returns pointer to hlist_node */
+ static void *ima_measurements_start(struct seq_file *m, loff_t *pos)
+ {
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct ima_namespace *ns = ima_ns_from_file(m->file);
+ 	loff_t l = *pos;
+ 	struct ima_queue_entry *qe;
+ 
+@@ -95,7 +95,7 @@ static void *ima_measurements_start(struct seq_file *m, loff_t *pos)
+ 
+ static void *ima_measurements_next(struct seq_file *m, void *v, loff_t *pos)
+ {
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct ima_namespace *ns = ima_ns_from_file(m->file);
+ 	struct ima_queue_entry *qe = v;
+ 
+ 	/* lock protects when reading beyond last element
+@@ -317,7 +317,7 @@ static ssize_t ima_read_policy(struct ima_namespace *ns, char *path)
+ static ssize_t ima_write_policy(struct file *file, const char __user *buf,
+ 				size_t datalen, loff_t *ppos)
+ {
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct ima_namespace *ns = ima_ns_from_file(file);
+ 	char *data;
+ 	ssize_t result;
+ 
+@@ -379,7 +379,7 @@ static const struct seq_operations ima_policy_seqops = {
+ static int ima_open_policy(struct inode *inode, struct file *filp)
+ {
+ 	struct user_namespace *user_ns = ima_user_ns_from_file(filp);
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct ima_namespace *ns = ima_ns_from_file(filp);
+ 
+ 	if (!(filp->f_flags & O_WRONLY)) {
+ #ifndef	CONFIG_IMA_READ_POLICY
+@@ -406,7 +406,7 @@ static int ima_open_policy(struct inode *inode, struct file *filp)
+  */
+ static int ima_release_policy(struct inode *inode, struct file *file)
+ {
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct ima_namespace *ns = ima_ns_from_file(file);
+ 	const char *cause = ns->valid_policy ? "completed" : "failed";
+ 
+ 	if ((file->f_flags & O_ACCMODE) == O_RDONLY)
+@@ -459,12 +459,29 @@ int ima_fs_ns_init(struct user_namespace *user_ns, struct dentry *root)
+ 	struct dentry *ascii_runtime_measurements = NULL;
+ 	struct dentry *runtime_measurements_count = NULL;
+ 	struct dentry *violations = NULL;
++	bool created_ns = false;
++
++	/*
++	 * While multiple superblocks can exist they are keyed by userns in
++	 * s_fs_info for securityfs. The first time a userns mounts a
++	 * securityfs instance we lazily allocate the ima_namespace for the
++	 * userns since that's the only way a userns can meaningfully use ima.
++	 * The vfs ensures we're the only one to call fill_super() and hence
++	 * ima_fs_ns_init(), so we don't need any memory barriers here, i.e.
++	 * user_ns->ima_ns can't change while we're in here.
++	 */
++	if (!ns) {
++		ns = create_ima_ns(user_ns);
++		if (IS_ERR(ns))
++			return PTR_ERR(ns);
++		created_ns = true;
++	}
+ 
+ 	/* FIXME: update when evm and integrity are namespaced */
+ 	if (user_ns != &init_user_ns) {
+ 		int_dir = securityfs_create_dir("integrity", root);
+ 		if (IS_ERR(int_dir))
+-			return PTR_ERR(int_dir);
++			goto free_ns;
+ 	} else
+ 		int_dir = integrity_dir;
+ 
+@@ -526,6 +543,10 @@ int ima_fs_ns_init(struct user_namespace *user_ns, struct dentry *root)
+ 	if (user_ns != &init_user_ns)
+ 		securityfs_remove(int_dir);
+ 
++free_ns:
++	if (created_ns)
++		free_ima_ns(user_ns);
++
+ 	return -1;
  }
  
- void ima_audit_measurement(struct integrity_iint_cache *iint,
--			   const unsigned char *filename)
-+			   const unsigned char *filename,
-+			   struct ns_status *status)
- {
- 	struct audit_buffer *ab;
- 	char *hash;
- 	const char *algo_name = hash_algo_name[iint->ima_hash->algo];
- 	int i;
-+	unsigned long flags = iint_flags(iint, status);
- 
--	if (iint->flags & IMA_AUDITED)
-+	if (flags & IMA_AUDITED)
- 		return;
- 
- 	hash = kzalloc((iint->ima_hash->length * 2) + 1, GFP_KERNEL);
-@@ -378,7 +380,7 @@ void ima_audit_measurement(struct integrity_iint_cache *iint,
- 	audit_log_task_info(ab);
- 	audit_log_end(ab);
- 
--	iint->flags |= IMA_AUDITED;
-+	set_iint_flags(iint, status, flags | IMA_AUDITED);
- out:
- 	kfree(hash);
- 	return;
 diff --git a/security/integrity/ima/ima_main.c b/security/integrity/ima/ima_main.c
-index 51b0ef1cebbe..99dc984b49c9 100644
+index bc3ab08f39c6..fc878577cdd7 100644
 --- a/security/integrity/ima/ima_main.c
 +++ b/security/integrity/ima/ima_main.c
-@@ -207,6 +207,7 @@ static int __process_measurement(struct ima_namespace *ns,
- {
- 	struct inode *inode = file_inode(file);
- 	struct integrity_iint_cache *iint = NULL;
-+	struct ns_status *status = NULL;
- 	struct ima_template_desc *template_desc = NULL;
- 	char *pathbuf = NULL;
- 	char filename[NAME_MAX];
-@@ -219,6 +220,7 @@ static int __process_measurement(struct ima_namespace *ns,
- 	bool violation_check;
- 	enum hash_algo hash_algo;
- 	unsigned int allowed_algos = 0;
-+	unsigned long flags;
+@@ -483,7 +483,7 @@ int ima_file_mmap(struct file *file, unsigned long prot)
+ 	struct ima_namespace *ns = get_current_ns();
+ 	u32 secid;
  
- 	if (!ns->ima_policy_flag || !S_ISREG(inode->i_mode))
+-	if (file && (prot & PROT_EXEC)) {
++	if (ns && file && (prot & PROT_EXEC)) {
+ 		security_task_getsecid_subj(current, &secid);
+ 		return process_measurement(ns, file, current_cred(), secid,
+ 					   NULL, 0, MAY_EXEC, MMAP_CHECK);
+@@ -519,7 +519,7 @@ int ima_file_mprotect(struct vm_area_struct *vma, unsigned long prot)
+ 	int pcr;
+ 
+ 	/* Is mprotect making an mmap'ed file executable? */
+-	if (!(ns->ima_policy_flag & IMA_APPRAISE) || !vma->vm_file ||
++	if (!ns || !(ns->ima_policy_flag & IMA_APPRAISE) || !vma->vm_file ||
+ 	    !(prot & PROT_EXEC) || (vma->vm_flags & VM_EXEC))
  		return 0;
-@@ -247,6 +249,14 @@ static int __process_measurement(struct ima_namespace *ns,
- 		iint = integrity_inode_get(inode);
- 		if (!iint)
- 			rc = -ENOMEM;
+ 
+@@ -565,6 +565,9 @@ int ima_bprm_check(struct linux_binprm *bprm)
+ 	int ret;
+ 	u32 secid;
+ 
++	if (!ns)
++		return 0;
 +
-+		if (!rc && (action & IMA_NS_STATUS_ACTIONS)) {
-+			status = ima_get_ns_status(ns, inode, iint);
-+			if (IS_ERR(status)) {
-+				rc = PTR_ERR(status);
-+				status = NULL;
-+			}
-+		}
- 	}
+ 	security_task_getsecid_subj(current, &secid);
+ 	ret = process_measurement(ns, bprm->file, current_cred(), secid, NULL,
+ 				  0, MAY_EXEC, BPRM_CHECK);
+@@ -591,6 +594,9 @@ int ima_file_check(struct file *file, int mask)
+ 	struct ima_namespace *ns = get_current_ns();
+ 	u32 secid;
  
- 	if (!rc && violation_check)
-@@ -262,11 +272,13 @@ static int __process_measurement(struct ima_namespace *ns,
- 
- 	mutex_lock(&iint->mutex);
- 
-+	flags = iint_flags(iint, status);
++	if (!ns)
++		return 0;
 +
- 	if (test_and_clear_bit(IMA_CHANGE_ATTR, &iint->atomic_flags))
- 		/* reset appraisal flags if ima_inode_post_setattr was called */
--		iint->flags &= ~(IMA_APPRAISE | IMA_APPRAISED |
--				 IMA_APPRAISE_SUBMASK | IMA_APPRAISED_SUBMASK |
--				 IMA_ACTION_FLAGS);
-+		flags &= ~(IMA_APPRAISE | IMA_APPRAISED |
-+			   IMA_APPRAISE_SUBMASK | IMA_APPRAISED_SUBMASK |
-+			   IMA_ACTION_FLAGS);
+ 	security_task_getsecid_subj(current, &secid);
+ 	return process_measurement(ns, file, current_cred(), secid, NULL, 0,
+ 				   mask & (MAY_READ | MAY_WRITE | MAY_EXEC |
+@@ -656,7 +662,7 @@ int ima_file_hash(struct file *file, char *buf, size_t buf_size)
+ {
+ 	struct ima_namespace *ns = get_current_ns();
  
+-	if (!file)
++	if (!ns || !file)
+ 		return -EINVAL;
+ 
+ 	return __ima_inode_hash(ns, file_inode(file), buf, buf_size);
+@@ -685,7 +691,7 @@ int ima_inode_hash(struct inode *inode, char *buf, size_t buf_size)
+ {
+ 	struct ima_namespace *ns = get_current_ns();
+ 
+-	if (!inode)
++	if (!ns || !inode)
+ 		return -EINVAL;
+ 
+ 	return __ima_inode_hash(ns, inode, buf, buf_size);
+@@ -708,7 +714,7 @@ void ima_post_create_tmpfile(struct user_namespace *mnt_userns,
+ 	struct integrity_iint_cache *iint;
+ 	int must_appraise;
+ 
+-	if (!ns->ima_policy_flag || !S_ISREG(inode->i_mode))
++	if (!ns || !ns->ima_policy_flag || !S_ISREG(inode->i_mode))
+ 		return;
+ 
+ 	must_appraise = ima_must_appraise(ns, mnt_userns, inode, MAY_ACCESS,
+@@ -742,7 +748,7 @@ void ima_post_path_mknod(struct user_namespace *mnt_userns,
+ 	struct inode *inode = dentry->d_inode;
+ 	int must_appraise;
+ 
+-	if (!ns->ima_policy_flag || !S_ISREG(inode->i_mode))
++	if (!ns || !ns->ima_policy_flag || !S_ISREG(inode->i_mode))
+ 		return;
+ 
+ 	must_appraise = ima_must_appraise(ns, mnt_userns, inode, MAY_ACCESS,
+@@ -778,6 +784,9 @@ int ima_read_file(struct file *file, enum kernel_read_file_id read_id,
+ 	enum ima_hooks func;
+ 	u32 secid;
+ 
++	if (!ns)
++		return 0;
++
  	/*
- 	 * Re-evaulate the file if either the xattr has changed or the
-@@ -277,7 +289,7 @@ static int __process_measurement(struct ima_namespace *ns,
- 	    ((inode->i_sb->s_iflags & SB_I_IMA_UNVERIFIABLE_SIGNATURE) &&
- 	     !(inode->i_sb->s_iflags & SB_I_UNTRUSTED_MOUNTER) &&
- 	     !(action & IMA_FAIL_UNVERIFIABLE_SIGS))) {
--		iint->flags &= ~IMA_DONE_MASK;
-+		flags &= ~IMA_DONE_MASK;
- 		iint->measured_pcrs = 0;
- 	}
+ 	 * Do devices using pre-allocated memory run the risk of the
+ 	 * firmware being accessible to the device prior to the completion
+@@ -829,6 +838,9 @@ int ima_post_read_file(struct file *file, void *buf, loff_t size,
+ 	enum ima_hooks func;
+ 	u32 secid;
  
-@@ -285,9 +297,9 @@ static int __process_measurement(struct ima_namespace *ns,
- 	 * (IMA_MEASURE, IMA_MEASURED, IMA_XXXX_APPRAISE, IMA_XXXX_APPRAISED,
- 	 *  IMA_AUDIT, IMA_AUDITED)
- 	 */
--	iint->flags |= action;
-+	flags = set_iint_flags(iint, status, flags | action);
- 	action &= IMA_DO_MASK;
--	action &= ~((iint->flags & (IMA_DONE_MASK ^ IMA_MEASURED)) >> 1);
-+	action &= ~((flags & (IMA_DONE_MASK ^ IMA_MEASURED)) >> 1);
++	if (!ns)
++		return 0;
++
+ 	/* permit signed certs */
+ 	if (!file && read_id == READING_X509_CERTIFICATE)
+ 		return 0;
+@@ -1071,7 +1083,7 @@ void ima_kexec_cmdline(int kernel_fd, const void *buf, int size)
+ 	struct ima_namespace *ns = get_current_ns();
+ 	struct fd f;
  
- 	/* If target pcr is already measured, unset IMA_MEASURE action */
- 	if ((action & IMA_MEASURE) && (iint->measured_pcrs & (0x1 << pcr)))
-@@ -362,7 +374,7 @@ static int __process_measurement(struct ima_namespace *ns,
- 						  &pathname, filename);
- 	}
- 	if (action & IMA_AUDIT)
--		ima_audit_measurement(iint, pathname);
-+		ima_audit_measurement(iint, pathname, status);
+-	if (!buf || !size)
++	if (!ns || !buf || !size)
+ 		return;
  
- 	if ((file->f_flags & O_DIRECT) && (iint->flags & IMA_PERMIT_DIRECTIO))
- 		rc = 0;
+ 	f = fdget(kernel_fd);
+@@ -1111,6 +1123,9 @@ int ima_measure_critical_data(const char *event_label,
+ {
+ 	struct ima_namespace *ns = get_current_ns();
+ 
++	if (!ns)
++		return -EINVAL;
++
+ 	if (!event_name || !event_label || !buf || !buf_len)
+ 		return -ENOPARAM;
+ 
 diff --git a/security/integrity/ima/ima_ns.c b/security/integrity/ima/ima_ns.c
-index 5a79fb6c10c0..205dd06ac41e 100644
+index 205dd06ac41e..9a5105d0ea89 100644
 --- a/security/integrity/ima/ima_ns.c
 +++ b/security/integrity/ima/ima_ns.c
-@@ -54,6 +54,26 @@ void free_ima_ns(struct user_namespace *user_ns)
- 	destroy_ima_ns(ns);
- }
+@@ -26,7 +26,8 @@ struct ima_namespace *create_ima_ns(struct user_namespace *user_ns)
+ 	if (err)
+ 		goto fail_free;
  
-+unsigned long iint_flags(struct integrity_iint_cache *iint,
-+			 struct ns_status *status)
-+{
-+	if (!status)
-+		return iint->flags;
-+
-+	return (iint->flags & ~IMA_NS_STATUS_FLAGS) |
-+	       (status->flags & IMA_NS_STATUS_FLAGS);
-+}
-+
-+unsigned long set_iint_flags(struct integrity_iint_cache *iint,
-+			     struct ns_status *status, unsigned long flags)
-+{
-+	iint->flags = flags;
-+	if (status)
-+		status->flags = flags & IMA_NS_STATUS_FLAGS;
-+
-+	return flags;
-+}
-+
- static int __init imans_cache_init(void)
+-	user_ns->ima_ns = ns;
++	/* Pairs with smp_load_acquire() in ima_ns_from_user_ns(). */
++	smp_store_release(&user_ns->ima_ns, ns);
+ 
+ 	return ns;
+ 
+diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
+index b7dbc687b6ff..5a9b511ebbae 100644
+--- a/security/integrity/ima/ima_policy.c
++++ b/security/integrity/ima/ima_policy.c
+@@ -1333,6 +1333,7 @@ static unsigned int ima_parse_appraise_algos(char *arg)
+ static int ima_parse_rule(struct ima_namespace *ns,
+ 			  char *rule, struct ima_rule_entry *entry)
  {
- 	imans_cachep = KMEM_CACHE(ima_namespace, SLAB_PANIC);
++	struct user_namespace *user_ns = ima_ns_to_user_ns(ns);
+ 	struct audit_buffer *ab;
+ 	char *from;
+ 	char *p;
+@@ -1582,7 +1583,7 @@ static int ima_parse_rule(struct ima_namespace *ns,
+ 
+ 			result = kstrtoul(args[0].from, 10, &lnum);
+ 			if (!result) {
+-				entry->uid = make_kuid(current_user_ns(),
++				entry->uid = make_kuid(user_ns,
+ 						       (uid_t) lnum);
+ 				if (!uid_valid(entry->uid) ||
+ 				    (uid_t)lnum != lnum)
+@@ -1617,7 +1618,7 @@ static int ima_parse_rule(struct ima_namespace *ns,
+ 
+ 			result = kstrtoul(args[0].from, 10, &lnum);
+ 			if (!result) {
+-				entry->gid = make_kgid(current_user_ns(),
++				entry->gid = make_kgid(user_ns,
+ 						       (gid_t)lnum);
+ 				if (!gid_valid(entry->gid) ||
+ 				    (((gid_t)lnum) != lnum))
+@@ -1644,7 +1645,7 @@ static int ima_parse_rule(struct ima_namespace *ns,
+ 
+ 			result = kstrtoul(args[0].from, 10, &lnum);
+ 			if (!result) {
+-				entry->fowner = make_kuid(current_user_ns(),
++				entry->fowner = make_kuid(user_ns,
+ 							  (uid_t)lnum);
+ 				if (!uid_valid(entry->fowner) ||
+ 				    (((uid_t)lnum) != lnum))
+@@ -1670,7 +1671,7 @@ static int ima_parse_rule(struct ima_namespace *ns,
+ 
+ 			result = kstrtoul(args[0].from, 10, &lnum);
+ 			if (!result) {
+-				entry->fgroup = make_kgid(current_user_ns(),
++				entry->fgroup = make_kgid(user_ns,
+ 							  (gid_t)lnum);
+ 				if (!gid_valid(entry->fgroup) ||
+ 				    (((gid_t)lnum) != lnum))
+@@ -1920,7 +1921,7 @@ static const char *const mask_tokens[] = {
+ 
+ void *ima_policy_start(struct seq_file *m, loff_t *pos)
+ {
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct ima_namespace *ns = ima_ns_from_file(m->file);
+ 	loff_t l = *pos;
+ 	struct ima_rule_entry *entry;
+ 	struct list_head *ima_rules_tmp;
+@@ -1939,7 +1940,7 @@ void *ima_policy_start(struct seq_file *m, loff_t *pos)
+ 
+ void *ima_policy_next(struct seq_file *m, void *v, loff_t *pos)
+ {
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct ima_namespace *ns = ima_ns_from_file(m->file);
+ 	struct ima_rule_entry *entry = v;
+ 
+ 	rcu_read_lock();
 -- 
 2.31.1
 
