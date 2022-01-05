@@ -1,227 +1,272 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
+Received: from mga01.intel.com (mga01.intel.com [192.55.52.88])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C35F32C9D
-	for <containers@lists.linux.dev>; Wed,  5 Jan 2022 15:21:50 +0000 (UTC)
-Received: from pps.filterd (m0098410.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 205FCUei028696;
-	Wed, 5 Jan 2022 15:21:42 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
- mime-version : subject : to : cc : references : from : in-reply-to :
- content-type : content-transfer-encoding; s=pp1;
- bh=IL2jSP9Vg3TpO3ICs4O5w7nfz0/LY4RrW+pXipkAW6k=;
- b=Pv1zF576AyppYfoXZKSa+28m3bP25uRMud9Q5fgL1u3Tv9OjPReYMh0q96krXTV8AQk1
- BJHNFuGi2hFffgUnT1LFdM2bVX3S4wSS9X16Bna58Fkwq7/6zWooCnATmqEwG+NB/eEh
- mPnLJejGOuMecEu99GefZ7aVb7E+VoBaGEsSFa/Qi9zmfWdNQw8SKBRAfO6epiuho9Fr
- JX3QXMgCvW4qJRaQDvq9qYon4rqWC7AZd599b+GevNeu9PS/HVMdkqJ+1ylYk7d+TRDp
- CXQNTgJ5Jg3JmO9Rf7lAZoLn42CRPzB5TC6YFJBIwT16gzDUgTOEp/4Yuec8TEUjMzgq ww== 
-Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3dckxt4b9n-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 05 Jan 2022 15:21:42 +0000
-Received: from m0098410.ppops.net (m0098410.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 205FLg4E005222;
-	Wed, 5 Jan 2022 15:21:42 GMT
-Received: from ppma02wdc.us.ibm.com (aa.5b.37a9.ip4.static.sl-reverse.com [169.55.91.170])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3dckxt4b93-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 05 Jan 2022 15:21:41 +0000
-Received: from pps.filterd (ppma02wdc.us.ibm.com [127.0.0.1])
-	by ppma02wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 205FHoRp016459;
-	Wed, 5 Jan 2022 15:21:40 GMT
-Received: from b01cxnp23032.gho.pok.ibm.com (b01cxnp23032.gho.pok.ibm.com [9.57.198.27])
-	by ppma02wdc.us.ibm.com with ESMTP id 3daekb0brt-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 05 Jan 2022 15:21:40 +0000
-Received: from b01ledav006.gho.pok.ibm.com (b01ledav006.gho.pok.ibm.com [9.57.199.111])
-	by b01cxnp23032.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 205FLdja30015872
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Wed, 5 Jan 2022 15:21:39 GMT
-Received: from b01ledav006.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 692E7AC059;
-	Wed,  5 Jan 2022 15:21:39 +0000 (GMT)
-Received: from b01ledav006.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 1ED7EAC068;
-	Wed,  5 Jan 2022 15:21:39 +0000 (GMT)
-Received: from [9.47.158.152] (unknown [9.47.158.152])
-	by b01ledav006.gho.pok.ibm.com (Postfix) with ESMTP;
-	Wed,  5 Jan 2022 15:21:39 +0000 (GMT)
-Message-ID: <be083959-b1ef-9de7-0ea6-71ab36596523@linux.ibm.com>
-Date: Wed, 5 Jan 2022 10:21:38 -0500
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3A9882C80;
+	Wed,  5 Jan 2022 20:56:04 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1641416165; x=1672952165;
+  h=date:from:to:cc:subject:message-id:references:
+   mime-version:content-transfer-encoding:in-reply-to;
+  bh=/74BjyOvkge1ZZJm6N9EE+04KKrfpaii09pMcpRXciU=;
+  b=NOdWOA+yNnC90SiG0XzwlZ0b9RM+Qzwh/C8tjtlHGeApdYyFuHtBI/js
+   DEYGFDXT8QyhYHpFi8xn3/wQGtDLNFx+QD58dcnezjmvE2AmqMuSK330n
+   5R7QFrEJsoeh6Z7QSHXaLX7V9qgIH8IcWSThiZsEdCtREIIlG9dlYH148
+   DPbA0Dp1vw2yFvDrdxtbFa/bkPwR5Dk5Rp5KUJr5bgN0buj8RHc9c1Cug
+   E/pEgg1EUYGa56Kxp5aXpIGK7shH72ZhdJx3luYF3uI5MbFr91uBdyZXx
+   z6WXTWhOz6CpdlqOZBVSNcwjUL3hn6QSoa49UGk0YsHKLgfeF1Z7VAYyO
+   Q==;
+X-IronPort-AV: E=McAfee;i="6200,9189,10217"; a="266817472"
+X-IronPort-AV: E=Sophos;i="5.88,264,1635231600"; 
+   d="scan'208";a="266817472"
+Received: from orsmga001.jf.intel.com ([10.7.209.18])
+  by fmsmga101.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 05 Jan 2022 12:55:58 -0800
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="5.88,264,1635231600"; 
+   d="scan'208";a="556677885"
+Received: from lkp-server01.sh.intel.com (HELO e357b3ef1427) ([10.239.97.150])
+  by orsmga001.jf.intel.com with ESMTP; 05 Jan 2022 12:55:54 -0800
+Received: from kbuild by e357b3ef1427 with local (Exim 4.92)
+	(envelope-from <lkp@intel.com>)
+	id 1n5DK5-000H1r-L6; Wed, 05 Jan 2022 20:55:53 +0000
+Date: Thu, 6 Jan 2022 04:55:29 +0800
+From: kernel test robot <lkp@intel.com>
+To: Stefan Berger <stefanb@linux.vnet.ibm.com>,
+	linux-integrity@vger.kernel.org
+Cc: llvm@lists.linux.dev, kbuild-all@lists.01.org, zohar@linux.ibm.com,
+	serge@hallyn.com, christian.brauner@ubuntu.com,
+	containers@lists.linux.dev, dmitry.kasatkin@gmail.com,
+	ebiederm@xmission.com, krzysztof.struczynski@huawei.com,
+	roberto.sassu@huawei.com, mpeters@redhat.com
+Subject: Re: [PATCH v8 08/19] ima: Use mac_admin_ns_capable() to check
+ corresponding capability
+Message-ID: <202201060430.LHZbFhad-lkp@intel.com>
+References: <20220104170416.1923685-9-stefanb@linux.vnet.ibm.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.3.0
-Subject: Re: [PATCH v8 16/19] ima: Enable re-auditing of modified files
-Content-Language: en-US
-To: Stefan Berger <stefanb@linux.vnet.ibm.com>,
-        linux-integrity@vger.kernel.org
-Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
-        containers@lists.linux.dev, dmitry.kasatkin@gmail.com,
-        ebiederm@xmission.com, krzysztof.struczynski@huawei.com,
-        roberto.sassu@huawei.com, mpeters@redhat.com, lhinds@redhat.com,
-        lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
-        jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
-        rgb@redhat.com, linux-security-module@vger.kernel.org,
-        jmorris@namei.org
-References: <20220104170416.1923685-1-stefanb@linux.vnet.ibm.com>
- <20220104170416.1923685-17-stefanb@linux.vnet.ibm.com>
-From: Stefan Berger <stefanb@linux.ibm.com>
-In-Reply-To: <20220104170416.1923685-17-stefanb@linux.vnet.ibm.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
-X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: F_Gdp9N4kKwEw1OpLBvo5xXZSEq7xmxR
-X-Proofpoint-ORIG-GUID: jlDsoTM9MXXwXsJFKLLPsK585uGTjnzQ
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.205,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.11.62.513
- definitions=2022-01-05_03,2022-01-04_01,2021-12-02_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 impostorscore=0
- lowpriorityscore=0 mlxlogscore=999 priorityscore=1501 spamscore=0
- mlxscore=0 bulkscore=0 clxscore=1015 suspectscore=0 malwarescore=0
- adultscore=0 phishscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2110150000 definitions=main-2201050101
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+In-Reply-To: <20220104170416.1923685-9-stefanb@linux.vnet.ibm.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
+
+Hi Stefan,
+
+Thank you for the patch! Perhaps something to improve:
+
+[auto build test WARNING on linux/master]
+[also build test WARNING on linus/master v5.16-rc8]
+[cannot apply to zohar-integrity/next-integrity jmorris-security/next-testi=
+ng next-20220105]
+[If your patch is applied to the wrong git tree, kindly drop us a note.
+And when submitting patch, we suggest to use '--base' as documented in
+https://git-scm.com/docs/git-format-patch]
+
+url:    https://github.com/0day-ci/linux/commits/Stefan-Berger/ima-Namespac=
+e-IMA-with-audit-support-in-IMA-ns/20220105-010946
+base:   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git =
+136057256686de39cc3a07c2e39ef6bc43003ff6
+config: mips-randconfig-r002-20220105 (https://download.01.org/0day-ci/arch=
+ive/20220106/202201060430.LHZbFhad-lkp@intel.com/config)
+compiler: clang version 14.0.0 (https://github.com/llvm/llvm-project d5b6e3=
+0ed3acad794dd0aec400e617daffc6cc3d)
+reproduce (this is a W=3D1 build):
+        wget https://raw.githubusercontent.com/intel/lkp-tests/master/sbin/=
+make.cross -O ~/bin/make.cross
+        chmod +x ~/bin/make.cross
+        # install mips cross compiling tool for clang build
+        # apt-get install binutils-mips-linux-gnu
+        # https://github.com/0day-ci/linux/commit/fa09a3da70380ef32e9a644c0=
+8a04cc8f4630baf
+        git remote add linux-review https://github.com/0day-ci/linux
+        git fetch --no-tags linux-review Stefan-Berger/ima-Namespace-IMA-wi=
+th-audit-support-in-IMA-ns/20220105-010946
+        git checkout fa09a3da70380ef32e9a644c08a04cc8f4630baf
+        # save the config file to linux build tree
+        mkdir build_dir
+        COMPILER_INSTALL_PATH=3D$HOME/0day COMPILER=3Dclang make.cross W=3D=
+1 O=3Dbuild_dir ARCH=3Dmips SHELL=3D/bin/bash drivers/nvmem/ security/integ=
+rity/ima/
+
+If you fix the issue, kindly add following tag as appropriate
+Reported-by: kernel test robot <lkp@intel.com>
+
+All warnings (new ones prefixed by >>):
+
+>> security/integrity/ima/ima_fs.c:380:25: warning: unused variable 'user_n=
+s'
+   struct user_namespace =3D ima_user_ns_from_file(filp);
+   ^
+   fatal error: error in backend: Nested variants found in inline asm strin=
+g: ' .set push
+   .set mips64r2
+   .if ( 0x00 ) !=3D -1)) 0x00 ) !=3D -1)) : ($( static struct ftrace_branc=
+h_data __attribute__((__aligned__(4))) __attribute__((__section__("_ftrace_=
+branch"))) __if_trace =3D $( .func =3D __func__, .file =3D "arch/mips/inclu=
+de/asm/bitops.h", .line =3D 192, $); 0x00 ) !=3D -1)) : $))) ) && ( 0 ); .s=
+et push; .set mips64r2; .rept 1; sync 0x00; .endr; .set pop; .else; ; .endif
+   1: ll $0, $2
+   or $1, $0, $3
+   sc $1, $2
+   beqz $1, 1b
+   .set pop
+   '
+   PLEASE submit a bug report to https://bugs.llvm.org/ and include the cra=
+sh backtrace, preprocessed source, and associated run script.
+   Stack dump:
+   0. Program arguments: clang -Wp,-MMD,security/integrity/ima/.ima_fs.o.d =
+-nostdinc -Iarch/mips/include -I./arch/mips/include/generated -Iinclude -I.=
+/include -Iarch/mips/include/uapi -I./arch/mips/include/generated/uapi -Iin=
+clude/uapi -I./include/generated/uapi -include include/linux/compiler-versi=
+on.h -include include/linux/kconfig.h -include include/linux/compiler_types=
+=2Eh -D__KERNEL__ -DVMLINUX_LOAD_ADDRESS=3D0xffffffff84000000 -DLINKER_LOAD=
+_ADDRESS=3D0x84000000 -DDATAOFFSET=3D0 -Qunused-arguments -fmacro-prefix-ma=
+p=3D=3D -DKBUILD_EXTRA_WARN1 -Wall -Wundef -Werror=3Dstrict-prototypes -Wno=
+-trigraphs -fno-strict-aliasing -fno-common -fshort-wchar -fno-PIE -Werror=
+=3Dimplicit-function-declaration -Werror=3Dimplicit-int -Werror=3Dreturn-ty=
+pe -Wno-format-security -std=3Dgnu89 --target=3Dmipsel-linux -fintegrated-a=
+s -Werror=3Dunknown-warning-option -Werror=3Dignored-optimization-argument =
+-mno-check-zero-division -mabi=3D32 -G 0 -mno-abicalls -fno-pic -pipe -msof=
+t-float -DGAS_HAS_SET_HARDFLOAT -Wa,-msoft-float -ffreestanding -EL -fno-st=
+ack-check -march=3Dmips32 -Wa,--trap -DTOOLCHAIN_SUPPORTS_VIRT -Iarch/mips/=
+include/asm/mach-au1x00 -Iarch/mips/include/asm/mach-generic -fno-asynchron=
+ous-unwind-tables -fno-delete-null-pointer-checks -Wno-frame-address -Wno-a=
+ddress-of-packed-member -O2 -Wframe-larger-than=3D1024 -fno-stack-protector=
+ -Wimplicit-fallthrough -Wno-gnu -mno-global-merge -Wno-unused-but-set-vari=
+able -Wno-unused-const-variable -ftrivial-auto-var-init=3Dpattern -fno-stac=
+k-clash-protection -pg -falign-functions=3D64 -Wdeclaration-after-statement=
+ -Wvla -Wno-pointer-sign -Wno-array-bounds -fno-strict-overflow -fno-stack-=
+check -Werror=3Ddate-time -Werror=3Dincompatible-pointer-types -Wextra -Wun=
+used -Wno-unused-parameter -Wmissing-declarations -Wmissing-format-attribut=
+e -Wmissing-prototypes -Wold-style-definition -Wmissing-include-dirs -Wunus=
+ed-but-set-variable -Wunused-const-variable -Wno-missing-field-initializers=
+ -Wno-sign-compare -Wno-type-limits -fsanitize=3Darray-bounds -fsanitize=3D=
+unreachable -fsanitize=3Dobject-size -fsanitize=3Denum -fsanitize-coverage=
+=3Dtrace-pc -I security/integrity/ima -I ./security/integrity/ima -ffunctio=
+n-sections -fdata-sections -DKBUILD_MODFILE=3D"security/integrity/ima/ima" =
+-DKBUILD_BASENAME=3D"ima_fs" -DKBUILD_MODNAME=3D"ima" -D__KBUILD_MODNAME=3D=
+kmod_ima -c -o security/integrity/ima/ima_fs.o security/integrity/ima/ima_f=
+s.c
+   1. <eof> parser at end of file
+   2. Code generation
+   3. Running pass 'Function Pass Manager' on module 'security/integrity/im=
+a/ima_fs.c'.
+   4. Running pass 'Mips Assembly Printer' on function '@ima_open_policy'
+   #0 0x0000557a749c4b3f Signals.cpp:0:0
+   #1 0x0000557a749c2a8c llvm::sys::CleanupOnSignal(unsigned long) (/opt/cr=
+oss/clang-d5b6e30ed3/bin/clang-14+0x3401a8c)
+   #2 0x0000557a74906667 llvm::CrashRecoveryContext::HandleExit(int) (/opt/=
+cross/clang-d5b6e30ed3/bin/clang-14+0x3345667)
+   #3 0x0000557a749bb13e llvm::sys::Process::Exit(int, bool) (/opt/cross/cl=
+ang-d5b6e30ed3/bin/clang-14+0x33fa13e)
+   #4 0x0000557a7264133b (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x108033=
+b)
+   #5 0x0000557a7490d10c llvm::report_fatal_error(llvm::Twine const&, bool)=
+ (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x334c10c)
+   #6 0x0000557a755ef9b8 llvm::AsmPrinter::emitInlineAsm(llvm::MachineInstr=
+ const (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x402e9b8)
+   #7 0x0000557a755eb759 llvm::AsmPrinter::emitFunctionBody() (/opt/cross/c=
+lang-d5b6e30ed3/bin/clang-14+0x402a759)
+   #8 0x0000557a7309c82e llvm::MipsAsmPrinter::runOnMachineFunction(llvm::M=
+achineFunction&) (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x1adb82e)
+   #9 0x0000557a73d332fd llvm::MachineFunctionPass::runOnFunction(llvm::Fun=
+ction&) (.part.53) MachineFunctionPass.cpp:0:0
+   #10 0x0000557a7416b867 llvm::FPPassManager::runOnFunction(llvm::Function=
+&) (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x2baa867)
+   #11 0x0000557a7416b9e1 llvm::FPPassManager::runOnModule(llvm::Module&) (=
+/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x2baa9e1)
+   #12 0x0000557a7416ccbf llvm::legacy::PassManagerImpl::run(llvm::Module&)=
+ (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x2babcbf)
+   #13 0x0000557a74cd64fa clang::EmitBackendOutput(clang::DiagnosticsEngine=
+&, clang::HeaderSearchOptions const&, clang::CodeGenOptions const&, clang::=
+TargetOptions const&, clang::LangOptions const&, llvm::StringRef, clang::Ba=
+ckendAction, std::unique_ptr<llvm::raw_pwrite_stream, std::default_delete<l=
+lvm::raw_pwrite_stream> >) (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x3715=
+4fa)
+   #14 0x0000557a75903ea3 clang::BackendConsumer::HandleTranslationUnit(cla=
+ng::ASTContext&) (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x4342ea3)
+   #15 0x0000557a76407fd9 clang::ParseAST(clang::Sema&, bool, bool) (/opt/c=
+ross/clang-d5b6e30ed3/bin/clang-14+0x4e46fd9)
+   #16 0x0000557a75902cff clang::CodeGenAction::ExecuteAction() (/opt/cross=
+/clang-d5b6e30ed3/bin/clang-14+0x4341cff)
+   #17 0x0000557a75302001 clang::FrontendAction::Execute() (/opt/cross/clan=
+g-d5b6e30ed3/bin/clang-14+0x3d41001)
+   #18 0x0000557a75299bda clang::CompilerInstance::ExecuteAction(clang::Fro=
+ntendAction&) (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x3cd8bda)
+   #19 0x0000557a753cb07b (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x3e0a0=
+7b)
+   #20 0x0000557a72642084 cc1_main(llvm::ArrayRef<char char (/opt/cross/cla=
+ng-d5b6e30ed3/bin/clang-14+0x1081084)
+   #21 0x0000557a7263f5cb ExecuteCC1Tool(llvm::SmallVectorImpl<char driver.=
+cpp:0:0
+   #22 0x0000557a75136b15 void llvm::function_ref<void ()>::callback_fn<cla=
+ng::driver::CC1Command::Execute(llvm::ArrayRef<llvm::Optional<llvm::StringR=
+ef> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::alloca=
+tor<char> const::'lambda'()>(long) Job.cpp:0:0
+   #23 0x0000557a74906523 llvm::CrashRecoveryContext::RunSafely(llvm::funct=
+ion_ref<void ()>) (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x3345523)
+   #24 0x0000557a7513740e clang::driver::CC1Command::Execute(llvm::ArrayRef=
+<llvm::Optional<llvm::StringRef> >, std::__cxx11::basic_string<char, std::c=
+har_traits<char>, std::allocator<char> const (.part.216) Job.cpp:0:0
+   #25 0x0000557a7510dee7 clang::driver::Compilation::ExecuteCommand(clang:=
+:driver::Command const&, clang::driver::Command const (/opt/cross/clang-d5b=
+6e30ed3/bin/clang-14+0x3b4cee7)
+   #26 0x0000557a7510e8c7 clang::driver::Compilation::ExecuteJobs(clang::dr=
+iver::JobList const&, llvm::SmallVectorImpl<std::pair<int, clang::driver::C=
+ommand >&) const (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x3b4d8c7)
+   #27 0x0000557a75118139 clang::driver::Driver::ExecuteCompilation(clang::=
+driver::Compilation&, llvm::SmallVectorImpl<std::pair<int, clang::driver::C=
+ommand >&) (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x3b57139)
+   #28 0x0000557a7256a19f main (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x=
+fa919f)
+   #29 0x00007fc0e7a42d0a __libc_start_main (/lib/x86_64-linux-gnu/libc.so.=
+6+0x26d0a)
+   #30 0x0000557a7263f0ea _start (/opt/cross/clang-d5b6e30ed3/bin/clang-14+=
+0x107e0ea)
+   clang-14: error: clang frontend command failed with exit code 70 (use -v=
+ to see invocation)
+   clang version 14.0.0 (git://gitmirror/llvm_project d5b6e30ed3acad794dd0a=
+ec400e617daffc6cc3d)
+   Target: mipsel-unknown-linux
+   Thread model: posix
+   InstalledDir: /opt/cross/clang-d5b6e30ed3/bin
+   clang-14: note: diagnostic msg:
+   Makefile arch drivers include kernel nr_bisected scripts security source=
+ usr
 
 
-On 1/4/22 12:04, Stefan Berger wrote:
-> From: Stefan Berger <stefanb@linux.ibm.com>
->
-> Walk the list of ns_status associated with an iint if the file has
-> changed and reset the IMA_AUDITED flag, which is part of the
-> IMA_DONE_MASK. This causes a new audit message to be emitted when the
-> file is again accessed on either the host or in an IMA namespace.
->
-> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-> ---
->   security/integrity/ima/ima_main.c | 33 ++++++++++++++++++++++++++++++-
->   1 file changed, 32 insertions(+), 1 deletion(-)
->
-> diff --git a/security/integrity/ima/ima_main.c b/security/integrity/ima/ima_main.c
-> index 99dc984b49c9..bc3ab08f39c6 100644
-> --- a/security/integrity/ima/ima_main.c
-> +++ b/security/integrity/ima/ima_main.c
-> @@ -153,6 +153,35 @@ static void ima_rdwr_violation_check(struct ima_namespace *ns,
->   				  "invalid_pcr", "open_writers");
->   }
->   
-> +#ifdef CONFIG_IMA_NS
-> +
-> +static void mask_iint_ns_status_flags(struct integrity_iint_cache *iint,
-> +				      unsigned long mask)
-> +{
-> +	struct ns_status *status;
-> +	unsigned long flags;
-> +
-> +	read_lock(&iint->ns_list_lock);
-> +	list_for_each_entry(status, &iint->ns_list, ns_next) {
-> +		flags = iint_flags(iint, status) & mask;
-> +		set_iint_flags(iint, status, flags);
-> +	}
-> +	read_unlock(&iint->ns_list_lock);
-> +}
-> +
-> +#else
-> +
-> +static void mask_iint_ns_status_flags(struct integrity_iint_cache *iint,
-> +				      unsigned long mask)
-> +{
-> +	unsigned long flags;
-> +
-> +	flags = iint_flags(iint, NULL) & mask;
-> +	set_iint_flags(iint, NULL, flags);
-> +}
-> +
-> +#endif
-> +
+vim +/user_ns +380 security/integrity/ima/ima_fs.c
 
-The above two cases are due to this here:
+   374=09
+   375	/*
+   376	 * ima_open_policy: sequentialize access to the policy file
+   377	 */
+   378	static int ima_open_policy(struct inode *inode, struct file *filp)
+   379	{
+ > 380		struct user_namespace *user_ns =3D ima_user_ns_from_file(filp);
+   381		struct ima_namespace *ns =3D &init_ima_ns;
+   382=09
+   383		if (!(filp->f_flags & O_WRONLY)) {
+   384	#ifndef	CONFIG_IMA_READ_POLICY
+   385			return -EACCES;
+   386	#else
+   387			if ((filp->f_flags & O_ACCMODE) !=3D O_RDONLY)
+   388				return -EACCES;
+   389			if (!mac_admin_ns_capable(user_ns))
+   390				return -EPERM;
+   391			return seq_open(filp, &ima_policy_seqops);
+   392	#endif
+   393		}
+   394		if (test_and_set_bit(IMA_FS_BUSY, &ns->ima_fs_flags))
+   395			return -EBUSY;
+   396		return 0;
+   397	}
+   398=09
 
-diff --git a/security/integrity/integrity.h b/security/integrity/integrity.h
-index 547425c20e11..201a9d46d6e1 100644
---- a/security/integrity/integrity.h
-+++ b/security/integrity/integrity.h
-@@ -138,6 +138,10 @@ struct integrity_iint_cache {
-  	enum integrity_status ima_creds_status:4;
-  	enum integrity_status evm_status:4;
-  	struct ima_digest_data *ima_hash;
-+#ifdef CONFIG_IMA_NS
-+	rwlock_t ns_list_lock;
-+	struct list_head ns_list;
-+#endif
-  };
-
-Ideally namespaced and non-namespaced code cases would share the code and to be able to share it the above #ifdef CONFIG_IMA_NS  in integrity.hshouldn't be there but we would have the lock and list in IMA namespacing and non-namespacing case. The above two code cases shown above are just the beginning and as more variables are moved from the iint into the ns_status these types of 'two cases of code' would show up in more places. So I think we should prevent this already now.
-
-To be able to share the code we need an ns_status on a list in the non-namespacing case as well. In the non-namespacing case it would always be a single ns_status on the list. What is worth a decision is how to get the ns_status on the list. One idea would be to conditionally embed it into the integrity_iint_cache like this:
-
-/* integrity data associated with an inode */
-struct integrity_iint_cache {
-         struct rb_node rb_node; /* rooted in integrity_iint_tree */
-         struct mutex mutex;     /* protects: version, flags, digest */
-         struct inode *inode;    /* back pointer to inode in question */
-         u64 version;            /* track inode changes */
-         unsigned long flags;
-         unsigned long atomic_flags;
-         enum integrity_status ima_file_status:4;
-         enum integrity_status ima_mmap_status:4;
-         enum integrity_status ima_bprm_status:4;
-         enum integrity_status ima_read_status:4;
-         enum integrity_status ima_creds_status:4;
-         enum integrity_status evm_status:4;
-         struct ima_digest_data *ima_hash;
-         rwlock_t ns_list_lock;
-         struct list_head ns_list;
-#ifndef CONFIG_IMA_NS
-	struct ns_status status;
-#endif
-};
-
-This would prevent a 2nd cache just for allocation of ns_status in the 
-non-namespacing case and getting the  embedded ns_status onto the list 
-would also be like this:
-
-     INIT_LIST_HEAD(&iint->ns_list);
-
-#ifndef CONFIG_IMA_NS
-
-     INIT_LIST_HEAD(&iint->status.ns_next);
-
-     list_add_tail(&iint->status.ns_next, &iint->ns_list);
-
-#endif
-
-The other option is to allocated the ns_status via a minimal 
-implementation of ima_ns_status.c for the non-namespaced case using 
-kmalloc's from a cache for ns_status structures.
-
-
-Also, the new 'rwlock_t ns_list_lock' in the iint would really only be 
-necessary for locking in the namespacing case. However, to be able to 
-share the code we would need to keep this lock around for the 
-non-namespacing case as well so that we can call read_lock() in both 
-cases. An option would be to introduce a macro for the locking that is a 
-no-op in the non-namespacing case and does the actual locking in the 
-namespacing case. I am not sure what would be better. I would prefer to 
-explicitly see the read_lock()...
-
-
-
->   static void ima_check_last_writer(struct integrity_iint_cache *iint,
->   				  struct inode *inode, struct file *file)
->   {
-> @@ -169,8 +198,10 @@ static void ima_check_last_writer(struct integrity_iint_cache *iint,
->   		if (!IS_I_VERSION(inode) ||
->   		    !inode_eq_iversion(inode, iint->version) ||
->   		    (iint->flags & IMA_NEW_FILE)) {
-> -			iint->flags &= ~(IMA_DONE_MASK | IMA_NEW_FILE);
-> +			mask_iint_ns_status_flags(iint,
-> +					~(IMA_DONE_MASK | IMA_NEW_FILE));
->   			iint->measured_pcrs = 0;
-> +
->   			if (update)
->   				ima_update_xattr(iint, file);
->   		}
+---
+0-DAY CI Kernel Test Service, Intel Corporation
+https://lists.01.org/hyperkitty/list/kbuild-all@lists.01.org
