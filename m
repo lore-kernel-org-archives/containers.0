@@ -1,272 +1,434 @@
-Received: from mga01.intel.com (mga01.intel.com [192.55.52.88])
+Received: from out03.mta.xmission.com (out03.mta.xmission.com [166.70.13.233])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3A9882C80;
-	Wed,  5 Jan 2022 20:56:04 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1641416165; x=1672952165;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:content-transfer-encoding:in-reply-to;
-  bh=/74BjyOvkge1ZZJm6N9EE+04KKrfpaii09pMcpRXciU=;
-  b=NOdWOA+yNnC90SiG0XzwlZ0b9RM+Qzwh/C8tjtlHGeApdYyFuHtBI/js
-   DEYGFDXT8QyhYHpFi8xn3/wQGtDLNFx+QD58dcnezjmvE2AmqMuSK330n
-   5R7QFrEJsoeh6Z7QSHXaLX7V9qgIH8IcWSThiZsEdCtREIIlG9dlYH148
-   DPbA0Dp1vw2yFvDrdxtbFa/bkPwR5Dk5Rp5KUJr5bgN0buj8RHc9c1Cug
-   E/pEgg1EUYGa56Kxp5aXpIGK7shH72ZhdJx3luYF3uI5MbFr91uBdyZXx
-   z6WXTWhOz6CpdlqOZBVSNcwjUL3hn6QSoa49UGk0YsHKLgfeF1Z7VAYyO
-   Q==;
-X-IronPort-AV: E=McAfee;i="6200,9189,10217"; a="266817472"
-X-IronPort-AV: E=Sophos;i="5.88,264,1635231600"; 
-   d="scan'208";a="266817472"
-Received: from orsmga001.jf.intel.com ([10.7.209.18])
-  by fmsmga101.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 05 Jan 2022 12:55:58 -0800
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="5.88,264,1635231600"; 
-   d="scan'208";a="556677885"
-Received: from lkp-server01.sh.intel.com (HELO e357b3ef1427) ([10.239.97.150])
-  by orsmga001.jf.intel.com with ESMTP; 05 Jan 2022 12:55:54 -0800
-Received: from kbuild by e357b3ef1427 with local (Exim 4.92)
-	(envelope-from <lkp@intel.com>)
-	id 1n5DK5-000H1r-L6; Wed, 05 Jan 2022 20:55:53 +0000
-Date: Thu, 6 Jan 2022 04:55:29 +0800
-From: kernel test robot <lkp@intel.com>
-To: Stefan Berger <stefanb@linux.vnet.ibm.com>,
-	linux-integrity@vger.kernel.org
-Cc: llvm@lists.linux.dev, kbuild-all@lists.01.org, zohar@linux.ibm.com,
-	serge@hallyn.com, christian.brauner@ubuntu.com,
-	containers@lists.linux.dev, dmitry.kasatkin@gmail.com,
-	ebiederm@xmission.com, krzysztof.struczynski@huawei.com,
-	roberto.sassu@huawei.com, mpeters@redhat.com
-Subject: Re: [PATCH v8 08/19] ima: Use mac_admin_ns_capable() to check
- corresponding capability
-Message-ID: <202201060430.LHZbFhad-lkp@intel.com>
-References: <20220104170416.1923685-9-stefanb@linux.vnet.ibm.com>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 254F72C80
+	for <containers@lists.linux.dev>; Mon, 10 Jan 2022 16:52:24 +0000 (UTC)
+Received: from in01.mta.xmission.com ([166.70.13.51]:49204)
+	by out03.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.93)
+	(envelope-from <ebiederm@xmission.com>)
+	id 1n6xVD-009LjY-KR; Mon, 10 Jan 2022 09:26:36 -0700
+Received: from ip68-110-24-146.om.om.cox.net ([68.110.24.146]:47318 helo=email.froward.int.ebiederm.org.xmission.com)
+	by in01.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.93)
+	(envelope-from <ebiederm@xmission.com>)
+	id 1n6xVC-005eir-3g; Mon, 10 Jan 2022 09:26:35 -0700
+From: "Eric W. Biederman" <ebiederm@xmission.com>
+To: Alexey Gladkov <legion@kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>,  Linux Containers
+ <containers@lists.linux.dev>,  Alexander Mikhalitsyn
+ <alexander.mikhalitsyn@virtuozzo.com>,  Andrew Morton
+ <akpm@linux-foundation.org>,  Christian Brauner
+ <christian.brauner@ubuntu.com>,  Daniel Walsh <dwalsh@redhat.com>,
+  Davidlohr Bueso <dbueso@suse.de>,  Kirill Tkhai <ktkhai@virtuozzo.com>,
+  Manfred Spraul <manfred@colorfullife.com>,  Serge Hallyn
+ <serge@hallyn.com>,  Varad Gautam <varad.gautam@suse.com>,  Vasily Averin
+ <vvs@virtuozzo.com>,  kernel test robot <lkp@intel.com>
+References: <0f0408bb7fbf3187966a9bf19a98642a5d9669fe.1641225760.git.legion@kernel.org>
+	<792dcae82bc228cd0bec1fa80ed4d2c9340b0f8f.1641296947.git.legion@kernel.org>
+Date: Mon, 10 Jan 2022 10:26:26 -0600
+In-Reply-To: <792dcae82bc228cd0bec1fa80ed4d2c9340b0f8f.1641296947.git.legion@kernel.org>
+	(Alexey Gladkov's message of "Tue, 4 Jan 2022 12:51:06 +0100")
+Message-ID: <87tuebwo99.fsf@email.froward.int.ebiederm.org>
+User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.1 (gnu/linux)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-In-Reply-To: <20220104170416.1923685-9-stefanb@linux.vnet.ibm.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+Content-Type: text/plain
+X-XM-SPF: eid=1n6xVC-005eir-3g;;;mid=<87tuebwo99.fsf@email.froward.int.ebiederm.org>;;;hst=in01.mta.xmission.com;;;ip=68.110.24.146;;;frm=ebiederm@xmission.com;;;spf=neutral
+X-XM-AID: U2FsdGVkX18rr2GOYbq36H9qfHFpHcwhS06Mxte5yNU=
+X-SA-Exim-Connect-IP: 68.110.24.146
+X-SA-Exim-Mail-From: ebiederm@xmission.com
+X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on sa01.xmission.com
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=8.0 tests=ALL_TRUSTED,BAYES_50,
+	DCC_CHECK_NEGATIVE,T_TM2_M_HEADER_IN_MSG,XMSubLong,XM_B_SpammyWords
+	autolearn=disabled version=3.4.2
+X-Spam-Virus: No
+X-Spam-Report: 
+	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
+	*  0.8 BAYES_50 BODY: Bayes spam probability is 40 to 60%
+	*      [score: 0.5000]
+	*  0.7 XMSubLong Long Subject
+	*  0.0 T_TM2_M_HEADER_IN_MSG BODY: No description available.
+	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
+	*      [sa01 1397; Body=1 Fuz1=1 Fuz2=1]
+	*  0.2 XM_B_SpammyWords One or more commonly used spammy words
+X-Spam-DCC: XMission; sa01 1397; Body=1 Fuz1=1 Fuz2=1 
+X-Spam-Combo: ;Alexey Gladkov <legion@kernel.org>
+X-Spam-Relay-Country: 
+X-Spam-Timing: total 847 ms - load_scoreonly_sql: 0.04 (0.0%),
+	signal_user_changed: 4.4 (0.5%), b_tie_ro: 3.0 (0.4%), parse: 1.82
+	(0.2%), extract_message_metadata: 13 (1.6%), get_uri_detail_list: 4.5
+	(0.5%), tests_pri_-1000: 4.0 (0.5%), tests_pri_-950: 1.03 (0.1%),
+	tests_pri_-900: 0.83 (0.1%), tests_pri_-90: 79 (9.3%), check_bayes: 77
+	(9.1%), b_tokenize: 16 (1.9%), b_tok_get_all: 13 (1.5%), b_comp_prob:
+	3.7 (0.4%), b_tok_touch_all: 42 (4.9%), b_finish: 0.75 (0.1%),
+	tests_pri_0: 662 (78.2%), check_dkim_signature: 0.54 (0.1%),
+	check_dkim_adsp: 2.3 (0.3%), poll_dns_idle: 59 (7.0%), tests_pri_10:
+	2.7 (0.3%), tests_pri_500: 74 (8.7%), rewrite_mail: 0.00 (0.0%)
+Subject: Re: [PATCH v2] ipc: Store mqueue sysctls in the ipc namespace
+X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
+X-SA-Exim-Scanned: Yes (on in01.mta.xmission.com)
 
-Hi Stefan,
+Alexey Gladkov <legion@kernel.org> writes:
 
-Thank you for the patch! Perhaps something to improve:
+> Right now, the mqueue sysctls take ipc namespaces into account in a
+> rather hacky way. This works in most cases, but does not respect the
+> user namespace.
+>
+> Within the user namespace, the user cannot change the /proc/sys/fs/mqueue/*
+> parametres. This poses a problem in the rootless containers.
+>
+> To solve this I changed the implementation of the mqueue sysctls just
+> like some other sysctls.
+>
+> Before this change:
+>
+> $ echo 5 | unshare -r -U -i tee /proc/sys/fs/mqueue/msg_max
+> tee: /proc/sys/fs/mqueue/msg_max: Permission denied
+> 5
+>
+> After this change:
+>
+> $ echo 5 | unshare -r -U -i tee /proc/sys/fs/mqueue/msg_max
+> 5
+>
+> v2:
+> * Fixed compilation problem if CONFIG_POSIX_MQUEUE_SYSCTL is not
+>   specified.
 
-[auto build test WARNING on linux/master]
-[also build test WARNING on linus/master v5.16-rc8]
-[cannot apply to zohar-integrity/next-integrity jmorris-security/next-testi=
-ng next-20220105]
-[If your patch is applied to the wrong git tree, kindly drop us a note.
-And when submitting patch, we suggest to use '--base' as documented in
-https://git-scm.com/docs/git-format-patch]
+Can you split this in two patches?
 
-url:    https://github.com/0day-ci/linux/commits/Stefan-Berger/ima-Namespac=
-e-IMA-with-audit-support-in-IMA-ns/20220105-010946
-base:   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git =
-136057256686de39cc3a07c2e39ef6bc43003ff6
-config: mips-randconfig-r002-20220105 (https://download.01.org/0day-ci/arch=
-ive/20220106/202201060430.LHZbFhad-lkp@intel.com/config)
-compiler: clang version 14.0.0 (https://github.com/llvm/llvm-project d5b6e3=
-0ed3acad794dd0aec400e617daffc6cc3d)
-reproduce (this is a W=3D1 build):
-        wget https://raw.githubusercontent.com/intel/lkp-tests/master/sbin/=
-make.cross -O ~/bin/make.cross
-        chmod +x ~/bin/make.cross
-        # install mips cross compiling tool for clang build
-        # apt-get install binutils-mips-linux-gnu
-        # https://github.com/0day-ci/linux/commit/fa09a3da70380ef32e9a644c0=
-8a04cc8f4630baf
-        git remote add linux-review https://github.com/0day-ci/linux
-        git fetch --no-tags linux-review Stefan-Berger/ima-Namespace-IMA-wi=
-th-audit-support-in-IMA-ns/20220105-010946
-        git checkout fa09a3da70380ef32e9a644c08a04cc8f4630baf
-        # save the config file to linux build tree
-        mkdir build_dir
-        COMPILER_INSTALL_PATH=3D$HOME/0day COMPILER=3Dclang make.cross W=3D=
-1 O=3Dbuild_dir ARCH=3Dmips SHELL=3D/bin/bash drivers/nvmem/ security/integ=
-rity/ima/
+The first that converts mq_sysctl.c and ipc_sysctl.c to live in
+a per ipc namespace sysctl set.  That will just be a bug-fix/cleanup
+patch.  
 
-If you fix the issue, kindly add following tag as appropriate
-Reported-by: kernel test robot <lkp@intel.com>
+The second that modifies the permissions to allow root in the ipc
+namespace to change the parameters.  With that second patch
+we can have the discussion about when it is valid to allow
+the user namespace root that created the ipc namespace to be able
+to set the sysctls.
 
-All warnings (new ones prefixed by >>):
-
->> security/integrity/ima/ima_fs.c:380:25: warning: unused variable 'user_n=
-s'
-   struct user_namespace =3D ima_user_ns_from_file(filp);
-   ^
-   fatal error: error in backend: Nested variants found in inline asm strin=
-g: ' .set push
-   .set mips64r2
-   .if ( 0x00 ) !=3D -1)) 0x00 ) !=3D -1)) : ($( static struct ftrace_branc=
-h_data __attribute__((__aligned__(4))) __attribute__((__section__("_ftrace_=
-branch"))) __if_trace =3D $( .func =3D __func__, .file =3D "arch/mips/inclu=
-de/asm/bitops.h", .line =3D 192, $); 0x00 ) !=3D -1)) : $))) ) && ( 0 ); .s=
-et push; .set mips64r2; .rept 1; sync 0x00; .endr; .set pop; .else; ; .endif
-   1: ll $0, $2
-   or $1, $0, $3
-   sc $1, $2
-   beqz $1, 1b
-   .set pop
-   '
-   PLEASE submit a bug report to https://bugs.llvm.org/ and include the cra=
-sh backtrace, preprocessed source, and associated run script.
-   Stack dump:
-   0. Program arguments: clang -Wp,-MMD,security/integrity/ima/.ima_fs.o.d =
--nostdinc -Iarch/mips/include -I./arch/mips/include/generated -Iinclude -I.=
-/include -Iarch/mips/include/uapi -I./arch/mips/include/generated/uapi -Iin=
-clude/uapi -I./include/generated/uapi -include include/linux/compiler-versi=
-on.h -include include/linux/kconfig.h -include include/linux/compiler_types=
-=2Eh -D__KERNEL__ -DVMLINUX_LOAD_ADDRESS=3D0xffffffff84000000 -DLINKER_LOAD=
-_ADDRESS=3D0x84000000 -DDATAOFFSET=3D0 -Qunused-arguments -fmacro-prefix-ma=
-p=3D=3D -DKBUILD_EXTRA_WARN1 -Wall -Wundef -Werror=3Dstrict-prototypes -Wno=
--trigraphs -fno-strict-aliasing -fno-common -fshort-wchar -fno-PIE -Werror=
-=3Dimplicit-function-declaration -Werror=3Dimplicit-int -Werror=3Dreturn-ty=
-pe -Wno-format-security -std=3Dgnu89 --target=3Dmipsel-linux -fintegrated-a=
-s -Werror=3Dunknown-warning-option -Werror=3Dignored-optimization-argument =
--mno-check-zero-division -mabi=3D32 -G 0 -mno-abicalls -fno-pic -pipe -msof=
-t-float -DGAS_HAS_SET_HARDFLOAT -Wa,-msoft-float -ffreestanding -EL -fno-st=
-ack-check -march=3Dmips32 -Wa,--trap -DTOOLCHAIN_SUPPORTS_VIRT -Iarch/mips/=
-include/asm/mach-au1x00 -Iarch/mips/include/asm/mach-generic -fno-asynchron=
-ous-unwind-tables -fno-delete-null-pointer-checks -Wno-frame-address -Wno-a=
-ddress-of-packed-member -O2 -Wframe-larger-than=3D1024 -fno-stack-protector=
- -Wimplicit-fallthrough -Wno-gnu -mno-global-merge -Wno-unused-but-set-vari=
-able -Wno-unused-const-variable -ftrivial-auto-var-init=3Dpattern -fno-stac=
-k-clash-protection -pg -falign-functions=3D64 -Wdeclaration-after-statement=
- -Wvla -Wno-pointer-sign -Wno-array-bounds -fno-strict-overflow -fno-stack-=
-check -Werror=3Ddate-time -Werror=3Dincompatible-pointer-types -Wextra -Wun=
-used -Wno-unused-parameter -Wmissing-declarations -Wmissing-format-attribut=
-e -Wmissing-prototypes -Wold-style-definition -Wmissing-include-dirs -Wunus=
-ed-but-set-variable -Wunused-const-variable -Wno-missing-field-initializers=
- -Wno-sign-compare -Wno-type-limits -fsanitize=3Darray-bounds -fsanitize=3D=
-unreachable -fsanitize=3Dobject-size -fsanitize=3Denum -fsanitize-coverage=
-=3Dtrace-pc -I security/integrity/ima -I ./security/integrity/ima -ffunctio=
-n-sections -fdata-sections -DKBUILD_MODFILE=3D"security/integrity/ima/ima" =
--DKBUILD_BASENAME=3D"ima_fs" -DKBUILD_MODNAME=3D"ima" -D__KBUILD_MODNAME=3D=
-kmod_ima -c -o security/integrity/ima/ima_fs.o security/integrity/ima/ima_f=
-s.c
-   1. <eof> parser at end of file
-   2. Code generation
-   3. Running pass 'Function Pass Manager' on module 'security/integrity/im=
-a/ima_fs.c'.
-   4. Running pass 'Mips Assembly Printer' on function '@ima_open_policy'
-   #0 0x0000557a749c4b3f Signals.cpp:0:0
-   #1 0x0000557a749c2a8c llvm::sys::CleanupOnSignal(unsigned long) (/opt/cr=
-oss/clang-d5b6e30ed3/bin/clang-14+0x3401a8c)
-   #2 0x0000557a74906667 llvm::CrashRecoveryContext::HandleExit(int) (/opt/=
-cross/clang-d5b6e30ed3/bin/clang-14+0x3345667)
-   #3 0x0000557a749bb13e llvm::sys::Process::Exit(int, bool) (/opt/cross/cl=
-ang-d5b6e30ed3/bin/clang-14+0x33fa13e)
-   #4 0x0000557a7264133b (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x108033=
-b)
-   #5 0x0000557a7490d10c llvm::report_fatal_error(llvm::Twine const&, bool)=
- (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x334c10c)
-   #6 0x0000557a755ef9b8 llvm::AsmPrinter::emitInlineAsm(llvm::MachineInstr=
- const (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x402e9b8)
-   #7 0x0000557a755eb759 llvm::AsmPrinter::emitFunctionBody() (/opt/cross/c=
-lang-d5b6e30ed3/bin/clang-14+0x402a759)
-   #8 0x0000557a7309c82e llvm::MipsAsmPrinter::runOnMachineFunction(llvm::M=
-achineFunction&) (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x1adb82e)
-   #9 0x0000557a73d332fd llvm::MachineFunctionPass::runOnFunction(llvm::Fun=
-ction&) (.part.53) MachineFunctionPass.cpp:0:0
-   #10 0x0000557a7416b867 llvm::FPPassManager::runOnFunction(llvm::Function=
-&) (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x2baa867)
-   #11 0x0000557a7416b9e1 llvm::FPPassManager::runOnModule(llvm::Module&) (=
-/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x2baa9e1)
-   #12 0x0000557a7416ccbf llvm::legacy::PassManagerImpl::run(llvm::Module&)=
- (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x2babcbf)
-   #13 0x0000557a74cd64fa clang::EmitBackendOutput(clang::DiagnosticsEngine=
-&, clang::HeaderSearchOptions const&, clang::CodeGenOptions const&, clang::=
-TargetOptions const&, clang::LangOptions const&, llvm::StringRef, clang::Ba=
-ckendAction, std::unique_ptr<llvm::raw_pwrite_stream, std::default_delete<l=
-lvm::raw_pwrite_stream> >) (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x3715=
-4fa)
-   #14 0x0000557a75903ea3 clang::BackendConsumer::HandleTranslationUnit(cla=
-ng::ASTContext&) (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x4342ea3)
-   #15 0x0000557a76407fd9 clang::ParseAST(clang::Sema&, bool, bool) (/opt/c=
-ross/clang-d5b6e30ed3/bin/clang-14+0x4e46fd9)
-   #16 0x0000557a75902cff clang::CodeGenAction::ExecuteAction() (/opt/cross=
-/clang-d5b6e30ed3/bin/clang-14+0x4341cff)
-   #17 0x0000557a75302001 clang::FrontendAction::Execute() (/opt/cross/clan=
-g-d5b6e30ed3/bin/clang-14+0x3d41001)
-   #18 0x0000557a75299bda clang::CompilerInstance::ExecuteAction(clang::Fro=
-ntendAction&) (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x3cd8bda)
-   #19 0x0000557a753cb07b (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x3e0a0=
-7b)
-   #20 0x0000557a72642084 cc1_main(llvm::ArrayRef<char char (/opt/cross/cla=
-ng-d5b6e30ed3/bin/clang-14+0x1081084)
-   #21 0x0000557a7263f5cb ExecuteCC1Tool(llvm::SmallVectorImpl<char driver.=
-cpp:0:0
-   #22 0x0000557a75136b15 void llvm::function_ref<void ()>::callback_fn<cla=
-ng::driver::CC1Command::Execute(llvm::ArrayRef<llvm::Optional<llvm::StringR=
-ef> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::alloca=
-tor<char> const::'lambda'()>(long) Job.cpp:0:0
-   #23 0x0000557a74906523 llvm::CrashRecoveryContext::RunSafely(llvm::funct=
-ion_ref<void ()>) (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x3345523)
-   #24 0x0000557a7513740e clang::driver::CC1Command::Execute(llvm::ArrayRef=
-<llvm::Optional<llvm::StringRef> >, std::__cxx11::basic_string<char, std::c=
-har_traits<char>, std::allocator<char> const (.part.216) Job.cpp:0:0
-   #25 0x0000557a7510dee7 clang::driver::Compilation::ExecuteCommand(clang:=
-:driver::Command const&, clang::driver::Command const (/opt/cross/clang-d5b=
-6e30ed3/bin/clang-14+0x3b4cee7)
-   #26 0x0000557a7510e8c7 clang::driver::Compilation::ExecuteJobs(clang::dr=
-iver::JobList const&, llvm::SmallVectorImpl<std::pair<int, clang::driver::C=
-ommand >&) const (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x3b4d8c7)
-   #27 0x0000557a75118139 clang::driver::Driver::ExecuteCompilation(clang::=
-driver::Compilation&, llvm::SmallVectorImpl<std::pair<int, clang::driver::C=
-ommand >&) (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x3b57139)
-   #28 0x0000557a7256a19f main (/opt/cross/clang-d5b6e30ed3/bin/clang-14+0x=
-fa919f)
-   #29 0x00007fc0e7a42d0a __libc_start_main (/lib/x86_64-linux-gnu/libc.so.=
-6+0x26d0a)
-   #30 0x0000557a7263f0ea _start (/opt/cross/clang-d5b6e30ed3/bin/clang-14+=
-0x107e0ea)
-   clang-14: error: clang frontend command failed with exit code 70 (use -v=
- to see invocation)
-   clang version 14.0.0 (git://gitmirror/llvm_project d5b6e30ed3acad794dd0a=
-ec400e617daffc6cc3d)
-   Target: mipsel-unknown-linux
-   Thread model: posix
-   InstalledDir: /opt/cross/clang-d5b6e30ed3/bin
-   clang-14: note: diagnostic msg:
-   Makefile arch drivers include kernel nr_bisected scripts security source=
- usr
+A few more comments below.
 
 
-vim +/user_ns +380 security/integrity/ima/ima_fs.c
+> Reported-by: kernel test robot <lkp@intel.com>
+> Signed-off-by: Alexey Gladkov <legion@kernel.org>
+> ---
+>  include/linux/ipc_namespace.h |  18 ++++-
+>  ipc/mq_sysctl.c               | 137 ++++++++++++++++++++--------------
+>  ipc/mqueue.c                  |  10 +--
+>  ipc/namespace.c               |   6 ++
+>  4 files changed, 106 insertions(+), 65 deletions(-)
+>
+> diff --git a/include/linux/ipc_namespace.h b/include/linux/ipc_namespace.h
+> index b75395ec8d52..bcedc86a6f1d 100644
+> --- a/include/linux/ipc_namespace.h
+> +++ b/include/linux/ipc_namespace.h
+> @@ -10,6 +10,7 @@
+>  #include <linux/ns_common.h>
+>  #include <linux/refcount.h>
+>  #include <linux/rhashtable-types.h>
+> +#include <linux/sysctl.h>
+>  
+>  struct user_namespace;
+>  
+> @@ -63,6 +64,11 @@ struct ipc_namespace {
+>  	unsigned int    mq_msg_default;
+>  	unsigned int    mq_msgsize_default;
+>  
+> +#ifdef CONFIG_POSIX_MQUEUE_SYSCTL
+> +	struct ctl_table_set	set;
+> +	struct ctl_table_header *sysctls;
+> +#endif
+> +
 
-   374=09
-   375	/*
-   376	 * ima_open_policy: sequentialize access to the policy file
-   377	 */
-   378	static int ima_open_policy(struct inode *inode, struct file *filp)
-   379	{
- > 380		struct user_namespace *user_ns =3D ima_user_ns_from_file(filp);
-   381		struct ima_namespace *ns =3D &init_ima_ns;
-   382=09
-   383		if (!(filp->f_flags & O_WRONLY)) {
-   384	#ifndef	CONFIG_IMA_READ_POLICY
-   385			return -EACCES;
-   386	#else
-   387			if ((filp->f_flags & O_ACCMODE) !=3D O_RDONLY)
-   388				return -EACCES;
-   389			if (!mac_admin_ns_capable(user_ns))
-   390				return -EPERM;
-   391			return seq_open(filp, &ima_policy_seqops);
-   392	#endif
-   393		}
-   394		if (test_and_set_bit(IMA_FS_BUSY, &ns->ima_fs_flags))
-   395			return -EBUSY;
-   396		return 0;
-   397	}
-   398=09
+Updating the code to handle all of the ipc sysctls should
+remove the need for the #ifdef here.
 
----
-0-DAY CI Kernel Test Service, Intel Corporation
-https://lists.01.org/hyperkitty/list/kbuild-all@lists.01.org
+>  	/* user_ns which owns the ipc ns */
+>  	struct user_namespace *user_ns;
+>  	struct ucounts *ucounts;
+> @@ -169,14 +175,18 @@ static inline void put_ipc_ns(struct ipc_namespace *ns)
+>  
+>  #ifdef CONFIG_POSIX_MQUEUE_SYSCTL
+>  
+> -struct ctl_table_header;
+> -extern struct ctl_table_header *mq_register_sysctl_table(void);
+> +void retire_mq_sysctls(struct ipc_namespace *ns);
+> +bool setup_mq_sysctls(struct ipc_namespace *ns);
+>  
+>  #else /* CONFIG_POSIX_MQUEUE_SYSCTL */
+>  
+> -static inline struct ctl_table_header *mq_register_sysctl_table(void)
+> +static inline void retire_mq_sysctls(struct ipc_namespace *ns)
+>  {
+> -	return NULL;
+> +}
+> +
+> +static inline bool setup_mq_sysctls(struct ipc_namespace *ns)
+> +{
+> +	return true;
+>  }
+>  
+>  #endif /* CONFIG_POSIX_MQUEUE_SYSCTL */
+> diff --git a/ipc/mq_sysctl.c b/ipc/mq_sysctl.c
+> index 72a92a08c848..56afb0503296 100644
+> --- a/ipc/mq_sysctl.c
+> +++ b/ipc/mq_sysctl.c
+> @@ -9,39 +9,9 @@
+>  #include <linux/ipc_namespace.h>
+>  #include <linux/sysctl.h>
+>  
+> -#ifdef CONFIG_PROC_SYSCTL
+> -static void *get_mq(struct ctl_table *table)
+> -{
+> -	char *which = table->data;
+> -	struct ipc_namespace *ipc_ns = current->nsproxy->ipc_ns;
+> -	which = (which - (char *)&init_ipc_ns) + (char *)ipc_ns;
+> -	return which;
+> -}
+> -
+> -static int proc_mq_dointvec(struct ctl_table *table, int write,
+> -			    void *buffer, size_t *lenp, loff_t *ppos)
+> -{
+> -	struct ctl_table mq_table;
+> -	memcpy(&mq_table, table, sizeof(mq_table));
+> -	mq_table.data = get_mq(table);
+> -
+> -	return proc_dointvec(&mq_table, write, buffer, lenp, ppos);
+> -}
+> -
+> -static int proc_mq_dointvec_minmax(struct ctl_table *table, int write,
+> -		void *buffer, size_t *lenp, loff_t *ppos)
+> -{
+> -	struct ctl_table mq_table;
+> -	memcpy(&mq_table, table, sizeof(mq_table));
+> -	mq_table.data = get_mq(table);
+> -
+> -	return proc_dointvec_minmax(&mq_table, write, buffer,
+> -					lenp, ppos);
+> -}
+> -#else
+> -#define proc_mq_dointvec NULL
+> -#define proc_mq_dointvec_minmax NULL
+> -#endif
+> +#include <linux/stat.h>
+> +#include <linux/capability.h>
+> +#include <linux/slab.h>
+>  
+>  static int msg_max_limit_min = MIN_MSGMAX;
+>  static int msg_max_limit_max = HARD_MSGMAX;
+> @@ -55,14 +25,14 @@ static struct ctl_table mq_sysctls[] = {
+>  		.data		= &init_ipc_ns.mq_queues_max,
+>  		.maxlen		= sizeof(int),
+>  		.mode		= 0644,
+> -		.proc_handler	= proc_mq_dointvec,
+> +		.proc_handler	= proc_dointvec,
+>  	},
+>  	{
+>  		.procname	= "msg_max",
+>  		.data		= &init_ipc_ns.mq_msg_max,
+>  		.maxlen		= sizeof(int),
+>  		.mode		= 0644,
+> -		.proc_handler	= proc_mq_dointvec_minmax,
+> +		.proc_handler	= proc_dointvec_minmax,
+>  		.extra1		= &msg_max_limit_min,
+>  		.extra2		= &msg_max_limit_max,
+>  	},
+> @@ -71,7 +41,7 @@ static struct ctl_table mq_sysctls[] = {
+>  		.data		= &init_ipc_ns.mq_msgsize_max,
+>  		.maxlen		= sizeof(int),
+>  		.mode		= 0644,
+> -		.proc_handler	= proc_mq_dointvec_minmax,
+> +		.proc_handler	= proc_dointvec_minmax,
+>  		.extra1		= &msg_maxsize_limit_min,
+>  		.extra2		= &msg_maxsize_limit_max,
+>  	},
+> @@ -80,7 +50,7 @@ static struct ctl_table mq_sysctls[] = {
+>  		.data		= &init_ipc_ns.mq_msg_default,
+>  		.maxlen		= sizeof(int),
+>  		.mode		= 0644,
+> -		.proc_handler	= proc_mq_dointvec_minmax,
+> +		.proc_handler	= proc_dointvec_minmax,
+>  		.extra1		= &msg_max_limit_min,
+>  		.extra2		= &msg_max_limit_max,
+>  	},
+> @@ -89,32 +59,89 @@ static struct ctl_table mq_sysctls[] = {
+>  		.data		= &init_ipc_ns.mq_msgsize_default,
+>  		.maxlen		= sizeof(int),
+>  		.mode		= 0644,
+> -		.proc_handler	= proc_mq_dointvec_minmax,
+> +		.proc_handler	= proc_dointvec_minmax,
+>  		.extra1		= &msg_maxsize_limit_min,
+>  		.extra2		= &msg_maxsize_limit_max,
+>  	},
+>  	{}
+>  };
+>  
+> -static struct ctl_table mq_sysctl_dir[] = {
+> -	{
+> -		.procname	= "mqueue",
+> -		.mode		= 0555,
+> -		.child		= mq_sysctls,
+> -	},
+> -	{}
+> -};
+> +static struct ctl_table_set *
+> +set_lookup(struct ctl_table_root *root)
+> +{
+> +	return &current->nsproxy->ipc_ns->set;
+> +}
+>  
+> -static struct ctl_table mq_sysctl_root[] = {
+> -	{
+> -		.procname	= "fs",
+> -		.mode		= 0555,
+> -		.child		= mq_sysctl_dir,
+> -	},
+> -	{}
+> +static int set_is_seen(struct ctl_table_set *set)
+> +{
+> +	return &current->nsproxy->ipc_ns->set == set;
+> +}
+> +
+> +static int set_permissions(struct ctl_table_header *head, struct ctl_table *table)
+> +{
+> +	struct ipc_namespace *ns = container_of(head->set, struct ipc_namespace, set);
+> +	int mode;
+> +
+> +	/* Allow users with CAP_SYS_RESOURCE unrestrained access */
+> +	if (ns_capable(ns->user_ns, CAP_SYS_RESOURCE))
+> +		mode = (table->mode & S_IRWXU) >> 6;
+> +	else
+> +	/* Allow all others at most read-only access */
+> +		mode = table->mode & S_IROTH;
+> +	return (mode << 6) | (mode << 3) | mode;
+> +}
+
+As a cleanup/bug-fix  please don't implemenet set_permissions.  If you
+don't the default permissions that we use today will apply.
+
+> +static struct ctl_table_root set_root = {
+> +	.lookup = set_lookup,
+> +	.permissions = set_permissions,
+>  };
+>  
+> -struct ctl_table_header *mq_register_sysctl_table(void)
+> +bool setup_mq_sysctls(struct ipc_namespace *ns)
+>  {
+> -	return register_sysctl_table(mq_sysctl_root);
+> +	struct ctl_table *tbl;
+> +
+> +	setup_sysctl_set(&ns->set, &set_root, set_is_seen);
+> +
+> +	tbl = kmemdup(mq_sysctls, sizeof(mq_sysctls), GFP_KERNEL);
+> +	if (tbl) {
+> +		int i;
+> +
+> +		for (i = 0; i < ARRAY_SIZE(mq_sysctls); i++) {
+> +			if (tbl[i].data == &init_ipc_ns.mq_queues_max)
+> +				tbl[i].data = &ns->mq_queues_max;
+> +
+> +			else if (tbl[i].data == &init_ipc_ns.mq_msg_max)
+> +				tbl[i].data = &ns->mq_msg_max;
+> +
+> +			else if (tbl[i].data == &init_ipc_ns.mq_msgsize_max)
+> +				tbl[i].data = &ns->mq_msgsize_max;
+> +
+> +			else if (tbl[i].data == &init_ipc_ns.mq_msg_default)
+> +				tbl[i].data = &ns->mq_msg_default;
+> +
+> +			else if (tbl[i].data == &init_ipc_ns.mq_msgsize_default)
+> +				tbl[i].data = &ns->mq_msgsize_default;
+> +			else
+> +				tbl[i].data = NULL;
+> +		}
+> +
+> +		ns->sysctls = __register_sysctl_table(&ns->set, "fs/mqueue", tbl);
+> +	}
+> +	if (!ns->sysctls) {
+> +		kfree(tbl);
+> +		retire_sysctl_set(&ns->set);
+> +		return false;
+> +	}
+> +
+> +	return true;
+> +}
+> +
+> +void retire_mq_sysctls(struct ipc_namespace *ns)
+> +{
+> +	struct ctl_table *tbl;
+> +
+> +	tbl = ns->sysctls->ctl_table_arg;
+> +	unregister_sysctl_table(ns->sysctls);
+> +	retire_sysctl_set(&ns->set);
+> +	kfree(tbl);
+>  }
+> diff --git a/ipc/mqueue.c b/ipc/mqueue.c
+> index 5becca9be867..1b4a3be71636 100644
+> --- a/ipc/mqueue.c
+> +++ b/ipc/mqueue.c
+> @@ -163,8 +163,6 @@ static void remove_notification(struct mqueue_inode_info *info);
+>  
+>  static struct kmem_cache *mqueue_inode_cachep;
+>  
+> -static struct ctl_table_header *mq_sysctl_table;
+> -
+>  static inline struct mqueue_inode_info *MQUEUE_I(struct inode *inode)
+>  {
+>  	return container_of(inode, struct mqueue_inode_info, vfs_inode);
+> @@ -1713,8 +1711,10 @@ static int __init init_mqueue_fs(void)
+>  	if (mqueue_inode_cachep == NULL)
+>  		return -ENOMEM;
+>  
+> -	/* ignore failures - they are not fatal */
+> -	mq_sysctl_table = mq_register_sysctl_table();
+> +	if (!setup_mq_sysctls(&init_ipc_ns)) {
+> +		pr_warn("sysctl registration failed\n");
+> +		return -ENOMEM;
+> +	}
+>  
+>  	error = register_filesystem(&mqueue_fs_type);
+>  	if (error)
+> @@ -1731,8 +1731,6 @@ static int __init init_mqueue_fs(void)
+>  out_filesystem:
+>  	unregister_filesystem(&mqueue_fs_type);
+>  out_sysctl:
+> -	if (mq_sysctl_table)
+> -		unregister_sysctl_table(mq_sysctl_table);
+>  	kmem_cache_destroy(mqueue_inode_cachep);
+>  	return error;
+>  }
+> diff --git a/ipc/namespace.c b/ipc/namespace.c
+> index ae83f0f2651b..f760243ca685 100644
+> --- a/ipc/namespace.c
+> +++ b/ipc/namespace.c
+> @@ -59,6 +59,10 @@ static struct ipc_namespace *create_ipc_ns(struct user_namespace *user_ns,
+>  	if (err)
+>  		goto fail_put;
+>  
+> +	err = -ENOMEM;
+> +	if (!setup_mq_sysctls(ns))
+> +		goto fail_put;
+> +
+Please make this handle all ipc sysctls not just the mq sysctls.
+
+>  	sem_init_ns(ns);
+>  	msg_init_ns(ns);
+>  	shm_init_ns(ns);
+> @@ -125,6 +129,8 @@ static void free_ipc_ns(struct ipc_namespace *ns)
+>  	msg_exit_ns(ns);
+>  	shm_exit_ns(ns);
+>  
+> +	retire_mq_sysctls(ns);
+> +
+>  	dec_ipc_namespaces(ns->ucounts);
+>  	put_user_ns(ns->user_ns);
+>  	ns_free_inum(&ns->ns);
+
+Eric
