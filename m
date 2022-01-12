@@ -1,171 +1,192 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ed1-f52.google.com (mail-ed1-f52.google.com [209.85.208.52])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2D71729CA;
-	Wed, 12 Jan 2022 14:28:50 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0F02EC36AEA;
-	Wed, 12 Jan 2022 14:28:47 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1641997730;
-	bh=8WIH+0qVHO2YBYQ9GPnvwj6icMEELix8gczxJYwvnIw=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=dzS4M2/DzXW/uYSD3qH8Mf3jszHIBeMg7D7/vFjqrT5ZWPax2SV9M31DbttMAtqvC
-	 PTLiWacplV6qtagr2TBtoLqK+Joe1tf+AmUyqHuW3+l401kpQY85aez7caWtQ5Syue
-	 BYA0T5DDOXr9pyNd7qm6kxDRamLGSJY2mBMB1rIbQFHsOCKNg0RWuIp+wRw1OwZDW1
-	 Z7L525sW7HAvzM25rfl8376n5ysqcFTNefviVmYEfltshpNPn1ydTK7umxmXO5twgh
-	 fWQq4ykVAnb2GyfppHl3e9QAvNRUqXXur2z4wrW2oRMey6OFDhVWHM+hQCXGfZPV4H
-	 0+uZCUlOg9/Eg==
-Date: Wed, 12 Jan 2022 15:28:46 +0100
-From: Alexey Gladkov <legion@kernel.org>
-To: Christian Brauner <christian.brauner@ubuntu.com>
-Cc: Anders Roxell <anders.roxell@linaro.org>,
-	Naresh Kamboju <naresh.kamboju@linaro.org>,
-	open list <linux-kernel@vger.kernel.org>,
-	Linux-Next Mailing List <linux-next@vger.kernel.org>,
-	lkft-triage@lists.linaro.org, LTP List <ltp@lists.linux.it>,
-	linux-fsdevel@vger.kernel.org, regressions@lists.linux.dev,
-	containers@lists.linux.dev, Sven Schnelle <svens@linux.ibm.com>,
-	"Eric W. Biederman" <ebiederm@xmission.com>,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	Arnd Bergmann <arnd@arndb.de>
-Subject: Re: [next]: LTP: getxattr05.c:97: TFAIL: unshare(CLONE_NEWUSER)
- failed: ENOSPC (28)
-Message-ID: <20220112142846.3b3m2dyhdtppgwrw@example.org>
-References: <CA+G9fYsMHhXJCgO-ykR0oO1kVdusGnthgj6ifxEKaGPHZJ-ZCw@mail.gmail.com>
- <20220112131837.igsjkkttqskw4eix@wittgenstein>
- <CADYN=9Lvm-1etZS817eZK91NUyxkFBmsu=5-q_8Ei-1eV8DuZQ@mail.gmail.com>
- <20220112140254.cvngcwggeevwaazw@wittgenstein>
- <20220112141445.txgrdlycvfkiwsv5@example.org>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5E1D12C82
+	for <containers@lists.linux.dev>; Wed, 12 Jan 2022 15:56:40 +0000 (UTC)
+Received: by mail-ed1-f52.google.com with SMTP id u21so11760288edd.5
+        for <containers@lists.linux.dev>; Wed, 12 Jan 2022 07:56:40 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linaro.org; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=ZUIE2TtYEPu3+VteNSorh9BvWhArgrA6kX1TNQslOW0=;
+        b=AE/8XXAT+GWlyXsKx8iA8oMQffflNVnXzes3tLi6pUcdB26QnlwM5w2N5hjYTKUrYM
+         jAaju3PO7uKcuVu63C2ADgjyfSGnOaRkjGo3n83BUjtc8NuRMMZRf9Sd2bZsj3FpNDmh
+         9wfHxXxetHOur2oYPvYr94mxr4fHWk2Tr8IrVcngbeTV0p1I+7MuZZDHB1mTOiS+VuDP
+         JaPDWtmZBeu48jDcOIspNjRGaAatl80ncdPUoESUq4eaxxfNuRmEpEDyHhsicpmuYgY3
+         LH53J9eVBWGj/3QTgylfiHYpmY7USbh49S09PlvaA/AYzEuDSkgAXTmy/gWYT0p0vxFs
+         Jyow==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=ZUIE2TtYEPu3+VteNSorh9BvWhArgrA6kX1TNQslOW0=;
+        b=hFiCroB95ASza3XsBIDi4eQesgU/UaRZ2WaG5cZ7+i76oQF3eiMrCICOFbufUAUMn+
+         rIBEQU4WiEKr3rFz97IGF2IzJAqjyOFQRZKPsgtLJhoOMThHCE7CY9i/rjoysbtEfjvh
+         LPkIxzoef2CeosbV9OxEdr/i9jvQhaSulasXKpfow1SKUWT/leMyiez2ASPrTjcVAeA5
+         pFqKmDZo1gCdPhxUncaVT+BwyndJpMB4c++gDHPJpCQ+0YYheidBt9EVCvcThLfyZEWN
+         6ZVWmtxVvX9+xojHF1SH8TFWzL4J6zhe3ZYSADXTILIyaOunE8vZ6nGuzVEiuPJG7zOG
+         VEKw==
+X-Gm-Message-State: AOAM531vl4ESsVZEyav/MrR2aqVeXfCGN4bkGmWcp+cp5PJK7tyyTB90
+	oJYOMSKHCpFMu5oz9PtAOEBGEPDPaV17UupNsI4mFw==
+X-Google-Smtp-Source: ABdhPJyeWuZt41D3Y95p0NJDealf3e/VotiCxmEZUzV2AnJgFO8G1BJ8ATEhYpQN39OJfSr22ufSLjOu8AmH8BWXpUc=
+X-Received: by 2002:a17:907:3f92:: with SMTP id hr18mr255113ejc.693.1642002998420;
+ Wed, 12 Jan 2022 07:56:38 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20220112141445.txgrdlycvfkiwsv5@example.org>
+References: <CA+G9fYsMHhXJCgO-ykR0oO1kVdusGnthgj6ifxEKaGPHZJ-ZCw@mail.gmail.com>
+ <20220112131837.igsjkkttqskw4eix@wittgenstein> <CADYN=9Lvm-1etZS817eZK91NUyxkFBmsu=5-q_8Ei-1eV8DuZQ@mail.gmail.com>
+ <20220112140254.cvngcwggeevwaazw@wittgenstein> <20220112141445.txgrdlycvfkiwsv5@example.org>
+ <20220112142846.3b3m2dyhdtppgwrw@example.org>
+In-Reply-To: <20220112142846.3b3m2dyhdtppgwrw@example.org>
+From: Anders Roxell <anders.roxell@linaro.org>
+Date: Wed, 12 Jan 2022 16:56:27 +0100
+Message-ID: <CADYN=9LBjp0=mqyPkTGmdeMx52cg4pM39fnXe-ODTZ=_1OP+zw@mail.gmail.com>
+Subject: Re: [next]: LTP: getxattr05.c:97: TFAIL: unshare(CLONE_NEWUSER)
+ failed: ENOSPC (28)
+To: Alexey Gladkov <legion@kernel.org>
+Cc: Christian Brauner <christian.brauner@ubuntu.com>, 
+	Naresh Kamboju <naresh.kamboju@linaro.org>, open list <linux-kernel@vger.kernel.org>, 
+	Linux-Next Mailing List <linux-next@vger.kernel.org>, lkft-triage@lists.linaro.org, 
+	LTP List <ltp@lists.linux.it>, linux-fsdevel@vger.kernel.org, 
+	regressions@lists.linux.dev, containers@lists.linux.dev, 
+	Sven Schnelle <svens@linux.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, 
+	Alexander Viro <viro@zeniv.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>
+Content-Type: text/plain; charset="UTF-8"
 
-On Wed, Jan 12, 2022 at 03:14:45PM +0100, Alexey Gladkov wrote:
-> On Wed, Jan 12, 2022 at 03:02:54PM +0100, Christian Brauner wrote:
-> > On Wed, Jan 12, 2022 at 02:22:42PM +0100, Anders Roxell wrote:
-> > > On Wed, 12 Jan 2022 at 14:18, Christian Brauner
-> > > <christian.brauner@ubuntu.com> wrote:
-> > > >
-> > > > On Wed, Jan 12, 2022 at 05:15:37PM +0530, Naresh Kamboju wrote:
-> > > > > While testing LTP syscalls with Linux next 20220110 (and till date 20220112)
-> > > > > on x86_64, i386, arm and arm64 the following tests failed.
+On Wed, 12 Jan 2022 at 15:28, Alexey Gladkov <legion@kernel.org> wrote:
+>
+> On Wed, Jan 12, 2022 at 03:14:45PM +0100, Alexey Gladkov wrote:
+> > On Wed, Jan 12, 2022 at 03:02:54PM +0100, Christian Brauner wrote:
+> > > On Wed, Jan 12, 2022 at 02:22:42PM +0100, Anders Roxell wrote:
+> > > > On Wed, 12 Jan 2022 at 14:18, Christian Brauner
+> > > > <christian.brauner@ubuntu.com> wrote:
 > > > > >
-> > > > > tst_test.c:1365: TINFO: Timeout per run is 0h 15m 00s
-> > > > > getxattr05.c:87: TPASS: Got same data when acquiring the value of
-> > > > > system.posix_acl_access twice
-> > > > > getxattr05.c:97: TFAIL: unshare(CLONE_NEWUSER) failed: ENOSPC (28)
-> > > > > tst_test.c:391: TBROK: Invalid child (13545) exit value 1
+> > > > > On Wed, Jan 12, 2022 at 05:15:37PM +0530, Naresh Kamboju wrote:
+> > > > > > While testing LTP syscalls with Linux next 20220110 (and till date 20220112)
+> > > > > > on x86_64, i386, arm and arm64 the following tests failed.
+> > > > > >
+> > > > > > tst_test.c:1365: TINFO: Timeout per run is 0h 15m 00s
+> > > > > > getxattr05.c:87: TPASS: Got same data when acquiring the value of
+> > > > > > system.posix_acl_access twice
+> > > > > > getxattr05.c:97: TFAIL: unshare(CLONE_NEWUSER) failed: ENOSPC (28)
+> > > > > > tst_test.c:391: TBROK: Invalid child (13545) exit value 1
+> > > > > >
+> > > > > > fanotify17.c:176: TINFO: Test #1: Global groups limit in privileged user ns
+> > > > > > fanotify17.c:155: TFAIL: unshare(CLONE_NEWUSER) failed: ENOSPC (28)
+> > > > > > tst_test.c:391: TBROK: Invalid child (14739) exit value 1
+> > > > > >
+> > > > > > sendto03.c:48: TBROK: unshare(268435456) failed: ENOSPC (28)
+> > > > > >
+> > > > > > setsockopt05.c:45: TBROK: unshare(268435456) failed: ENOSPC (28)
+> > > > > >
+> > > > > > strace output:
+> > > > > > --------------
+> > > > > > [pid   481] wait4(-1, 0x7fff52f5ae8c, 0, NULL) = -1 ECHILD (No child processes)
+> > > > > > [pid   481] clone(child_stack=NULL,
+> > > > > > flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD,
+> > > > > > child_tidptr=0x7f3af0fa7a10) = 483
+> > > > > > strace: Process 483 attached
+> > > > > > [pid   481] wait4(-1,  <unfinished ...>
+> > > > > > [pid   483] unshare(CLONE_NEWUSER)      = -1 ENOSPC (No space left on device)
 > > > > >
-> > > > > fanotify17.c:176: TINFO: Test #1: Global groups limit in privileged user ns
-> > > > > fanotify17.c:155: TFAIL: unshare(CLONE_NEWUSER) failed: ENOSPC (28)
-> > > > > tst_test.c:391: TBROK: Invalid child (14739) exit value 1
+> > > > > This looks like another regression in the ucount code. Reverting the
+> > > > > following commit fixes it and makes the getxattr05 test work again:
 > > > > >
-> > > > > sendto03.c:48: TBROK: unshare(268435456) failed: ENOSPC (28)
+> > > > > commit 0315b634f933b0f12cfa82660322f6186c1aa0f4
+> > > > > Author: Alexey Gladkov <legion@kernel.org>
+> > > > > Date:   Fri Dec 17 15:48:23 2021 +0100
 > > > > >
-> > > > > setsockopt05.c:45: TBROK: unshare(268435456) failed: ENOSPC (28)
+> > > > >     ucounts: Split rlimit and ucount values and max values
 > > > > >
-> > > > > strace output:
-> > > > > --------------
-> > > > > [pid   481] wait4(-1, 0x7fff52f5ae8c, 0, NULL) = -1 ECHILD (No child processes)
-> > > > > [pid   481] clone(child_stack=NULL,
-> > > > > flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD,
-> > > > > child_tidptr=0x7f3af0fa7a10) = 483
-> > > > > strace: Process 483 attached
-> > > > > [pid   481] wait4(-1,  <unfinished ...>
-> > > > > [pid   483] unshare(CLONE_NEWUSER)      = -1 ENOSPC (No space left on device)
+> > > > >     Since the semantics of maximum rlimit values are different, it would be
+> > > > >     better not to mix ucount and rlimit values. This will prevent the error
+> > > > >     of using inc_count/dec_ucount for rlimit parameters.
+> > > > >
+> > > > >     This patch also renames the functions to emphasize the lack of
+> > > > >     connection between rlimit and ucount.
+> > > > >
+> > > > >     v2:
+> > > > >     - Fix the array-index-out-of-bounds that was found by the lkp project.
+> > > > >
+> > > > >     Reported-by: kernel test robot <oliver.sang@intel.com>
+> > > > >     Signed-off-by: Alexey Gladkov <legion@kernel.org>
+> > > > >     Link: https://lkml.kernel.org/r/73ea569042babda5cee2092423da85027ceb471f.1639752364.git.legion@kernel.org
+> > > > >     Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+> > > > >
+> > > > > The issue only surfaces if /proc/sys/user/max_user_namespaces is
+> > > > > actually written to.
 > > > >
-> > > > This looks like another regression in the ucount code. Reverting the
-> > > > following commit fixes it and makes the getxattr05 test work again:
-> > > >
-> > > > commit 0315b634f933b0f12cfa82660322f6186c1aa0f4
-> > > > Author: Alexey Gladkov <legion@kernel.org>
-> > > > Date:   Fri Dec 17 15:48:23 2021 +0100
-> > > >
-> > > >     ucounts: Split rlimit and ucount values and max values
-> > > >
-> > > >     Since the semantics of maximum rlimit values are different, it would be
-> > > >     better not to mix ucount and rlimit values. This will prevent the error
-> > > >     of using inc_count/dec_ucount for rlimit parameters.
-> > > >
-> > > >     This patch also renames the functions to emphasize the lack of
-> > > >     connection between rlimit and ucount.
-> > > >
-> > > >     v2:
-> > > >     - Fix the array-index-out-of-bounds that was found by the lkp project.
-> > > >
-> > > >     Reported-by: kernel test robot <oliver.sang@intel.com>
-> > > >     Signed-off-by: Alexey Gladkov <legion@kernel.org>
-> > > >     Link: https://lkml.kernel.org/r/73ea569042babda5cee2092423da85027ceb471f.1639752364.git.legion@kernel.org
-> > > >     Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
-> > > >
-> > > > The issue only surfaces if /proc/sys/user/max_user_namespaces is
-> > > > actually written to.
-> > > 
-> > > I did a git bisect and that pointed me to this patch too.
-> > 
-> > Uhm, doesn't this want to be:
-> 
-> Yes. I miss it. I tried not to mix the logic, but I myself stepped on this
-> problem.
+> > > > I did a git bisect and that pointed me to this patch too.
+> > >
+> > > Uhm, doesn't this want to be:
+> >
+> > Yes. I miss it. I tried not to mix the logic, but I myself stepped on this
+> > problem.
+>
+> It should be fixed in the four places:
+>
+> diff --git a/kernel/ucount.c b/kernel/ucount.c
+> index 22070f004e97..5c373a453f43 100644
+> --- a/kernel/ucount.c
+> +++ b/kernel/ucount.c
+> @@ -264,7 +264,7 @@ long inc_rlimit_ucounts(struct ucounts *ucounts, enum rlimit_type type, long v)
+>         long ret = 0;
+>
+>         for (iter = ucounts; iter; iter = iter->ns->ucounts) {
+> -               long new = atomic_long_add_return(v, &iter->ucount[type]);
+> +               long new = atomic_long_add_return(v, &iter->rlimit[type]);
+>                 if (new < 0 || new > max)
+>                         ret = LONG_MAX;
+>                 else if (iter == ucounts)
+> @@ -279,7 +279,7 @@ bool dec_rlimit_ucounts(struct ucounts *ucounts, enum rlimit_type type, long v)
+>         struct ucounts *iter;
+>         long new = -1; /* Silence compiler warning */
+>         for (iter = ucounts; iter; iter = iter->ns->ucounts) {
+> -               long dec = atomic_long_sub_return(v, &iter->ucount[type]);
+> +               long dec = atomic_long_sub_return(v, &iter->rlimit[type]);
+>                 WARN_ON_ONCE(dec < 0);
+>                 if (iter == ucounts)
+>                         new = dec;
+> @@ -292,7 +292,7 @@ static void do_dec_rlimit_put_ucounts(struct ucounts *ucounts,
+>  {
+>         struct ucounts *iter, *next;
+>         for (iter = ucounts; iter != last; iter = next) {
+> -               long dec = atomic_long_sub_return(1, &iter->ucount[type]);
+> +               long dec = atomic_long_sub_return(1, &iter->rlimit[type]);
+>                 WARN_ON_ONCE(dec < 0);
+>                 next = iter->ns->ucounts;
+>                 if (dec == 0)
+> @@ -313,7 +313,7 @@ long inc_rlimit_get_ucounts(struct ucounts *ucounts, enum rlimit_type type)
+>         long dec, ret = 0;
+>
+>         for (iter = ucounts; iter; iter = iter->ns->ucounts) {
+> -               long new = atomic_long_add_return(1, &iter->ucount[type]);
+> +               long new = atomic_long_add_return(1, &iter->rlimit[type]);
+>                 if (new < 0 || new > max)
+>                         goto unwind;
+>                 if (iter == ucounts)
+> @@ -330,7 +330,7 @@ long inc_rlimit_get_ucounts(struct ucounts *ucounts, enum rlimit_type type)
+>         }
+>         return ret;
+>  dec_unwind:
+> -       dec = atomic_long_sub_return(1, &iter->ucount[type]);
+> +       dec = atomic_long_sub_return(1, &iter->rlimit[type]);
+>         WARN_ON_ONCE(dec < 0);
+>  unwind:
+>         do_dec_rlimit_put_ucounts(ucounts, iter, type);
+>
 
-It should be fixed in the four places:
+Thank you for the fix.
+I applied this patch and built and ran it in qemu for arm64 and x86.
+'./runltp -s getxattr05' passed on both architectures.
 
-diff --git a/kernel/ucount.c b/kernel/ucount.c
-index 22070f004e97..5c373a453f43 100644
---- a/kernel/ucount.c
-+++ b/kernel/ucount.c
-@@ -264,7 +264,7 @@ long inc_rlimit_ucounts(struct ucounts *ucounts, enum rlimit_type type, long v)
- 	long ret = 0;
- 
- 	for (iter = ucounts; iter; iter = iter->ns->ucounts) {
--		long new = atomic_long_add_return(v, &iter->ucount[type]);
-+		long new = atomic_long_add_return(v, &iter->rlimit[type]);
- 		if (new < 0 || new > max)
- 			ret = LONG_MAX;
- 		else if (iter == ucounts)
-@@ -279,7 +279,7 @@ bool dec_rlimit_ucounts(struct ucounts *ucounts, enum rlimit_type type, long v)
- 	struct ucounts *iter;
- 	long new = -1; /* Silence compiler warning */
- 	for (iter = ucounts; iter; iter = iter->ns->ucounts) {
--		long dec = atomic_long_sub_return(v, &iter->ucount[type]);
-+		long dec = atomic_long_sub_return(v, &iter->rlimit[type]);
- 		WARN_ON_ONCE(dec < 0);
- 		if (iter == ucounts)
- 			new = dec;
-@@ -292,7 +292,7 @@ static void do_dec_rlimit_put_ucounts(struct ucounts *ucounts,
- {
- 	struct ucounts *iter, *next;
- 	for (iter = ucounts; iter != last; iter = next) {
--		long dec = atomic_long_sub_return(1, &iter->ucount[type]);
-+		long dec = atomic_long_sub_return(1, &iter->rlimit[type]);
- 		WARN_ON_ONCE(dec < 0);
- 		next = iter->ns->ucounts;
- 		if (dec == 0)
-@@ -313,7 +313,7 @@ long inc_rlimit_get_ucounts(struct ucounts *ucounts, enum rlimit_type type)
- 	long dec, ret = 0;
- 
- 	for (iter = ucounts; iter; iter = iter->ns->ucounts) {
--		long new = atomic_long_add_return(1, &iter->ucount[type]);
-+		long new = atomic_long_add_return(1, &iter->rlimit[type]);
- 		if (new < 0 || new > max)
- 			goto unwind;
- 		if (iter == ucounts)
-@@ -330,7 +330,7 @@ long inc_rlimit_get_ucounts(struct ucounts *ucounts, enum rlimit_type type)
- 	}
- 	return ret;
- dec_unwind:
--	dec = atomic_long_sub_return(1, &iter->ucount[type]);
-+	dec = atomic_long_sub_return(1, &iter->rlimit[type]);
- 	WARN_ON_ONCE(dec < 0);
- unwind:
- 	do_dec_rlimit_put_ucounts(ucounts, iter, type);
+Tested-by: Linux Kernel Functional Testing <lkft@linaro.org>
 
--- 
-Rgrds, legion
 
+Cheers,
+Anders
