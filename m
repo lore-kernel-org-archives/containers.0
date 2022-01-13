@@ -1,225 +1,182 @@
-Received: from out01.mta.xmission.com (out01.mta.xmission.com [166.70.13.231])
+Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EFA7F2C80;
-	Wed, 12 Jan 2022 17:57:51 +0000 (UTC)
-Received: from in01.mta.xmission.com ([166.70.13.51]:49380)
-	by out01.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1n7giC-008Sxe-NA; Wed, 12 Jan 2022 09:43:00 -0700
-Received: from ip68-110-24-146.om.om.cox.net ([68.110.24.146]:41266 helo=email.froward.int.ebiederm.org.xmission.com)
-	by in01.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1n7giB-005CcX-Bl; Wed, 12 Jan 2022 09:43:00 -0700
-From: "Eric W. Biederman" <ebiederm@xmission.com>
-To: Anders Roxell <anders.roxell@linaro.org>
-Cc: Alexey Gladkov <legion@kernel.org>,  Christian Brauner
- <christian.brauner@ubuntu.com>,  Naresh Kamboju
- <naresh.kamboju@linaro.org>,  open list <linux-kernel@vger.kernel.org>,
-  Linux-Next Mailing List <linux-next@vger.kernel.org>,
-  lkft-triage@lists.linaro.org,  LTP List <ltp@lists.linux.it>,
-  linux-fsdevel@vger.kernel.org,  regressions@lists.linux.dev,
-  containers@lists.linux.dev,  Sven Schnelle <svens@linux.ibm.com>,
-  Alexander Viro <viro@zeniv.linux.org.uk>,  Arnd Bergmann <arnd@arndb.de>
-References: <CA+G9fYsMHhXJCgO-ykR0oO1kVdusGnthgj6ifxEKaGPHZJ-ZCw@mail.gmail.com>
-	<20220112131837.igsjkkttqskw4eix@wittgenstein>
-	<CADYN=9Lvm-1etZS817eZK91NUyxkFBmsu=5-q_8Ei-1eV8DuZQ@mail.gmail.com>
-	<20220112140254.cvngcwggeevwaazw@wittgenstein>
-	<20220112141445.txgrdlycvfkiwsv5@example.org>
-	<20220112142846.3b3m2dyhdtppgwrw@example.org>
-	<CADYN=9LBjp0=mqyPkTGmdeMx52cg4pM39fnXe-ODTZ=_1OP+zw@mail.gmail.com>
-Date: Wed, 12 Jan 2022 10:42:32 -0600
-In-Reply-To: <CADYN=9LBjp0=mqyPkTGmdeMx52cg4pM39fnXe-ODTZ=_1OP+zw@mail.gmail.com>
-	(Anders Roxell's message of "Wed, 12 Jan 2022 16:56:27 +0100")
-Message-ID: <87v8yoq51j.fsf@email.froward.int.ebiederm.org>
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.1 (gnu/linux)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0D9022C9C
+	for <containers@lists.linux.dev>; Thu, 13 Jan 2022 20:27:18 +0000 (UTC)
+Received: from pps.filterd (m0098399.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 20DJpwAY020538;
+	Thu, 13 Jan 2022 20:27:01 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : subject :
+ from : to : cc : date : in-reply-to : references : content-type :
+ mime-version : content-transfer-encoding; s=pp1;
+ bh=5dWrKAUhgUEBU9SwdPioCU6ft6T7G3y3e0+T9mnYyP4=;
+ b=kIZD/WrhvFL2mOL5QB+2Gk4ZlteCvveJNNd1Bdn006MMNqJ2Lz/YnQuSg2xq/zEbAY6D
+ jxx+QEKdPh3czAER6Elc6kzbIpIPRiwEJ1bM0FyTQ2ybsVhrkJhWiV1SVtnupwJxxUrm
+ 10noQgkdbLnAvMaljzPdBHfS68CcvsOnMDvZTEqcSFxtzRjQ6TcH3oRxIgLB4BNu87aZ
+ V22Q5usZrteX5LYZD8muQNoe/J742Lb//SDaykT1pXwn1TGTV5BAlh0YfdJryEF8QcTG
+ irCbT/xyJb3/qukxeIydHMF7aEBOQ0SBj4vKeE17IfLt4udAryMm6uDTdPOTUdKo4w4/ 5Q== 
+Received: from pps.reinject (localhost [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3djtm2rt5c-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Thu, 13 Jan 2022 20:27:01 +0000
+Received: from m0098399.ppops.net (m0098399.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 20DJqQpo022200;
+	Thu, 13 Jan 2022 20:27:00 GMT
+Received: from ppma03ams.nl.ibm.com (62.31.33a9.ip4.static.sl-reverse.com [169.51.49.98])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3djtm2rt4h-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Thu, 13 Jan 2022 20:27:00 +0000
+Received: from pps.filterd (ppma03ams.nl.ibm.com [127.0.0.1])
+	by ppma03ams.nl.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 20DK8Rqs012516;
+	Thu, 13 Jan 2022 20:26:58 GMT
+Received: from b06cxnps4076.portsmouth.uk.ibm.com (d06relay13.portsmouth.uk.ibm.com [9.149.109.198])
+	by ppma03ams.nl.ibm.com with ESMTP id 3df28a85q1-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Thu, 13 Jan 2022 20:26:57 +0000
+Received: from d06av24.portsmouth.uk.ibm.com (mk.ibm.com [9.149.105.60])
+	by b06cxnps4076.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 20DKQs4h23920942
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Thu, 13 Jan 2022 20:26:54 GMT
+Received: from d06av24.portsmouth.uk.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id D737F42068;
+	Thu, 13 Jan 2022 20:26:53 +0000 (GMT)
+Received: from d06av24.portsmouth.uk.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 9EDC54204D;
+	Thu, 13 Jan 2022 20:26:51 +0000 (GMT)
+Received: from sig-9-65-68-109.ibm.com (unknown [9.65.68.109])
+	by d06av24.portsmouth.uk.ibm.com (Postfix) with ESMTP;
+	Thu, 13 Jan 2022 20:26:51 +0000 (GMT)
+Message-ID: <150cb51f95c3fe54e94edc5b96b2e15edb3bf399.camel@linux.ibm.com>
+Subject: Re: [PATCH v8 03/19] ima: Move policy related variables into
+ ima_namespace
+From: Mimi Zohar <zohar@linux.ibm.com>
+To: Stefan Berger <stefanb@linux.vnet.ibm.com>,
+        linux-integrity@vger.kernel.org
+Cc: serge@hallyn.com, christian.brauner@ubuntu.com, containers@lists.linux.dev,
+        dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
+        krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
+        mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
+        puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
+        linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
+        linux-security-module@vger.kernel.org, jmorris@namei.org,
+        Stefan Berger <stefanb@linux.ibm.com>
+Date: Thu, 13 Jan 2022 15:26:51 -0500
+In-Reply-To: <20220104170416.1923685-4-stefanb@linux.vnet.ibm.com>
+References: <20220104170416.1923685-1-stefanb@linux.vnet.ibm.com>
+	 <20220104170416.1923685-4-stefanb@linux.vnet.ibm.com>
+Content-Type: text/plain; charset="ISO-8859-15"
+X-Mailer: Evolution 3.28.5 (3.28.5-18.el8) 
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
-MIME-Version: 1.0
-Content-Type: text/plain
-X-XM-SPF: eid=1n7giB-005CcX-Bl;;;mid=<87v8yoq51j.fsf@email.froward.int.ebiederm.org>;;;hst=in01.mta.xmission.com;;;ip=68.110.24.146;;;frm=ebiederm@xmission.com;;;spf=neutral
-X-XM-AID: U2FsdGVkX19xVjhWaZhYL0/HgEx+P4VRuQZTUh+RHAs=
-X-SA-Exim-Connect-IP: 68.110.24.146
-X-SA-Exim-Mail-From: ebiederm@xmission.com
-X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on sa02.xmission.com
-X-Spam-Level: ****
-X-Spam-Status: No, score=4.2 required=8.0 tests=ALL_TRUSTED,BAYES_50,
-	DCC_CHECK_NEGATIVE,LotsOfNums_01,TR_Symld_Words,T_TM2_M_HEADER_IN_MSG,
-	T_TooManySym_01,T_TooManySym_02,T_TooManySym_03,T_XMDrugObfuBody_08,
-	XMSubLong autolearn=disabled version=3.4.2
-X-Spam-Virus: No
-X-Spam-Report: 
-	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
-	*  0.8 BAYES_50 BODY: Bayes spam probability is 40 to 60%
-	*      [score: 0.5000]
-	*  1.5 TR_Symld_Words too many words that have symbols inside
-	*  0.7 XMSubLong Long Subject
-	*  1.2 LotsOfNums_01 BODY: Lots of long strings of numbers
-	*  0.0 T_TM2_M_HEADER_IN_MSG BODY: No description available.
-	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
-	*      [sa02 1397; Body=1 Fuz1=1 Fuz2=1]
-	*  1.0 T_XMDrugObfuBody_08 obfuscated drug references
-	*  0.0 T_TooManySym_03 6+ unique symbols in subject
-	*  0.0 T_TooManySym_01 4+ unique symbols in subject
-	*  0.0 T_TooManySym_02 5+ unique symbols in subject
-X-Spam-DCC: XMission; sa02 1397; Body=1 Fuz1=1 Fuz2=1 
-X-Spam-Combo: ****;Anders Roxell <anders.roxell@linaro.org>
-X-Spam-Relay-Country: 
-X-Spam-Timing: total 663 ms - load_scoreonly_sql: 0.03 (0.0%),
-	signal_user_changed: 3.9 (0.6%), b_tie_ro: 2.7 (0.4%), parse: 0.85
-	(0.1%), extract_message_metadata: 18 (2.7%), get_uri_detail_list: 3.3
-	(0.5%), tests_pri_-1000: 25 (3.7%), tests_pri_-950: 1.01 (0.2%),
-	tests_pri_-900: 0.83 (0.1%), tests_pri_-90: 73 (10.9%), check_bayes:
-	71 (10.8%), b_tokenize: 12 (1.8%), b_tok_get_all: 13 (1.9%),
-	b_comp_prob: 2.5 (0.4%), b_tok_touch_all: 41 (6.2%), b_finish: 0.66
-	(0.1%), tests_pri_0: 526 (79.3%), check_dkim_signature: 0.44 (0.1%),
-	check_dkim_adsp: 1.45 (0.2%), poll_dns_idle: 0.27 (0.0%),
-	tests_pri_10: 2.8 (0.4%), tests_pri_500: 10 (1.5%), rewrite_mail: 0.00
-	(0.0%)
-Subject: Re: [next]: LTP: getxattr05.c:97: TFAIL: unshare(CLONE_NEWUSER)
- failed: ENOSPC (28)
-X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
-X-SA-Exim-Scanned: Yes (on in01.mta.xmission.com)
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-TM-AS-GCONF: 00
+X-Proofpoint-GUID: 180RLcFUDhkcHwTM1IEWXECOOOMN0Osl
+X-Proofpoint-ORIG-GUID: Fkrfi4gnFQS76AmMXASepKeK8fahk7XZ
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.205,Aquarius:18.0.816,Hydra:6.0.425,FMLib:17.11.62.513
+ definitions=2022-01-13_09,2022-01-13_01,2021-12-02_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 bulkscore=0 phishscore=0
+ spamscore=0 malwarescore=0 priorityscore=1501 mlxscore=0 adultscore=0
+ mlxlogscore=999 lowpriorityscore=0 suspectscore=0 impostorscore=0
+ clxscore=1015 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2110150000 definitions=main-2201130126
 
-Anders Roxell <anders.roxell@linaro.org> writes:
+Hi Stefan,
 
-> On Wed, 12 Jan 2022 at 15:28, Alexey Gladkov <legion@kernel.org> wrote:
->>
->> On Wed, Jan 12, 2022 at 03:14:45PM +0100, Alexey Gladkov wrote:
->> > On Wed, Jan 12, 2022 at 03:02:54PM +0100, Christian Brauner wrote:
->> > > On Wed, Jan 12, 2022 at 02:22:42PM +0100, Anders Roxell wrote:
->> > > > On Wed, 12 Jan 2022 at 14:18, Christian Brauner
->> > > > <christian.brauner@ubuntu.com> wrote:
->> > > > >
->> > > > > On Wed, Jan 12, 2022 at 05:15:37PM +0530, Naresh Kamboju wrote:
->> > > > > > While testing LTP syscalls with Linux next 20220110 (and till date 20220112)
->> > > > > > on x86_64, i386, arm and arm64 the following tests failed.
->> > > > > >
->> > > > > > tst_test.c:1365: TINFO: Timeout per run is 0h 15m 00s
->> > > > > > getxattr05.c:87: TPASS: Got same data when acquiring the value of
->> > > > > > system.posix_acl_access twice
->> > > > > > getxattr05.c:97: TFAIL: unshare(CLONE_NEWUSER) failed: ENOSPC (28)
->> > > > > > tst_test.c:391: TBROK: Invalid child (13545) exit value 1
->> > > > > >
->> > > > > > fanotify17.c:176: TINFO: Test #1: Global groups limit in privileged user ns
->> > > > > > fanotify17.c:155: TFAIL: unshare(CLONE_NEWUSER) failed: ENOSPC (28)
->> > > > > > tst_test.c:391: TBROK: Invalid child (14739) exit value 1
->> > > > > >
->> > > > > > sendto03.c:48: TBROK: unshare(268435456) failed: ENOSPC (28)
->> > > > > >
->> > > > > > setsockopt05.c:45: TBROK: unshare(268435456) failed: ENOSPC (28)
->> > > > > >
->> > > > > > strace output:
->> > > > > > --------------
->> > > > > > [pid   481] wait4(-1, 0x7fff52f5ae8c, 0, NULL) = -1 ECHILD (No child processes)
->> > > > > > [pid   481] clone(child_stack=NULL,
->> > > > > > flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD,
->> > > > > > child_tidptr=0x7f3af0fa7a10) = 483
->> > > > > > strace: Process 483 attached
->> > > > > > [pid   481] wait4(-1,  <unfinished ...>
->> > > > > > [pid   483] unshare(CLONE_NEWUSER)      = -1 ENOSPC (No space left on device)
->> > > > >
->> > > > > This looks like another regression in the ucount code. Reverting the
->> > > > > following commit fixes it and makes the getxattr05 test work again:
->> > > > >
->> > > > > commit 0315b634f933b0f12cfa82660322f6186c1aa0f4
->> > > > > Author: Alexey Gladkov <legion@kernel.org>
->> > > > > Date:   Fri Dec 17 15:48:23 2021 +0100
->> > > > >
->> > > > >     ucounts: Split rlimit and ucount values and max values
->> > > > >
->> > > > >     Since the semantics of maximum rlimit values are different, it would be
->> > > > >     better not to mix ucount and rlimit values. This will prevent the error
->> > > > >     of using inc_count/dec_ucount for rlimit parameters.
->> > > > >
->> > > > >     This patch also renames the functions to emphasize the lack of
->> > > > >     connection between rlimit and ucount.
->> > > > >
->> > > > >     v2:
->> > > > >     - Fix the array-index-out-of-bounds that was found by the lkp project.
->> > > > >
->> > > > >     Reported-by: kernel test robot <oliver.sang@intel.com>
->> > > > >     Signed-off-by: Alexey Gladkov <legion@kernel.org>
->> > > > >     Link: https://lkml.kernel.org/r/73ea569042babda5cee2092423da85027ceb471f.1639752364.git.legion@kernel.org
->> > > > >     Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
->> > > > >
->> > > > > The issue only surfaces if /proc/sys/user/max_user_namespaces is
->> > > > > actually written to.
->> > > >
->> > > > I did a git bisect and that pointed me to this patch too.
->> > >
->> > > Uhm, doesn't this want to be:
->> >
->> > Yes. I miss it. I tried not to mix the logic, but I myself stepped on this
->> > problem.
->>
->> It should be fixed in the four places:
->>
->> diff --git a/kernel/ucount.c b/kernel/ucount.c
->> index 22070f004e97..5c373a453f43 100644
->> --- a/kernel/ucount.c
->> +++ b/kernel/ucount.c
->> @@ -264,7 +264,7 @@ long inc_rlimit_ucounts(struct ucounts *ucounts, enum rlimit_type type, long v)
->>         long ret = 0;
->>
->>         for (iter = ucounts; iter; iter = iter->ns->ucounts) {
->> -               long new = atomic_long_add_return(v, &iter->ucount[type]);
->> +               long new = atomic_long_add_return(v, &iter->rlimit[type]);
->>                 if (new < 0 || new > max)
->>                         ret = LONG_MAX;
->>                 else if (iter == ucounts)
->> @@ -279,7 +279,7 @@ bool dec_rlimit_ucounts(struct ucounts *ucounts, enum rlimit_type type, long v)
->>         struct ucounts *iter;
->>         long new = -1; /* Silence compiler warning */
->>         for (iter = ucounts; iter; iter = iter->ns->ucounts) {
->> -               long dec = atomic_long_sub_return(v, &iter->ucount[type]);
->> +               long dec = atomic_long_sub_return(v, &iter->rlimit[type]);
->>                 WARN_ON_ONCE(dec < 0);
->>                 if (iter == ucounts)
->>                         new = dec;
->> @@ -292,7 +292,7 @@ static void do_dec_rlimit_put_ucounts(struct ucounts *ucounts,
->>  {
->>         struct ucounts *iter, *next;
->>         for (iter = ucounts; iter != last; iter = next) {
->> -               long dec = atomic_long_sub_return(1, &iter->ucount[type]);
->> +               long dec = atomic_long_sub_return(1, &iter->rlimit[type]);
->>                 WARN_ON_ONCE(dec < 0);
->>                 next = iter->ns->ucounts;
->>                 if (dec == 0)
->> @@ -313,7 +313,7 @@ long inc_rlimit_get_ucounts(struct ucounts *ucounts, enum rlimit_type type)
->>         long dec, ret = 0;
->>
->>         for (iter = ucounts; iter; iter = iter->ns->ucounts) {
->> -               long new = atomic_long_add_return(1, &iter->ucount[type]);
->> +               long new = atomic_long_add_return(1, &iter->rlimit[type]);
->>                 if (new < 0 || new > max)
->>                         goto unwind;
->>                 if (iter == ucounts)
->> @@ -330,7 +330,7 @@ long inc_rlimit_get_ucounts(struct ucounts *ucounts, enum rlimit_type type)
->>         }
->>         return ret;
->>  dec_unwind:
->> -       dec = atomic_long_sub_return(1, &iter->ucount[type]);
->> +       dec = atomic_long_sub_return(1, &iter->rlimit[type]);
->>         WARN_ON_ONCE(dec < 0);
->>  unwind:
->>         do_dec_rlimit_put_ucounts(ucounts, iter, type);
->>
->
-> Thank you for the fix.
-> I applied this patch and built and ran it in qemu for arm64 and x86.
-> './runltp -s getxattr05' passed on both architectures.
->
-> Tested-by: Linux Kernel Functional Testing <lkft@linaro.org>
+On Tue, 2022-01-04 at 12:04 -0500, Stefan Berger wrote:
+> From: Stefan Berger <stefanb@linux.ibm.com>
+> 
+> Move variables related to the IMA policy into the ima_namespace. This way
+> the IMA policy of an IMA namespace can be set and displayed using a
+> front-end like SecurityFS.
+> 
+> Implement ima_ns_from_file() to get the IMA namespace via the user
+> namespace of the SecurityFS superblock that a file belongs to.
+> 
+> To get the current ima_namespace use get_current_ns() when a function
+> that is related to a policy rule is called. In other cases where functions
+> are called due file attribute modifications, use init_ima_ns, since these
+> functions are related to IMA appraisal and changes to file attributes are
+> only relevant to the init_ima_ns until IMA namespaces also support IMA
+> appraisal. In ima_file_free() use init_ima_ns since in this case flags
+> related to file measurements may be affected, which is not supported in
+> IMA namespaces, yet.
+> 
+> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
 
-Thank you all.
+Please split this patch into "ima: pass through ima namespace", or some
+other name,  and "ima: Move policy related variables into
+ima_namespace".  The other option is to combine the "pass through ima
+namespace" with the 2nd patch, like Christian's example.
 
-For now I have dropped this from linux-next.  I will add the fix and
-will aim to get this cleanup in the next merge window.
+> ---
+>  security/integrity/ima/ima.h                 |  49 ++++---
+>  security/integrity/ima/ima_api.c             |   8 +-
+>  security/integrity/ima/ima_appraise.c        |  28 ++--
+>  security/integrity/ima/ima_asymmetric_keys.c |   4 +-
+>  security/integrity/ima/ima_fs.c              |  16 ++-
+>  security/integrity/ima/ima_init.c            |   8 +-
+>  security/integrity/ima/ima_init_ima_ns.c     |   6 +
+>  security/integrity/ima/ima_main.c            |  83 +++++++----
+>  security/integrity/ima/ima_policy.c          | 142 ++++++++++---------
+>  security/integrity/ima/ima_queue_keys.c      |  11 +-
+>  10 files changed, 213 insertions(+), 142 deletions(-)
+> 
+> diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+> index c4af3275f015..0b3dc9425076 100644
+> --- a/security/integrity/ima/ima.h
+> +++ b/security/integrity/ima/ima.h
+> @@ -20,6 +20,7 @@
+>  #include <linux/hash.h>
+>  #include <linux/tpm.h>
+>  #include <linux/audit.h>
+> +#include <linux/user_namespace.h>
+>  #include <crypto/hash_info.h>
+>  
+>  #include "../integrity.h"
+> @@ -43,9 +44,6 @@ enum tpm_pcrs { TPM_PCR0 = 0, TPM_PCR8 = 8, TPM_PCR10 = 10 };
+>  
+>  #define NR_BANKS(chip) ((chip != NULL) ? chip->nr_allocated_banks : 0)
+>  
+> -/* current content of the policy */
+> -extern int ima_policy_flag;
+> -
+>  /* bitset of digests algorithms allowed in the setxattr hook */
+>  extern atomic_t ima_setxattr_allowed_hash_algorithms;
+>  
+> @@ -120,6 +118,14 @@ struct ima_kexec_hdr {
+>  };
+>  
+>  struct ima_namespace {
+> +	struct list_head ima_default_rules;
+> +	/* ns's policy rules */
 
-Eric
+Thank you for adding comments.  Why is the ima_default_rules not
+considered "ns's policy rules"?   Will this come later or is it limited
+to init_ima_ns?
+
+> +	struct list_head ima_policy_rules;
+> +	struct list_head ima_temp_rules;
+> +	/* Pointer to ns's current policy */
+> +	struct list_head __rcu *ima_rules;
+
+Since "Pointer to ns's current policy" only refers to ima_rules, append
+it to the variable definition.
+
+> +	/* current content of the policy */
+> +	int ima_policy_flag;
+
+Similarly here append the comment to the variable definition.
+
+>  } __randomize_layout;
+>  extern struct ima_namespace init_ima_ns;
+
+thanks,
+
+Mimi
+
+
