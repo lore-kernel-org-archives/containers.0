@@ -1,21 +1,21 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 00C362C80
-	for <containers@lists.linux.dev>; Fri, 14 Jan 2022 11:21:22 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D524CC36AE5;
-	Fri, 14 Jan 2022 11:21:17 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 634A82C80
+	for <containers@lists.linux.dev>; Fri, 14 Jan 2022 11:43:29 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 431F4C36AEB;
+	Fri, 14 Jan 2022 11:43:24 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1642159282;
-	bh=NbrTOKw2NXpLjzztrax4ER9WDyfOxaxGE7tM1uu5Itg=;
+	s=k20201202; t=1642160609;
+	bh=bgmAhxQsVVgxRzj2THs9lrv78RfoWXCLdTlRB3+Zats=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=faMRwpg+FACzc2wAngUDsBwF57K/ahxeDdhKvPnZk60jDpOjPTCAjtaC7swrApGhV
-	 9aya7jA8F6uF8CV12qjbZDPQkYjTfrsUrxamOR4XpP9s6kFa4DW42+jjtr2t5GqmlC
-	 ga5Ckie1/NQa8I7NZheexto2eFqGWFlV4YTt1dEEDf3/j8Nay5dl3AkcuXp+/CK0LF
-	 eaKlyvdSqsNlNWxYDVJVst0rGAAdnGLJt8mejElocbf+LvRYxkfaQyj+AMaCcNvT9P
-	 0NDXiX4BCQJ3who3+JJ8xfl7r1XUNbnnHOR2xRwx0JGJFkaoMsh/3809sl6MwKl/nf
-	 f80Wf1x65X3RA==
-Date: Fri, 14 Jan 2022 12:21:14 +0100
+	b=D1mn2vqUD2BXCpYE0h8pk23H+u7UvwHfpA+zYovyknErHV1CC4+IcQ6F715d78sPO
+	 YxIfWCvIH/0/Lv91iKXfPgvNSHKnKJLqHVtr9gfv8v4PhwWDLiFvbD3FyYgjMrqeeO
+	 6N9sH9d0CJsVeLHfhfh5hSPt6CeX7Es4oIpIBAKaz9/wyYHuJdZb5q7ep5dFq68F96
+	 LgiBA8rnT22mhRwuXwT5DCWX7zWJbj0ApzsXCyxWzg9EOqEiKb/E+yGVzT1DtPx3+g
+	 OATxfYpIxmzGQhuOOJjhKPE27ll8DnBcxgx9oQadXBJCYXecJG3J4V9s2nhrjgjhz/
+	 Atl9yO0yy3qNw==
+Date: Fri, 14 Jan 2022 12:43:21 +0100
 From: Christian Brauner <brauner@kernel.org>
 To: Stefan Berger <stefanb@linux.vnet.ibm.com>
 Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
@@ -27,11 +27,11 @@ Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
 	linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
 	linux-security-module@vger.kernel.org, jmorris@namei.org,
 	Stefan Berger <stefanb@linux.ibm.com>
-Subject: Re: [PATCH v8 10/19] ima: Implement hierarchical processing of file
- accesses
-Message-ID: <20220114112114.tu4f56bm7tewzfmj@wittgenstein>
+Subject: Re: [PATCH v8 13/19] ima: Add functions for creation and freeing of
+ an ima_namespace
+Message-ID: <20220114114321.7prnt72ukvch4wxa@wittgenstein>
 References: <20220104170416.1923685-1-stefanb@linux.vnet.ibm.com>
- <20220104170416.1923685-11-stefanb@linux.vnet.ibm.com>
+ <20220104170416.1923685-14-stefanb@linux.vnet.ibm.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
@@ -40,110 +40,108 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20220104170416.1923685-11-stefanb@linux.vnet.ibm.com>
+In-Reply-To: <20220104170416.1923685-14-stefanb@linux.vnet.ibm.com>
 
-On Tue, Jan 04, 2022 at 12:04:07PM -0500, Stefan Berger wrote:
+On Tue, Jan 04, 2022 at 12:04:10PM -0500, Stefan Berger wrote:
 > From: Stefan Berger <stefanb@linux.ibm.com>
 > 
-> Implement hierarchical processing of file accesses in IMA namespaces by
-> walking the list of user namespaces towards the root. This way file
-> accesses can be audited in an IMA namespace and also be evaluated against
-> the IMA policies of parent IMA namespaces.
-> 
-> __process_measurement() returns either 0 or -EACCES. For hierarchical
-> processing remember the -EACCES returned by this function but continue
-> to the parent user namespace. At the end either return 0 or -EACCES
-> if an error occurred in one of the IMA namespaces.
-> 
-> Currently the ima_ns pointer of the user_namespace is always NULL except
-> at the init_user_ns, so test ima_ns for NULL pointer and skip the call to
-> __process_measurement() if it is NULL. Once IMA namespacing is fully
-> enabled, the pointer may also be NULL due to late initialization of the
-> IMA namespace.
+> Implement create_ima_ns() to create and initialize an ima_namespace
+> and implement free_ima_ns() to free it.
 > 
 > Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
 > ---
->  include/linux/ima.h               |  6 +++++
->  security/integrity/ima/ima_main.c | 37 +++++++++++++++++++++++++++----
->  2 files changed, 39 insertions(+), 4 deletions(-)
+>  include/linux/ima.h                      | 13 +++++
+>  security/integrity/ima/Makefile          |  1 +
+>  security/integrity/ima/ima.h             | 16 +++++++
+>  security/integrity/ima/ima_init_ima_ns.c |  2 +-
+>  security/integrity/ima/ima_ns.c          | 61 ++++++++++++++++++++++++
+>  5 files changed, 92 insertions(+), 1 deletion(-)
+>  create mode 100644 security/integrity/ima/ima_ns.c
 > 
 > diff --git a/include/linux/ima.h b/include/linux/ima.h
-> index b6ab66a546ae..fcee2a51bb87 100644
+> index e1d65162d1fb..06c88cb17b21 100644
 > --- a/include/linux/ima.h
 > +++ b/include/linux/ima.h
-> @@ -65,6 +65,12 @@ static inline const char * const *arch_get_ima_policy(void)
+> @@ -226,4 +226,17 @@ static inline bool ima_appraise_signature(enum kernel_read_file_id func)
+>  	return false;
 >  }
->  #endif
->  
-> +static inline struct user_namespace
-> +*ima_ns_to_user_ns(struct ima_namespace *ns)
+>  #endif /* CONFIG_IMA_APPRAISE && CONFIG_INTEGRITY_TRUSTED_KEYRING */
+> +
+> +#ifdef CONFIG_IMA_NS
+> +
+> +void free_ima_ns(struct user_namespace *ns);
+> +
+> +#else
+> +
+> +static inline void free_ima_ns(struct user_namespace *user_ns)
 > +{
-> +	return current_user_ns();
 > +}
 > +
->  #else
->  static inline enum hash_algo ima_get_current_hash_algo(void)
->  {
-> diff --git a/security/integrity/ima/ima_main.c b/security/integrity/ima/ima_main.c
-> index 621685d4eb95..51b0ef1cebbe 100644
-> --- a/security/integrity/ima/ima_main.c
-> +++ b/security/integrity/ima/ima_main.c
-> @@ -200,10 +200,10 @@ void ima_file_free(struct file *file)
->  	ima_check_last_writer(iint, inode, file);
+> +#endif /* CONFIG_IMA_NS */
+> +
+>  #endif /* _LINUX_IMA_H */
+> diff --git a/security/integrity/ima/Makefile b/security/integrity/ima/Makefile
+> index f8a5e5f3975d..b86a35fbed60 100644
+> --- a/security/integrity/ima/Makefile
+> +++ b/security/integrity/ima/Makefile
+> @@ -14,6 +14,7 @@ ima-$(CONFIG_HAVE_IMA_KEXEC) += ima_kexec.o
+>  ima-$(CONFIG_IMA_BLACKLIST_KEYRING) += ima_mok.o
+>  ima-$(CONFIG_IMA_MEASURE_ASYMMETRIC_KEYS) += ima_asymmetric_keys.o
+>  ima-$(CONFIG_IMA_QUEUE_EARLY_BOOT_KEYS) += ima_queue_keys.o
+> +ima-$(CONFIG_IMA_NS) += ima_ns.o
+>  
+>  ifeq ($(CONFIG_EFI),y)
+>  ima-$(CONFIG_IMA_SECURE_AND_OR_TRUSTED_BOOT) += ima_efi.o
+> diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+> index f63c6f22b853..4255301e5b96 100644
+> --- a/security/integrity/ima/ima.h
+> +++ b/security/integrity/ima/ima.h
+> @@ -163,6 +163,7 @@ extern bool ima_canonical_fmt;
+>  int ima_init(void);
+>  int ima_fs_init(void);
+>  int ima_ns_init(void);
+> +int ima_init_namespace(struct ima_namespace *ns);
+>  int ima_add_template_entry(struct ima_namespace *ns,
+>  			   struct ima_template_entry *entry, int violation,
+>  			   const char *op, struct inode *inode,
+> @@ -503,4 +504,19 @@ static inline struct ima_namespace *get_current_ns(void)
+>  	return &init_ima_ns;
 >  }
 >  
-> -static int process_measurement(struct ima_namespace *ns,
-> -			       struct file *file, const struct cred *cred,
-> -			       u32 secid, char *buf, loff_t size, int mask,
-> -			       enum ima_hooks func)
-> +static int __process_measurement(struct ima_namespace *ns,
-> +				 struct file *file, const struct cred *cred,
-> +				 u32 secid, char *buf, loff_t size, int mask,
-> +				 enum ima_hooks func)
->  {
->  	struct inode *inode = file_inode(file);
->  	struct integrity_iint_cache *iint = NULL;
-> @@ -395,6 +395,35 @@ static int process_measurement(struct ima_namespace *ns,
->  	return 0;
->  }
->  
-> +static int process_measurement(struct ima_namespace *ns,
-> +			       struct file *file, const struct cred *cred,
-> +			       u32 secid, char *buf, loff_t size, int mask,
-> +			       enum ima_hooks func)
+> +#ifdef CONFIG_IMA_NS
+> +
+> +struct ima_namespace *create_ima_ns(struct user_namespace *user_ns);
+> +
+> +#else
+> +
+> +static inline struct ima_namespace *
+> +create_ima_ns(struct user_namespace *user_ns)
+
+Why are you introducing these functions in 13/19 when you're first using
+it in the last patch of this series?
+
 > +{
-> +	struct user_namespace *user_ns = ima_ns_to_user_ns(ns);
-> +	int ret = 0;
-> +
-> +	while (user_ns) {
-> +		ns = ima_ns_from_user_ns(user_ns);
-> +		if (ns) {
-> +			int rc;
-> +
-> +			rc = __process_measurement(ns, file, cred, secid, buf,
-> +						   size, mask, func);
-> +			switch (rc) {
-> +			case -EACCES:
-> +				/* return this error at the end but continue */
-> +				ret = -EACCES;
-> +				break;
+> +	WARN(1, "Cannot create an IMA namespace\n");
+> +	return ERR_PTR(-EFAULT);
+> +}
 
-This seems risky. Every error not -EACCES will be counted as a success.
-It doesn't look like __process_measurement() will return anything else
-but I would still place a WARN_ON() or WARN_ON_ONCE() in there to make
-that assumption explicit.
+I think I pointed this out earlier or made illustrated it in my draft
+patch earlier. This function should not return a ptr to an ima
+namespace. That's just not necessary: the ima namespace _is stashed in
+struct user namespace_:
 
-Right now it looks like your only error condition is -EACCES and non-ima
-cracks like me need to read through __process_measurement() to figure
-out that that's ok. With a WARN_ON* in there I'd not have needed to bother.
+static int create_ima_ns(struct uesr_namespace *user_ns)
+{
+	[...]
 
-switch (rc) {
-case -EACCES:
-	/* return this error at the end but continue */
-	ret = -EACCES;
-	break
-default:
-	WARN_ON_ONCE(true);
+	/* Pairs with [...] */
+	smp_store_release(&user_ns->ima_ns, ns);
+	return 0;
 }
 
-or sm similar.
+and in the other case:
+
+static inline create_ima_ns(struct user_namespace *user_ns)
+{
+	return -EINVAL;
+}
