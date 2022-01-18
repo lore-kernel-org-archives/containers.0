@@ -1,53 +1,53 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CE3432C9C
-	for <containers@lists.linux.dev>; Tue, 18 Jan 2022 18:25:55 +0000 (UTC)
-Received: from pps.filterd (m0098413.ppops.net [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 20IH2P5o031785;
-	Tue, 18 Jan 2022 18:25:45 GMT
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ABC112C82
+	for <containers@lists.linux.dev>; Tue, 18 Jan 2022 20:13:12 +0000 (UTC)
+Received: from pps.filterd (m0127361.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 20IHRDhv010575;
+	Tue, 18 Jan 2022 20:13:05 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
  mime-version : subject : to : cc : references : from : in-reply-to :
  content-type : content-transfer-encoding; s=pp1;
- bh=iE9WKD1YJTxYs5keYigsr8/4SV2jwquBdbV3r5pWp08=;
- b=M9zkN6O4Bknm74VroZcEhcqzTgXhAJ7PWKSnOFk4IU9VTO+QrPS/XZkByB1fYYOvFUws
- 0HrL+HOZCiPY4CkyQceEfXL3J3s1Hj3DO/8RBYa5uSEzpT7SdKMA95jK6T15y77Ucgyl
- /tOae2iiWFPlzaotU0RZ2hqdU4rm/T1j8twm1yIkpjtm2ZYewwaexVowKTK9N9lgpJCp
- RZuYQUdxiAk7HSBw0Mml7Tx3kblDHM4L3G8cdvbFijkJ/8yoLRJkFcEtiIPJZmr3IcZN
- rQMnifUdQCE4LzHHxChUqdqY9/5VG00LMo8IgRIAtYEtx26ItaPgML0is5aZ2y8z1Nrr rQ== 
+ bh=APUYDznO3Quaz+Sc0s0sZb+MiLSW6FJB7cBY6Cn3RU8=;
+ b=ObkN5+WSWaysDU41ut+nVvODrD7MO2qpmHSCN9bE1sn8UfYMjbUkYF339tZ1YXVI1L7j
+ L7v4tSZQCL8uaNLgx4M4WXZp04y0FtPHINkf5thG3x/9PX4oMG1zBHtPXvhzGQ+3Ujdr
+ k2lWrcdt/mDP1CoWKaQCsvyhn5czaSA3nYNmFZDJNL/ljbcnIz1yCVwNCPhPQ+5TGqQp
+ 6QV7lVzPZOEaowdKH7Zhc7Bew0d1iY6IFMqto2UfjJaWfKEVbE90LXGJH/+VKJDZgaIA
+ oZKw5Vqwu5dX0HQRKB5/si1G5UnIxAoVQsFRbfdmmU53Jp1v+0qM0BLk2R+1EEhOztXm Zw== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3dp1kq26kh-1
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3dp1yavjt1-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 18 Jan 2022 18:25:44 +0000
-Received: from m0098413.ppops.net (m0098413.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 20IH3WSH003597;
-	Tue, 18 Jan 2022 18:25:44 GMT
-Received: from ppma04dal.us.ibm.com (7a.29.35a9.ip4.static.sl-reverse.com [169.53.41.122])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3dp1kq26k1-1
+	Tue, 18 Jan 2022 20:13:05 +0000
+Received: from m0127361.ppops.net (m0127361.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 20IJZuSU004306;
+	Tue, 18 Jan 2022 20:13:05 GMT
+Received: from ppma05wdc.us.ibm.com (1b.90.2fa9.ip4.static.sl-reverse.com [169.47.144.27])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3dp1yavjsn-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 18 Jan 2022 18:25:44 +0000
-Received: from pps.filterd (ppma04dal.us.ibm.com [127.0.0.1])
-	by ppma04dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 20IIHeoF019546;
-	Tue, 18 Jan 2022 18:25:43 GMT
-Received: from b03cxnp07027.gho.boulder.ibm.com (b03cxnp07027.gho.boulder.ibm.com [9.17.130.14])
-	by ppma04dal.us.ibm.com with ESMTP id 3dknwavyjv-1
+	Tue, 18 Jan 2022 20:13:05 +0000
+Received: from pps.filterd (ppma05wdc.us.ibm.com [127.0.0.1])
+	by ppma05wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 20IK1xJP012541;
+	Tue, 18 Jan 2022 20:13:04 GMT
+Received: from b03cxnp08027.gho.boulder.ibm.com (b03cxnp08027.gho.boulder.ibm.com [9.17.130.19])
+	by ppma05wdc.us.ibm.com with ESMTP id 3dknwasc5j-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 18 Jan 2022 18:25:43 +0000
-Received: from b03ledav003.gho.boulder.ibm.com (b03ledav003.gho.boulder.ibm.com [9.17.130.234])
-	by b03cxnp07027.gho.boulder.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 20IIPfNF31326610
+	Tue, 18 Jan 2022 20:13:04 +0000
+Received: from b03ledav005.gho.boulder.ibm.com (b03ledav005.gho.boulder.ibm.com [9.17.130.236])
+	by b03cxnp08027.gho.boulder.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 20IKD3U815466788
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Tue, 18 Jan 2022 18:25:42 GMT
-Received: from b03ledav003.gho.boulder.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id DF2E86A05F;
-	Tue, 18 Jan 2022 18:25:41 +0000 (GMT)
-Received: from b03ledav003.gho.boulder.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 52B7E6A04D;
-	Tue, 18 Jan 2022 18:25:39 +0000 (GMT)
+	Tue, 18 Jan 2022 20:13:03 GMT
+Received: from b03ledav005.gho.boulder.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id E6372BE05A;
+	Tue, 18 Jan 2022 20:13:02 +0000 (GMT)
+Received: from b03ledav005.gho.boulder.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 8C635BE059;
+	Tue, 18 Jan 2022 20:13:00 +0000 (GMT)
 Received: from [9.47.158.152] (unknown [9.47.158.152])
-	by b03ledav003.gho.boulder.ibm.com (Postfix) with ESMTP;
-	Tue, 18 Jan 2022 18:25:39 +0000 (GMT)
-Message-ID: <546afc0c-8d86-e471-49cd-8665cea643fb@linux.ibm.com>
-Date: Tue, 18 Jan 2022 13:25:38 -0500
+	by b03ledav005.gho.boulder.ibm.com (Postfix) with ESMTP;
+	Tue, 18 Jan 2022 20:13:00 +0000 (GMT)
+Message-ID: <d53a66a2-17e2-54b3-f115-efd7c58080a7@linux.ibm.com>
+Date: Tue, 18 Jan 2022 15:12:59 -0500
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
@@ -56,13 +56,13 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
  Thunderbird/91.3.0
-Subject: Re: [PATCH v8 10/19] ima: Implement hierarchical processing of file
- accesses
+Subject: Re: [PATCH v8 07/19] ima: Move dentry into ima_namespace and others
+ onto stack
 Content-Language: en-US
-To: Christian Brauner <brauner@kernel.org>,
-        Stefan Berger <stefanb@linux.vnet.ibm.com>
-Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
-        christian.brauner@ubuntu.com, containers@lists.linux.dev,
+To: Mimi Zohar <zohar@linux.ibm.com>,
+        Stefan Berger <stefanb@linux.vnet.ibm.com>,
+        linux-integrity@vger.kernel.org
+Cc: serge@hallyn.com, christian.brauner@ubuntu.com, containers@lists.linux.dev,
         dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
         krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
         mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
@@ -70,133 +70,89 @@ Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
         linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
         linux-security-module@vger.kernel.org, jmorris@namei.org
 References: <20220104170416.1923685-1-stefanb@linux.vnet.ibm.com>
- <20220104170416.1923685-11-stefanb@linux.vnet.ibm.com>
- <20220114112114.tu4f56bm7tewzfmj@wittgenstein>
+ <20220104170416.1923685-8-stefanb@linux.vnet.ibm.com>
+ <a7c5ac94b4c4d87b407353f74ff87bc0b13542a4.camel@linux.ibm.com>
 From: Stefan Berger <stefanb@linux.ibm.com>
-In-Reply-To: <20220114112114.tu4f56bm7tewzfmj@wittgenstein>
+In-Reply-To: <a7c5ac94b4c4d87b407353f74ff87bc0b13542a4.camel@linux.ibm.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: VNH60PNfUU_LgIrC_cUmgkt2DVU7OxvU
-X-Proofpoint-GUID: aqpCJlpBsGArLMbKizDpsEL0PYhojCq-
+X-Proofpoint-ORIG-GUID: 3HaX4pOfEpqkwQI_nTwVgEtt-lcLRJrf
+X-Proofpoint-GUID: HTpAqsbImGmRNkb9a8LkaDtqEYrZAuWZ
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.816,Hydra:6.0.425,FMLib:17.11.62.513
  definitions=2022-01-18_05,2022-01-18_01,2021-12-02_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 spamscore=0 phishscore=0
- suspectscore=0 impostorscore=0 malwarescore=0 lowpriorityscore=0
- bulkscore=0 mlxscore=0 clxscore=1015 adultscore=0 mlxlogscore=999
- priorityscore=1501 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2110150000 definitions=main-2201180109
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 lowpriorityscore=0
+ adultscore=0 malwarescore=0 phishscore=0 mlxlogscore=999 bulkscore=0
+ priorityscore=1501 clxscore=1015 impostorscore=0 suspectscore=0 mlxscore=0
+ spamscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2110150000 definitions=main-2201180119
 
 
-On 1/14/22 06:21, Christian Brauner wrote:
-> On Tue, Jan 04, 2022 at 12:04:07PM -0500, Stefan Berger wrote:
+On 1/13/22 15:28, Mimi Zohar wrote:
+> Hi Stefan,
+>
+> Nobody refers to the IMA securityfs files as dentries.  The Subject
+> line is suppose to provide a hint about the patch.  How about changing
+> the "Subject" line to "ima: Move IMA securityfs files into
+> ima_namespaces or onto stack".
+>
+> On Tue, 2022-01-04 at 12:04 -0500, Stefan Berger wrote:
 >> From: Stefan Berger <stefanb@linux.ibm.com>
 >>
->> Implement hierarchical processing of file accesses in IMA namespaces by
->> walking the list of user namespaces towards the root. This way file
->> accesses can be audited in an IMA namespace and also be evaluated against
->> the IMA policies of parent IMA namespaces.
->>
->> __process_measurement() returns either 0 or -EACCES. For hierarchical
->> processing remember the -EACCES returned by this function but continue
->> to the parent user namespace. At the end either return 0 or -EACCES
->> if an error occurred in one of the IMA namespaces.
->>
->> Currently the ima_ns pointer of the user_namespace is always NULL except
->> at the init_user_ns, so test ima_ns for NULL pointer and skip the call to
->> __process_measurement() if it is NULL. Once IMA namespacing is fully
->> enabled, the pointer may also be NULL due to late initialization of the
->> IMA namespace.
->>
+>> Move the policy file dentry into the ima_namespace for reuse by
+>> virtualized SecurityFS and for being able to remove it from
+>> the filesystem. Move the other dentries onto the stack.
+> Missing is an explanation why the other IMA securityfs files can be on
+> the stack.  Maybe start out by saying that the ns_ima_init securityfs
+> files are never deleted.  Then transition into the IMA namespaced
+> securityfs files and how they will be deleted.
+
+How about this:
+
+ima: Move IMA securityfs files into ima_namespace or onto stack
+
+Move the IMA policy file's dentry into the ima_namespace for reuse by
+virtualized securityfs and for being able to remove the file from the
+filesystem using securityfs_remove().
+
+Move the other files' dentries onto the stack since they are not needed
+outside the function where they are created in. Also, their cleanup is
+automatically handled by the filesystem upon umount of a virtualized
+secruityfs instance, so they don't need to be explicitly freed anymore.
+
+When moving the dentry 'ima_policy' into ima_namespace rename it to
+'policy_dentry' to clarify its datatype and avoid a name clash with
+'int ima_policy' from ima_policy.c.
+
+    Stefan
+
+
+
 >> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
 >> ---
->>   include/linux/ima.h               |  6 +++++
->>   security/integrity/ima/ima_main.c | 37 +++++++++++++++++++++++++++----
->>   2 files changed, 39 insertions(+), 4 deletions(-)
+>>   security/integrity/ima/ima.h    |  2 ++
+>>   security/integrity/ima/ima_fs.c | 32 ++++++++++++++++++--------------
+>>   2 files changed, 20 insertions(+), 14 deletions(-)
 >>
->> diff --git a/include/linux/ima.h b/include/linux/ima.h
->> index b6ab66a546ae..fcee2a51bb87 100644
->> --- a/include/linux/ima.h
->> +++ b/include/linux/ima.h
->> @@ -65,6 +65,12 @@ static inline const char * const *arch_get_ima_policy(void)
->>   }
->>   #endif
->>   
->> +static inline struct user_namespace
->> +*ima_ns_to_user_ns(struct ima_namespace *ns)
->> +{
->> +	return current_user_ns();
->> +}
+>> diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+>> index 82b3f6a98320..224b09617c52 100644
+>> --- a/security/integrity/ima/ima.h
+>> +++ b/security/integrity/ima/ima.h
+>> @@ -140,6 +140,8 @@ struct ima_namespace {
+>>   	struct mutex ima_write_mutex;
+>>   	unsigned long ima_fs_flags;
+>>   	int valid_policy;
 >> +
->>   #else
->>   static inline enum hash_algo ima_get_current_hash_algo(void)
->>   {
->> diff --git a/security/integrity/ima/ima_main.c b/security/integrity/ima/ima_main.c
->> index 621685d4eb95..51b0ef1cebbe 100644
->> --- a/security/integrity/ima/ima_main.c
->> +++ b/security/integrity/ima/ima_main.c
->> @@ -200,10 +200,10 @@ void ima_file_free(struct file *file)
->>   	ima_check_last_writer(iint, inode, file);
->>   }
->>   
->> -static int process_measurement(struct ima_namespace *ns,
->> -			       struct file *file, const struct cred *cred,
->> -			       u32 secid, char *buf, loff_t size, int mask,
->> -			       enum ima_hooks func)
->> +static int __process_measurement(struct ima_namespace *ns,
->> +				 struct file *file, const struct cred *cred,
->> +				 u32 secid, char *buf, loff_t size, int mask,
->> +				 enum ima_hooks func)
->>   {
->>   	struct inode *inode = file_inode(file);
->>   	struct integrity_iint_cache *iint = NULL;
->> @@ -395,6 +395,35 @@ static int process_measurement(struct ima_namespace *ns,
->>   	return 0;
->>   }
->>   
->> +static int process_measurement(struct ima_namespace *ns,
->> +			       struct file *file, const struct cred *cred,
->> +			       u32 secid, char *buf, loff_t size, int mask,
->> +			       enum ima_hooks func)
->> +{
->> +	struct user_namespace *user_ns = ima_ns_to_user_ns(ns);
->> +	int ret = 0;
->> +
->> +	while (user_ns) {
->> +		ns = ima_ns_from_user_ns(user_ns);
->> +		if (ns) {
->> +			int rc;
->> +
->> +			rc = __process_measurement(ns, file, cred, secid, buf,
->> +						   size, mask, func);
->> +			switch (rc) {
->> +			case -EACCES:
->> +				/* return this error at the end but continue */
->> +				ret = -EACCES;
->> +				break;
-> This seems risky. Every error not -EACCES will be counted as a success.
-> It doesn't look like __process_measurement() will return anything else
-> but I would still place a WARN_ON() or WARN_ON_ONCE() in there to make
-> that assumption explicit.
+>> +	struct dentry *policy_dentry;
+> None of the other securityfs files are renamed.  Why is "ima_policy"
+> being renamed to "policy_dentry"?  If there is a need, it should be
+> documented in the patch description.
 >
-> Right now it looks like your only error condition is -EACCES and non-ima
-> cracks like me need to read through __process_measurement() to figure
-> out that that's ok. With a WARN_ON* in there I'd not have needed to bother.
+> thanks,
 >
-> switch (rc) {
-> case -EACCES:
-> 	/* return this error at the end but continue */
-> 	ret = -EACCES;
-> 	break
-> default:
-> 	WARN_ON_ONCE(true);
-              ret = -EINVAL;
-> }
+> Mimi
 >
-> or sm similar.
-
-
-Agreed. To be on the safe side I would add a ret = -EINVAL to it for the 
-unhandled case as shown above.
-
+>>   } __randomize_layout;
+>>   extern struct ima_namespace init_ima_ns;
+>>
