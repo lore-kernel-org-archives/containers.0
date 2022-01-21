@@ -1,209 +1,456 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+Received: from us-smtp-delivery-44.mimecast.com (us-smtp-delivery-44.mimecast.com [207.211.30.44])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 687BF2CA3
-	for <containers@lists.linux.dev>; Wed, 19 Jan 2022 13:32:44 +0000 (UTC)
-Received: from pps.filterd (m0098420.ppops.net [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 20JAvcst028475;
-	Wed, 19 Jan 2022 13:32:32 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
- mime-version : subject : to : cc : references : from : in-reply-to :
- content-type : content-transfer-encoding; s=pp1;
- bh=iQOM2B7pBkIu/v+1xQgTsapMW9lVF15319i1ZV98854=;
- b=Vvjfbr4zVL9FdnR3nFn8gSMLljR+2Z6Aksroq4Msrzxn+vHEyENF1wVPHXz3aneaoRtm
- 7rsHbQLqOI63bM6IkQ51vu7v5/nH7QUCYhsCBIw37CCW6DB/pmGoNcjCYCIGlF5pJ0em
- Vwe6OiP5Upsi5xIt0swkziqFnh98Kj41NW3tqD5SMGeuJ/PVyUgQxoYfinOxALcOqW+/
- LLXYmEFexgHqaqWmdyq6QuOUOKTH+Q3udWsfku4rK0rHzrHiAE6Nq1nU3KN0UdbQZTUJ
- HOxNEkoWLLpgJBxXgaHtwKE0Nx8lIKUW82/4lRc899iK1sK7TyMeCkjLrRHVk/sPg80G ag== 
-Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3dphbqb6h9-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 19 Jan 2022 13:32:32 +0000
-Received: from m0098420.ppops.net (m0098420.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 20JDL71R012456;
-	Wed, 19 Jan 2022 13:32:31 GMT
-Received: from ppma03wdc.us.ibm.com (ba.79.3fa9.ip4.static.sl-reverse.com [169.63.121.186])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3dphbqb6gj-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 19 Jan 2022 13:32:31 +0000
-Received: from pps.filterd (ppma03wdc.us.ibm.com [127.0.0.1])
-	by ppma03wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 20JDH8nG016689;
-	Wed, 19 Jan 2022 13:32:30 GMT
-Received: from b03cxnp07028.gho.boulder.ibm.com (b03cxnp07028.gho.boulder.ibm.com [9.17.130.15])
-	by ppma03wdc.us.ibm.com with ESMTP id 3dknwaggg8-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 19 Jan 2022 13:32:30 +0000
-Received: from b03ledav005.gho.boulder.ibm.com (b03ledav005.gho.boulder.ibm.com [9.17.130.236])
-	by b03cxnp07028.gho.boulder.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 20JDWTOi30409176
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Wed, 19 Jan 2022 13:32:29 GMT
-Received: from b03ledav005.gho.boulder.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 14F6DBE05B;
-	Wed, 19 Jan 2022 13:32:29 +0000 (GMT)
-Received: from b03ledav005.gho.boulder.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 37A52BE053;
-	Wed, 19 Jan 2022 13:32:26 +0000 (GMT)
-Received: from [9.47.158.152] (unknown [9.47.158.152])
-	by b03ledav005.gho.boulder.ibm.com (Postfix) with ESMTP;
-	Wed, 19 Jan 2022 13:32:25 +0000 (GMT)
-Message-ID: <c76b2bfc-d629-c720-e13c-84367524b88f@linux.ibm.com>
-Date: Wed, 19 Jan 2022 08:32:24 -0500
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 798C12C80
+	for <containers@lists.linux.dev>; Fri, 21 Jan 2022 13:10:15 +0000 (UTC)
+Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
+ [209.132.183.4]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ us-mta-355-2fp-tSzhPpi_DP4pLkh_6Q-1; Fri, 21 Jan 2022 08:10:12 -0500
+X-MC-Unique: 2fp-tSzhPpi_DP4pLkh_6Q-1
+Received: from smtp.corp.redhat.com (int-mx04.intmail.prod.int.phx2.redhat.com [10.5.11.14])
+	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	by mimecast-mx01.redhat.com (Postfix) with ESMTPS id EDBD983DEE1;
+	Fri, 21 Jan 2022 13:10:10 +0000 (UTC)
+Received: from comp-core-i7-2640m-0182e6.redhat.com (unknown [10.36.110.3])
+	by smtp.corp.redhat.com (Postfix) with ESMTP id A985078AA0;
+	Fri, 21 Jan 2022 13:09:11 +0000 (UTC)
+From: Alexey Gladkov <legion@kernel.org>
+To: LKML <linux-kernel@vger.kernel.org>,
+	Linux Containers <containers@lists.linux.dev>
+Cc: Alexander Mikhalitsyn <alexander.mikhalitsyn@virtuozzo.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Christian Brauner <christian.brauner@ubuntu.com>,
+	Daniel Walsh <dwalsh@redhat.com>,
+	Davidlohr Bueso <dbueso@suse.de>,
+	"Eric W . Biederman" <ebiederm@xmission.com>,
+	Kirill Tkhai <ktkhai@virtuozzo.com>,
+	Manfred Spraul <manfred@colorfullife.com>,
+	Serge Hallyn <serge@hallyn.com>,
+	Varad Gautam <varad.gautam@suse.com>,
+	Vasily Averin <vvs@virtuozzo.com>
+Subject: [RFC PATCH v3 2/4] ipc: Store ipc sysctls in the ipc namespace
+Date: Fri, 21 Jan 2022 14:08:39 +0100
+Message-Id: <5cee8775a57c18d56701b39d28dfbe9ad8a7cc38.1642769810.git.legion@kernel.org>
+In-Reply-To: <cover.1642769810.git.legion@kernel.org>
+References: <87tuebwo99.fsf@email.froward.int.ebiederm.org> <cover.1642769810.git.legion@kernel.org>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.3.0
-Subject: Re: [PATCH v8 03/19] ima: Move policy related variables into
- ima_namespace
-Content-Language: en-US
-To: Mimi Zohar <zohar@linux.ibm.com>,
-        Stefan Berger <stefanb@linux.vnet.ibm.com>,
-        linux-integrity@vger.kernel.org
-Cc: serge@hallyn.com, christian.brauner@ubuntu.com, containers@lists.linux.dev,
-        dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
-        krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
-        mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
-        puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
-        linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
-        linux-security-module@vger.kernel.org, jmorris@namei.org
-References: <20220104170416.1923685-1-stefanb@linux.vnet.ibm.com>
- <20220104170416.1923685-4-stefanb@linux.vnet.ibm.com>
- <150cb51f95c3fe54e94edc5b96b2e15edb3bf399.camel@linux.ibm.com>
-From: Stefan Berger <stefanb@linux.ibm.com>
-In-Reply-To: <150cb51f95c3fe54e94edc5b96b2e15edb3bf399.camel@linux.ibm.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: J1Ciy3qNc1FEHBz2o0_fECRRD-mCAzYY
-X-Proofpoint-ORIG-GUID: Y6LSk7xDS6psh9z4QijZWX87OwSxJpQy
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.205,Aquarius:18.0.816,Hydra:6.0.425,FMLib:17.11.62.513
- definitions=2022-01-19_07,2022-01-19_01,2021-12-02_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 malwarescore=0 phishscore=0
- mlxlogscore=999 spamscore=0 priorityscore=1501 impostorscore=0
- lowpriorityscore=0 clxscore=1015 bulkscore=0 suspectscore=0 mlxscore=0
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2110150000 definitions=main-2201190075
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.14
+Authentication-Results: relay.mimecast.com;
+	auth=pass smtp.auth=CUSA124A263 smtp.mailfrom=legion@kernel.org
+X-Mimecast-Spam-Score: 0
+X-Mimecast-Originator: kernel.org
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=WINDOWS-1252
 
+The ipc sysctls are not available for modification inside the user
+namespace. Following the mqueue sysctls, we changed the implementation
+to be more userns friendly.
 
-On 1/13/22 15:26, Mimi Zohar wrote:
-> Hi Stefan,
->
-> On Tue, 2022-01-04 at 12:04 -0500, Stefan Berger wrote:
->> From: Stefan Berger <stefanb@linux.ibm.com>
->>
->> Move variables related to the IMA policy into the ima_namespace. This way
->> the IMA policy of an IMA namespace can be set and displayed using a
->> front-end like SecurityFS.
->>
->> Implement ima_ns_from_file() to get the IMA namespace via the user
->> namespace of the SecurityFS superblock that a file belongs to.
->>
->> To get the current ima_namespace use get_current_ns() when a function
->> that is related to a policy rule is called. In other cases where functions
->> are called due file attribute modifications, use init_ima_ns, since these
->> functions are related to IMA appraisal and changes to file attributes are
->> only relevant to the init_ima_ns until IMA namespaces also support IMA
->> appraisal. In ima_file_free() use init_ima_ns since in this case flags
->> related to file measurements may be affected, which is not supported in
->> IMA namespaces, yet.
->>
->> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-> Please split this patch into "ima: pass through ima namespace", or some
-> other name,  and "ima: Move policy related variables into
+So far, the changes do not provide additional access to files. This
+will be done in a future patch.
 
-What is supposed to happen in the 'ima: pass through ima namespace' 
-patch? What part of this patch do you expect to see there and what do 
-you want to see deferred to a 2nd patch?
+Signed-off-by: Alexey Gladkov <legion@kernel.org>
+---
+ include/linux/ipc_namespace.h |  21 ++++
+ ipc/ipc_sysctl.c              | 189 ++++++++++++++++++++++------------
+ ipc/namespace.c               |   4 +
+ 3 files changed, 147 insertions(+), 67 deletions(-)
 
+diff --git a/include/linux/ipc_namespace.h b/include/linux/ipc_namespace.h
+index fa787d97d60a..94af746704fa 100644
+--- a/include/linux/ipc_namespace.h
++++ b/include/linux/ipc_namespace.h
+@@ -67,6 +67,9 @@ struct ipc_namespace {
+ =09struct ctl_table_set=09mq_set;
+ =09struct ctl_table_header=09*mq_sysctls;
+=20
++=09struct ctl_table_set=09set;
++=09struct ctl_table_header=09*ipc_sysctls;
++
+ =09/* user_ns which owns the ipc ns */
+ =09struct user_namespace *user_ns;
+ =09struct ucounts *ucounts;
+@@ -188,4 +191,22 @@ static inline bool setup_mq_sysctls(struct ipc_namespa=
+ce *ns)
+ }
+=20
+ #endif /* CONFIG_POSIX_MQUEUE_SYSCTL */
++
++#ifdef CONFIG_SYSVIPC_SYSCTL
++
++bool setup_ipc_sysctls(struct ipc_namespace *ns);
++void retire_ipc_sysctls(struct ipc_namespace *ns);
++
++#else /* CONFIG_SYSVIPC_SYSCTL */
++
++static inline void retire_ipc_sysctls(struct ipc_namespace *ns)
++{
++}
++
++static inline bool setup_ipc_sysctls(struct ipc_namespace *ns)
++{
++=09return true;
++}
++
++#endif /* CONFIG_SYSVIPC_SYSCTL */
+ #endif
+diff --git a/ipc/ipc_sysctl.c b/ipc/ipc_sysctl.c
+index f101c171753f..dd87ba12f5e3 100644
+--- a/ipc/ipc_sysctl.c
++++ b/ipc/ipc_sysctl.c
+@@ -13,43 +13,22 @@
+ #include <linux/capability.h>
+ #include <linux/ipc_namespace.h>
+ #include <linux/msg.h>
++#include <linux/slab.h>
+ #include "util.h"
+=20
+-static void *get_ipc(struct ctl_table *table)
+-{
+-=09char *which =3D table->data;
+-=09struct ipc_namespace *ipc_ns =3D current->nsproxy->ipc_ns;
+-=09which =3D (which - (char *)&init_ipc_ns) + (char *)ipc_ns;
+-=09return which;
+-}
+-
+-static int proc_ipc_dointvec(struct ctl_table *table, int write,
+-=09=09void *buffer, size_t *lenp, loff_t *ppos)
+-{
+-=09struct ctl_table ipc_table;
+-
+-=09memcpy(&ipc_table, table, sizeof(ipc_table));
+-=09ipc_table.data =3D get_ipc(table);
+-
+-=09return proc_dointvec(&ipc_table, write, buffer, lenp, ppos);
+-}
+-
+-static int proc_ipc_dointvec_minmax(struct ctl_table *table, int write,
++static int proc_ipc_dointvec_minmax_orphans(struct ctl_table *table, int w=
+rite,
+ =09=09void *buffer, size_t *lenp, loff_t *ppos)
+ {
++=09struct ipc_namespace *ns =3D table->extra1;
+ =09struct ctl_table ipc_table;
++=09int err;
+=20
+ =09memcpy(&ipc_table, table, sizeof(ipc_table));
+-=09ipc_table.data =3D get_ipc(table);
+=20
+-=09return proc_dointvec_minmax(&ipc_table, write, buffer, lenp, ppos);
+-}
++=09ipc_table.extra1 =3D SYSCTL_ZERO;
++=09ipc_table.extra2 =3D SYSCTL_ONE;
+=20
+-static int proc_ipc_dointvec_minmax_orphans(struct ctl_table *table, int w=
+rite,
+-=09=09void *buffer, size_t *lenp, loff_t *ppos)
+-{
+-=09struct ipc_namespace *ns =3D current->nsproxy->ipc_ns;
+-=09int err =3D proc_ipc_dointvec_minmax(table, write, buffer, lenp, ppos);
++=09err =3D proc_dointvec_minmax(&ipc_table, write, buffer, lenp, ppos);
+=20
+ =09if (err < 0)
+ =09=09return err;
+@@ -58,17 +37,6 @@ static int proc_ipc_dointvec_minmax_orphans(struct ctl_t=
+able *table, int write,
+ =09return err;
+ }
+=20
+-static int proc_ipc_doulongvec_minmax(struct ctl_table *table, int write,
+-=09=09void *buffer, size_t *lenp, loff_t *ppos)
+-{
+-=09struct ctl_table ipc_table;
+-=09memcpy(&ipc_table, table, sizeof(ipc_table));
+-=09ipc_table.data =3D get_ipc(table);
+-
+-=09return proc_doulongvec_minmax(&ipc_table, write, buffer,
+-=09=09=09=09=09lenp, ppos);
+-}
+-
+ static int proc_ipc_auto_msgmni(struct ctl_table *table, int write,
+ =09=09void *buffer, size_t *lenp, loff_t *ppos)
+ {
+@@ -87,11 +55,17 @@ static int proc_ipc_auto_msgmni(struct ctl_table *table=
+, int write,
+ static int proc_ipc_sem_dointvec(struct ctl_table *table, int write,
+ =09void *buffer, size_t *lenp, loff_t *ppos)
+ {
++=09struct ipc_namespace *ns =3D table->extra1;
++=09struct ctl_table ipc_table;
+ =09int ret, semmni;
+-=09struct ipc_namespace *ns =3D current->nsproxy->ipc_ns;
++
++=09memcpy(&ipc_table, table, sizeof(ipc_table));
++
++=09ipc_table.extra1 =3D NULL;
++=09ipc_table.extra2 =3D NULL;
+=20
+ =09semmni =3D ns->sem_ctls[3];
+-=09ret =3D proc_ipc_dointvec(table, write, buffer, lenp, ppos);
++=09ret =3D proc_dointvec(table, write, buffer, lenp, ppos);
+=20
+ =09if (!ret)
+ =09=09ret =3D sem_check_semmni(current->nsproxy->ipc_ns);
+@@ -108,12 +82,18 @@ static int proc_ipc_sem_dointvec(struct ctl_table *tab=
+le, int write,
+ static int proc_ipc_dointvec_minmax_checkpoint_restore(struct ctl_table *t=
+able,
+ =09=09int write, void *buffer, size_t *lenp, loff_t *ppos)
+ {
+-=09struct user_namespace *user_ns =3D current->nsproxy->ipc_ns->user_ns;
++=09struct ipc_namespace *ns =3D table->extra1;
++=09struct ctl_table ipc_table;
+=20
+-=09if (write && !checkpoint_restore_ns_capable(user_ns))
++=09if (write && !checkpoint_restore_ns_capable(ns->user_ns))
+ =09=09return -EPERM;
+=20
+-=09return proc_ipc_dointvec_minmax(table, write, buffer, lenp, ppos);
++=09memcpy(&ipc_table, table, sizeof(ipc_table));
++
++=09ipc_table.extra1 =3D SYSCTL_ZERO;
++=09ipc_table.extra2 =3D SYSCTL_INT_MAX;
++
++=09return proc_dointvec_minmax(&ipc_table, write, buffer, lenp, ppos);
+ }
+ #endif
+=20
+@@ -121,27 +101,27 @@ int ipc_mni =3D IPCMNI;
+ int ipc_mni_shift =3D IPCMNI_SHIFT;
+ int ipc_min_cycle =3D RADIX_TREE_MAP_SIZE;
+=20
+-static struct ctl_table ipc_kern_table[] =3D {
++static struct ctl_table ipc_sysctls[] =3D {
+ =09{
+ =09=09.procname=09=3D "shmmax",
+ =09=09.data=09=09=3D &init_ipc_ns.shm_ctlmax,
+ =09=09.maxlen=09=09=3D sizeof(init_ipc_ns.shm_ctlmax),
+ =09=09.mode=09=09=3D 0644,
+-=09=09.proc_handler=09=3D proc_ipc_doulongvec_minmax,
++=09=09.proc_handler=09=3D proc_doulongvec_minmax,
+ =09},
+ =09{
+ =09=09.procname=09=3D "shmall",
+ =09=09.data=09=09=3D &init_ipc_ns.shm_ctlall,
+ =09=09.maxlen=09=09=3D sizeof(init_ipc_ns.shm_ctlall),
+ =09=09.mode=09=09=3D 0644,
+-=09=09.proc_handler=09=3D proc_ipc_doulongvec_minmax,
++=09=09.proc_handler=09=3D proc_doulongvec_minmax,
+ =09},
+ =09{
+ =09=09.procname=09=3D "shmmni",
+ =09=09.data=09=09=3D &init_ipc_ns.shm_ctlmni,
+ =09=09.maxlen=09=09=3D sizeof(init_ipc_ns.shm_ctlmni),
+ =09=09.mode=09=09=3D 0644,
+-=09=09.proc_handler=09=3D proc_ipc_dointvec_minmax,
++=09=09.proc_handler=09=3D proc_dointvec_minmax,
+ =09=09.extra1=09=09=3D SYSCTL_ZERO,
+ =09=09.extra2=09=09=3D &ipc_mni,
+ =09},
+@@ -151,15 +131,13 @@ static struct ctl_table ipc_kern_table[] =3D {
+ =09=09.maxlen=09=09=3D sizeof(init_ipc_ns.shm_rmid_forced),
+ =09=09.mode=09=09=3D 0644,
+ =09=09.proc_handler=09=3D proc_ipc_dointvec_minmax_orphans,
+-=09=09.extra1=09=09=3D SYSCTL_ZERO,
+-=09=09.extra2=09=09=3D SYSCTL_ONE,
+ =09},
+ =09{
+ =09=09.procname=09=3D "msgmax",
+ =09=09.data=09=09=3D &init_ipc_ns.msg_ctlmax,
+ =09=09.maxlen=09=09=3D sizeof(init_ipc_ns.msg_ctlmax),
+ =09=09.mode=09=09=3D 0644,
+-=09=09.proc_handler=09=3D proc_ipc_dointvec_minmax,
++=09=09.proc_handler=09=3D proc_dointvec_minmax,
+ =09=09.extra1=09=09=3D SYSCTL_ZERO,
+ =09=09.extra2=09=09=3D SYSCTL_INT_MAX,
+ =09},
+@@ -168,7 +146,7 @@ static struct ctl_table ipc_kern_table[] =3D {
+ =09=09.data=09=09=3D &init_ipc_ns.msg_ctlmni,
+ =09=09.maxlen=09=09=3D sizeof(init_ipc_ns.msg_ctlmni),
+ =09=09.mode=09=09=3D 0644,
+-=09=09.proc_handler=09=3D proc_ipc_dointvec_minmax,
++=09=09.proc_handler=09=3D proc_dointvec_minmax,
+ =09=09.extra1=09=09=3D SYSCTL_ZERO,
+ =09=09.extra2=09=09=3D &ipc_mni,
+ =09},
+@@ -186,7 +164,7 @@ static struct ctl_table ipc_kern_table[] =3D {
+ =09=09.data=09=09=3D &init_ipc_ns.msg_ctlmnb,
+ =09=09.maxlen=09=09=3D sizeof(init_ipc_ns.msg_ctlmnb),
+ =09=09.mode=09=09=3D 0644,
+-=09=09.proc_handler=09=3D proc_ipc_dointvec_minmax,
++=09=09.proc_handler=09=3D proc_dointvec_minmax,
+ =09=09.extra1=09=09=3D SYSCTL_ZERO,
+ =09=09.extra2=09=09=3D SYSCTL_INT_MAX,
+ =09},
+@@ -204,8 +182,6 @@ static struct ctl_table ipc_kern_table[] =3D {
+ =09=09.maxlen=09=09=3D sizeof(init_ipc_ns.ids[IPC_SEM_IDS].next_id),
+ =09=09.mode=09=09=3D 0666,
+ =09=09.proc_handler=09=3D proc_ipc_dointvec_minmax_checkpoint_restore,
+-=09=09.extra1=09=09=3D SYSCTL_ZERO,
+-=09=09.extra2=09=09=3D SYSCTL_INT_MAX,
+ =09},
+ =09{
+ =09=09.procname=09=3D "msg_next_id",
+@@ -213,8 +189,6 @@ static struct ctl_table ipc_kern_table[] =3D {
+ =09=09.maxlen=09=09=3D sizeof(init_ipc_ns.ids[IPC_MSG_IDS].next_id),
+ =09=09.mode=09=09=3D 0666,
+ =09=09.proc_handler=09=3D proc_ipc_dointvec_minmax_checkpoint_restore,
+-=09=09.extra1=09=09=3D SYSCTL_ZERO,
+-=09=09.extra2=09=09=3D SYSCTL_INT_MAX,
+ =09},
+ =09{
+ =09=09.procname=09=3D "shm_next_id",
+@@ -222,25 +196,106 @@ static struct ctl_table ipc_kern_table[] =3D {
+ =09=09.maxlen=09=09=3D sizeof(init_ipc_ns.ids[IPC_SHM_IDS].next_id),
+ =09=09.mode=09=09=3D 0666,
+ =09=09.proc_handler=09=3D proc_ipc_dointvec_minmax_checkpoint_restore,
+-=09=09.extra1=09=09=3D SYSCTL_ZERO,
+-=09=09.extra2=09=09=3D SYSCTL_INT_MAX,
+ =09},
+ #endif
+ =09{}
+ };
+=20
+-static struct ctl_table ipc_root_table[] =3D {
+-=09{
+-=09=09.procname=09=3D "kernel",
+-=09=09.mode=09=09=3D 0555,
+-=09=09.child=09=09=3D ipc_kern_table,
+-=09},
+-=09{}
++static struct ctl_table_set *set_lookup(struct ctl_table_root *root)
++{
++=09return &current->nsproxy->ipc_ns->set;
++}
++
++static int set_is_seen(struct ctl_table_set *set)
++{
++=09return &current->nsproxy->ipc_ns->set =3D=3D set;
++}
++
++static struct ctl_table_root set_root =3D {
++=09.lookup =3D set_lookup,
+ };
+=20
++bool setup_ipc_sysctls(struct ipc_namespace *ns)
++{
++=09struct ctl_table *tbl;
++
++=09setup_sysctl_set(&ns->set, &set_root, set_is_seen);
++
++=09tbl =3D kmemdup(ipc_sysctls, sizeof(ipc_sysctls), GFP_KERNEL);
++=09if (tbl) {
++=09=09int i;
++
++=09=09for (i =3D 0; i < ARRAY_SIZE(ipc_sysctls); i++) {
++=09=09=09if (tbl[i].data =3D=3D &init_ipc_ns.shm_ctlmax) {
++=09=09=09=09tbl[i].data =3D &ns->shm_ctlmax;
++
++=09=09=09} else if (tbl[i].data =3D=3D &init_ipc_ns.shm_ctlall) {
++=09=09=09=09tbl[i].data =3D &ns->shm_ctlall;
++
++=09=09=09} else if (tbl[i].data =3D=3D &init_ipc_ns.shm_ctlmni) {
++=09=09=09=09tbl[i].data =3D &ns->shm_ctlmni;
++
++=09=09=09} else if (tbl[i].data =3D=3D &init_ipc_ns.shm_rmid_forced) {
++=09=09=09=09tbl[i].data =3D &ns->shm_rmid_forced;
++=09=09=09=09tbl[i].extra1 =3D ns;
++
++=09=09=09} else if (tbl[i].data =3D=3D &init_ipc_ns.msg_ctlmax) {
++=09=09=09=09tbl[i].data =3D &ns->msg_ctlmax;
++
++=09=09=09} else if (tbl[i].data =3D=3D &init_ipc_ns.msg_ctlmni) {
++=09=09=09=09tbl[i].data =3D &ns->msg_ctlmni;
++
++=09=09=09} else if (tbl[i].data =3D=3D &init_ipc_ns.msg_ctlmnb) {
++=09=09=09=09tbl[i].data =3D &ns->msg_ctlmnb;
++
++=09=09=09} else if (tbl[i].data =3D=3D &init_ipc_ns.sem_ctls) {
++=09=09=09=09tbl[i].data =3D &ns->sem_ctls;
++=09=09=09=09tbl[i].extra1 =3D ns;
++#ifdef CONFIG_CHECKPOINT_RESTORE
++=09=09=09} else if (tbl[i].data =3D=3D &init_ipc_ns.ids[IPC_SEM_IDS].next_=
+id) {
++=09=09=09=09tbl[i].data =3D &ns->ids[IPC_SEM_IDS].next_id;
++=09=09=09=09tbl[i].extra1 =3D ns;
++
++=09=09=09} else if (tbl[i].data =3D=3D &init_ipc_ns.ids[IPC_MSG_IDS].next_=
+id) {
++=09=09=09=09tbl[i].data =3D &ns->ids[IPC_MSG_IDS].next_id;
++=09=09=09=09tbl[i].extra1 =3D ns;
++
++=09=09=09} else if (tbl[i].data =3D=3D &init_ipc_ns.ids[IPC_SHM_IDS].next_=
+id) {
++=09=09=09=09tbl[i].data =3D &ns->ids[IPC_SHM_IDS].next_id;
++=09=09=09=09tbl[i].extra1 =3D ns;
++#endif
++=09=09=09} else {
++=09=09=09=09tbl[i].data =3D NULL;
++=09=09=09}
++=09=09}
++
++=09=09ns->ipc_sysctls =3D __register_sysctl_table(&ns->set, "kernel", tbl)=
+;
++=09}
++=09if (!ns->ipc_sysctls) {
++=09=09kfree(tbl);
++=09=09retire_sysctl_set(&ns->set);
++=09=09return false;
++=09}
++
++=09return true;
++}
++
++void retire_ipc_sysctls(struct ipc_namespace *ns)
++{
++=09struct ctl_table *tbl;
++
++=09tbl =3D ns->ipc_sysctls->ctl_table_arg;
++=09unregister_sysctl_table(ns->ipc_sysctls);
++=09retire_sysctl_set(&ns->set);
++=09kfree(tbl);
++}
++
+ static int __init ipc_sysctl_init(void)
+ {
+-=09register_sysctl_table(ipc_root_table);
++=09if (!setup_ipc_sysctls(&init_ipc_ns)) {
++=09=09pr_warn("ipc sysctl registration failed\n");
++=09=09return -ENOMEM;
++=09}
+ =09return 0;
+ }
+=20
+diff --git a/ipc/namespace.c b/ipc/namespace.c
+index f760243ca685..754f3237194a 100644
+--- a/ipc/namespace.c
++++ b/ipc/namespace.c
+@@ -63,6 +63,9 @@ static struct ipc_namespace *create_ipc_ns(struct user_na=
+mespace *user_ns,
+ =09if (!setup_mq_sysctls(ns))
+ =09=09goto fail_put;
+=20
++=09if (!setup_ipc_sysctls(ns))
++=09=09goto fail_put;
++
+ =09sem_init_ns(ns);
+ =09msg_init_ns(ns);
+ =09shm_init_ns(ns);
+@@ -130,6 +133,7 @@ static void free_ipc_ns(struct ipc_namespace *ns)
+ =09shm_exit_ns(ns);
+=20
+ =09retire_mq_sysctls(ns);
++=09retire_ipc_sysctls(ns);
+=20
+ =09dec_ipc_namespaces(ns->ucounts);
+ =09put_user_ns(ns->user_ns);
+--=20
+2.33.0
 
-> ima_namespace".  The other option is to combine the "pass through ima
-> namespace" with the 2nd patch, like Christian's example.
-
-You mean I should merge this patch with the 2nd?
-
-I am a bit confused as to what you are proposing. The first option would 
-create 2 patches out of this one, the 2nd option would merge this one 
-with the 2nd patch.
-
-The equivalent of Christian's 2nd patch would be to merge this patch 
-into the 2nd. So then let's do that?
-
-
->
->> ---
->>   security/integrity/ima/ima.h                 |  49 ++++---
->>   security/integrity/ima/ima_api.c             |   8 +-
->>   security/integrity/ima/ima_appraise.c        |  28 ++--
->>   security/integrity/ima/ima_asymmetric_keys.c |   4 +-
->>   security/integrity/ima/ima_fs.c              |  16 ++-
->>   security/integrity/ima/ima_init.c            |   8 +-
->>   security/integrity/ima/ima_init_ima_ns.c     |   6 +
->>   security/integrity/ima/ima_main.c            |  83 +++++++----
->>   security/integrity/ima/ima_policy.c          | 142 ++++++++++---------
->>   security/integrity/ima/ima_queue_keys.c      |  11 +-
->>   10 files changed, 213 insertions(+), 142 deletions(-)
->>
->> diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
->> index c4af3275f015..0b3dc9425076 100644
->> --- a/security/integrity/ima/ima.h
->> +++ b/security/integrity/ima/ima.h
->> @@ -20,6 +20,7 @@
->>   #include <linux/hash.h>
->>   #include <linux/tpm.h>
->>   #include <linux/audit.h>
->> +#include <linux/user_namespace.h>
->>   #include <crypto/hash_info.h>
->>   
->>   #include "../integrity.h"
->> @@ -43,9 +44,6 @@ enum tpm_pcrs { TPM_PCR0 = 0, TPM_PCR8 = 8, TPM_PCR10 = 10 };
->>   
->>   #define NR_BANKS(chip) ((chip != NULL) ? chip->nr_allocated_banks : 0)
->>   
->> -/* current content of the policy */
->> -extern int ima_policy_flag;
->> -
->>   /* bitset of digests algorithms allowed in the setxattr hook */
->>   extern atomic_t ima_setxattr_allowed_hash_algorithms;
->>   
->> @@ -120,6 +118,14 @@ struct ima_kexec_hdr {
->>   };
->>   
->>   struct ima_namespace {
->> +	struct list_head ima_default_rules;
->> +	/* ns's policy rules */
-> Thank you for adding comments.  Why is the ima_default_rules not
-> considered "ns's policy rules"?   Will this come later or is it limited
-> to init_ima_ns?
-Let me move the comment up.
->
->> +	struct list_head ima_policy_rules;
->> +	struct list_head ima_temp_rules;
->> +	/* Pointer to ns's current policy */
->> +	struct list_head __rcu *ima_rules;
-> Since "Pointer to ns's current policy" only refers to ima_rules, append
-> it to the variable definition.
-
-
-Ok, I will move it onto the same line then.
-
-
->
->> +	/* current content of the policy */
->> +	int ima_policy_flag;
-> Similarly here append the comment to the variable definition.
-
-Will do. Thanks.
-
-
->
->>   } __randomize_layout;
->>   extern struct ima_namespace init_ima_ns;
-> thanks,
->
-> Mimi
->
->
