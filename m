@@ -1,366 +1,117 @@
-Received: from us-smtp-delivery-44.mimecast.com (us-smtp-delivery-44.mimecast.com [207.211.30.44])
+Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6C0842CA8
-	for <containers@lists.linux.dev>; Fri, 21 Jan 2022 13:10:25 +0000 (UTC)
-Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
- [209.132.183.4]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-88-ecJTHvhXOYaHSMHmN8LB-g-1; Fri, 21 Jan 2022 08:09:13 -0500
-X-MC-Unique: ecJTHvhXOYaHSMHmN8LB-g-1
-Received: from smtp.corp.redhat.com (int-mx04.intmail.prod.int.phx2.redhat.com [10.5.11.14])
-	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 5059193920;
-	Fri, 21 Jan 2022 13:09:11 +0000 (UTC)
-Received: from comp-core-i7-2640m-0182e6.redhat.com (unknown [10.36.110.3])
-	by smtp.corp.redhat.com (Postfix) with ESMTP id EC85178AA0;
-	Fri, 21 Jan 2022 13:09:07 +0000 (UTC)
-From: Alexey Gladkov <legion@kernel.org>
-To: LKML <linux-kernel@vger.kernel.org>,
-	Linux Containers <containers@lists.linux.dev>
-Cc: Alexander Mikhalitsyn <alexander.mikhalitsyn@virtuozzo.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Christian Brauner <christian.brauner@ubuntu.com>,
-	Daniel Walsh <dwalsh@redhat.com>,
-	Davidlohr Bueso <dbueso@suse.de>,
-	"Eric W . Biederman" <ebiederm@xmission.com>,
-	Kirill Tkhai <ktkhai@virtuozzo.com>,
-	Manfred Spraul <manfred@colorfullife.com>,
-	Serge Hallyn <serge@hallyn.com>,
-	Varad Gautam <varad.gautam@suse.com>,
-	Vasily Averin <vvs@virtuozzo.com>,
-	kernel test robot <lkp@intel.com>
-Subject: [RFC PATCH v3 1/4] ipc: Store mqueue sysctls in the ipc namespace
-Date: Fri, 21 Jan 2022 14:08:38 +0100
-Message-Id: <861ff67f82a0d82321e843282c3c2f6ed2dc041e.1642769810.git.legion@kernel.org>
-In-Reply-To: <cover.1642769810.git.legion@kernel.org>
-References: <87tuebwo99.fsf@email.froward.int.ebiederm.org> <cover.1642769810.git.legion@kernel.org>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 490FB2C82
+	for <containers@lists.linux.dev>; Tue, 25 Jan 2022 22:47:19 +0000 (UTC)
+Received: from pps.filterd (m0098410.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 20PMkiFp004562;
+	Tue, 25 Jan 2022 22:47:03 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
+ : date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding; s=pp1;
+ bh=d0w2KVQWpiRmupZTVZ5yd6yW0pQMhRPOXS1919LCwZA=;
+ b=njHetPoSod1i91urgtS0UGQ3tvfrtK7Ib4RD3vMoC7lboNCz/FOvD4CYh7QIrIqFC5Ep
+ A+Y5OetJjlenqUi4nhFjRSUDPgrlbhHDdJkpDDoF4LZUbTPeZtuI9vLepwblh/xlrDUi
+ 5yq42TlyZQ3baRiC8OYbWkY3sMKmWkJAk1z2KYivgd2HohuII4YVCgAiGizP6wKFP2lm
+ NtSKo7v7aRK549bFPTusBYwJnGlp2LC13zy0X2uR6Cn06rfQ73eICT4tbHh5k5Sd/oeR
+ YbOdV7rn3UHSZDo8E7yleOO6gnIlnmeOYOo7EYJZbrOvl2Dut7HvBNVp19VM2ZtPCTGS Zg== 
+Received: from pps.reinject (localhost [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3dtta2007e-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 25 Jan 2022 22:47:03 +0000
+Received: from m0098410.ppops.net (m0098410.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 20PMl2bd005268;
+	Tue, 25 Jan 2022 22:47:02 GMT
+Received: from ppma02wdc.us.ibm.com (aa.5b.37a9.ip4.static.sl-reverse.com [169.55.91.170])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3dtta20072-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 25 Jan 2022 22:47:02 +0000
+Received: from pps.filterd (ppma02wdc.us.ibm.com [127.0.0.1])
+	by ppma02wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 20PMhu2q025231;
+	Tue, 25 Jan 2022 22:47:01 GMT
+Received: from b01cxnp22034.gho.pok.ibm.com (b01cxnp22034.gho.pok.ibm.com [9.57.198.24])
+	by ppma02wdc.us.ibm.com with ESMTP id 3dr9ja734r-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 25 Jan 2022 22:47:00 +0000
+Received: from b01ledav006.gho.pok.ibm.com (b01ledav006.gho.pok.ibm.com [9.57.199.111])
+	by b01cxnp22034.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 20PMkuZX31261098
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Tue, 25 Jan 2022 22:46:56 GMT
+Received: from b01ledav006.gho.pok.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id A2955AC05B;
+	Tue, 25 Jan 2022 22:46:56 +0000 (GMT)
+Received: from b01ledav006.gho.pok.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 85E78AC062;
+	Tue, 25 Jan 2022 22:46:56 +0000 (GMT)
+Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
+	by b01ledav006.gho.pok.ibm.com (Postfix) with ESMTP;
+	Tue, 25 Jan 2022 22:46:56 +0000 (GMT)
+From: Stefan Berger <stefanb@linux.vnet.ibm.com>
+To: linux-integrity@vger.kernel.org
+Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
+        containers@lists.linux.dev, dmitry.kasatkin@gmail.com,
+        ebiederm@xmission.com, krzysztof.struczynski@huawei.com,
+        roberto.sassu@huawei.com, mpeters@redhat.com, lhinds@redhat.com,
+        lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
+        jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
+        rgb@redhat.com, linux-security-module@vger.kernel.org,
+        jmorris@namei.org, Stefan Berger <stefanb@linux.ibm.com>
+Subject: [PATCH v9 02/23] ima: Do not print policy rule with inactive LSM labels
+Date: Tue, 25 Jan 2022 17:46:24 -0500
+Message-Id: <20220125224645.79319-3-stefanb@linux.vnet.ibm.com>
+X-Mailer: git-send-email 2.34.1
+In-Reply-To: <20220125224645.79319-1-stefanb@linux.vnet.ibm.com>
+References: <20220125224645.79319-1-stefanb@linux.vnet.ibm.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.14
-Authentication-Results: relay.mimecast.com;
-	auth=pass smtp.auth=CUSA124A263 smtp.mailfrom=legion@kernel.org
-X-Mimecast-Spam-Score: 0
-X-Mimecast-Originator: kernel.org
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset=WINDOWS-1252
+Content-Transfer-Encoding: 8bit
+X-TM-AS-GCONF: 00
+X-Proofpoint-GUID: 60RwSpArJtszf20Iw9uFgJzUYY7-xW6Q
+X-Proofpoint-ORIG-GUID: H3SWkM1tJ7ojU375fB_05aEDt7KoS5NR
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.205,Aquarius:18.0.816,Hydra:6.0.425,FMLib:17.11.62.513
+ definitions=2022-01-25_05,2022-01-25_02,2021-12-02_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 spamscore=0 mlxscore=0
+ malwarescore=0 impostorscore=0 phishscore=0 bulkscore=0 suspectscore=0
+ adultscore=0 mlxlogscore=999 lowpriorityscore=0 priorityscore=1501
+ clxscore=1015 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2201110000 definitions=main-2201250135
 
-Right now, the mqueue sysctls take ipc namespaces into account in a
-rather hacky way. This works in most cases, but does not respect the
-user namespace.
+From: Stefan Berger <stefanb@linux.ibm.com>
 
-Within the user namespace, the user cannot change the /proc/sys/fs/mqueue/*
-parametres. This poses a problem in the rootless containers.
+Before printing a policy rule scan for inactive LSM labels in the policy
+rule. Inactive LSM labels are identified by args_p != NULL and
+rule == NULL.
 
-To solve this I changed the implementation of the mqueue sysctls just
-like some other sysctls.
-
-So far, the changes do not provide additional access to files. This will
-be done in a future patch.
-
-v3:
-* Don't implemenet set_permissions to keep the current behavior.
-
-v2:
-* Fixed compilation problem if CONFIG_POSIX_MQUEUE_SYSCTL is not
-  specified.
-
-Reported-by: kernel test robot <lkp@intel.com>
-Signed-off-by: Alexey Gladkov <legion@kernel.org>
+Fixes: b16942455193 ("ima: use the lsm policy update notifier")
+Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
 ---
- include/linux/ipc_namespace.h |  16 +++--
- ipc/mq_sysctl.c               | 121 ++++++++++++++++++----------------
- ipc/mqueue.c                  |  10 ++-
- ipc/namespace.c               |   6 ++
- 4 files changed, 88 insertions(+), 65 deletions(-)
+ security/integrity/ima/ima_policy.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/include/linux/ipc_namespace.h b/include/linux/ipc_namespace.h
-index b75395ec8d52..fa787d97d60a 100644
---- a/include/linux/ipc_namespace.h
-+++ b/include/linux/ipc_namespace.h
-@@ -10,6 +10,7 @@
- #include <linux/ns_common.h>
- #include <linux/refcount.h>
- #include <linux/rhashtable-types.h>
-+#include <linux/sysctl.h>
-=20
- struct user_namespace;
-=20
-@@ -63,6 +64,9 @@ struct ipc_namespace {
- =09unsigned int    mq_msg_default;
- =09unsigned int    mq_msgsize_default;
-=20
-+=09struct ctl_table_set=09mq_set;
-+=09struct ctl_table_header=09*mq_sysctls;
+diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
+index 320ca80aacab..2a1f6418b10a 100644
+--- a/security/integrity/ima/ima_policy.c
++++ b/security/integrity/ima/ima_policy.c
+@@ -1967,6 +1967,14 @@ int ima_policy_show(struct seq_file *m, void *v)
+ 
+ 	rcu_read_lock();
+ 
++	/* Do not print rules with inactive LSM labels */
++	for (i = 0; i < MAX_LSM_RULES; i++) {
++		if (entry->lsm[i].args_p && !entry->lsm[i].rule) {
++			rcu_read_unlock();
++			return 0;
++		}
++	}
 +
- =09/* user_ns which owns the ipc ns */
- =09struct user_namespace *user_ns;
- =09struct ucounts *ucounts;
-@@ -169,14 +173,18 @@ static inline void put_ipc_ns(struct ipc_namespace *n=
-s)
-=20
- #ifdef CONFIG_POSIX_MQUEUE_SYSCTL
-=20
--struct ctl_table_header;
--extern struct ctl_table_header *mq_register_sysctl_table(void);
-+void retire_mq_sysctls(struct ipc_namespace *ns);
-+bool setup_mq_sysctls(struct ipc_namespace *ns);
-=20
- #else /* CONFIG_POSIX_MQUEUE_SYSCTL */
-=20
--static inline struct ctl_table_header *mq_register_sysctl_table(void)
-+static inline void retire_mq_sysctls(struct ipc_namespace *ns)
- {
--=09return NULL;
-+}
-+
-+static inline bool setup_mq_sysctls(struct ipc_namespace *ns)
-+{
-+=09return true;
- }
-=20
- #endif /* CONFIG_POSIX_MQUEUE_SYSCTL */
-diff --git a/ipc/mq_sysctl.c b/ipc/mq_sysctl.c
-index 72a92a08c848..fbf6a8b93a26 100644
---- a/ipc/mq_sysctl.c
-+++ b/ipc/mq_sysctl.c
-@@ -9,39 +9,9 @@
- #include <linux/ipc_namespace.h>
- #include <linux/sysctl.h>
-=20
--#ifdef CONFIG_PROC_SYSCTL
--static void *get_mq(struct ctl_table *table)
--{
--=09char *which =3D table->data;
--=09struct ipc_namespace *ipc_ns =3D current->nsproxy->ipc_ns;
--=09which =3D (which - (char *)&init_ipc_ns) + (char *)ipc_ns;
--=09return which;
--}
--
--static int proc_mq_dointvec(struct ctl_table *table, int write,
--=09=09=09    void *buffer, size_t *lenp, loff_t *ppos)
--{
--=09struct ctl_table mq_table;
--=09memcpy(&mq_table, table, sizeof(mq_table));
--=09mq_table.data =3D get_mq(table);
--
--=09return proc_dointvec(&mq_table, write, buffer, lenp, ppos);
--}
--
--static int proc_mq_dointvec_minmax(struct ctl_table *table, int write,
--=09=09void *buffer, size_t *lenp, loff_t *ppos)
--{
--=09struct ctl_table mq_table;
--=09memcpy(&mq_table, table, sizeof(mq_table));
--=09mq_table.data =3D get_mq(table);
--
--=09return proc_dointvec_minmax(&mq_table, write, buffer,
--=09=09=09=09=09lenp, ppos);
--}
--#else
--#define proc_mq_dointvec NULL
--#define proc_mq_dointvec_minmax NULL
--#endif
-+#include <linux/stat.h>
-+#include <linux/capability.h>
-+#include <linux/slab.h>
-=20
- static int msg_max_limit_min =3D MIN_MSGMAX;
- static int msg_max_limit_max =3D HARD_MSGMAX;
-@@ -55,14 +25,14 @@ static struct ctl_table mq_sysctls[] =3D {
- =09=09.data=09=09=3D &init_ipc_ns.mq_queues_max,
- =09=09.maxlen=09=09=3D sizeof(int),
- =09=09.mode=09=09=3D 0644,
--=09=09.proc_handler=09=3D proc_mq_dointvec,
-+=09=09.proc_handler=09=3D proc_dointvec,
- =09},
- =09{
- =09=09.procname=09=3D "msg_max",
- =09=09.data=09=09=3D &init_ipc_ns.mq_msg_max,
- =09=09.maxlen=09=09=3D sizeof(int),
- =09=09.mode=09=09=3D 0644,
--=09=09.proc_handler=09=3D proc_mq_dointvec_minmax,
-+=09=09.proc_handler=09=3D proc_dointvec_minmax,
- =09=09.extra1=09=09=3D &msg_max_limit_min,
- =09=09.extra2=09=09=3D &msg_max_limit_max,
- =09},
-@@ -71,7 +41,7 @@ static struct ctl_table mq_sysctls[] =3D {
- =09=09.data=09=09=3D &init_ipc_ns.mq_msgsize_max,
- =09=09.maxlen=09=09=3D sizeof(int),
- =09=09.mode=09=09=3D 0644,
--=09=09.proc_handler=09=3D proc_mq_dointvec_minmax,
-+=09=09.proc_handler=09=3D proc_dointvec_minmax,
- =09=09.extra1=09=09=3D &msg_maxsize_limit_min,
- =09=09.extra2=09=09=3D &msg_maxsize_limit_max,
- =09},
-@@ -80,7 +50,7 @@ static struct ctl_table mq_sysctls[] =3D {
- =09=09.data=09=09=3D &init_ipc_ns.mq_msg_default,
- =09=09.maxlen=09=09=3D sizeof(int),
- =09=09.mode=09=09=3D 0644,
--=09=09.proc_handler=09=3D proc_mq_dointvec_minmax,
-+=09=09.proc_handler=09=3D proc_dointvec_minmax,
- =09=09.extra1=09=09=3D &msg_max_limit_min,
- =09=09.extra2=09=09=3D &msg_max_limit_max,
- =09},
-@@ -89,32 +59,73 @@ static struct ctl_table mq_sysctls[] =3D {
- =09=09.data=09=09=3D &init_ipc_ns.mq_msgsize_default,
- =09=09.maxlen=09=09=3D sizeof(int),
- =09=09.mode=09=09=3D 0644,
--=09=09.proc_handler=09=3D proc_mq_dointvec_minmax,
-+=09=09.proc_handler=09=3D proc_dointvec_minmax,
- =09=09.extra1=09=09=3D &msg_maxsize_limit_min,
- =09=09.extra2=09=09=3D &msg_maxsize_limit_max,
- =09},
- =09{}
- };
-=20
--static struct ctl_table mq_sysctl_dir[] =3D {
--=09{
--=09=09.procname=09=3D "mqueue",
--=09=09.mode=09=09=3D 0555,
--=09=09.child=09=09=3D mq_sysctls,
--=09},
--=09{}
--};
-+static struct ctl_table_set *set_lookup(struct ctl_table_root *root)
-+{
-+=09return &current->nsproxy->ipc_ns->mq_set;
-+}
-=20
--static struct ctl_table mq_sysctl_root[] =3D {
--=09{
--=09=09.procname=09=3D "fs",
--=09=09.mode=09=09=3D 0555,
--=09=09.child=09=09=3D mq_sysctl_dir,
--=09},
--=09{}
-+static int set_is_seen(struct ctl_table_set *set)
-+{
-+=09return &current->nsproxy->ipc_ns->mq_set =3D=3D set;
-+}
-+
-+static struct ctl_table_root set_root =3D {
-+=09.lookup =3D set_lookup,
- };
-=20
--struct ctl_table_header *mq_register_sysctl_table(void)
-+bool setup_mq_sysctls(struct ipc_namespace *ns)
- {
--=09return register_sysctl_table(mq_sysctl_root);
-+=09struct ctl_table *tbl;
-+
-+=09setup_sysctl_set(&ns->mq_set, &set_root, set_is_seen);
-+
-+=09tbl =3D kmemdup(mq_sysctls, sizeof(mq_sysctls), GFP_KERNEL);
-+=09if (tbl) {
-+=09=09int i;
-+
-+=09=09for (i =3D 0; i < ARRAY_SIZE(mq_sysctls); i++) {
-+=09=09=09if (tbl[i].data =3D=3D &init_ipc_ns.mq_queues_max)
-+=09=09=09=09tbl[i].data =3D &ns->mq_queues_max;
-+
-+=09=09=09else if (tbl[i].data =3D=3D &init_ipc_ns.mq_msg_max)
-+=09=09=09=09tbl[i].data =3D &ns->mq_msg_max;
-+
-+=09=09=09else if (tbl[i].data =3D=3D &init_ipc_ns.mq_msgsize_max)
-+=09=09=09=09tbl[i].data =3D &ns->mq_msgsize_max;
-+
-+=09=09=09else if (tbl[i].data =3D=3D &init_ipc_ns.mq_msg_default)
-+=09=09=09=09tbl[i].data =3D &ns->mq_msg_default;
-+
-+=09=09=09else if (tbl[i].data =3D=3D &init_ipc_ns.mq_msgsize_default)
-+=09=09=09=09tbl[i].data =3D &ns->mq_msgsize_default;
-+=09=09=09else
-+=09=09=09=09tbl[i].data =3D NULL;
-+=09=09}
-+
-+=09=09ns->mq_sysctls =3D __register_sysctl_table(&ns->mq_set, "fs/mqueue",=
- tbl);
-+=09}
-+=09if (!ns->mq_sysctls) {
-+=09=09kfree(tbl);
-+=09=09retire_sysctl_set(&ns->mq_set);
-+=09=09return false;
-+=09}
-+
-+=09return true;
-+}
-+
-+void retire_mq_sysctls(struct ipc_namespace *ns)
-+{
-+=09struct ctl_table *tbl;
-+
-+=09tbl =3D ns->mq_sysctls->ctl_table_arg;
-+=09unregister_sysctl_table(ns->mq_sysctls);
-+=09retire_sysctl_set(&ns->mq_set);
-+=09kfree(tbl);
- }
-diff --git a/ipc/mqueue.c b/ipc/mqueue.c
-index 5becca9be867..1b4a3be71636 100644
---- a/ipc/mqueue.c
-+++ b/ipc/mqueue.c
-@@ -163,8 +163,6 @@ static void remove_notification(struct mqueue_inode_inf=
-o *info);
-=20
- static struct kmem_cache *mqueue_inode_cachep;
-=20
--static struct ctl_table_header *mq_sysctl_table;
--
- static inline struct mqueue_inode_info *MQUEUE_I(struct inode *inode)
- {
- =09return container_of(inode, struct mqueue_inode_info, vfs_inode);
-@@ -1713,8 +1711,10 @@ static int __init init_mqueue_fs(void)
- =09if (mqueue_inode_cachep =3D=3D NULL)
- =09=09return -ENOMEM;
-=20
--=09/* ignore failures - they are not fatal */
--=09mq_sysctl_table =3D mq_register_sysctl_table();
-+=09if (!setup_mq_sysctls(&init_ipc_ns)) {
-+=09=09pr_warn("sysctl registration failed\n");
-+=09=09return -ENOMEM;
-+=09}
-=20
- =09error =3D register_filesystem(&mqueue_fs_type);
- =09if (error)
-@@ -1731,8 +1731,6 @@ static int __init init_mqueue_fs(void)
- out_filesystem:
- =09unregister_filesystem(&mqueue_fs_type);
- out_sysctl:
--=09if (mq_sysctl_table)
--=09=09unregister_sysctl_table(mq_sysctl_table);
- =09kmem_cache_destroy(mqueue_inode_cachep);
- =09return error;
- }
-diff --git a/ipc/namespace.c b/ipc/namespace.c
-index ae83f0f2651b..f760243ca685 100644
---- a/ipc/namespace.c
-+++ b/ipc/namespace.c
-@@ -59,6 +59,10 @@ static struct ipc_namespace *create_ipc_ns(struct user_n=
-amespace *user_ns,
- =09if (err)
- =09=09goto fail_put;
-=20
-+=09err =3D -ENOMEM;
-+=09if (!setup_mq_sysctls(ns))
-+=09=09goto fail_put;
-+
- =09sem_init_ns(ns);
- =09msg_init_ns(ns);
- =09shm_init_ns(ns);
-@@ -125,6 +129,8 @@ static void free_ipc_ns(struct ipc_namespace *ns)
- =09msg_exit_ns(ns);
- =09shm_exit_ns(ns);
-=20
-+=09retire_mq_sysctls(ns);
-+
- =09dec_ipc_namespaces(ns->ucounts);
- =09put_user_ns(ns->user_ns);
- =09ns_free_inum(&ns->ns);
---=20
-2.33.0
+ 	if (entry->action & MEASURE)
+ 		seq_puts(m, pt(Opt_measure));
+ 	if (entry->action & DONT_MEASURE)
+-- 
+2.31.1
 
