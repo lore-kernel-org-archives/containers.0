@@ -1,51 +1,51 @@
 Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 56AA22CB2
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AFD092CB4
 	for <containers@lists.linux.dev>; Tue, 25 Jan 2022 22:47:20 +0000 (UTC)
 Received: from pps.filterd (m0098409.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 20PMflNm011095;
-	Tue, 25 Jan 2022 22:47:13 GMT
+	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 20PMfiYg010964;
+	Tue, 25 Jan 2022 22:47:03 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=pp1;
- bh=65fhBGRDSwpujvZ4xXpsSjgZqAWmpm0wPo18a5HqDvU=;
- b=nmjHRD0k08w9bjlLlSrGpFLspyH3tL8tb9k9EEy3urchSR3JITG/nJYYHmbkXgrCRVz6
- G3i0/GuhNjgKUlGqbBAVD8fLA1O7AhH0hQ4BgpXlfFXwresPSNCO8tu8zlBRwh+m1R0S
- NEYQKWHR+/Rs2Lmjh1RSjzLFo9fFCqHkDIQhT6qpSD+doYSWoBzj0Jsj7aEv3cttU1F2
- dIJtrf6+2quNCIT/NB+gPsF1GeNfAM6KZbck7/NS417jK/kVaPH8xJ7B2zzmm4sDDyVn
- t2zSioNU6MB+XuAnzxftAgNhLI00YbJdygH2Zbn0FcS2DT+xf0tFHRJjENDZM4ZVQbPN 8A== 
+ bh=SFcFD/EvTQUoNcYyKVdfg6JmVIDdzQPCJOH1FaaGd5g=;
+ b=p4Yf+StFEY8xsu172qvPCKqPPx3DTnpJYE410WsrLrNOVCqzJke/19Xp+WFWobP6IhBV
+ ab1xr1+60gqMY49IGFRCY1K/RY/6THPyhPUuK/TVT3oAzEu7Tr/9uABXauvNlnforeky
+ K4AwI5C/nRTdb+HN38ECoaZbMSFreAy5RybIOWqEZ99Ko9LzVCnyd2gnGX7L/hXN39bM
+ 1gR4SmwT28q4FvW2jawswMv+j8KABou0hWsu5f7qz6okDr2AMipR405qLUCPvrU7NByn
+ ln3QCR6kJZAew8HybXlBq8Xt4HDM3JaZlZ/kTJBNNcduvb2Z+lazzUuQg2nWkVqcLHbb 9w== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3dtt7ng2jk-1
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3dtt7ng2g7-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 25 Jan 2022 22:47:12 +0000
+	Tue, 25 Jan 2022 22:47:03 +0000
 Received: from m0098409.ppops.net (m0098409.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 20PMh2V3016165;
-	Tue, 25 Jan 2022 22:47:12 GMT
-Received: from ppma05wdc.us.ibm.com (1b.90.2fa9.ip4.static.sl-reverse.com [169.47.144.27])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3dtt7ng2ja-1
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 20PMgSiM012126;
+	Tue, 25 Jan 2022 22:47:03 GMT
+Received: from ppma03dal.us.ibm.com (b.bd.3ea9.ip4.static.sl-reverse.com [169.62.189.11])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3dtt7ng2ft-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 25 Jan 2022 22:47:12 +0000
-Received: from pps.filterd (ppma05wdc.us.ibm.com [127.0.0.1])
-	by ppma05wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 20PMho9Z010517;
-	Tue, 25 Jan 2022 22:47:10 GMT
-Received: from b01cxnp23032.gho.pok.ibm.com (b01cxnp23032.gho.pok.ibm.com [9.57.198.27])
-	by ppma05wdc.us.ibm.com with ESMTP id 3dtbch8rkf-1
+	Tue, 25 Jan 2022 22:47:03 +0000
+Received: from pps.filterd (ppma03dal.us.ibm.com [127.0.0.1])
+	by ppma03dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 20PMhnL7006726;
+	Tue, 25 Jan 2022 22:47:02 GMT
+Received: from b01cxnp23033.gho.pok.ibm.com (b01cxnp23033.gho.pok.ibm.com [9.57.198.28])
+	by ppma03dal.us.ibm.com with ESMTP id 3dr9jb6e5x-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 25 Jan 2022 22:47:10 +0000
+	Tue, 25 Jan 2022 22:47:01 +0000
 Received: from b01ledav006.gho.pok.ibm.com (b01ledav006.gho.pok.ibm.com [9.57.199.111])
-	by b01cxnp23032.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 20PMkvUq35848526
+	by b01cxnp23033.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 20PMkwv732768428
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Tue, 25 Jan 2022 22:46:57 GMT
+	Tue, 25 Jan 2022 22:46:58 GMT
 Received: from b01ledav006.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id E68E5AC059;
-	Tue, 25 Jan 2022 22:46:56 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 96778AC062;
+	Tue, 25 Jan 2022 22:46:58 +0000 (GMT)
 Received: from b01ledav006.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id C7EF7AC065;
-	Tue, 25 Jan 2022 22:46:56 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 7927DAC05E;
+	Tue, 25 Jan 2022 22:46:58 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by b01ledav006.gho.pok.ibm.com (Postfix) with ESMTP;
-	Tue, 25 Jan 2022 22:46:56 +0000 (GMT)
+	Tue, 25 Jan 2022 22:46:58 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.vnet.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
@@ -55,12 +55,10 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
         lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
         jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
-        jmorris@namei.org, Stefan Berger <stefanb@linux.ibm.com>,
-        James Bottomley <James.Bottomley@HansenPartnership.com>,
-        Christian Brauner <brauner@kernel.org>
-Subject: [PATCH v9 04/23] securityfs: Extend securityfs with namespacing support
-Date: Tue, 25 Jan 2022 17:46:26 -0500
-Message-Id: <20220125224645.79319-5-stefanb@linux.vnet.ibm.com>
+        jmorris@namei.org, Stefan Berger <stefanb@linux.ibm.com>
+Subject: [PATCH v9 15/23] ima: Implement hierarchical processing of file accesses
+Date: Tue, 25 Jan 2022 17:46:37 -0500
+Message-Id: <20220125224645.79319-16-stefanb@linux.vnet.ibm.com>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <20220125224645.79319-1-stefanb@linux.vnet.ibm.com>
 References: <20220125224645.79319-1-stefanb@linux.vnet.ibm.com>
@@ -72,8 +70,8 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: G2UliTMicESmkwNc88np_8GSRYihczgf
-X-Proofpoint-ORIG-GUID: Zn1d921sXtPx2bgeQDfZp1VvJ83fd1Aw
+X-Proofpoint-GUID: HCdg-vNidBEYyHILyHmR7rwAN1zlubVr
+X-Proofpoint-ORIG-GUID: 9ga8XOLzV59JZDzjNC1xxYo1NmfJBHx2
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.816,Hydra:6.0.425,FMLib:17.11.62.513
  definitions=2022-01-25_06,2022-01-25_02,2021-12-02_01
@@ -85,205 +83,214 @@ X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 malware
 
 From: Stefan Berger <stefanb@linux.ibm.com>
 
-Enable multiple instances of securityfs by keying each instance with a
-pointer to the user namespace it belongs to.
+Implement hierarchical processing of file accesses in IMA namespaces by
+walking the list of user namespaces towards the root. This way file
+accesses can be audited in an IMA namespace and also be evaluated against
+the IMA policies of parent IMA namespaces.
 
-Since we do not need the pinning of the filesystem for the virtualization
-case, limit the usage of simple_pin_fs() and simpe_release_fs() to the
-case when the init_user_ns is active. This simplifies the cleanup for the
-virtualization case where usage of securityfs_remove() to free dentries
-is not needed anymore.
+Pass the user_namespace into process_measurement since we will be walking
+the hierarchy of user_namespaces towards the init_user_ns and we can easily
+derive the ima_namespace from the user_namespace.
 
-For the initial securityfs, i.e. the one mounted in the host userns mount,
-nothing changes. The rules for securityfs_remove() are as before and it is
-still paired with securityfs_create(). Specifically, a file created via
-securityfs_create_dentry() in the initial securityfs mount still needs to
-be removed by a call to securityfs_remove(). Creating a new dentry in the
-initial securityfs mount still pins the filesystem like it always did.
-Consequently, the initial securityfs mount is not destroyed on
-umount/shutdown as long as at least one user of it still has dentries that
-it hasn't removed with a call to securityfs_remove().
+__process_measurement() returns either 0 or -EACCES. For hierarchical
+processing remember the -EACCES returned by this function but continue
+to the parent user namespace. At the end either return 0 or -EACCES
+if an error occurred in one of the IMA namespaces.
 
-Prevent mounting of an instance of securityfs in another user namespace
-than it belongs to. Also, prevent accesses to files and directories by
-a user namespace that is neither the user namespace it belongs to
-nor an ancestor of the user namespace that the instance of securityfs
-belongs to. Do not prevent access if securityfs was bind-mounted and
-therefore the init_user_ns is the owning user namespace.
+Currently the ima_ns pointer of the user_namespace is always NULL except
+at the init_user_ns, so test ima_ns for NULL pointer and skip the call to
+__process_measurement() if it is NULL. Once IMA namespacing is fully
+enabled, the pointer may still be NULL due to late initialization of the
+IMA namespace.
 
 Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-Signed-off-by: James Bottomley <James.Bottomley@HansenPartnership.com>
-Suggested-by: Christian Brauner <brauner@kernel.org>
----
- security/inode.c | 72 ++++++++++++++++++++++++++++++++++++++++--------
- 1 file changed, 61 insertions(+), 11 deletions(-)
 
-diff --git a/security/inode.c b/security/inode.c
-index 13e6780c4444..e525ba960063 100644
---- a/security/inode.c
-+++ b/security/inode.c
-@@ -21,9 +21,37 @@
- #include <linux/security.h>
- #include <linux/lsm_hooks.h>
- #include <linux/magic.h>
-+#include <linux/user_namespace.h>
+---
+
+v9:
+  - Switch callers to pass user_namespace rather than ima_namespace with
+    potential NULL pointer
+  - Add default case to switch statement and warn if this happens
+  - Implement ima_ns_from_user_ns() in this patch now
+---
+ security/integrity/ima/ima.h      |  8 ++++
+ security/integrity/ima/ima_main.c | 75 +++++++++++++++++++++++--------
+ 2 files changed, 64 insertions(+), 19 deletions(-)
+
+diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+index 0057b1fd6c18..aea8fb8d2854 100644
+--- a/security/integrity/ima/ima.h
++++ b/security/integrity/ima/ima.h
+@@ -493,4 +493,12 @@ struct user_namespace *ima_user_ns_from_file(const struct file *filp)
+ 	return file_inode(filp)->i_sb->s_user_ns;
+ }
  
--static struct vfsmount *mount;
--static int mount_count;
-+static struct vfsmount *init_securityfs_mount;
-+static int init_securityfs_mount_count;
-+
-+static int securityfs_permission(struct user_namespace *mnt_userns,
-+				 struct inode *inode, int mask)
++static inline struct ima_namespace
++*ima_ns_from_user_ns(struct user_namespace *user_ns)
 +{
-+	int err;
-+
-+	err = generic_permission(&init_user_ns, inode, mask);
-+	if (!err) {
-+		/* Unless bind-mounted, deny access if current_user_ns() is not
-+		 * ancestor.
-+		 */
-+		if (inode->i_sb->s_user_ns != &init_user_ns &&
-+		    !in_userns(current_user_ns(), inode->i_sb->s_user_ns))
-+			err = -EACCES;
-+	}
-+
-+	return err;
++	if (user_ns == &init_user_ns)
++		return &init_ima_ns;
++	return NULL;
 +}
 +
-+static const struct inode_operations securityfs_dir_inode_operations = {
-+	.permission	= securityfs_permission,
-+	.lookup		= simple_lookup,
-+};
-+
-+static const struct inode_operations securityfs_file_inode_operations = {
-+	.permission	= securityfs_permission,
-+};
+ #endif /* __LINUX_IMA_H */
+diff --git a/security/integrity/ima/ima_main.c b/security/integrity/ima/ima_main.c
+index ae0e9b14554a..3385221ca1d5 100644
+--- a/security/integrity/ima/ima_main.c
++++ b/security/integrity/ima/ima_main.c
+@@ -196,10 +196,10 @@ void ima_file_free(struct file *file)
+ 	ima_check_last_writer(iint, inode, file);
+ }
  
- static void securityfs_free_inode(struct inode *inode)
+-static int process_measurement(struct ima_namespace *ns,
+-			       struct file *file, const struct cred *cred,
+-			       u32 secid, char *buf, loff_t size, int mask,
+-			       enum ima_hooks func)
++static int __process_measurement(struct ima_namespace *ns,
++				 struct file *file, const struct cred *cred,
++				 u32 secid, char *buf, loff_t size, int mask,
++				 enum ima_hooks func)
  {
-@@ -40,20 +68,25 @@ static const struct super_operations securityfs_super_operations = {
- static int securityfs_fill_super(struct super_block *sb, struct fs_context *fc)
- {
- 	static const struct tree_descr files[] = {{""}};
-+	struct user_namespace *ns = fc->user_ns;
- 	int error;
- 
-+	if (WARN_ON(ns != current_user_ns()))
-+		return -EINVAL;
-+
- 	error = simple_fill_super(sb, SECURITYFS_MAGIC, files);
- 	if (error)
- 		return error;
- 
- 	sb->s_op = &securityfs_super_operations;
-+	sb->s_root->d_inode->i_op = &securityfs_dir_inode_operations;
- 
+ 	struct inode *inode = file_inode(file);
+ 	struct integrity_iint_cache *iint = NULL;
+@@ -391,6 +391,41 @@ static int process_measurement(struct ima_namespace *ns,
  	return 0;
  }
  
- static int securityfs_get_tree(struct fs_context *fc)
++static int process_measurement(struct user_namespace *user_ns,
++			       struct file *file, const struct cred *cred,
++			       u32 secid, char *buf, loff_t size, int mask,
++			       enum ima_hooks func)
++{
++	struct ima_namespace *ns;
++	int ret = 0;
++
++	while (user_ns) {
++		ns = ima_ns_from_user_ns(user_ns);
++		if (ns) {
++			int rc;
++
++			rc = __process_measurement(ns, file, cred, secid, buf,
++						   size, mask, func);
++			switch (rc) {
++			case 0:
++				break;
++			case -EACCES:
++				/* return this error at the end but continue */
++				ret = -EACCES;
++				break;
++			default:
++				/* should not happen */
++				ret = -EACCES;
++				WARN_ON_ONCE(true);
++			}
++		}
++
++		user_ns = user_ns->parent;
++	};
++
++	return ret;
++}
++
+ /**
+  * ima_file_mmap - based on policy, collect/store measurement.
+  * @file: pointer to the file to be measured (May be NULL)
+@@ -404,13 +439,14 @@ static int process_measurement(struct ima_namespace *ns,
+  */
+ int ima_file_mmap(struct file *file, unsigned long prot)
  {
--	return get_tree_single(fc, securityfs_fill_super);
-+	return get_tree_keyed(fc, securityfs_fill_super, fc->user_ns);
- }
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct user_namespace *user_ns = current_user_ns();
+ 	u32 secid;
  
- static const struct fs_context_operations securityfs_context_ops = {
-@@ -71,6 +104,7 @@ static struct file_system_type fs_type = {
- 	.name =		"securityfs",
- 	.init_fs_context = securityfs_init_fs_context,
- 	.kill_sb =	kill_litter_super,
-+	.fs_flags =	FS_USERNS_MOUNT,
- };
+ 	if (file && (prot & PROT_EXEC)) {
+ 		security_task_getsecid_subj(current, &secid);
+-		return process_measurement(ns, file, current_cred(), secid,
+-					   NULL, 0, MAY_EXEC, MMAP_CHECK);
++		return process_measurement(user_ns, file, current_cred(),
++					   secid, NULL, 0, MAY_EXEC,
++					   MMAP_CHECK);
+ 	}
+ 
+ 	return 0;
+@@ -485,19 +521,19 @@ int ima_file_mprotect(struct vm_area_struct *vma, unsigned long prot)
+  */
+ int ima_bprm_check(struct linux_binprm *bprm)
+ {
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct user_namespace *user_ns = current_user_ns();
+ 	int ret;
+ 	u32 secid;
+ 
+ 	security_task_getsecid_subj(current, &secid);
+-	ret = process_measurement(ns, bprm->file, current_cred(), secid, NULL,
+-				  0, MAY_EXEC, BPRM_CHECK);
++	ret = process_measurement(user_ns, bprm->file, current_cred(), secid,
++				  NULL, 0, MAY_EXEC, BPRM_CHECK);
+ 	if (ret)
+ 		return ret;
+ 
+ 	security_cred_getsecid(bprm->cred, &secid);
+-	return process_measurement(ns, bprm->file, bprm->cred, secid, NULL, 0,
+-				   MAY_EXEC, CREDS_CHECK);
++	return process_measurement(user_ns, bprm->file, bprm->cred, secid,
++				   NULL, 0, MAY_EXEC, CREDS_CHECK);
+ }
  
  /**
-@@ -109,6 +143,7 @@ static struct dentry *securityfs_create_dentry(const char *name, umode_t mode,
- 					const struct file_operations *fops,
- 					const struct inode_operations *iops)
- {
-+	struct user_namespace *ns = current_user_ns();
- 	struct dentry *dentry;
- 	struct inode *dir, *inode;
- 	int error;
-@@ -118,12 +153,19 @@ static struct dentry *securityfs_create_dentry(const char *name, umode_t mode,
- 
- 	pr_debug("securityfs: creating file '%s'\n",name);
- 
--	error = simple_pin_fs(&fs_type, &mount, &mount_count);
--	if (error)
--		return ERR_PTR(error);
-+	if (ns == &init_user_ns) {
-+		error = simple_pin_fs(&fs_type, &init_securityfs_mount,
-+				      &init_securityfs_mount_count);
-+		if (error)
-+			return ERR_PTR(error);
-+	}
- 
--	if (!parent)
--		parent = mount->mnt_root;
-+	if (!parent) {
-+		if (ns == &init_user_ns)
-+			parent = init_securityfs_mount->mnt_root;
-+		else
-+			return ERR_PTR(-EINVAL);
-+	}
- 
- 	dir = d_inode(parent);
- 
-@@ -148,7 +190,7 @@ static struct dentry *securityfs_create_dentry(const char *name, umode_t mode,
- 	inode->i_atime = inode->i_mtime = inode->i_ctime = current_time(inode);
- 	inode->i_private = data;
- 	if (S_ISDIR(mode)) {
--		inode->i_op = &simple_dir_inode_operations;
-+		inode->i_op = &securityfs_dir_inode_operations;
- 		inode->i_fop = &simple_dir_operations;
- 		inc_nlink(inode);
- 		inc_nlink(dir);
-@@ -156,6 +198,7 @@ static struct dentry *securityfs_create_dentry(const char *name, umode_t mode,
- 		inode->i_op = iops ? iops : &simple_symlink_inode_operations;
- 		inode->i_link = data;
- 	} else {
-+		inode->i_op = &securityfs_file_inode_operations;
- 		inode->i_fop = fops;
- 	}
- 	d_instantiate(dentry, inode);
-@@ -167,7 +210,9 @@ static struct dentry *securityfs_create_dentry(const char *name, umode_t mode,
- 	dentry = ERR_PTR(error);
- out:
- 	inode_unlock(dir);
--	simple_release_fs(&mount, &mount_count);
-+	if (ns == &init_user_ns)
-+		simple_release_fs(&init_securityfs_mount,
-+				  &init_securityfs_mount_count);
- 	return dentry;
- }
- 
-@@ -293,11 +338,14 @@ EXPORT_SYMBOL_GPL(securityfs_create_symlink);
+@@ -512,11 +548,12 @@ int ima_bprm_check(struct linux_binprm *bprm)
   */
- void securityfs_remove(struct dentry *dentry)
+ int ima_file_check(struct file *file, int mask)
  {
-+	struct user_namespace *ns;
- 	struct inode *dir;
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct user_namespace *user_ns = current_user_ns();
+ 	u32 secid;
  
- 	if (!dentry || IS_ERR(dentry))
- 		return;
- 
-+	ns = dentry->d_sb->s_user_ns;
-+
- 	dir = d_inode(dentry->d_parent);
- 	inode_lock(dir);
- 	if (simple_positive(dentry)) {
-@@ -310,7 +358,9 @@ void securityfs_remove(struct dentry *dentry)
- 		dput(dentry);
- 	}
- 	inode_unlock(dir);
--	simple_release_fs(&mount, &mount_count);
-+	if (ns == &init_user_ns)
-+		simple_release_fs(&init_securityfs_mount,
-+				  &init_securityfs_mount_count);
+ 	security_task_getsecid_subj(current, &secid);
+-	return process_measurement(ns, file, current_cred(), secid, NULL, 0,
++	return process_measurement(user_ns, file, current_cred(), secid,
++				   NULL, 0,
+ 				   mask & (MAY_READ | MAY_WRITE | MAY_EXEC |
+ 					   MAY_APPEND), FILE_CHECK);
  }
- EXPORT_SYMBOL_GPL(securityfs_remove);
+@@ -698,7 +735,7 @@ void ima_post_path_mknod(struct user_namespace *mnt_userns,
+ int ima_read_file(struct file *file, enum kernel_read_file_id read_id,
+ 		  bool contents)
+ {
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct user_namespace *user_ns = current_user_ns();
+ 	enum ima_hooks func;
+ 	u32 secid;
  
+@@ -721,7 +758,7 @@ int ima_read_file(struct file *file, enum kernel_read_file_id read_id,
+ 	/* Read entire file for all partial reads. */
+ 	func = read_idmap[read_id] ?: FILE_CHECK;
+ 	security_task_getsecid_subj(current, &secid);
+-	return process_measurement(ns, file, current_cred(), secid, NULL,
++	return process_measurement(user_ns, file, current_cred(), secid, NULL,
+ 				   0, MAY_READ, func);
+ }
+ 
+@@ -749,7 +786,7 @@ const int read_idmap[READING_MAX_ID] = {
+ int ima_post_read_file(struct file *file, void *buf, loff_t size,
+ 		       enum kernel_read_file_id read_id)
+ {
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct user_namespace *user_ns = current_user_ns();
+ 	enum ima_hooks func;
+ 	u32 secid;
+ 
+@@ -766,8 +803,8 @@ int ima_post_read_file(struct file *file, void *buf, loff_t size,
+ 
+ 	func = read_idmap[read_id] ?: FILE_CHECK;
+ 	security_task_getsecid_subj(current, &secid);
+-	return process_measurement(ns, file, current_cred(), secid, buf, size,
+-				   MAY_READ, func);
++	return process_measurement(user_ns, file, current_cred(), secid,
++				   buf, size, MAY_READ, func);
+ }
+ 
+ /**
 -- 
 2.31.1
 
