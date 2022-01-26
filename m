@@ -1,21 +1,21 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 43F83168
-	for <containers@lists.linux.dev>; Wed, 26 Jan 2022 08:47:28 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E8114C340E3;
-	Wed, 26 Jan 2022 08:47:22 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B8C22168
+	for <containers@lists.linux.dev>; Wed, 26 Jan 2022 09:11:12 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id D4186C340E3;
+	Wed, 26 Jan 2022 09:11:07 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1643186847;
-	bh=fYjYvin/ncOZkgLTguVdtStT4rh5GTFzqtSVTzTJ5zc=;
+	s=k20201202; t=1643188272;
+	bh=81J6WPzY+ci50rtR2WWy0x8FAKIC8UJUQHIK59zO96I=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=fz3RmuSXApVcPfd2W5IX7BNuEBYQ4d/CA4tiX/LmenrLmCpArMF2qcdlYLQqGghN4
-	 kcz87olbwJ69uqNx2KuvfDqsGLid6phMh1y7QQ6ZDZkna1T3qDXoi3B54/PL4HxhAk
-	 qjJsJKbt74o7ckNIdM5WXtP8wLuxGZmlqPPeZxACkgBgoxnPLDQBDsYvZlNZCeEMYg
-	 r72iPq8g4MXzgih9XPna4tWSThd95NHiJg2TUilTWFMRaid5MshhbHKH9ve+Zx7u3i
-	 PhGYuWoPHAEXHVLJnnqfliypniJ+DOQbrG9blbksF7BIhGznT10Mb5v+/tRN/MW5b7
-	 Yn5BnOWWVQrcA==
-Date: Wed, 26 Jan 2022 09:47:15 +0100
+	b=McAkAp5dZD7GpxrB2gHhx7l+taB5JCn8xsMZY5FJp3JIY3Vv1nqeAjaZn5HJMlbkW
+	 tNbttNjiPfRD0fA0yDHJVGwjq3Cy7M+4DNTqL5EgbvOIo9iBerzAbvgjAwX5Gf+R0X
+	 b+GqTvhVUM8j2N0nIPZt9S6oIAuq2BujY+p9wJGbyjdxhCBxng14pAsQk9P/wA2uGv
+	 Ns3AWK1vdEfh3MalW6AGWael9UeWyu58w0YGInd50x/Uipb8k7Z+UytQd4xS94TjIW
+	 myM1bGpxvsZgDKlsyn6IBZTOa5jAvNtIEveWUR7fOIlkUUWbUpFORHWD4tdF17nDbR
+	 pUBBh3uXHj/Lw==
+Date: Wed, 26 Jan 2022 10:11:04 +0100
 From: Christian Brauner <brauner@kernel.org>
 To: Stefan Berger <stefanb@linux.vnet.ibm.com>
 Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
@@ -27,11 +27,10 @@ Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
 	linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
 	linux-security-module@vger.kernel.org, jmorris@namei.org,
 	Stefan Berger <stefanb@linux.ibm.com>
-Subject: Re: [PATCH v9 05/23] ima: Define ima_namespace struct and start
- moving variables into it
-Message-ID: <20220126084715.b2wtmlbzoaqtipbp@wittgenstein>
+Subject: Re: [PATCH v9 06/23] ima: Move arch_policy_entry into ima_namespace
+Message-ID: <20220126091104.jbedxrewojcmvy3u@wittgenstein>
 References: <20220125224645.79319-1-stefanb@linux.vnet.ibm.com>
- <20220125224645.79319-6-stefanb@linux.vnet.ibm.com>
+ <20220125224645.79319-7-stefanb@linux.vnet.ibm.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
@@ -40,33 +39,20 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20220125224645.79319-6-stefanb@linux.vnet.ibm.com>
+In-Reply-To: <20220125224645.79319-7-stefanb@linux.vnet.ibm.com>
 
-On Tue, Jan 25, 2022 at 05:46:27PM -0500, Stefan Berger wrote:
+On Tue, Jan 25, 2022 at 05:46:28PM -0500, Stefan Berger wrote:
 > From: Stefan Berger <stefanb@linux.ibm.com>
 > 
-> Define the ima_namespace structure and the ima_namespace variable
-> init_ima_ns for the host's IMA namespace. Implement basic functions for
-> namespacing support.
+> Move the arch_policy_entry pointer into ima_namespace.
 > 
-> Move variables related to the IMA policy into the ima_namespace. This way
-> the IMA policy of an IMA namespace can be set and displayed using a
-> front-end like securityfs.
-> 
-> Implement ima_ns_from_file() to get the IMA namespace via the user
-> namespace of the securityfs superblock that a file belongs to.
-> 
-> To get the current ima_namespace use &init_ima_ns when a function
-> that is related to a policy rule is called.
+> When freeing the memory set the pointer to NULL.
 > 
 > Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-> 
 > ---
 
-For the approach of introducing struct ima_namespace and moving a bunch
-of variables in there at the same time to prepare subsequent further
-namespacing:
+Only relevant for the initial imans (for now) since it is derived from a
+boot parameter. Maybe mention this in the commit message.
 
+Move into struct ima_namespace looks good,
 Acked-by: Christian Brauner <brauner@kernel.org>
-
-I can't speak to the actual ima changes.
