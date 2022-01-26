@@ -1,21 +1,21 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C44A7168
-	for <containers@lists.linux.dev>; Wed, 26 Jan 2022 08:30:39 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id AC646C340E3;
-	Wed, 26 Jan 2022 08:30:33 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C6C782CA7
+	for <containers@lists.linux.dev>; Wed, 26 Jan 2022 08:38:22 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9C61EC340E3;
+	Wed, 26 Jan 2022 08:38:17 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1643185839;
-	bh=qKazU28NFPi1JaZnJrqSAMht8qRDH0NxIN7MLjkqLqE=;
+	s=k20201202; t=1643186302;
+	bh=hql5taXDX4ZFmojFgMRXFkOGKx291CxE+GSNeSfAA2c=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=NPWQNvgAyMwwqb0Ni1Ase2Q9wL5sOBkJ+9hRMUWNP3bxm9BiQH7CnQIH2dxzcSszN
-	 g0z5UOqsQQDEHg50yZDClr4pXnj/GNXR4sQkqc1tREwWE+grwOvcOGo/DMfpoxEDsp
-	 VKpKpqBBhYB9gjcZPAaSENV7OstEIHozmvf+wLJ7/Onnl5TTPbSUZySgr2m5k79+Pu
-	 22xVzNSkGljlVJmdTmRbF643FrqBvft1U/9Vrt5BA6irynPpNr/lVoesnWMviLvNVe
-	 XNIuhb/liA9PytK1+dOMbcXmolTxksY2cnbwfrBCtyG3H2jlShcOg+beYjCWrOUJm7
-	 VMWP2wMUmUvVw==
-Date: Wed, 26 Jan 2022 09:30:30 +0100
+	b=pNb+YTM6/mJuqAYTriG5zewRhHzjPggPybHpoW8TTb59Zd19gxWB+rotrC6gceiZI
+	 aNYPvP5pSSYQKToxenZI6nFnIV7BbVqeXKHRsXl7cgtqYGdsk5Ww6saclUG/juZHhU
+	 DRwmm4doPU4RrdV1ehlVGIrxpIkOuWVP7huqJsmNMl3eWUgsTBTLkR5Yrq4hUd427k
+	 ljHiNHVKcLEGP8sirEGX0NJWHdtNZSW4Jy1GRWON4i9isvXo7vH0Ks+l4EEqwOFil4
+	 pqiXmnpmZTP3AdsYYeSaU+mUeO+RysNjQR9OGFglrTSz6GT1PKmkYdn1Js7gEkKTFy
+	 x+lyBwK1EV8uw==
+Date: Wed, 26 Jan 2022 09:38:14 +0100
 From: Christian Brauner <brauner@kernel.org>
 To: Stefan Berger <stefanb@linux.vnet.ibm.com>
 Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
@@ -27,10 +27,11 @@ Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
 	linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
 	linux-security-module@vger.kernel.org, jmorris@namei.org,
 	Stefan Berger <stefanb@linux.ibm.com>
-Subject: Re: [PATCH v9 01/23] ima: Remove ima_policy file before directory
-Message-ID: <20220126083030.theijkt7v3w3fwm5@wittgenstein>
+Subject: Re: [PATCH v9 02/23] ima: Do not print policy rule with inactive LSM
+ labels
+Message-ID: <20220126083814.3ndwkhivir573aok@wittgenstein>
 References: <20220125224645.79319-1-stefanb@linux.vnet.ibm.com>
- <20220125224645.79319-2-stefanb@linux.vnet.ibm.com>
+ <20220125224645.79319-3-stefanb@linux.vnet.ibm.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
@@ -39,17 +40,23 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20220125224645.79319-2-stefanb@linux.vnet.ibm.com>
+In-Reply-To: <20220125224645.79319-3-stefanb@linux.vnet.ibm.com>
 
-On Tue, Jan 25, 2022 at 05:46:23PM -0500, Stefan Berger wrote:
+On Tue, Jan 25, 2022 at 05:46:24PM -0500, Stefan Berger wrote:
 > From: Stefan Berger <stefanb@linux.ibm.com>
 > 
-> The removal of ima_dir currently fails since ima_policy still exists, so
-> remove the ima_policy file before removing the directory.
+> Before printing a policy rule scan for inactive LSM labels in the policy
+> rule. Inactive LSM labels are identified by args_p != NULL and
+> rule == NULL.
 > 
-> Fixes: 4af4662fa4a9 ("integrity: IMA policy")
-> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-> ---
+> Fixes: b16942455193 ("ima: use the lsm policy update notifier")
 
-Looks good,
-Acked-by: Christian Brauner <brauner@kernel.org>
+That commit message of the referenced patch reads:
+
+"Don't do lazy policy updates while running the rule matching, run the
+updates as they happen."
+
+and given that we had a lengthy discussion how to update the rules I'd
+really would have liked an explanation why the update needs to run
+immediately. Not doing it lazily is the whole reason we have this
+notifier infra. Why can't this be done lazily?
