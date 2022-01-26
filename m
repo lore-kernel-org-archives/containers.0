@@ -1,21 +1,21 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4F32129CA
-	for <containers@lists.linux.dev>; Wed, 26 Jan 2022 13:19:15 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id F3ECDC340E3;
-	Wed, 26 Jan 2022 13:19:09 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 061672CA8
+	for <containers@lists.linux.dev>; Wed, 26 Jan 2022 13:43:44 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 85E67C340E3;
+	Wed, 26 Jan 2022 13:43:39 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1643203155;
-	bh=lKH8YDY04maTeVFEgXG3vRNVow0n8FFojBX2uObASL4=;
+	s=k20201202; t=1643204624;
+	bh=yMFvQqxwqDIuVp2GIpZdDIZGBM7hvQhOlI6IOZPBOgE=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=eyIJyOY4AwdCrefrN53yw5S60cWw5bG6H46HrMjDBuUfr9pDvdXYIEJlCI52QIOaN
-	 CePfyKY59M+eyz4Vz/dJPQW/QmBoYe4qVAMtHjesWsBgua1I0ES+j8KS/Mfi3tZxC/
-	 X4w0C9wvjmpTmwNHwSFCS59FXqN/i7BL0rtL5z3uFJ+h0ZA5hgZJf4JIMiXDNeIpPl
-	 RXw9MFHi5N0V43qS5A3ZR9dACrhH+MhBa+ks6zuz+li1ZRxsG4sVKutRv71Jv/WWcl
-	 AGwGSPF+qutru6BJto/Uh9VJHnLC3I0S6FhV+OBREKbmsOY3nuyI9CpGHu3ZZdKMV4
-	 kLHRFn3VU6/ow==
-Date: Wed, 26 Jan 2022 14:19:07 +0100
+	b=Qx9WNWys+iiLYrvUd4CWOuHHnhQvnpVRXmVi2MI/CITSzaAzGOTRze+m6CfEoShf/
+	 hTbDRkepUg2XL2mpNrXu8iXnjqxB2Du40xy1r1uuVa+jaP51K0tVTyokxsgneACiqw
+	 jxQ7IwM42MhvSrlogC2ZOYBAM7BZhdWNWHZ8PDWvPVDCfGXwJcry7+rzTUqnr5wCe+
+	 txrT1d0XTdYlduALq9rE0litfBoLodTHICmuSo8uzuoMLzLV03qMcXZNNEvBYmTo2/
+	 uUxXuuQP0BE+/aQLrgS9KokhlCf9rbYUKHQcjuV8yB/8Spm88i5Juw3HmOk9hArGSl
+	 e62YCoQC2oZsQ==
+Date: Wed, 26 Jan 2022 14:43:36 +0100
 From: Christian Brauner <brauner@kernel.org>
 To: Stefan Berger <stefanb@linux.vnet.ibm.com>
 Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
@@ -26,10 +26,13 @@ Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
 	puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
 	linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
 	linux-security-module@vger.kernel.org, jmorris@namei.org,
-	Stefan Berger <stefanb@linux.ibm.com>
-Subject: Re: [PATCH v9 00/23] ima: Namespace IMA with audit support in IMA-ns
-Message-ID: <20220126131907.5fauajyjfbcnienp@wittgenstein>
+	Stefan Berger <stefanb@linux.ibm.com>,
+	Denis Semakin <denis.semakin@huawei.com>
+Subject: Re: [PATCH v9 12/23] ima: Define mac_admin_ns_capable() as a wrapper
+ for ns_capable()
+Message-ID: <20220126134336.fqaqwzed3cpaz2vi@wittgenstein>
 References: <20220125224645.79319-1-stefanb@linux.vnet.ibm.com>
+ <20220125224645.79319-13-stefanb@linux.vnet.ibm.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
@@ -38,48 +41,103 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20220125224645.79319-1-stefanb@linux.vnet.ibm.com>
+In-Reply-To: <20220125224645.79319-13-stefanb@linux.vnet.ibm.com>
 
-On Tue, Jan 25, 2022 at 05:46:22PM -0500, Stefan Berger wrote:
+On Tue, Jan 25, 2022 at 05:46:34PM -0500, Stefan Berger wrote:
 > From: Stefan Berger <stefanb@linux.ibm.com>
 > 
-> The goal of this series of patches is to start with the namespacing of
-> IMA and support auditing within an IMA namespace (IMA-ns) as the first
-> step.
+> Define mac_admin_ns_capable() as a wrapper for the combined ns_capable()
+> checks on CAP_MAC_ADMIN and CAP_SYS_ADMIN in a user namespace. Return
+> true on the check if either capability or both are available.
 > 
-> In this series the IMA namespace is piggy backing on the user namespace
-> and therefore an IMA namespace is created when a user namespace is
-> created, although this is done late when SecurityFS is mounted inside
-> a user namespace. The advantage of piggy backing on the user namespace
-> is that the user namespace can provide the keys infrastructure that IMA
-> appraisal support will need later on.
+> Use mac_admin_ns_capable() in place of capable(SYS_ADMIN). This will allow
+> an IMA namespace to read the policy with only CAP_MAC_ADMIN, which has
+> less privileges than CAP_SYS_ADMIN.
 > 
-> We chose the goal of supporting auditing within an IMA namespace since it
-> requires the least changes to IMA. Following this series, auditing within
-> an IMA namespace can be activated by a user running the following lines
-> that rely on a statically linked busybox to be installed on the host for
-> execution within the minimal container environment:
+> Signed-off-by: Denis Semakin <denis.semakin@huawei.com>
+> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
+> ---
+
+It's unfortunate that the securityfs namespacing patch with
+FS_USERNS_MOUNT set comes before this patch. The check below with
+ima_open_policy() operates on an unprivileged userns if securityfs is
+mounted in there. But the ima namespace is the hardcoded as the initial
+ima namespace.
+
+I'd rather have the securityfs namespacing patch moved very late in the
+series. Even if might not yet possible to open an ima policy in a
+non-init userns at this point in the patch series, it still is confusing
+in terms of ordering. Especially when considering this were to land in
+an upstream tree and one would later in a few years have to read through
+the history of this code again.
+
+>  static int ima_open_policy(struct inode *inode, struct file *filp)
+>  {
+> +#ifdef CONFIG_IMA_READ_POLICY
+> +	struct user_namespace *user_ns = ima_user_ns_from_file(filp);
+> +#endif
+
+>  include/linux/capability.h      | 6 ++++++
+>  security/integrity/ima/ima.h    | 6 ++++++
+>  security/integrity/ima/ima_fs.c | 5 ++++-
+>  3 files changed, 16 insertions(+), 1 deletion(-)
 > 
-> mkdir -p rootfs/{bin,mnt,proc}
-> cp /sbin/busybox rootfs/bin
-> cp /sbin/busybox rootfs/bin/busybox2
-> echo >> rootfs/bin/busybox2
-> PATH=/bin unshare --user --map-root-user --mount-proc --pid --fork \
->   --root rootfs busybox sh -c \
->  "busybox mount -t securityfs /mnt /mnt; \
->   busybox echo 1 > /mnt/ima/active; \
->   busybox echo 'audit func=BPRM_CHECK mask=MAY_EXEC' > /mnt/ima/policy; \
-
-I think we need to limit the number of rules that can be added to an ima
-namespace to prevent DOS attacks. The current implementation allows
-users to write as many ima rules as they want.
-
-My suggestion would be that you look at real-world data to figure out
-what a fairly common number of rules is that people write. Then use this
-as the hard-coded limit for a first implementation. If the use-case
-arises you can later make this limit configurable by introducing a
-ucount for ima rules via /proc/sys/user/max_ima_rules.
-
-Additionally, you should probably switch a lot of ima allocations from
-GFP_KERNEL to GFP_KERNEL_ACCOUNT as allocations triggerable from userns
-should be treated as untrusted.
+> diff --git a/include/linux/capability.h b/include/linux/capability.h
+> index 65efb74c3585..991579178f32 100644
+> --- a/include/linux/capability.h
+> +++ b/include/linux/capability.h
+> @@ -270,6 +270,12 @@ static inline bool checkpoint_restore_ns_capable(struct user_namespace *ns)
+>  		ns_capable(ns, CAP_SYS_ADMIN);
+>  }
+>  
+> +static inline bool mac_admin_ns_capable(struct user_namespace *ns)
+> +{
+> +	return ns_capable(ns, CAP_MAC_ADMIN) ||
+> +		ns_capable(ns, CAP_SYS_ADMIN);
+> +}
+> +
+>  /* audit system wants to get cap info from files as well */
+>  int get_vfs_caps_from_disk(struct user_namespace *mnt_userns,
+>  			   const struct dentry *dentry,
+> diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+> index fb6bd054d899..0057b1fd6c18 100644
+> --- a/security/integrity/ima/ima.h
+> +++ b/security/integrity/ima/ima.h
+> @@ -487,4 +487,10 @@ static inline int ima_filter_rule_match(u32 secid, u32 field, u32 op,
+>  #define	POLICY_FILE_FLAGS	S_IWUSR
+>  #endif /* CONFIG_IMA_READ_POLICY */
+>  
+> +static inline
+> +struct user_namespace *ima_user_ns_from_file(const struct file *filp)
+> +{
+> +	return file_inode(filp)->i_sb->s_user_ns;
+> +}
+> +
+>  #endif /* __LINUX_IMA_H */
+> diff --git a/security/integrity/ima/ima_fs.c b/security/integrity/ima/ima_fs.c
+> index 3afb7a74d2cf..9162f06d182f 100644
+> --- a/security/integrity/ima/ima_fs.c
+> +++ b/security/integrity/ima/ima_fs.c
+> @@ -377,6 +377,9 @@ static const struct seq_operations ima_policy_seqops = {
+>   */
+>  static int ima_open_policy(struct inode *inode, struct file *filp)
+>  {
+> +#ifdef CONFIG_IMA_READ_POLICY
+> +	struct user_namespace *user_ns = ima_user_ns_from_file(filp);
+> +#endif
+>  	struct ima_namespace *ns = &init_ima_ns;
+>  
+>  	if (!(filp->f_flags & O_WRONLY)) {
+> @@ -385,7 +388,7 @@ static int ima_open_policy(struct inode *inode, struct file *filp)
+>  #else
+>  		if ((filp->f_flags & O_ACCMODE) != O_RDONLY)
+>  			return -EACCES;
+> -		if (!capable(CAP_SYS_ADMIN))
+> +		if (!mac_admin_ns_capable(user_ns))
+>  			return -EPERM;
+>  		return seq_open(filp, &ima_policy_seqops);
+>  #endif
+> -- 
+> 2.31.1
+> 
+> 
