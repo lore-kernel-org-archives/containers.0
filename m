@@ -1,208 +1,129 @@
 Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E4F2D2CA9
-	for <containers@lists.linux.dev>; Wed, 26 Jan 2022 23:13:41 +0000 (UTC)
-Received: from pps.filterd (m0098409.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 20QMnD79032141;
-	Wed, 26 Jan 2022 23:13:22 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
- mime-version : subject : to : cc : references : from : in-reply-to :
- content-type : content-transfer-encoding; s=pp1;
- bh=zvxSVDuUSN9c67gKeo+7qdK1xgI5l1LCOGcWxzPJOrA=;
- b=F1wXgn7SsKrigV97hjLB/OJBP1Lgm+MDpQ4FcBWXd1KcuhnQgZ4z3J0Rein9mVeDz2Hj
- 7CQqp8b9ZnLSEDypG77bvwY7cBllVvSm2FCNtq7qb7q1B2b2Ht0V37YxLqfyORmVoLB6
- aN42c87lFFnluylqDjR5T1vaAfUUc+XpjXsi8/0k4oJWhkXxvhlTtl57nNijTXyKhjJ6
- lHzk4LmOKagInmpGj1G17iC1tlER6WBZNEwMgb4I391qXlN2FCYkL5dGbZEOelPO20pX
- sHbcoDPSEAIs7eGO2/4Ig8vUZr7WDMixzCX1+fWYl2S/K++EqTQjjfhqN5aROC/h4FcM Rg== 
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3FEFD2C9D
+	for <containers@lists.linux.dev>; Thu, 27 Jan 2022 14:13:10 +0000 (UTC)
+Received: from pps.filterd (m0098410.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 20RDLa1I001407;
+	Thu, 27 Jan 2022 14:13:00 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : subject :
+ from : to : cc : date : in-reply-to : references : content-type :
+ mime-version : content-transfer-encoding; s=pp1;
+ bh=2mEKE2mLE734ZV7DyqQGgRuJkpcK3WlaLUk4wvuYRZI=;
+ b=dOx084y2SjMT0NJXu6lb8qYDlS9mHyixctu6GzEoGAudDaKijqxMFIzCe/+SJijd52A9
+ Jkmpp2pwytLiukEX6kSgH56d1Mr8JgNXhaUr8XvcAVXLRxaT/YR0pmDkiIJ+n3lmH8BG
+ WMkNFoRZ/vAE4+paiPvW5gc8at1ZX+wd3BBJX+WUDQSRcHwNiXMCupIs9aSI3K3EIWHs
+ 40vuwWZdQnT1gjeS5VrApkUEj0XyhREoFjrmYg3wGYGMJj9gpPUQDE23WINA8azKWDcS
+ nzl8eFTV+vuT2X372WATn078hugUiSY9Y6FEIJzi4OcxIXp20R2svC8TRWUaV0JXW8rW AQ== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3dufb80geh-1
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3duta8urwa-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 26 Jan 2022 23:13:22 +0000
-Received: from m0098409.ppops.net (m0098409.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 20QNBPXE010054;
-	Wed, 26 Jan 2022 23:13:21 GMT
-Received: from ppma01dal.us.ibm.com (83.d6.3fa9.ip4.static.sl-reverse.com [169.63.214.131])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3dufb80gea-1
+	Thu, 27 Jan 2022 14:12:59 +0000
+Received: from m0098410.ppops.net (m0098410.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 20RDLYB8001277;
+	Thu, 27 Jan 2022 14:12:58 GMT
+Received: from ppma05fra.de.ibm.com (6c.4a.5195.ip4.static.sl-reverse.com [149.81.74.108])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3duta8urvj-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 26 Jan 2022 23:13:21 +0000
-Received: from pps.filterd (ppma01dal.us.ibm.com [127.0.0.1])
-	by ppma01dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 20QNC9Rh007993;
-	Wed, 26 Jan 2022 23:13:20 GMT
-Received: from b03cxnp08025.gho.boulder.ibm.com (b03cxnp08025.gho.boulder.ibm.com [9.17.130.17])
-	by ppma01dal.us.ibm.com with ESMTP id 3dr9jc26g5-1
+	Thu, 27 Jan 2022 14:12:58 +0000
+Received: from pps.filterd (ppma05fra.de.ibm.com [127.0.0.1])
+	by ppma05fra.de.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 20RECNm4016041;
+	Thu, 27 Jan 2022 14:12:56 GMT
+Received: from b06avi18626390.portsmouth.uk.ibm.com (b06avi18626390.portsmouth.uk.ibm.com [9.149.26.192])
+	by ppma05fra.de.ibm.com with ESMTP id 3dr9j9emcn-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 26 Jan 2022 23:13:20 +0000
-Received: from b03ledav006.gho.boulder.ibm.com (b03ledav006.gho.boulder.ibm.com [9.17.130.237])
-	by b03cxnp08025.gho.boulder.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 20QNDHRj15532428
+	Thu, 27 Jan 2022 14:12:55 +0000
+Received: from d06av21.portsmouth.uk.ibm.com (d06av21.portsmouth.uk.ibm.com [9.149.105.232])
+	by b06avi18626390.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 20RE3FC420709796
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Wed, 26 Jan 2022 23:13:17 GMT
-Received: from b03ledav006.gho.boulder.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id A4A40C6055;
-	Wed, 26 Jan 2022 23:13:17 +0000 (GMT)
-Received: from b03ledav006.gho.boulder.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 79019C605D;
-	Wed, 26 Jan 2022 23:13:16 +0000 (GMT)
-Received: from [9.47.158.152] (unknown [9.47.158.152])
-	by b03ledav006.gho.boulder.ibm.com (Postfix) with ESMTP;
-	Wed, 26 Jan 2022 23:13:16 +0000 (GMT)
-Message-ID: <e1a8540c-0f53-d469-f10b-4098a3b9c9e0@linux.ibm.com>
-Date: Wed, 26 Jan 2022 18:13:15 -0500
-Precedence: bulk
-X-Mailing-List: containers@lists.linux.dev
-List-Id: <containers.lists.linux.dev>
-List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
-List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.3.0
-Subject: Re: [PATCH v9 22/23] ima: Show owning user namespace's uid and gid
- when displaying policy
-Content-Language: en-US
+	Thu, 27 Jan 2022 14:03:15 GMT
+Received: from d06av21.portsmouth.uk.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id B4B9B5204E;
+	Thu, 27 Jan 2022 14:12:52 +0000 (GMT)
+Received: from sig-9-65-89-165.ibm.com (unknown [9.65.89.165])
+	by d06av21.portsmouth.uk.ibm.com (Postfix) with ESMTP id 2E2C352067;
+	Thu, 27 Jan 2022 14:12:50 +0000 (GMT)
+Message-ID: <4fe1b4fbd47f9ee7ad92eaac7da1db642b126344.camel@linux.ibm.com>
+Subject: Re: [PATCH v9 02/23] ima: Do not print policy rule with inactive
+ LSM labels
+From: Mimi Zohar <zohar@linux.ibm.com>
 To: Christian Brauner <brauner@kernel.org>,
-        Stefan Berger <stefanb@linux.vnet.ibm.com>
-Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
+        Stefan Berger
+	 <stefanb@linux.vnet.ibm.com>
+Cc: linux-integrity@vger.kernel.org, serge@hallyn.com,
         christian.brauner@ubuntu.com, containers@lists.linux.dev,
         dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
         krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
         mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
         puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
         linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
-        linux-security-module@vger.kernel.org, jmorris@namei.org
+        linux-security-module@vger.kernel.org, jmorris@namei.org,
+        Stefan Berger
+ <stefanb@linux.ibm.com>
+Date: Thu, 27 Jan 2022 09:12:49 -0500
+In-Reply-To: <20220126083814.3ndwkhivir573aok@wittgenstein>
 References: <20220125224645.79319-1-stefanb@linux.vnet.ibm.com>
- <20220125224645.79319-23-stefanb@linux.vnet.ibm.com>
- <20220126144326.ci646xkm7mjsqwci@wittgenstein>
-From: Stefan Berger <stefanb@linux.ibm.com>
-In-Reply-To: <20220126144326.ci646xkm7mjsqwci@wittgenstein>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+	 <20220125224645.79319-3-stefanb@linux.vnet.ibm.com>
+	 <20220126083814.3ndwkhivir573aok@wittgenstein>
+Content-Type: text/plain; charset="ISO-8859-15"
+X-Mailer: Evolution 3.28.5 (3.28.5-18.el8) 
+Precedence: bulk
+X-Mailing-List: containers@lists.linux.dev
+List-Id: <containers.lists.linux.dev>
+List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
+List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
+Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: JSvjeTjvBRvl9ZF5RqZyKVPXK25sLyWG
-X-Proofpoint-ORIG-GUID: NmduSLxIcbmCfufW77-Gxcbl1eJOrh8X
+X-Proofpoint-GUID: sOKIoN0drbW1X5ImTYY2H2IYaJNyhRGV
+X-Proofpoint-ORIG-GUID: doHH_H6SDmcQxYiHG2pQM1tUNkh0GFJW
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.816,Hydra:6.0.425,FMLib:17.11.62.513
- definitions=2022-01-26_09,2022-01-26_01,2021-12-02_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 clxscore=1015
- priorityscore=1501 impostorscore=0 bulkscore=0 mlxlogscore=999
- lowpriorityscore=0 suspectscore=0 phishscore=0 mlxscore=0 spamscore=0
- adultscore=0 malwarescore=0 classifier=spam adjust=0 reason=mlx
- scancount=1 engine=8.12.0-2201110000 definitions=main-2201260131
+ definitions=2022-01-27_03,2022-01-27_01,2021-12-02_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 lowpriorityscore=0
+ clxscore=1011 impostorscore=0 priorityscore=1501 bulkscore=0
+ mlxlogscore=999 phishscore=0 malwarescore=0 suspectscore=0 mlxscore=0
+ spamscore=0 adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2201110000 definitions=main-2201270086
 
+Hi Christian,
 
-On 1/26/22 09:43, Christian Brauner wrote:
-> On Tue, Jan 25, 2022 at 05:46:44PM -0500, Stefan Berger wrote:
->> From: Stefan Berger <stefanb@linux.ibm.com>
->>
->> Show the uid and gid values relative to the user namespace that is
->> currently active. The effect of this changes is that when one displays
->> the policy from the user namespace that originally set the policy,
->> the same uid and gid values are shown in the policy as those that were
->> used when the policy was set.
-> "Make sure that the uid and gid values associated with the relevant
-> ima policy are resolved in the user namespace of the opener of the
-> policy file."
+On Wed, 2022-01-26 at 09:38 +0100, Christian Brauner wrote:
+> On Tue, Jan 25, 2022 at 05:46:24PM -0500, Stefan Berger wrote:
+> > From: Stefan Berger <stefanb@linux.ibm.com>
+> > 
+> > Before printing a policy rule scan for inactive LSM labels in the policy
+> > rule. Inactive LSM labels are identified by args_p != NULL and
+> > rule == NULL.
+> > 
+> > Fixes: b16942455193 ("ima: use the lsm policy update notifier")
 
-I updated the text now to:
+Stefan, please refer to commit 483ec26eed42 ("ima: ima/lsm policy rule
+loading logic bug fixes") instead.
 
-Make sure that the uid and gid values associated with the relevant IMA
+> 
+> That commit message of the referenced patch reads:
+> 
+> "Don't do lazy policy updates while running the rule matching, run the
+> updates as they happen."
+> 
+> and given that we had a lengthy discussion how to update the rules I'd
+> really would have liked an explanation why the update needs to run
+> immediately. Not doing it lazily is the whole reason we have this
+> notifier infra. Why can't this be done lazily?
 
-policy are resolved in the user namespace of the opener of the policy
+The subject of the original thread leading up to registering a block
+notifier is titled
+"Subject: sleep in selinux_audit_rule_init".  The message id of the
+original thread is 
+CAHC9VhS=GsEVUmxtiV64o8G6i2nJpkzxzpyTADgN-vhV8pzZbg@mail.gmail.com.
 
-file. The effect of this changes is that when one displays the policy
-from the user namespace that originally set the policy, the same uid
-and gid values are shown in the policy as those that were used when the
-policy was set.
+This patch addresses a bug and could be upstreamed independently the
+IMA namespacing patch set.  Should we defer including a summary from
+the lazy update to block notifier discussion to "[PATCH v9 11/23] ima:
+Move ima_lsm_policy_notifier into ima_namespace"?
 
->
-> is more correct. Also note, that by virtue of enforcing that securityfs
-> files can only ever be opened if the opener's userns is the same or an
-> ancestor of the userns the securityfs instance is mounted in we are
-> guaranteed that the uid and gid can be resolved. That's another way of
-> saying technically *_munged() isn't necessary but it is more correct
-> since we're crossing the user-kernel boundary.
->
->> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
->>
->> ---
->> v9:
->>    - use seq_user_ns and from_k{g,u}id_munged()
->> ---
->>   security/integrity/ima/ima_policy.c | 19 +++++++++++++------
->>   1 file changed, 13 insertions(+), 6 deletions(-)
->>
->> diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
->> index 47f2d1b5d156..151f418036ee 100644
->> --- a/security/integrity/ima/ima_policy.c
->> +++ b/security/integrity/ima/ima_policy.c
->> @@ -2002,6 +2002,7 @@ static void ima_policy_show_appraise_algos(struct seq_file *m,
->>   
->>   int ima_policy_show(struct seq_file *m, void *v)
->>   {
->> +	struct user_namespace *user_ns = seq_user_ns(m);
->>   	struct ima_rule_entry *entry = v;
->>   	int i;
->>   	char tbuf[64] = {0,};
->> @@ -2087,7 +2088,8 @@ int ima_policy_show(struct seq_file *m, void *v)
->>   	}
->>   
->>   	if (entry->flags & IMA_UID) {
->> -		snprintf(tbuf, sizeof(tbuf), "%d", __kuid_val(entry->uid));
->> +		snprintf(tbuf, sizeof(tbuf),
->> +			 "%d", from_kuid_munged(user_ns, entry->uid));
->>   		if (entry->uid_op == &uid_gt)
->>   			seq_printf(m, pt(Opt_uid_gt), tbuf);
->>   		else if (entry->uid_op == &uid_lt)
->> @@ -2098,7 +2100,8 @@ int ima_policy_show(struct seq_file *m, void *v)
->>   	}
->>   
->>   	if (entry->flags & IMA_EUID) {
->> -		snprintf(tbuf, sizeof(tbuf), "%d", __kuid_val(entry->uid));
->> +		snprintf(tbuf, sizeof(tbuf),
->> +			 "%d", from_kuid_munged(user_ns, entry->uid));
->>   		if (entry->uid_op == &uid_gt)
->>   			seq_printf(m, pt(Opt_euid_gt), tbuf);
->>   		else if (entry->uid_op == &uid_lt)
->> @@ -2109,7 +2112,8 @@ int ima_policy_show(struct seq_file *m, void *v)
->>   	}
->>   
->>   	if (entry->flags & IMA_GID) {
->> -		snprintf(tbuf, sizeof(tbuf), "%d", __kgid_val(entry->gid));
->> +		snprintf(tbuf, sizeof(tbuf),
->> +			 "%d", from_kgid_munged(user_ns, entry->gid));
->>   		if (entry->gid_op == &gid_gt)
->>   			seq_printf(m, pt(Opt_gid_gt), tbuf);
->>   		else if (entry->gid_op == &gid_lt)
->> @@ -2120,7 +2124,8 @@ int ima_policy_show(struct seq_file *m, void *v)
->>   	}
->>   
->>   	if (entry->flags & IMA_EGID) {
->> -		snprintf(tbuf, sizeof(tbuf), "%d", __kgid_val(entry->gid));
->> +		snprintf(tbuf, sizeof(tbuf),
->> +			 "%d", from_kgid_munged(user_ns, entry->gid));
->>   		if (entry->gid_op == &gid_gt)
->>   			seq_printf(m, pt(Opt_egid_gt), tbuf);
->>   		else if (entry->gid_op == &gid_lt)
->> @@ -2131,7 +2136,8 @@ int ima_policy_show(struct seq_file *m, void *v)
->>   	}
->>   
->>   	if (entry->flags & IMA_FOWNER) {
->> -		snprintf(tbuf, sizeof(tbuf), "%d", __kuid_val(entry->fowner));
->> +		snprintf(tbuf, sizeof(tbuf),
->> +			 "%d", from_kuid_munged(user_ns, entry->fowner));
->>   		if (entry->fowner_op == &uid_gt)
->>   			seq_printf(m, pt(Opt_fowner_gt), tbuf);
->>   		else if (entry->fowner_op == &uid_lt)
->> @@ -2142,7 +2148,8 @@ int ima_policy_show(struct seq_file *m, void *v)
->>   	}
->>   
->>   	if (entry->flags & IMA_FGROUP) {
->> -		snprintf(tbuf, sizeof(tbuf), "%d", __kgid_val(entry->fgroup));
->> +		snprintf(tbuf, sizeof(tbuf),
->> +			 "%d", from_kgid_munged(user_ns, entry->fgroup));
->>   		if (entry->fgroup_op == &gid_gt)
->>   			seq_printf(m, pt(Opt_fgroup_gt), tbuf);
->>   		else if (entry->fgroup_op == &gid_lt)
->> -- 
->> 2.31.1
->>
->>
+thanks,
+
+Mimi
+
