@@ -1,129 +1,167 @@
 Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3FEFD2C9D
-	for <containers@lists.linux.dev>; Thu, 27 Jan 2022 14:13:10 +0000 (UTC)
-Received: from pps.filterd (m0098410.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 20RDLa1I001407;
-	Thu, 27 Jan 2022 14:13:00 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : subject :
- from : to : cc : date : in-reply-to : references : content-type :
- mime-version : content-transfer-encoding; s=pp1;
- bh=2mEKE2mLE734ZV7DyqQGgRuJkpcK3WlaLUk4wvuYRZI=;
- b=dOx084y2SjMT0NJXu6lb8qYDlS9mHyixctu6GzEoGAudDaKijqxMFIzCe/+SJijd52A9
- Jkmpp2pwytLiukEX6kSgH56d1Mr8JgNXhaUr8XvcAVXLRxaT/YR0pmDkiIJ+n3lmH8BG
- WMkNFoRZ/vAE4+paiPvW5gc8at1ZX+wd3BBJX+WUDQSRcHwNiXMCupIs9aSI3K3EIWHs
- 40vuwWZdQnT1gjeS5VrApkUEj0XyhREoFjrmYg3wGYGMJj9gpPUQDE23WINA8azKWDcS
- nzl8eFTV+vuT2X372WATn078hugUiSY9Y6FEIJzi4OcxIXp20R2svC8TRWUaV0JXW8rW AQ== 
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D5F38168
+	for <containers@lists.linux.dev>; Thu, 27 Jan 2022 15:24:32 +0000 (UTC)
+Received: from pps.filterd (m0098394.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 20RF11bC022756;
+	Thu, 27 Jan 2022 15:24:23 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
+ mime-version : subject : to : cc : references : from : in-reply-to :
+ content-type : content-transfer-encoding; s=pp1;
+ bh=hUFEVcbtFFdXYF2aSiR/wks0GiXAIcRZVVzHOqM3ihk=;
+ b=g6XfByjBBW2seZiHpoVX7JPCwOXPk/trg5NkkCB3jAJQlggnRITLIDkrnyULuWjIAWur
+ 46Tq8YXFm3lwI838b8AqTKlTZcglfQTqznxM8Kix62hhcaShjRbv0GFXLb1QDQjPoiPT
+ 5K+efyi1S/hER70bA2CKb2SAF83ZMpFCJnJR/lBlhImLwQ07MDaIzOI6mJgplnFK8sHR
+ lcjRLnKH8sAp5SdHzSOJKYzwmanzPjOXS5bsDW/p1svDAmFmG/WxRewy7cw9WzbZb+Zc
+ F/FOJFOGBQOnNC0hWgjK3ZsjTvFYsMSE4trp1+90CJP3TfghqnciETkkVOBT0Ggg5OJj lQ== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3duta8urwa-1
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3duun6udee-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 27 Jan 2022 14:12:59 +0000
-Received: from m0098410.ppops.net (m0098410.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 20RDLYB8001277;
-	Thu, 27 Jan 2022 14:12:58 GMT
-Received: from ppma05fra.de.ibm.com (6c.4a.5195.ip4.static.sl-reverse.com [149.81.74.108])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3duta8urvj-1
+	Thu, 27 Jan 2022 15:24:23 +0000
+Received: from m0098394.ppops.net (m0098394.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 20RF15VE024417;
+	Thu, 27 Jan 2022 15:24:22 GMT
+Received: from ppma01dal.us.ibm.com (83.d6.3fa9.ip4.static.sl-reverse.com [169.63.214.131])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3duun6uddw-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 27 Jan 2022 14:12:58 +0000
-Received: from pps.filterd (ppma05fra.de.ibm.com [127.0.0.1])
-	by ppma05fra.de.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 20RECNm4016041;
-	Thu, 27 Jan 2022 14:12:56 GMT
-Received: from b06avi18626390.portsmouth.uk.ibm.com (b06avi18626390.portsmouth.uk.ibm.com [9.149.26.192])
-	by ppma05fra.de.ibm.com with ESMTP id 3dr9j9emcn-1
+	Thu, 27 Jan 2022 15:24:22 +0000
+Received: from pps.filterd (ppma01dal.us.ibm.com [127.0.0.1])
+	by ppma01dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 20RFIZUm013596;
+	Thu, 27 Jan 2022 15:24:20 GMT
+Received: from b03cxnp08026.gho.boulder.ibm.com (b03cxnp08026.gho.boulder.ibm.com [9.17.130.18])
+	by ppma01dal.us.ibm.com with ESMTP id 3dr9jcnred-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 27 Jan 2022 14:12:55 +0000
-Received: from d06av21.portsmouth.uk.ibm.com (d06av21.portsmouth.uk.ibm.com [9.149.105.232])
-	by b06avi18626390.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 20RE3FC420709796
+	Thu, 27 Jan 2022 15:24:20 +0000
+Received: from b03ledav001.gho.boulder.ibm.com (b03ledav001.gho.boulder.ibm.com [9.17.130.232])
+	by b03cxnp08026.gho.boulder.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 20RFOJD231850816
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Thu, 27 Jan 2022 14:03:15 GMT
-Received: from d06av21.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id B4B9B5204E;
-	Thu, 27 Jan 2022 14:12:52 +0000 (GMT)
-Received: from sig-9-65-89-165.ibm.com (unknown [9.65.89.165])
-	by d06av21.portsmouth.uk.ibm.com (Postfix) with ESMTP id 2E2C352067;
-	Thu, 27 Jan 2022 14:12:50 +0000 (GMT)
-Message-ID: <4fe1b4fbd47f9ee7ad92eaac7da1db642b126344.camel@linux.ibm.com>
-Subject: Re: [PATCH v9 02/23] ima: Do not print policy rule with inactive
- LSM labels
-From: Mimi Zohar <zohar@linux.ibm.com>
+	Thu, 27 Jan 2022 15:24:19 GMT
+Received: from b03ledav001.gho.boulder.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id F03B26E060;
+	Thu, 27 Jan 2022 15:24:18 +0000 (GMT)
+Received: from b03ledav001.gho.boulder.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 43D446E05B;
+	Thu, 27 Jan 2022 15:24:15 +0000 (GMT)
+Received: from [9.47.158.152] (unknown [9.47.158.152])
+	by b03ledav001.gho.boulder.ibm.com (Postfix) with ESMTP;
+	Thu, 27 Jan 2022 15:24:14 +0000 (GMT)
+Message-ID: <eb917dd4-fc8e-2c15-815d-4f9eaa971d60@linux.ibm.com>
+Date: Thu, 27 Jan 2022 10:24:14 -0500
+Precedence: bulk
+X-Mailing-List: containers@lists.linux.dev
+List-Id: <containers.lists.linux.dev>
+List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
+List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
+MIME-Version: 1.0
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.3.0
+Subject: Re: [PATCH v9 21/23] ima: Introduce securityfs file to activate an
+ IMA namespace
+Content-Language: en-US
 To: Christian Brauner <brauner@kernel.org>,
-        Stefan Berger
-	 <stefanb@linux.vnet.ibm.com>
-Cc: linux-integrity@vger.kernel.org, serge@hallyn.com,
+        Stefan Berger <stefanb@linux.vnet.ibm.com>
+Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
         christian.brauner@ubuntu.com, containers@lists.linux.dev,
         dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
         krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
         mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
         puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
         linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
-        linux-security-module@vger.kernel.org, jmorris@namei.org,
-        Stefan Berger
- <stefanb@linux.ibm.com>
-Date: Thu, 27 Jan 2022 09:12:49 -0500
-In-Reply-To: <20220126083814.3ndwkhivir573aok@wittgenstein>
+        linux-security-module@vger.kernel.org, jmorris@namei.org
 References: <20220125224645.79319-1-stefanb@linux.vnet.ibm.com>
-	 <20220125224645.79319-3-stefanb@linux.vnet.ibm.com>
-	 <20220126083814.3ndwkhivir573aok@wittgenstein>
-Content-Type: text/plain; charset="ISO-8859-15"
-X-Mailer: Evolution 3.28.5 (3.28.5-18.el8) 
-Precedence: bulk
-X-Mailing-List: containers@lists.linux.dev
-List-Id: <containers.lists.linux.dev>
-List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
-List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+ <20220125224645.79319-22-stefanb@linux.vnet.ibm.com>
+ <20220126143140.awwlv3h2jqotng2n@wittgenstein>
+From: Stefan Berger <stefanb@linux.ibm.com>
+In-Reply-To: <20220126143140.awwlv3h2jqotng2n@wittgenstein>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: sOKIoN0drbW1X5ImTYY2H2IYaJNyhRGV
-X-Proofpoint-ORIG-GUID: doHH_H6SDmcQxYiHG2pQM1tUNkh0GFJW
+X-Proofpoint-GUID: i148xUf73sf1N-75QirIAyEQAE2QJY0I
+X-Proofpoint-ORIG-GUID: zWQIkGBP0kakaTpkVfHC-99O5PQVzXnp
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.816,Hydra:6.0.425,FMLib:17.11.62.513
  definitions=2022-01-27_03,2022-01-27_01,2021-12-02_01
 X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 lowpriorityscore=0
- clxscore=1011 impostorscore=0 priorityscore=1501 bulkscore=0
- mlxlogscore=999 phishscore=0 malwarescore=0 suspectscore=0 mlxscore=0
- spamscore=0 adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2201110000 definitions=main-2201270086
+ adultscore=0 priorityscore=1501 spamscore=0 clxscore=1015 phishscore=0
+ bulkscore=0 suspectscore=0 mlxlogscore=999 malwarescore=0 impostorscore=0
+ mlxscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2201110000 definitions=main-2201270092
 
-Hi Christian,
 
-On Wed, 2022-01-26 at 09:38 +0100, Christian Brauner wrote:
-> On Tue, Jan 25, 2022 at 05:46:24PM -0500, Stefan Berger wrote:
-> > From: Stefan Berger <stefanb@linux.ibm.com>
-> > 
-> > Before printing a policy rule scan for inactive LSM labels in the policy
-> > rule. Inactive LSM labels are identified by args_p != NULL and
-> > rule == NULL.
-> > 
-> > Fixes: b16942455193 ("ima: use the lsm policy update notifier")
+On 1/26/22 09:31, Christian Brauner wrote:
+> On Tue, Jan 25, 2022 at 05:46:43PM -0500, Stefan Berger wrote:
+>
+> Hm, I'd rather do something like (uncompiled, untested):
+>
+> +static ssize_t ima_write_active(struct file *filp,
+> 				const char __user *buf,
+> 				size_t count, loff_t *ppos)
+> {
+> 	struct ima_namespace *ns = &init_ima_ns;
+> 	int err;
+> 	unsigned int active;
+> 	char *kbuf = NULL;
+> 	ssize_t length;
+>
+> 	if (count >= 3)
+> 		return -EINVAL;
+>
+> 	/* No partial writes. */
+> 	if (*ppos != 0)
+> 		return -EINVAL;
+>
+> 	if (ns_active(ns))
+> 		return -EBUSY;
+>
+> 	kbuf = memdup_user_nul(buf, count);
+> 	if (IS_ERR(kbuf))
+> 		return PTR_ERR(kbuf);
+>
+> 	err = kstrtouint(kbuf, 10, &active);
+> 	kfree(kbuf);
+> 	if (err)
+> 		return err;
+>
+> 	if (active != 1)
+> 		return -EINVAL;
+>
+> 	atomic_set(&ns->active, 1);
+> 	return count;
+> }
 
-Stefan, please refer to commit 483ec26eed42 ("ima: ima/lsm policy rule
-loading logic bug fixes") instead.
+Rearranged it to look lik this?
 
-> 
-> That commit message of the referenced patch reads:
-> 
-> "Don't do lazy policy updates while running the rule matching, run the
-> updates as they happen."
-> 
-> and given that we had a lengthy discussion how to update the rules I'd
-> really would have liked an explanation why the update needs to run
-> immediately. Not doing it lazily is the whole reason we have this
-> notifier infra. Why can't this be done lazily?
+static ssize_t ima_write_active(struct file *filp,
+                                 const char __user *buf,
+                                 size_t count, loff_t *ppos)
+{
+         struct ima_namespace *ns = &init_ima_ns;
+         unsigned int active;
+         char *kbuf;
+         int err;
 
-The subject of the original thread leading up to registering a block
-notifier is titled
-"Subject: sleep in selinux_audit_rule_init".  The message id of the
-original thread is 
-CAHC9VhS=GsEVUmxtiV64o8G6i2nJpkzxzpyTADgN-vhV8pzZbg@mail.gmail.com.
+         if (ns_is_active(ns))
+                 return -EBUSY;
 
-This patch addresses a bug and could be upstreamed independently the
-IMA namespacing patch set.  Should we defer including a summary from
-the lazy update to block notifier discussion to "[PATCH v9 11/23] ima:
-Move ima_lsm_policy_notifier into ima_namespace"?
+         /* accepting '1\n' and '1\0' and no partial writes */
+         if (count >= 3 || *ppos != 0)
+                 return -EINVAL;
 
-thanks,
+         kbuf = memdup_user_nul(buf, count);
+         if (IS_ERR(kbuf))
+                 return PTR_ERR(kbuf);
 
-Mimi
+         err = kstrtouint(kbuf, 10, &active);
+         kfree(kbuf);
+         if (err)
+                 return err;
+
+         if (active != 1)
+                 return -EINVAL;
+
+         atomic_set(&ns->active, 1);
+         return count;
+}
+
 
