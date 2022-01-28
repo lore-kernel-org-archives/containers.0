@@ -1,118 +1,125 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 818B52C82
-	for <containers@lists.linux.dev>; Fri, 28 Jan 2022 16:03:54 +0000 (UTC)
-Received: from pps.filterd (m0098414.ppops.net [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 20SFonVV010379;
-	Fri, 28 Jan 2022 16:03:47 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : subject :
- from : to : cc : date : in-reply-to : references : content-type :
- mime-version : content-transfer-encoding; s=pp1;
- bh=gtiUGNNErj1tF6ZBPCrxpuaTVneQFhIz7Mui8/YHGbE=;
- b=eH9qWv0jWgek1Py9j78Kt0d5hIJjv6yuStHMFv7Tw1/e9VMfJC5mv2Kkl3miTfv/bffR
- HlGW43TR7AFUp75ZaUj/BAQ+QxsR9X/qOG5YhmO0LlQLt0Ltr45bviEMDB+4+Nha5b9t
- ysWS/m338bouelpvhwgojT2HwCIFolPjLFVXft6oShMlYvhKm+5t6SCDBJDUKEs7jIz1
- n/9OLIk8Q0JTJFryfUK7fp2HTjnnYlG/95IzPdInZ7z/jNrpKvp9lCfWPmo6dYFyNvXc
- iry1u8mT6SI7Ldzn99Z7kB8v/YkHJS+u15c6u6Rngf6OUStcAWbBnu+weuaDvbNEZLQ7 DA== 
-Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3dvgqj3skb-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 28 Jan 2022 16:03:47 +0000
-Received: from m0098414.ppops.net (m0098414.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 20SFox9n011204;
-	Fri, 28 Jan 2022 16:03:46 GMT
-Received: from ppma05fra.de.ibm.com (6c.4a.5195.ip4.static.sl-reverse.com [149.81.74.108])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3dvgqj3sje-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 28 Jan 2022 16:03:46 +0000
-Received: from pps.filterd (ppma05fra.de.ibm.com [127.0.0.1])
-	by ppma05fra.de.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 20SG2WaV017346;
-	Fri, 28 Jan 2022 16:03:44 GMT
-Received: from b06cxnps3074.portsmouth.uk.ibm.com (d06relay09.portsmouth.uk.ibm.com [9.149.109.194])
-	by ppma05fra.de.ibm.com with ESMTP id 3dr9j9rk2s-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 28 Jan 2022 16:03:44 +0000
-Received: from b06wcsmtp001.portsmouth.uk.ibm.com (b06wcsmtp001.portsmouth.uk.ibm.com [9.149.105.160])
-	by b06cxnps3074.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 20SG3fEx44368140
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Fri, 28 Jan 2022 16:03:41 GMT
-Received: from b06wcsmtp001.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 76FA7A4068;
-	Fri, 28 Jan 2022 16:03:41 +0000 (GMT)
-Received: from b06wcsmtp001.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 27DF3A4060;
-	Fri, 28 Jan 2022 16:03:39 +0000 (GMT)
-Received: from sig-9-65-83-59.ibm.com (unknown [9.65.83.59])
-	by b06wcsmtp001.portsmouth.uk.ibm.com (Postfix) with ESMTP;
-	Fri, 28 Jan 2022 16:03:39 +0000 (GMT)
-Message-ID: <a72131dea70845bd7741d7e9f4d49671d538aa79.camel@linux.ibm.com>
-Subject: Re: [PATCH v9 09/23] ima: Move some IMA policy and filesystem
- related variables into ima_namespace
-From: Mimi Zohar <zohar@linux.ibm.com>
-To: Stefan Berger <stefanb@linux.ibm.com>,
-        Stefan Berger
-	 <stefanb@linux.vnet.ibm.com>,
-        linux-integrity@vger.kernel.org
-Cc: serge@hallyn.com, christian.brauner@ubuntu.com, containers@lists.linux.dev,
-        dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
-        krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
-        mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
-        puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
-        linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
-        linux-security-module@vger.kernel.org, jmorris@namei.org
-Date: Fri, 28 Jan 2022 11:03:38 -0500
-In-Reply-To: <be31137d-57d9-24f7-01f6-f33080dd4bba@linux.ibm.com>
-References: <20220125224645.79319-1-stefanb@linux.vnet.ibm.com>
-	 <20220125224645.79319-10-stefanb@linux.vnet.ibm.com>
-	 <1af8f2155730c38dcd510016fe82bc90e4acee39.camel@linux.ibm.com>
-	 <be31137d-57d9-24f7-01f6-f33080dd4bba@linux.ibm.com>
-Content-Type: text/plain; charset="ISO-8859-15"
-X-Mailer: Evolution 3.28.5 (3.28.5-18.el8) 
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DA94A29CA
+	for <containers@lists.linux.dev>; Fri, 28 Jan 2022 18:34:28 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C665BC340EA;
+	Fri, 28 Jan 2022 18:34:26 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1643394868;
+	bh=qc2srDJ/Tr/4ioZ7NvjqTJDjb9MXIJRHw3QP9k8RdMM=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=u5OjJY5X3oKqZEg+u4pRnQLY6p6bUrZUtD3XGdF5VuT+Ig+6nkvSCPF2JzFnxFFj+
+	 HYTNj4Vpxq+xe4R8rVScMZdLvYAYxnjpqQNEZEisUuPZOiHLkqIrlGr61D5UYIF2IY
+	 YI7Nfrd2YctZE9ohtuwiJ61n7viksHkGEA4/Yv04RnX/OdGDk8ncasrqx1vzVxRHgx
+	 pX0ZgK9ZOaVMtXBJVIqXv6CfEd3trjfyCQTw+pIKeTnn1pOpqZu7nyoJNlwtC1T2zp
+	 kSSdj7/RSzN8tEVKPOPYaYPVp1FuvUf7yPK0/8D4jKOqzanG+AC3q6Op2kQ91nZ+bB
+	 ZD1xTZ5dVFEug==
+Date: Fri, 28 Jan 2022 19:34:23 +0100
+From: Christian Brauner <brauner@kernel.org>
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
+	linux-kernel@vger.kernel.org, Alexey Gladkov <legion@kernel.org>,
+	Qian Cai <quic_qiancai@quicinc.com>,
+	Mathias Krause <minipli@grsecurity.net>,
+	Linux Containers <containers@lists.linux.dev>
+Subject: Re: [GIT PULL] ucount rlimit fixes for v5.17-rc2
+Message-ID: <20220128183423.d5z7v46opgphrbdb@wittgenstein>
+References: <871r0rss9q.fsf@email.froward.int.ebiederm.org>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: Wvz4tC0BTiAZ0g5VC94FeFwVo4JnkoHA
-X-Proofpoint-ORIG-GUID: b32T8YgdimPamh-EsXgoSLFynR4y7Myp
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.205,Aquarius:18.0.816,Hydra:6.0.425,FMLib:17.11.62.513
- definitions=2022-01-28_04,2022-01-28_01,2021-12-02_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 phishscore=0 impostorscore=0
- bulkscore=0 priorityscore=1501 mlxlogscore=999 clxscore=1015 adultscore=0
- suspectscore=0 lowpriorityscore=0 mlxscore=0 spamscore=0 malwarescore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2201110000
- definitions=main-2201280097
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+In-Reply-To: <871r0rss9q.fsf@email.froward.int.ebiederm.org>
 
-On Fri, 2022-01-28 at 10:44 -0500, Stefan Berger wrote:
-> On 1/27/22 17:30, Mimi Zohar wrote:
-> > On Tue, 2022-01-25 at 17:46 -0500, Stefan Berger wrote:
-> >> From: Stefan Berger <stefanb@linux.ibm.com>
-> >>
-> >> Move the ima_write_mutex, ima_fs_flag, and valid_policy variables into
-> >> ima_namespace. This way each IMA namespace can set those variables
-> >> independently.
-> > This patch description needs to be expanded a bit, indicating why
-> > they're being moved together.  These flags are needed when loading a
-> > policy. Please also update the "struct ima_namespace" comment.
+On Fri, Jan 28, 2022 at 11:07:45AM -0600, Eric W. Biederman wrote:
 > 
-> I'll extend the above sentence like this:
+> Linus,
 > 
-> ... those variables independently in its instance of securityfs.
+> Please pull the ucount-rlimit-fixes-for-v5.17-rc2 branch from the git tree:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git ucount-rlimit-fixes-for-v5.17-rc2
+>   HEAD: f9d87929d451d3e649699d0f1d74f71f77ad38f5 ucount:  Make get_ucount a safe get_user replacement
+> 
+> 
+> From: "Eric W. Biederman" <ebiederm@xmission.com>
+> Date: Mon, 24 Jan 2022 12:46:50 -0600
+> Subject: [PATCH] ucount:  Make get_ucount a safe get_user replacement
+> 
+> When the ucount code was refactored to create get_ucount it was missed
+> that some of the contexts in which a rlimit is kept elevated can be
+> the only reference to the user/ucount in the system.
+> 
+> Ordinary ucount references exist in places that also have a reference
+> to the user namspace, but in POSIX message queues, the SysV shm code,
+> and the SIGPENDING code there is no independent user namespace
+> reference.
+> 
+> Inspection of the the user_namespace show no instance of circular
+> references between struct ucounts and the user_namespace.  So
+> hold a reference from struct ucount to it's user_namespace to
+> resolve this problem.
+> 
+> Link: https://lore.kernel.org/lkml/YZV7Z+yXbsx9p3JN@fixkernel.com/
+> Reported-by: Qian Cai <quic_qiancai@quicinc.com>
+> Reported-by: Mathias Krause <minipli@grsecurity.net>
+> Tested-by: Mathias Krause <minipli@grsecurity.net>
+> Reviewed-by: Mathias Krause <minipli@grsecurity.net>
+> Reviewed-by: Alexey Gladkov <legion@kernel.org>
+> Fixes: d64696905554 ("Reimplement RLIMIT_SIGPENDING on top of ucounts")
+> Fixes: 6e52a9f0532f ("Reimplement RLIMIT_MSGQUEUE on top of ucounts")
+> Fixes: d7c9e99aee48 ("Reimplement RLIMIT_MEMLOCK on top of ucounts")
+> Cc: stable@vger.kernel.org
+> Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
+> ---
 
-That doesn't explain anything as to what these flags are or how they're
-used.  Perhaps something like,  "Move the variables - ima_write_mutex,
-ima_fs_flag, and valid_policy - related to updating the IMA policy into
-the ima_namespace.  This way each IMA namespace can set these variables
-independently."
+Hey,
 
-Did you notice my comment inline below?
+Please ensure that next time a security issue is reported to
+security@kernel.org for userns such as this UAF that the pull request
+that gets sent to fix this issue Ccs the containers development list.
 
-thanks,
+This whole ucount conversion has been quite problematic so far. And
+that's not the problem, bugs happen. But fixes for bugs that were
+reported as security issues should at least have visibility on the right
+lists so people don't go and get pinged about them on Twitter [1].
 
-Mimi
+A Cc for the oss-security list would've also sufficed where most of us
+are subscribed. None of this is pleasant, I very much sympathise.
+Thanks for fixing this, and thanks to Mathias for the report.
 
+[1]: https://twitter.com/grsecurity/status/1487119590425600005
+
+
+>  kernel/ucount.c | 2 ++
+>  1 file changed, 2 insertions(+)
+> 
+> diff --git a/kernel/ucount.c b/kernel/ucount.c
+> index 7b32c356ebc5..65b597431c86 100644
+> --- a/kernel/ucount.c
+> +++ b/kernel/ucount.c
+> @@ -190,6 +190,7 @@ struct ucounts *alloc_ucounts(struct user_namespace *ns, kuid_t uid)
+>  			kfree(new);
+>  		} else {
+>  			hlist_add_head(&new->node, hashent);
+> +			get_user_ns(new->ns);
+>  			spin_unlock_irq(&ucounts_lock);
+>  			return new;
+>  		}
+> @@ -210,6 +211,7 @@ void put_ucounts(struct ucounts *ucounts)
+>  	if (atomic_dec_and_lock_irqsave(&ucounts->count, &ucounts_lock, flags)) {
+>  		hlist_del_init(&ucounts->node);
+>  		spin_unlock_irqrestore(&ucounts_lock, flags);
+> +		put_user_ns(ucounts->ns);
+>  		kfree(ucounts);
+>  	}
+>  }
+> -- 
+> 2.29.2
+> 
+> eric
+> 
