@@ -1,53 +1,53 @@
-Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 905F62CA0
-	for <containers@lists.linux.dev>; Fri, 28 Jan 2022 18:35:02 +0000 (UTC)
-Received: from pps.filterd (m0098421.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 20SI8tLp020845;
-	Fri, 28 Jan 2022 18:34:54 GMT
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D2F7F2CA1
+	for <containers@lists.linux.dev>; Mon, 31 Jan 2022 18:57:17 +0000 (UTC)
+Received: from pps.filterd (m0098419.ppops.net [127.0.0.1])
+	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 20VHW8wf018646;
+	Mon, 31 Jan 2022 18:56:55 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
  mime-version : subject : to : cc : references : from : in-reply-to :
  content-type : content-transfer-encoding; s=pp1;
- bh=/5fP2DHU2seuRk21lH1YPFXff69uyMGRoc4nJk9F9IU=;
- b=VnE1su6pXJ9R2rDFCPdhNJ4D/I90Hl6mrhT7HXGvsLrsvS97VObpx7kMvXBtsektPD38
- dZc2joWlXhC0pCiOZhixldT71AtQ1OzsaGGuwAYPBvo+QxJLqf/AJ0Ozfss/WVBAHr0c
- TJxTsghoMZJUSU1eK3Sx7By3yzeaceEYwE+Goj+EXMXCNThyZsDFIagc0y1BPAEOBOKL
- 8ufjpTFpMFxJfunGU8Jo/0j2WXxqS1MiNWbjQaeHvoVfyxqlKryZWXtTq6tV7e3iGve8
- ycqxeuTvUsnEhY/wrUC+cozaHx7tKllsWkZuoA7v03ozuFRXiGoUiNxhp+v1XA7YhtVG rg== 
+ bh=OoBmDdOiqugOKX+t2tC8Z6K0AKa0cLylyvApIRSkk5I=;
+ b=n4RqKA6nlmWnmrghvMD2CRaKMSvPCuChxumTowm2RPuW47np/HcETsr/QQ+cx7Gjnawj
+ tG6geMo8+UCl80Bp8/YoPxt4F1ydV8yOz2eOqbpqmxuTSfX5ALHbBrRWID9xZ2n9j1nb
+ E3j11pGu3R3nt7JyNpzQFWcQT0OMpeOc6p3MrBaWOwA4Dyk2jCy5e3o682EQnmt4G1qI
+ 0H3lbUcHzRZkZ+XCq2PnB3/2QBnVwRP26aPxZFHaxmtJhZPYgYIgYZTpB/o6ikQRbFu7
+ +dNrfPSIIHRVM5cprlFemWd0Zci3e+RHJI0G+lTcfJaiiU2uU+DBpIo5Ud1aaU5mtIib 8g== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3dvhm3p8su-1
+	by mx0b-001b2d01.pphosted.com with ESMTP id 3dxm8khyam-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 28 Jan 2022 18:34:53 +0000
-Received: from m0098421.ppops.net (m0098421.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 20SIGerh027059;
-	Fri, 28 Jan 2022 18:34:53 GMT
-Received: from ppma01dal.us.ibm.com (83.d6.3fa9.ip4.static.sl-reverse.com [169.63.214.131])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3dvhm3p8sc-1
+	Mon, 31 Jan 2022 18:56:55 +0000
+Received: from m0098419.ppops.net (m0098419.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 20VIpdpv018370;
+	Mon, 31 Jan 2022 18:56:54 GMT
+Received: from ppma02wdc.us.ibm.com (aa.5b.37a9.ip4.static.sl-reverse.com [169.55.91.170])
+	by mx0b-001b2d01.pphosted.com with ESMTP id 3dxm8khya9-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 28 Jan 2022 18:34:53 +0000
-Received: from pps.filterd (ppma01dal.us.ibm.com [127.0.0.1])
-	by ppma01dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 20SIXHHP022432;
-	Fri, 28 Jan 2022 18:34:52 GMT
-Received: from b03cxnp08027.gho.boulder.ibm.com (b03cxnp08027.gho.boulder.ibm.com [9.17.130.19])
-	by ppma01dal.us.ibm.com with ESMTP id 3dr9jdnvv5-1
+	Mon, 31 Jan 2022 18:56:54 +0000
+Received: from pps.filterd (ppma02wdc.us.ibm.com [127.0.0.1])
+	by ppma02wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 20VIqJrA019182;
+	Mon, 31 Jan 2022 18:56:53 GMT
+Received: from b01cxnp22035.gho.pok.ibm.com (b01cxnp22035.gho.pok.ibm.com [9.57.198.25])
+	by ppma02wdc.us.ibm.com with ESMTP id 3dvw7a9k3w-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 28 Jan 2022 18:34:51 +0000
-Received: from b03ledav002.gho.boulder.ibm.com (b03ledav002.gho.boulder.ibm.com [9.17.130.233])
-	by b03cxnp08027.gho.boulder.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 20SIYoPQ19136846
+	Mon, 31 Jan 2022 18:56:53 +0000
+Received: from b01ledav002.gho.pok.ibm.com (b01ledav002.gho.pok.ibm.com [9.57.199.107])
+	by b01cxnp22035.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 20VIuoDJ31850960
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Fri, 28 Jan 2022 18:34:50 GMT
-Received: from b03ledav002.gho.boulder.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 00779136053;
-	Fri, 28 Jan 2022 18:34:50 +0000 (GMT)
-Received: from b03ledav002.gho.boulder.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 9C713136061;
-	Fri, 28 Jan 2022 18:34:47 +0000 (GMT)
+	Mon, 31 Jan 2022 18:56:50 GMT
+Received: from b01ledav002.gho.pok.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id AAF92124070;
+	Mon, 31 Jan 2022 18:56:50 +0000 (GMT)
+Received: from b01ledav002.gho.pok.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 67E35124055;
+	Mon, 31 Jan 2022 18:56:48 +0000 (GMT)
 Received: from [9.47.158.152] (unknown [9.47.158.152])
-	by b03ledav002.gho.boulder.ibm.com (Postfix) with ESMTP;
-	Fri, 28 Jan 2022 18:34:47 +0000 (GMT)
-Message-ID: <02a1501c-bf7d-e572-e1c2-4e7eeed3cf15@linux.ibm.com>
-Date: Fri, 28 Jan 2022 13:34:46 -0500
+	by b01ledav002.gho.pok.ibm.com (Postfix) with ESMTP;
+	Mon, 31 Jan 2022 18:56:48 +0000 (GMT)
+Message-ID: <83d32ac3-6633-3ccc-1377-91caaf709445@linux.ibm.com>
+Date: Mon, 31 Jan 2022 13:56:48 -0500
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
@@ -56,12 +56,13 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
  Thunderbird/91.3.0
-Subject: Re: [PATCH v9 00/23] ima: Namespace IMA with audit support in IMA-ns
+Subject: Re: [PATCH v9 16/23] ima: Implement ima_free_policy_rules() for
+ freeing of an ima_namespace
 Content-Language: en-US
-To: Christian Brauner <brauner@kernel.org>,
-        Stefan Berger <stefanb@linux.vnet.ibm.com>
-Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
-        christian.brauner@ubuntu.com, containers@lists.linux.dev,
+To: Mimi Zohar <zohar@linux.ibm.com>,
+        Stefan Berger <stefanb@linux.vnet.ibm.com>,
+        linux-integrity@vger.kernel.org
+Cc: serge@hallyn.com, christian.brauner@ubuntu.com, containers@lists.linux.dev,
         dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
         krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
         mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
@@ -69,75 +70,117 @@ Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
         linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
         linux-security-module@vger.kernel.org, jmorris@namei.org
 References: <20220125224645.79319-1-stefanb@linux.vnet.ibm.com>
- <20220126131907.5fauajyjfbcnienp@wittgenstein>
+ <20220125224645.79319-17-stefanb@linux.vnet.ibm.com>
+ <258c7c5e1aebfc9376560549794d43e744654713.camel@linux.ibm.com>
 From: Stefan Berger <stefanb@linux.ibm.com>
-In-Reply-To: <20220126131907.5fauajyjfbcnienp@wittgenstein>
+In-Reply-To: <258c7c5e1aebfc9376560549794d43e744654713.camel@linux.ibm.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: 1K_4N8kNdxFH7VYz7kzF5wMLSJacbMSR
-X-Proofpoint-ORIG-GUID: cvn8N21Gxy3SROjUVnFZP2smk6B2Kqci
+X-Proofpoint-GUID: ZplDHnseCm730yNs_Y20Zp5bXUuJIEF_
+X-Proofpoint-ORIG-GUID: LXRGMp9mqGG5FubM1xYAo-EY0g0LYkV7
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.816,Hydra:6.0.425,FMLib:17.11.62.513
- definitions=2022-01-28_05,2022-01-28_01,2021-12-02_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 priorityscore=1501 mlxscore=0
- bulkscore=0 adultscore=0 impostorscore=0 spamscore=0 mlxlogscore=999
- suspectscore=0 malwarescore=0 lowpriorityscore=0 clxscore=1015
- phishscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2201110000 definitions=main-2201280108
+ definitions=2022-01-31_07,2022-01-31_01,2021-12-02_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 adultscore=0 suspectscore=0
+ malwarescore=0 phishscore=0 lowpriorityscore=0 priorityscore=1501
+ mlxscore=0 clxscore=1015 mlxlogscore=999 bulkscore=0 impostorscore=0
+ spamscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2201110000 definitions=main-2201310120
 
 
-On 1/26/22 08:19, Christian Brauner wrote:
-> On Tue, Jan 25, 2022 at 05:46:22PM -0500, Stefan Berger wrote:
+On 1/28/22 09:02, Mimi Zohar wrote:
+> Hi Stefan,
+>
+> On Tue, 2022-01-25 at 17:46 -0500, Stefan Berger wrote:
 >> From: Stefan Berger <stefanb@linux.ibm.com>
 >>
->> The goal of this series of patches is to start with the namespacing of
->> IMA and support auditing within an IMA namespace (IMA-ns) as the first
->> step.
+>> Implement ima_free_policy_rules() that is needed when an ima_namespace
+>> is freed.
 >>
->> In this series the IMA namespace is piggy backing on the user namespace
->> and therefore an IMA namespace is created when a user namespace is
->> created, although this is done late when SecurityFS is mounted inside
->> a user namespace. The advantage of piggy backing on the user namespace
->> is that the user namespace can provide the keys infrastructure that IMA
->> appraisal support will need later on.
->>
->> We chose the goal of supporting auditing within an IMA namespace since it
->> requires the least changes to IMA. Following this series, auditing within
->> an IMA namespace can be activated by a user running the following lines
->> that rely on a statically linked busybox to be installed on the host for
->> execution within the minimal container environment:
->>
->> mkdir -p rootfs/{bin,mnt,proc}
->> cp /sbin/busybox rootfs/bin
->> cp /sbin/busybox rootfs/bin/busybox2
->> echo >> rootfs/bin/busybox2
->> PATH=/bin unshare --user --map-root-user --mount-proc --pid --fork \
->>    --root rootfs busybox sh -c \
->>   "busybox mount -t securityfs /mnt /mnt; \
->>    busybox echo 1 > /mnt/ima/active; \
->>    busybox echo 'audit func=BPRM_CHECK mask=MAY_EXEC' > /mnt/ima/policy; \
-> I think we need to limit the number of rules that can be added to an ima
-> namespace to prevent DOS attacks. The current implementation allows
-> users to write as many ima rules as they want.
->
-> My suggestion would be that you look at real-world data to figure out
-> what a fairly common number of rules is that people write. Then use this
-> as the hard-coded limit for a first implementation. If the use-case
+>> Only reset temp_ima_appraise when using init_ima_ns.
+> Instead of having to walk the policy rules to know if there are any
+> "appraise" rules, the ima_appraise flag is set.  For now, only reset
+> temp_ima_appraise flag on failed policy rule updates for init_ima_ns.
 
 
-I would now go with a hard-coded (generous) limit of 1024 rules for 
-non-init_ima_ns, and leave init_ima_ns unbounded.
-
-
-> arises you can later make this limit configurable by introducing a
-> ucount for ima rules via /proc/sys/user/max_ima_rules.
-
-Ok, let's defer this.
+Ok, I am taking this whole text.
 
 
 >
-> Additionally, you should probably switch a lot of ima allocations from
-> GFP_KERNEL to GFP_KERNEL_ACCOUNT as allocations triggerable from userns
-> should be treated as untrusted.
-Ok, done.
+>> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
+>>
+>> ---
+>>   v9:
+>>    - Only reset temp_ima_appraise when using init_ima_ns.
+>> ---
+>>   security/integrity/ima/ima.h        |  1 +
+>>   security/integrity/ima/ima_policy.c | 20 +++++++++++++++++++-
+>>   2 files changed, 20 insertions(+), 1 deletion(-)
+>>
+>> diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+>> index aea8fb8d2854..8c757223d549 100644
+>> --- a/security/integrity/ima/ima.h
+>> +++ b/security/integrity/ima/ima.h
+>> @@ -329,6 +329,7 @@ void ima_update_policy_flags(struct ima_namespace *ns);
+>>   ssize_t ima_parse_add_rule(struct ima_namespace *ns, char *rule);
+>>   void ima_delete_rules(struct ima_namespace *ns);
+>>   int ima_check_policy(struct ima_namespace *ns);
+>> +void ima_free_policy_rules(struct ima_namespace *ns);
+>>   void *ima_policy_start(struct seq_file *m, loff_t *pos);
+>>   void *ima_policy_next(struct seq_file *m, void *v, loff_t *pos);
+>>   void ima_policy_stop(struct seq_file *m, void *v);
+>> diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
+>> index e8140e73d80b..47f2d1b5d156 100644
+>> --- a/security/integrity/ima/ima_policy.c
+>> +++ b/security/integrity/ima/ima_policy.c
+>> @@ -1880,13 +1880,31 @@ void ima_delete_rules(struct ima_namespace *ns)
+>>   {
+>>   	struct ima_rule_entry *entry, *tmp;
+>>   
+>> -	temp_ima_appraise = 0;
+>> +	if (ns == &init_ima_ns)
+>> +		temp_ima_appraise = 0;
+>> +
+>>   	list_for_each_entry_safe(entry, tmp, &ns->ima_temp_rules, list) {
+>>   		list_del(&entry->list);
+>>   		ima_free_rule(entry);
+>>   	}
+>>   }
+>>   
+>> +/**
+>> + * ima_free_policy_rules - free all policy rules
+>> + * @ns: IMA namespace that has the policy
+>> + */
+>> +void ima_free_policy_rules(struct ima_namespace *ns)
+>> +{
+>> +	struct ima_rule_entry *entry, *tmp;
+>> +
+>> +	ima_delete_rules(ns);
+> When the IMA policy is being extended, new rules are temporarily added
+> to the ima_temp_rules list.  If the entire set of rules being added are
+> valid, they're appended to the tail.
+>
+> There shouldn't be any rules on the ima_temp_rules list unless the
+> policy is currently being extended.  Is that possible at this point?
+
+Actually, no. Nothing can be left. I am removing this call.
+
+I wonder whether to split this patch into into two patches?
+
+
+>
+>> +
+>> +	list_for_each_entry_safe(entry, tmp, &ns->ima_policy_rules, list) {
+>> +		list_del(&entry->list);
+>> +		ima_free_rule(entry);
+>> +	}
+>> +}
+>> +
+>>   #define __ima_hook_stringify(func, str)	(#func),
+>>   
+>>   const char *const func_tokens[] = {
+> thanks,
+>
+> Mimi
+>
