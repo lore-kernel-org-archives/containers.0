@@ -1,51 +1,51 @@
 Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C69F22CAB
-	for <containers@lists.linux.dev>; Tue,  1 Feb 2022 20:38:09 +0000 (UTC)
-Received: from pps.filterd (m0127361.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 211K2RYY007406;
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A14552F2E
+	for <containers@lists.linux.dev>; Tue,  1 Feb 2022 20:38:10 +0000 (UTC)
+Received: from pps.filterd (m0098421.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 211JUETD015776;
 	Tue, 1 Feb 2022 20:37:54 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=pp1;
- bh=fUlyRIVWJ4Srak9bU1o0uRoRZnQEW9IGDoHv8s37O4Y=;
- b=gxF6VTJuihEumMeRYnOyMtc9S0gOJ1913bX1djlhF0ToYi9D2Ju/BpyIhk3iuuJUWvzJ
- Mu2UKRnZ2ZlOgGiSnFpgaysdYr9CGnjf5wgWqnjyQ5XFPxPCUWrHxiQLW7HWnSAYyJrv
- X1F/0VA0GMNLKaeD2cjE2u9aeph95vIAtQRGFLU7bcuac/btvOAhBvrLYmzWa+8vEknZ
- PuwJ3TRMi/80BbKyXcPFb067IJSmUoEePe7Uj+jsMY0EtO3gNgpeiOPBAcyZMVOk77mv
- yAXzCjFci0lB9wGgXdUX0MaH24+xnppgZ1v5RL6MVhbIu55ga8awLR1VwE88xbJ+mUfw Bg== 
+ bh=duIONTIJY9+HpOQOxdhJJW27A8z53ENYqwIxBoXiYzM=;
+ b=c3g5druLI9NPZH4lGJrivkz1VYSYv4/6rDp1nNVavBlni1t9Iq0n+05TlED2Y3NYwUIl
+ kYCwrDBGLOBl8XMDi8HX4UhuUVWnSHjilgn1SNk6ytXof8VmqN96ms3Z/5oZ3n9W/sTX
+ A8k+zEgW9+EOO2nF8h4u6yFYk/CKjV7Y1iE4Z9R3q4b1XX30QTuDrxO3nmP+/QUh8b8w
+ MHDXhktqC8e4NVc/rapqNlnv/skizWRwLdRCWjLqmQrCQGLRxcJosTBZ2YLjYKkiuRIj
+ JLlITBC0kcEugI4IKBVF1zzsZ1DTEhlHP8ZdtWk0+aytWTaq0BsF73smTJfk49jmOs8v zQ== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3dy8u5byhm-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 01 Feb 2022 20:37:54 +0000
-Received: from m0127361.ppops.net (m0127361.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 211KDK62021947;
-	Tue, 1 Feb 2022 20:37:53 GMT
-Received: from ppma01wdc.us.ibm.com (fd.55.37a9.ip4.static.sl-reverse.com [169.55.85.253])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3dy8u5byha-1
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3dyb2q93fp-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Tue, 01 Feb 2022 20:37:53 +0000
-Received: from pps.filterd (ppma01wdc.us.ibm.com [127.0.0.1])
-	by ppma01wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 211KXCph009588;
+Received: from m0098421.ppops.net (m0098421.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 211KBSCh027316;
+	Tue, 1 Feb 2022 20:37:53 GMT
+Received: from ppma04dal.us.ibm.com (7a.29.35a9.ip4.static.sl-reverse.com [169.53.41.122])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3dyb2q93fh-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 01 Feb 2022 20:37:53 +0000
+Received: from pps.filterd (ppma04dal.us.ibm.com [127.0.0.1])
+	by ppma04dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 211KWlt1015959;
 	Tue, 1 Feb 2022 20:37:52 GMT
-Received: from b01cxnp23032.gho.pok.ibm.com (b01cxnp23032.gho.pok.ibm.com [9.57.198.27])
-	by ppma01wdc.us.ibm.com with ESMTP id 3dvw7as59c-1
+Received: from b01cxnp23034.gho.pok.ibm.com (b01cxnp23034.gho.pok.ibm.com [9.57.198.29])
+	by ppma04dal.us.ibm.com with ESMTP id 3dvw7b7242-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Tue, 01 Feb 2022 20:37:52 +0000
 Received: from b01ledav003.gho.pok.ibm.com (b01ledav003.gho.pok.ibm.com [9.57.199.108])
-	by b01cxnp23032.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 211Kbp4r36372944
+	by b01cxnp23034.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 211KbpjJ29032834
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Tue, 1 Feb 2022 20:37:52 GMT
+	Tue, 1 Feb 2022 20:37:51 GMT
 Received: from b01ledav003.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id C013BB206C;
-	Tue,  1 Feb 2022 20:37:51 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id E52CDB206A;
+	Tue,  1 Feb 2022 20:37:50 +0000 (GMT)
 Received: from b01ledav003.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id AD206B2065;
-	Tue,  1 Feb 2022 20:37:51 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id C9326B206C;
+	Tue,  1 Feb 2022 20:37:50 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by b01ledav003.gho.pok.ibm.com (Postfix) with ESMTP;
-	Tue,  1 Feb 2022 20:37:51 +0000 (GMT)
+	Tue,  1 Feb 2022 20:37:50 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
@@ -55,10 +55,11 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
         lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
         jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
-        jmorris@namei.org, Stefan Berger <stefanb@linux.ibm.com>
-Subject: [PATCH v10 19/27] integrity: Add optional callback function to integrity_inode_free()
-Date: Tue,  1 Feb 2022 15:37:27 -0500
-Message-Id: <20220201203735.164593-20-stefanb@linux.ibm.com>
+        jmorris@namei.org, Stefan Berger <stefanb@linux.ibm.com>,
+        Christian Brauner <brauner@kernel.org>
+Subject: [PATCH v10 13/27] ima: Only accept AUDIT rules for non-init_ima_ns namespaces for now
+Date: Tue,  1 Feb 2022 15:37:21 -0500
+Message-Id: <20220201203735.164593-14-stefanb@linux.ibm.com>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <20220201203735.164593-1-stefanb@linux.ibm.com>
 References: <20220201203735.164593-1-stefanb@linux.ibm.com>
@@ -70,110 +71,60 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: znPBCEav9hTUri_CYoJWpExTS7auEsjk
-X-Proofpoint-ORIG-GUID: MsqkzJLkzZ7ZmqKhFcMv_7rK91cHSemv
+X-Proofpoint-GUID: wRcmLHIXqsDlnQegujjREG3XVNg490K-
+X-Proofpoint-ORIG-GUID: mtJLJ6NJt-KsBPrXoJniAvAD--eCTNIE
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.816,Hydra:6.0.425,FMLib:17.11.62.513
  definitions=2022-02-01_09,2022-02-01_01,2021-12-02_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 clxscore=1015 phishscore=0
- lowpriorityscore=0 mlxscore=0 bulkscore=0 malwarescore=0 spamscore=0
- suspectscore=0 mlxlogscore=935 impostorscore=0 adultscore=0
- priorityscore=1501 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2201110000 definitions=main-2202010114
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 malwarescore=0 phishscore=0
+ adultscore=0 spamscore=0 impostorscore=0 suspectscore=0 mlxlogscore=999
+ bulkscore=0 priorityscore=1501 clxscore=1015 mlxscore=0 lowpriorityscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2201110000
+ definitions=main-2202010114
 
-Add an optional callback function to integrity_inode_free() that,
-if provided, must be called and determines whether the iint can be
-freed. Adjust all callers of this function to provide a NULL pointer
-since none of the existing callers needs this check.
+Only accept AUDIT rules for non-init_ima_ns namespaces rejecting all rules
+that require support for measuring, appraisal, and hashing.
 
 Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
----
- include/linux/integrity.h |  8 ++++++--
- security/integrity/iint.c | 15 +++++++++++++--
- security/security.c       |  2 +-
- 3 files changed, 20 insertions(+), 5 deletions(-)
+Acked-by: Christian Brauner <brauner@kernel.org>
 
-diff --git a/include/linux/integrity.h b/include/linux/integrity.h
-index 2ea0f2f65ab6..9fe826b9146e 100644
---- a/include/linux/integrity.h
-+++ b/include/linux/integrity.h
-@@ -19,10 +19,13 @@ enum integrity_status {
- 	INTEGRITY_UNKNOWN,
- };
- 
-+struct integrity_iint_cache;
-+typedef bool (*iint_removable_cb)(struct integrity_iint_cache *iint);
+---
+v9:
+  - Jump to err_audit when unsupported rules are detected
+---
+ security/integrity/ima/ima_policy.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
+index 148ff5a98a8e..2dcc5a8c585a 100644
+--- a/security/integrity/ima/ima_policy.c
++++ b/security/integrity/ima/ima_policy.c
+@@ -1796,6 +1796,17 @@ static int ima_parse_rule(struct ima_namespace *ns,
+ 			result = -EINVAL;
+ 			break;
+ 		}
 +
- /* List of EVM protected security xattrs */
- #ifdef CONFIG_INTEGRITY
- extern struct integrity_iint_cache *integrity_inode_get(struct inode *inode);
--extern void integrity_inode_free(struct inode *inode);
-+extern void integrity_inode_free(struct inode *inode, iint_removable_cb check);
- extern void __init integrity_load_keys(void);
++		/* IMA namespace only accepts AUDIT rules */
++		if (ns != &init_ima_ns && result == 0) {
++			switch (entry->action) {
++			case MEASURE:
++			case APPRAISE:
++			case HASH:
++				result = -EINVAL;
++				goto err_audit;
++			}
++		}
+ 	}
+ 	if (!result && !ima_validate_rule(entry))
+ 		result = -EINVAL;
+@@ -1808,6 +1819,7 @@ static int ima_parse_rule(struct ima_namespace *ns,
+ 		check_template_modsig(template_desc);
+ 	}
  
- #else
-@@ -32,7 +35,8 @@ static inline struct integrity_iint_cache *
- 	return NULL;
- }
- 
--static inline void integrity_inode_free(struct inode *inode)
-+static inline void integrity_inode_free(struct inode *inode,
-+					iint_removable_cb check)
- {
- 	return;
- }
-diff --git a/security/integrity/iint.c b/security/integrity/iint.c
-index 371cbceaf479..4580df0e716e 100644
---- a/security/integrity/iint.c
-+++ b/security/integrity/iint.c
-@@ -143,21 +143,32 @@ struct integrity_iint_cache *integrity_inode_get(struct inode *inode)
- /**
-  * integrity_inode_free - called on security_inode_free
-  * @inode: pointer to the inode
-+ * @check: optional callback function to check whether the iint can be freed
-  *
-  * Free the integrity information(iint) associated with an inode.
-  */
--void integrity_inode_free(struct inode *inode)
-+void integrity_inode_free(struct inode *inode, iint_removable_cb check)
- {
- 	struct integrity_iint_cache *iint;
-+	bool freeit = true;
- 
- 	if (!IS_IMA(inode))
- 		return;
- 
- 	write_lock(&integrity_iint_lock);
-+
- 	iint = __integrity_iint_find(inode);
--	rb_erase(&iint->rb_node, &integrity_iint_tree);
-+
-+	if (check)
-+		freeit = check(iint);
-+	if (freeit)
-+		rb_erase(&iint->rb_node, &integrity_iint_tree);
-+
- 	write_unlock(&integrity_iint_lock);
- 
-+	if (!freeit)
-+		return;
-+
- 	ima_free_ns_status_list(&iint->ns_list, &iint->ns_list_lock);
- 
- 	iint_free(iint);
-diff --git a/security/security.c b/security/security.c
-index c88167a414b4..84c9ed18a4b1 100644
---- a/security/security.c
-+++ b/security/security.c
-@@ -1035,7 +1035,7 @@ static void inode_free_by_rcu(struct rcu_head *head)
- 
- void security_inode_free(struct inode *inode)
- {
--	integrity_inode_free(inode);
-+	integrity_inode_free(inode, NULL);
- 	call_void_hook(inode_free_security, inode);
- 	/*
- 	 * The inode may still be referenced in a path walk and
++err_audit:
+ 	audit_log_format(ab, "res=%d", !result);
+ 	audit_log_end(ab);
+ 	return result;
 -- 
 2.31.1
 
