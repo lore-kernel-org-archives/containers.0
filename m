@@ -1,226 +1,366 @@
-Received: from out01.mta.xmission.com (out01.mta.xmission.com [166.70.13.231])
+Received: from us-smtp-delivery-44.mimecast.com (us-smtp-delivery-44.mimecast.com [205.139.111.44])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E985D7E
-	for <containers@lists.linux.dev>; Fri, 11 Feb 2022 20:15:36 +0000 (UTC)
-Received: from in02.mta.xmission.com ([166.70.13.52]:52364)
-	by out01.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1nIc2M-002ugY-Bt; Fri, 11 Feb 2022 12:56:58 -0700
-Received: from ip68-227-174-4.om.om.cox.net ([68.227.174.4]:51124 helo=email.froward.int.ebiederm.org.xmission.com)
-	by in02.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1nIc2J-00A0GN-BV; Fri, 11 Feb 2022 12:56:57 -0700
-From: "Eric W. Biederman" <ebiederm@xmission.com>
-To: Alexey Gladkov <legion@kernel.org>
-Cc: linux-kernel@vger.kernel.org,  Kees Cook <keescook@chromium.org>,  Shuah
- Khan <shuah@kernel.org>,  Christian Brauner <brauner@kernel.org>,  Solar
- Designer <solar@openwall.com>,  Ran Xiaokai <ran.xiaokai@zte.com.cn>,
-  containers@lists.linux.dev,  Michal =?utf-8?Q?Koutn=C3=BD?=
- <mkoutny@suse.com>
-References: <87o83e2mbu.fsf@email.froward.int.ebiederm.org>
-	<20220211021324.4116773-6-ebiederm@xmission.com>
-	<20220211113454.socmlrne5heux7q7@example.org>
-	<87sfspz409.fsf@email.froward.int.ebiederm.org>
-	<20220211184041.dlqjk2fgdnkmtpe3@example.org>
-Date: Fri, 11 Feb 2022 13:56:29 -0600
-In-Reply-To: <20220211184041.dlqjk2fgdnkmtpe3@example.org> (Alexey Gladkov's
-	message of "Fri, 11 Feb 2022 19:40:41 +0100")
-Message-ID: <87zgmxxjma.fsf@email.froward.int.ebiederm.org>
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.1 (gnu/linux)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5D058A2C
+	for <containers@lists.linux.dev>; Mon, 14 Feb 2022 18:19:00 +0000 (UTC)
+Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
+ [209.132.183.4]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ us-mta-586-Mu8-cTGhOvuxgX99ysiN1A-1; Mon, 14 Feb 2022 13:18:55 -0500
+X-MC-Unique: Mu8-cTGhOvuxgX99ysiN1A-1
+Received: from smtp.corp.redhat.com (int-mx06.intmail.prod.int.phx2.redhat.com [10.5.11.16])
+	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	by mimecast-mx01.redhat.com (Postfix) with ESMTPS id BF65A1006AA0;
+	Mon, 14 Feb 2022 18:18:53 +0000 (UTC)
+Received: from comp-core-i7-2640m-0182e6.redhat.com (unknown [10.36.110.3])
+	by smtp.corp.redhat.com (Postfix) with ESMTP id 0D3558477A;
+	Mon, 14 Feb 2022 18:18:46 +0000 (UTC)
+From: Alexey Gladkov <legion@kernel.org>
+To: LKML <linux-kernel@vger.kernel.org>,
+	Linux Containers <containers@lists.linux.dev>
+Cc: Alexander Mikhalitsyn <alexander.mikhalitsyn@virtuozzo.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Christian Brauner <christian.brauner@ubuntu.com>,
+	Daniel Walsh <dwalsh@redhat.com>,
+	Davidlohr Bueso <dbueso@suse.de>,
+	"Eric W . Biederman" <ebiederm@xmission.com>,
+	Kirill Tkhai <ktkhai@virtuozzo.com>,
+	Manfred Spraul <manfred@colorfullife.com>,
+	Serge Hallyn <serge@hallyn.com>,
+	Varad Gautam <varad.gautam@suse.com>,
+	Vasily Averin <vvs@virtuozzo.com>,
+	kernel test robot <lkp@intel.com>
+Subject: [PATCH v4 1/2] ipc: Store mqueue sysctls in the ipc namespace
+Date: Mon, 14 Feb 2022 19:18:14 +0100
+Message-Id: <b0ccbb2489119f1f20c737cf1930c3a9c4e4243a.1644862280.git.legion@kernel.org>
+In-Reply-To: <cover.1644862280.git.legion@kernel.org>
+References: <cover.1644862280.git.legion@kernel.org>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain
-X-XM-SPF: eid=1nIc2J-00A0GN-BV;;;mid=<87zgmxxjma.fsf@email.froward.int.ebiederm.org>;;;hst=in02.mta.xmission.com;;;ip=68.227.174.4;;;frm=ebiederm@xmission.com;;;spf=neutral
-X-XM-AID: U2FsdGVkX19E7a/eaKFtZzvaoEdxpINrDSEu8ypYCyc=
-X-SA-Exim-Connect-IP: 68.227.174.4
-X-SA-Exim-Mail-From: ebiederm@xmission.com
-X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on sa07.xmission.com
-X-Spam-Level: *****
-X-Spam-Status: No, score=5.2 required=8.0 tests=ALL_TRUSTED,BAYES_50,
-	DCC_CHECK_NEGATIVE,LotsOfNums_01,TR_XM_BayesUnsub,T_SCC_BODY_TEXT_LINE,
-	T_TM2_M_HEADER_IN_MSG,T_TooManySym_01,XMNoVowels,XMSubLong,XM_B_Unsub
-	autolearn=disabled version=3.4.2
-X-Spam-Report: 
-	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
-	*  0.8 BAYES_50 BODY: Bayes spam probability is 40 to 60%
-	*      [score: 0.5000]
-	*  1.5 XMNoVowels Alpha-numberic number with no vowels
-	*  0.7 XMSubLong Long Subject
-	*  1.2 LotsOfNums_01 BODY: Lots of long strings of numbers
-	*  0.0 T_TM2_M_HEADER_IN_MSG BODY: No description available.
-	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
-	*      [sa07 1397; Body=1 Fuz1=1 Fuz2=1]
-	*  0.5 XM_B_Unsub Unsubscribe in body of email but missing unsubscribe
-	*       header
-	* -0.0 T_SCC_BODY_TEXT_LINE No description available.
-	*  0.0 T_TooManySym_01 4+ unique symbols in subject
-	*  1.5 TR_XM_BayesUnsub High bayes score with no unsubscribe header
-X-Spam-DCC: XMission; sa07 1397; Body=1 Fuz1=1 Fuz2=1 
-X-Spam-Combo: *****;Alexey Gladkov <legion@kernel.org>
-X-Spam-Relay-Country: 
-X-Spam-Timing: total 2407 ms - load_scoreonly_sql: 0.04 (0.0%),
-	signal_user_changed: 11 (0.5%), b_tie_ro: 10 (0.4%), parse: 1.39
-	(0.1%), extract_message_metadata: 15 (0.6%), get_uri_detail_list: 3.5
-	(0.1%), tests_pri_-1000: 14 (0.6%), tests_pri_-950: 1.27 (0.1%),
-	tests_pri_-900: 1.01 (0.0%), tests_pri_-90: 1912 (79.4%), check_bayes:
-	1910 (79.4%), b_tokenize: 12 (0.5%), b_tok_get_all: 10 (0.4%),
-	b_comp_prob: 3.2 (0.1%), b_tok_touch_all: 1881 (78.1%), b_finish: 1.03
-	(0.0%), tests_pri_0: 438 (18.2%), check_dkim_signature: 0.59 (0.0%),
-	check_dkim_adsp: 2.6 (0.1%), poll_dns_idle: 0.85 (0.0%), tests_pri_10:
-	2.2 (0.1%), tests_pri_500: 7 (0.3%), rewrite_mail: 0.00 (0.0%)
-Subject: Re: [PATCH 6/8] ucounts: Handle inc_rlimit_ucounts wrapping in fork
-X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
-X-SA-Exim-Scanned: Yes (on in02.mta.xmission.com)
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.16
+Authentication-Results: relay.mimecast.com;
+	auth=pass smtp.auth=CUSA124A263 smtp.mailfrom=legion@kernel.org
+X-Mimecast-Spam-Score: 0
+X-Mimecast-Originator: kernel.org
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=WINDOWS-1252
 
-Alexey Gladkov <legion@kernel.org> writes:
+Right now, the mqueue sysctls take ipc namespaces into account in a
+rather hacky way. This works in most cases, but does not respect the
+user namespace.
 
-> On Fri, Feb 11, 2022 at 11:50:46AM -0600, Eric W. Biederman wrote:
->> Alexey Gladkov <legion@kernel.org> writes:
->> 
->> > On Thu, Feb 10, 2022 at 08:13:22PM -0600, Eric W. Biederman wrote:
->> >> Move inc_rlimit_ucounts from copy_creds into copy_process immediately
->> >> after copy_creds where it can be called exactly once.  Test for and
->> >> handle it when inc_rlimit_ucounts returns LONG_MAX indicating the
->> >> count has wrapped.
->> >> 
->> >> This is good hygenine and fixes a theoretical bug.  In practice
->> >> PID_MAX_LIMIT is at most 2^22 so there is not a chance the number of
->> >> processes would ever wrap even on an architecture with a 32bit long.
->> >> 
->> >> Fixes: 21d1c5e386bc ("Reimplement RLIMIT_NPROC on top of ucounts")
->> >> Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
->> >> ---
->> >>  kernel/cred.c | 2 --
->> >>  kernel/fork.c | 2 ++
->> >>  2 files changed, 2 insertions(+), 2 deletions(-)
->> >> 
->> >> diff --git a/kernel/cred.c b/kernel/cred.c
->> >> index 229cff081167..96d5fd6ff26f 100644
->> >> --- a/kernel/cred.c
->> >> +++ b/kernel/cred.c
->> >> @@ -358,7 +358,6 @@ int copy_creds(struct task_struct *p, unsigned long clone_flags)
->> >>  		kdebug("share_creds(%p{%d,%d})",
->> >>  		       p->cred, atomic_read(&p->cred->usage),
->> >>  		       read_cred_subscribers(p->cred));
->> >> -		inc_rlimit_ucounts(task_ucounts(p), UCOUNT_RLIMIT_NPROC, 1);
->> >>  		return 0;
->> >>  	}
->> >>  
->> >> @@ -395,7 +394,6 @@ int copy_creds(struct task_struct *p, unsigned long clone_flags)
->> >>  #endif
->> >>  
->> >>  	p->cred = p->real_cred = get_cred(new);
->> >> -	inc_rlimit_ucounts(task_ucounts(p), UCOUNT_RLIMIT_NPROC, 1);
->> >>  	alter_cred_subscribers(new, 2);
->> >>  	validate_creds(new);
->> >>  	return 0;
->> >> diff --git a/kernel/fork.c b/kernel/fork.c
->> >> index 6f62d37f3650..69333078259c 100644
->> >> --- a/kernel/fork.c
->> >> +++ b/kernel/fork.c
->> >> @@ -2026,6 +2026,8 @@ static __latent_entropy struct task_struct *copy_process(
->> >>  		goto bad_fork_free;
->> >>  
->> >>  	retval = -EAGAIN;
->> >> +	if (inc_rlimit_ucounts(task_ucounts(p), UCOUNT_RLIMIT_NPROC, 1) == LONG_MAX)
->> >> +		goto bad_fork_cleanup_count;
->> >>  	if (is_ucounts_overlimit(task_ucounts(p), UCOUNT_RLIMIT_NPROC, rlimit(RLIMIT_NPROC))) {
->> >>  		if ((task_ucounts(p) != &init_ucounts) &&
->> >>  		    !capable(CAP_SYS_RESOURCE) && !capable(CAP_SYS_ADMIN))
->> >
->> > It might make sense to do something like:
->> >
->> > 	if (inc_rlimit_ucounts_overlimit(task_ucounts(p), UCOUNT_RLIMIT_NPROC, 1, rlimit(RLIMIT_NPROC)) == LONG_MAX) {
->> > 		if ((task_ucounts(p) != &init_ucounts) &&
->> > 		    !capable(CAP_SYS_RESOURCE) && !capable(CAP_SYS_ADMIN))
->> >
->> > and the new function:
->> >
->> > long inc_rlimit_ucounts_overlimit(struct ucounts *ucounts, enum ucount_type type, long v, unsigned long rlimit)
->> > {
->> > 	struct ucounts *iter;
->> > 	long ret = 0;
->> > 	long max = rlimit;
->> > 	if (rlimit > LONG_MAX)
->> > 		max = LONG_MAX;
->> > 	for (iter = ucounts; iter; iter = iter->ns->ucounts) {
->> > 		long new = atomic_long_add_return(v, &iter->ucount[type]);
->> > 		if (new < 0 || new > max)
->> > 			ret = LONG_MAX;
->> > 		else if (iter == ucounts)
->> > 			ret = new;
->> > 		max = READ_ONCE(iter->ns->ucount_max[type]);
->> > 	}
->> > 	return ret;
->> > }
->> >
->> > This will avoid double checking the same userns tree.
->> >
->> > Or even modify inc_rlimit_ucounts. This function is used elsewhere like
->> > this:
->> >
->> >
->> > msgqueue = inc_rlimit_ucounts(info->ucounts, UCOUNT_RLIMIT_MSGQUEUE, mq_bytes);
->> > if (msgqueue == LONG_MAX || msgqueue > rlimit(RLIMIT_MSGQUEUE)) {
->> >
->> >
->> > memlock = inc_rlimit_ucounts(ucounts, UCOUNT_RLIMIT_MEMLOCK, locked);
->> > if (!allowed && (memlock == LONG_MAX || memlock > lock_limit) && !capable(CAP_IPC_LOCK)) {
->> >
->> >
->> > In all cases, we have max value for comparison.
->> 
->> Good point.   The downside is that it means we can't use the same code
->> in exec.  The upside is that the code is more idiomatic.
->
-> My suggestion was before I saw the 8/8 patch :)
->
-> We can make something like:
->
-> static inline bool is_nproc_overlimit(struct task_struct *task)
-> {
-> 	return (task_ucounts(task) != &init_ucounts) &&
-> 		!has_capability(task, CAP_SYS_RESOURCE) &&
-> 		!has_capability(task, CAP_SYS_ADMIN);
-> }
->
-> In copy_process:
->
-> if (inc_rlimit_ucounts_overlimit(task_ucounts(p), UCOUNT_RLIMIT_NPROC, 1, rlimit(RLIMIT_NPROC)) == LONG_MAX) {
-> 	if (is_nproc_overlimit(p))
-> 		goto bad_fork_cleanup_count;
-> }
->
-> In do_execveat_common:
->
-> if ((current->flags & PF_NPROC_CHECK) &&
->     is_ucounts_overlimit(current_ucounts(), UCOUNT_RLIMIT_NPROC, rlimit(RLIMIT_NPROC)) &&
->     is_nproc_overlimit(current)) {
-> 	retval = -EAGAIN;
-> 	goto out_ret;
-> }
+Within the user namespace, the user cannot change the /proc/sys/fs/mqueue/*
+parametres. This poses a problem in the rootless containers.
 
+To solve this I changed the implementation of the mqueue sysctls just
+like some other sysctls.
 
-The more I think about it the more I suspect 8/8 is the wrong way to go.
+So far, the changes do not provide additional access to files. This will
+be done in a future patch.
 
-The report is that adding the capability calls in kernel/sys.c which I
-moved into execve broke apache.  As the change was about removing
-inconsistencies I expect I should just start with the revert and keep
-the difference between the two code paths.
+v3:
+* Don't implemenet set_permissions to keep the current behavior.
 
-My gut feel is that both the capable and the magic exception of a user
-are wrong.  If I am wrong people can report a bug and the code can get
-fixed.
+v2:
+* Fixed compilation problem if CONFIG_POSIX_MQUEUE_SYSCTL is not
+  specified.
 
-But definitely a bug fix branch is the wrong place to be expanding what
-is allowed without it clearly being a bug.
+Reported-by: kernel test robot <lkp@intel.com>
+Signed-off-by: Alexey Gladkov <legion@kernel.org>
+---
+ include/linux/ipc_namespace.h |  16 +++--
+ ipc/mq_sysctl.c               | 121 ++++++++++++++++++----------------
+ ipc/mqueue.c                  |  10 ++-
+ ipc/namespace.c               |   6 ++
+ 4 files changed, 88 insertions(+), 65 deletions(-)
 
-Eric
+diff --git a/include/linux/ipc_namespace.h b/include/linux/ipc_namespace.h
+index b75395ec8d52..fa787d97d60a 100644
+--- a/include/linux/ipc_namespace.h
++++ b/include/linux/ipc_namespace.h
+@@ -10,6 +10,7 @@
+ #include <linux/ns_common.h>
+ #include <linux/refcount.h>
+ #include <linux/rhashtable-types.h>
++#include <linux/sysctl.h>
+=20
+ struct user_namespace;
+=20
+@@ -63,6 +64,9 @@ struct ipc_namespace {
+ =09unsigned int    mq_msg_default;
+ =09unsigned int    mq_msgsize_default;
+=20
++=09struct ctl_table_set=09mq_set;
++=09struct ctl_table_header=09*mq_sysctls;
++
+ =09/* user_ns which owns the ipc ns */
+ =09struct user_namespace *user_ns;
+ =09struct ucounts *ucounts;
+@@ -169,14 +173,18 @@ static inline void put_ipc_ns(struct ipc_namespace *n=
+s)
+=20
+ #ifdef CONFIG_POSIX_MQUEUE_SYSCTL
+=20
+-struct ctl_table_header;
+-extern struct ctl_table_header *mq_register_sysctl_table(void);
++void retire_mq_sysctls(struct ipc_namespace *ns);
++bool setup_mq_sysctls(struct ipc_namespace *ns);
+=20
+ #else /* CONFIG_POSIX_MQUEUE_SYSCTL */
+=20
+-static inline struct ctl_table_header *mq_register_sysctl_table(void)
++static inline void retire_mq_sysctls(struct ipc_namespace *ns)
+ {
+-=09return NULL;
++}
++
++static inline bool setup_mq_sysctls(struct ipc_namespace *ns)
++{
++=09return true;
+ }
+=20
+ #endif /* CONFIG_POSIX_MQUEUE_SYSCTL */
+diff --git a/ipc/mq_sysctl.c b/ipc/mq_sysctl.c
+index 72a92a08c848..fbf6a8b93a26 100644
+--- a/ipc/mq_sysctl.c
++++ b/ipc/mq_sysctl.c
+@@ -9,39 +9,9 @@
+ #include <linux/ipc_namespace.h>
+ #include <linux/sysctl.h>
+=20
+-#ifdef CONFIG_PROC_SYSCTL
+-static void *get_mq(struct ctl_table *table)
+-{
+-=09char *which =3D table->data;
+-=09struct ipc_namespace *ipc_ns =3D current->nsproxy->ipc_ns;
+-=09which =3D (which - (char *)&init_ipc_ns) + (char *)ipc_ns;
+-=09return which;
+-}
+-
+-static int proc_mq_dointvec(struct ctl_table *table, int write,
+-=09=09=09    void *buffer, size_t *lenp, loff_t *ppos)
+-{
+-=09struct ctl_table mq_table;
+-=09memcpy(&mq_table, table, sizeof(mq_table));
+-=09mq_table.data =3D get_mq(table);
+-
+-=09return proc_dointvec(&mq_table, write, buffer, lenp, ppos);
+-}
+-
+-static int proc_mq_dointvec_minmax(struct ctl_table *table, int write,
+-=09=09void *buffer, size_t *lenp, loff_t *ppos)
+-{
+-=09struct ctl_table mq_table;
+-=09memcpy(&mq_table, table, sizeof(mq_table));
+-=09mq_table.data =3D get_mq(table);
+-
+-=09return proc_dointvec_minmax(&mq_table, write, buffer,
+-=09=09=09=09=09lenp, ppos);
+-}
+-#else
+-#define proc_mq_dointvec NULL
+-#define proc_mq_dointvec_minmax NULL
+-#endif
++#include <linux/stat.h>
++#include <linux/capability.h>
++#include <linux/slab.h>
+=20
+ static int msg_max_limit_min =3D MIN_MSGMAX;
+ static int msg_max_limit_max =3D HARD_MSGMAX;
+@@ -55,14 +25,14 @@ static struct ctl_table mq_sysctls[] =3D {
+ =09=09.data=09=09=3D &init_ipc_ns.mq_queues_max,
+ =09=09.maxlen=09=09=3D sizeof(int),
+ =09=09.mode=09=09=3D 0644,
+-=09=09.proc_handler=09=3D proc_mq_dointvec,
++=09=09.proc_handler=09=3D proc_dointvec,
+ =09},
+ =09{
+ =09=09.procname=09=3D "msg_max",
+ =09=09.data=09=09=3D &init_ipc_ns.mq_msg_max,
+ =09=09.maxlen=09=09=3D sizeof(int),
+ =09=09.mode=09=09=3D 0644,
+-=09=09.proc_handler=09=3D proc_mq_dointvec_minmax,
++=09=09.proc_handler=09=3D proc_dointvec_minmax,
+ =09=09.extra1=09=09=3D &msg_max_limit_min,
+ =09=09.extra2=09=09=3D &msg_max_limit_max,
+ =09},
+@@ -71,7 +41,7 @@ static struct ctl_table mq_sysctls[] =3D {
+ =09=09.data=09=09=3D &init_ipc_ns.mq_msgsize_max,
+ =09=09.maxlen=09=09=3D sizeof(int),
+ =09=09.mode=09=09=3D 0644,
+-=09=09.proc_handler=09=3D proc_mq_dointvec_minmax,
++=09=09.proc_handler=09=3D proc_dointvec_minmax,
+ =09=09.extra1=09=09=3D &msg_maxsize_limit_min,
+ =09=09.extra2=09=09=3D &msg_maxsize_limit_max,
+ =09},
+@@ -80,7 +50,7 @@ static struct ctl_table mq_sysctls[] =3D {
+ =09=09.data=09=09=3D &init_ipc_ns.mq_msg_default,
+ =09=09.maxlen=09=09=3D sizeof(int),
+ =09=09.mode=09=09=3D 0644,
+-=09=09.proc_handler=09=3D proc_mq_dointvec_minmax,
++=09=09.proc_handler=09=3D proc_dointvec_minmax,
+ =09=09.extra1=09=09=3D &msg_max_limit_min,
+ =09=09.extra2=09=09=3D &msg_max_limit_max,
+ =09},
+@@ -89,32 +59,73 @@ static struct ctl_table mq_sysctls[] =3D {
+ =09=09.data=09=09=3D &init_ipc_ns.mq_msgsize_default,
+ =09=09.maxlen=09=09=3D sizeof(int),
+ =09=09.mode=09=09=3D 0644,
+-=09=09.proc_handler=09=3D proc_mq_dointvec_minmax,
++=09=09.proc_handler=09=3D proc_dointvec_minmax,
+ =09=09.extra1=09=09=3D &msg_maxsize_limit_min,
+ =09=09.extra2=09=09=3D &msg_maxsize_limit_max,
+ =09},
+ =09{}
+ };
+=20
+-static struct ctl_table mq_sysctl_dir[] =3D {
+-=09{
+-=09=09.procname=09=3D "mqueue",
+-=09=09.mode=09=09=3D 0555,
+-=09=09.child=09=09=3D mq_sysctls,
+-=09},
+-=09{}
+-};
++static struct ctl_table_set *set_lookup(struct ctl_table_root *root)
++{
++=09return &current->nsproxy->ipc_ns->mq_set;
++}
+=20
+-static struct ctl_table mq_sysctl_root[] =3D {
+-=09{
+-=09=09.procname=09=3D "fs",
+-=09=09.mode=09=09=3D 0555,
+-=09=09.child=09=09=3D mq_sysctl_dir,
+-=09},
+-=09{}
++static int set_is_seen(struct ctl_table_set *set)
++{
++=09return &current->nsproxy->ipc_ns->mq_set =3D=3D set;
++}
++
++static struct ctl_table_root set_root =3D {
++=09.lookup =3D set_lookup,
+ };
+=20
+-struct ctl_table_header *mq_register_sysctl_table(void)
++bool setup_mq_sysctls(struct ipc_namespace *ns)
+ {
+-=09return register_sysctl_table(mq_sysctl_root);
++=09struct ctl_table *tbl;
++
++=09setup_sysctl_set(&ns->mq_set, &set_root, set_is_seen);
++
++=09tbl =3D kmemdup(mq_sysctls, sizeof(mq_sysctls), GFP_KERNEL);
++=09if (tbl) {
++=09=09int i;
++
++=09=09for (i =3D 0; i < ARRAY_SIZE(mq_sysctls); i++) {
++=09=09=09if (tbl[i].data =3D=3D &init_ipc_ns.mq_queues_max)
++=09=09=09=09tbl[i].data =3D &ns->mq_queues_max;
++
++=09=09=09else if (tbl[i].data =3D=3D &init_ipc_ns.mq_msg_max)
++=09=09=09=09tbl[i].data =3D &ns->mq_msg_max;
++
++=09=09=09else if (tbl[i].data =3D=3D &init_ipc_ns.mq_msgsize_max)
++=09=09=09=09tbl[i].data =3D &ns->mq_msgsize_max;
++
++=09=09=09else if (tbl[i].data =3D=3D &init_ipc_ns.mq_msg_default)
++=09=09=09=09tbl[i].data =3D &ns->mq_msg_default;
++
++=09=09=09else if (tbl[i].data =3D=3D &init_ipc_ns.mq_msgsize_default)
++=09=09=09=09tbl[i].data =3D &ns->mq_msgsize_default;
++=09=09=09else
++=09=09=09=09tbl[i].data =3D NULL;
++=09=09}
++
++=09=09ns->mq_sysctls =3D __register_sysctl_table(&ns->mq_set, "fs/mqueue",=
+ tbl);
++=09}
++=09if (!ns->mq_sysctls) {
++=09=09kfree(tbl);
++=09=09retire_sysctl_set(&ns->mq_set);
++=09=09return false;
++=09}
++
++=09return true;
++}
++
++void retire_mq_sysctls(struct ipc_namespace *ns)
++{
++=09struct ctl_table *tbl;
++
++=09tbl =3D ns->mq_sysctls->ctl_table_arg;
++=09unregister_sysctl_table(ns->mq_sysctls);
++=09retire_sysctl_set(&ns->mq_set);
++=09kfree(tbl);
+ }
+diff --git a/ipc/mqueue.c b/ipc/mqueue.c
+index 5becca9be867..1b4a3be71636 100644
+--- a/ipc/mqueue.c
++++ b/ipc/mqueue.c
+@@ -163,8 +163,6 @@ static void remove_notification(struct mqueue_inode_inf=
+o *info);
+=20
+ static struct kmem_cache *mqueue_inode_cachep;
+=20
+-static struct ctl_table_header *mq_sysctl_table;
+-
+ static inline struct mqueue_inode_info *MQUEUE_I(struct inode *inode)
+ {
+ =09return container_of(inode, struct mqueue_inode_info, vfs_inode);
+@@ -1713,8 +1711,10 @@ static int __init init_mqueue_fs(void)
+ =09if (mqueue_inode_cachep =3D=3D NULL)
+ =09=09return -ENOMEM;
+=20
+-=09/* ignore failures - they are not fatal */
+-=09mq_sysctl_table =3D mq_register_sysctl_table();
++=09if (!setup_mq_sysctls(&init_ipc_ns)) {
++=09=09pr_warn("sysctl registration failed\n");
++=09=09return -ENOMEM;
++=09}
+=20
+ =09error =3D register_filesystem(&mqueue_fs_type);
+ =09if (error)
+@@ -1731,8 +1731,6 @@ static int __init init_mqueue_fs(void)
+ out_filesystem:
+ =09unregister_filesystem(&mqueue_fs_type);
+ out_sysctl:
+-=09if (mq_sysctl_table)
+-=09=09unregister_sysctl_table(mq_sysctl_table);
+ =09kmem_cache_destroy(mqueue_inode_cachep);
+ =09return error;
+ }
+diff --git a/ipc/namespace.c b/ipc/namespace.c
+index ae83f0f2651b..f760243ca685 100644
+--- a/ipc/namespace.c
++++ b/ipc/namespace.c
+@@ -59,6 +59,10 @@ static struct ipc_namespace *create_ipc_ns(struct user_n=
+amespace *user_ns,
+ =09if (err)
+ =09=09goto fail_put;
+=20
++=09err =3D -ENOMEM;
++=09if (!setup_mq_sysctls(ns))
++=09=09goto fail_put;
++
+ =09sem_init_ns(ns);
+ =09msg_init_ns(ns);
+ =09shm_init_ns(ns);
+@@ -125,6 +129,8 @@ static void free_ipc_ns(struct ipc_namespace *ns)
+ =09msg_exit_ns(ns);
+ =09shm_exit_ns(ns);
+=20
++=09retire_mq_sysctls(ns);
++
+ =09dec_ipc_namespaces(ns->ucounts);
+ =09put_user_ns(ns->user_ns);
+ =09ns_free_inum(&ns->ns);
+--=20
+2.33.0
 
