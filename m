@@ -1,102 +1,162 @@
-Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+Received: from out01.mta.xmission.com (out01.mta.xmission.com [166.70.13.231])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BC7B2158E
-	for <containers@lists.linux.dev>; Tue, 15 Feb 2022 18:09:41 +0000 (UTC)
-Received: from pps.filterd (m0127361.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 21FHB2pG016332;
-	Tue, 15 Feb 2022 18:09:13 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : subject :
- from : to : cc : date : in-reply-to : references : content-type :
- mime-version : content-transfer-encoding; s=pp1;
- bh=9kxFY6QSfERb8ypvZ0/M23Sv+S4WIy8ZmOdiGOw/q4I=;
- b=X4yaxXOc2a/6q/fjuObGtyNqKwxDYUzXn/K9HnUzHUz62EIENYgCz55If95TQfjnod70
- LW8CSsvQcTKSolAKi7RlJPfj/y7H29w/Ot5JX7y9LtScIacl8aouZ5zg01dWXEG8G6tE
- tN3j1hkvQubd9O0+zLnlPSI2C42V6OBvRK2kkjQb4LomKYRZXvl0eu5SEWFKYgC+6mmQ
- bLpi809lXPQ/jhHSDkyr9TbQku9jTfjVx8qsCshOHNcOSRjX8NNJ8avVfxo3LUJiZQ27
- Mv6LFhy7f4+kYFmr4/G95Qtt8PjqT9biwwwaih96KwgUZtETBY34XmVCulwgiiPWoToT Pw== 
-Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3e8fe3tmfk-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 15 Feb 2022 18:09:12 +0000
-Received: from m0127361.ppops.net (m0127361.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 21FHDv5W026458;
-	Tue, 15 Feb 2022 18:09:12 GMT
-Received: from ppma04ams.nl.ibm.com (63.31.33a9.ip4.static.sl-reverse.com [169.51.49.99])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3e8fe3tmer-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 15 Feb 2022 18:09:12 +0000
-Received: from pps.filterd (ppma04ams.nl.ibm.com [127.0.0.1])
-	by ppma04ams.nl.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 21FI8UFm001039;
-	Tue, 15 Feb 2022 18:09:10 GMT
-Received: from b06cxnps4075.portsmouth.uk.ibm.com (d06relay12.portsmouth.uk.ibm.com [9.149.109.197])
-	by ppma04ams.nl.ibm.com with ESMTP id 3e64ha1vkg-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 15 Feb 2022 18:09:10 +0000
-Received: from d06av25.portsmouth.uk.ibm.com (d06av25.portsmouth.uk.ibm.com [9.149.105.61])
-	by b06cxnps4075.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 21FI95ce42205450
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Tue, 15 Feb 2022 18:09:05 GMT
-Received: from d06av25.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 576C611C06C;
-	Tue, 15 Feb 2022 18:09:05 +0000 (GMT)
-Received: from d06av25.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 34D4711C054;
-	Tue, 15 Feb 2022 18:09:03 +0000 (GMT)
-Received: from sig-9-65-88-149.ibm.com (unknown [9.65.88.149])
-	by d06av25.portsmouth.uk.ibm.com (Postfix) with ESMTP;
-	Tue, 15 Feb 2022 18:09:03 +0000 (GMT)
-Message-ID: <8d72ee39ac5d98e0d293d46c8f73188281f270b7.camel@linux.ibm.com>
-Subject: Re: [PATCH v10 03/27] ima: Return error code obtained from
- securityfs functions
-From: Mimi Zohar <zohar@linux.ibm.com>
-To: Stefan Berger <stefanb@linux.ibm.com>, linux-integrity@vger.kernel.org
-Cc: serge@hallyn.com, christian.brauner@ubuntu.com, containers@lists.linux.dev,
-        dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
-        krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
-        mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
-        puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
-        linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
-        linux-security-module@vger.kernel.org, jmorris@namei.org
-Date: Tue, 15 Feb 2022 13:09:02 -0500
-In-Reply-To: <1a4bc3cf915057bc5c5957c42c164bc2491a9da7.camel@linux.ibm.com>
-References: <20220201203735.164593-1-stefanb@linux.ibm.com>
-	 <20220201203735.164593-4-stefanb@linux.ibm.com>
-	 <1a4bc3cf915057bc5c5957c42c164bc2491a9da7.camel@linux.ibm.com>
-Content-Type: text/plain; charset="ISO-8859-15"
-X-Mailer: Evolution 3.28.5 (3.28.5-18.el8) 
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8EF327C
+	for <containers@lists.linux.dev>; Tue, 15 Feb 2022 19:30:49 +0000 (UTC)
+Received: from in02.mta.xmission.com ([166.70.13.52]:54488)
+	by out01.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.93)
+	(envelope-from <ebiederm@xmission.com>)
+	id 1nK3X8-00D9nP-CF; Tue, 15 Feb 2022 12:30:42 -0700
+Received: from ip68-227-174-4.om.om.cox.net ([68.227.174.4]:41044 helo=email.froward.int.ebiederm.org.xmission.com)
+	by in02.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.93)
+	(envelope-from <ebiederm@xmission.com>)
+	id 1nK3X5-0070hH-KN; Tue, 15 Feb 2022 12:30:41 -0700
+From: "Eric W. Biederman" <ebiederm@xmission.com>
+To: bugzilla-daemon@kernel.org
+Cc: Alexey Gladkov <legion@kernel.org>,
+ Linux Containers <containers@lists.linux.dev> 
+References: <bug-215596-7251@https.bugzilla.kernel.org/>
+Date: Tue, 15 Feb 2022 13:30:33 -0600
+In-Reply-To: <bug-215596-7251@https.bugzilla.kernel.org/>
+	(bugzilla-daemon@kernel.org's message of "Sat, 12 Feb 2022 15:01:32
+	+0000")
+Message-ID: <8735kkq65i.fsf@email.froward.int.ebiederm.org>
+User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.1 (gnu/linux)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: 2vQN03Yr0BkbDFMnNTjyktEts2coJDFe
-X-Proofpoint-ORIG-GUID: CIupRnnEGM9sDcVqfp0CKLZMLJCOh7PS
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.205,Aquarius:18.0.816,Hydra:6.0.425,FMLib:17.11.62.513
- definitions=2022-02-15_05,2022-02-14_04,2021-12-02_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 phishscore=0 spamscore=0
- adultscore=0 priorityscore=1501 lowpriorityscore=0 mlxlogscore=953
- impostorscore=0 suspectscore=0 bulkscore=0 mlxscore=0 malwarescore=0
- clxscore=1015 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2201110000 definitions=main-2202150105
+MIME-Version: 1.0
+Content-Type: text/plain
+X-XM-SPF: eid=1nK3X5-0070hH-KN;;;mid=<8735kkq65i.fsf@email.froward.int.ebiederm.org>;;;hst=in02.mta.xmission.com;;;ip=68.227.174.4;;;frm=ebiederm@xmission.com;;;spf=neutral
+X-XM-AID: U2FsdGVkX1+hoJe3lL3qO5Pjlre9AwfQGoKY2SMtmyA=
+X-SA-Exim-Connect-IP: 68.227.174.4
+X-SA-Exim-Mail-From: ebiederm@xmission.com
+X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on sa06.xmission.com
+X-Spam-Level: 
+X-Spam-Status: No, score=0.5 required=8.0 tests=ALL_TRUSTED,BAYES_50,
+	DCC_CHECK_NEGATIVE,T_SCC_BODY_TEXT_LINE,T_TM2_M_HEADER_IN_MSG,
+	XMSubLong autolearn=disabled version=3.4.2
+X-Spam-Report: 
+	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
+	*  0.8 BAYES_50 BODY: Bayes spam probability is 40 to 60%
+	*      [score: 0.4913]
+	*  0.7 XMSubLong Long Subject
+	*  0.0 T_TM2_M_HEADER_IN_MSG BODY: No description available.
+	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
+	*      [sa06 1397; Body=1 Fuz1=1 Fuz2=1]
+	* -0.0 T_SCC_BODY_TEXT_LINE No description available.
+X-Spam-DCC: XMission; sa06 1397; Body=1 Fuz1=1 Fuz2=1 
+X-Spam-Combo: ;bugzilla-daemon@kernel.org
+X-Spam-Relay-Country: 
+X-Spam-Timing: total 2175 ms - load_scoreonly_sql: 0.06 (0.0%),
+	signal_user_changed: 10 (0.4%), b_tie_ro: 8 (0.4%), parse: 1.01 (0.0%),
+	 extract_message_metadata: 26 (1.2%), get_uri_detail_list: 3.0 (0.1%),
+	tests_pri_-1000: 22 (1.0%), tests_pri_-950: 1.37 (0.1%),
+	tests_pri_-900: 1.08 (0.0%), tests_pri_-90: 222 (10.2%), check_bayes:
+	206 (9.5%), b_tokenize: 9 (0.4%), b_tok_get_all: 41 (1.9%),
+	b_comp_prob: 2.8 (0.1%), b_tok_touch_all: 149 (6.8%), b_finish: 1.08
+	(0.0%), tests_pri_0: 1421 (65.4%), check_dkim_signature: 0.96 (0.0%),
+	check_dkim_adsp: 3.7 (0.2%), poll_dns_idle: 448 (20.6%), tests_pri_10:
+	2.1 (0.1%), tests_pri_500: 465 (21.4%), rewrite_mail: 0.00 (0.0%)
+Subject: Re: [Bug 215596] New: Commit 59ec715 breaks systemd LimitNPROC with
+ PrivateUsers
+X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
+X-SA-Exim-Scanned: Yes (on in02.mta.xmission.com)
 
-On Thu, 2022-02-10 at 07:02 -0500, Mimi Zohar wrote:
-> On Tue, 2022-02-01 at 15:37 -0500, Stefan Berger wrote:
-> > If an error occurs when creating a securityfs file, return the exact
-> > error code to the caller.
-> > 
-> > Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-> 
-> Thanks, Stefan.  Nice cleanup.
+bugzilla-daemon@kernel.org writes:
 
-This is now queued in next-integrity.
+> https://bugzilla.kernel.org/show_bug.cgi?id=215596
+>
+>             Bug ID: 215596
+>            Summary: Commit 59ec715 breaks systemd LimitNPROC with
+>                     PrivateUsers
+>            Product: Other
+>            Version: 2.5
+>           Hardware: All
+>                 OS: Linux
+>             Status: NEW
+>           Severity: normal
+>           Priority: P1
+>          Component: Other
+>           Assignee: other_other@kernel-bugs.osdl.org
+>           Reporter: etienne@edechamps.fr
+>                 CC: ebiederm@xmission.com, mkoutny@suse.com,
+>                     solar@openwall.com
+>         Regression: Yes
+>
+> Commit 59ec715 "ucounts: Fix rlimit max values check", first included in Linux
+> 5.15.12, breaks systemd "LimitNPROC" (RLIMIT_NPROC) when combined with
+> "PrivateUsers" (user namespacing).
+>
+> This can be reproduced with a trivial systemd service file:
+>
+> [Service]
+> User=nobody
+> PrivateUsers=yes
+> LimitNPROC=4
+> Type=oneshot
+> ExecStart=/bin/true
+>
+> Which, on 59ec715, fails with:
+>
+> Failed to execute /bin/true: Resource temporarily unavailable
+> Failed at step EXEC spawning /bin/true: Resource temporarily unavailable
+> Main process exited, code=exited, status=203/EXEC
+>
+> (Even though user `nobody` has no running processes besides this one)
+>
+> A strace on PID 1 reveals the following sequence of calls (excerpt):
+>
+> clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD,
+> child_tidptr=0x40e60150) = 129
+> [pid   129] prlimit64(0, RLIMIT_NPROC, {rlim_cur=4, rlim_max=4}, NULL) = 0
+> [pid   129] unshare(CLONE_NEWUSER)      = 0
+> [pid   129] setresuid(65534, 65534, 65534) = 0
+> [pid   129] execve("/bin/true", ["/bin/true"], 0x552ad950a0 /* 7 vars */) = -1
+> EAGAIN (Resource temporarily unavailable)
 
--- 
-Thanks,
+Do you happen to know which user the code was running as when prlimit64
+was called?  Really it only matters before the unshare(CLONE_NEWUSER).
 
-Mimi
+> On the parent commit of 59ec715 the service starts successfully.
+>
+> This is still reproducible on current master (83e3966).
+>
+> Relevant patch discussion:
+> https://lore.kernel.org/lkml/87lf0g9xq7.fsf@email.froward.int.ebiederm.org/T/#m0a39edf27bc5aabca58b2c2a3d81704818d2c6fe
+>
+> This more recent thread also seems highly relevant:
+> https://lore.kernel.org/lkml/20220207121800.5079-1-mkoutny@suse.com/
+
+What this looks like is the user that called unshare had more that 4
+processes running.
+
+If that user is root is root there is an easy argument for fixing this.
+Looking at the behavior from your trace and reading the code I don't
+think the code was running as user root.
+
+If the user that called unshare was not root, the question becomes
+what are you trying to achieve.
+
+You say it breaks LimitNPROC with PrivateUsers but I don't see how
+this could have worked reliably in the past even without the change.
+
+What limit were you expecting to be enforced?
+
+Right now this looks like:
+  Set RLIMIT_NPROC to 4.
+  Have more than 4 processes.
+  The kernel enforces the limit.
+
+There is a lot of weird and goofy history with RLIMIT_NPROC so I am open
+to learning something that would let this be a sensible case.  Right now
+I unfortunately am not seeing it.
+
+Eric
+
+
 
