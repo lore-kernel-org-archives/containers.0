@@ -1,146 +1,210 @@
 Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D64F3C8A
-	for <containers@lists.linux.dev>; Wed, 23 Feb 2022 15:44:53 +0000 (UTC)
-Received: from pps.filterd (m0098414.ppops.net [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 21NFZ6tY009316;
-	Wed, 23 Feb 2022 15:44:33 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
- mime-version : subject : to : cc : references : from : in-reply-to :
- content-type : content-transfer-encoding; s=pp1;
- bh=ko5rFaANlv28TkWdV5MQzkzdp12fcrrTojPC+F+P5kc=;
- b=aX8ngmoIdYoXKBgZVVxGioheT43rpsSbkvO9/49/0PRUM+TIeEAU+qdlVPgtCCQXPvbb
- M0fOq+rQFZXTfsa56QcQu8Fii5j6xUZeDzeB8yprDGESHqpmd8HLlm/VfPiQ0CTPb/Ni
- pUYGbZvJOqZNGCUYfdQqGVDJNydhm8JrJBX8jayFi8WaWbHAJKIaOlNGirKa87umlQSK
- MA8wblfIQ4wLw5j8cvYA/Za+3WKmTq4dW7PK8CqU3OAh7cWmrSa/dnuu7X+hdzCeZuje
- xNozqibPzZI6Jtdd/+SNM9ikzDi0CFqVx5nTlImbcDYEcDBTdVVUZupK7lxN7pUkH63W vg== 
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 31AC5C8A
+	for <containers@lists.linux.dev>; Wed, 23 Feb 2022 16:12:22 +0000 (UTC)
+Received: from pps.filterd (m0098419.ppops.net [127.0.0.1])
+	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 21NFJ31c007698;
+	Wed, 23 Feb 2022 16:12:12 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : subject :
+ from : to : cc : date : in-reply-to : references : content-type :
+ mime-version : content-transfer-encoding; s=pp1;
+ bh=tM6CYaafv6levPFQZwnS+tS3XywolFy28ZPi68FuYXQ=;
+ b=bjse8YTEUfsjJVYwcKQYmlWCp+aSwWSDNE71bzqsCVTfx+ty8WhXdN9IGO9YI7JsRlDO
+ ib1aY7G8j6NZmt0UMrEU28YWHQmTDB5/UcLETeAzhjcgtd+8q0bOpZQRd+u2qcq9uuWM
+ 7S1FYWY7ETjyyTpfT4cTBzoMGzMf+1aQ/97kvKgxFVr2Qo32UCToZMQVr2MrSONR8bKG
+ jTLxLTFGd05xdesQFncAuyYd3sePWMuu0PIBpeN9yyE6Ztd4vy8wrezPFOINusaJVKQ6
+ qQgF1CfaTU4PHk7J878EhCXT2umiiAK2qVw0O0wzcWPv9liA4WPUJBSOP3BiWr+aBSsL zA== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3ednks3squ-1
+	by mx0b-001b2d01.pphosted.com with ESMTP id 3edqf3h99a-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 23 Feb 2022 15:44:33 +0000
-Received: from m0098414.ppops.net (m0098414.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 21NDrQxu029216;
-	Wed, 23 Feb 2022 15:44:32 GMT
-Received: from ppma01dal.us.ibm.com (83.d6.3fa9.ip4.static.sl-reverse.com [169.63.214.131])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3ednks3sqh-1
+	Wed, 23 Feb 2022 16:12:11 +0000
+Received: from m0098419.ppops.net (m0098419.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 21NG960a016764;
+	Wed, 23 Feb 2022 16:12:11 GMT
+Received: from ppma06fra.de.ibm.com (48.49.7a9f.ip4.static.sl-reverse.com [159.122.73.72])
+	by mx0b-001b2d01.pphosted.com with ESMTP id 3edqf3h98q-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 23 Feb 2022 15:44:32 +0000
-Received: from pps.filterd (ppma01dal.us.ibm.com [127.0.0.1])
-	by ppma01dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 21NFgL4M018818;
-	Wed, 23 Feb 2022 15:44:31 GMT
-Received: from b01cxnp23034.gho.pok.ibm.com (b01cxnp23034.gho.pok.ibm.com [9.57.198.29])
-	by ppma01dal.us.ibm.com with ESMTP id 3ed22dwwdf-1
+	Wed, 23 Feb 2022 16:12:11 +0000
+Received: from pps.filterd (ppma06fra.de.ibm.com [127.0.0.1])
+	by ppma06fra.de.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 21NG8aeu004810;
+	Wed, 23 Feb 2022 16:12:09 GMT
+Received: from b06cxnps4075.portsmouth.uk.ibm.com (d06relay12.portsmouth.uk.ibm.com [9.149.109.197])
+	by ppma06fra.de.ibm.com with ESMTP id 3eaqtjst78-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 23 Feb 2022 15:44:31 +0000
-Received: from b01ledav001.gho.pok.ibm.com (b01ledav001.gho.pok.ibm.com [9.57.199.106])
-	by b01cxnp23034.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 21NFiT3247710550
+	Wed, 23 Feb 2022 16:12:09 +0000
+Received: from d06av26.portsmouth.uk.ibm.com (d06av26.portsmouth.uk.ibm.com [9.149.105.62])
+	by b06cxnps4075.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 21NGC5f153412176
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Wed, 23 Feb 2022 15:44:29 GMT
-Received: from b01ledav001.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id D5C582806E;
-	Wed, 23 Feb 2022 15:44:29 +0000 (GMT)
-Received: from b01ledav001.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id D9D832806A;
-	Wed, 23 Feb 2022 15:44:28 +0000 (GMT)
-Received: from [9.47.158.152] (unknown [9.47.158.152])
-	by b01ledav001.gho.pok.ibm.com (Postfix) with ESMTP;
-	Wed, 23 Feb 2022 15:44:28 +0000 (GMT)
-Message-ID: <bfd9878c-71d5-1a9e-6306-b2cc68b26772@linux.ibm.com>
-Date: Wed, 23 Feb 2022 10:44:28 -0500
+	Wed, 23 Feb 2022 16:12:05 GMT
+Received: from d06av26.portsmouth.uk.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id A8656AE056;
+	Wed, 23 Feb 2022 16:12:05 +0000 (GMT)
+Received: from d06av26.portsmouth.uk.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 68BB8AE051;
+	Wed, 23 Feb 2022 16:12:03 +0000 (GMT)
+Received: from sig-9-65-80-154.ibm.com (unknown [9.65.80.154])
+	by d06av26.portsmouth.uk.ibm.com (Postfix) with ESMTP;
+	Wed, 23 Feb 2022 16:12:03 +0000 (GMT)
+Message-ID: <d94928dcb87550b7d5cfe277eed8a195ad9c877c.camel@linux.ibm.com>
+Subject: Re: [PATCH v10 18/27] integrity/ima: Define ns_status for storing
+ namespaced iint data
+From: Mimi Zohar <zohar@linux.ibm.com>
+To: Stefan Berger <stefanb@linux.ibm.com>, linux-integrity@vger.kernel.org
+Cc: serge@hallyn.com, christian.brauner@ubuntu.com, containers@lists.linux.dev,
+        dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
+        krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
+        mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
+        puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
+        linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
+        linux-security-module@vger.kernel.org, jmorris@namei.org,
+        Mehmet Kayaalp <mkayaalp@linux.vnet.ibm.com>
+Date: Wed, 23 Feb 2022 11:12:01 -0500
+In-Reply-To: <20220201203735.164593-19-stefanb@linux.ibm.com>
+References: <20220201203735.164593-1-stefanb@linux.ibm.com>
+	 <20220201203735.164593-19-stefanb@linux.ibm.com>
+Content-Type: text/plain; charset="ISO-8859-15"
+X-Mailer: Evolution 3.28.5 (3.28.5-18.el8) 
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.5.0
-Subject: Re: [PATCH v10 22/27] securityfs: Extend securityfs with namespacing
- support
-Content-Language: en-US
-To: Christian Brauner <brauner@kernel.org>, Mimi Zohar <zohar@linux.ibm.com>
-Cc: linux-integrity@vger.kernel.org, serge@hallyn.com,
-        containers@lists.linux.dev, dmitry.kasatkin@gmail.com,
-        ebiederm@xmission.com, krzysztof.struczynski@huawei.com,
-        roberto.sassu@huawei.com, mpeters@redhat.com, lhinds@redhat.com,
-        lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
-        jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
-        rgb@redhat.com, linux-security-module@vger.kernel.org,
-        jmorris@namei.org,
-        James Bottomley <James.Bottomley@HansenPartnership.com>
-References: <20220201203735.164593-1-stefanb@linux.ibm.com>
- <20220201203735.164593-23-stefanb@linux.ibm.com>
- <177baf827c4dbf9a225b14552725360066af6471.camel@linux.ibm.com>
- <20220223081420.7mthf3rfxb3n5gvs@wittgenstein>
-From: Stefan Berger <stefanb@linux.ibm.com>
-In-Reply-To: <20220223081420.7mthf3rfxb3n5gvs@wittgenstein>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: Z1V6jv2-RzqVVlMBrlgbrFsdYp-R9FH_
-X-Proofpoint-ORIG-GUID: jRFSt3rFH0aegxryeZpf2xfITNgleL7V
+X-Proofpoint-ORIG-GUID: zK4eRAEmR0O6iAS1Os9DjhSEXCSTitaD
+X-Proofpoint-GUID: sjk5Ffb0PBuQMenBjcLb4EhkwPAcNysM
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.816,Hydra:6.0.425,FMLib:17.11.64.514
  definitions=2022-02-23_07,2022-02-23_01,2022-02-23_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 malwarescore=0 suspectscore=0
- phishscore=0 mlxscore=0 spamscore=0 priorityscore=1501 adultscore=0
- impostorscore=0 clxscore=1011 lowpriorityscore=0 mlxlogscore=999
- bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2201110000 definitions=main-2202230087
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 bulkscore=0 suspectscore=0
+ phishscore=0 clxscore=1015 mlxlogscore=999 spamscore=0 mlxscore=0
+ malwarescore=0 adultscore=0 priorityscore=1501 impostorscore=0
+ lowpriorityscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2201110000 definitions=main-2202230091
 
+On Tue, 2022-02-01 at 15:37 -0500, Stefan Berger wrote:
+> From: Mehmet Kayaalp <mkayaalp@linux.vnet.ibm.com>
+> 
+> Add an rbtree to the IMA namespace structure that stores a namespaced
+> version of iint->flags in ns_status struct. Similar to the
+> integrity_iint_cache, both the iint and ns_status are looked up using the
+> inode pointer value. The lookup, allocate, and insertion code is also
+> similar.
+> 
+> In subsequent patches we will have to find all ns_status entries an iint
+> is being used in and reset flags there. To do this, connect a list of
+> ns_status to the integrity_iint_cache and provide a reader-writer
+> lock in the integrity_iint_cache to lock access to the list.
+> 
+> To simplify the code in the non-namespaces case embed an ns_status in
+> the integrity_iint_cache and have it linked into the iint's ns_status list
+> when calling ima_get_ns_status().
+> 
+> When getting an ns_status first try to find it in the RB tree. Here we can
+> run into the situation that an ns_status found in the RB tree has a
+> different iint associated with it for the same inode. In this case we need
+> to delete the ns_status structure and get a new one.
+> 
+> There are two cases for freeing:
+> - when the iint is freed (inode deletion): Walk the list of ns_status
+>   entries and disconnect each ns_status from the list; take the
+>   writer lock to protect access to the list; also, take the item off the
+>   per-namespace rbtree
+> 
+> - when the ima_namepace is freed: While walking the rbtree, remove the
+>   ns_status from the list while also holding the iint's writer lock;
+>   to be able to grab the lock we have to have a pointer to the iint on
+>   the ns_status structure.
+> 
+> To avoid an ns_status to be freed by the two cases concurrently, prevent
+> these two cases to run concurrently. Therefore, groups of threads
+> deleting either inodes or ima_namespaces are allowed to run concurrently
+> but no two threads may run and one delete an inode and the other an
+> ima_namespace.
 
-On 2/23/22 03:14, Christian Brauner wrote:
-> On Tue, Feb 22, 2022 at 08:48:47PM -0500, Mimi Zohar wrote:
->> On Tue, 2022-02-01 at 15:37 -0500, Stefan Berger wrote:
->>> Enable multiple instances of securityfs by keying each instance with a
->>> pointer to the user namespace it belongs to.
->>>
->>> Since we do not need the pinning of the filesystem for the virtualization
->> ^namespacing case
->>
->>> case, limit the usage of simple_pin_fs() and simpe_release_fs() to the
->> ^simple_release_fs
->>
->>> case when the init_user_ns is active. This simplifies the cleanup for the
->>> virtualization case where usage of securityfs_remove() to free dentries
->> ^namespacing
->>
->>> is therefore not needed anymore.
->>>
->>> For the initial securityfs, i.e. the one mounted in the host userns mount,
->>> nothing changes. The rules for securityfs_remove() are as before and it is
->>> still paired with securityfs_create(). Specifically, a file created via
->>> securityfs_create_dentry() in the initial securityfs mount still needs to
->>> be removed by a call to securityfs_remove(). Creating a new dentry in the
->>> initial securityfs mount still pins the filesystem like it always did.
->>> Consequently, the initial securityfs mount is not destroyed on
->>> umount/shutdown as long as at least one user of it still has dentries that
->>> it hasn't removed with a call to securityfs_remove().
->>>
->>> Prevent mounting of an instance of securityfs in another user namespace
->>> than it belongs to. Also, prevent accesses to files and directories by
->>> a user namespace that is neither the user namespace it belongs to
->>> nor an ancestor of the user namespace that the instance of securityfs
->>> belongs to. Do not prevent access if securityfs was bind-mounted and
->>> therefore the init_user_ns is the owning user namespace.
->>>
->>> Suggested-by: Christian Brauner <brauner@kernel.org>
->>> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
->>> Signed-off-by: James Bottomley <James.Bottomley@HansenPartnership.com>
->> Christian, I understand that "[PATCH v10 23/27] ima: Setup securityfs
->> for IMA namespace" needs to be deferred, but is there a reason for
->> deferring  "[PATCH v10 22/27] securityfs: Extend securityfs with
->> namespacing support"?   As the securityfs patches are really
->> independent of IMA namespacing, I would have thought  "[PATCH v10
->> 04/27] securityfs: rework dentry creation" and this patch should be co-
->> located at the beginning of the patch set.
-> It felt more natural to me to defer it until the end but I have no
-> strong thoughts on this as of right now. Since Stefan has mentioned
-> moving this earlier already himself and you seem to agree as well, feel
-> free to do so.
+The locking involved here is really complex.  I'm sure you thought
+about it a lot, but isn't there a better alternative?
 
-I'll move it after 'securityfs: rework dentry creation' if that's ok.
+> 
+> Signed-off-by: Mehmet Kayaalp <mkayaalp@linux.vnet.ibm.com>
+> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
+> 
+> ---
+> v9:
+>  - Move ns_status into integrity.h and embedded it into integrity_iint_cache
+>    for the non-CONFIG_IMA_NS case
 
-    Stefan
+<snip>
+
+>  
+> +/*
+> + * ima_free_ns_status_tree - free all items on the ns_status_tree and take each
+> + *                           one off the list; yield to ns_list free'ers
+> + *
+> + * This function is called when an ima_namespace is freed. All entries in the
+> + * rbtree will be taken off their list and collected in a garbage collection
+> + * list and freed at the end. This allows to walk the rbtree again.
+> + */
+> +void ima_free_ns_status_tree(struct ima_namespace *ns)
+> +{
+> +	struct ns_status *ns_status, *next;
+> +	struct llist_node *node;
+> +	LLIST_HEAD(garbage);
+> +	unsigned int ctr;
+> +	bool restart;
+> +
+> +	do {
+> +		ctr = 0;
+> +		restart = false;
+> +
+> +		lock_group(GRP_NS_STATUS_TREE);
+> +		write_lock(&ns->ns_tree_lock);
+> +
+> +		rbtree_postorder_for_each_entry_safe(ns_status, next,
+> +						     &ns->ns_status_tree,
+> +						     rb_node) {
+> +			write_lock(&ns_status->iint->ns_list_lock);
+> +			if (!list_empty(&ns_status->ns_next)) {
+> +				list_del_init(&ns_status->ns_next);
+> +				llist_add(&ns_status->gc_llist, &garbage);
+> +				ctr++;
+> +			}
+
+At this point when the namespace is being deleted, no entries are being
+added to the rbtree, so it is safe to remove the nodes here.  There's
+no need to first create a list and then remove them.
+
+> +			write_unlock(&ns_status->iint->ns_list_lock);
+> +
+> +			/*
+> +			 * After some progress yield to any waiting ns_list
+> +			 * free'ers.
+> +			 */
+> +			if (atomic_read(&ns_list_waiters) > 0 && ctr >= 5) {
+> +				restart = true;
+> +				break;
+> +			}
+
+Giving priority to removing entries in the iint cache is important, but
+I wish there was a better alternative.
+
+> +		}
+> +
+> +		write_unlock(&ns->ns_tree_lock);
+> +		unlock_group(GRP_NS_STATUS_TREE);
+> +	} while (restart);
+> +
+> +	node = llist_del_all(&garbage);
+> +	llist_for_each_entry_safe(ns_status, next, node, gc_llist)
+> +		ns_status_free(ns, ns_status);
+> +
+> +	kmem_cache_destroy(ns->ns_status_cache);
+> +}
+
+-- 
+thanks,
+
+Mimi
 
