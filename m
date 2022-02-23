@@ -1,87 +1,142 @@
-Received: from mail.hallyn.com (mail.hallyn.com [178.63.66.53])
+Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 849C766C8
-	for <containers@lists.linux.dev>; Wed, 23 Feb 2022 17:59:57 +0000 (UTC)
-Received: by mail.hallyn.com (Postfix, from userid 1001)
-	id 60528821; Wed, 23 Feb 2022 11:51:21 -0600 (CST)
-Date: Wed, 23 Feb 2022 11:51:21 -0600
-From: "Serge E. Hallyn" <serge@hallyn.com>
-To: Stefan Berger <stefanb@linux.ibm.com>
-Cc: "Serge E. Hallyn" <serge@hallyn.com>, linux-integrity@vger.kernel.org,
-	zohar@linux.ibm.com, christian.brauner@ubuntu.com,
-	containers@lists.linux.dev, dmitry.kasatkin@gmail.com,
-	ebiederm@xmission.com, krzysztof.struczynski@huawei.com,
-	roberto.sassu@huawei.com, mpeters@redhat.com, lhinds@redhat.com,
-	lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
-	jamjoom@us.ibm.com, linux-kernel@vger.kernel.org,
-	paul@paul-moore.com, rgb@redhat.com,
-	linux-security-module@vger.kernel.org, jmorris@namei.org,
-	Denis Semakin <denis.semakin@huawei.com>
-Subject: Re: [PATCH v10 12/27] ima: Define mac_admin_ns_capable() as a
- wrapper for ns_capable()
-Message-ID: <20220223175121.GA10272@mail.hallyn.com>
-References: <20220201203735.164593-1-stefanb@linux.ibm.com>
- <20220201203735.164593-13-stefanb@linux.ibm.com>
- <20220205055826.GA15072@mail.hallyn.com>
- <9c8a09d6-6373-c8c2-c8ff-2b4c3f92ddf1@linux.ibm.com>
- <cb94bd18-2d6c-772f-b16e-a4778480258b@linux.ibm.com>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D9A6D6ABF
+	for <containers@lists.linux.dev>; Wed, 23 Feb 2022 20:45:43 +0000 (UTC)
+Received: from pps.filterd (m0098393.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 21NKF4qL025832;
+	Wed, 23 Feb 2022 20:45:33 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
+ mime-version : subject : to : cc : references : from : in-reply-to :
+ content-type : content-transfer-encoding; s=pp1;
+ bh=P9w0LjnRQCmW7EIl3CKX1esvC4RSB5f2OeuFKGEk13c=;
+ b=g6KGVONqoR3epSR3Sk66IR8orfxzPjeOotsnFTpRs7+3dIYV1ITLfSo89Kjyfa4E18N5
+ jhoVGW+F/0mRKKq7azCingFJLIk6gzk7x2TN2LT6nkA4eYyYttA0lKALn+G1AiafyKrv
+ pQvvQ+PdMxsQ2KutXWK1vQ7M3Q9E9OtKGfd1c4uTzi7sfybvl1UEuSjOpNpUKUw5W6xS
+ JwsggxjwduLXrLmJuHfqFqk5HEkF8TKcOHIcuDxyBUbXff8rEC1ocryd80CtXyYIV7op
+ DYJCXbnzEbOTzojJYL4hJCbK3RZBzaFtUtVxQGKqtXZv6XBRkWkJ9kmhrjqkrFyqOoGY Sw== 
+Received: from pps.reinject (localhost [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3edq0j8awa-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Wed, 23 Feb 2022 20:45:32 +0000
+Received: from m0098393.ppops.net (m0098393.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 21NJhCRd002967;
+	Wed, 23 Feb 2022 20:45:32 GMT
+Received: from ppma04dal.us.ibm.com (7a.29.35a9.ip4.static.sl-reverse.com [169.53.41.122])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3edq0j8avw-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Wed, 23 Feb 2022 20:45:32 +0000
+Received: from pps.filterd (ppma04dal.us.ibm.com [127.0.0.1])
+	by ppma04dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 21NKi590010487;
+	Wed, 23 Feb 2022 20:45:31 GMT
+Received: from b03cxnp07029.gho.boulder.ibm.com (b03cxnp07029.gho.boulder.ibm.com [9.17.130.16])
+	by ppma04dal.us.ibm.com with ESMTP id 3ear6bgqwv-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Wed, 23 Feb 2022 20:45:31 +0000
+Received: from b03ledav005.gho.boulder.ibm.com (b03ledav005.gho.boulder.ibm.com [9.17.130.236])
+	by b03cxnp07029.gho.boulder.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 21NKjRJo34537964
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Wed, 23 Feb 2022 20:45:27 GMT
+Received: from b03ledav005.gho.boulder.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id B615EBE063;
+	Wed, 23 Feb 2022 20:45:27 +0000 (GMT)
+Received: from b03ledav005.gho.boulder.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 97F11BE058;
+	Wed, 23 Feb 2022 20:45:26 +0000 (GMT)
+Received: from [9.47.158.152] (unknown [9.47.158.152])
+	by b03ledav005.gho.boulder.ibm.com (Postfix) with ESMTP;
+	Wed, 23 Feb 2022 20:45:26 +0000 (GMT)
+Message-ID: <46156a90-d6a6-a0cc-247a-3ceb29f1cf75@linux.ibm.com>
+Date: Wed, 23 Feb 2022 15:45:26 -0500
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <cb94bd18-2d6c-772f-b16e-a4778480258b@linux.ibm.com>
-User-Agent: Mutt/1.9.4 (2018-02-28)
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.5.0
+Subject: Re: [PATCH v10 26/27] ima: Limit number of policy rules in
+ non-init_ima_ns
+Content-Language: en-US
+To: Mimi Zohar <zohar@linux.ibm.com>, linux-integrity@vger.kernel.org
+Cc: serge@hallyn.com, christian.brauner@ubuntu.com, containers@lists.linux.dev,
+        dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
+        krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
+        mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
+        puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
+        linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
+        linux-security-module@vger.kernel.org, jmorris@namei.org
+References: <20220201203735.164593-1-stefanb@linux.ibm.com>
+ <20220201203735.164593-27-stefanb@linux.ibm.com>
+ <5e4a862917785972281bbcb483404da01b71e801.camel@linux.ibm.com>
+ <479f09e7-0d39-0281-45ef-5cce4861d24d@linux.ibm.com>
+ <8a4f9cb6cab5ba04eb61e346d0fca16efa4c6703.camel@linux.ibm.com>
+From: Stefan Berger <stefanb@linux.ibm.com>
+In-Reply-To: <8a4f9cb6cab5ba04eb61e346d0fca16efa4c6703.camel@linux.ibm.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-TM-AS-GCONF: 00
+X-Proofpoint-ORIG-GUID: YT3eMPXUv5ygLu07mnIhImeTmpUHMT9V
+X-Proofpoint-GUID: SGRKohjMfnoameOg4zdckiqP5pmL7WYe
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.205,Aquarius:18.0.816,Hydra:6.0.425,FMLib:17.11.64.514
+ definitions=2022-02-23_09,2022-02-23_01,2022-02-23_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 suspectscore=0
+ priorityscore=1501 phishscore=0 adultscore=0 lowpriorityscore=0
+ malwarescore=0 bulkscore=0 clxscore=1015 mlxscore=0 impostorscore=0
+ spamscore=0 mlxlogscore=999 classifier=spam adjust=0 reason=mlx
+ scancount=1 engine=8.12.0-2201110000 definitions=main-2202230116
 
-On Mon, Feb 07, 2022 at 01:43:31PM -0500, Stefan Berger wrote:
-> 
-> On 2/6/22 12:20, Stefan Berger wrote:
-> > 
-> > On 2/5/22 00:58, Serge E. Hallyn wrote:
-> > > On Tue, Feb 01, 2022 at 03:37:20PM -0500, Stefan Berger wrote:
-> > > > Define mac_admin_ns_capable() as a wrapper for the combined
-> > > > ns_capable()
-> > > > checks on CAP_MAC_ADMIN and CAP_SYS_ADMIN in a user namespace. Return
-> > > > true on the check if either capability or both are available.
-> > > > 
-> > > > Use mac_admin_ns_capable() in place of capable(SYS_ADMIN). This
-> > > > will allow
-> > > > an IMA namespace to read the policy with only CAP_MAC_ADMIN, which has
-> > > > less privileges than CAP_SYS_ADMIN.
-> > > > 
-> > > > Signed-off-by: Denis Semakin <denis.semakin@huawei.com>
-> > > > Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-> > > > ---
-> > > >   include/linux/capability.h      | 6 ++++++
-> > > >   security/integrity/ima/ima.h    | 6 ++++++
-> > > >   security/integrity/ima/ima_fs.c | 5 ++++-
-> > > >   3 files changed, 16 insertions(+), 1 deletion(-)
-> > > > 
-> > > > diff --git a/include/linux/capability.h b/include/linux/capability.h
-> > > > index 65efb74c3585..991579178f32 100644
-> > > > --- a/include/linux/capability.h
-> > > > +++ b/include/linux/capability.h
-> > > > @@ -270,6 +270,12 @@ static inline bool
-> > > > checkpoint_restore_ns_capable(struct user_namespace *ns)
-> > > >           ns_capable(ns, CAP_SYS_ADMIN);
-> > > >   }
-> > > >   +static inline bool mac_admin_ns_capable(struct user_namespace *ns)
-> > > > +{
-> > > > +    return ns_capable(ns, CAP_MAC_ADMIN) ||
-> > > > +        ns_capable(ns, CAP_SYS_ADMIN);
-> > > Do you care about audit warnings?  If the task has CAP_SYS_ADMIN but
-> > > not CAP_MAC_ADMIN, is it desirable that selinux_capable() will audit the
-> > > CAP_MAC_ADMIN failure?
-> > 
-> > Good point.  I will switch both to ns_capable_noaudit() so that the user
-> > cannot provoke unnecessary audit message.
-> 
-> Actually,  I will only change the MAC_ADMIN to not do auditing and not
-> change the auditing behavior related to SYS_ADMIN.
 
-Right, that makes the most sense.
+On 2/23/22 12:04, Mimi Zohar wrote:
+> On Wed, 2022-02-23 at 11:37 -0500, Stefan Berger wrote:
+>> On 2/23/22 10:38, Mimi Zohar wrote:
+>>> On Tue, 2022-02-01 at 15:37 -0500, Stefan Berger wrote:
+>>>> Limit the number of policy rules one can set in non-init_ima_ns to a
+>>>> hardcoded 1024 rules. If the user attempts to exceed this limit by
+>>>> setting too many additional rules, emit an audit message with the cause
+>>>> 'too-many-rules' and simply ignore the newly added rules.
+>>> This paragraph describes 'what' you're doing, not 'why'.  Please prefix
+>>> this paragraph with a short, probably one sentence, reason for the
+>>> change.
+>>>> Switch the accounting for the memory allocated for IMA policy rules to
+>>>> GFP_KERNEL_ACCOUNT so that cgroups kernel memory accounting takes effect.
+>>> Does this change affect the existing IMA policy rules for init_ima_ns?
+>> There's typically no cgroup for the int_ima_ns, so not effect on
+>> init_ima_ns.
+>>
+>> Here's the updated text:
+>>
+>> Limit the number of policy rules one can set in non-init_ima_ns to a
+>> hardcoded 1024 rules to restrict the amount of memory used for IMA's
+>> policy.
+> The question is "why" there should be a difference between the
+> init_ima_ns and non-init_ima_ns cases.  Perhaps something like, "Only
+
+
+Chistian had suggested it to not have the number of policy rules unbounded.
+
+
+> host root with CAP_SYS_ADMIN may write init_ima_ns policy rules, but in
+> the non-init_ima_ns case root in the namespace with CAP_MAC_ADMIN
+> privileges may write IMA policy rules.  Limit the total number of IMA
+> policy rules per namespace."
+
+What does it have to do with CAP_SYS_ADMIN and CAP_MAC_ADMIN and why 
+mention these here? It seem primarily a limit of number of rules to 
+avoid huge kernel memory consumption in the case that a cgroup limit for 
+memory was not set up.
+
+
+>
+>>   Ignore the added rules if the user attempts to exceed this
+>> limit by setting too many additional rules.
+>>
+>> Switch the accounting for the memory allocated for IMA policy rules to
+>> GFP_KERNEL_ACCOUNT so that cgroups kernel memory accounting takes effect.
+>> This switch has no effect on the init_ima_ns.
+> thanks,
+>
+> Mimi
+>
