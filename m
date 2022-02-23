@@ -1,240 +1,146 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
+Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4A289C8A
-	for <containers@lists.linux.dev>; Wed, 23 Feb 2022 15:39:06 +0000 (UTC)
-Received: from pps.filterd (m0098409.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 21NERC6e017992;
-	Wed, 23 Feb 2022 15:38:49 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : subject :
- from : to : cc : date : in-reply-to : references : content-type :
- mime-version : content-transfer-encoding; s=pp1;
- bh=7DQLKUgdnvflrrBNDkKPvx9BLtwQZE03ICcMhF/Lvdw=;
- b=satumKOykpaXCKFPWAWvXk3vllRUpB0jHgG6wBR2xOYJ1l/bfdatnkvbKj0J2vNw+Kx0
- ZWOEEek26ilUYYjPw3uP+bdWk8s0TwSIlzA2V8CR0VSo/axSLL2pGoG1XwGeJ9hWC+nP
- vjwNLYYQrVrDm/M03KZtUPyiTFG76AB8HwQHxGsBnlbJ3pFTgWHql3ZLSpSh+pd6DdbR
- uVSMIlQNFUolIgpRz9lLotFlBatJqxR9vFr+EpvIEdxc/KWqnqqh28Xkgqq5/Xi4fTLN
- PUn4B3LxoAB7dPSs8k/tbkzv9n1hVJAeRAjSXKz01XhSWHPJD+pm+bdTXrBaXsXSQ/lx 0A== 
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D64F3C8A
+	for <containers@lists.linux.dev>; Wed, 23 Feb 2022 15:44:53 +0000 (UTC)
+Received: from pps.filterd (m0098414.ppops.net [127.0.0.1])
+	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 21NFZ6tY009316;
+	Wed, 23 Feb 2022 15:44:33 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
+ mime-version : subject : to : cc : references : from : in-reply-to :
+ content-type : content-transfer-encoding; s=pp1;
+ bh=ko5rFaANlv28TkWdV5MQzkzdp12fcrrTojPC+F+P5kc=;
+ b=aX8ngmoIdYoXKBgZVVxGioheT43rpsSbkvO9/49/0PRUM+TIeEAU+qdlVPgtCCQXPvbb
+ M0fOq+rQFZXTfsa56QcQu8Fii5j6xUZeDzeB8yprDGESHqpmd8HLlm/VfPiQ0CTPb/Ni
+ pUYGbZvJOqZNGCUYfdQqGVDJNydhm8JrJBX8jayFi8WaWbHAJKIaOlNGirKa87umlQSK
+ MA8wblfIQ4wLw5j8cvYA/Za+3WKmTq4dW7PK8CqU3OAh7cWmrSa/dnuu7X+hdzCeZuje
+ xNozqibPzZI6Jtdd/+SNM9ikzDi0CFqVx5nTlImbcDYEcDBTdVVUZupK7lxN7pUkH63W vg== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3edh6ws7ka-1
+	by mx0b-001b2d01.pphosted.com with ESMTP id 3ednks3squ-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 23 Feb 2022 15:38:49 +0000
-Received: from m0098409.ppops.net (m0098409.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 21NEQv6T000576;
-	Wed, 23 Feb 2022 15:38:48 GMT
-Received: from ppma02fra.de.ibm.com (47.49.7a9f.ip4.static.sl-reverse.com [159.122.73.71])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3edh6ws7jd-1
+	Wed, 23 Feb 2022 15:44:33 +0000
+Received: from m0098414.ppops.net (m0098414.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 21NDrQxu029216;
+	Wed, 23 Feb 2022 15:44:32 GMT
+Received: from ppma01dal.us.ibm.com (83.d6.3fa9.ip4.static.sl-reverse.com [169.63.214.131])
+	by mx0b-001b2d01.pphosted.com with ESMTP id 3ednks3sqh-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 23 Feb 2022 15:38:48 +0000
-Received: from pps.filterd (ppma02fra.de.ibm.com [127.0.0.1])
-	by ppma02fra.de.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 21NFWYJ2010680;
-	Wed, 23 Feb 2022 15:38:45 GMT
-Received: from b06avi18878370.portsmouth.uk.ibm.com (b06avi18878370.portsmouth.uk.ibm.com [9.149.26.194])
-	by ppma02fra.de.ibm.com with ESMTP id 3ear699ku5-1
+	Wed, 23 Feb 2022 15:44:32 +0000
+Received: from pps.filterd (ppma01dal.us.ibm.com [127.0.0.1])
+	by ppma01dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 21NFgL4M018818;
+	Wed, 23 Feb 2022 15:44:31 GMT
+Received: from b01cxnp23034.gho.pok.ibm.com (b01cxnp23034.gho.pok.ibm.com [9.57.198.29])
+	by ppma01dal.us.ibm.com with ESMTP id 3ed22dwwdf-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 23 Feb 2022 15:38:45 +0000
-Received: from b06wcsmtp001.portsmouth.uk.ibm.com (b06wcsmtp001.portsmouth.uk.ibm.com [9.149.105.160])
-	by b06avi18878370.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 21NFcg9i33816834
+	Wed, 23 Feb 2022 15:44:31 +0000
+Received: from b01ledav001.gho.pok.ibm.com (b01ledav001.gho.pok.ibm.com [9.57.199.106])
+	by b01cxnp23034.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 21NFiT3247710550
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Wed, 23 Feb 2022 15:38:42 GMT
-Received: from b06wcsmtp001.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 74B66A4065;
-	Wed, 23 Feb 2022 15:38:42 +0000 (GMT)
-Received: from b06wcsmtp001.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 44378A4062;
-	Wed, 23 Feb 2022 15:38:40 +0000 (GMT)
-Received: from sig-9-65-80-154.ibm.com (unknown [9.65.80.154])
-	by b06wcsmtp001.portsmouth.uk.ibm.com (Postfix) with ESMTP;
-	Wed, 23 Feb 2022 15:38:40 +0000 (GMT)
-Message-ID: <5e4a862917785972281bbcb483404da01b71e801.camel@linux.ibm.com>
-Subject: Re: [PATCH v10 26/27] ima: Limit number of policy rules in
- non-init_ima_ns
-From: Mimi Zohar <zohar@linux.ibm.com>
-To: Stefan Berger <stefanb@linux.ibm.com>, linux-integrity@vger.kernel.org
-Cc: serge@hallyn.com, christian.brauner@ubuntu.com, containers@lists.linux.dev,
-        dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
-        krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
-        mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
-        puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
-        linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
-        linux-security-module@vger.kernel.org, jmorris@namei.org
-Date: Wed, 23 Feb 2022 10:38:39 -0500
-In-Reply-To: <20220201203735.164593-27-stefanb@linux.ibm.com>
-References: <20220201203735.164593-1-stefanb@linux.ibm.com>
-	 <20220201203735.164593-27-stefanb@linux.ibm.com>
-Content-Type: text/plain; charset="ISO-8859-15"
-X-Mailer: Evolution 3.28.5 (3.28.5-18.el8) 
+	Wed, 23 Feb 2022 15:44:29 GMT
+Received: from b01ledav001.gho.pok.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id D5C582806E;
+	Wed, 23 Feb 2022 15:44:29 +0000 (GMT)
+Received: from b01ledav001.gho.pok.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id D9D832806A;
+	Wed, 23 Feb 2022 15:44:28 +0000 (GMT)
+Received: from [9.47.158.152] (unknown [9.47.158.152])
+	by b01ledav001.gho.pok.ibm.com (Postfix) with ESMTP;
+	Wed, 23 Feb 2022 15:44:28 +0000 (GMT)
+Message-ID: <bfd9878c-71d5-1a9e-6306-b2cc68b26772@linux.ibm.com>
+Date: Wed, 23 Feb 2022 10:44:28 -0500
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.5.0
+Subject: Re: [PATCH v10 22/27] securityfs: Extend securityfs with namespacing
+ support
+Content-Language: en-US
+To: Christian Brauner <brauner@kernel.org>, Mimi Zohar <zohar@linux.ibm.com>
+Cc: linux-integrity@vger.kernel.org, serge@hallyn.com,
+        containers@lists.linux.dev, dmitry.kasatkin@gmail.com,
+        ebiederm@xmission.com, krzysztof.struczynski@huawei.com,
+        roberto.sassu@huawei.com, mpeters@redhat.com, lhinds@redhat.com,
+        lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
+        jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
+        rgb@redhat.com, linux-security-module@vger.kernel.org,
+        jmorris@namei.org,
+        James Bottomley <James.Bottomley@HansenPartnership.com>
+References: <20220201203735.164593-1-stefanb@linux.ibm.com>
+ <20220201203735.164593-23-stefanb@linux.ibm.com>
+ <177baf827c4dbf9a225b14552725360066af6471.camel@linux.ibm.com>
+ <20220223081420.7mthf3rfxb3n5gvs@wittgenstein>
+From: Stefan Berger <stefanb@linux.ibm.com>
+In-Reply-To: <20220223081420.7mthf3rfxb3n5gvs@wittgenstein>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: -_N_LTBSyNxiP_N7uD9o1NSnm0GozV1V
-X-Proofpoint-ORIG-GUID: XQeRhpxmFWWbPSVucT5-uvdNPHlIsebt
+X-Proofpoint-GUID: Z1V6jv2-RzqVVlMBrlgbrFsdYp-R9FH_
+X-Proofpoint-ORIG-GUID: jRFSt3rFH0aegxryeZpf2xfITNgleL7V
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.816,Hydra:6.0.425,FMLib:17.11.64.514
  definitions=2022-02-23_07,2022-02-23_01,2022-02-23_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 priorityscore=1501
- spamscore=0 clxscore=1015 bulkscore=0 adultscore=0 mlxscore=0
- suspectscore=0 mlxlogscore=999 phishscore=0 malwarescore=0
- lowpriorityscore=0 impostorscore=0 classifier=spam adjust=0 reason=mlx
- scancount=1 engine=8.12.0-2201110000 definitions=main-2202230087
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 malwarescore=0 suspectscore=0
+ phishscore=0 mlxscore=0 spamscore=0 priorityscore=1501 adultscore=0
+ impostorscore=0 clxscore=1011 lowpriorityscore=0 mlxlogscore=999
+ bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2201110000 definitions=main-2202230087
 
-On Tue, 2022-02-01 at 15:37 -0500, Stefan Berger wrote:
-> Limit the number of policy rules one can set in non-init_ima_ns to a
-> hardcoded 1024 rules. If the user attempts to exceed this limit by
-> setting too many additional rules, emit an audit message with the cause
-> 'too-many-rules' and simply ignore the newly added rules.
 
-This paragraph describes 'what' you're doing, not 'why'.  Please prefix
-this paragraph with a short, probably one sentence, reason for the
-change.
-> 
-> Switch the accounting for the memory allocated for IMA policy rules to
-> GFP_KERNEL_ACCOUNT so that cgroups kernel memory accounting takes effect.
+On 2/23/22 03:14, Christian Brauner wrote:
+> On Tue, Feb 22, 2022 at 08:48:47PM -0500, Mimi Zohar wrote:
+>> On Tue, 2022-02-01 at 15:37 -0500, Stefan Berger wrote:
+>>> Enable multiple instances of securityfs by keying each instance with a
+>>> pointer to the user namespace it belongs to.
+>>>
+>>> Since we do not need the pinning of the filesystem for the virtualization
+>> ^namespacing case
+>>
+>>> case, limit the usage of simple_pin_fs() and simpe_release_fs() to the
+>> ^simple_release_fs
+>>
+>>> case when the init_user_ns is active. This simplifies the cleanup for the
+>>> virtualization case where usage of securityfs_remove() to free dentries
+>> ^namespacing
+>>
+>>> is therefore not needed anymore.
+>>>
+>>> For the initial securityfs, i.e. the one mounted in the host userns mount,
+>>> nothing changes. The rules for securityfs_remove() are as before and it is
+>>> still paired with securityfs_create(). Specifically, a file created via
+>>> securityfs_create_dentry() in the initial securityfs mount still needs to
+>>> be removed by a call to securityfs_remove(). Creating a new dentry in the
+>>> initial securityfs mount still pins the filesystem like it always did.
+>>> Consequently, the initial securityfs mount is not destroyed on
+>>> umount/shutdown as long as at least one user of it still has dentries that
+>>> it hasn't removed with a call to securityfs_remove().
+>>>
+>>> Prevent mounting of an instance of securityfs in another user namespace
+>>> than it belongs to. Also, prevent accesses to files and directories by
+>>> a user namespace that is neither the user namespace it belongs to
+>>> nor an ancestor of the user namespace that the instance of securityfs
+>>> belongs to. Do not prevent access if securityfs was bind-mounted and
+>>> therefore the init_user_ns is the owning user namespace.
+>>>
+>>> Suggested-by: Christian Brauner <brauner@kernel.org>
+>>> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
+>>> Signed-off-by: James Bottomley <James.Bottomley@HansenPartnership.com>
+>> Christian, I understand that "[PATCH v10 23/27] ima: Setup securityfs
+>> for IMA namespace" needs to be deferred, but is there a reason for
+>> deferring  "[PATCH v10 22/27] securityfs: Extend securityfs with
+>> namespacing support"?   As the securityfs patches are really
+>> independent of IMA namespacing, I would have thought  "[PATCH v10
+>> 04/27] securityfs: rework dentry creation" and this patch should be co-
+>> located at the beginning of the patch set.
+> It felt more natural to me to defer it until the end but I have no
+> strong thoughts on this as of right now. Since Stefan has mentioned
+> moving this earlier already himself and you seem to agree as well, feel
+> free to do so.
 
-Does this change affect the existing IMA policy rules for init_ima_ns?
+I'll move it after 'securityfs: rework dentry creation' if that's ok.
 
-> 
-> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-> ---
->  security/integrity/ima/ima_fs.c     | 20 ++++++++++++++------
->  security/integrity/ima/ima_policy.c | 23 ++++++++++++++++++-----
->  2 files changed, 32 insertions(+), 11 deletions(-)
-> 
-> diff --git a/security/integrity/ima/ima_fs.c b/security/integrity/ima/ima_fs.c
-> index 58d80884880f..cd102bbd4677 100644
-> --- a/security/integrity/ima/ima_fs.c
-> +++ b/security/integrity/ima/ima_fs.c
-> @@ -410,24 +410,32 @@ static int ima_release_policy(struct inode *inode, struct file *file)
->  {
->  	struct ima_namespace *ns = &init_ima_ns;
->  	const char *cause = ns->valid_policy ? "completed" : "failed";
-> +	int err = 0;
->  
->  	if ((file->f_flags & O_ACCMODE) == O_RDONLY)
->  		return seq_release(inode, file);
->  
-> -	if (ns->valid_policy && ima_check_policy(ns) < 0) {
-> -		cause = "failed";
-> -		ns->valid_policy = 0;
-> +	if (ns->valid_policy) {
-> +		err = ima_check_policy(ns);
-> +		if (err < 0) {
-> +			if (err == -ENOSPC)
-
-Perhaps "EDQUOT" would be more appropriate.
-
-> +				cause = "too-many-rules";
-> +			else
-> +				cause = "failed";
-> +			ns->valid_policy = 0;
-> +		}
->  	}
->  
->  	pr_info("policy update %s\n", cause);
-> -	integrity_audit_msg(AUDIT_INTEGRITY_STATUS, NULL, NULL,
-> -			    "policy_update", cause, !ns->valid_policy, 0);
-> +	integrity_audit_message(AUDIT_INTEGRITY_STATUS, NULL, NULL,
-> +				"policy_update", cause, !ns->valid_policy, 0,
-> +				-err);
-
-The 'err' value is already properly set.  No need for the minus sign.
-
->  
->  	if (!ns->valid_policy) {
->  		ima_delete_rules(ns);
->  		ns->valid_policy = 1;
->  		clear_bit(IMA_FS_BUSY, &ns->ima_fs_flags);
-> -		return 0;
-> +		return err;
->  	}
->  
->  	ima_update_policy(ns);
-> diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
-> index acb4c36e539f..3f84d04f101d 100644
-> --- a/security/integrity/ima/ima_policy.c
-> +++ b/security/integrity/ima/ima_policy.c
-> @@ -305,7 +305,8 @@ static struct ima_rule_opt_list *ima_alloc_rule_opt_list(const substring_t *src)
->  		return ERR_PTR(-EINVAL);
->  	}
->  
-> -	opt_list = kzalloc(struct_size(opt_list, items, count), GFP_KERNEL);
-> +	opt_list = kzalloc(struct_size(opt_list, items, count),
-> +			   GFP_KERNEL_ACCOUNT);
->  	if (!opt_list) {
->  		kfree(src_copy);
->  		return ERR_PTR(-ENOMEM);
-> @@ -379,7 +380,7 @@ static struct ima_rule_entry *ima_lsm_copy_rule(struct ima_namespace *ns,
->  	 * Immutable elements are copied over as pointers and data; only
->  	 * lsm rules can change
->  	 */
-> -	nentry = kmemdup(entry, sizeof(*nentry), GFP_KERNEL);
-> +	nentry = kmemdup(entry, sizeof(*nentry), GFP_KERNEL_ACCOUNT);
->  	if (!nentry)
->  		return NULL;
->  
-> @@ -826,7 +827,7 @@ static void add_rules(struct ima_namespace *ns,
->  
->  		if (policy_rule & IMA_CUSTOM_POLICY) {
->  			entry = kmemdup(&entries[i], sizeof(*entry),
-> -					GFP_KERNEL);
-> +					GFP_KERNEL_ACCOUNT);
->  			if (!entry)
->  				continue;
->  
-> @@ -863,7 +864,7 @@ static int __init ima_init_arch_policy(struct ima_namespace *ns)
->  
->  	ns->arch_policy_entry = kcalloc(arch_entries + 1,
->  					sizeof(*ns->arch_policy_entry),
-> -					GFP_KERNEL);
-> +					GFP_KERNEL_ACCOUNT);
->  	if (!ns->arch_policy_entry)
->  		return 0;
->  
-> @@ -975,8 +976,20 @@ void __init ima_init_policy(struct ima_namespace *ns)
->  /* Make sure we have a valid policy, at least containing some rules. */
->  int ima_check_policy(struct ima_namespace *ns)
->  {
-> +	struct ima_rule_entry *entry;
-> +	size_t len1 = 0;
-> +	size_t len2 = 0;
-> +
->  	if (list_empty(&ns->ima_temp_rules))
->  		return -EINVAL;
-> +	if (ns != &init_ima_ns) {
-> +		list_for_each_entry(entry, &ns->ima_temp_rules, list)
-> +			len1++;
-> +		list_for_each_entry(entry, &ns->ima_policy_rules, list)
-
-Using list_for_each_entry() is fine here, because multiple policy
-updates at the same time are blocked.  Please add a comment.
-
-> +			len2++;
-> +		if (len1 + len2 > 1024)
-
-One variable should be enough.
-
-> +			return -ENOSPC;
-> +	}
->  	return 0;
->  }
->  
-> @@ -1848,7 +1861,7 @@ ssize_t ima_parse_add_rule(struct ima_namespace *ns, char *rule)
->  	if (*p == '#' || *p == '\0')
->  		return len;
->  
-> -	entry = kzalloc(sizeof(*entry), GFP_KERNEL);
-> +	entry = kzalloc(sizeof(*entry), GFP_KERNEL_ACCOUNT);
->  	if (!entry) {
->  		integrity_audit_msg(AUDIT_INTEGRITY_STATUS, NULL,
->  				    NULL, op, "-ENOMEM", -ENOMEM, audit_info);
-
--- 
-thanks,
-
-Mimi
+    Stefan
 
