@@ -1,119 +1,232 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
+Received: from mail.hallyn.com (mail.hallyn.com [178.63.66.53])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0A65CEBD
-	for <containers@lists.linux.dev>; Wed, 23 Feb 2022 17:12:23 +0000 (UTC)
-Received: from pps.filterd (m0098396.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 21NGNPZu008842;
-	Wed, 23 Feb 2022 17:12:15 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : subject :
- from : to : cc : date : in-reply-to : references : content-type :
- mime-version : content-transfer-encoding; s=pp1;
- bh=i7a7ev+TSToZOoDITIyGq1Q0Jh67k8rK12gkyQZVitk=;
- b=qfiB00L18eYwIJ4dcgp+nVidsxXO/jALnC0A8yOv/5dyzQWPvIWjXpl8pmd9Eam0UkMZ
- 8uFyft8YsV/bliVgyhJmJ6CVIOAKzFNZK6Bhdd5lI1ND48/ceIDOzW62+TH9ARgv80f0
- dwY/Yq3YUfEm+9lY9kkPlISwJK+YSNd0tngx6uUqFMP1yjIsXqnWn0O4EKULIQ+IzNuG
- CbnRy5at002RxYp45gbf8eap5faqh29N8lKdkqfE9XyKPXCWbCDOgGeXNxBwppM/jk+i
- ocZjs7H6zGCehwXkXBFUBO5p2WtCzZMq58IbEbxGG7UVXzmHhrKIDZJo0aaB7y7oqX2T eA== 
-Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3edkxg092j-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 23 Feb 2022 17:12:14 +0000
-Received: from m0098396.ppops.net (m0098396.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 21NGvX71002924;
-	Wed, 23 Feb 2022 17:12:14 GMT
-Received: from ppma02fra.de.ibm.com (47.49.7a9f.ip4.static.sl-reverse.com [159.122.73.71])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3edkxg091f-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 23 Feb 2022 17:12:14 +0000
-Received: from pps.filterd (ppma02fra.de.ibm.com [127.0.0.1])
-	by ppma02fra.de.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 21NH6lnw028313;
-	Wed, 23 Feb 2022 17:12:11 GMT
-Received: from b06cxnps4075.portsmouth.uk.ibm.com (d06relay12.portsmouth.uk.ibm.com [9.149.109.197])
-	by ppma02fra.de.ibm.com with ESMTP id 3ear69a3xy-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 23 Feb 2022 17:12:11 +0000
-Received: from d06av25.portsmouth.uk.ibm.com (d06av25.portsmouth.uk.ibm.com [9.149.105.61])
-	by b06cxnps4075.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 21NHC8QY29884898
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Wed, 23 Feb 2022 17:12:08 GMT
-Received: from d06av25.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id EBF2F11C050;
-	Wed, 23 Feb 2022 17:12:07 +0000 (GMT)
-Received: from d06av25.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 998A211C04A;
-	Wed, 23 Feb 2022 17:12:05 +0000 (GMT)
-Received: from sig-9-65-80-154.ibm.com (unknown [9.65.80.154])
-	by d06av25.portsmouth.uk.ibm.com (Postfix) with ESMTP;
-	Wed, 23 Feb 2022 17:12:05 +0000 (GMT)
-Message-ID: <6e5d6ab590f18e6ee57c9e6e4bb805c8c223259a.camel@linux.ibm.com>
-Subject: Re: [PATCH v10 24/27] ima: Introduce securityfs file to activate an
- IMA namespace
-From: Mimi Zohar <zohar@linux.ibm.com>
-To: Stefan Berger <stefanb@linux.ibm.com>, linux-integrity@vger.kernel.org
-Cc: serge@hallyn.com, christian.brauner@ubuntu.com, containers@lists.linux.dev,
-        dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
-        krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
-        mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
-        puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
-        linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
-        linux-security-module@vger.kernel.org, jmorris@namei.org
-Date: Wed, 23 Feb 2022 12:12:05 -0500
-In-Reply-To: <9262a630-1f3e-0f58-110d-abfebe8274af@linux.ibm.com>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8B50DEBD
+	for <containers@lists.linux.dev>; Wed, 23 Feb 2022 17:58:56 +0000 (UTC)
+Received: by mail.hallyn.com (Postfix, from userid 1001)
+	id 65D2BA1C; Wed, 23 Feb 2022 11:58:54 -0600 (CST)
+Date: Wed, 23 Feb 2022 11:58:54 -0600
+From: "Serge E. Hallyn" <serge@hallyn.com>
+To: Stefan Berger <stefanb@linux.ibm.com>
+Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
+	christian.brauner@ubuntu.com, containers@lists.linux.dev,
+	dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
+	krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
+	mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
+	puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
+	linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
+	linux-security-module@vger.kernel.org, jmorris@namei.org
+Subject: Re: [PATCH v10 27/27] ima: Enable IMA namespaces
+Message-ID: <20220223175854.GB10272@mail.hallyn.com>
 References: <20220201203735.164593-1-stefanb@linux.ibm.com>
-	 <20220201203735.164593-25-stefanb@linux.ibm.com>
-	 <9a720bf5928151a0cbc7994ee498a1c3ca779c56.camel@linux.ibm.com>
-	 <9262a630-1f3e-0f58-110d-abfebe8274af@linux.ibm.com>
-Content-Type: text/plain; charset="ISO-8859-15"
-X-Mailer: Evolution 3.28.5 (3.28.5-18.el8) 
+ <20220201203735.164593-28-stefanb@linux.ibm.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: JJc5mqF_CaUs9S4-s0Iyrx8pandaGvzg
-X-Proofpoint-ORIG-GUID: wrjrOCkyqYYz1iMH06UsjUEM94jqL-on
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.205,Aquarius:18.0.816,Hydra:6.0.425,FMLib:17.11.64.514
- definitions=2022-02-23_08,2022-02-23_01,2022-02-23_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 impostorscore=0
- malwarescore=0 phishscore=0 priorityscore=1501 mlxscore=0 clxscore=1015
- suspectscore=0 spamscore=0 mlxlogscore=999 bulkscore=0 adultscore=0
- lowpriorityscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2201110000 definitions=main-2202230097
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220201203735.164593-28-stefanb@linux.ibm.com>
+User-Agent: Mutt/1.9.4 (2018-02-28)
 
-On Wed, 2022-02-23 at 12:08 -0500, Stefan Berger wrote:
-> On 2/23/22 08:54, Mimi Zohar wrote:
-> > On Tue, 2022-02-01 at 15:37 -0500, Stefan Berger wrote:
-> >
-> >>   int ima_fs_ns_init(struct user_namespace *user_ns, struct dentry *root)
-> >>   {
-> >>   	struct ima_namespace *ns = ima_ns_from_user_ns(user_ns);
-> >> @@ -531,6 +596,12 @@ int ima_fs_ns_init(struct user_namespace *user_ns, struct dentry *root)
-> >>   		}
-> >>   	}
-> >>   
-> >> +	if (ns != &init_ima_ns) {
-> >> +		ret = ima_fs_add_ns_files(ima_dir);
-> >> +		if (ret)
-> >> +			goto out;
-> >> +	}
-> >> +
-> > In all other cases, the securityfs files are directly created in
-> > ima_fs_ns_init().   What is different about "active" that a new
-> > function is defined?
+On Tue, Feb 01, 2022 at 03:37:35PM -0500, Stefan Berger wrote:
+> Introduce the IMA_NS in Kconfig for IMA namespace enablement.
 > 
+> Enable the lazy initialization of an IMA namespace when a user mounts
+> SecurityFS and writes '1' into IMA's 'active' securityfs file. A
+> user_namespace will now get a pointer to an ima_namespace and therefore
+> implement get_current_ns() for the namespacing case that returns this
+> pointer. Use get_current_ns() in those places that require access to the
+> current IMA namespace. In some places, primarily those related to
+> IMA-appraisal and changes to file attributes, keep the pointer to
+> init_ima_ns, since there flags related to file measurements may be
+> affected, which are not supported in IMA namespaces, yet.
 > 
-> It was meant as a function to create namespace-specific files, if more 
-> were to come along.  I can move the code from ima_fs_add_ns_files() into 
-> this function if you want.
+> Before using the ima_namespace pointer test it with ns_is_active()
+> to check whether it is NULL and whether the ima_namespace is active.
+> If it's not active, it cannot be used, yet. Therefore, return early
+> from those functions that may now get either get a NULL pointer from
+> this call or where ns->active is still 0. The init_ima_ns is always
+> set to be active, thus passing the check.
+> 
+> Implement ima_ns_from_file() for SecurityFS-related files where we can
+> now get the IMA namespace via the user namespace pointer associated
+> with the superblock of the SecurityFS filesystem instance.
+> 
+> Return -EACCES to IMA's securityfs files, except for the 'active' file,
+> until the IMA namespace has been set to active.
+> 
+> Switch access to userns->ima_ns to use acquire/release semantics to ensure
+> that a newly created ima_namespace structure is fully visible upon access.
+> 
+> Only emit the kernel log message 'policy update completed' for the
+> init_ima_ns.
+> 
+> When parsing an IMA policy rule use the user namespace of the opener
+> to translate uid and gid values to kernel values rather than the user
+> namespace of the writer.
+> 
+> Gate access to ima_appraise variable to init_ima_ns in ima_load_data()
+> and ima_write_policy().
+> 
+> Gate access to temp_ima_appraise variable to init_ima_ns in
+> ima_delete_rules().
+> 
+> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
+> 
+> ---
+> v10:
+>  - dropped ima_ns_to_user_ns(); using current_user_ns() instead
+>  - Pass user_namespace of file opener into ima_parse_rule and propagate
+>    this parameter back all the way to the initial caller in the chain
+>  - Gate access to ima_appraise to init_ima_ns in ima_write_policy()
+> 
+> v9:
+>  - ima_post_key_create_or_update: Only handle key if in init_ima_ns
+>  - Removed ns == NULL checks where user_namespace is now passed
+>  - Defer setting of user_ns->ima_ns until end of ima_fs_ns_init();
+>    required new ima_free_imans() and new user_ns_set_ima_ns()
+>  - Only emit log message 'policy update completed' for init_ima_ns
+>  - Introduce get_current_ns() only in this patch
+>  - Check for ns == &init_ima_ns in ima_load_data()
+> ---
+>  include/linux/ima.h                          |  1 +
+>  init/Kconfig                                 | 13 +++
+>  kernel/user_namespace.c                      |  2 +
+>  security/integrity/ima/ima.h                 | 55 +++++++++++--
+>  security/integrity/ima/ima_appraise.c        |  3 +
+>  security/integrity/ima/ima_asymmetric_keys.c |  6 +-
+>  security/integrity/ima/ima_fs.c              | 87 ++++++++++++++++----
+>  security/integrity/ima/ima_init.c            |  2 +-
+>  security/integrity/ima/ima_init_ima_ns.c     |  2 +
+>  security/integrity/ima/ima_main.c            | 34 +++++---
+>  security/integrity/ima/ima_ns.c              | 15 +++-
+>  security/integrity/ima/ima_policy.c          | 43 ++++++----
+>  12 files changed, 202 insertions(+), 61 deletions(-)
+> 
+> diff --git a/include/linux/ima.h b/include/linux/ima.h
+> index c584527c0f47..a8cb2c269f61 100644
+> --- a/include/linux/ima.h
+> +++ b/include/linux/ima.h
+> @@ -11,6 +11,7 @@
+>  #include <linux/fs.h>
+>  #include <linux/security.h>
+>  #include <linux/kexec.h>
+> +#include <linux/user_namespace.h>
+>  #include <crypto/hash_info.h>
+>  struct linux_binprm;
+>  
+> diff --git a/init/Kconfig b/init/Kconfig
+> index 4b7bac10c72d..e27155e0ddba 100644
+> --- a/init/Kconfig
+> +++ b/init/Kconfig
+> @@ -1247,6 +1247,19 @@ config NET_NS
+>  	  Allow user space to create what appear to be multiple instances
+>  	  of the network stack.
+>  
+> +config IMA_NS
+> +	bool "IMA namespace"
+> +	depends on USER_NS
+> +	depends on IMA
+> +	default n
+> +	help
+> +	  Allow the creation of an IMA namespace for each user namespace.
+> +	  Namespaced IMA enables having IMA features work separately
+> +	  in each IMA namespace.
+> +	  Currently, only the audit status flags are stored in the namespace,
+> +	  which allows the same file to be audited each time it is accessed
+> +	  in a new namespace.
+> +
+>  endif # NAMESPACES
+>  
+>  config CHECKPOINT_RESTORE
+> diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+> index 6b2e3ca7ee99..653f8fa83b69 100644
+> --- a/kernel/user_namespace.c
+> +++ b/kernel/user_namespace.c
+> @@ -20,6 +20,7 @@
+>  #include <linux/fs_struct.h>
+>  #include <linux/bsearch.h>
+>  #include <linux/sort.h>
+> +#include <linux/ima.h>
+>  
+>  static struct kmem_cache *user_ns_cachep __read_mostly;
+>  static DEFINE_MUTEX(userns_state_mutex);
+> @@ -196,6 +197,7 @@ static void free_user_ns(struct work_struct *work)
+>  			kfree(ns->projid_map.forward);
+>  			kfree(ns->projid_map.reverse);
+>  		}
+> +		free_ima_ns(ns);
+>  		retire_userns_sysctls(ns);
+>  		key_free_user_ns(ns);
+>  		ns_free_inum(&ns->ns);
+> diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+> index 05e2de7697da..73df1d8a2ece 100644
+> --- a/security/integrity/ima/ima.h
+> +++ b/security/integrity/ima/ima.h
+> @@ -337,10 +337,10 @@ int ima_match_policy(struct ima_namespace *ns,
+>  		     int mask, int flags, int *pcr,
+>  		     struct ima_template_desc **template_desc,
+>  		     const char *func_data, unsigned int *allowed_algos);
+> -void ima_init_policy(struct ima_namespace *ns);
+> +void ima_init_policy(struct user_namespace *user_ns);
+>  void ima_update_policy(struct ima_namespace *ns);
+>  void ima_update_policy_flags(struct ima_namespace *ns);
+> -ssize_t ima_parse_add_rule(struct ima_namespace *ns, char *rule);
+> +ssize_t ima_parse_add_rule(struct user_namespace *user_ns, char *rule);
+>  void ima_delete_rules(struct ima_namespace *ns);
+>  int ima_check_policy(struct ima_namespace *ns);
+>  void ima_free_policy_rules(struct ima_namespace *ns);
+> @@ -538,32 +538,70 @@ struct user_namespace *ima_user_ns_from_file(const struct file *filp)
+>  	return file_inode(filp)->i_sb->s_user_ns;
+>  }
+>  
+> +#ifdef CONFIG_IMA_NS
+> +
+>  static inline struct ima_namespace
+>  *ima_ns_from_user_ns(struct user_namespace *user_ns)
+>  {
+> -	if (user_ns == &init_user_ns)
+> -		return &init_ima_ns;
+> -	return NULL;
+> +	/* Pairs with smp_store_releases() in user_ns_set_ima_ns(). */
+> +	return smp_load_acquire(&user_ns->ima_ns);
+>  }
+>  
+> -#ifdef CONFIG_IMA_NS
+> +static inline void user_ns_set_ima_ns(struct user_namespace *user_ns,
+> +				      struct ima_namespace *ns)
+> +{
+> +	/* Pairs with smp_load_acquire() in ima_ns_from_user_ns() */
+> +	smp_store_release(&user_ns->ima_ns, ns);
+> +}
+> +
+> +static inline struct ima_namespace *get_current_ns(void)
+> +{
+> +	return ima_ns_from_user_ns(current_user_ns());
+> +}
+>  
+>  struct ima_namespace *create_ima_ns(void);
+>  
+> +void ima_free_ima_ns(struct ima_namespace *ns);
+> +
+>  struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
+>  				    struct inode *inode,
+>  				    struct integrity_iint_cache *iint);
+>  
+>  void ima_free_ns_status_tree(struct ima_namespace *ns);
+>  
+> +static inline struct ima_namespace *ima_ns_from_file(const struct file *filp)
+> +{
 
-Perhaps defer defining a new function until that happens.
+Why is it ok here to dereference userns->ima_ns without
+going through ima_ns_from_user_ns() to do the smp_load_acquire()?
 
-thanks,
+> +	return ima_user_ns_from_file(filp)->ima_ns;
+> +}
+> +
+>  #else
 
-Mimi
-
+-serge
