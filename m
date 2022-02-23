@@ -1,141 +1,90 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-qv1-f43.google.com (mail-qv1-f43.google.com [209.85.219.43])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6EB1B64E
-	for <containers@lists.linux.dev>; Wed, 23 Feb 2022 01:49:21 +0000 (UTC)
-Received: from pps.filterd (m0098404.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 21N0igvx013877;
-	Wed, 23 Feb 2022 01:48:59 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : subject :
- from : to : cc : date : in-reply-to : references : content-type :
- mime-version : content-transfer-encoding; s=pp1;
- bh=iKFpQ9kbhqeLxy4HC18HZD9+9bhlB13TyDv7gJ8L99I=;
- b=GODOdtDrT93RlhyWG7kiXyUIkCAL9vNjG01G/T4V+jLAwIghchepcZfHpDW8LEzK7cXl
- tbiTfFhsLyECnoWqRd3RICuWm0fE5bt3wYVXIZYLLC4Wea1p+FGsDg87CoZ9HEuIyoek
- nVYZUBnISssH3a7Pji4F5outRClNKokKwBfQTL3r8IF73MXMvwiCNz1w/86HEtAfDJtU
- sCzJeqUKxA2ajNgNyBKynE4SperV/y5aVRaL/i37MixusuDV+Z8Ht4kKIc0/s6ufJDad
- 2wQHKkhPkhbTW3YnsGjzqFD2A4J+WIblvIYoKQGqIlJZ+ShPnD3rg4BuoZvyZiPTNG5h Nw== 
-Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3ed8gfaw1q-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 23 Feb 2022 01:48:58 +0000
-Received: from m0098404.ppops.net (m0098404.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 21N1mwkP008738;
-	Wed, 23 Feb 2022 01:48:58 GMT
-Received: from ppma06fra.de.ibm.com (48.49.7a9f.ip4.static.sl-reverse.com [159.122.73.72])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3ed8gfaw16-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 23 Feb 2022 01:48:58 +0000
-Received: from pps.filterd (ppma06fra.de.ibm.com [127.0.0.1])
-	by ppma06fra.de.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 21N1lnRL021504;
-	Wed, 23 Feb 2022 01:48:55 GMT
-Received: from b06cxnps4076.portsmouth.uk.ibm.com (d06relay13.portsmouth.uk.ibm.com [9.149.109.198])
-	by ppma06fra.de.ibm.com with ESMTP id 3eaqtjn85h-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 23 Feb 2022 01:48:55 +0000
-Received: from b06wcsmtp001.portsmouth.uk.ibm.com (b06wcsmtp001.portsmouth.uk.ibm.com [9.149.105.160])
-	by b06cxnps4076.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 21N1mojV38404432
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Wed, 23 Feb 2022 01:48:51 GMT
-Received: from b06wcsmtp001.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id DF90EA4054;
-	Wed, 23 Feb 2022 01:48:50 +0000 (GMT)
-Received: from b06wcsmtp001.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 9166CA405C;
-	Wed, 23 Feb 2022 01:48:48 +0000 (GMT)
-Received: from sig-9-65-81-84.ibm.com (unknown [9.65.81.84])
-	by b06wcsmtp001.portsmouth.uk.ibm.com (Postfix) with ESMTP;
-	Wed, 23 Feb 2022 01:48:48 +0000 (GMT)
-Message-ID: <177baf827c4dbf9a225b14552725360066af6471.camel@linux.ibm.com>
-Subject: Re: [PATCH v10 22/27] securityfs: Extend securityfs with
- namespacing support
-From: Mimi Zohar <zohar@linux.ibm.com>
-To: Stefan Berger <stefanb@linux.ibm.com>, linux-integrity@vger.kernel.org
-Cc: serge@hallyn.com, christian.brauner@ubuntu.com, containers@lists.linux.dev,
-        dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
-        krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
-        mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
-        puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
-        linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
-        linux-security-module@vger.kernel.org, jmorris@namei.org,
-        Christian Brauner <brauner@kernel.org>,
-        James Bottomley
- <James.Bottomley@HansenPartnership.com>
-Date: Tue, 22 Feb 2022 20:48:47 -0500
-In-Reply-To: <20220201203735.164593-23-stefanb@linux.ibm.com>
-References: <20220201203735.164593-1-stefanb@linux.ibm.com>
-	 <20220201203735.164593-23-stefanb@linux.ibm.com>
-Content-Type: text/plain; charset="ISO-8859-15"
-X-Mailer: Evolution 3.28.5 (3.28.5-18.el8) 
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C8C28800
+	for <containers@lists.linux.dev>; Wed, 23 Feb 2022 04:56:46 +0000 (UTC)
+Received: by mail-qv1-f43.google.com with SMTP id j11so6236657qvy.0
+        for <containers@lists.linux.dev>; Tue, 22 Feb 2022 20:56:46 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=GRsWtuYPVtPE9giQevMBeF9cuFJK/NvIt7pyCSw7hDs=;
+        b=khJDE2iVvaglQeQ9LXMCz6SMrTJJkiLvNqBliBXOjiVSkmbE0fh9SqGgEBmv3MVW1Y
+         zJJY6OdkCBe7oKFRmakwPUdhMOfv7G/BzUnyjG3tn1OLARgoW9m00aIBwZ2LqItgUSFZ
+         wl8MwBHbk8fVAdFqRX4ZogseAeQ6+Je/QNn5Eclr/RELyXfhWWgGSmYgIFEK7kbY7gLV
+         1x8sbmoI1QZcm5x5ms9Y7+dW2Hz7KHiqVLwfYwC/XTRIMLv4VgDiZG87nixRmf7YoJ8o
+         b7qOo5QwXazdfDJzCBHJI0CUYiCdFD3FlF6temGs6Hs/rlQjzqQGn2EEuolGfWoIEhsd
+         Sa8A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=GRsWtuYPVtPE9giQevMBeF9cuFJK/NvIt7pyCSw7hDs=;
+        b=YGYf6RWH+BIJbdkw/h5RzT0i7vgDscdqMb1Vv+KiZ/SadYfR4xJirKu4IqwRMeBjir
+         3h++rwa1lWS8hVqUkNcGosZtzxynp/ffitAm8fKzZBtuRmMPWdiOgOeOQ381a1PpCbAL
+         Y1laFMapIHuA35cpBnX+C5Zy38QS3mW2R54d/U4uMJPw9Dt1wrfPo8AL++JBFONawI7b
+         jI1xNR/J1yO3sHiwxYzRprTAj6UF9YdHM4GJdEkjY9bxu8RnJkg+cpKWDdJC23fmyc8M
+         GKoOMc9Lxi4LWwmg4QRsWy40pJJ5vs7TVkEa1SAzsLuS0YkFtXjj/lpXvoU1RTDPRTfS
+         8kig==
+X-Gm-Message-State: AOAM533uoK5i+tbV9d98a7Hvhe+xvnIN5+BaW26gdAoGAC00ksv8X0sF
+	agSY9zWZCT5kZoPrlhO/0x8=
+X-Google-Smtp-Source: ABdhPJwnF6BD9X6na/b400ybzxEnuRIEgmqgiA2Yc0f2crveMrPvg8r4nJnufal5GsBBQE4eQnFQGA==
+X-Received: by 2002:ad4:5aef:0:b0:42c:3b31:86bf with SMTP id c15-20020ad45aef000000b0042c3b3186bfmr22102689qvh.72.1645592205740;
+        Tue, 22 Feb 2022 20:56:45 -0800 (PST)
+Received: from localhost.localdomain ([193.203.214.57])
+        by smtp.gmail.com with ESMTPSA id 15sm398444qtz.89.2022.02.22.20.56.42
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 22 Feb 2022 20:56:44 -0800 (PST)
+From: cgel.zte@gmail.com
+X-Google-Original-From: xu.xin16@zte.com.cn
+To: ebiederm@xmission.com
+Cc: akpm@linux-foundation.org,
+	balbir@linux.vnet.ibm.com,
+	bsingharora@gmail.com,
+	cgel.zte@gmail.com,
+	containers@lists.linux.dev,
+	deng.changcheng@zte.com.cn,
+	linux-kernel@vger.kernel.org,
+	xu.xin16@zte.com.cn
+Subject: Re: [PATCH resend] kernel: Make taskstats available via genetlink per namespace
+Date: Wed, 23 Feb 2022 04:56:39 +0000
+Message-Id: <20220223045639.1932955-1-xu.xin16@zte.com.cn>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <87v8x678ph.fsf@email.froward.int.ebiederm.org>
+References: <87v8x678ph.fsf@email.froward.int.ebiederm.org>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: 7V62I64nn7OkWARNIC9G2e67EqS6lT0Q
-X-Proofpoint-GUID: y6sEF0FKWWD0DP0ofnsaya5WQhmV79Mf
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.205,Aquarius:18.0.816,Hydra:6.0.425,FMLib:17.11.62.513
- definitions=2022-02-22_08,2022-02-21_02,2021-12-02_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 bulkscore=0 suspectscore=0
- impostorscore=0 adultscore=0 priorityscore=1501 malwarescore=0
- lowpriorityscore=0 mlxscore=0 clxscore=1015 spamscore=0 mlxlogscore=999
- phishscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2201110000 definitions=main-2202230004
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 
-On Tue, 2022-02-01 at 15:37 -0500, Stefan Berger wrote:
-> Enable multiple instances of securityfs by keying each instance with a
-> pointer to the user namespace it belongs to.
-> 
-> Since we do not need the pinning of the filesystem for the virtualization
+>> -sh-4.4# ./getdelays -d -p 186 -v
+>> print delayacct stats ON
+>> debug on
+>> Error getting family id, errno 0
+>>
+>> As more and more applications are deployed in containers like Docker,
+>> it is necessary to support getdelays to be used in net namespace.
+>> Taskstats is safe for use per namespace as genetlink checks the
+>> capability of namespace message by netlink_ns_capable().
+>>
+>> Make taskstats available via genetlink per namespace.
+>
+> Let me add a polite nack to this patch.
 
-^namespacing case
+> Taskstats is completely senseless in a network namespace.  There is no
+> translation of identifiers into the context of the receiver of the
+> message.
 
-> case, limit the usage of simple_pin_fs() and simpe_release_fs() to the
+The interface of taskstats is genetlink that is sensible in net namsespace.
 
-^simple_release_fs
+> To make this work requires updating the taskstats code to do something
+> sensible when in a pid namespace, as well as when in a network
+> namespace.
 
-> case when the init_user_ns is active. This simplifies the cleanup for the
-> virtualization case where usage of securityfs_remove() to free dentries
-
-^namespacing 
-
-> is therefore not needed anymore.
-> 
-> For the initial securityfs, i.e. the one mounted in the host userns mount,
-> nothing changes. The rules for securityfs_remove() are as before and it is
-> still paired with securityfs_create(). Specifically, a file created via
-> securityfs_create_dentry() in the initial securityfs mount still needs to
-> be removed by a call to securityfs_remove(). Creating a new dentry in the
-> initial securityfs mount still pins the filesystem like it always did.
-> Consequently, the initial securityfs mount is not destroyed on
-> umount/shutdown as long as at least one user of it still has dentries that
-> it hasn't removed with a call to securityfs_remove().
-> 
-> Prevent mounting of an instance of securityfs in another user namespace
-> than it belongs to. Also, prevent accesses to files and directories by
-> a user namespace that is neither the user namespace it belongs to
-> nor an ancestor of the user namespace that the instance of securityfs
-> belongs to. Do not prevent access if securityfs was bind-mounted and
-> therefore the init_user_ns is the owning user namespace.
-> 
-> Suggested-by: Christian Brauner <brauner@kernel.org>
-> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-> Signed-off-by: James Bottomley <James.Bottomley@HansenPartnership.com>
-
-Christian, I understand that "[PATCH v10 23/27] ima: Setup securityfs
-for IMA namespace" needs to be deferred, but is there a reason for
-deferring  "[PATCH v10 22/27] securityfs: Extend securityfs with
-namespacing support"?   As the securityfs patches are really
-independent of IMA namespacing, I would have thought  "[PATCH v10
-04/27] securityfs: rework dentry creation" and this patch should be co-
-located at the beginning of the patch set.
-
--- 
-thanks,
-
-Mimi
-
+Yes. Taskstats already does convert the input process ID into the task in the
+correspoding pid namsespace. Do you mean to add some check of current user's
+capability like SYS_ADMIN or else?
