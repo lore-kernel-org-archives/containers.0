@@ -1,180 +1,134 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+Received: from out02.mta.xmission.com (out02.mta.xmission.com [166.70.13.232])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6E7252F2D
-	for <containers@lists.linux.dev>; Fri, 18 Feb 2022 20:08:35 +0000 (UTC)
-Received: from pps.filterd (m0098420.ppops.net [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 21IK8DAX001416;
-	Fri, 18 Feb 2022 20:08:21 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : subject :
- from : to : cc : date : in-reply-to : references : content-type :
- mime-version : content-transfer-encoding; s=pp1;
- bh=8WtNdrz4XvVj3I7dCRdDhnQLA9IgoRhPdH7j9n1eVRI=;
- b=J6HT/HzgyOpMoVTreAAeIfag1EGdjiPgFS8PR8sM+UalIc1CpGkdKlTR4d+EgrLJnGgp
- cXXGqUlOPMfUXfNYVG68dAM+0rsLlsmvuhFtX4a7I/2haPs4+M2+/bTo3DFOvx1qvRB4
- VogJHsqQW9xpWkyRhZGFmZ42vRqfxV+c4rJC1UcE3R6nzC0vCi40zPVeFtprcEbW0KWQ
- aY7UajSrf5y1G77ieduZWOCIMYci7Y7eE2IYf1uFISY3P7BWrrrKlLqYoFLTl+pUW/XZ
- UvmmW7LS6SZhn7D0YhEH08W0Almzt5oDCzZ+6PY7QRM03xdlcndCkkJ81w61Nm9+3dz5 PA== 
-Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3eaj2505es-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 18 Feb 2022 20:08:21 +0000
-Received: from m0098420.ppops.net (m0098420.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 21IK8Lgl002212;
-	Fri, 18 Feb 2022 20:08:21 GMT
-Received: from ppma03fra.de.ibm.com (6b.4a.5195.ip4.static.sl-reverse.com [149.81.74.107])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3eaj2505ck-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 18 Feb 2022 20:08:21 +0000
-Received: from pps.filterd (ppma03fra.de.ibm.com [127.0.0.1])
-	by ppma03fra.de.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 21IK2ZV8017792;
-	Fri, 18 Feb 2022 20:04:27 GMT
-Received: from b06cxnps4074.portsmouth.uk.ibm.com (d06relay11.portsmouth.uk.ibm.com [9.149.109.196])
-	by ppma03fra.de.ibm.com with ESMTP id 3e64hasjd0-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 18 Feb 2022 20:04:26 +0000
-Received: from b06wcsmtp001.portsmouth.uk.ibm.com (b06wcsmtp001.portsmouth.uk.ibm.com [9.149.105.160])
-	by b06cxnps4074.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 21IK4Lvm43844020
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Fri, 18 Feb 2022 20:04:21 GMT
-Received: from b06wcsmtp001.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 1BA06A405B;
-	Fri, 18 Feb 2022 20:04:21 +0000 (GMT)
-Received: from b06wcsmtp001.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id E5F75A4054;
-	Fri, 18 Feb 2022 20:04:18 +0000 (GMT)
-Received: from sig-9-65-86-101.ibm.com (unknown [9.65.86.101])
-	by b06wcsmtp001.portsmouth.uk.ibm.com (Postfix) with ESMTP;
-	Fri, 18 Feb 2022 20:04:18 +0000 (GMT)
-Message-ID: <15ff4fc5b4386e588c4314ad9712b7044c0bb8f8.camel@linux.ibm.com>
-Subject: Re: [PATCH v10 16/27] ima: Implement ima_free_policy_rules() for
- freeing of an ima_namespace
-From: Mimi Zohar <zohar@linux.ibm.com>
-To: Stefan Berger <stefanb@linux.ibm.com>, linux-integrity@vger.kernel.org
-Cc: serge@hallyn.com, christian.brauner@ubuntu.com, containers@lists.linux.dev,
-        dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
-        krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
-        mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
-        puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
-        linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
-        linux-security-module@vger.kernel.org, jmorris@namei.org
-Date: Fri, 18 Feb 2022 15:04:18 -0500
-In-Reply-To: <55c0c300-3fe4-f610-0b78-adc5593a70a0@linux.ibm.com>
-References: <20220201203735.164593-1-stefanb@linux.ibm.com>
-	 <20220201203735.164593-17-stefanb@linux.ibm.com>
-	 <ce1fbc8baf5359b698bf4420e602cc3a5a2a1f44.camel@linux.ibm.com>
-	 <55c0c300-3fe4-f610-0b78-adc5593a70a0@linux.ibm.com>
-Content-Type: text/plain; charset="ISO-8859-15"
-X-Mailer: Evolution 3.28.5 (3.28.5-18.el8) 
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9E26B7A
+	for <containers@lists.linux.dev>; Wed, 23 Feb 2022 00:27:53 +0000 (UTC)
+Received: from in02.mta.xmission.com ([166.70.13.52]:34536)
+	by out02.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.93)
+	(envelope-from <ebiederm@xmission.com>)
+	id 1nMf5P-00Gru7-Fr; Tue, 22 Feb 2022 17:00:51 -0700
+Received: from ip68-227-174-4.om.om.cox.net ([68.227.174.4]:51350 helo=email.froward.int.ebiederm.org.xmission.com)
+	by in02.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.93)
+	(envelope-from <ebiederm@xmission.com>)
+	id 1nMf5N-00G58W-IT; Tue, 22 Feb 2022 17:00:50 -0700
+From: "Eric W. Biederman" <ebiederm@xmission.com>
+To: xu xin <cgel.zte@gmail.com>
+Cc: bsingharora@gmail.com,  akpm@linux-foundation.org,
+ deng.changcheng@zte.com.cn,  linux-kernel@vger.kernel.org,
+ balbir@linux.vnet.ibm.com,  xu.xin16@zte.com.cn,
+ Linux Containers <containers@lists.linux.dev> 
+References: <20220217093945.1904085-1-xu.xin16@zte.com.cn>
+	<20220221032202.1925507-1-xu.xin16@zte.com.cn>
+Date: Tue, 22 Feb 2022 18:00:42 -0600
+In-Reply-To: <20220221032202.1925507-1-xu.xin16@zte.com.cn> (xu xin's message
+	of "Mon, 21 Feb 2022 03:22:02 +0000")
+Message-ID: <87v8x678ph.fsf@email.froward.int.ebiederm.org>
+User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.1 (gnu/linux)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: hDxCtjCREBgQSbGtvqlRR1EAgOitfuid
-X-Proofpoint-GUID: 138CzvqWyVFF4yLwO7JbbyZGW1JDnJIO
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.205,Aquarius:18.0.816,Hydra:6.0.425,FMLib:17.11.62.513
- definitions=2022-02-18_09,2022-02-18_01,2021-12-02_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 clxscore=1015 bulkscore=0
- phishscore=0 lowpriorityscore=0 mlxscore=0 suspectscore=0 adultscore=0
- spamscore=0 impostorscore=0 priorityscore=1501 malwarescore=0
- mlxlogscore=999 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2201110000 definitions=main-2202180119
+MIME-Version: 1.0
+Content-Type: text/plain
+X-XM-SPF: eid=1nMf5N-00G58W-IT;;;mid=<87v8x678ph.fsf@email.froward.int.ebiederm.org>;;;hst=in02.mta.xmission.com;;;ip=68.227.174.4;;;frm=ebiederm@xmission.com;;;spf=neutral
+X-XM-AID: U2FsdGVkX19QOxAXvj0mBgOUQkTk4AIyjG4Lz6zcAgQ=
+X-SA-Exim-Connect-IP: 68.227.174.4
+X-SA-Exim-Mail-From: ebiederm@xmission.com
+X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on sa07.xmission.com
+X-Spam-Level: 
+X-Spam-Status: No, score=-0.3 required=8.0 tests=ALL_TRUSTED,BAYES_40,
+	DCC_CHECK_NEGATIVE,T_SCC_BODY_TEXT_LINE,T_TM2_M_HEADER_IN_MSG,
+	XMSubLong autolearn=disabled version=3.4.2
+X-Spam-Report: 
+	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
+	* -0.0 BAYES_40 BODY: Bayes spam probability is 20 to 40%
+	*      [score: 0.3778]
+	*  0.7 XMSubLong Long Subject
+	*  0.0 T_TM2_M_HEADER_IN_MSG BODY: No description available.
+	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
+	*      [sa07 1397; Body=1 Fuz1=1 Fuz2=1]
+	* -0.0 T_SCC_BODY_TEXT_LINE No description available.
+X-Spam-DCC: XMission; sa07 1397; Body=1 Fuz1=1 Fuz2=1 
+X-Spam-Combo: ;xu xin <cgel.zte@gmail.com>
+X-Spam-Relay-Country: 
+X-Spam-Timing: total 1208 ms - load_scoreonly_sql: 0.16 (0.0%),
+	signal_user_changed: 13 (1.1%), b_tie_ro: 11 (0.9%), parse: 1.50
+	(0.1%), extract_message_metadata: 20 (1.6%), get_uri_detail_list: 2.6
+	(0.2%), tests_pri_-1000: 8 (0.7%), tests_pri_-950: 1.80 (0.1%),
+	tests_pri_-900: 1.53 (0.1%), tests_pri_-90: 184 (15.2%), check_bayes:
+	180 (14.9%), b_tokenize: 14 (1.2%), b_tok_get_all: 9 (0.8%),
+	b_comp_prob: 3.8 (0.3%), b_tok_touch_all: 149 (12.4%), b_finish: 1.12
+	(0.1%), tests_pri_0: 478 (39.6%), check_dkim_signature: 0.73 (0.1%),
+	check_dkim_adsp: 3.8 (0.3%), poll_dns_idle: 465 (38.5%), tests_pri_10:
+	3.4 (0.3%), tests_pri_500: 491 (40.6%), rewrite_mail: 0.00 (0.0%)
+Subject: Re: [PATCH resend] kernel: Make taskstats available via genetlink
+ per namespace
+X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
+X-SA-Exim-Scanned: Yes (on in02.mta.xmission.com)
 
-On Fri, 2022-02-18 at 14:38 -0500, Stefan Berger wrote:
-> On 2/18/22 12:09, Mimi Zohar wrote:
-> > On Tue, 2022-02-01 at 15:37 -0500, Stefan Berger wrote:
-> >> Implement ima_free_policy_rules() that is needed when an ima_namespace
-> >> is freed.
+xu xin <cgel.zte@gmail.com> writes:
 
-ima_free_policy_rules() isn't free all the rules, just the custom
-policy rules.  I would update the patch description as:
+> Currently, the application getdelays cannot get taskstats in a net
+> namespace. The returned error is just like the following:
+> -sh-4.4# ps -ef | tail -5
+> root       186     2  0 09:23 ?        00:00:00 [kworker/2:1H]
+> root       187     2  0 09:23 ?        00:00:00 [kworker/0:2-eve]
+> root       190   183  0 09:23 ?        00:00:00 -sh
+> root       198   190  0 09:25 ?        00:00:00 ps -ef
+> root       199   190  0 09:25 ?        00:00:00 tail -5
+> -sh-4.4#
+> -sh-4.4# ./getdelays -d -p 186 -v
+> print delayacct stats ON
+> debug on
+> Error getting family id, errno 0
+>
+> As more and more applications are deployed in containers like Docker,
+> it is necessary to support getdelays to be used in net namespace.
+> Taskstats is safe for use per namespace as genetlink checks the
+> capability of namespace message by netlink_ns_capable().
+>
+> Make taskstats available via genetlink per namespace.
 
-Implement ima_free_policy_rules() to free the custom policy rules, when
-...
+Let me add a polite nack to this patch.
 
-Otherwise,
+Taskstats is completely senseless in a network namespace.  There is no
+translation of identifiers into the context of the receiver of the
+message.
 
-Reviewd-by: Mimi Zohar <zohar@linux.ibm.com>
+As such taskstats can not be meaningfully used in a container.
 
-> >>
-> >> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-> >>
-> >> ---
-> >> v10:
-> >>    - Not calling ima_delete_rules() anymore
-> >>    - Move access check from ima_delete_rules into very last patch
-> >>
-> >>   v9:
-> >>    - Only reset temp_ima_appraise when using init_ima_ns.
-> >> ---
-> >>   security/integrity/ima/ima.h        |  1 +
-> >>   security/integrity/ima/ima_policy.c | 14 ++++++++++++++
-> >>   2 files changed, 15 insertions(+)
-> >>
-> >> diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
-> >> index aea8fb8d2854..8c757223d549 100644
-> >> --- a/security/integrity/ima/ima.h
-> >> +++ b/security/integrity/ima/ima.h
-> >> @@ -329,6 +329,7 @@ void ima_update_policy_flags(struct ima_namespace *ns);
-> >>   ssize_t ima_parse_add_rule(struct ima_namespace *ns, char *rule);
-> >>   void ima_delete_rules(struct ima_namespace *ns);
-> >>   int ima_check_policy(struct ima_namespace *ns);
-> >> +void ima_free_policy_rules(struct ima_namespace *ns);
-> >>   void *ima_policy_start(struct seq_file *m, loff_t *pos);
-> >>   void *ima_policy_next(struct seq_file *m, void *v, loff_t *pos);
-> >>   void ima_policy_stop(struct seq_file *m, void *v);
-> >> diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
-> >> index 2dcc5a8c585a..fe3dce8fb939 100644
-> >> --- a/security/integrity/ima/ima_policy.c
-> >> +++ b/security/integrity/ima/ima_policy.c
-> >> @@ -1889,6 +1889,20 @@ void ima_delete_rules(struct ima_namespace *ns)
-> >>   	}
-> >>   }
-> >>   
-> >> +/**
-> >> + * ima_free_policy_rules - free all policy rules
-> >> + * @ns: IMA namespace that has the policy
-> >> + */
-> >> +void ima_free_policy_rules(struct ima_namespace *ns)
-> >> +{
-> >> +	struct ima_rule_entry *entry, *tmp;
-> >> +
-> >> +	list_for_each_entry_safe(entry, tmp, &ns->ima_policy_rules, list) {
-> >> +		list_del(&entry->list);
-> >> +		ima_free_rule(entry);
-> >> +	}
-> >> +}
-> >> +
-> > The first time a policy is loaded, the policy rules pivot
-> > from ima_default_rules to the custom rules.  When this happens, the
-> > architecture specific policy rules are freed.  Here too, if a custom
-> > policy isn't already loaded, the architecture specific rules stored as
-> > an array need to be freed.  Refer to the comment in
-> > ima_update_policy().
-> 
-> Right. So here's how it's done (before arch_policy_entry was moved into 
-> ima_namespace).
-> 
->          /*
->           * IMA architecture specific policy rules are specified
->           * as strings and converted to an array of ima_entry_rules
->           * on boot.  After loading a custom policy, free the
->           * architecture specific rules stored as an array.
->           */
->          kfree(arch_policy_entry);
-> 
-> 
-> So, I now added kfree(ns->arch_policy_entry).
+To make this work requires updating the taskstats code to do something
+sensible when in a pid namespace, as well as when in a network
+namespace.
 
-Yes, that is fine.
+I would like to give a suggest on how to do something sensible but
+I don't have any idea at this point.  The code would have been converted
+long ago on general principles if this was a straight forward thing to
+do.
 
--- 
-thanks,
+The taskstats interface only makes sense when you are within all of the
+initial namespaces.
 
-Mimi
+Eric
 
+> Reported-by: Changcheng Deng <deng.changcheng@zte.com.cn>
+> Signed-off-by: xu xin <xu.xin16@zte.com.cn>
+> ---
+>  kernel/taskstats.c | 1 +
+>  1 file changed, 1 insertion(+)
+>
+> diff --git a/kernel/taskstats.c b/kernel/taskstats.c
+> index 2b4898b4752e..4d6bcaaf52a0 100644
+> --- a/kernel/taskstats.c
+> +++ b/kernel/taskstats.c
+> @@ -664,6 +664,7 @@ static struct genl_family family __ro_after_init = {
+>  	.module		= THIS_MODULE,
+>  	.ops		= taskstats_ops,
+>  	.n_ops		= ARRAY_SIZE(taskstats_ops),
+> +	.netnsok	= true,
+>  };
+>  
+>  /* Needed early in initialization */
