@@ -1,130 +1,104 @@
-Received: from mail-il1-f173.google.com (mail-il1-f173.google.com [209.85.166.173])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6FD937A
-	for <containers@lists.linux.dev>; Mon, 28 Feb 2022 17:06:40 +0000 (UTC)
-Received: by mail-il1-f173.google.com with SMTP id y5so10447640ill.13
-        for <containers@lists.linux.dev>; Mon, 28 Feb 2022 09:06:40 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=yT9BO7LqspGlgx3scrJFgyOokQFAFM+2onJaMqMrNjE=;
-        b=Bpl2eRg4BgweC31FKgffeUd8dsL6IerPbWlBrrVCKLBbwk1V/6ikK0M7pGR2Y/VbSj
-         9DPu/Q8TYPtZ1lP7a93N0KQ8SsqtsgMC97AlnKFNyKm/fLmqoQ+IemSeyyjcPzlWCCq/
-         V02RniZo0X6ig3Y68VUjJ8mnRtbNCWuWDbg/Q3GvXVc4UHPGed3yQGx+oYkdaxT044+P
-         gPLo+dQ3qs/ugDaFcyCqT8B0ZdY5OvNuMSOoiYzks0taetWL42eyzzTpmlAKsQHNt5B3
-         ypK1hLM6G67O018DkvGprtZfj5Iw6DXgjrhPXLNEdic4lLbPpiYm0rGdnxmWUoDZa48Y
-         SGAw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=yT9BO7LqspGlgx3scrJFgyOokQFAFM+2onJaMqMrNjE=;
-        b=HJSdQd3R3IZKYebz6uoceaor+q4OX9VroKSFPH6YThriHuYa6xKM8vAwcKGDXaK6n5
-         jd/1DZ8nPnN1OuqTMDyEXLRJHrhuEVArplVy2qijAJSv0AA55DemzYiBa1Vkk9HZ7aQK
-         4HsenuyPokqiFT5F6E9hIKL8wz2c+CROx1AtM9ctSIMEltKZs3652KorLbyuN3eA9Hva
-         G9kB9SyXaFLxX/kKXNUvamw6UJKFdJPA3w5uV27J9BE+BvBZxoXU1fuqlhv6W51q2Bcs
-         l9O3pS+AkvuteRgXHIDvq+CKNSOD5sXOZHs2WMB9m4AtHZNbuS8pIF5yKDHcTDplQ1HK
-         DOXg==
-X-Gm-Message-State: AOAM532UhM0XFwUHTlHS7IU54V3JKE9/Vdhv8ngEsih/kM2mOisJAhK0
-	a5S+GG5co0cR8sGS1pff8/1VOON5pK3U5MkmVAEdkpqcCJE=
-X-Google-Smtp-Source: ABdhPJwDpld2f9g1ZZXYohkpFIF6uRCef8rrTTHtPcfwwLiC8YFIFot+3c9vivaxwDrxHo6DtETDh48hlWwRbxXA6SE=
-X-Received: by 2002:a05:6e02:214a:b0:2bf:a442:cbff with SMTP id
- d10-20020a056e02214a00b002bfa442cbffmr20398650ilv.107.1646067999554; Mon, 28
- Feb 2022 09:06:39 -0800 (PST)
+Received: from mail104.syd.optusnet.com.au (mail104.syd.optusnet.com.au [211.29.132.246])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id C09E65382
+	for <containers@lists.linux.dev>; Mon, 28 Feb 2022 21:39:15 +0000 (UTC)
+Received: from dread.disaster.area (pa49-186-17-0.pa.vic.optusnet.com.au [49.186.17.0])
+	by mail104.syd.optusnet.com.au (Postfix) with ESMTPS id 2D35A531600;
+	Tue,  1 Mar 2022 08:11:14 +1100 (AEDT)
+Received: from dave by dread.disaster.area with local (Exim 4.92.3)
+	(envelope-from <david@fromorbit.com>)
+	id 1nOnIX-00HZt1-Rw; Tue, 01 Mar 2022 08:11:13 +1100
+Date: Tue, 1 Mar 2022 08:11:13 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: Amir Goldstein <amir73il@gmail.com>
+Cc: Miklos Szeredi <miklos@szeredi.hu>, Al Viro <viro@zeniv.linux.org.uk>,
+	linux-unionfs@vger.kernel.org, containers@lists.linux.dev,
+	linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH v2 4/6] fs: report per-mount io stats
+Message-ID: <20220228211113.GB3927073@dread.disaster.area>
+References: <20220228113910.1727819-1-amir73il@gmail.com>
+ <20220228113910.1727819-5-amir73il@gmail.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-References: <20220228113910.1727819-1-amir73il@gmail.com> <20220228113910.1727819-5-amir73il@gmail.com>
- <CAJfpegvZefGp9NChm_69Km0FgpxwUs+og-uc2mpMAbH6mZ2azQ@mail.gmail.com>
- <CAOQ4uxgg8PDweNvkhXE20Gbb+=OGBbwLXjR6Yffc4ZkiKzGM0w@mail.gmail.com> <CAJfpegvnhsBB_Ym3VGs7xBQM3OWsXCsqBZncBVNFCDJXka_AwA@mail.gmail.com>
-In-Reply-To: <CAJfpegvnhsBB_Ym3VGs7xBQM3OWsXCsqBZncBVNFCDJXka_AwA@mail.gmail.com>
-From: Amir Goldstein <amir73il@gmail.com>
-Date: Mon, 28 Feb 2022 19:06:28 +0200
-Message-ID: <CAOQ4uxh=VEsspfEyxc8c6V72LJX9_nU1NSfaptsig=k8z7NOkg@mail.gmail.com>
-Subject: Re: [PATCH v2 4/6] fs: report per-mount io stats
-To: Miklos Szeredi <miklos@szeredi.hu>
-Cc: Al Viro <viro@zeniv.linux.org.uk>, overlayfs <linux-unionfs@vger.kernel.org>, 
-	containers@lists.linux.dev, linux-fsdevel <linux-fsdevel@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220228113910.1727819-5-amir73il@gmail.com>
+X-Optus-CM-Score: 0
+X-Optus-CM-Analysis: v=2.4 cv=VuxAv86n c=1 sm=1 tr=0 ts=621d3a74
+	a=+dVDrTVfsjPpH/ci3UuFng==:117 a=+dVDrTVfsjPpH/ci3UuFng==:17
+	a=kj9zAlcOel0A:10 a=o8Y5sQTvuykA:10 a=pGLkceISAAAA:8 a=7-415B0cAAAA:8
+	a=IM8i16zBH4Qyx9iLlMQA:9 a=CjuIK1q_8ugA:10 a=biEYGPWJfzWAr4FL6Ov7:22
 
-On Mon, Feb 28, 2022 at 6:31 PM Miklos Szeredi <miklos@szeredi.hu> wrote:
->
-> On Mon, 28 Feb 2022 at 17:19, Amir Goldstein <amir73il@gmail.com> wrote:
-> >
-> > On Mon, Feb 28, 2022 at 5:06 PM Miklos Szeredi <miklos@szeredi.hu> wrote:
-> > >
-> > > On Mon, 28 Feb 2022 at 12:39, Amir Goldstein <amir73il@gmail.com> wrote:
-> > > >
-> > > > Show optional collected per-mount io stats in /proc/<pid>/mountstats
-> > > > for filesystems that do not implement their own show_stats() method
-> > > > and opted-in to generic per-mount stats with FS_MOUNT_STATS flag.
-> > >
-> > > This would allow some filesystems to report per-mount I/O stats, while
-> > > leaving CIFS and NFS reporting a different set of per-sb stats.  This
-> > > doesn't sound very clean.
-> > >
-> > > There was an effort to create saner and more efficient interfaces for
-> > > per-mount info.  IMO this should be part of that effort instead of
-> > > overloading the old interface.
-> > >
-> >
-> > That's fair, but actually, I have no much need for per-mount I/O stats
-> > in overlayfs/fuse use cases, so I could amend the patches to collect and
-> > show per-sb I/O stats.
-> >
-> > Then, the generic show_stats() will not be "overloading the old interface".
-> > Instead, it will be creating a common implementation to share among different
-> > filesystems and using an existing vfs interface as it was intended.
-> >
-> > Would you be willing to accept adding per-sb I/O stats to overlayfs
-> > and/or fuse via /proc/<pid>/mountstats?
->
-> Yes, that would certainly be more sane.   But I'm also wondering if
-> there could be some commonality with the stats provided by NFS...
->
+On Mon, Feb 28, 2022 at 01:39:08PM +0200, Amir Goldstein wrote:
+> Show optional collected per-mount io stats in /proc/<pid>/mountstats
+> for filesystems that do not implement their own show_stats() method
+> and opted-in to generic per-mount stats with FS_MOUNT_STATS flag.
+> 
+> Signed-off-by: Amir Goldstein <amir73il@gmail.com>
+> ---
+>  fs/mount.h          |  1 +
+>  fs/namespace.c      |  2 ++
+>  fs/proc_namespace.c | 13 +++++++++++++
+>  3 files changed, 16 insertions(+)
+> 
+> diff --git a/fs/mount.h b/fs/mount.h
+> index f98bf4cd5b1a..2ab6308af78b 100644
+> --- a/fs/mount.h
+> +++ b/fs/mount.h
+> @@ -91,6 +91,7 @@ struct mount {
+>  	int mnt_id;			/* mount identifier */
+>  	int mnt_group_id;		/* peer group identifier */
+>  	int mnt_expiry_mark;		/* true if marked for expiry */
+> +	time64_t mnt_time;		/* time of mount */
+>  	struct hlist_head mnt_pins;
+>  	struct hlist_head mnt_stuck_children;
+>  } __randomize_layout;
+> diff --git a/fs/namespace.c b/fs/namespace.c
+> index 3fb8f11a42a1..546f07ed44c5 100644
+> --- a/fs/namespace.c
+> +++ b/fs/namespace.c
+> @@ -220,6 +220,8 @@ static struct mount *alloc_vfsmnt(const char *name)
+>  		mnt->mnt_count = 1;
+>  		mnt->mnt_writers = 0;
+>  #endif
+> +		/* For proc/<pid>/mountstats */
+> +		mnt->mnt_time = ktime_get_seconds();
+>  
+>  		INIT_HLIST_NODE(&mnt->mnt_hash);
+>  		INIT_LIST_HEAD(&mnt->mnt_child);
+> diff --git a/fs/proc_namespace.c b/fs/proc_namespace.c
+> index 49650e54d2f8..d744fb8543f5 100644
+> --- a/fs/proc_namespace.c
+> +++ b/fs/proc_namespace.c
+> @@ -232,6 +232,19 @@ static int show_vfsstat(struct seq_file *m, struct vfsmount *mnt)
+>  	if (sb->s_op->show_stats) {
+>  		seq_putc(m, ' ');
+>  		err = sb->s_op->show_stats(m, mnt_path.dentry);
+> +	} else if (mnt_has_stats(mnt)) {
+> +		/* Similar to /proc/<pid>/io */
+> +		seq_printf(m, "\n"
+> +			   "\ttimes: %lld %lld\n"
+> +			   "\trchar: %lld\n"
+> +			   "\twchar: %lld\n"
+> +			   "\tsyscr: %lld\n"
+> +			   "\tsyscw: %lld\n",
+> +			   r->mnt_time, ktime_get_seconds(),
+> +			   mnt_iostats_counter_read(r, MNTIOS_CHARS_RD),
+> +			   mnt_iostats_counter_read(r, MNTIOS_CHARS_WR),
+> +			   mnt_iostats_counter_read(r, MNTIOS_SYSCALLS_RD),
+> +			   mnt_iostats_counter_read(r, MNTIOS_SYSCALLS_WR));
 
-hmm, maybe, but look:
+This doesn't scale as {cpus, mounts, counters, read frequency}
+matrix explodes.  Please iterate the per-mount per cpu counters
+once, adding up all counters in one pass to an array on stack, then
+print them all from the array.
 
-device genesis:/shares/media mounted on /mnt/nfs with fstype nfs4 statvers=1.1
-opts: rw,vers=4.2,rsize=1048576,wsize=1048576,namlen=255,acregmin=3,acregmax=60,acdirmin=30,acdirmax=60,hard,proto=tcp,timeo=600,retrans=2,sec=sys,clientaddr=192.168.122.1,local_lock=none
-age: 38
-impl_id: name='',domain='',date='0,0'
-caps: caps=0x3ffbffff,wtmult=512,dtsize=32768,bsize=0,namlen=255
-nfsv4: bm0=0xfdffbfff,bm1=0xf9be3e,bm2=0x68800,acl=0x3,sessions,pnfs=not
-configured,lease_time=90,lease_expired=0
-sec: flavor=1,pseudoflavor=1
-events: 0 0 0 0 0 2 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-bytes: 0 0 0 0 0 0 0 0
-RPC iostats version: 1.1  p/v: 100003/4 (nfs)
-xprt: tcp 0 0 2 0 38 27 27 0 27 0 2 0 0
-per-op statistics
-       NULL: 1 1 0 44 24 0 0 0 0
-       READ: 0 0 0 0 0 0 0 0 0
-       WRITE: 0 0 0 0 0 0 0 0 0
-       COMMIT: 0 0 0 0 0 0 0 0 0
-       OPEN: 0 0 0 0 0 0 0 0 0
-       OPEN_CONFIRM: 0 0 0 0 0 0 0 0 0
-       OPEN_NOATTR: 0 0 0 0 0 0 0 0 0
-       OPEN_DOWNGRADE: 0 0 0 0 0 0 0 0 0
-       CLOSE: 0 0 0 0 0 0 0 0 0
-       ...
+Cheers,
 
-Those stats are pretty specific to NFS.
-Most of it is RPC protocol stats, not including cached /I/O stats,
-so in fact the generic collected io stats could be added to nfs_show_stats()
-and they will not break the <tag>:<value> format.
-
-I used the same output format as /proc/<pid>/io for a reason.
-The iotop utility parses /proc/<pid>/io to display io per task and
-also displays total io stats for block devices.
-
-I am envisioning an extended version of iotop (-m ?) that also
-displays total iostats per mount/sb, when available.
-
-Thanks,
-Amir.
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com
