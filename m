@@ -1,100 +1,65 @@
-Received: from mail-wr1-f51.google.com (mail-wr1-f51.google.com [209.85.221.51])
+Received: from mail-vk1-f180.google.com (mail-vk1-f180.google.com [209.85.221.180])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0F94A53A4
-	for <containers@lists.linux.dev>; Mon, 28 Feb 2022 11:39:35 +0000 (UTC)
-Received: by mail-wr1-f51.google.com with SMTP id j17so15027509wrc.0
-        for <containers@lists.linux.dev>; Mon, 28 Feb 2022 03:39:34 -0800 (PST)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9D6E57C
+	for <containers@lists.linux.dev>; Mon, 28 Feb 2022 15:06:50 +0000 (UTC)
+Received: by mail-vk1-f180.google.com with SMTP id b64so1959132vkf.7
+        for <containers@lists.linux.dev>; Mon, 28 Feb 2022 07:06:50 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=/wlzIgcPfmWlzG8mZw8mU98HRU6UG4iDulaqC27k8XE=;
-        b=HaWNuoLURtPmskYk3JMn81nh3G+CEz3F1Cb6avefJRfg7bdzYCv0GQKlYd01uf1icx
-         ebYnR976irKAf+AiZ88Hy85/ZhE/9numO00I1Nq1PbXHsrTpJ0PUn1lh9tmaLzUbOchs
-         xrIUDA4n5tRz8t/MhjFjEmnni4Jg3DeKqZ+GIAbNEfbUqfJ4DNGAJDERCfixc0ba55OX
-         EcMYlns3XqGLd7TQsJCQGlUz9d7wHnRuZE6bzo4cstColw0lQnaoW8N2nZ33xUxye/fU
-         OIyRC1Kufdq/kwwjy7Mr4zqMuAM58/571xa7kVUKcMy1lRCN7IhfbqvIqZtyNzu71vDh
-         dCOg==
+        d=szeredi.hu; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=jiqKta+C/bUAijQgVs2pIwZxEquJxCrRrkx40wt5xeU=;
+        b=jrZ7QG8cvbuAWbySWWqcPRl1HzBxXrPIQi88Qwxn9KEns4B4V6BG/WCFVt2TODG2Ek
+         mVVcRUWT7BUAL5BAyusW6Vh4apN5Ewv3KR/Aq+pMkgfcel1DXFU8JWDqrvlCEpRo5wt5
+         tALdoK1ujT5pztZcBl+qe2p7Xd+6FhJuFYLw0=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=/wlzIgcPfmWlzG8mZw8mU98HRU6UG4iDulaqC27k8XE=;
-        b=Mks/t5nBMrE/Q+5EFWPEFs8TzbCWyAH7cCEsd1kDdWSR4ayknQ7PqX9nJTkkVa/E9J
-         MBWPcfFmU0kDYhGYejUST8HnVQE/z8TIhE+ySKJkBtVp/02oXEPjIR60BtdMSdJ8e6o8
-         N0HzyY2h7GGU0UZgK6Y7bvOtpcEyG2oc+PTSK7MRJRRtLVzthr2EeWxc8bc55boAg+Fh
-         cYUtihAG1ZCat75iobf/i3ks3cjndLMwnXuMWNitnYdBlhULN6S8t4Svtv7ueg2rhDY6
-         TXw3C4/4/ap4yOHIRX54sCMEr5vVDy4sG4QpoaqJlyVgsbM2mlHXx08x9VSIAcIpcFB9
-         7rVA==
-X-Gm-Message-State: AOAM531/hJ9PxKudhxQbiqHvEJMWN7M7Rp0yg8MbscOArK/9Jg2o1Ed3
-	lOxliqnGNY12vXEZqERyCsQ=
-X-Google-Smtp-Source: ABdhPJx3/58BLQbW37CqO1FcM0VcammSp/oCUcSsL3jYD3As8LSPNJ9Se3sgmxWJkzo6qkIg/DhlVA==
-X-Received: by 2002:a5d:47ae:0:b0:1ef:d725:876e with SMTP id 14-20020a5d47ae000000b001efd725876emr2777714wrb.447.1646048373450;
-        Mon, 28 Feb 2022 03:39:33 -0800 (PST)
-Received: from localhost.localdomain ([5.29.13.154])
-        by smtp.gmail.com with ESMTPSA id e22-20020adf9bd6000000b001eda1017861sm10584592wrc.64.2022.02.28.03.39.32
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 28 Feb 2022 03:39:33 -0800 (PST)
-From: Amir Goldstein <amir73il@gmail.com>
-To: Miklos Szeredi <miklos@szeredi.hu>
-Cc: Al Viro <viro@zeniv.linux.org.uk>,
-	linux-unionfs@vger.kernel.org,
-	containers@lists.linux.dev,
-	linux-fsdevel@vger.kernel.org
-Subject: [PATCH v2 6/6] fuse: opt-in for per-mount io stats
-Date: Mon, 28 Feb 2022 13:39:10 +0200
-Message-Id: <20220228113910.1727819-7-amir73il@gmail.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20220228113910.1727819-1-amir73il@gmail.com>
-References: <20220228113910.1727819-1-amir73il@gmail.com>
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=jiqKta+C/bUAijQgVs2pIwZxEquJxCrRrkx40wt5xeU=;
+        b=zHRpPQZLTF1F+w/SDMKAnDTkps6KU3J425n9w3ac6YvdVIXSlzZPFXshw8nQD6Dkvu
+         uFTOnI+6tVwkrJSKFbMvFUGsZvNJtuBTCvjhzPdjNsenwrg6VWRCbuq6SeF6sYawNdSa
+         85A2tnxmVv8HcK2MSgBlwxs40m7CixD5rJx0V/Wyfv4yJ3i/OhuOTkdfroY8yjl1suiK
+         DfHS8Je9g0tixRRjBX6YMpQD3Fqei7XMocO4mECankRjnvvtVpPvIEKKx2qModWd4XUU
+         lSmnfoxXyBc/PjM5CB84G2KDe5cJm/0szeZbs/QUd8rqgvNDxY2OE1pcCQ/c04u+VYZo
+         QEZg==
+X-Gm-Message-State: AOAM532iF8g4wcVwdPrNoWRVpFhXxP0qgZHtHcyLn7EjRy/4aH7BpIqt
+	TxeSlBq5aSQ7LxBzrqjRZVTqJE4rzgPI14Nzwokzkw==
+X-Google-Smtp-Source: ABdhPJwG4oeunZtfTAqFSdPSvXQ/EGO74OOSjPwKybQKY955Q+Lm+yXaJNDZXx6QkmGxjo5MfMxF2Uv2x7n3YyUuw60=
+X-Received: by 2002:a05:6122:2213:b0:31b:76c3:16df with SMTP id
+ bb19-20020a056122221300b0031b76c316dfmr7894044vkb.31.1646060809331; Mon, 28
+ Feb 2022 07:06:49 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20220228113910.1727819-1-amir73il@gmail.com> <20220228113910.1727819-5-amir73il@gmail.com>
+In-Reply-To: <20220228113910.1727819-5-amir73il@gmail.com>
+From: Miklos Szeredi <miklos@szeredi.hu>
+Date: Mon, 28 Feb 2022 16:06:38 +0100
+Message-ID: <CAJfpegvZefGp9NChm_69Km0FgpxwUs+og-uc2mpMAbH6mZ2azQ@mail.gmail.com>
+Subject: Re: [PATCH v2 4/6] fs: report per-mount io stats
+To: Amir Goldstein <amir73il@gmail.com>
+Cc: Al Viro <viro@zeniv.linux.org.uk>, overlayfs <linux-unionfs@vger.kernel.org>, 
+	containers@lists.linux.dev, linux-fsdevel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-Traditionally, system administrators have used the iostat utility
-to track the amount of io performed to a local disk filesystem.
+On Mon, 28 Feb 2022 at 12:39, Amir Goldstein <amir73il@gmail.com> wrote:
+>
+> Show optional collected per-mount io stats in /proc/<pid>/mountstats
+> for filesystems that do not implement their own show_stats() method
+> and opted-in to generic per-mount stats with FS_MOUNT_STATS flag.
 
-Similar functionality is provided for NFS mounts via the nfsstat
-utility that reads the NFS client's stats from /proc/pid/mountstats.
+This would allow some filesystems to report per-mount I/O stats, while
+leaving CIFS and NFS reporting a different set of per-sb stats.  This
+doesn't sound very clean.
 
-There is currently no good way for a system administrator or a
-monitoring application to track the amount of io performed via fuse
-filesystems.
+There was an effort to create saner and more efficient interfaces for
+per-mount info.  IMO this should be part of that effort instead of
+overloading the old interface.
 
-Opt-in for generic io stats via /proc/pid/mountstats to provide
-that functionality.
-
-It is possible to collect io stats on the server side inside libfuse,
-but those io stats will not cover cached writes and reads.  Therefore,
-implementing the server side io stats would be complementary to these
-client side io stats.  Also, this feature provides the io stats for
-existing fuse filesystem/lib release binaries.
-
-This feature depends on CONFIG_MOUNT_IO_STATS.
-
-Signed-off-by: Amir Goldstein <amir73il@gmail.com>
----
- fs/fuse/inode.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/fs/fuse/inode.c b/fs/fuse/inode.c
-index 9ee36aa73251..5c58583a12fc 100644
---- a/fs/fuse/inode.c
-+++ b/fs/fuse/inode.c
-@@ -1806,7 +1806,7 @@ static void fuse_kill_sb_anon(struct super_block *sb)
- static struct file_system_type fuse_fs_type = {
- 	.owner		= THIS_MODULE,
- 	.name		= "fuse",
--	.fs_flags	= FS_HAS_SUBTYPE | FS_USERNS_MOUNT,
-+	.fs_flags	= FS_HAS_SUBTYPE | FS_USERNS_MOUNT | FS_MOUNT_STATS,
- 	.init_fs_context = fuse_init_fs_context,
- 	.parameters	= fuse_fs_parameters,
- 	.kill_sb	= fuse_kill_sb_anon,
--- 
-2.25.1
-
+Thanks,
+Miklos
