@@ -1,51 +1,51 @@
 Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 26EDF33E6
-	for <containers@lists.linux.dev>; Wed,  2 Mar 2022 13:50:19 +0000 (UTC)
-Received: from pps.filterd (m0098414.ppops.net [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 222Cm7L4022460;
-	Wed, 2 Mar 2022 13:50:05 GMT
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7009D33E3
+	for <containers@lists.linux.dev>; Wed,  2 Mar 2022 13:50:18 +0000 (UTC)
+Received: from pps.filterd (m0098420.ppops.net [127.0.0.1])
+	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 222Bm7Lw007634;
+	Wed, 2 Mar 2022 13:50:01 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=pp1;
- bh=mSKD+dycBa1y0C46NJVVN6YMiGZ4TSgWrEy/0RgPo5w=;
- b=aaMPY7ws0gt1XZZhjQxiH/L4HdbU49hleUkHUNt3lP4JjAwxV2ggURjHwQ8VD9zdKMyg
- A83Q38Y7KrMXPFHY208r12ia83CggopOPJX6nkRtWPIr2EH1lHCW0qdcZzIQ3DUPZpc/
- Jd0yzvx+IcsdZ/CWWjgkj9z86aQlE+dqpPeD1xv1LWFXWiwFoWmrXVW+L41PyfIk+i0H
- 5MFbUFeWP0YX1lhJcc0dt9lAHZHOXk7Xr8j/Bq6HnuYN3QsLWEMXpyykawk46Yh+07v0
- R156boZtlo7hhqlhaLNyq3s/d+dnaiHbe5EQLMU9tPUwYjUsk9qDLzZQizMlDNmd4L+/ +A== 
+ bh=DfUt7CUSXuxdJceegAgR/IDVY5F54an8OwIpQOK5YCo=;
+ b=VIfhoyor2mLa0T9xB9NJd5U9yv251Hg0grlhssc4oQkSP2p8F+Vcgnif37P+IVp0M56H
+ I3/8TmqVNii9kflUn4l8+o/6aQt0h/VsLVU9JuKEdzcMIosXYhsncJUBSkf+2cYEo3c9
+ cNrvru9u6hDgoSiSCDup8jPItsZJuTJ/ndz4Fb5cXOXi6Vt0BPkhcNtDMHvr2lcrGlhn
+ LK6WrDNXrlSKkUDXwunzDQVIbU9T/p0y/F/jO42Q2aYuplT5r0VZLA1PgSiNdkMcwBtE
+ /v09ZR5v90sAdR1o+v+PCrhfjbt0l2j18H6amD+3uZ06iutOK0sznxcChm3Pam/sB9a3 EQ== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3ej8wh970y-1
+	by mx0b-001b2d01.pphosted.com with ESMTP id 3ej81ctg9c-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 02 Mar 2022 13:50:04 +0000
-Received: from m0098414.ppops.net (m0098414.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 222CmI2N023219;
-	Wed, 2 Mar 2022 13:50:03 GMT
-Received: from ppma02wdc.us.ibm.com (aa.5b.37a9.ip4.static.sl-reverse.com [169.55.91.170])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3ej8wh970j-1
+	Wed, 02 Mar 2022 13:50:01 +0000
+Received: from m0098420.ppops.net (m0098420.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 222Dl4OM028772;
+	Wed, 2 Mar 2022 13:50:01 GMT
+Received: from ppma01dal.us.ibm.com (83.d6.3fa9.ip4.static.sl-reverse.com [169.63.214.131])
+	by mx0b-001b2d01.pphosted.com with ESMTP id 3ej81ctg8v-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 02 Mar 2022 13:50:03 +0000
-Received: from pps.filterd (ppma02wdc.us.ibm.com [127.0.0.1])
-	by ppma02wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 222DnBVS031242;
-	Wed, 2 Mar 2022 13:50:03 GMT
-Received: from b01cxnp22036.gho.pok.ibm.com (b01cxnp22036.gho.pok.ibm.com [9.57.198.26])
-	by ppma02wdc.us.ibm.com with ESMTP id 3efbua4v79-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 02 Mar 2022 13:50:03 +0000
-Received: from b01ledav004.gho.pok.ibm.com (b01ledav004.gho.pok.ibm.com [9.57.199.109])
-	by b01cxnp22036.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 222Do0qE14287676
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Wed, 02 Mar 2022 13:50:01 +0000
+Received: from pps.filterd (ppma01dal.us.ibm.com [127.0.0.1])
+	by ppma01dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 222DmUWO005334;
 	Wed, 2 Mar 2022 13:50:00 GMT
+Received: from b01cxnp22033.gho.pok.ibm.com (b01cxnp22033.gho.pok.ibm.com [9.57.198.23])
+	by ppma01dal.us.ibm.com with ESMTP id 3efbuany38-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Wed, 02 Mar 2022 13:49:59 +0000
+Received: from b01ledav004.gho.pok.ibm.com (b01ledav004.gho.pok.ibm.com [9.57.199.109])
+	by b01cxnp22033.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 222Dnvbt34406862
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Wed, 2 Mar 2022 13:49:57 GMT
 Received: from b01ledav004.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 5DC8211206B;
-	Wed,  2 Mar 2022 13:50:00 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id F367911206B;
+	Wed,  2 Mar 2022 13:49:56 +0000 (GMT)
 Received: from b01ledav004.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 4A792112071;
-	Wed,  2 Mar 2022 13:50:00 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id D6712112072;
+	Wed,  2 Mar 2022 13:49:56 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by b01ledav004.gho.pok.ibm.com (Postfix) with ESMTP;
-	Wed,  2 Mar 2022 13:50:00 +0000 (GMT)
+	Wed,  2 Mar 2022 13:49:56 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
@@ -56,9 +56,9 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
         jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
         jmorris@namei.org, Stefan Berger <stefanb@linux.ibm.com>
-Subject: [PATCH v11 24/27] ima: Show owning user namespace's uid and gid when displaying policy
-Date: Wed,  2 Mar 2022 08:46:59 -0500
-Message-Id: <20220302134703.1273041-25-stefanb@linux.ibm.com>
+Subject: [PATCH v11 01/27] ima: Return error code obtained from securityfs functions
+Date: Wed,  2 Mar 2022 08:46:36 -0500
+Message-Id: <20220302134703.1273041-2-stefanb@linux.ibm.com>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <20220302134703.1273041-1-stefanb@linux.ibm.com>
 References: <20220302134703.1273041-1-stefanb@linux.ibm.com>
@@ -70,105 +70,107 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: T2VGRr-o3yS3O0YC7G-ab2J8LXGr-E-Z
-X-Proofpoint-GUID: -r6yXn26Ps4pkNt91ibqHxQL_-6APtdX
+X-Proofpoint-GUID: ZA7KyhWiC5plxNC9yEeSGwyxqR9gUeuZ
+X-Proofpoint-ORIG-GUID: HZUET_dK2ZcyAN__v1fPs-2tr8DE_TCH
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.816,Hydra:6.0.425,FMLib:17.11.64.514
  definitions=2022-03-02_06,2022-02-26_01,2022-02-23_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 clxscore=1015 mlxscore=0
- impostorscore=0 phishscore=0 priorityscore=1501 suspectscore=0
- mlxlogscore=999 adultscore=0 spamscore=0 lowpriorityscore=0 malwarescore=0
- bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2201110000 definitions=main-2203020057
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 mlxscore=0 mlxlogscore=999
+ phishscore=0 suspectscore=0 spamscore=0 clxscore=1015 lowpriorityscore=0
+ adultscore=0 malwarescore=0 priorityscore=1501 impostorscore=0 bulkscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2201110000
+ definitions=main-2203020057
 
-Show the uid and gid values relative to the user namespace that is
-currently active. The effect of this changes is that when one displays
-the policy from the user namespace that originally set the policy,
-the same uid and gid values are shown in the policy as those that were
-used when the policy was set.
+If an error occurs when creating a securityfs file, return the exact
+error code to the caller.
 
 Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
 Reviewed-by: Mimi Zohar <zohar@linux.ibm.com>
-
 ---
-v9:
-  - use seq_user_ns and from_k{g,u}id_munged()
----
- security/integrity/ima/ima_policy.c | 19 +++++++++++++------
- 1 file changed, 13 insertions(+), 6 deletions(-)
+ security/integrity/ima/ima_fs.c | 31 +++++++++++++++++++++++--------
+ 1 file changed, 23 insertions(+), 8 deletions(-)
 
-diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
-index 50c7bdec5109..0f697a475882 100644
---- a/security/integrity/ima/ima_policy.c
-+++ b/security/integrity/ima/ima_policy.c
-@@ -2019,6 +2019,7 @@ static void ima_policy_show_appraise_algos(struct seq_file *m,
+diff --git a/security/integrity/ima/ima_fs.c b/security/integrity/ima/ima_fs.c
+index 3ad8f7734208..cd1683dad3bf 100644
+--- a/security/integrity/ima/ima_fs.c
++++ b/security/integrity/ima/ima_fs.c
+@@ -452,47 +452,61 @@ static const struct file_operations ima_measure_policy_ops = {
  
- int ima_policy_show(struct seq_file *m, void *v)
+ int __init ima_fs_init(void)
  {
-+	struct user_namespace *user_ns = seq_user_ns(m);
- 	struct ima_rule_entry *entry = v;
- 	int i;
- 	char tbuf[64] = {0,};
-@@ -2104,7 +2105,8 @@ int ima_policy_show(struct seq_file *m, void *v)
- 	}
++	int ret;
++
+ 	ima_dir = securityfs_create_dir("ima", integrity_dir);
+ 	if (IS_ERR(ima_dir))
+-		return -1;
++		return PTR_ERR(ima_dir);
  
- 	if (entry->flags & IMA_UID) {
--		snprintf(tbuf, sizeof(tbuf), "%d", __kuid_val(entry->uid));
-+		snprintf(tbuf, sizeof(tbuf),
-+			 "%d", from_kuid_munged(user_ns, entry->uid));
- 		if (entry->uid_op == &uid_gt)
- 			seq_printf(m, pt(Opt_uid_gt), tbuf);
- 		else if (entry->uid_op == &uid_lt)
-@@ -2115,7 +2117,8 @@ int ima_policy_show(struct seq_file *m, void *v)
- 	}
+ 	ima_symlink = securityfs_create_symlink("ima", NULL, "integrity/ima",
+ 						NULL);
+-	if (IS_ERR(ima_symlink))
++	if (IS_ERR(ima_symlink)) {
++		ret = PTR_ERR(ima_symlink);
+ 		goto out;
++	}
  
- 	if (entry->flags & IMA_EUID) {
--		snprintf(tbuf, sizeof(tbuf), "%d", __kuid_val(entry->uid));
-+		snprintf(tbuf, sizeof(tbuf),
-+			 "%d", from_kuid_munged(user_ns, entry->uid));
- 		if (entry->uid_op == &uid_gt)
- 			seq_printf(m, pt(Opt_euid_gt), tbuf);
- 		else if (entry->uid_op == &uid_lt)
-@@ -2126,7 +2129,8 @@ int ima_policy_show(struct seq_file *m, void *v)
- 	}
+ 	binary_runtime_measurements =
+ 	    securityfs_create_file("binary_runtime_measurements",
+ 				   S_IRUSR | S_IRGRP, ima_dir, NULL,
+ 				   &ima_measurements_ops);
+-	if (IS_ERR(binary_runtime_measurements))
++	if (IS_ERR(binary_runtime_measurements)) {
++		ret = PTR_ERR(binary_runtime_measurements);
+ 		goto out;
++	}
  
- 	if (entry->flags & IMA_GID) {
--		snprintf(tbuf, sizeof(tbuf), "%d", __kgid_val(entry->gid));
-+		snprintf(tbuf, sizeof(tbuf),
-+			 "%d", from_kgid_munged(user_ns, entry->gid));
- 		if (entry->gid_op == &gid_gt)
- 			seq_printf(m, pt(Opt_gid_gt), tbuf);
- 		else if (entry->gid_op == &gid_lt)
-@@ -2137,7 +2141,8 @@ int ima_policy_show(struct seq_file *m, void *v)
- 	}
+ 	ascii_runtime_measurements =
+ 	    securityfs_create_file("ascii_runtime_measurements",
+ 				   S_IRUSR | S_IRGRP, ima_dir, NULL,
+ 				   &ima_ascii_measurements_ops);
+-	if (IS_ERR(ascii_runtime_measurements))
++	if (IS_ERR(ascii_runtime_measurements)) {
++		ret = PTR_ERR(ascii_runtime_measurements);
+ 		goto out;
++	}
  
- 	if (entry->flags & IMA_EGID) {
--		snprintf(tbuf, sizeof(tbuf), "%d", __kgid_val(entry->gid));
-+		snprintf(tbuf, sizeof(tbuf),
-+			 "%d", from_kgid_munged(user_ns, entry->gid));
- 		if (entry->gid_op == &gid_gt)
- 			seq_printf(m, pt(Opt_egid_gt), tbuf);
- 		else if (entry->gid_op == &gid_lt)
-@@ -2148,7 +2153,8 @@ int ima_policy_show(struct seq_file *m, void *v)
- 	}
+ 	runtime_measurements_count =
+ 	    securityfs_create_file("runtime_measurements_count",
+ 				   S_IRUSR | S_IRGRP, ima_dir, NULL,
+ 				   &ima_measurements_count_ops);
+-	if (IS_ERR(runtime_measurements_count))
++	if (IS_ERR(runtime_measurements_count)) {
++		ret = PTR_ERR(runtime_measurements_count);
+ 		goto out;
++	}
  
- 	if (entry->flags & IMA_FOWNER) {
--		snprintf(tbuf, sizeof(tbuf), "%d", __kuid_val(entry->fowner));
-+		snprintf(tbuf, sizeof(tbuf),
-+			 "%d", from_kuid_munged(user_ns, entry->fowner));
- 		if (entry->fowner_op == &uid_gt)
- 			seq_printf(m, pt(Opt_fowner_gt), tbuf);
- 		else if (entry->fowner_op == &uid_lt)
-@@ -2159,7 +2165,8 @@ int ima_policy_show(struct seq_file *m, void *v)
- 	}
+ 	violations =
+ 	    securityfs_create_file("violations", S_IRUSR | S_IRGRP,
+ 				   ima_dir, NULL, &ima_htable_violations_ops);
+-	if (IS_ERR(violations))
++	if (IS_ERR(violations)) {
++		ret = PTR_ERR(violations);
+ 		goto out;
++	}
  
- 	if (entry->flags & IMA_FGROUP) {
--		snprintf(tbuf, sizeof(tbuf), "%d", __kgid_val(entry->fgroup));
-+		snprintf(tbuf, sizeof(tbuf),
-+			 "%d", from_kgid_munged(user_ns, entry->fgroup));
- 		if (entry->fgroup_op == &gid_gt)
- 			seq_printf(m, pt(Opt_fgroup_gt), tbuf);
- 		else if (entry->fgroup_op == &gid_lt)
+ 	ima_policy = securityfs_create_file("policy", POLICY_FILE_FLAGS,
+ 					    ima_dir, NULL,
+ 					    &ima_measure_policy_ops);
+-	if (IS_ERR(ima_policy))
++	if (IS_ERR(ima_policy)) {
++		ret = PTR_ERR(ima_policy);
+ 		goto out;
++	}
+ 
+ 	return 0;
+ out:
+@@ -503,5 +517,6 @@ int __init ima_fs_init(void)
+ 	securityfs_remove(binary_runtime_measurements);
+ 	securityfs_remove(ima_symlink);
+ 	securityfs_remove(ima_dir);
+-	return -1;
++
++	return ret;
+ }
 -- 
 2.31.1
 
