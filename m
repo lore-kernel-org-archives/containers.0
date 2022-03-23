@@ -1,137 +1,106 @@
-Received: from mga09.intel.com (mga09.intel.com [134.134.136.24])
+Received: from out03.mta.xmission.com (out03.mta.xmission.com [166.70.13.233])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 66BE06153;
-	Wed,  2 Mar 2022 23:12:05 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1646262725; x=1677798725;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=8rc56ekTbeKFOC2iDvS+DEuqovVns3lGZWNghGxdVAg=;
-  b=BM8AyUOEdX+wAVyxEEZdviVrJs7k8GY28/jNwM+wc9c4t/52QWUEGqt2
-   89FCZo6kz+F/NnXXlTUFroqVm9zXu68d0/n5PPvNmHeU+dP8i3s2XHn7c
-   VT9MosTZnnWLxFoRZOIVGvoYKWd+XdISRiCBFxlXhHHxUpWW2TMK0Kmcb
-   R2KxDZbvAKHcm9fUG11JcVbeikU5KoduAbuc394SJYtg8DwhHluVZW5n3
-   i/CfL7WiEVubamyrnoWooLkNhtFudIf5YMOO3aeBYk78ohf0c2IaBa8c7
-   RVILS3d3unLMj8t3a3Shj8F8JDQpFBxXMpqrwuQ7c9xsWe8XD4B+GBF0V
-   A==;
-X-IronPort-AV: E=McAfee;i="6200,9189,10274"; a="253256776"
-X-IronPort-AV: E=Sophos;i="5.90,150,1643702400"; 
-   d="scan'208";a="253256776"
-Received: from fmsmga003.fm.intel.com ([10.253.24.29])
-  by orsmga102.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 02 Mar 2022 15:12:04 -0800
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="5.90,150,1643702400"; 
-   d="scan'208";a="630572209"
-Received: from lkp-server02.sh.intel.com (HELO e9605edfa585) ([10.239.97.151])
-  by FMSMGA003.fm.intel.com with ESMTP; 02 Mar 2022 15:11:59 -0800
-Received: from kbuild by e9605edfa585 with local (Exim 4.92)
-	(envelope-from <lkp@intel.com>)
-	id 1nPY8U-00023G-Fz; Wed, 02 Mar 2022 23:11:58 +0000
-Date: Thu, 3 Mar 2022 07:11:15 +0800
-From: kernel test robot <lkp@intel.com>
-To: Stefan Berger <stefanb@linux.ibm.com>, linux-integrity@vger.kernel.org
-Cc: llvm@lists.linux.dev, kbuild-all@lists.01.org, zohar@linux.ibm.com,
-	serge@hallyn.com, christian.brauner@ubuntu.com,
-	containers@lists.linux.dev, dmitry.kasatkin@gmail.com,
-	ebiederm@xmission.com, krzysztof.struczynski@huawei.com,
-	roberto.sassu@huawei.com, mpeters@redhat.com, lhinds@redhat.com,
-	lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
-	jamjoom@us.ibm.com, linux-kernel@vger.kernel.org,
-	paul@paul-moore.com, rgb@redhat.com,
-	linux-security-module@vger.kernel.org, jmorris@namei.org,
-	Stefan Berger <stefanb@linux.ibm.com>
-Subject: Re: [PATCH v11 26/27] ima: Restrict informational audit messages to
- init_ima_ns
-Message-ID: <202203030748.dQ8i3hT2-lkp@intel.com>
-References: <20220302134703.1273041-27-stefanb@linux.ibm.com>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0CE8D1B6C
+	for <containers@lists.linux.dev>; Wed, 23 Mar 2022 20:57:57 +0000 (UTC)
+Received: from in02.mta.xmission.com ([166.70.13.52]:38190)
+	by out03.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.93)
+	(envelope-from <ebiederm@xmission.com>)
+	id 1nX7Wt-007dRw-6V; Wed, 23 Mar 2022 14:24:27 -0600
+Received: from ip68-227-174-4.om.om.cox.net ([68.227.174.4]:35242 helo=email.froward.int.ebiederm.org.xmission.com)
+	by in02.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.93)
+	(envelope-from <ebiederm@xmission.com>)
+	id 1nX7Ws-0080N1-2F; Wed, 23 Mar 2022 14:24:26 -0600
+From: "Eric W. Biederman" <ebiederm@xmission.com>
+To: Linus Torvalds <torvalds@linux-foundation.org> 
+Cc: LKML <linux-kernel@vger.kernel.org>,  Linux Containers
+ <containers@lists.linux.dev>,  Alexander Mikhalitsyn
+ <alexander.mikhalitsyn@virtuozzo.com>,  Andrew Morton
+ <akpm@linux-foundation.org>,  Christian Brauner
+ <christian.brauner@ubuntu.com>,  Daniel Walsh <dwalsh@redhat.com>,
+  Davidlohr Bueso <dbueso@suse.de>,  Kirill Tkhai <ktkhai@virtuozzo.com>,
+  Manfred Spraul <manfred@colorfullife.com>,  Serge Hallyn
+ <serge@hallyn.com>,  Varad Gautam <varad.gautam@suse.com>,  Vasily Averin
+ <vvs@virtuozzo.com>, Alexey Gladkov <legion@kernel.org>
+References: <cover.1644862280.git.legion@kernel.org>
+Date: Wed, 23 Mar 2022 15:24:18 -0500
+In-Reply-To: <cover.1644862280.git.legion@kernel.org> (Alexey Gladkov's
+	message of "Mon, 14 Feb 2022 19:18:13 +0100")
+Message-ID: <877d8kfmdp.fsf@email.froward.int.ebiederm.org>
+User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.1 (gnu/linux)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20220302134703.1273041-27-stefanb@linux.ibm.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
-
-Hi Stefan,
-
-Thank you for the patch! Yet something to improve:
-
-[auto build test ERROR on linus/master]
-[also build test ERROR on v5.17-rc6]
-[cannot apply to zohar-integrity/next-integrity linux/master jmorris-security/next-testing next-20220302]
-[If your patch is applied to the wrong git tree, kindly drop us a note.
-And when submitting patch, we suggest to use '--base' as documented in
-https://git-scm.com/docs/git-format-patch]
-
-url:    https://github.com/0day-ci/linux/commits/Stefan-Berger/ima-Namespace-IMA-with-audit-support-in-IMA-ns/20220302-215707
-base:   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git fb184c4af9b9f4563e7a126219389986a71d5b5b
-config: arm64-randconfig-r006-20220302 (https://download.01.org/0day-ci/archive/20220303/202203030748.dQ8i3hT2-lkp@intel.com/config)
-compiler: clang version 15.0.0 (https://github.com/llvm/llvm-project d271fc04d5b97b12e6b797c6067d3c96a8d7470e)
-reproduce (this is a W=1 build):
-        wget https://raw.githubusercontent.com/intel/lkp-tests/master/sbin/make.cross -O ~/bin/make.cross
-        chmod +x ~/bin/make.cross
-        # install arm64 cross compiling tool for clang build
-        # apt-get install binutils-aarch64-linux-gnu
-        # https://github.com/0day-ci/linux/commit/781d4b92eee902d5ebcac657814703974f8e8b28
-        git remote add linux-review https://github.com/0day-ci/linux
-        git fetch --no-tags linux-review Stefan-Berger/ima-Namespace-IMA-with-audit-support-in-IMA-ns/20220302-215707
-        git checkout 781d4b92eee902d5ebcac657814703974f8e8b28
-        # save the config file to linux build tree
-        mkdir build_dir
-        COMPILER_INSTALL_PATH=$HOME/0day COMPILER=clang make.cross W=1 O=build_dir ARCH=arm64 SHELL=/bin/bash
-
-If you fix the issue, kindly add following tag as appropriate
-Reported-by: kernel test robot <lkp@intel.com>
-
-All errors (new ones prefixed by >>):
-
->> security/integrity/ima/ima_main.c:200:32: error: too many arguments to function call, expected 2, have 3
-                                   ima_update_xattr(ns, iint, file);
-                                   ~~~~~~~~~~~~~~~~           ^~~~
-   security/integrity/ima/ima.h:413:20: note: 'ima_update_xattr' declared here
-   static inline void ima_update_xattr(struct integrity_iint_cache *iint,
-                      ^
-   1 error generated.
+Content-Type: text/plain
+X-XM-SPF: eid=1nX7Ws-0080N1-2F;;;mid=<877d8kfmdp.fsf@email.froward.int.ebiederm.org>;;;hst=in02.mta.xmission.com;;;ip=68.227.174.4;;;frm=ebiederm@xmission.com;;;spf=neutral
+X-XM-AID: U2FsdGVkX1+bc2v0BvmToXTwnCKZgjNRumB58N8N6oQ=
+X-SA-Exim-Connect-IP: 68.227.174.4
+X-SA-Exim-Mail-From: ebiederm@xmission.com
+X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on sa06.xmission.com
+X-Spam-Level: **
+X-Spam-Status: No, score=2.0 required=8.0 tests=ALL_TRUSTED,BAYES_50,
+	DCC_CHECK_NEGATIVE,T_SCC_BODY_TEXT_LINE,XMSubMetaSxObfu_03,
+	XMSubMetaSx_00 autolearn=disabled version=3.4.2
+X-Spam-Report: 
+	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
+	*  0.8 BAYES_50 BODY: Bayes spam probability is 40 to 60%
+	*      [score: 0.4997]
+	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
+	*      [sa06 1397; Body=1 Fuz1=1 Fuz2=1]
+	*  1.2 XMSubMetaSxObfu_03 Obfuscated Sexy Noun-People
+	* -0.0 T_SCC_BODY_TEXT_LINE No description available.
+	*  1.0 XMSubMetaSx_00 1+ Sexy Words
+X-Spam-DCC: XMission; sa06 1397; Body=1 Fuz1=1 Fuz2=1 
+X-Spam-Combo: **;Linus Torvalds <torvalds@linux-foundation.org>
+X-Spam-Relay-Country: 
+X-Spam-Timing: total 552 ms - load_scoreonly_sql: 0.03 (0.0%),
+	signal_user_changed: 11 (1.9%), b_tie_ro: 9 (1.7%), parse: 0.81 (0.1%),
+	 extract_message_metadata: 11 (2.0%), get_uri_detail_list: 1.02 (0.2%),
+	 tests_pri_-1000: 14 (2.5%), tests_pri_-950: 1.19 (0.2%),
+	tests_pri_-900: 1.01 (0.2%), tests_pri_-90: 107 (19.4%), check_bayes:
+	105 (19.1%), b_tokenize: 6 (1.1%), b_tok_get_all: 6 (1.0%),
+	b_comp_prob: 1.97 (0.4%), b_tok_touch_all: 89 (16.1%), b_finish: 0.78
+	(0.1%), tests_pri_0: 395 (71.5%), check_dkim_signature: 0.49 (0.1%),
+	check_dkim_adsp: 3.0 (0.5%), poll_dns_idle: 1.14 (0.2%), tests_pri_10:
+	2.1 (0.4%), tests_pri_500: 7 (1.3%), rewrite_mail: 0.00 (0.0%)
+Subject: [GIT PULL] ipc: Bind to the ipc namespace at open time.
+X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
+X-SA-Exim-Scanned: Yes (on in02.mta.xmission.com)
 
 
-vim +200 security/integrity/ima/ima_main.c
+Linus,
 
-   176	
-   177	static void ima_check_last_writer(struct ima_namespace *ns,
-   178					  struct integrity_iint_cache *iint,
-   179					  struct inode *inode, struct file *file)
-   180	{
-   181		fmode_t mode = file->f_mode;
-   182		bool update;
-   183	
-   184		if (!(mode & FMODE_WRITE))
-   185			return;
-   186	
-   187		mutex_lock(&iint->mutex);
-   188		if (atomic_read(&inode->i_writecount) == 1) {
-   189			update = test_and_clear_bit(IMA_UPDATE_XATTR,
-   190						    &iint->atomic_flags);
-   191			if (!IS_I_VERSION(inode) ||
-   192			    !inode_eq_iversion(inode, iint->version) ||
-   193			    (iint->flags & IMA_NEW_FILE)) {
-   194				mask_iint_ns_status_flags
-   195						(iint,
-   196						 ~(IMA_DONE_MASK | IMA_NEW_FILE));
-   197				iint->measured_pcrs = 0;
-   198	
-   199				if (update)
- > 200					ima_update_xattr(ns, iint, file);
-   201			}
-   202		}
-   203		mutex_unlock(&iint->mutex);
-   204	}
-   205	
+Please pull the per-namespace-ipc-sysctls-for-v5.18 tag from the git tree:
 
----
-0-DAY CI Kernel Test Service, Intel Corporation
-https://lists.01.org/hyperkitty/list/kbuild-all@lists.01.org
+  git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git per-namespace-ipc-sysctls-for-v5.18
+  HEAD: 1f5c135ee509e89e0cc274333a65f73c62cb16e5 ipc: Store ipc sysctls in the ipc namespace
+
+
+The per ipc namespace sysctls have been imperfect since they were
+implemented.  Instead of binding to the ipc namespace of the opener of
+the file the code bound to the ipc namespace of the writer of the
+file.
+
+This short series of changes addresses that old deficiency in the
+code.
+
+Alexey Gladkov (2):
+      ipc: Store mqueue sysctls in the ipc namespace
+      ipc: Store ipc sysctls in the ipc namespace
+
+ include/linux/ipc_namespace.h |  37 ++++++++-
+ ipc/ipc_sysctl.c              | 189 +++++++++++++++++++++++++++---------------
+ ipc/mq_sysctl.c               | 121 +++++++++++++++------------
+ ipc/mqueue.c                  |  10 +--
+ ipc/namespace.c               |  10 +++
+ 5 files changed, 235 insertions(+), 132 deletions(-)
+
+Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
+
+
+Eric
