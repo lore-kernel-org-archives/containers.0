@@ -1,106 +1,131 @@
-Received: from out03.mta.xmission.com (out03.mta.xmission.com [166.70.13.233])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-lj1-f172.google.com (mail-lj1-f172.google.com [209.85.208.172])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0CE8D1B6C
-	for <containers@lists.linux.dev>; Wed, 23 Mar 2022 20:57:57 +0000 (UTC)
-Received: from in02.mta.xmission.com ([166.70.13.52]:38190)
-	by out03.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1nX7Wt-007dRw-6V; Wed, 23 Mar 2022 14:24:27 -0600
-Received: from ip68-227-174-4.om.om.cox.net ([68.227.174.4]:35242 helo=email.froward.int.ebiederm.org.xmission.com)
-	by in02.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1nX7Ws-0080N1-2F; Wed, 23 Mar 2022 14:24:26 -0600
-From: "Eric W. Biederman" <ebiederm@xmission.com>
-To: Linus Torvalds <torvalds@linux-foundation.org> 
-Cc: LKML <linux-kernel@vger.kernel.org>,  Linux Containers
- <containers@lists.linux.dev>,  Alexander Mikhalitsyn
- <alexander.mikhalitsyn@virtuozzo.com>,  Andrew Morton
- <akpm@linux-foundation.org>,  Christian Brauner
- <christian.brauner@ubuntu.com>,  Daniel Walsh <dwalsh@redhat.com>,
-  Davidlohr Bueso <dbueso@suse.de>,  Kirill Tkhai <ktkhai@virtuozzo.com>,
-  Manfred Spraul <manfred@colorfullife.com>,  Serge Hallyn
- <serge@hallyn.com>,  Varad Gautam <varad.gautam@suse.com>,  Vasily Averin
- <vvs@virtuozzo.com>, Alexey Gladkov <legion@kernel.org>
-References: <cover.1644862280.git.legion@kernel.org>
-Date: Wed, 23 Mar 2022 15:24:18 -0500
-In-Reply-To: <cover.1644862280.git.legion@kernel.org> (Alexey Gladkov's
-	message of "Mon, 14 Feb 2022 19:18:13 +0100")
-Message-ID: <877d8kfmdp.fsf@email.froward.int.ebiederm.org>
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.1 (gnu/linux)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3ACD87E
+	for <containers@lists.linux.dev>; Thu, 24 Mar 2022 18:12:44 +0000 (UTC)
+Received: by mail-lj1-f172.google.com with SMTP id q14so7246675ljc.12
+        for <containers@lists.linux.dev>; Thu, 24 Mar 2022 11:12:43 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linux-foundation.org; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=/LSEoPoVBVnfztCSkUFcbwBfE5ukisNTx0Z0bM1jWgk=;
+        b=fBZauSq0ACQcCD0aXGuuoIgacGzWbZWvHI/yboiImq3d2gbCBsK4u0P2R6I9rA5s+1
+         llLlGyVUkbHFxwANgyrhG7OcuWCL4PearUKXNl+3bWauMSB43nTGA6zaQsGMBIOxTMat
+         Y9LYQyxU0oUnKd77In8/8H15bD1XyIFNQEVc4=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=/LSEoPoVBVnfztCSkUFcbwBfE5ukisNTx0Z0bM1jWgk=;
+        b=VvDQrvEri3zMycm/bU91eQ7zfr00azy1UxvzN6VDdUdr48+w8AFSn6wVJGUhyk+AHg
+         Ji8NClDXEMmm8cL6hupawwlS9J2BOJewAQynieG6ztqCGBjR/ev9ZgrQqISDh4ivaUgA
+         ASgUY8dC23ZbnnWUEjtfIiq7Wbc1Q/BPhiDg1X+PADgjpHHpP4xTVm7bhZdJ5xJDexyZ
+         xXgN0eylooOmmXzZgLcL3guvJpvgYmqcvvEIXtJ5/XrnlaVPwLnJcGbsWO+QqgpEkAuA
+         pQo5ooraLlIn1WU2CXYj0XHFmR5TR8dkdmMkNCgRqn1/iAyJ1e7pPBZTYU/6WH/ZNpfn
+         Uk3w==
+X-Gm-Message-State: AOAM533d7raiS349s8PSHx3TM8ZB1ZIWU3Lt8O+XhfaqCRKuhP6wcBaP
+	P7ex3KT25CMGu8O89YANCGANlAwbTIEiD3iiAUQ=
+X-Google-Smtp-Source: ABdhPJw/pmGvt0TyY+3Ez1HDgVugEnCSyxQw5iCzRpbFNSAogQDGpr+0L4SsYabb/bSWDZFSErvPcw==
+X-Received: by 2002:a2e:a36c:0:b0:246:4680:e55a with SMTP id i12-20020a2ea36c000000b002464680e55amr4926621ljn.451.1648145561829;
+        Thu, 24 Mar 2022 11:12:41 -0700 (PDT)
+Received: from mail-lj1-f174.google.com (mail-lj1-f174.google.com. [209.85.208.174])
+        by smtp.gmail.com with ESMTPSA id a25-20020a05651c031900b0024924e63577sm418907ljp.139.2022.03.24.11.12.38
+        for <containers@lists.linux.dev>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 24 Mar 2022 11:12:39 -0700 (PDT)
+Received: by mail-lj1-f174.google.com with SMTP id bn33so7283094ljb.6
+        for <containers@lists.linux.dev>; Thu, 24 Mar 2022 11:12:38 -0700 (PDT)
+X-Received: by 2002:a2e:a5c4:0:b0:249:9ec3:f2b with SMTP id
+ n4-20020a2ea5c4000000b002499ec30f2bmr4898966ljp.358.1648145558024; Thu, 24
+ Mar 2022 11:12:38 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain
-X-XM-SPF: eid=1nX7Ws-0080N1-2F;;;mid=<877d8kfmdp.fsf@email.froward.int.ebiederm.org>;;;hst=in02.mta.xmission.com;;;ip=68.227.174.4;;;frm=ebiederm@xmission.com;;;spf=neutral
-X-XM-AID: U2FsdGVkX1+bc2v0BvmToXTwnCKZgjNRumB58N8N6oQ=
-X-SA-Exim-Connect-IP: 68.227.174.4
-X-SA-Exim-Mail-From: ebiederm@xmission.com
-X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on sa06.xmission.com
-X-Spam-Level: **
-X-Spam-Status: No, score=2.0 required=8.0 tests=ALL_TRUSTED,BAYES_50,
-	DCC_CHECK_NEGATIVE,T_SCC_BODY_TEXT_LINE,XMSubMetaSxObfu_03,
-	XMSubMetaSx_00 autolearn=disabled version=3.4.2
-X-Spam-Report: 
-	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
-	*  0.8 BAYES_50 BODY: Bayes spam probability is 40 to 60%
-	*      [score: 0.4997]
-	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
-	*      [sa06 1397; Body=1 Fuz1=1 Fuz2=1]
-	*  1.2 XMSubMetaSxObfu_03 Obfuscated Sexy Noun-People
-	* -0.0 T_SCC_BODY_TEXT_LINE No description available.
-	*  1.0 XMSubMetaSx_00 1+ Sexy Words
-X-Spam-DCC: XMission; sa06 1397; Body=1 Fuz1=1 Fuz2=1 
-X-Spam-Combo: **;Linus Torvalds <torvalds@linux-foundation.org>
-X-Spam-Relay-Country: 
-X-Spam-Timing: total 552 ms - load_scoreonly_sql: 0.03 (0.0%),
-	signal_user_changed: 11 (1.9%), b_tie_ro: 9 (1.7%), parse: 0.81 (0.1%),
-	 extract_message_metadata: 11 (2.0%), get_uri_detail_list: 1.02 (0.2%),
-	 tests_pri_-1000: 14 (2.5%), tests_pri_-950: 1.19 (0.2%),
-	tests_pri_-900: 1.01 (0.2%), tests_pri_-90: 107 (19.4%), check_bayes:
-	105 (19.1%), b_tokenize: 6 (1.1%), b_tok_get_all: 6 (1.0%),
-	b_comp_prob: 1.97 (0.4%), b_tok_touch_all: 89 (16.1%), b_finish: 0.78
-	(0.1%), tests_pri_0: 395 (71.5%), check_dkim_signature: 0.49 (0.1%),
-	check_dkim_adsp: 3.0 (0.5%), poll_dns_idle: 1.14 (0.2%), tests_pri_10:
-	2.1 (0.4%), tests_pri_500: 7 (1.3%), rewrite_mail: 0.00 (0.0%)
-Subject: [GIT PULL] ipc: Bind to the ipc namespace at open time.
-X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
-X-SA-Exim-Scanned: Yes (on in02.mta.xmission.com)
+References: <cover.1644862280.git.legion@kernel.org> <877d8kfmdp.fsf@email.froward.int.ebiederm.org>
+In-Reply-To: <877d8kfmdp.fsf@email.froward.int.ebiederm.org>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Thu, 24 Mar 2022 11:12:21 -0700
+X-Gmail-Original-Message-ID: <CAHk-=wgBB8iPd0W=MQWnQJukMAPAqgsC0QX2wwiSvcct9zu_RA@mail.gmail.com>
+Message-ID: <CAHk-=wgBB8iPd0W=MQWnQJukMAPAqgsC0QX2wwiSvcct9zu_RA@mail.gmail.com>
+Subject: Re: [GIT PULL] ipc: Bind to the ipc namespace at open time.
+To: "Eric W. Biederman" <ebiederm@xmission.com>, Alexey Gladkov <legion@kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, 
+	Linux Containers <containers@lists.linux.dev>, 
+	Alexander Mikhalitsyn <alexander.mikhalitsyn@virtuozzo.com>, 
+	Andrew Morton <akpm@linux-foundation.org>, 
+	Christian Brauner <christian.brauner@ubuntu.com>, Daniel Walsh <dwalsh@redhat.com>, 
+	Davidlohr Bueso <dbueso@suse.de>, Kirill Tkhai <ktkhai@virtuozzo.com>, 
+	Manfred Spraul <manfred@colorfullife.com>, Serge Hallyn <serge@hallyn.com>, 
+	Varad Gautam <varad.gautam@suse.com>, Vasily Averin <vvs@virtuozzo.com>
+Content-Type: text/plain; charset="UTF-8"
 
+On Wed, Mar 23, 2022 at 1:24 PM Eric W. Biederman <ebiederm@xmission.com> wrote:
+>
+> Please pull the per-namespace-ipc-sysctls-for-v5.18 tag from the git tree:
 
-Linus,
+Ugh.
 
-Please pull the per-namespace-ipc-sysctls-for-v5.18 tag from the git tree:
+I pulled this. Then I stared at it for a long time.
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git per-namespace-ipc-sysctls-for-v5.18
-  HEAD: 1f5c135ee509e89e0cc274333a65f73c62cb16e5 ipc: Store ipc sysctls in the ipc namespace
+And then I decided that this is too ugly to live.
 
+I'm sorry. I think Alexey has probably spent a fair amount of time on
+it, but I really think the sysctl code needs to be cleaned up way more
+than this.
 
-The per ipc namespace sysctls have been imperfect since they were
-implemented.  Instead of binding to the ipc namespace of the opener of
-the file the code bound to the ipc namespace of the writer of the
-file.
+The old code was horribly hacky too, but that setup_ipc_sysctls() (and
+setup_mq_sysctls()) thing that copies the whole sysctls table, and
+then walks it entry by entry to modify it, is just too ugly for words.
 
-This short series of changes addresses that old deficiency in the
-code.
+And then it hides things in .extra1, and because it does that it can't
+use the normal "extra1 and extra2 contains the limits" so then at
+write() time it copies it into a local one AGAIN only to set the
+limits back so that it can call the normal routines again.
 
-Alexey Gladkov (2):
-      ipc: Store mqueue sysctls in the ipc namespace
-      ipc: Store ipc sysctls in the ipc namespace
+Not ok.
 
- include/linux/ipc_namespace.h |  37 ++++++++-
- ipc/ipc_sysctl.c              | 189 +++++++++++++++++++++++++++---------------
- ipc/mq_sysctl.c               | 121 +++++++++++++++------------
- ipc/mqueue.c                  |  10 +--
- ipc/namespace.c               |  10 +++
- 5 files changed, 235 insertions(+), 132 deletions(-)
+Yes, yes, the old code did some similar things - to set the 'data'
+pointer. That was disgusting too. Don't get me wrong - the existing
+code was nasty too. But this took nasty code, and doubled down on it.
 
-Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
+I really think this is a fundamental problem, and needs a more
+fundamental fix than adding more and more of these kinds of nasty
+hacks.
 
+And yes, that fundamental fix is almost certainly to pass in 'struct
+cred *' to all those sysctl helper functions.
 
-Eric
+Then, when you do the actual 'sysctl()' system calls, you pass in
+'current_cred()".
+
+And the /proc users would pass in file->f_cred.
+
+And yes, that patch might be quite messy, because we have quite a lot
+of those random .proc_handler users.
+
+But *most* of them by far (at least in random code) use the standard
+proc_dointvec_minmax() and friends, and won't even notice.
+
+And then the ones that are about namespace issues will have to
+continue to do the nasty "make a copy and update the data pointer",
+but *MAYBE* we could also introduce the notion of an "offset" to those
+proc_dointvec_minmax() things to help them out (and at least avoid the
+"make a copy" thing).
+
+Anyway, I really think we must not make that sysctl code even uglier
+than it is today, and I think we need to move towards a model that
+actually makes sense. And that "pass in the right cred" is the only
+sensible model I can see.
+
+I haven't tried to create such a patch, and maybe Alexey already tried
+to do something like that and it turned out to be too ugly for words
+and that's why these nasty patches happened.
+
+But at least for now, I can't with a good conscience pull this.
+
+Sorry,
+                   Linus
