@@ -1,131 +1,350 @@
-Received: from mail-lj1-f172.google.com (mail-lj1-f172.google.com [209.85.208.172])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from out02.mta.xmission.com (out02.mta.xmission.com [166.70.13.232])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3ACD87E
-	for <containers@lists.linux.dev>; Thu, 24 Mar 2022 18:12:44 +0000 (UTC)
-Received: by mail-lj1-f172.google.com with SMTP id q14so7246675ljc.12
-        for <containers@lists.linux.dev>; Thu, 24 Mar 2022 11:12:43 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linux-foundation.org; s=google;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=/LSEoPoVBVnfztCSkUFcbwBfE5ukisNTx0Z0bM1jWgk=;
-        b=fBZauSq0ACQcCD0aXGuuoIgacGzWbZWvHI/yboiImq3d2gbCBsK4u0P2R6I9rA5s+1
-         llLlGyVUkbHFxwANgyrhG7OcuWCL4PearUKXNl+3bWauMSB43nTGA6zaQsGMBIOxTMat
-         Y9LYQyxU0oUnKd77In8/8H15bD1XyIFNQEVc4=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=/LSEoPoVBVnfztCSkUFcbwBfE5ukisNTx0Z0bM1jWgk=;
-        b=VvDQrvEri3zMycm/bU91eQ7zfr00azy1UxvzN6VDdUdr48+w8AFSn6wVJGUhyk+AHg
-         Ji8NClDXEMmm8cL6hupawwlS9J2BOJewAQynieG6ztqCGBjR/ev9ZgrQqISDh4ivaUgA
-         ASgUY8dC23ZbnnWUEjtfIiq7Wbc1Q/BPhiDg1X+PADgjpHHpP4xTVm7bhZdJ5xJDexyZ
-         xXgN0eylooOmmXzZgLcL3guvJpvgYmqcvvEIXtJ5/XrnlaVPwLnJcGbsWO+QqgpEkAuA
-         pQo5ooraLlIn1WU2CXYj0XHFmR5TR8dkdmMkNCgRqn1/iAyJ1e7pPBZTYU/6WH/ZNpfn
-         Uk3w==
-X-Gm-Message-State: AOAM533d7raiS349s8PSHx3TM8ZB1ZIWU3Lt8O+XhfaqCRKuhP6wcBaP
-	P7ex3KT25CMGu8O89YANCGANlAwbTIEiD3iiAUQ=
-X-Google-Smtp-Source: ABdhPJw/pmGvt0TyY+3Ez1HDgVugEnCSyxQw5iCzRpbFNSAogQDGpr+0L4SsYabb/bSWDZFSErvPcw==
-X-Received: by 2002:a2e:a36c:0:b0:246:4680:e55a with SMTP id i12-20020a2ea36c000000b002464680e55amr4926621ljn.451.1648145561829;
-        Thu, 24 Mar 2022 11:12:41 -0700 (PDT)
-Received: from mail-lj1-f174.google.com (mail-lj1-f174.google.com. [209.85.208.174])
-        by smtp.gmail.com with ESMTPSA id a25-20020a05651c031900b0024924e63577sm418907ljp.139.2022.03.24.11.12.38
-        for <containers@lists.linux.dev>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 24 Mar 2022 11:12:39 -0700 (PDT)
-Received: by mail-lj1-f174.google.com with SMTP id bn33so7283094ljb.6
-        for <containers@lists.linux.dev>; Thu, 24 Mar 2022 11:12:38 -0700 (PDT)
-X-Received: by 2002:a2e:a5c4:0:b0:249:9ec3:f2b with SMTP id
- n4-20020a2ea5c4000000b002499ec30f2bmr4898966ljp.358.1648145558024; Thu, 24
- Mar 2022 11:12:38 -0700 (PDT)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 870C823BE
+	for <containers@lists.linux.dev>; Thu, 24 Mar 2022 22:10:59 +0000 (UTC)
+Received: from in01.mta.xmission.com ([166.70.13.51]:42026)
+	by out02.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.93)
+	(envelope-from <ebiederm@xmission.com>)
+	id 1nXVKf-004CrQ-Le; Thu, 24 Mar 2022 15:49:25 -0600
+Received: from ip68-227-174-4.om.om.cox.net ([68.227.174.4]:35370 helo=email.froward.int.ebiederm.org.xmission.com)
+	by in01.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.93)
+	(envelope-from <ebiederm@xmission.com>)
+	id 1nXVKe-009mjU-6j; Thu, 24 Mar 2022 15:49:25 -0600
+From: "Eric W. Biederman" <ebiederm@xmission.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Alexey Gladkov <legion@kernel.org>,  LKML
+ <linux-kernel@vger.kernel.org>,  Linux Containers
+ <containers@lists.linux.dev>,  Alexander Mikhalitsyn
+ <alexander.mikhalitsyn@virtuozzo.com>,  Andrew Morton
+ <akpm@linux-foundation.org>,  Christian Brauner
+ <christian.brauner@ubuntu.com>,  Daniel Walsh <dwalsh@redhat.com>,
+  Davidlohr Bueso <dbueso@suse.de>,  Kirill Tkhai <ktkhai@virtuozzo.com>,
+  Manfred Spraul <manfred@colorfullife.com>,  Serge Hallyn
+ <serge@hallyn.com>,  Varad Gautam <varad.gautam@suse.com>,  Vasily Averin
+ <vvs@virtuozzo.com>
+References: <cover.1644862280.git.legion@kernel.org>
+	<877d8kfmdp.fsf@email.froward.int.ebiederm.org>
+	<CAHk-=wgBB8iPd0W=MQWnQJukMAPAqgsC0QX2wwiSvcct9zu_RA@mail.gmail.com>
+Date: Thu, 24 Mar 2022 16:48:59 -0500
+In-Reply-To: <CAHk-=wgBB8iPd0W=MQWnQJukMAPAqgsC0QX2wwiSvcct9zu_RA@mail.gmail.com>
+	(Linus Torvalds's message of "Thu, 24 Mar 2022 11:12:21 -0700")
+Message-ID: <87czib9g38.fsf@email.froward.int.ebiederm.org>
+User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.1 (gnu/linux)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-References: <cover.1644862280.git.legion@kernel.org> <877d8kfmdp.fsf@email.froward.int.ebiederm.org>
-In-Reply-To: <877d8kfmdp.fsf@email.froward.int.ebiederm.org>
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Date: Thu, 24 Mar 2022 11:12:21 -0700
-X-Gmail-Original-Message-ID: <CAHk-=wgBB8iPd0W=MQWnQJukMAPAqgsC0QX2wwiSvcct9zu_RA@mail.gmail.com>
-Message-ID: <CAHk-=wgBB8iPd0W=MQWnQJukMAPAqgsC0QX2wwiSvcct9zu_RA@mail.gmail.com>
+Content-Type: text/plain
+X-XM-SPF: eid=1nXVKe-009mjU-6j;;;mid=<87czib9g38.fsf@email.froward.int.ebiederm.org>;;;hst=in01.mta.xmission.com;;;ip=68.227.174.4;;;frm=ebiederm@xmission.com;;;spf=neutral
+X-XM-AID: U2FsdGVkX1/CzAR3xs870q902q+h8NSA1paBvYeu4wE=
+X-SA-Exim-Connect-IP: 68.227.174.4
+X-SA-Exim-Mail-From: ebiederm@xmission.com
+X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on sa05.xmission.com
+X-Spam-Level: ****
+X-Spam-Status: No, score=4.1 required=8.0 tests=ALL_TRUSTED,BAYES_50,
+	DCC_CHECK_NEGATIVE,T_TM2_M_HEADER_IN_MSG,XMSexyCombo_01,
+	XMSubMetaSxObfu_03,XMSubMetaSx_00,XM_Body_Dirty_Words
+	autolearn=disabled version=3.4.2
+X-Spam-Report: 
+	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
+	*  0.8 BAYES_50 BODY: Bayes spam probability is 40 to 60%
+	*      [score: 0.5000]
+	*  0.0 T_TM2_M_HEADER_IN_MSG BODY: No description available.
+	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
+	*      [sa05 1397; Body=1 Fuz1=1 Fuz2=1]
+	*  1.2 XMSubMetaSxObfu_03 Obfuscated Sexy Noun-People
+	*  1.0 XMSubMetaSx_00 1+ Sexy Words
+	*  1.0 XM_Body_Dirty_Words Contains a dirty word
+	*  1.0 XMSexyCombo_01 Sexy words in both body/subject
+X-Spam-DCC: XMission; sa05 1397; Body=1 Fuz1=1 Fuz2=1 
+X-Spam-Combo: ****;Linus Torvalds <torvalds@linux-foundation.org>
+X-Spam-Relay-Country: 
+X-Spam-Timing: total 769 ms - load_scoreonly_sql: 0.07 (0.0%),
+	signal_user_changed: 12 (1.6%), b_tie_ro: 10 (1.4%), parse: 1.54
+	(0.2%), extract_message_metadata: 20 (2.6%), get_uri_detail_list: 6
+	(0.7%), tests_pri_-1000: 26 (3.3%), tests_pri_-950: 1.24 (0.2%),
+	tests_pri_-900: 0.99 (0.1%), tests_pri_-90: 92 (12.0%), check_bayes:
+	91 (11.8%), b_tokenize: 17 (2.2%), b_tok_get_all: 13 (1.7%),
+	b_comp_prob: 3.8 (0.5%), b_tok_touch_all: 53 (6.9%), b_finish: 0.89
+	(0.1%), tests_pri_0: 597 (77.6%), check_dkim_signature: 1.25 (0.2%),
+	check_dkim_adsp: 4.1 (0.5%), poll_dns_idle: 1.26 (0.2%), tests_pri_10:
+	2.1 (0.3%), tests_pri_500: 13 (1.7%), rewrite_mail: 0.00 (0.0%)
 Subject: Re: [GIT PULL] ipc: Bind to the ipc namespace at open time.
-To: "Eric W. Biederman" <ebiederm@xmission.com>, Alexey Gladkov <legion@kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, 
-	Linux Containers <containers@lists.linux.dev>, 
-	Alexander Mikhalitsyn <alexander.mikhalitsyn@virtuozzo.com>, 
-	Andrew Morton <akpm@linux-foundation.org>, 
-	Christian Brauner <christian.brauner@ubuntu.com>, Daniel Walsh <dwalsh@redhat.com>, 
-	Davidlohr Bueso <dbueso@suse.de>, Kirill Tkhai <ktkhai@virtuozzo.com>, 
-	Manfred Spraul <manfred@colorfullife.com>, Serge Hallyn <serge@hallyn.com>, 
-	Varad Gautam <varad.gautam@suse.com>, Vasily Averin <vvs@virtuozzo.com>
-Content-Type: text/plain; charset="UTF-8"
+X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
+X-SA-Exim-Scanned: Yes (on in01.mta.xmission.com)
 
-On Wed, Mar 23, 2022 at 1:24 PM Eric W. Biederman <ebiederm@xmission.com> wrote:
+Linus Torvalds <torvalds@linux-foundation.org> writes:
+
+> On Wed, Mar 23, 2022 at 1:24 PM Eric W. Biederman <ebiederm@xmission.com> wrote:
+>>
+>> Please pull the per-namespace-ipc-sysctls-for-v5.18 tag from the git tree:
 >
-> Please pull the per-namespace-ipc-sysctls-for-v5.18 tag from the git tree:
+> Ugh.
+>
+> I pulled this. Then I stared at it for a long time.
+>
+> And then I decided that this is too ugly to live.
+>
+> I'm sorry. I think Alexey has probably spent a fair amount of time on
+> it, but I really think the sysctl code needs to be cleaned up way more
+> than this.
+>
+> The old code was horribly hacky too, but that setup_ipc_sysctls() (and
+> setup_mq_sysctls()) thing that copies the whole sysctls table, and
+> then walks it entry by entry to modify it, is just too ugly for words.
 
-Ugh.
+I am not convinced when it comes to the .data pointers it is too
+ugly to live.  The only realistic alternative is doing something
+with the offset to adjust the pointers to the per namespace values.
 
-I pulled this. Then I stared at it for a long time.
+Fundamentally the copy is needed because in the general case (which is
+present in the networking stack) we only show a subset of the sysctls in
+anything other than the initial namespace.  That is necessary as some
+sysctls have not been shown to be safe for unprivileged users to write.
 
-And then I decided that this is too ugly to live.
+So there does need to be a separate array of ctl_table entries per
+namespace, and the data pointers in those entries need to be adjusted to
+the per namespace values.
 
-I'm sorry. I think Alexey has probably spent a fair amount of time on
-it, but I really think the sysctl code needs to be cleaned up way more
-than this.
+> And then it hides things in .extra1, and because it does that it can't
+> use the normal "extra1 and extra2 contains the limits" so then at
+> write() time it copies it into a local one AGAIN only to set the
+> limits back so that it can call the normal routines again.
+>
+> Not ok.
 
-The old code was horribly hacky too, but that setup_ipc_sysctls() (and
-setup_mq_sysctls()) thing that copies the whole sysctls table, and
-then walks it entry by entry to modify it, is just too ugly for words.
+I agree.  That is a bit ugly, and I missed it when I was looking
+at the code.
 
-And then it hides things in .extra1, and because it does that it can't
-use the normal "extra1 and extra2 contains the limits" so then at
-write() time it copies it into a local one AGAIN only to set the
-limits back so that it can call the normal routines again.
+The mq_sysctl.c changes look reasonable to me.  There are no strange
+games being played with .extra1 or .extra2.  All I see happening
+in mq_sysctl.c is boiler plate to make things work.
 
-Not ok.
+Looking at ipc_sysctl.c I agree playing games with .extra1 and .extra2
+is ugly and error prone.  Worse I noticed when reading it through that
+proc_ipc_sem_dointvec passes sem_check_semmni current->nsproxy->ipc_ns
+instead of passing the computed ns value.  A bug but not a regression.
 
-Yes, yes, the old code did some similar things - to set the 'data'
-pointer. That was disgusting too. Don't get me wrong - the existing
-code was nasty too. But this took nasty code, and doubled down on it.
+I went through the code and we don't need to play games with .extra1
+to get the namespace value all we need to call container_of with
+the .data member.  That takes a little extra boiler plate especially
+for the checkpoint_restore case.
 
-I really think this is a fundamental problem, and needs a more
-fundamental fix than adding more and more of these kinds of nasty
-hacks.
+The checkpoint_restore sysctls arguably need to be done differently so
+that the permissions can be checked at open time instead of at write
+time.  That would eliminate the need to play games with foobar.
 
-And yes, that fundamental fix is almost certainly to pass in 'struct
-cred *' to all those sysctl helper functions.
+>
+> Anyway, I really think we must not make that sysctl code even uglier
+> than it is today, and I think we need to move towards a model that
+> actually makes sense. And that "pass in the right cred" is the only
+> sensible model I can see.
 
-Then, when you do the actual 'sysctl()' system calls, you pass in
-'current_cred()".
+I don't see how passing in struct cred does anything helpful.  The
+namespace can not be found in struct cred.
 
-And the /proc users would pass in file->f_cred.
+Now this set of changes is a setup to allow implementing .set_ownership
+and .permission methods so that we can allow the namespace root to write
+to sysctls it is safe for the namespace root to be able to write to.
+Even there I don't see how passing in a struct cred would help.
 
-And yes, that patch might be quite messy, because we have quite a lot
-of those random .proc_handler users.
+Given that there are no regressions I don't see it even being helpful
+to not merge this code.
 
-But *most* of them by far (at least in random code) use the standard
-proc_dointvec_minmax() and friends, and won't even notice.
+I did look and there are some cleanup pretty significant cleanup
+opportunities, by using container_of on .data, which avoids the need
+to stuff a namespace parameter in .extra1.
 
-And then the ones that are about namespace issues will have to
-continue to do the nasty "make a copy and update the data pointer",
-but *MAYBE* we could also introduce the notion of an "offset" to those
-proc_dointvec_minmax() things to help them out (and at least avoid the
-"make a copy" thing).
+There are also significant cleanup opportunities in implementing a
+.permission method that will allow the checkpoint_restart sysctls
+to perform all of their permission checks at open time, and not
+need any other special code.
 
-Anyway, I really think we must not make that sysctl code even uglier
-than it is today, and I think we need to move towards a model that
-actually makes sense. And that "pass in the right cred" is the only
-sensible model I can see.
+But all of these cleanups I see are moving forward from the current
+point so I don't see why we would not want to merge the code as is
+and then get the tested versions of my cleanups below.
 
-I haven't tried to create such a patch, and maybe Alexey already tried
-to do something like that and it turned out to be too ugly for words
-and that's why these nasty patches happened.
 
-But at least for now, I can't with a good conscience pull this.
 
-Sorry,
-                   Linus
+ipc/ipc_sysctl.c | 81 +++++++++++++++++++++++++-------------------------------
+ 1 file changed, 36 insertions(+), 45 deletions(-)
+
+diff --git a/ipc/ipc_sysctl.c b/ipc/ipc_sysctl.c
+index 15210ac47e9e..e2209d48db04 100644
+--- a/ipc/ipc_sysctl.c
++++ b/ipc/ipc_sysctl.c
+@@ -19,16 +19,11 @@
+ static int proc_ipc_dointvec_minmax_orphans(struct ctl_table *table, int write,
+ 		void *buffer, size_t *lenp, loff_t *ppos)
+ {
+-	struct ipc_namespace *ns = table->extra1;
+-	struct ctl_table ipc_table;
++	struct ipc_namespace *ns =
++		container_of(table->data, struct ipc_namespace, shm_rmid_forced);
+ 	int err;
+ 
+-	memcpy(&ipc_table, table, sizeof(ipc_table));
+-
+-	ipc_table.extra1 = SYSCTL_ZERO;
+-	ipc_table.extra2 = SYSCTL_ONE;
+-
+-	err = proc_dointvec_minmax(&ipc_table, write, buffer, lenp, ppos);
++	err = proc_dointvec_minmax(table, write, buffer, lenp, ppos);
+ 
+ 	if (err < 0)
+ 		return err;
+@@ -55,20 +50,15 @@ static int proc_ipc_auto_msgmni(struct ctl_table *table, int write,
+ static int proc_ipc_sem_dointvec(struct ctl_table *table, int write,
+ 	void *buffer, size_t *lenp, loff_t *ppos)
+ {
+-	struct ipc_namespace *ns = table->extra1;
+-	struct ctl_table ipc_table;
++	struct ipc_namespace *ns =
++		container_of(table->data, struct ipc_namespace, sem_ctls);
+ 	int ret, semmni;
+ 
+-	memcpy(&ipc_table, table, sizeof(ipc_table));
+-
+-	ipc_table.extra1 = NULL;
+-	ipc_table.extra2 = NULL;
+-
+ 	semmni = ns->sem_ctls[3];
+ 	ret = proc_dointvec(table, write, buffer, lenp, ppos);
+ 
+ 	if (!ret)
+-		ret = sem_check_semmni(current->nsproxy->ipc_ns);
++		ret = sem_check_semmni(ns);
+ 
+ 	/*
+ 	 * Reset the semmni value if an error happens.
+@@ -78,24 +68,6 @@ static int proc_ipc_sem_dointvec(struct ctl_table *table, int write,
+ 	return ret;
+ }
+ 
+-#ifdef CONFIG_CHECKPOINT_RESTORE
+-static int proc_ipc_dointvec_minmax_checkpoint_restore(struct ctl_table *table,
+-		int write, void *buffer, size_t *lenp, loff_t *ppos)
+-{
+-	struct ipc_namespace *ns = table->extra1;
+-	struct ctl_table ipc_table;
+-
+-	if (write && !checkpoint_restore_ns_capable(ns->user_ns))
+-		return -EPERM;
+-
+-	memcpy(&ipc_table, table, sizeof(ipc_table));
+-
+-	ipc_table.extra1 = SYSCTL_ZERO;
+-	ipc_table.extra2 = SYSCTL_INT_MAX;
+-
+-	return proc_dointvec_minmax(&ipc_table, write, buffer, lenp, ppos);
+-}
+-#endif
+ 
+ int ipc_mni = IPCMNI;
+ int ipc_mni_shift = IPCMNI_SHIFT;
+@@ -131,6 +103,8 @@ static struct ctl_table ipc_sysctls[] = {
+ 		.maxlen		= sizeof(init_ipc_ns.shm_rmid_forced),
+ 		.mode		= 0644,
+ 		.proc_handler	= proc_ipc_dointvec_minmax_orphans,
++		.extra1		= SYSCTL_ZERO,
++		.extra2		= SYSCTL_ONE,
+ 	},
+ 	{
+ 		.procname	= "msgmax",
+@@ -180,22 +154,28 @@ static struct ctl_table ipc_sysctls[] = {
+ 		.procname	= "sem_next_id",
+ 		.data		= &init_ipc_ns.ids[IPC_SEM_IDS].next_id,
+ 		.maxlen		= sizeof(init_ipc_ns.ids[IPC_SEM_IDS].next_id),
+-		.mode		= 0666,
+-		.proc_handler	= proc_ipc_dointvec_minmax_checkpoint_restore,
++		.mode		= 0444,
++		.proc_handler	= proc_dointvec_minmax,
++		.extra1		= SYSCTL_ZERO,
++		.extra2		= SYSCTL_INT_MAX,
+ 	},
+ 	{
+ 		.procname	= "msg_next_id",
+ 		.data		= &init_ipc_ns.ids[IPC_MSG_IDS].next_id,
+ 		.maxlen		= sizeof(init_ipc_ns.ids[IPC_MSG_IDS].next_id),
+-		.mode		= 0666,
+-		.proc_handler	= proc_ipc_dointvec_minmax_checkpoint_restore,
++		.mode		= 0444,
++		.proc_handler	= proc_dointvec_minmax,
++		.extra1		= SYSCTL_ZERO,
++		.extra2		= SYSCTL_INT_MAX,
+ 	},
+ 	{
+ 		.procname	= "shm_next_id",
+ 		.data		= &init_ipc_ns.ids[IPC_SHM_IDS].next_id,
+ 		.maxlen		= sizeof(init_ipc_ns.ids[IPC_SHM_IDS].next_id),
+-		.mode		= 0666,
+-		.proc_handler	= proc_ipc_dointvec_minmax_checkpoint_restore,
++		.mode		= 0444,
++		.proc_handler	= proc_dointvec_minmax,
++		.extra1		= SYSCTL_ZERO,
++		.extra2		= SYSCTL_INT_MAX,
+ 	},
+ #endif
+ 	{}
+@@ -211,8 +191,24 @@ static int set_is_seen(struct ctl_table_set *set)
+ 	return &current->nsproxy->ipc_ns->ipc_set == set;
+ }
+ 
++static int ipc_permissions(struct ctl_table_header *head, struct ctl_table *table)
++{
++	struct ipc_namespace *ns = current->nsproxy->ipc_ns;
++	int mode = table->mode;
++
++#ifdef CONFIG_CHECKPOINT_RESTORE
++	if (((table->data == &ns->ids[IPC_SEM_IDS].next_id) ||
++	     (table->data == &ns->ids[IPC_MSG_IDS].next_id) ||
++	     (table->data == &ns->ids[IPC_SHM_IDS].next_id)) &&
++	    checkpoint_restore_ns_capable(ns->user_ns))
++		mode = 0666;
++#endif
++	return mode;
++}
++
+ static struct ctl_table_root set_root = {
+ 	.lookup = set_lookup,
++	.permissions = ipc_permissions,
+ };
+ 
+ bool setup_ipc_sysctls(struct ipc_namespace *ns)
+@@ -237,7 +233,6 @@ bool setup_ipc_sysctls(struct ipc_namespace *ns)
+ 
+ 			} else if (tbl[i].data == &init_ipc_ns.shm_rmid_forced) {
+ 				tbl[i].data = &ns->shm_rmid_forced;
+-				tbl[i].extra1 = ns;
+ 
+ 			} else if (tbl[i].data == &init_ipc_ns.msg_ctlmax) {
+ 				tbl[i].data = &ns->msg_ctlmax;
+@@ -250,19 +245,15 @@ bool setup_ipc_sysctls(struct ipc_namespace *ns)
+ 
+ 			} else if (tbl[i].data == &init_ipc_ns.sem_ctls) {
+ 				tbl[i].data = &ns->sem_ctls;
+-				tbl[i].extra1 = ns;
+ #ifdef CONFIG_CHECKPOINT_RESTORE
+ 			} else if (tbl[i].data == &init_ipc_ns.ids[IPC_SEM_IDS].next_id) {
+ 				tbl[i].data = &ns->ids[IPC_SEM_IDS].next_id;
+-				tbl[i].extra1 = ns;
+ 
+ 			} else if (tbl[i].data == &init_ipc_ns.ids[IPC_MSG_IDS].next_id) {
+ 				tbl[i].data = &ns->ids[IPC_MSG_IDS].next_id;
+-				tbl[i].extra1 = ns;
+ 
+ 			} else if (tbl[i].data == &init_ipc_ns.ids[IPC_SHM_IDS].next_id) {
+ 				tbl[i].data = &ns->ids[IPC_SHM_IDS].next_id;
+-				tbl[i].extra1 = ns;
+ #endif
+ 			} else {
+ 				tbl[i].data = NULL;
+
+
+
+Eric
