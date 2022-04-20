@@ -1,50 +1,51 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F42231863
-	for <containers@lists.linux.dev>; Wed, 20 Apr 2022 14:07:05 +0000 (UTC)
-Received: from pps.filterd (m0098419.ppops.net [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 23KCoYIo016105;
-	Wed, 20 Apr 2022 14:06:46 GMT
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 73E2E1870
+	for <containers@lists.linux.dev>; Wed, 20 Apr 2022 14:07:08 +0000 (UTC)
+Received: from pps.filterd (m0098399.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 23KClnXW028819;
+	Wed, 20 Apr 2022 14:06:47 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
- : date : message-id : in-reply-to : references : content-transfer-encoding
- : mime-version; s=pp1; bh=xW5JLK089ysp/7UaPIawulZuhZkmobSrVeFQQQz6dJU=;
- b=E3OaPHYAOCGz0+BsKVZKlRmJcrRGdc3x8HCllZ8adpIq0U3duMmafPHgakIl/W4955Ec
- yPzXiExtIoR//loaorRVTuNcJAzaCkHFs3mGtsCNPi5phIb7EZZ5hfufzV2ksxs+Yx21
- XmPY9Z6ZGvZMVbO1FAjSvjz23fSXfED3LCySEPztOYJD9SFCBPl/ZyfDjqTqWVLgsfcO
- yTSeDtN4gTLA/AUp5U46N/p7mZT1gHRQf7ji8GiL6cTKHn6SbAJggqQFDTV1wvlIKWdC
- ANE25FYdf9tnBeBjdpQrcUYd7iDg3oGlzSoFO+utOWTnYCv6viCn5bh06XPP47AEoaZd GA== 
+ : date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding; s=pp1;
+ bh=hDODQfHxncKmdT1CPelnP7t68PNJDhfJLxmV0MuTmNU=;
+ b=EbcFdvFl+SKqAt7aBaNieLTJQH+JIYjSBrk1DvMvYa51kg/sSFrKlCRT/2n1l0iRyhVR
+ HArq9tLQuhy6dlCywgMeVZdSWcWniG4SSKeLW/S666Y3rJxVS3fckN9X58Ohu6zkP11h
+ zE1N/vtxumFvg3NrpDDbK/nsN94tDUPSplmPz28xH2fwVz3dqskIVcpo7nnJM2FPylJu
+ ZasNHOzHxCX0HJKLx4pYQNcyUJ9BQQB4q1layqOtFI8fBuZr2KtsNYa5o+HkZ3TOMZbV
+ wjhWW2Pj6iXXEzYsToSEJ80UGncbndzSH6OogMXFk7FsfGSpHKCCyU+TEEKMvFupOjSP 6A== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3fjjhf1nb7-1
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3fjdn3r60e-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Wed, 20 Apr 2022 14:06:47 +0000
+Received: from m0098399.ppops.net (m0098399.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 23KBvrac008463;
+	Wed, 20 Apr 2022 14:06:46 GMT
+Received: from ppma03dal.us.ibm.com (b.bd.3ea9.ip4.static.sl-reverse.com [169.62.189.11])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3fjdn3r5yw-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Wed, 20 Apr 2022 14:06:46 +0000
-Received: from m0098419.ppops.net (m0098419.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 23KDFTOm013466;
+Received: from pps.filterd (ppma03dal.us.ibm.com [127.0.0.1])
+	by ppma03dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 23KE34HY030562;
 	Wed, 20 Apr 2022 14:06:45 GMT
-Received: from ppma01wdc.us.ibm.com (fd.55.37a9.ip4.static.sl-reverse.com [169.55.85.253])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 3fjjhf1nae-1
+Received: from b01cxnp22035.gho.pok.ibm.com (b01cxnp22035.gho.pok.ibm.com [9.57.198.25])
+	by ppma03dal.us.ibm.com with ESMTP id 3ffnea3y4r-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Wed, 20 Apr 2022 14:06:45 +0000
-Received: from pps.filterd (ppma01wdc.us.ibm.com [127.0.0.1])
-	by ppma01wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 23KE1xfo023579;
-	Wed, 20 Apr 2022 14:06:44 GMT
-Received: from b01cxnp22034.gho.pok.ibm.com (b01cxnp22034.gho.pok.ibm.com [9.57.198.24])
-	by ppma01wdc.us.ibm.com with ESMTP id 3ffneacsm4-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 20 Apr 2022 14:06:44 +0000
 Received: from b01ledav005.gho.pok.ibm.com (b01ledav005.gho.pok.ibm.com [9.57.199.110])
-	by b01cxnp22034.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 23KE6hh860162500
+	by b01cxnp22035.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 23KE6i2B24641862
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Wed, 20 Apr 2022 14:06:43 GMT
+	Wed, 20 Apr 2022 14:06:44 GMT
 Received: from b01ledav005.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 5B2C6AE067;
-	Wed, 20 Apr 2022 14:06:43 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 569F4AE066;
+	Wed, 20 Apr 2022 14:06:44 +0000 (GMT)
 Received: from b01ledav005.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 32DD5AE064;
-	Wed, 20 Apr 2022 14:06:43 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 3A8FBAE062;
+	Wed, 20 Apr 2022 14:06:44 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by b01ledav005.gho.pok.ibm.com (Postfix) with ESMTP;
-	Wed, 20 Apr 2022 14:06:43 +0000 (GMT)
+	Wed, 20 Apr 2022 14:06:44 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
@@ -55,652 +56,126 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
         jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
         jmorris@namei.org, jpenumak@redhat.com,
-        Mehmet Kayaalp <mkayaalp@linux.vnet.ibm.com>,
         Stefan Berger <stefanb@linux.ibm.com>
-Subject: [PATCH v12 17/26] integrity/ima: Define ns_status for storing namespaced iint data
-Date: Wed, 20 Apr 2022 10:06:24 -0400
-Message-Id: <20220420140633.753772-18-stefanb@linux.ibm.com>
+Subject: [PATCH v12 24/26] ima: Limit number of policy rules in non-init_ima_ns
+Date: Wed, 20 Apr 2022 10:06:31 -0400
+Message-Id: <20220420140633.753772-25-stefanb@linux.ibm.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <20220420140633.753772-1-stefanb@linux.ibm.com>
 References: <20220420140633.753772-1-stefanb@linux.ibm.com>
-X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: _HJ7zf6sbN3Lc7Uhr4quKdXtZViRCUQj
-X-Proofpoint-GUID: 5gv1dt_2MNnHCopmq6HaqB-r2zgLhXx4
-Content-Transfer-Encoding: 8bit
-X-Proofpoint-UnRewURL: 0 URL was un-rewritten
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+X-TM-AS-GCONF: 00
+X-Proofpoint-ORIG-GUID: TKh4iT64ggF7UilfGPzTNnWL_VmLaDdl
+X-Proofpoint-GUID: j3Vd6hIQ6bu3FJGtST6TNGSkpfesxuxc
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.858,Hydra:6.0.486,FMLib:17.11.64.514
- definitions=2022-04-20_03,2022-04-20_01,2022-02-23_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 priorityscore=1501
- phishscore=0 mlxscore=0 impostorscore=0 suspectscore=0 clxscore=1015
- malwarescore=0 spamscore=0 mlxlogscore=999 lowpriorityscore=0 adultscore=0
- bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2202240000 definitions=main-2204200081
+ definitions=2022-04-20_04,2022-04-20_01,2022-02-23_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 adultscore=0 mlxscore=0
+ malwarescore=0 bulkscore=0 clxscore=1015 priorityscore=1501
+ impostorscore=0 mlxlogscore=999 phishscore=0 lowpriorityscore=0
+ spamscore=0 suspectscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2202240000 definitions=main-2204200084
 
-From: Mehmet Kayaalp <mkayaalp@linux.vnet.ibm.com>
+Limit the number of policy rules a user can set in non-init_ima_ns to a
+hardcoded 1024 rules. This allows to restrict the amount of kernel memory
+used for IMA's policy since now any user can create an IMA namespace and
+could try to waste kernel memory.
 
-Add an rbtree to the IMA namespace structure that stores a namespaced
-version of iint->flags in ns_status struct. Similar to the
-integrity_iint_cache, both the iint and ns_status are looked up using the
-inode pointer value. The lookup, allocate, and insertion code is also
-similar.
+Ignore added rules if the user attempts to exceed this limit by setting
+too many additional rules.
 
-In subsequent patches we will have to find all ns_status entries an iint
-is being used in and reset flags there. To do this, connect a list of
-ns_status to the integrity_iint_cache and provide a reader-writer
-lock in the integrity_iint_cache to lock access to the list.
+Switch the accounting for the memory allocated for IMA policy rules to
+GFP_KERNEL_ACCOUNT so that cgroups kernel memory accounting can take
+effect. This switch has no effect on the init_ima_ns.
 
-To simplify the code in the non-namespaces case embed an ns_status in
-the integrity_iint_cache and have it linked into the iint's ns_status list
-when calling ima_get_ns_status().
-
-When getting an ns_status first try to find it in the RB tree. Here we can
-run into the situation that an ns_status found in the RB tree has a
-different iint associated with it for the same inode. In this case we need
-to delete the ns_status structure and get a new one.
-
-There are two cases for freeing:
-- when the iint is freed (inode deletion): Walk the list of ns_status
-  entries and disconnect each ns_status from the list; take the
-  writer lock to protect access to the list; also, take the item off the
-  per-namespace rbtree
-
-- when the ima_namepace is freed: While walking the rbtree, remove the
-  ns_status from the list while also holding the iint's writer lock;
-  to be able to grab the lock we have to have a pointer to the iint on
-  the ns_status structure.
-
-To avoid an ns_status to be freed by the two cases concurrently, prevent
-these two cases to run concurrently. Therefore, groups of threads
-deleting either inodes or ima_namespaces are allowed to run concurrently
-but no two threads may run and one delete an inode and the other an
-ima_namespace.
-
-Signed-off-by: Mehmet Kayaalp <mkayaalp@linux.vnet.ibm.com>
 Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
 
 ---
 
-Design discussion:
- - https://lore.kernel.org/linux-integrity/20220201203735.164593-1-stefanb@linux.ibm.com/T/#m500a621141c52dc0e34cf11ba37b4032a2de84fd
-
-v9:
- - Move ns_status into integrity.h and embedded it into integrity_iint_cache
-   for the non-CONFIG_IMA_NS case
+v11:
+  - roll back changes to auditing too-many-rules since not auditing from
+    IMA namespaces
 ---
- include/linux/ima.h                      |   7 +
- security/integrity/iint.c                |   7 +
- security/integrity/ima/Makefile          |   2 +-
- security/integrity/ima/ima.h             |  18 ++
- security/integrity/ima/ima_init_ima_ns.c |   5 +
- security/integrity/ima/ima_ns.c          |   1 +
- security/integrity/ima/ima_ns_status.c   | 344 +++++++++++++++++++++++
- security/integrity/integrity.h           |  35 ++-
- 8 files changed, 417 insertions(+), 2 deletions(-)
- create mode 100644 security/integrity/ima/ima_ns_status.c
+ security/integrity/ima/ima_policy.c | 23 ++++++++++++++++++-----
+ 1 file changed, 18 insertions(+), 5 deletions(-)
 
-diff --git a/include/linux/ima.h b/include/linux/ima.h
-index 76d19995ab89..b9301e2aaa8b 100644
---- a/include/linux/ima.h
-+++ b/include/linux/ima.h
-@@ -225,12 +225,19 @@ static inline bool ima_appraise_signature(enum kernel_read_file_id func)
+diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
+index 4f8c50ddb777..a0bd8ffca88e 100644
+--- a/security/integrity/ima/ima_policy.c
++++ b/security/integrity/ima/ima_policy.c
+@@ -312,7 +312,8 @@ static struct ima_rule_opt_list *ima_alloc_rule_opt_list(const substring_t *src)
+ 		return ERR_PTR(-EINVAL);
+ 	}
  
- void free_ima_ns(struct user_namespace *ns);
+-	opt_list = kzalloc(struct_size(opt_list, items, count), GFP_KERNEL);
++	opt_list = kzalloc(struct_size(opt_list, items, count),
++			   GFP_KERNEL_ACCOUNT);
+ 	if (!opt_list) {
+ 		kfree(src_copy);
+ 		return ERR_PTR(-ENOMEM);
+@@ -386,7 +387,7 @@ static struct ima_rule_entry *ima_lsm_copy_rule(struct ima_namespace *ns,
+ 	 * Immutable elements are copied over as pointers and data; only
+ 	 * lsm rules can change
+ 	 */
+-	nentry = kmemdup(entry, sizeof(*nentry), GFP_KERNEL);
++	nentry = kmemdup(entry, sizeof(*nentry), GFP_KERNEL_ACCOUNT);
+ 	if (!nentry)
+ 		return NULL;
  
-+void ima_free_ns_status_list(struct list_head *head, rwlock_t *ns_list_lock);
-+
- #else
+@@ -842,7 +843,7 @@ static void add_rules(struct ima_namespace *ns,
  
- static inline void free_ima_ns(struct user_namespace *user_ns)
+ 		if (policy_rule & IMA_CUSTOM_POLICY) {
+ 			entry = kmemdup(&entries[i], sizeof(*entry),
+-					GFP_KERNEL);
++					GFP_KERNEL_ACCOUNT);
+ 			if (!entry)
+ 				continue;
+ 
+@@ -879,7 +880,7 @@ static int __init ima_init_arch_policy(struct ima_namespace *ns)
+ 
+ 	ns->arch_policy_entry = kcalloc(arch_entries + 1,
+ 					sizeof(*ns->arch_policy_entry),
+-					GFP_KERNEL);
++					GFP_KERNEL_ACCOUNT);
+ 	if (!ns->arch_policy_entry)
+ 		return 0;
+ 
+@@ -991,8 +992,20 @@ void __init ima_init_policy(struct ima_namespace *ns)
+ /* Make sure we have a valid policy, at least containing some rules. */
+ int ima_check_policy(struct ima_namespace *ns)
  {
++	struct ima_rule_entry *entry;
++	size_t len1 = 0;
++	size_t len2 = 0;
++
+ 	if (list_empty(&ns->ima_temp_rules))
+ 		return -EINVAL;
++	if (ns != &init_ima_ns) {
++		list_for_each_entry(entry, &ns->ima_temp_rules, list)
++			len1++;
++		list_for_each_entry(entry, &ns->ima_policy_rules, list)
++			len2++;
++		if (len1 + len2 > 1024)
++			return -ENOSPC;
++	}
+ 	return 0;
  }
  
-+static inline void ima_free_ns_status_list(struct list_head *head,
-+					   rwlock_t *ns_list_lock)
-+{
-+}
-+
- #endif /* CONFIG_IMA_NS */
+@@ -1864,7 +1877,7 @@ ssize_t ima_parse_add_rule(struct ima_namespace *ns, char *rule)
+ 	if (*p == '#' || *p == '\0')
+ 		return len;
  
- #endif /* _LINUX_IMA_H */
-diff --git a/security/integrity/iint.c b/security/integrity/iint.c
-index 8638976f7990..371cbceaf479 100644
---- a/security/integrity/iint.c
-+++ b/security/integrity/iint.c
-@@ -19,6 +19,7 @@
- #include <linux/uaccess.h>
- #include <linux/security.h>
- #include <linux/lsm_hooks.h>
-+#include <linux/ima.h>
- #include "integrity.h"
- 
- static struct rb_root integrity_iint_tree = RB_ROOT;
-@@ -82,6 +83,8 @@ static void iint_free(struct integrity_iint_cache *iint)
- 	iint->ima_creds_status = INTEGRITY_UNKNOWN;
- 	iint->evm_status = INTEGRITY_UNKNOWN;
- 	iint->measured_pcrs = 0;
-+	rwlock_init(&iint->ns_list_lock);
-+	INIT_LIST_HEAD(&iint->ns_list);
- 	kmem_cache_free(iint_cache, iint);
- }
- 
-@@ -155,6 +158,8 @@ void integrity_inode_free(struct inode *inode)
- 	rb_erase(&iint->rb_node, &integrity_iint_tree);
- 	write_unlock(&integrity_iint_lock);
- 
-+	ima_free_ns_status_list(&iint->ns_list, &iint->ns_list_lock);
-+
- 	iint_free(iint);
- }
- 
-@@ -170,6 +175,8 @@ static void init_once(void *foo)
- 	iint->ima_creds_status = INTEGRITY_UNKNOWN;
- 	iint->evm_status = INTEGRITY_UNKNOWN;
- 	mutex_init(&iint->mutex);
-+	rwlock_init(&iint->ns_list_lock);
-+	INIT_LIST_HEAD(&iint->ns_list);
- }
- 
- static int __init integrity_iintcache_init(void)
-diff --git a/security/integrity/ima/Makefile b/security/integrity/ima/Makefile
-index b86a35fbed60..edfb0c30a063 100644
---- a/security/integrity/ima/Makefile
-+++ b/security/integrity/ima/Makefile
-@@ -14,7 +14,7 @@ ima-$(CONFIG_HAVE_IMA_KEXEC) += ima_kexec.o
- ima-$(CONFIG_IMA_BLACKLIST_KEYRING) += ima_mok.o
- ima-$(CONFIG_IMA_MEASURE_ASYMMETRIC_KEYS) += ima_asymmetric_keys.o
- ima-$(CONFIG_IMA_QUEUE_EARLY_BOOT_KEYS) += ima_queue_keys.o
--ima-$(CONFIG_IMA_NS) += ima_ns.o
-+ima-$(CONFIG_IMA_NS) += ima_ns.o ima_ns_status.o
- 
- ifeq ($(CONFIG_EFI),y)
- ima-$(CONFIG_IMA_SECURE_AND_OR_TRUSTED_BOOT) += ima_efi.o
-diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
-index 3e77738aec2c..7a08fdce7ebc 100644
---- a/security/integrity/ima/ima.h
-+++ b/security/integrity/ima/ima.h
-@@ -127,6 +127,10 @@ struct ima_namespace {
- /* Bit numbers for above flags; use BIT() to get flag */
- #define IMA_NS_LSM_UPDATE_RULES		0
- 
-+	struct rb_root ns_status_tree;
-+	rwlock_t ns_tree_lock;
-+	struct kmem_cache *ns_status_cache;
-+
- 	/* policy rules */
- 	struct list_head ima_default_rules; /* Kconfig, builtin & arch rules */
- 	struct list_head ima_policy_rules;  /* arch & custom rules */
-@@ -511,6 +515,12 @@ static inline struct ima_namespace
- 
- struct ima_namespace *create_ima_ns(void);
- 
-+struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
-+				    struct inode *inode,
-+				    struct integrity_iint_cache *iint);
-+
-+void ima_free_ns_status_tree(struct ima_namespace *ns);
-+
- #else
- 
- static inline struct ima_namespace *create_ima_ns(void)
-@@ -519,6 +529,14 @@ static inline struct ima_namespace *create_ima_ns(void)
- 	return ERR_PTR(-EFAULT);
- }
- 
-+static inline struct ns_status *ima_get_ns_status
-+					(struct ima_namespace *ns,
-+					 struct inode *inode,
-+					 struct integrity_iint_cache *iint)
-+{
-+	return NULL;
-+}
-+
- #endif /* CONFIG_IMA_NS */
- 
- #endif /* __LINUX_IMA_H */
-diff --git a/security/integrity/ima/ima_init_ima_ns.c b/security/integrity/ima/ima_init_ima_ns.c
-index b497062090cf..41e7db0c9749 100644
---- a/security/integrity/ima/ima_init_ima_ns.c
-+++ b/security/integrity/ima/ima_init_ima_ns.c
-@@ -12,6 +12,11 @@ int ima_init_namespace(struct ima_namespace *ns)
- {
- 	int ret;
- 
-+	ns->ns_status_tree = RB_ROOT;
-+	rwlock_init(&ns->ns_tree_lock);
-+	/* Use KMEM_CACHE for simplicity */
-+	ns->ns_status_cache = KMEM_CACHE(ns_status, SLAB_PANIC);
-+
- 	INIT_LIST_HEAD(&ns->ima_default_rules);
- 	INIT_LIST_HEAD(&ns->ima_policy_rules);
- 	INIT_LIST_HEAD(&ns->ima_temp_rules);
-diff --git a/security/integrity/ima/ima_ns.c b/security/integrity/ima/ima_ns.c
-index b3b81a1e313e..29af6fea2d74 100644
---- a/security/integrity/ima/ima_ns.c
-+++ b/security/integrity/ima/ima_ns.c
-@@ -29,6 +29,7 @@ static void destroy_ima_ns(struct ima_namespace *ns)
- 	unregister_blocking_lsm_notifier(&ns->ima_lsm_policy_notifier);
- 	kfree(ns->arch_policy_entry);
- 	ima_free_policy_rules(ns);
-+	ima_free_ns_status_tree(ns);
- }
- 
- void free_ima_ns(struct user_namespace *user_ns)
-diff --git a/security/integrity/ima/ima_ns_status.c b/security/integrity/ima/ima_ns_status.c
-new file mode 100644
-index 000000000000..9c753caad6ac
---- /dev/null
-+++ b/security/integrity/ima/ima_ns_status.c
-@@ -0,0 +1,344 @@
-+// SPDX-License-Identifier: GPL-2.0-only
-+/*
-+ * Copyright (C) 2016-2021 IBM Corporation
-+ * Author:
-+ *  Yuqiong Sun <suny@us.ibm.com>
-+ *  Stefan Berger <stefanb@linux.vnet.ibm.com>
-+ */
-+
-+#include <linux/user_namespace.h>
-+#include <linux/ima.h>
-+
-+#include "ima.h"
-+
-+/*
-+ * An ns_status must be on a per-namespace rbtree and on a per-iint list.
-+ *
-+ * Locking order for ns_status:
-+ * 1) ns->ns_tree_lock  : Lock the rbtree
-+ * 2) iint->ns_list_lock: Lock the list
-+ *
-+ * An ns_status can be freed either by walking the rbtree (namespace deletion)
-+ * or by walking the linked list of ns_status (inode/iint deletion). There are
-+ * two functions that implement each one of the cases. To avoid concurrent
-+ * freeing of the same ns_status, the two freeing paths cannot be run
-+ * concurrently but each path can be run by multiple threads since no two
-+ * threads will free the same inode/iint and no two threads will free the same
-+ * namespace. Grouping threads like this ensures that:
-+ * - while walking the rbtree: all ns_status will be on their list and the iint
-+ *                             will still exist
-+ * - while walking the list:   all ns_status will be on their rbtree
-+ */
-+enum lk_group {
-+	GRP_NS_STATUS_LIST = 0,
-+	GRP_NS_STATUS_TREE
-+};
-+
-+static atomic_t lg_ctr[2] = {
-+	ATOMIC_INIT(0),
-+	ATOMIC_INIT(0)
-+};
-+
-+static DEFINE_SPINLOCK(lg_ctr_lock);
-+
-+static struct wait_queue_head lg_wq[2] = {
-+	__WAIT_QUEUE_HEAD_INITIALIZER(lg_wq[0]),
-+	__WAIT_QUEUE_HEAD_INITIALIZER(lg_wq[1])
-+};
-+
-+static atomic_t ns_list_waiters = ATOMIC_INIT(0);
-+
-+/*
-+ * Any number of concurrent threads may free ns_status's in either one of the
-+ * groups but the groups must not run concurrently. The GRP_NS_STATUS_TREE
-+ * group yields to waiters in the GRP_NS_STATUS_LIST group since namespace
-+ * deletion has more time.
-+ */
-+static void lock_group(enum lk_group group)
-+{
-+	unsigned long flags;
-+	bool done = false;
-+	int announced = 0;
-+
-+	while (1) {
-+		spin_lock_irqsave(&lg_ctr_lock, flags);
-+
-+		switch (group) {
-+		case GRP_NS_STATUS_LIST:
-+			if (atomic_read(&lg_ctr[GRP_NS_STATUS_TREE]) == 0) {
-+				if (announced)
-+					atomic_dec(&ns_list_waiters);
-+				done = true;
-+				atomic_inc(&lg_ctr[GRP_NS_STATUS_LIST]);
-+			} else {
-+				/* rbtree being deleted; announce waiting */
-+				if (!announced) {
-+					atomic_inc(&ns_list_waiters);
-+					announced = 1;
-+				}
-+			}
-+			break;
-+		case GRP_NS_STATUS_TREE:
-+			if (atomic_read(&lg_ctr[GRP_NS_STATUS_LIST]) == 0 &&
-+			    atomic_read(&ns_list_waiters) == 0) {
-+				done = true;
-+				atomic_inc(&lg_ctr[GRP_NS_STATUS_TREE]);
-+			}
-+			break;
-+		}
-+
-+		spin_unlock_irqrestore(&lg_ctr_lock, flags);
-+
-+		if (done)
-+			break;
-+
-+		/* wait until opposite group is done */
-+		switch (group) {
-+		case GRP_NS_STATUS_LIST:
-+			wait_event_interruptible
-+			    (lg_wq[GRP_NS_STATUS_LIST],
-+			     atomic_read(&lg_ctr[GRP_NS_STATUS_TREE]) == 0);
-+			break;
-+		case GRP_NS_STATUS_TREE:
-+			wait_event_interruptible
-+			    (lg_wq[GRP_NS_STATUS_TREE],
-+			     atomic_read(&lg_ctr[GRP_NS_STATUS_LIST]) == 0 &&
-+			     atomic_read(&ns_list_waiters) == 0);
-+			break;
-+		}
-+	}
-+}
-+
-+static void unlock_group(enum lk_group group)
-+{
-+	switch (group) {
-+	case GRP_NS_STATUS_LIST:
-+		if (atomic_dec_and_test(&lg_ctr[GRP_NS_STATUS_LIST]))
-+			wake_up_interruptible_all(&lg_wq[GRP_NS_STATUS_TREE]);
-+		break;
-+	case GRP_NS_STATUS_TREE:
-+		if (atomic_dec_and_test(&lg_ctr[GRP_NS_STATUS_TREE]))
-+			wake_up_interruptible_all(&lg_wq[GRP_NS_STATUS_LIST]);
-+		break;
-+	}
-+}
-+
-+static void ns_status_free(struct ima_namespace *ns,
-+			   struct ns_status *ns_status)
-+{
-+	pr_debug("FREE ns_status: %p\n", ns_status);
-+
-+	kmem_cache_free(ns->ns_status_cache, ns_status);
-+}
-+
-+/*
-+ * ima_free_ns_status_tree - free all items on the ns_status_tree and take each
-+ *                           one off the list; yield to ns_list free'ers
-+ *
-+ * This function is called when an ima_namespace is freed. All entries in the
-+ * rbtree will be taken off their list and collected in a garbage collection
-+ * list and freed at the end. This allows to walk the rbtree again.
-+ */
-+void ima_free_ns_status_tree(struct ima_namespace *ns)
-+{
-+	struct ns_status *ns_status, *next;
-+	struct llist_node *node;
-+	LLIST_HEAD(garbage);
-+	unsigned int ctr;
-+	bool restart;
-+
-+	do {
-+		ctr = 0;
-+		restart = false;
-+
-+		lock_group(GRP_NS_STATUS_TREE);
-+		write_lock(&ns->ns_tree_lock);
-+
-+		rbtree_postorder_for_each_entry_safe(ns_status, next,
-+						     &ns->ns_status_tree,
-+						     rb_node) {
-+			write_lock(&ns_status->iint->ns_list_lock);
-+			if (!list_empty(&ns_status->ns_next)) {
-+				list_del_init(&ns_status->ns_next);
-+				llist_add(&ns_status->gc_llist, &garbage);
-+				ctr++;
-+			}
-+			write_unlock(&ns_status->iint->ns_list_lock);
-+
-+			/*
-+			 * After some progress yield to any waiting ns_list
-+			 * free'ers.
-+			 */
-+			if (atomic_read(&ns_list_waiters) > 0 && ctr >= 5) {
-+				restart = true;
-+				break;
-+			}
-+		}
-+
-+		write_unlock(&ns->ns_tree_lock);
-+		unlock_group(GRP_NS_STATUS_TREE);
-+	} while (restart);
-+
-+	node = llist_del_all(&garbage);
-+	llist_for_each_entry_safe(ns_status, next, node, gc_llist)
-+		ns_status_free(ns, ns_status);
-+
-+	kmem_cache_destroy(ns->ns_status_cache);
-+}
-+
-+/*
-+ * ima_free_ns_status_list: free the list of ns_status items and take
-+ *                          each one off its namespace rbtree
-+ */
-+void ima_free_ns_status_list(struct list_head *head, rwlock_t *ns_list_lock)
-+{
-+	struct ns_status *ns_status;
-+
-+	lock_group(GRP_NS_STATUS_LIST);
-+
-+	while (1) {
-+		write_lock(ns_list_lock);
-+		ns_status = list_first_entry_or_null(head, struct ns_status,
-+						     ns_next);
-+		if (ns_status)
-+			list_del_init(&ns_status->ns_next);
-+		write_unlock(ns_list_lock);
-+
-+		if (!ns_status)
-+			break;
-+
-+		write_lock(&ns_status->ns->ns_tree_lock);
-+
-+		rb_erase(&ns_status->rb_node, &ns_status->ns->ns_status_tree);
-+		RB_CLEAR_NODE(&ns_status->rb_node);
-+
-+		write_unlock(&ns_status->ns->ns_tree_lock);
-+
-+		ns_status_free(ns_status->ns, ns_status);
-+	}
-+
-+	unlock_group(GRP_NS_STATUS_LIST);
-+}
-+
-+/*
-+ * ns_status_find - return the ns_status associated with an inode;
-+ *                  caller must hold lock for tree
-+ */
-+static struct ns_status *ns_status_find(struct ima_namespace *ns,
-+					struct inode *inode)
-+{
-+	struct ns_status *ns_status;
-+	struct rb_node *n = ns->ns_status_tree.rb_node;
-+
-+	while (n) {
-+		ns_status = rb_entry(n, struct ns_status, rb_node);
-+
-+		if (inode < ns_status->inode)
-+			n = n->rb_left;
-+		else if (inode > ns_status->inode)
-+			n = n->rb_right;
-+		else
-+			break;
-+	}
-+	if (!n)
-+		return NULL;
-+
-+	return ns_status;
-+}
-+
-+static void insert_ns_status(struct ima_namespace *ns, struct inode *inode,
-+			     struct ns_status *ns_status)
-+{
-+	struct rb_node **p;
-+	struct rb_node *node, *parent = NULL;
-+	struct ns_status *test_status;
-+
-+	p = &ns->ns_status_tree.rb_node;
-+	while (*p) {
-+		parent = *p;
-+		test_status = rb_entry(parent, struct ns_status, rb_node);
-+		if (inode < test_status->inode)
-+			p = &(*p)->rb_left;
-+		else
-+			p = &(*p)->rb_right;
-+	}
-+	node = &ns_status->rb_node;
-+	rb_link_node(node, parent, p);
-+	rb_insert_color(node, &ns->ns_status_tree);
-+}
-+
-+static void ns_status_unlink(struct ima_namespace *ns,
-+			     struct ns_status *ns_status)
-+{
-+	write_lock(&ns_status->iint->ns_list_lock);
-+	if (!list_empty(&ns_status->ns_next))
-+		list_del_init(&ns_status->ns_next);
-+	write_unlock(&ns_status->iint->ns_list_lock);
-+
-+	rb_erase(&ns_status->rb_node, &ns->ns_status_tree);
-+	RB_CLEAR_NODE(&ns_status->rb_node);
-+}
-+
-+struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
-+				    struct inode *inode,
-+				    struct integrity_iint_cache *iint)
-+{
-+	struct ns_status *ns_status;
-+	bool get_new = true;
-+
-+	/*
-+	 * Prevent finding the status via the list (inode/iint deletion) since
-+	 * we may free it.
-+	 */
-+	lock_group(GRP_NS_STATUS_TREE);
-+
-+	write_lock(&ns->ns_tree_lock);
-+
-+	ns_status = ns_status_find(ns, inode);
-+	if (ns_status) {
-+		if (unlikely(ns_status->iint != iint)) {
-+			/* Same inode but stale iint: free it and get new */
-+			ns_status_unlink(ns, ns_status);
-+			ns_status_free(ns, ns_status);
-+		} else if (inode->i_ino == ns_status->i_ino &&
-+			   inode->i_generation == ns_status->i_generation) {
-+			goto unlock;
-+		} else {
-+			/* Reuse of ns_status is possible but need reset */
-+			ns_status_reset(ns_status);
-+			get_new = false;
-+		}
-+	}
-+
-+	if (get_new) {
-+		ns_status = kmem_cache_alloc(ns->ns_status_cache, GFP_NOFS);
-+		if (!ns_status) {
-+			ns_status = ERR_PTR(-ENOMEM);
-+			goto unlock;
-+		}
-+
-+		pr_debug("NEW  ns_status: %p\n", ns_status);
-+
-+		ns_status_init(ns_status);
-+		insert_ns_status(ns, inode, ns_status);
-+	}
-+
-+	ns_status->iint = iint;
-+	ns_status->inode = inode;
-+	ns_status->ns = ns;
-+	ns_status->i_ino = inode->i_ino;
-+	ns_status->i_generation = inode->i_generation;
-+
-+	/* make visible on list */
-+	write_lock(&iint->ns_list_lock);
-+	if (list_empty(&ns_status->ns_next))
-+		list_add_tail(&ns_status->ns_next, &iint->ns_list);
-+	write_unlock(&iint->ns_list_lock);
-+
-+unlock:
-+	write_unlock(&ns->ns_tree_lock);
-+
-+	unlock_group(GRP_NS_STATUS_TREE);
-+
-+	return ns_status;
-+}
-diff --git a/security/integrity/integrity.h b/security/integrity/integrity.h
-index 3510e413ea17..ae0da8f1ba7e 100644
---- a/security/integrity/integrity.h
-+++ b/security/integrity/integrity.h
-@@ -132,13 +132,39 @@ struct signature_v2_hdr {
- 	uint8_t sig[];		/* signature payload */
- } __packed;
- 
-+/* integrity status of an inode in a namespace */
-+struct ns_status {
-+	struct list_head ns_next;
-+	unsigned long flags;		/* flags split with iint */
-+#ifdef CONFIG_IMA_NS
-+	struct rb_node rb_node;
-+	struct integrity_iint_cache *iint;
-+	struct inode *inode;
-+	struct ima_namespace *ns;
-+	ino_t i_ino;
-+	u32 i_generation;
-+	struct llist_node gc_llist;	/* used while freeing */
-+#endif
-+};
-+
-+static inline void ns_status_reset(struct ns_status *ns_status)
-+{
-+	ns_status->flags = 0;
-+}
-+
-+static inline void ns_status_init(struct ns_status *ns_status)
-+{
-+	INIT_LIST_HEAD(&ns_status->ns_next);
-+	ns_status_reset(ns_status);
-+}
-+
- /* integrity data associated with an inode */
- struct integrity_iint_cache {
- 	struct rb_node rb_node;	/* rooted in integrity_iint_tree */
- 	struct mutex mutex;	/* protects: version, flags, digest */
- 	struct inode *inode;	/* back pointer to inode in question */
- 	u64 version;		/* track inode changes */
--	unsigned long flags;
-+	unsigned long flags;	/* flags split with ns_status */
- 	unsigned long measured_pcrs;
- 	unsigned long atomic_flags;
- 	enum integrity_status ima_file_status:4;
-@@ -148,6 +174,13 @@ struct integrity_iint_cache {
- 	enum integrity_status ima_creds_status:4;
- 	enum integrity_status evm_status:4;
- 	struct ima_digest_data *ima_hash;
-+
-+	/*
-+	 * Lock and list of ns_status for files shared by different
-+	 * namespaces
-+	 */
-+	rwlock_t ns_list_lock;
-+	struct list_head ns_list;
- };
- 
- /* rbtree tree calls to lookup, insert, delete
+-	entry = kzalloc(sizeof(*entry), GFP_KERNEL);
++	entry = kzalloc(sizeof(*entry), GFP_KERNEL_ACCOUNT);
+ 	if (!entry) {
+ 		integrity_audit_msg(AUDIT_INTEGRITY_STATUS, NULL,
+ 				    NULL, op, "-ENOMEM", -ENOMEM, audit_info);
 -- 
 2.34.1
 
