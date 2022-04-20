@@ -1,51 +1,51 @@
-Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9520E1871
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 60D4A185B
 	for <containers@lists.linux.dev>; Wed, 20 Apr 2022 14:07:08 +0000 (UTC)
-Received: from pps.filterd (m0127361.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 23KBmOJq005891;
-	Wed, 20 Apr 2022 14:06:48 GMT
+Received: from pps.filterd (m0098413.ppops.net [127.0.0.1])
+	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 23KDgYE1024142;
+	Wed, 20 Apr 2022 14:06:45 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=pp1;
- bh=1bCmtM3PkF52IMaKSyyI1ZVU1tABDO70rpEWfzNwsCA=;
- b=pa4pEzWmckNhPel4G4/MwiHx6tD8KB4zR4uFDKgoxu5hl6sDHbjeJAT6hIB5e0XCXHe1
- Wl0ftHiD457K6BhfYRIYq1mOaVn2Fr9lY6JCvf5FnlcbFt4jBHaZ6hfJMzYzD0Smayxl
- TRU3CEyG9gp8wPbmGLAAlLTwK3o3eRDMvXIfol1iWHqqxvbbVGtiF7hY2Ww0M7jn7xBU
- BygMKhucXkEil3bPVqtU/vk37HLs28y/LE6mMDjfGyT+/19OLKpJZ9doUvAdqNgbHoB7
- LtIKqPiGlGoT8ES8Tuq5yeJRAdhb2kGR66GcwkCzYdAVYXttJMhOL9SWCMm8p0boPNr1 wg== 
+ bh=4yCkiarP9Pid2VOEjKjWjLbzpYWHHmp/k34md2hVtW8=;
+ b=tNbXiillNxeMRdGOG/ByO1iInN7mZSiK0mmShbLQ96pQp3rM4c9FWCUlmEY8kjdTbD+w
+ 2QBM2/D1n0sCYQBwxM8azPltDhm1mKMa7/qnbq5qG6ByhmekvlK7ls/aIprT2htJXVwp
+ MlNqzEOvsoWnuldT9Xk4ggEs37LDnZt9OYcsDKdhb+0wms1acKX2rlmknzrOm3KEwoTQ
+ BBkxXsHW74LS+oJaJDFCFwDyg7q1C1vns3ZhKkVkvKJcmrpescLz9ouHRuGLdLgFtr5g
+ Jz8djJ2pqDng3txvgv1jxo3mxJ4iLSidMOZpXp2ei5vAT42PnAc1/pxXTtOHiD/FGFmV Uw== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3fg7rg44b5-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 20 Apr 2022 14:06:47 +0000
-Received: from m0127361.ppops.net (m0127361.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 23KE02LF035895;
-	Wed, 20 Apr 2022 14:06:47 GMT
-Received: from ppma02wdc.us.ibm.com (aa.5b.37a9.ip4.static.sl-reverse.com [169.55.91.170])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3fg7rg44a7-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 20 Apr 2022 14:06:47 +0000
-Received: from pps.filterd (ppma02wdc.us.ibm.com [127.0.0.1])
-	by ppma02wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 23KE3H0f006676;
-	Wed, 20 Apr 2022 14:06:45 GMT
-Received: from b01cxnp22035.gho.pok.ibm.com (b01cxnp22035.gho.pok.ibm.com [9.57.198.25])
-	by ppma02wdc.us.ibm.com with ESMTP id 3fg2xw1aqh-1
+	by mx0b-001b2d01.pphosted.com with ESMTP id 3fhsx97hqh-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Wed, 20 Apr 2022 14:06:45 +0000
-Received: from b01ledav005.gho.pok.ibm.com (b01ledav005.gho.pok.ibm.com [9.57.199.110])
-	by b01cxnp22035.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 23KE6ilJ25821664
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+Received: from m0098413.ppops.net (m0098413.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 23KDi67u027086;
 	Wed, 20 Apr 2022 14:06:44 GMT
+Received: from ppma05wdc.us.ibm.com (1b.90.2fa9.ip4.static.sl-reverse.com [169.47.144.27])
+	by mx0b-001b2d01.pphosted.com with ESMTP id 3fhsx97hq8-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Wed, 20 Apr 2022 14:06:44 +0000
+Received: from pps.filterd (ppma05wdc.us.ibm.com [127.0.0.1])
+	by ppma05wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 23KE2xX2032389;
+	Wed, 20 Apr 2022 14:06:43 GMT
+Received: from b01cxnp23034.gho.pok.ibm.com (b01cxnp23034.gho.pok.ibm.com [9.57.198.29])
+	by ppma05wdc.us.ibm.com with ESMTP id 3ffne9vr6c-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Wed, 20 Apr 2022 14:06:43 +0000
+Received: from b01ledav005.gho.pok.ibm.com (b01ledav005.gho.pok.ibm.com [9.57.199.110])
+	by b01cxnp23034.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 23KE6glG27984194
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Wed, 20 Apr 2022 14:06:43 GMT
 Received: from b01ledav005.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 2BE88AE05F;
-	Wed, 20 Apr 2022 14:06:44 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id DA917AE05C;
+	Wed, 20 Apr 2022 14:06:42 +0000 (GMT)
 Received: from b01ledav005.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 22A36AE05C;
-	Wed, 20 Apr 2022 14:06:44 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id BA609AE062;
+	Wed, 20 Apr 2022 14:06:42 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by b01ledav005.gho.pok.ibm.com (Postfix) with ESMTP;
-	Wed, 20 Apr 2022 14:06:44 +0000 (GMT)
+	Wed, 20 Apr 2022 14:06:42 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
@@ -57,9 +57,9 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
         jmorris@namei.org, jpenumak@redhat.com,
         Stefan Berger <stefanb@linux.ibm.com>
-Subject: [PATCH v12 23/26] ima: Show owning user namespace's uid and gid when displaying policy
-Date: Wed, 20 Apr 2022 10:06:30 -0400
-Message-Id: <20220420140633.753772-24-stefanb@linux.ibm.com>
+Subject: [PATCH v12 14/26] ima: Implement hierarchical processing of file accesses
+Date: Wed, 20 Apr 2022 10:06:21 -0400
+Message-Id: <20220420140633.753772-15-stefanb@linux.ibm.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <20220420140633.753772-1-stefanb@linux.ibm.com>
 References: <20220420140633.753772-1-stefanb@linux.ibm.com>
@@ -71,105 +71,230 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: k2L8nAPpfMiCo9lqaxYXcSP74sT2p8-D
-X-Proofpoint-ORIG-GUID: z4jsHbBq0x9EDHIsUd1TuUrRfDKBn6e4
+X-Proofpoint-GUID: 2DU2PEb3-0QhD8HEbIrHVQEVAM2gbgDK
+X-Proofpoint-ORIG-GUID: 0AL5l02Ypkhh8jd1QTcs3SH7HE1uz4l8
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.858,Hydra:6.0.486,FMLib:17.11.64.514
- definitions=2022-04-20_04,2022-04-20_01,2022-02-23_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 priorityscore=1501
- impostorscore=0 malwarescore=0 phishscore=0 clxscore=1015 bulkscore=0
- spamscore=0 adultscore=0 mlxlogscore=999 mlxscore=0 suspectscore=0
- lowpriorityscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2202240000 definitions=main-2204200081
+ definitions=2022-04-20_03,2022-04-20_01,2022-02-23_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 adultscore=0 malwarescore=0
+ suspectscore=0 mlxlogscore=999 lowpriorityscore=0 spamscore=0 bulkscore=0
+ impostorscore=0 mlxscore=0 priorityscore=1501 phishscore=0 clxscore=1015
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2202240000
+ definitions=main-2204200081
 
-Show the uid and gid values relative to the user namespace that is
-currently active. The effect of this changes is that when one displays
-the policy from the user namespace that originally set the policy,
-the same uid and gid values are shown in the policy as those that were
-used when the policy was set.
+Implement hierarchical processing of file accesses in IMA namespaces by
+walking the list of user namespaces towards the root. This way file
+accesses can be audited in an IMA namespace and also be evaluated against
+the IMA policies of parent IMA namespaces.
+
+Pass the user_namespace into process_measurement since we will be walking
+the hierarchy of user_namespaces towards the init_user_ns and we can easily
+derive the ima_namespace from the user_namespace.
+
+__process_measurement() returns either 0 or -EACCES. For hierarchical
+processing remember the -EACCES returned by this function but continue
+to the parent user namespace. At the end either return 0 or -EACCES
+if an error occurred in one of the IMA namespaces.
+
+Currently the ima_ns pointer of the user_namespace is always NULL except
+at the init_user_ns, so test ima_ns for NULL pointer and skip the call to
+__process_measurement() if it is NULL. Once IMA namespacing is fully
+enabled, the pointer may still be NULL due to late initialization of the
+IMA namespace.
 
 Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
 Reviewed-by: Mimi Zohar <zohar@linux.ibm.com>
 
 ---
-v9:
-  - use seq_user_ns and from_k{g,u}id_munged()
----
- security/integrity/ima/ima_policy.c | 19 +++++++++++++------
- 1 file changed, 13 insertions(+), 6 deletions(-)
 
-diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
-index eb10d895923d..4f8c50ddb777 100644
---- a/security/integrity/ima/ima_policy.c
-+++ b/security/integrity/ima/ima_policy.c
-@@ -2018,6 +2018,7 @@ static void ima_policy_show_appraise_algos(struct seq_file *m,
+v10:
+  - Fixed compilation issue
+
+v9:
+  - Switch callers to pass user_namespace rather than ima_namespace with
+    potential NULL pointer
+  - Add default case to switch statement and warn if this happens
+  - Implement ima_ns_from_user_ns() in this patch now
+---
+ security/integrity/ima/ima.h      |  8 ++++
+ security/integrity/ima/ima_main.c | 76 +++++++++++++++++++++++--------
+ 2 files changed, 65 insertions(+), 19 deletions(-)
+
+diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+index 626a6ce2453c..2775a6d89e6d 100644
+--- a/security/integrity/ima/ima.h
++++ b/security/integrity/ima/ima.h
+@@ -497,4 +497,12 @@ struct user_namespace *ima_user_ns_from_file(const struct file *filp)
+ 	return file_inode(filp)->i_sb->s_user_ns;
+ }
  
- int ima_policy_show(struct seq_file *m, void *v)
++static inline struct ima_namespace
++*ima_ns_from_user_ns(struct user_namespace *user_ns)
++{
++	if (user_ns == &init_user_ns)
++		return &init_ima_ns;
++	return NULL;
++}
++
+ #endif /* __LINUX_IMA_H */
+diff --git a/security/integrity/ima/ima_main.c b/security/integrity/ima/ima_main.c
+index d44faf1c065d..17eb2971eb36 100644
+--- a/security/integrity/ima/ima_main.c
++++ b/security/integrity/ima/ima_main.c
+@@ -196,10 +196,10 @@ void ima_file_free(struct file *file)
+ 	ima_check_last_writer(iint, inode, file);
+ }
+ 
+-static int process_measurement(struct ima_namespace *ns,
+-			       struct file *file, const struct cred *cred,
+-			       u32 secid, char *buf, loff_t size, int mask,
+-			       enum ima_hooks func)
++static int __process_measurement(struct ima_namespace *ns,
++				 struct file *file, const struct cred *cred,
++				 u32 secid, char *buf, loff_t size, int mask,
++				 enum ima_hooks func)
  {
-+	struct user_namespace *user_ns = seq_user_ns(m);
- 	struct ima_rule_entry *entry = v;
- 	int i;
- 	char tbuf[64] = {0,};
-@@ -2103,7 +2104,8 @@ int ima_policy_show(struct seq_file *m, void *v)
+ 	struct inode *inode = file_inode(file);
+ 	struct integrity_iint_cache *iint = NULL;
+@@ -391,6 +391,41 @@ static int process_measurement(struct ima_namespace *ns,
+ 	return 0;
+ }
+ 
++static int process_measurement(struct user_namespace *user_ns,
++			       struct file *file, const struct cred *cred,
++			       u32 secid, char *buf, loff_t size, int mask,
++			       enum ima_hooks func)
++{
++	struct ima_namespace *ns;
++	int ret = 0;
++
++	while (user_ns) {
++		ns = ima_ns_from_user_ns(user_ns);
++		if (ns) {
++			int rc;
++
++			rc = __process_measurement(ns, file, cred, secid, buf,
++						   size, mask, func);
++			switch (rc) {
++			case 0:
++				break;
++			case -EACCES:
++				/* return this error at the end but continue */
++				ret = -EACCES;
++				break;
++			default:
++				/* should not happen */
++				ret = -EACCES;
++				WARN_ON_ONCE(true);
++			}
++		}
++
++		user_ns = user_ns->parent;
++	}
++
++	return ret;
++}
++
+ /**
+  * ima_file_mmap - based on policy, collect/store measurement.
+  * @file: pointer to the file to be measured (May be NULL)
+@@ -404,13 +439,14 @@ static int process_measurement(struct ima_namespace *ns,
+  */
+ int ima_file_mmap(struct file *file, unsigned long prot)
+ {
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct user_namespace *user_ns = current_user_ns();
+ 	u32 secid;
+ 
+ 	if (file && (prot & PROT_EXEC)) {
+ 		security_current_getsecid_subj(&secid);
+-		return process_measurement(ns, file, current_cred(), secid,
+-					   NULL, 0, MAY_EXEC, MMAP_CHECK);
++		return process_measurement(user_ns, file, current_cred(),
++					   secid, NULL, 0, MAY_EXEC,
++					   MMAP_CHECK);
  	}
  
- 	if (entry->flags & IMA_UID) {
--		snprintf(tbuf, sizeof(tbuf), "%d", __kuid_val(entry->uid));
-+		snprintf(tbuf, sizeof(tbuf),
-+			 "%d", from_kuid_munged(user_ns, entry->uid));
- 		if (entry->uid_op == &uid_gt)
- 			seq_printf(m, pt(Opt_uid_gt), tbuf);
- 		else if (entry->uid_op == &uid_lt)
-@@ -2114,7 +2116,8 @@ int ima_policy_show(struct seq_file *m, void *v)
- 	}
+ 	return 0;
+@@ -486,19 +522,19 @@ int ima_file_mprotect(struct vm_area_struct *vma, unsigned long prot)
+  */
+ int ima_bprm_check(struct linux_binprm *bprm)
+ {
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct user_namespace *user_ns = current_user_ns();
+ 	int ret;
+ 	u32 secid;
  
- 	if (entry->flags & IMA_EUID) {
--		snprintf(tbuf, sizeof(tbuf), "%d", __kuid_val(entry->uid));
-+		snprintf(tbuf, sizeof(tbuf),
-+			 "%d", from_kuid_munged(user_ns, entry->uid));
- 		if (entry->uid_op == &uid_gt)
- 			seq_printf(m, pt(Opt_euid_gt), tbuf);
- 		else if (entry->uid_op == &uid_lt)
-@@ -2125,7 +2128,8 @@ int ima_policy_show(struct seq_file *m, void *v)
- 	}
+ 	security_current_getsecid_subj(&secid);
+-	ret = process_measurement(ns, bprm->file, current_cred(), secid, NULL,
+-				  0, MAY_EXEC, BPRM_CHECK);
++	ret = process_measurement(user_ns, bprm->file, current_cred(), secid,
++				  NULL, 0, MAY_EXEC, BPRM_CHECK);
+ 	if (ret)
+ 		return ret;
  
- 	if (entry->flags & IMA_GID) {
--		snprintf(tbuf, sizeof(tbuf), "%d", __kgid_val(entry->gid));
-+		snprintf(tbuf, sizeof(tbuf),
-+			 "%d", from_kgid_munged(user_ns, entry->gid));
- 		if (entry->gid_op == &gid_gt)
- 			seq_printf(m, pt(Opt_gid_gt), tbuf);
- 		else if (entry->gid_op == &gid_lt)
-@@ -2136,7 +2140,8 @@ int ima_policy_show(struct seq_file *m, void *v)
- 	}
+ 	security_cred_getsecid(bprm->cred, &secid);
+-	return process_measurement(ns, bprm->file, bprm->cred, secid, NULL, 0,
+-				   MAY_EXEC, CREDS_CHECK);
++	return process_measurement(user_ns, bprm->file, bprm->cred, secid,
++				   NULL, 0, MAY_EXEC, CREDS_CHECK);
+ }
  
- 	if (entry->flags & IMA_EGID) {
--		snprintf(tbuf, sizeof(tbuf), "%d", __kgid_val(entry->gid));
-+		snprintf(tbuf, sizeof(tbuf),
-+			 "%d", from_kgid_munged(user_ns, entry->gid));
- 		if (entry->gid_op == &gid_gt)
- 			seq_printf(m, pt(Opt_egid_gt), tbuf);
- 		else if (entry->gid_op == &gid_lt)
-@@ -2147,7 +2152,8 @@ int ima_policy_show(struct seq_file *m, void *v)
- 	}
+ /**
+@@ -513,11 +549,12 @@ int ima_bprm_check(struct linux_binprm *bprm)
+  */
+ int ima_file_check(struct file *file, int mask)
+ {
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct user_namespace *user_ns = current_user_ns();
+ 	u32 secid;
  
- 	if (entry->flags & IMA_FOWNER) {
--		snprintf(tbuf, sizeof(tbuf), "%d", __kuid_val(entry->fowner));
-+		snprintf(tbuf, sizeof(tbuf),
-+			 "%d", from_kuid_munged(user_ns, entry->fowner));
- 		if (entry->fowner_op == &uid_gt)
- 			seq_printf(m, pt(Opt_fowner_gt), tbuf);
- 		else if (entry->fowner_op == &uid_lt)
-@@ -2158,7 +2164,8 @@ int ima_policy_show(struct seq_file *m, void *v)
- 	}
+ 	security_current_getsecid_subj(&secid);
+-	return process_measurement(ns, file, current_cred(), secid, NULL, 0,
++	return process_measurement(user_ns, file, current_cred(), secid,
++				   NULL, 0,
+ 				   mask & (MAY_READ | MAY_WRITE | MAY_EXEC |
+ 					   MAY_APPEND), FILE_CHECK);
+ }
+@@ -718,7 +755,7 @@ void ima_post_path_mknod(struct user_namespace *mnt_userns,
+ int ima_read_file(struct file *file, enum kernel_read_file_id read_id,
+ 		  bool contents)
+ {
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct user_namespace *user_ns = current_user_ns();
+ 	enum ima_hooks func;
+ 	u32 secid;
  
- 	if (entry->flags & IMA_FGROUP) {
--		snprintf(tbuf, sizeof(tbuf), "%d", __kgid_val(entry->fgroup));
-+		snprintf(tbuf, sizeof(tbuf),
-+			 "%d", from_kgid_munged(user_ns, entry->fgroup));
- 		if (entry->fgroup_op == &gid_gt)
- 			seq_printf(m, pt(Opt_fgroup_gt), tbuf);
- 		else if (entry->fgroup_op == &gid_lt)
+@@ -741,7 +778,7 @@ int ima_read_file(struct file *file, enum kernel_read_file_id read_id,
+ 	/* Read entire file for all partial reads. */
+ 	func = read_idmap[read_id] ?: FILE_CHECK;
+ 	security_current_getsecid_subj(&secid);
+-	return process_measurement(ns, file, current_cred(), secid, NULL,
++	return process_measurement(user_ns, file, current_cred(), secid, NULL,
+ 				   0, MAY_READ, func);
+ }
+ 
+@@ -769,7 +806,8 @@ const int read_idmap[READING_MAX_ID] = {
+ int ima_post_read_file(struct file *file, void *buf, loff_t size,
+ 		       enum kernel_read_file_id read_id)
+ {
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct user_namespace *user_ns = current_user_ns();
++	struct ima_namespace *ns = ima_ns_from_user_ns(user_ns);
+ 	enum ima_hooks func;
+ 	u32 secid;
+ 
+@@ -786,8 +824,8 @@ int ima_post_read_file(struct file *file, void *buf, loff_t size,
+ 
+ 	func = read_idmap[read_id] ?: FILE_CHECK;
+ 	security_current_getsecid_subj(&secid);
+-	return process_measurement(ns, file, current_cred(), secid, buf, size,
+-				   MAY_READ, func);
++	return process_measurement(user_ns, file, current_cred(), secid,
++				   buf, size, MAY_READ, func);
+ }
+ 
+ /**
 -- 
 2.34.1
 
