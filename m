@@ -1,51 +1,51 @@
 Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 73E2E1870
-	for <containers@lists.linux.dev>; Wed, 20 Apr 2022 14:07:08 +0000 (UTC)
-Received: from pps.filterd (m0098399.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 23KClnXW028819;
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DC3D6184A
+	for <containers@lists.linux.dev>; Wed, 20 Apr 2022 14:07:06 +0000 (UTC)
+Received: from pps.filterd (m0098394.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 23KDIt0a028367;
 	Wed, 20 Apr 2022 14:06:47 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=pp1;
- bh=hDODQfHxncKmdT1CPelnP7t68PNJDhfJLxmV0MuTmNU=;
- b=EbcFdvFl+SKqAt7aBaNieLTJQH+JIYjSBrk1DvMvYa51kg/sSFrKlCRT/2n1l0iRyhVR
- HArq9tLQuhy6dlCywgMeVZdSWcWniG4SSKeLW/S666Y3rJxVS3fckN9X58Ohu6zkP11h
- zE1N/vtxumFvg3NrpDDbK/nsN94tDUPSplmPz28xH2fwVz3dqskIVcpo7nnJM2FPylJu
- ZasNHOzHxCX0HJKLx4pYQNcyUJ9BQQB4q1layqOtFI8fBuZr2KtsNYa5o+HkZ3TOMZbV
- wjhWW2Pj6iXXEzYsToSEJ80UGncbndzSH6OogMXFk7FsfGSpHKCCyU+TEEKMvFupOjSP 6A== 
+ bh=pLLW/m2i4D2dXu+kZPSmFL14flfwwNQyHVHmRaeVpf8=;
+ b=AexI1TxvvRlT/ATD1XP0DKzuxhislKyxReiEthzOCw+FKALcyj61o32iebeLT4HPxPkg
+ fUqo2II2RQdZ8gfPrK8ebojJDjbdLs0bmOprDbqecDAEJvYNEpE5pus947Bjr019EgaA
+ nsBqDXGJJ+P2bRG3o4BfnyPZp4fLXnNAHlur0zQCjpNV+dqqkTvok9CSqOZUnBA8Pn/G
+ SoPfFoAtilbOXmMXOiISMYNHFgxOHQntFc6C9sDvR5L/aSjokdMoJJawTq8BqbN7ys2N
+ b9XWHIISiNcLJoZun/syGoJBV/9oV10uG2gk8haCocdL0sNqcf0TJPQfvXJHEPr9ENlO zw== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3fjdn3r60e-1
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3fg79y0mnf-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Wed, 20 Apr 2022 14:06:47 +0000
-Received: from m0098399.ppops.net (m0098399.ppops.net [127.0.0.1])
-	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 23KBvrac008463;
+Received: from m0098394.ppops.net (m0098394.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 23KE0NPD012904;
 	Wed, 20 Apr 2022 14:06:46 GMT
-Received: from ppma03dal.us.ibm.com (b.bd.3ea9.ip4.static.sl-reverse.com [169.62.189.11])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 3fjdn3r5yw-1
+Received: from ppma02wdc.us.ibm.com (aa.5b.37a9.ip4.static.sl-reverse.com [169.55.91.170])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 3fg79y0mmp-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Wed, 20 Apr 2022 14:06:46 +0000
-Received: from pps.filterd (ppma03dal.us.ibm.com [127.0.0.1])
-	by ppma03dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 23KE34HY030562;
-	Wed, 20 Apr 2022 14:06:45 GMT
-Received: from b01cxnp22035.gho.pok.ibm.com (b01cxnp22035.gho.pok.ibm.com [9.57.198.25])
-	by ppma03dal.us.ibm.com with ESMTP id 3ffnea3y4r-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 20 Apr 2022 14:06:45 +0000
-Received: from b01ledav005.gho.pok.ibm.com (b01ledav005.gho.pok.ibm.com [9.57.199.110])
-	by b01cxnp22035.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 23KE6i2B24641862
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+Received: from pps.filterd (ppma02wdc.us.ibm.com [127.0.0.1])
+	by ppma02wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 23KE3G7m006661;
 	Wed, 20 Apr 2022 14:06:44 GMT
+Received: from b01cxnp22034.gho.pok.ibm.com (b01cxnp22034.gho.pok.ibm.com [9.57.198.24])
+	by ppma02wdc.us.ibm.com with ESMTP id 3fg2xw1aqe-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Wed, 20 Apr 2022 14:06:44 +0000
+Received: from b01ledav005.gho.pok.ibm.com (b01ledav005.gho.pok.ibm.com [9.57.199.110])
+	by b01cxnp22034.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 23KE6hde61145560
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Wed, 20 Apr 2022 14:06:43 GMT
 Received: from b01ledav005.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 569F4AE066;
-	Wed, 20 Apr 2022 14:06:44 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id CBA79AE060;
+	Wed, 20 Apr 2022 14:06:43 +0000 (GMT)
 Received: from b01ledav005.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 3A8FBAE062;
-	Wed, 20 Apr 2022 14:06:44 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id AE862AE062;
+	Wed, 20 Apr 2022 14:06:43 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by b01ledav005.gho.pok.ibm.com (Postfix) with ESMTP;
-	Wed, 20 Apr 2022 14:06:44 +0000 (GMT)
+	Wed, 20 Apr 2022 14:06:43 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
@@ -57,9 +57,9 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
         jmorris@namei.org, jpenumak@redhat.com,
         Stefan Berger <stefanb@linux.ibm.com>
-Subject: [PATCH v12 24/26] ima: Limit number of policy rules in non-init_ima_ns
-Date: Wed, 20 Apr 2022 10:06:31 -0400
-Message-Id: <20220420140633.753772-25-stefanb@linux.ibm.com>
+Subject: [PATCH v12 20/26] ima: Remove unused iints from the integrity_iint_cache
+Date: Wed, 20 Apr 2022 10:06:27 -0400
+Message-Id: <20220420140633.753772-21-stefanb@linux.ibm.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <20220420140633.753772-1-stefanb@linux.ibm.com>
 References: <20220420140633.753772-1-stefanb@linux.ibm.com>
@@ -71,111 +71,168 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: TKh4iT64ggF7UilfGPzTNnWL_VmLaDdl
-X-Proofpoint-GUID: j3Vd6hIQ6bu3FJGtST6TNGSkpfesxuxc
+X-Proofpoint-GUID: M9O-KoHPKR_Cbcqjuabsm10l-SoiaT97
+X-Proofpoint-ORIG-GUID: ZdyeCiVCIwVyBg8xsjV85VA2M0Wci_nM
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.858,Hydra:6.0.486,FMLib:17.11.64.514
  definitions=2022-04-20_04,2022-04-20_01,2022-02-23_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 adultscore=0 mlxscore=0
- malwarescore=0 bulkscore=0 clxscore=1015 priorityscore=1501
- impostorscore=0 mlxlogscore=999 phishscore=0 lowpriorityscore=0
- spamscore=0 suspectscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2202240000 definitions=main-2204200084
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 mlxscore=0 clxscore=1015
+ priorityscore=1501 bulkscore=0 mlxlogscore=999 spamscore=0 phishscore=0
+ adultscore=0 impostorscore=0 lowpriorityscore=0 malwarescore=0
+ suspectscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2202240000 definitions=main-2204200081
 
-Limit the number of policy rules a user can set in non-init_ima_ns to a
-hardcoded 1024 rules. This allows to restrict the amount of kernel memory
-used for IMA's policy since now any user can create an IMA namespace and
-could try to waste kernel memory.
+When the rbtree of an IMA namespace is torn down, also remove those iints
+that are completely unused since only the torn-down namespace stored data
+about the associated inode in it.
 
-Ignore added rules if the user attempts to exceed this limit by setting
-too many additional rules.
+An iint is unused when the following two conditions are met:
 
-Switch the accounting for the memory allocated for IMA policy rules to
-GFP_KERNEL_ACCOUNT so that cgroups kernel memory accounting can take
-effect. This switch has no effect on the init_ima_ns.
+- Its ns_status list is empty which means that no IMA namespace
+  currently has auditing related state stored in it.
+
+- The iint's flags don't contain any of the flags IMA_MEASURE,
+  IMA_APPRAISE or IMA_HASH that the host would still store there.
+  It doesn't need an ns_status list for these but also only for
+  IMA_AUDIT.
+
+Introduce the #define IMA_IINT_FLAGS that represent the mask to test the
+iint->flags with in this case. This test provides the reason to keep the
+iint if any of these flags are set.
+
+The IMA_IINT_FLAGS mask will loose its flags as more flags are namespaced
+and can then be removed in the end and only the check for the empty list
+will remain.
+
+Process the list of garbage-collected ns_status outside the locking of
+the ns_status tree and related lock-group and free any iint that was
+previously found to be unused while walking the list. File accesses, that
+may have happened in the meantime, could have re-activated the iint and
+therefore pass along the test function to check whether the iint is still
+unused.
 
 Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
 
 ---
 
 v11:
-  - roll back changes to auditing too-many-rules since not auditing from
-    IMA namespaces
+  - change write_lock to read_lock in callback
 ---
- security/integrity/ima/ima_policy.c | 23 ++++++++++++++++++-----
- 1 file changed, 18 insertions(+), 5 deletions(-)
+ security/integrity/iint.c              |  4 +++
+ security/integrity/ima/ima.h           |  2 ++
+ security/integrity/ima/ima_ns_status.c | 43 +++++++++++++++++++++++++-
+ security/integrity/integrity.h         |  1 +
+ 4 files changed, 49 insertions(+), 1 deletion(-)
 
-diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
-index 4f8c50ddb777..a0bd8ffca88e 100644
---- a/security/integrity/ima/ima_policy.c
-+++ b/security/integrity/ima/ima_policy.c
-@@ -312,7 +312,8 @@ static struct ima_rule_opt_list *ima_alloc_rule_opt_list(const substring_t *src)
- 		return ERR_PTR(-EINVAL);
- 	}
+diff --git a/security/integrity/iint.c b/security/integrity/iint.c
+index 4580df0e716e..b0996bd0ee67 100644
+--- a/security/integrity/iint.c
++++ b/security/integrity/iint.c
+@@ -158,6 +158,10 @@ void integrity_inode_free(struct inode *inode, iint_removable_cb check)
+ 	write_lock(&integrity_iint_lock);
  
--	opt_list = kzalloc(struct_size(opt_list, items, count), GFP_KERNEL);
-+	opt_list = kzalloc(struct_size(opt_list, items, count),
-+			   GFP_KERNEL_ACCOUNT);
- 	if (!opt_list) {
- 		kfree(src_copy);
- 		return ERR_PTR(-ENOMEM);
-@@ -386,7 +387,7 @@ static struct ima_rule_entry *ima_lsm_copy_rule(struct ima_namespace *ns,
- 	 * Immutable elements are copied over as pointers and data; only
- 	 * lsm rules can change
- 	 */
--	nentry = kmemdup(entry, sizeof(*nentry), GFP_KERNEL);
-+	nentry = kmemdup(entry, sizeof(*nentry), GFP_KERNEL_ACCOUNT);
- 	if (!nentry)
- 		return NULL;
- 
-@@ -842,7 +843,7 @@ static void add_rules(struct ima_namespace *ns,
- 
- 		if (policy_rule & IMA_CUSTOM_POLICY) {
- 			entry = kmemdup(&entries[i], sizeof(*entry),
--					GFP_KERNEL);
-+					GFP_KERNEL_ACCOUNT);
- 			if (!entry)
- 				continue;
- 
-@@ -879,7 +880,7 @@ static int __init ima_init_arch_policy(struct ima_namespace *ns)
- 
- 	ns->arch_policy_entry = kcalloc(arch_entries + 1,
- 					sizeof(*ns->arch_policy_entry),
--					GFP_KERNEL);
-+					GFP_KERNEL_ACCOUNT);
- 	if (!ns->arch_policy_entry)
- 		return 0;
- 
-@@ -991,8 +992,20 @@ void __init ima_init_policy(struct ima_namespace *ns)
- /* Make sure we have a valid policy, at least containing some rules. */
- int ima_check_policy(struct ima_namespace *ns)
- {
-+	struct ima_rule_entry *entry;
-+	size_t len1 = 0;
-+	size_t len2 = 0;
-+
- 	if (list_empty(&ns->ima_temp_rules))
- 		return -EINVAL;
-+	if (ns != &init_ima_ns) {
-+		list_for_each_entry(entry, &ns->ima_temp_rules, list)
-+			len1++;
-+		list_for_each_entry(entry, &ns->ima_policy_rules, list)
-+			len2++;
-+		if (len1 + len2 > 1024)
-+			return -ENOSPC;
+ 	iint = __integrity_iint_find(inode);
++	if (!iint) {
++		write_unlock(&integrity_iint_lock);
++		return;
 +	}
- 	return 0;
+ 
+ 	if (check)
+ 		freeit = check(iint);
+diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+index b7e1f4b5eb30..cb48fc1d5b80 100644
+--- a/security/integrity/ima/ima.h
++++ b/security/integrity/ima/ima.h
+@@ -501,6 +501,8 @@ static inline int ima_filter_rule_match(u32 secid, u32 field, u32 op,
+ #define IMA_NS_STATUS_ACTIONS   IMA_AUDIT
+ #define IMA_NS_STATUS_FLAGS     (IMA_AUDIT | IMA_AUDITED)
+ 
++#define IMA_IINT_FLAGS		(IMA_MEASURE | IMA_APPRAISE | IMA_HASH)
++
+ static inline unsigned long iint_flags(struct integrity_iint_cache *iint,
+ 				       struct ns_status *ns_status)
+ {
+diff --git a/security/integrity/ima/ima_ns_status.c b/security/integrity/ima/ima_ns_status.c
+index 9c753caad6ac..32d75dbd9c21 100644
+--- a/security/integrity/ima/ima_ns_status.c
++++ b/security/integrity/ima/ima_ns_status.c
+@@ -131,6 +131,26 @@ static void ns_status_free(struct ima_namespace *ns,
+ 	kmem_cache_free(ns->ns_status_cache, ns_status);
  }
  
-@@ -1864,7 +1877,7 @@ ssize_t ima_parse_add_rule(struct ima_namespace *ns, char *rule)
- 	if (*p == '#' || *p == '\0')
- 		return len;
++/* Test whether an iint is unused due to empty ns_status list AND the
++ * not-yet namespaced flags are not set on it.
++ */
++static bool __iint_is_unused(struct integrity_iint_cache *iint)
++{
++	return list_empty(&iint->ns_list) &&
++		(iint_flags(iint, NULL) & IMA_IINT_FLAGS) == 0;
++}
++
++static bool iint_is_unused(struct integrity_iint_cache *iint)
++{
++	bool ret;
++
++	read_lock(&iint->ns_list_lock);
++	ret = __iint_is_unused(iint);
++	read_unlock(&iint->ns_list_lock);
++
++	return ret;
++}
++
+ /*
+  * ima_free_ns_status_tree - free all items on the ns_status_tree and take each
+  *                           one off the list; yield to ns_list free'ers
+@@ -161,6 +181,18 @@ void ima_free_ns_status_tree(struct ima_namespace *ns)
+ 			if (!list_empty(&ns_status->ns_next)) {
+ 				list_del_init(&ns_status->ns_next);
+ 				llist_add(&ns_status->gc_llist, &garbage);
++
++				/*
++				 * While ns_status->iint is guaranteed to be
++				 * there, check whether the iint is still in
++				 * use by anyone at this moment.
++				 */
++				if (__iint_is_unused(ns_status->iint)) {
++					ns_status->inode_to_remove =
++						ns_status->iint->inode;
++				} else {
++					ns_status->inode_to_remove = NULL;
++				}
+ 				ctr++;
+ 			}
+ 			write_unlock(&ns_status->iint->ns_list_lock);
+@@ -180,8 +212,17 @@ void ima_free_ns_status_tree(struct ima_namespace *ns)
+ 	} while (restart);
  
--	entry = kzalloc(sizeof(*entry), GFP_KERNEL);
-+	entry = kzalloc(sizeof(*entry), GFP_KERNEL_ACCOUNT);
- 	if (!entry) {
- 		integrity_audit_msg(AUDIT_INTEGRITY_STATUS, NULL,
- 				    NULL, op, "-ENOMEM", -ENOMEM, audit_info);
+ 	node = llist_del_all(&garbage);
+-	llist_for_each_entry_safe(ns_status, next, node, gc_llist)
++	llist_for_each_entry_safe(ns_status, next, node, gc_llist) {
++		if (ns_status->inode_to_remove) {
++			/*
++			 * Pass along the test function in case inode is in
++			 * use now.
++			 */
++			integrity_inode_free(ns_status->inode_to_remove,
++					     iint_is_unused);
++		}
+ 		ns_status_free(ns, ns_status);
++	}
+ 
+ 	kmem_cache_destroy(ns->ns_status_cache);
+ }
+diff --git a/security/integrity/integrity.h b/security/integrity/integrity.h
+index 33084ab2addd..b3460517344a 100644
+--- a/security/integrity/integrity.h
++++ b/security/integrity/integrity.h
+@@ -144,6 +144,7 @@ struct ns_status {
+ 	ino_t i_ino;
+ 	u32 i_generation;
+ 	struct llist_node gc_llist;	/* used while freeing */
++	void *inode_to_remove;		/* used while freeing */
+ #endif
+ };
+ 
 -- 
 2.34.1
 
