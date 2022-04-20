@@ -1,131 +1,210 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A04E77E
-	for <containers@lists.linux.dev>; Fri, 25 Mar 2022 12:11:01 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8737AC340E9;
-	Fri, 25 Mar 2022 12:10:58 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1648210261;
-	bh=k425P4V7HyPF0scZcAaiy6OXeqX9yJ95TNKIlZKXKGw=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=eMZF75ekPfhQ0rVdUQDCvurnR/7aNC7s8lMP9NQC/FAUwwC7SU81mn/azOy5D+XB7
-	 JJM3JNoIW2BJqToDwoSzw8mEOCLEknJcAVNMKpAbkZth4pl3bknOhSwk8/Dr5UjHVu
-	 ALtydUfiHX+tUs2WHypQ0f3hAG9ylU0AdypL7dpdVh20URJ37zULLmTwa6jSOZv58M
-	 yZOec65WCH0E/5cFrPgB0MosBDTgqslRUThTbWhsFBu49sJvdWg1TbTcX5K4bXySwd
-	 evBb734uRm3CiYTJnf/S3lpQPDtoaplyQA6X3GWhOpySofLGZtvDgl9HyQVpTfXTd8
-	 FDdqovoTil/NA==
-Date: Fri, 25 Mar 2022 13:10:56 +0100
-From: Alexey Gladkov <legion@kernel.org>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>,
-	LKML <linux-kernel@vger.kernel.org>,
-	Linux Containers <containers@lists.linux.dev>,
-	Alexander Mikhalitsyn <alexander.mikhalitsyn@virtuozzo.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Christian Brauner <christian.brauner@ubuntu.com>,
-	Daniel Walsh <dwalsh@redhat.com>, Davidlohr Bueso <dbueso@suse.de>,
-	Kirill Tkhai <ktkhai@virtuozzo.com>,
-	Manfred Spraul <manfred@colorfullife.com>,
-	Serge Hallyn <serge@hallyn.com>,
-	Varad Gautam <varad.gautam@suse.com>,
-	Vasily Averin <vvs@virtuozzo.com>
-Subject: Re: [GIT PULL] ipc: Bind to the ipc namespace at open time.
-Message-ID: <20220325121056.dcvm3u2fe2bvn6om@example.org>
-References: <cover.1644862280.git.legion@kernel.org>
- <877d8kfmdp.fsf@email.froward.int.ebiederm.org>
- <CAHk-=wgBB8iPd0W=MQWnQJukMAPAqgsC0QX2wwiSvcct9zu_RA@mail.gmail.com>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DD8281858
+	for <containers@lists.linux.dev>; Wed, 20 Apr 2022 14:07:03 +0000 (UTC)
+Received: from pps.filterd (m0098414.ppops.net [127.0.0.1])
+	by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 23KCkfGc025444;
+	Wed, 20 Apr 2022 14:06:44 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
+ : date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding; s=pp1;
+ bh=5tI2hx9rDCxfhE62hkCR4x8oPBVeMZDbPdXso0Ax/8I=;
+ b=MzYmsCDMY6gvbWxIEQJRkfkevKO8I+bhQ3UU3dMxAl3GFacq10MShPFK0Uu2m24RPQbs
+ bv713zvnbHE3kQqIccOqW/KRIrIFqAMV6Gr9VP8WfHvdhhVi318h91yLHOLuZwfA99kw
+ f6S4m4Z6BB809wui3J4/QTLBMEp7J4m6PvVQNxb6BQ5UIBftyCXSSwGwznvb/UjN2haR
+ scnqxlhZ5xR+BnvhyvqSvcUDyPxMFMtj1pzs7xBdcbLmPot2huOtQUJcQNjh2k08AN3q
+ uoWaVGe7KFw9DAXt4UKbOpmq6LMNmsZoiHi3VNoPDpVvESjvNB+uKBF6HhOqzlvIhbZL zw== 
+Received: from pps.reinject (localhost [127.0.0.1])
+	by mx0b-001b2d01.pphosted.com with ESMTP id 3fjjfm1smw-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Wed, 20 Apr 2022 14:06:44 +0000
+Received: from m0098414.ppops.net (m0098414.ppops.net [127.0.0.1])
+	by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 23KDqSiq031119;
+	Wed, 20 Apr 2022 14:06:43 GMT
+Received: from ppma01wdc.us.ibm.com (fd.55.37a9.ip4.static.sl-reverse.com [169.55.85.253])
+	by mx0b-001b2d01.pphosted.com with ESMTP id 3fjjfm1smm-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Wed, 20 Apr 2022 14:06:43 +0000
+Received: from pps.filterd (ppma01wdc.us.ibm.com [127.0.0.1])
+	by ppma01wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 23KE1wCq023541;
+	Wed, 20 Apr 2022 14:06:42 GMT
+Received: from b01cxnp23034.gho.pok.ibm.com (b01cxnp23034.gho.pok.ibm.com [9.57.198.29])
+	by ppma01wdc.us.ibm.com with ESMTP id 3ffneacskt-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Wed, 20 Apr 2022 14:06:42 +0000
+Received: from b01ledav005.gho.pok.ibm.com (b01ledav005.gho.pok.ibm.com [9.57.199.110])
+	by b01cxnp23034.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 23KE6gGL27656594
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Wed, 20 Apr 2022 14:06:42 GMT
+Received: from b01ledav005.gho.pok.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 00E2CAE062;
+	Wed, 20 Apr 2022 14:06:42 +0000 (GMT)
+Received: from b01ledav005.gho.pok.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id D7AECAE063;
+	Wed, 20 Apr 2022 14:06:41 +0000 (GMT)
+Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
+	by b01ledav005.gho.pok.ibm.com (Postfix) with ESMTP;
+	Wed, 20 Apr 2022 14:06:41 +0000 (GMT)
+From: Stefan Berger <stefanb@linux.ibm.com>
+To: linux-integrity@vger.kernel.org
+Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
+        containers@lists.linux.dev, dmitry.kasatkin@gmail.com,
+        ebiederm@xmission.com, krzysztof.struczynski@huawei.com,
+        roberto.sassu@huawei.com, mpeters@redhat.com, lhinds@redhat.com,
+        lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
+        jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
+        rgb@redhat.com, linux-security-module@vger.kernel.org,
+        jmorris@namei.org, jpenumak@redhat.com,
+        Stefan Berger <stefanb@linux.ibm.com>,
+        Christian Brauner <brauner@kernel.org>
+Subject: [PATCH v12 08/26] ima: Move IMA securityfs files into ima_namespace or onto stack
+Date: Wed, 20 Apr 2022 10:06:15 -0400
+Message-Id: <20220420140633.753772-9-stefanb@linux.ibm.com>
+X-Mailer: git-send-email 2.35.1
+In-Reply-To: <20220420140633.753772-1-stefanb@linux.ibm.com>
+References: <20220420140633.753772-1-stefanb@linux.ibm.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAHk-=wgBB8iPd0W=MQWnQJukMAPAqgsC0QX2wwiSvcct9zu_RA@mail.gmail.com>
+Content-Transfer-Encoding: 8bit
+X-TM-AS-GCONF: 00
+X-Proofpoint-GUID: h_g_14V26i-wwFiQyancK9wWuSSWnBvu
+X-Proofpoint-ORIG-GUID: CGrSmyPOAohAsjKQKVemZ342nGcTb2hu
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.205,Aquarius:18.0.858,Hydra:6.0.486,FMLib:17.11.64.514
+ definitions=2022-04-20_03,2022-04-20_01,2022-02-23_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 priorityscore=1501
+ adultscore=0 lowpriorityscore=0 malwarescore=0 impostorscore=0 mlxscore=0
+ clxscore=1015 bulkscore=0 mlxlogscore=999 suspectscore=0 phishscore=0
+ spamscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2202240000 definitions=main-2204200081
 
-On Thu, Mar 24, 2022 at 11:12:21AM -0700, Linus Torvalds wrote:
-> On Wed, Mar 23, 2022 at 1:24 PM Eric W. Biederman <ebiederm@xmission.com> wrote:
-> >
-> > Please pull the per-namespace-ipc-sysctls-for-v5.18 tag from the git tree:
-> 
-> Ugh.
-> 
-> I pulled this. Then I stared at it for a long time.
-> 
-> And then I decided that this is too ugly to live.
-> 
-> I'm sorry. I think Alexey has probably spent a fair amount of time on
-> it, but I really think the sysctl code needs to be cleaned up way more
-> than this.
+Earlier we simplified how dentry creation and deletion is manged in
+securityfs. This allows us to move IMA securityfs files from global
+variables directly into ima_fs_ns_init() itself. We can now rely on
+those dentries to be cleaned up when the securityfs instance is cleaned
+when the last reference to it is dropped.
 
-Apparently it's my fault that the purpose of these changes is not clear. I
-did this refactoring not for the sake of refactoring as such.
+Things are slightly different for the initial IMA namespace. In contrast
+to non-initial IMA namespaces it has pinning logic binding the lifetime
+of the securityfs superblock to created dentries. We need to keep this
+behavior to not regress userspace. Since IMA never removes most of the
+securityfs files the initial securityfs instance stays pinned. This also
+means even for the initial IMA namespace we don't need to keep
+references to these dentries anywhere.
 
-In my original patch [1], I was trying to fix the situation where the user
-cannot change the /proc/sys/fs/mqueue/* options inside rootless container.
+The ima_policy file is the exception since IMA can end up removing it
+on systems that don't allow reading or extending the IMA custom policy.
 
-But then I split the changes into refactoring which fixes the hack and
-permission changes which I wanted to discuss and propose later.
+Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
+Acked-by: Christian Brauner <brauner@kernel.org>
+Reviewed-by: Mimi Zohar <zohar@linux.ibm.com>
 
-[1] https://lore.kernel.org/lkml/0f0408bb7fbf3187966a9bf19a98642a5d9669fe.1641225760.git.legion@kernel.org/
+---
 
-> The old code was horribly hacky too, but that setup_ipc_sysctls() (and
-> setup_mq_sysctls()) thing that copies the whole sysctls table, and
-> then walks it entry by entry to modify it, is just too ugly for words.
-> 
-> And then it hides things in .extra1, and because it does that it can't
-> use the normal "extra1 and extra2 contains the limits" so then at
-> write() time it copies it into a local one AGAIN only to set the
-> limits back so that it can call the normal routines again.
-> 
-> Not ok.
-> 
-> Yes, yes, the old code did some similar things - to set the 'data'
-> pointer. That was disgusting too. Don't get me wrong - the existing
-> code was nasty too. But this took nasty code, and doubled down on it.
-> 
-> I really think this is a fundamental problem, and needs a more
-> fundamental fix than adding more and more of these kinds of nasty
-> hacks.
-> 
-> And yes, that fundamental fix is almost certainly to pass in 'struct
-> cred *' to all those sysctl helper functions.
-> 
-> Then, when you do the actual 'sysctl()' system calls, you pass in
-> 'current_cred()".
-> 
-> And the /proc users would pass in file->f_cred.
-> 
-> And yes, that patch might be quite messy, because we have quite a lot
-> of those random .proc_handler users.
-> 
-> But *most* of them by far (at least in random code) use the standard
-> proc_dointvec_minmax() and friends, and won't even notice.
-> 
-> And then the ones that are about namespace issues will have to
-> continue to do the nasty "make a copy and update the data pointer",
-> but *MAYBE* we could also introduce the notion of an "offset" to those
-> proc_dointvec_minmax() things to help them out (and at least avoid the
-> "make a copy" thing).
-> 
-> Anyway, I really think we must not make that sysctl code even uglier
-> than it is today, and I think we need to move towards a model that
-> actually makes sense. And that "pass in the right cred" is the only
-> sensible model I can see.
-> 
-> I haven't tried to create such a patch, and maybe Alexey already tried
-> to do something like that and it turned out to be too ugly for words
-> and that's why these nasty patches happened.
-> 
-> But at least for now, I can't with a good conscience pull this.
-> 
-> Sorry,
->                    Linus
+v9:
+ - Revert renaming of ima_policy to policy_dentry
+---
+ security/integrity/ima/ima.h    |  2 ++
+ security/integrity/ima/ima_fs.c | 37 ++++++++++++++++++---------------
+ 2 files changed, 22 insertions(+), 17 deletions(-)
 
-OK. I'll try to come up with some other solution.
-
+diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+index a144edfdb9a1..b35c8504ef87 100644
+--- a/security/integrity/ima/ima.h
++++ b/security/integrity/ima/ima.h
+@@ -142,6 +142,8 @@ struct ima_namespace {
+ 	struct mutex ima_write_mutex;
+ 	unsigned long ima_fs_flags;
+ 	int valid_policy;
++
++	struct dentry *ima_policy;
+ } __randomize_layout;
+ extern struct ima_namespace init_ima_ns;
+ 
+diff --git a/security/integrity/ima/ima_fs.c b/security/integrity/ima/ima_fs.c
+index 4cf786f0bba8..89d3113ceda1 100644
+--- a/security/integrity/ima/ima_fs.c
++++ b/security/integrity/ima/ima_fs.c
+@@ -359,14 +359,6 @@ static ssize_t ima_write_policy(struct file *file, const char __user *buf,
+ 	return result;
+ }
+ 
+-static struct dentry *ima_dir;
+-static struct dentry *ima_symlink;
+-static struct dentry *binary_runtime_measurements;
+-static struct dentry *ascii_runtime_measurements;
+-static struct dentry *runtime_measurements_count;
+-static struct dentry *violations;
+-static struct dentry *ima_policy;
+-
+ enum ima_fs_flags {
+ 	IMA_FS_BUSY,
+ };
+@@ -436,8 +428,8 @@ static int ima_release_policy(struct inode *inode, struct file *file)
+ 
+ 	ima_update_policy(ns);
+ #if !defined(CONFIG_IMA_WRITE_POLICY) && !defined(CONFIG_IMA_READ_POLICY)
+-	securityfs_remove(ima_policy);
+-	ima_policy = NULL;
++	securityfs_remove(ns->ima_policy);
++	ns->ima_policy = NULL;
+ #elif defined(CONFIG_IMA_WRITE_POLICY)
+ 	clear_bit(IMA_FS_BUSY, &ns->ima_fs_flags);
+ #elif defined(CONFIG_IMA_READ_POLICY)
+@@ -454,8 +446,14 @@ static const struct file_operations ima_measure_policy_ops = {
+ 	.llseek = generic_file_llseek,
+ };
+ 
+-int __init ima_fs_init(void)
++static int __init ima_fs_ns_init(struct ima_namespace *ns)
+ {
++	struct dentry *ima_dir;
++	struct dentry *ima_symlink = NULL;
++	struct dentry *binary_runtime_measurements = NULL;
++	struct dentry *ascii_runtime_measurements = NULL;
++	struct dentry *runtime_measurements_count = NULL;
++	struct dentry *violations = NULL;
+ 	int ret;
+ 
+ 	ima_dir = securityfs_create_dir("ima", integrity_dir);
+@@ -504,17 +502,17 @@ int __init ima_fs_init(void)
+ 		goto out;
+ 	}
+ 
+-	ima_policy = securityfs_create_file("policy", POLICY_FILE_FLAGS,
+-					    ima_dir, NULL,
+-					    &ima_measure_policy_ops);
+-	if (IS_ERR(ima_policy)) {
+-		ret = PTR_ERR(ima_policy);
++	ns->ima_policy = securityfs_create_file("policy", POLICY_FILE_FLAGS,
++						ima_dir, NULL,
++						&ima_measure_policy_ops);
++	if (IS_ERR(ns->ima_policy)) {
++		ret = PTR_ERR(ns->ima_policy);
+ 		goto out;
+ 	}
+ 
+ 	return 0;
+ out:
+-	securityfs_remove(ima_policy);
++	securityfs_remove(ns->ima_policy);
+ 	securityfs_remove(violations);
+ 	securityfs_remove(runtime_measurements_count);
+ 	securityfs_remove(ascii_runtime_measurements);
+@@ -524,3 +522,8 @@ int __init ima_fs_init(void)
+ 
+ 	return ret;
+ }
++
++int __init ima_fs_init(void)
++{
++	return ima_fs_ns_init(&init_ima_ns);
++}
 -- 
-Rgrds, legion
+2.34.1
 
