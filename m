@@ -1,88 +1,80 @@
-Received: from us-smtp-delivery-44.mimecast.com (us-smtp-delivery-44.mimecast.com [207.211.30.44])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-lf1-f50.google.com (mail-lf1-f50.google.com [209.85.167.50])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CAA117A
-	for <containers@lists.linux.dev>; Fri, 22 Apr 2022 12:55:07 +0000 (UTC)
-Received: from mimecast-mx02.redhat.com (mx3-rdu2.redhat.com
- [66.187.233.73]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-628-AnjXehsdPmmzQ8-DhAtM3A-1; Fri, 22 Apr 2022 08:53:54 -0400
-X-MC-Unique: AnjXehsdPmmzQ8-DhAtM3A-1
-Received: from smtp.corp.redhat.com (int-mx08.intmail.prod.int.rdu2.redhat.com [10.11.54.8])
-	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 14DCF38337EE;
-	Fri, 22 Apr 2022 12:53:54 +0000 (UTC)
-Received: from comp-core-i7-2640m-0182e6.redhat.com (unknown [10.36.110.3])
-	by smtp.corp.redhat.com (Postfix) with ESMTP id 7B64BC28107;
-	Fri, 22 Apr 2022 12:53:51 +0000 (UTC)
-From: Alexey Gladkov <legion@kernel.org>
-To: LKML <linux-kernel@vger.kernel.org>,
-	"Eric W . Biederman" <ebiederm@xmission.com>,
-	Linus Torvalds <torvalds@linux-foundation.org>
-Cc: Alexander Mikhalitsyn <alexander.mikhalitsyn@virtuozzo.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Christian Brauner <christian.brauner@ubuntu.com>,
-	Daniel Walsh <dwalsh@redhat.com>,
-	Davidlohr Bueso <dbueso@suse.de>,
-	Kirill Tkhai <ktkhai@virtuozzo.com>,
-	Linux Containers <containers@lists.linux.dev>,
-	Manfred Spraul <manfred@colorfullife.com>,
-	Serge Hallyn <serge@hallyn.com>,
-	Varad Gautam <varad.gautam@suse.com>,
-	Vasily Averin <vvs@virtuozzo.com>
-Subject: [PATCH v1 2/4] ipc: Use proper ipc namespace
-Date: Fri, 22 Apr 2022 14:53:38 +0200
-Message-Id: <32a29b3eb5f560e30ef24cfb86e480684b49ac62.1650631347.git.legion@kernel.org>
-In-Reply-To: <cover.1650631347.git.legion@kernel.org>
-References: <CAHk-=wgBB8iPd0W=MQWnQJukMAPAqgsC0QX2wwiSvcct9zu_RA@mail.gmail.com> <cover.1650631347.git.legion@kernel.org>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7B62E7A
+	for <containers@lists.linux.dev>; Fri, 22 Apr 2022 20:45:13 +0000 (UTC)
+Received: by mail-lf1-f50.google.com with SMTP id bu29so16345768lfb.0
+        for <containers@lists.linux.dev>; Fri, 22 Apr 2022 13:45:13 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linux-foundation.org; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=k7zvOy4Nu2CZwXC2YGCoJs9vagHX2+J0L34nHsp83yk=;
+        b=DfG+M/ORpXZPBdQvWZZK/E9FnBMkrgnax6RCiGFmGYuqE2J2XTjryHKJuwF9GsxnR1
+         8TyKRm500f39QvNnoE1Z/T8eT2Y2SHZyDLcpBsXLtb4f0n8UwNW1f33SC/zlmWHx5BNM
+         WE42YK0v+aT6a2sp2qnEHIv8xSPVSWn2KhDLU=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=k7zvOy4Nu2CZwXC2YGCoJs9vagHX2+J0L34nHsp83yk=;
+        b=a0IMcNrGEKFViJHqsu/gcdbK+kjpLQxaViUlnpf58RMJv976wtqJOl7Koj0l8eXiBt
+         U0L1gEdkBNIrJfkAxOdqcsH8VACYBO+w2B6rCxUJrfs69omsBnl8fnWECryUf1HsfQHT
+         XmzfdkLuXpWeoIblxArUojA/5tBLOvS9wceMWGV0BrO+WB+HTTin7uuQuOTXxUen2Am7
+         NR1VlpQizl7lWGYiNyJ/WXsUmpeWwnUPIKfVty3Kr5mKGmSUbGIf4L2iYr5+7+JFc3aC
+         HuARiMvazK/B5yzwGguGbUziAHjrgMFVCJrpmBiNexJ5rmm+gXePjPMnPcDP8rAMnGGP
+         5IlA==
+X-Gm-Message-State: AOAM530Rq+svSfI3WvcZ5FJTyo0gJ9fnyfGl8z40QPI4bIdjnvzYjL7Q
+	TDIqZrTPDgW+zgHEapjcbxvfNa3XX+YQbQMxyxA=
+X-Google-Smtp-Source: ABdhPJzXGLaXcnP+Kw0JzHZb8KHF0aSjUUnPeAKRyElk/Cc8Qw2KT+yLXoOIaBkaz81OaqoQgZCkfA==
+X-Received: by 2002:a05:6512:3d86:b0:471:b3db:1179 with SMTP id k6-20020a0565123d8600b00471b3db1179mr4449308lfv.72.1650660311287;
+        Fri, 22 Apr 2022 13:45:11 -0700 (PDT)
+Received: from mail-lf1-f42.google.com (mail-lf1-f42.google.com. [209.85.167.42])
+        by smtp.gmail.com with ESMTPSA id d22-20020a056512321600b0046f796b70b5sm345277lfe.87.2022.04.22.13.45.07
+        for <containers@lists.linux.dev>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 22 Apr 2022 13:45:07 -0700 (PDT)
+Received: by mail-lf1-f42.google.com with SMTP id br15so1882554lfb.9
+        for <containers@lists.linux.dev>; Fri, 22 Apr 2022 13:45:07 -0700 (PDT)
+X-Received: by 2002:a05:6512:1193:b0:471:af88:2d74 with SMTP id
+ g19-20020a056512119300b00471af882d74mr4247383lfr.531.1650660306799; Fri, 22
+ Apr 2022 13:45:06 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Scanned-By: MIMEDefang 2.85 on 10.11.54.8
+References: <CAHk-=wgBB8iPd0W=MQWnQJukMAPAqgsC0QX2wwiSvcct9zu_RA@mail.gmail.com>
+ <cover.1650631347.git.legion@kernel.org>
+In-Reply-To: <cover.1650631347.git.legion@kernel.org>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Fri, 22 Apr 2022 13:44:50 -0700
+X-Gmail-Original-Message-ID: <CAHk-=whi2SzU4XT_FsdTCAuK2qtYmH+-hwi1cbSdG8zu0KXL=g@mail.gmail.com>
+Message-ID: <CAHk-=whi2SzU4XT_FsdTCAuK2qtYmH+-hwi1cbSdG8zu0KXL=g@mail.gmail.com>
+Subject: Re: [PATCH v1 0/4] ipc: Remove extra1 field abuse to pass ipc namespace
+To: Alexey Gladkov <legion@kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, 
+	"Eric W . Biederman" <ebiederm@xmission.com>, 
+	Alexander Mikhalitsyn <alexander.mikhalitsyn@virtuozzo.com>, 
+	Andrew Morton <akpm@linux-foundation.org>, 
+	Christian Brauner <christian.brauner@ubuntu.com>, Daniel Walsh <dwalsh@redhat.com>, 
+	Davidlohr Bueso <dbueso@suse.de>, Kirill Tkhai <ktkhai@virtuozzo.com>, 
+	Linux Containers <containers@lists.linux.dev>, Manfred Spraul <manfred@colorfullife.com>, 
+	Serge Hallyn <serge@hallyn.com>, Varad Gautam <varad.gautam@suse.com>, 
+	Vasily Averin <vvs@virtuozzo.com>
+Content-Type: text/plain; charset="UTF-8"
 
-As Eric Biederman pointed out, changing the namespace broke checkpoint
-restore. I have reverted my previous changes.
+On Fri, Apr 22, 2022 at 5:53 AM Alexey Gladkov <legion@kernel.org> wrote:
+>
+> Yes, Linus, these changes are not the refactoring you were talking
+> about, but I plan to try to do such a refactoring in the my next
+> patchset.
 
-Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
-Signed-off-by: Alexey Gladkov <legion@kernel.org>
----
- ipc/ipc_sysctl.c | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+Heh. Ok, I'm not saying these patches are pretty, and looking up the
+namespace thing is a bit subtle, but it's certainly prettier than the
+existing odd "create a new ctl_table entry because of field abuse".
 
-diff --git a/ipc/ipc_sysctl.c b/ipc/ipc_sysctl.c
-index eb7ba8e0a355..ff99d0305a5b 100644
---- a/ipc/ipc_sysctl.c
-+++ b/ipc/ipc_sysctl.c
-@@ -72,7 +72,7 @@ static int proc_ipc_sem_dointvec(struct ctl_table *table, int write,
- static int proc_ipc_dointvec_minmax_checkpoint_restore(struct ctl_table *table,
- 		int write, void *buffer, size_t *lenp, loff_t *ppos)
- {
--	struct ipc_namespace *ns = table->extra1;
-+	struct ipc_namespace *ns = current->nsproxy->ipc_ns;
- 	struct ctl_table ipc_table;
- 
- 	if (write && !checkpoint_restore_ns_capable(ns->user_ns))
-@@ -244,15 +244,12 @@ bool setup_ipc_sysctls(struct ipc_namespace *ns)
- #ifdef CONFIG_CHECKPOINT_RESTORE
- 			} else if (tbl[i].data == &init_ipc_ns.ids[IPC_SEM_IDS].next_id) {
- 				tbl[i].data = &ns->ids[IPC_SEM_IDS].next_id;
--				tbl[i].extra1 = ns;
- 
- 			} else if (tbl[i].data == &init_ipc_ns.ids[IPC_MSG_IDS].next_id) {
- 				tbl[i].data = &ns->ids[IPC_MSG_IDS].next_id;
--				tbl[i].extra1 = ns;
- 
- 			} else if (tbl[i].data == &init_ipc_ns.ids[IPC_SHM_IDS].next_id) {
- 				tbl[i].data = &ns->ids[IPC_SHM_IDS].next_id;
--				tbl[i].extra1 = ns;
- #endif
- 			} else {
- 				tbl[i].data = NULL;
--- 
-2.33.2
+So this certainly looks like an improvement from a quick look.
 
+              Linus
