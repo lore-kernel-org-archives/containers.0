@@ -1,21 +1,21 @@
 Received: from us-smtp-delivery-44.mimecast.com (us-smtp-delivery-44.mimecast.com [205.139.111.44])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4834F3204
-	for <containers@lists.linux.dev>; Tue,  3 May 2022 15:23:33 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7F5A1322E
+	for <containers@lists.linux.dev>; Tue,  3 May 2022 16:12:36 +0000 (UTC)
 Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
  [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
  (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-311-oMQ1o89_P1OFVqVbHMOxmg-1; Tue, 03 May 2022 10:09:26 -0400
-X-MC-Unique: oMQ1o89_P1OFVqVbHMOxmg-1
+ us-mta-636-ACE-lopCPbagO-0vhgpgGA-1; Tue, 03 May 2022 12:12:11 -0400
+X-MC-Unique: ACE-lopCPbagO-0vhgpgGA-1
 Received: from smtp.corp.redhat.com (int-mx05.intmail.prod.int.rdu2.redhat.com [10.11.54.5])
 	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
 	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id F4060199704F;
-	Tue,  3 May 2022 13:40:20 +0000 (UTC)
+	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id E18CCB15AA6;
+	Tue,  3 May 2022 13:40:23 +0000 (UTC)
 Received: from comp-core-i7-2640m-0182e6.redhat.com (unknown [10.36.110.3])
-	by smtp.corp.redhat.com (Postfix) with ESMTP id 5E6439E89;
-	Tue,  3 May 2022 13:40:18 +0000 (UTC)
+	by smtp.corp.redhat.com (Postfix) with ESMTP id 4D8539E89;
+	Tue,  3 May 2022 13:40:21 +0000 (UTC)
 From: Alexey Gladkov <legion@kernel.org>
 To: LKML <linux-kernel@vger.kernel.org>,
 	"Eric W . Biederman" <ebiederm@xmission.com>,
@@ -31,9 +31,9 @@ Cc: Alexander Mikhalitsyn <alexander.mikhalitsyn@virtuozzo.com>,
 	Serge Hallyn <serge@hallyn.com>,
 	Varad Gautam <varad.gautam@suse.com>,
 	Vasily Averin <vvs@virtuozzo.com>
-Subject: [PATCH v2 1/4] ipc: Use the same namespace to modify and validate
-Date: Tue,  3 May 2022 15:39:54 +0200
-Message-Id: <b3cb9a25cce6becbef77186bc1216071a08a969b.1651584847.git.legion@kernel.org>
+Subject: [PATCH v2 2/4] ipc: Remove extra1 field abuse to pass ipc namespace
+Date: Tue,  3 May 2022 15:39:55 +0200
+Message-Id: <93df64a8fe93ba20ebbe1d9f8eda484b2f325426.1651584847.git.legion@kernel.org>
 In-Reply-To: <cover.1651584847.git.legion@kernel.org>
 References: <87sfprudal.fsf@email.froward.int.ebiederm.org> <cover.1651584847.git.legion@kernel.org>
 Precedence: bulk
@@ -45,30 +45,85 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Scanned-By: MIMEDefang 2.79 on 10.11.54.5
 
-In the 1f5c135ee509 ("ipc: Store ipc sysctls in the ipc namespace") I
-missed that in addition to the modification of sem_ctls[3], the change
-is validated. This validation must occur in the same namespace.
+Eric Biederman pointed out that using .extra1 to pass ipc namespace
+looks like an ugly hack and there is a better solution. We can get the
+ipc_namespace using the .data field.
 
-Link: https://lore.kernel.org/lkml/875ymnvryb.fsf@email.froward.int.ebiederm.org/
+Link: https://lore.kernel.org/lkml/87czib9g38.fsf@email.froward.int.ebiederm.org/
 Fixes: 1f5c135ee509 ("ipc: Store ipc sysctls in the ipc namespace")
+Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
 Signed-off-by: Alexey Gladkov <legion@kernel.org>
 ---
- ipc/ipc_sysctl.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ ipc/ipc_sysctl.c | 24 +++++++-----------------
+ 1 file changed, 7 insertions(+), 17 deletions(-)
 
 diff --git a/ipc/ipc_sysctl.c b/ipc/ipc_sysctl.c
-index 15210ac47e9e..d1d5204cf589 100644
+index d1d5204cf589..eb7ba8e0a355 100644
 --- a/ipc/ipc_sysctl.c
 +++ b/ipc/ipc_sysctl.c
-@@ -68,7 +68,7 @@ static int proc_ipc_sem_dointvec(struct ctl_table *table, int write,
+@@ -19,16 +19,11 @@
+ static int proc_ipc_dointvec_minmax_orphans(struct ctl_table *table, int write,
+ 		void *buffer, size_t *lenp, loff_t *ppos)
+ {
+-	struct ipc_namespace *ns = table->extra1;
+-	struct ctl_table ipc_table;
++	struct ipc_namespace *ns =
++		container_of(table->data, struct ipc_namespace, shm_rmid_forced);
+ 	int err;
+ 
+-	memcpy(&ipc_table, table, sizeof(ipc_table));
+-
+-	ipc_table.extra1 = SYSCTL_ZERO;
+-	ipc_table.extra2 = SYSCTL_ONE;
+-
+-	err = proc_dointvec_minmax(&ipc_table, write, buffer, lenp, ppos);
++	err = proc_dointvec_minmax(table, write, buffer, lenp, ppos);
+ 
+ 	if (err < 0)
+ 		return err;
+@@ -55,15 +50,10 @@ static int proc_ipc_auto_msgmni(struct ctl_table *table, int write,
+ static int proc_ipc_sem_dointvec(struct ctl_table *table, int write,
+ 	void *buffer, size_t *lenp, loff_t *ppos)
+ {
+-	struct ipc_namespace *ns = table->extra1;
+-	struct ctl_table ipc_table;
++	struct ipc_namespace *ns =
++		container_of(table->data, struct ipc_namespace, sem_ctls);
+ 	int ret, semmni;
+ 
+-	memcpy(&ipc_table, table, sizeof(ipc_table));
+-
+-	ipc_table.extra1 = NULL;
+-	ipc_table.extra2 = NULL;
+-
+ 	semmni = ns->sem_ctls[3];
  	ret = proc_dointvec(table, write, buffer, lenp, ppos);
  
- 	if (!ret)
--		ret = sem_check_semmni(current->nsproxy->ipc_ns);
-+		ret = sem_check_semmni(ns);
+@@ -131,6 +121,8 @@ static struct ctl_table ipc_sysctls[] = {
+ 		.maxlen		= sizeof(init_ipc_ns.shm_rmid_forced),
+ 		.mode		= 0644,
+ 		.proc_handler	= proc_ipc_dointvec_minmax_orphans,
++		.extra1		= SYSCTL_ZERO,
++		.extra2		= SYSCTL_ONE,
+ 	},
+ 	{
+ 		.procname	= "msgmax",
+@@ -237,7 +229,6 @@ bool setup_ipc_sysctls(struct ipc_namespace *ns)
  
- 	/*
- 	 * Reset the semmni value if an error happens.
+ 			} else if (tbl[i].data == &init_ipc_ns.shm_rmid_forced) {
+ 				tbl[i].data = &ns->shm_rmid_forced;
+-				tbl[i].extra1 = ns;
+ 
+ 			} else if (tbl[i].data == &init_ipc_ns.msg_ctlmax) {
+ 				tbl[i].data = &ns->msg_ctlmax;
+@@ -250,7 +241,6 @@ bool setup_ipc_sysctls(struct ipc_namespace *ns)
+ 
+ 			} else if (tbl[i].data == &init_ipc_ns.sem_ctls) {
+ 				tbl[i].data = &ns->sem_ctls;
+-				tbl[i].extra1 = ns;
+ #ifdef CONFIG_CHECKPOINT_RESTORE
+ 			} else if (tbl[i].data == &init_ipc_ns.ids[IPC_SEM_IDS].next_id) {
+ 				tbl[i].data = &ns->ids[IPC_SEM_IDS].next_id;
 -- 
 2.33.3
 
