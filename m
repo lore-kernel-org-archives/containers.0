@@ -1,124 +1,105 @@
-Received: from out01.mta.xmission.com (out01.mta.xmission.com [166.70.13.231])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pg1-f178.google.com (mail-pg1-f178.google.com [209.85.215.178])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CB66C2CA6
-	for <containers@lists.linux.dev>; Mon,  2 May 2022 16:42:44 +0000 (UTC)
-Received: from in02.mta.xmission.com ([166.70.13.52]:35878)
-	by out01.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1nlYc6-00D9TG-5q; Mon, 02 May 2022 10:09:30 -0600
-Received: from ip68-227-174-4.om.om.cox.net ([68.227.174.4]:36680 helo=email.froward.int.ebiederm.org.xmission.com)
-	by in02.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1nlYc5-0030RY-2P; Mon, 02 May 2022 10:09:29 -0600
-From: "Eric W. Biederman" <ebiederm@xmission.com>
-To: Alexey Gladkov <legion@kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>,  Linus Torvalds
- <torvalds@linux-foundation.org>,  Alexander Mikhalitsyn
- <alexander.mikhalitsyn@virtuozzo.com>,  Andrew Morton
- <akpm@linux-foundation.org>,  Christian Brauner
- <christian.brauner@ubuntu.com>,  Daniel Walsh <dwalsh@redhat.com>,
-  Davidlohr Bueso <dbueso@suse.de>,  Kirill Tkhai <ktkhai@virtuozzo.com>,
-  Linux Containers <containers@lists.linux.dev>,  Manfred Spraul
- <manfred@colorfullife.com>,  Serge Hallyn <serge@hallyn.com>,  Varad
- Gautam <varad.gautam@suse.com>,  Vasily Averin <vvs@virtuozzo.com>
-References: <CAHk-=wgBB8iPd0W=MQWnQJukMAPAqgsC0QX2wwiSvcct9zu_RA@mail.gmail.com>
-	<cover.1650631347.git.legion@kernel.org>
-	<32a29b3eb5f560e30ef24cfb86e480684b49ac62.1650631347.git.legion@kernel.org>
-Date: Mon, 02 May 2022 11:09:22 -0500
-In-Reply-To: <32a29b3eb5f560e30ef24cfb86e480684b49ac62.1650631347.git.legion@kernel.org>
-	(Alexey Gladkov's message of "Fri, 22 Apr 2022 14:53:38 +0200")
-Message-ID: <87sfprudal.fsf@email.froward.int.ebiederm.org>
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.1 (gnu/linux)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D9C5E17E9
+	for <containers@lists.linux.dev>; Tue,  3 May 2022 08:11:10 +0000 (UTC)
+Received: by mail-pg1-f178.google.com with SMTP id x12so13475288pgj.7
+        for <containers@lists.linux.dev>; Tue, 03 May 2022 01:11:10 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=sargun.me; s=google;
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=3ingImJTtvFfkp4DYljnLHHv+bSfMJ3n+N1up5cyEBc=;
+        b=ZKtbZh0ltnirTiWTEfFYomv04BeAehvM0gAet6KiXZjvLCZ1xaCyGJuzxXHjOj6eMv
+         uSPyMlfeC4XREadNu3xH4/sYr7OCt7jGLoM69eiZrrRYPK87w7As3TcdcpWApU73U0zU
+         i8STlqQ8eKen0nwNe25dmuiLfI6EKt7ooWMn4=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=3ingImJTtvFfkp4DYljnLHHv+bSfMJ3n+N1up5cyEBc=;
+        b=HgPvZGjytU388c0cNiv1NPzV3XZ0IfibixszyhZO6cHmUGg7I7GbXsO7TmTU1OMebK
+         eB6pERkDcSQg/VsNo/qkFLxJv1uzEQ3T9xmQKw7xg+Tk5Ru5nMQUR77pPbeK/bEcrlcS
+         2sq7ao5KrAVTHZnNG2UI7IfyvzUcSYgOYT75NKSNDGCXYeTQL+3qDuch6pXKKM9oZEX1
+         JxrzfE+0daywx7FywFillQBaBn9cpA0wcfddBeWuVPYDDpMC7pKmNbWcavXBbAFSaaFx
+         FaLcBTsI78jAOm6K94qwFtKpeebqx16lNz2OeYQ82Kb6L2h8a0TfR0rilnBCuPPhb1EO
+         0CZQ==
+X-Gm-Message-State: AOAM531AScZ/IlMH9UeUnLdxRc5mQ1dUVlbPOmRVzK1mzFkyNqMNyx2B
+	c0jUfwoirnzz1FZn99dSrwH9mA==
+X-Google-Smtp-Source: ABdhPJwCOmpDNmkh3bQetCNPZEgNRPP1XjypzwvoCv3dojW+WgrUkn7VTYGM3DW50Wva/2hftaA3MA==
+X-Received: by 2002:a05:6a00:2310:b0:4fa:7eb1:e855 with SMTP id h16-20020a056a00231000b004fa7eb1e855mr14855919pfh.14.1651565470059;
+        Tue, 03 May 2022 01:11:10 -0700 (PDT)
+Received: from localhost.localdomain (99-0-82-137.lightspeed.sntcca.sbcglobal.net. [99.0.82.137])
+        by smtp.gmail.com with ESMTPSA id h2-20020aa786c2000000b0050dc762815dsm5821069pfo.55.2022.05.03.01.11.08
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 03 May 2022 01:11:08 -0700 (PDT)
+From: Sargun Dhillon <sargun@sargun.me>
+To: Kees Cook <keescook@chromium.org>,
+	LKML <linux-kernel@vger.kernel.org>,
+	Linux Containers <containers@lists.linux.dev>
+Cc: Sargun Dhillon <sargun@sargun.me>,
+	Rodrigo Campos <rodrigo@kinvolk.io>,
+	Christian Brauner <christian.brauner@ubuntu.com>,
+	Giuseppe Scrivano <gscrivan@redhat.com>,
+	Will Drewry <wad@chromium.org>,
+	Andy Lutomirski <luto@amacapital.net>,
+	Tycho Andersen <tycho@tycho.pizza>,
+	Alban Crequy <alban@kinvolk.io>
+Subject: [PATCH v4 0/3] Handle seccomp notification preemption
+Date: Tue,  3 May 2022 01:09:55 -0700
+Message-Id: <20220503080958.20220-1-sargun@sargun.me>
+X-Mailer: git-send-email 2.25.1
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain
-X-XM-SPF: eid=1nlYc5-0030RY-2P;;;mid=<87sfprudal.fsf@email.froward.int.ebiederm.org>;;;hst=in02.mta.xmission.com;;;ip=68.227.174.4;;;frm=ebiederm@xmission.com;;;spf=softfail
-X-XM-AID: U2FsdGVkX19y/q/FQzGs6F1Akdf/n30W2F0lmB7XTpg=
-X-SA-Exim-Connect-IP: 68.227.174.4
-X-SA-Exim-Mail-From: ebiederm@xmission.com
-X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on sa06.xmission.com
-X-Spam-Level: **
-X-Spam-Status: No, score=2.3 required=8.0 tests=ALL_TRUSTED,BAYES_50,
-	DCC_CHECK_NEGATIVE,T_TM2_M_HEADER_IN_MSG,XM_SPF_SoftFail
-	autolearn=disabled version=3.4.2
-X-Spam-Report: 
-	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
-	*  0.8 BAYES_50 BODY: Bayes spam probability is 40 to 60%
-	*      [score: 0.5000]
-	*  0.0 T_TM2_M_HEADER_IN_MSG BODY: No description available.
-	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
-	*      [sa06 1397; Body=1 Fuz1=1 Fuz2=1]
-	*  2.5 XM_SPF_SoftFail SPF-SoftFail
-X-Spam-DCC: XMission; sa06 1397; Body=1 Fuz1=1 Fuz2=1 
-X-Spam-Combo: **;Alexey Gladkov <legion@kernel.org>
-X-Spam-Relay-Country: 
-X-Spam-Timing: total 467 ms - load_scoreonly_sql: 0.07 (0.0%),
-	signal_user_changed: 11 (2.4%), b_tie_ro: 10 (2.1%), parse: 1.43
-	(0.3%), extract_message_metadata: 17 (3.5%), get_uri_detail_list: 1.81
-	(0.4%), tests_pri_-1000: 21 (4.5%), tests_pri_-950: 1.76 (0.4%),
-	tests_pri_-900: 1.48 (0.3%), tests_pri_-90: 122 (26.2%), check_bayes:
-	120 (25.8%), b_tokenize: 7 (1.5%), b_tok_get_all: 6 (1.2%),
-	b_comp_prob: 2.2 (0.5%), b_tok_touch_all: 101 (21.7%), b_finish: 1.00
-	(0.2%), tests_pri_0: 276 (59.0%), check_dkim_signature: 0.94 (0.2%),
-	check_dkim_adsp: 3.2 (0.7%), poll_dns_idle: 0.55 (0.1%), tests_pri_10:
-	2.6 (0.6%), tests_pri_500: 9 (1.9%), rewrite_mail: 0.00 (0.0%)
-Subject: Re: [PATCH v1 2/4] ipc: Use proper ipc namespace
-X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
-X-SA-Exim-Scanned: Yes (on in02.mta.xmission.com)
+Content-Transfer-Encoding: 8bit
 
-Alexey Gladkov <legion@kernel.org> writes:
+This patchset addresses a race condition we've dealt with recently with
+seccomp. Specifically programs interrupting syscalls while they're in
+progress. This was exacerbated by Golang's[1] recent adoption of
+"Non-cooperative goroutine preemption", in which they try to interrupt any
+syscall that's been running for more than 10ms. During certain syscalls,
+it's non-trivial to write them in a reetrant manner in userspace (mount).
 
-> As Eric Biederman pointed out, changing the namespace broke checkpoint
-> restore. I have reverted my previous changes.
+It allows a per-filter flag to be set that makes it so that the notifying
+process will switch to "TASK_KILLABLE" as opposed to returning to userspace
+on non-fatal signals.
 
-Can you remind me the bug that is being fixed here?
+Changes since v3[4]:
+ * Clean up tests
+   * Split out helper function (dedupe code)
+   * Add some explanation about whats going on
+ * Small documentation edit
 
-I am probably just going to fast to see it, but it would be good to have
-it described in the commit comment.
+Changes since v2[3]:
+ * Split out addfd patches
+ * Move the flag to be per-filter (as opposed to per notification)
 
-Thanks,
-Eric
+Changes since v1[2]:
+ * Fix some documentation
+ * Add Rata's patches to allow for direct return from addfd
 
->
-> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
-> Signed-off-by: Alexey Gladkov <legion@kernel.org>
-> ---
->  ipc/ipc_sysctl.c | 5 +----
->  1 file changed, 1 insertion(+), 4 deletions(-)
->
-> diff --git a/ipc/ipc_sysctl.c b/ipc/ipc_sysctl.c
-> index eb7ba8e0a355..ff99d0305a5b 100644
-> --- a/ipc/ipc_sysctl.c
-> +++ b/ipc/ipc_sysctl.c
-> @@ -72,7 +72,7 @@ static int proc_ipc_sem_dointvec(struct ctl_table *table, int write,
->  static int proc_ipc_dointvec_minmax_checkpoint_restore(struct ctl_table *table,
->  		int write, void *buffer, size_t *lenp, loff_t *ppos)
->  {
-> -	struct ipc_namespace *ns = table->extra1;
-> +	struct ipc_namespace *ns = current->nsproxy->ipc_ns;
->  	struct ctl_table ipc_table;
->  
->  	if (write && !checkpoint_restore_ns_capable(ns->user_ns))
-> @@ -244,15 +244,12 @@ bool setup_ipc_sysctls(struct ipc_namespace *ns)
->  #ifdef CONFIG_CHECKPOINT_RESTORE
->  			} else if (tbl[i].data == &init_ipc_ns.ids[IPC_SEM_IDS].next_id) {
->  				tbl[i].data = &ns->ids[IPC_SEM_IDS].next_id;
-> -				tbl[i].extra1 = ns;
->  
->  			} else if (tbl[i].data == &init_ipc_ns.ids[IPC_MSG_IDS].next_id) {
->  				tbl[i].data = &ns->ids[IPC_MSG_IDS].next_id;
-> -				tbl[i].extra1 = ns;
->  
->  			} else if (tbl[i].data == &init_ipc_ns.ids[IPC_SHM_IDS].next_id) {
->  				tbl[i].data = &ns->ids[IPC_SHM_IDS].next_id;
-> -				tbl[i].extra1 = ns;
->  #endif
->  			} else {
->  				tbl[i].data = NULL;
+[1]: https://github.com/golang/proposal/blob/master/design/24543-non-cooperative-preemption.md
+[2]: https://lore.kernel.org/lkml/20210220090502.7202-1-sargun@sargun.me/
+[3]: https://lore.kernel.org/all/20210426180610.2363-1-sargun@sargun.me/
+[4]: https://lore.kernel.org/lkml/20220429023113.74993-1-sargun@sargun.me/
+
+Sargun Dhillon (3):
+  seccomp: Add wait_killable semantic to seccomp user notifier
+  selftests/seccomp: Refactor get_proc_stat to split out file reading
+    code
+  selftests/seccomp: Add test for wait killable notifier
+
+ .../userspace-api/seccomp_filter.rst          |  10 +
+ include/linux/seccomp.h                       |   3 +-
+ include/uapi/linux/seccomp.h                  |   2 +
+ kernel/seccomp.c                              |  42 ++-
+ tools/testing/selftests/seccomp/seccomp_bpf.c | 282 +++++++++++++++++-
+ 5 files changed, 320 insertions(+), 19 deletions(-)
+
+-- 
+2.25.1
+
