@@ -1,86 +1,152 @@
-Received: from pricom.com.au (pricom.com.au [14.202.193.218])
+Received: from mail.hallyn.com (mail.hallyn.com [178.63.66.53])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 28B9820E8
-	for <containers@lists.linux.dev>; Wed,  4 May 2022 03:48:57 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha1; c=relaxed/relaxed;
-	d=pricom.com.au; s=phr1; h=MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Date:From:To:Cc:Subject:Reply-To:
-	Mail-Reply-To:In-Reply-To:References:Message-ID; bh=YayLtC0WPVN5
-	EDnxFhIUN1fXdtM=; b=w0GGaAdSWx8ZsqHm9WqrOumt2kI54A7J/hCtMkyObBuE
-	9MpMNFLR+TWLqj8BqFFZJPDQDNTdG+q+VavpA/+4TUuZjwNYapb8rG+Zvz2AVHJp
-	Apt01mxAnDXRcGN9dhcpGLM9hJGlUhtDiM58nN8Eu+6yhWqb749ZtrJdAOtM310=
-Received: (indimail-mta 1395324 invoked from 127.0.0.1 by host pricom.com.au by uid 555); Wed, 4 May 2022 13:42:14 +1000
-DKIM-Signature: v=1; a=rsa-sha1; c=relaxed/relaxed;
-	d=pricom.com.au; s=phr1; x=1652240533; h=MIME-Version:
-	Content-Type:Content-Transfer-Encoding:Date:From:To:Cc:Subject:
-	Reply-To:Mail-Reply-To:In-Reply-To:References:Message-ID; bh=Yay
-	LtC0WPVN5EDnxFhIUN1fXdtM=; b=lYk1cWKr7HM8sQAskUocTkSpmlLOCHw3P5x
-	Q3T+WW/IIwfj9L3npxWiqDigGYqPUPw2cmyZGhKMh9D66JdnhPf9mVYcF7k8oBkW
-	AGDMxg0DHv4jHDpZjX2hjueS4YCd2YDCfPwy1ZuPw8PCic1WqTtdeWS1CjZJu8LY
-	3HYapWaE=
-Received: from localhost (HELO pricom.com.au) (phr@::ffff:127.0.0.1)
-  by 0 with ESMTPA; Wed, 4 May 2022 13:42:13 +1000
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 867737B
+	for <containers@lists.linux.dev>; Mon,  9 May 2022 20:03:14 +0000 (UTC)
+Received: by mail.hallyn.com (Postfix, from userid 1001)
+	id AA9D9936; Mon,  9 May 2022 14:54:14 -0500 (CDT)
+Date: Mon, 9 May 2022 14:54:14 -0500
+From: "Serge E. Hallyn" <serge@hallyn.com>
+To: Stefan Berger <stefanb@linux.ibm.com>
+Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
+	christian.brauner@ubuntu.com, containers@lists.linux.dev,
+	dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
+	krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
+	mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
+	puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
+	linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
+	linux-security-module@vger.kernel.org, jmorris@namei.org,
+	jpenumak@redhat.com, Christian Brauner <brauner@kernel.org>,
+	John Johansen <john.johansen@canonical.com>,
+	Matthew Garrett <mjg59@srcf.ucam.org>,
+	Micah Morton <mortonm@chromium.org>,
+	Kentaro Takeda <takedakn@nttdata.co.jp>,
+	Jarkko Sakkinen <jarkko@kernel.org>
+Subject: Re: [PATCH v12 01/26] securityfs: rework dentry creation
+Message-ID: <20220509195414.GA30894@mail.hallyn.com>
+References: <20220420140633.753772-1-stefanb@linux.ibm.com>
+ <20220420140633.753772-2-stefanb@linux.ibm.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Content-Transfer-Encoding: 7bit
-Date: Wed, 04 May 2022 13:42:03 +1000
-From: Philip Rhoades <phil@pricom.com.au>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: Alexey Gladkov <legion@kernel.org>, LKML <linux-kernel@vger.kernel.org>,
- "Eric W . Biederman" <ebiederm@xmission.com>, Alexander Mikhalitsyn
- <alexander.mikhalitsyn@virtuozzo.com>, Andrew Morton
- <akpm@linux-foundation.org>, Christian Brauner
- <christian.brauner@ubuntu.com>, Daniel Walsh <dwalsh@redhat.com>, Davidlohr
- Bueso <dbueso@suse.de>, Kirill Tkhai <ktkhai@virtuozzo.com>, Linux
- Containers <containers@lists.linux.dev>, Manfred Spraul
- <manfred@colorfullife.com>, Serge Hallyn <serge@hallyn.com>, Varad Gautam
- <varad.gautam@suse.com>, Vasily Averin <vvs@virtuozzo.com>
-Subject: Re: [PATCH v1 0/4] ipc: Remove extra1 field abuse to pass ipc
- namespace
-Reply-To: phil@pricom.com.au
-Mail-Reply-To: phil@pricom.com.au
-In-Reply-To: <CAHk-=whi2SzU4XT_FsdTCAuK2qtYmH+-hwi1cbSdG8zu0KXL=g@mail.gmail.com>
-References: <CAHk-=wgBB8iPd0W=MQWnQJukMAPAqgsC0QX2wwiSvcct9zu_RA@mail.gmail.com>
- <cover.1650631347.git.legion@kernel.org>
- <CAHk-=whi2SzU4XT_FsdTCAuK2qtYmH+-hwi1cbSdG8zu0KXL=g@mail.gmail.com>
-Message-ID: <94d3de676845342fa8abe0c90ee3c98f@pricom.com.au>
-X-Sender: phil@pricom.com.au
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220420140633.753772-2-stefanb@linux.ibm.com>
+User-Agent: Mutt/1.9.4 (2018-02-28)
 
-People,
-
-
-On 2022-04-23 06:44, Linus Torvalds wrote:
-> On Fri, Apr 22, 2022 at 5:53 AM Alexey Gladkov <legion@kernel.org> 
-> wrote:
->> 
->> Yes, Linus, these changes are not the refactoring you were talking
->> about, but I plan to try to do such a refactoring in the my next
->> patchset.
+On Wed, Apr 20, 2022 at 10:06:08AM -0400, Stefan Berger wrote:
+> From: Christian Brauner <brauner@kernel.org>
 > 
-> Heh. Ok, I'm not saying these patches are pretty, and looking up the
-> namespace thing is a bit subtle, but it's certainly prettier than the
-> existing odd "create a new ctl_table entry because of field abuse".
+> When securityfs creates a new file or directory via
+> securityfs_create_dentry() it will take an additional reference on the
+> newly created dentry after it has attached the new inode to the new
+> dentry and added it to the hashqueues.
+> If we contrast this with debugfs which has the same underlying logic as
+> securityfs. It uses a similar pairing as securityfs. Where securityfs
+> has the securityfs_create_dentry() and securityfs_remove() pairing,
+> debugfs has the __debugfs_create_file() and debugfs_remove() pairing.
 > 
-> So this certainly looks like an improvement from a quick look.
+> In contrast to securityfs, debugfs doesn't take an additional reference
+> on the newly created dentry in __debugfs_create_file() which would need
+> to be put in debugfs_remove().
 > 
->               Linus
+> The additional dget() isn't a problem per se. In the current
+> implementation of securityfs each created dentry pins the filesystem via
 
+Is 'via' an extra word here or is there a missing word?
 
-Thanks for that little glimpse into what happens with kernel development 
-- interesting!
+I'll delay the rest of my response as the missing word may answer my
+remaining question :)
 
-Phil.
--- 
-Philip Rhoades
-
-PO Box 896
-Cowra  NSW  2794
-Australia
-E-mail:  phil@pricom.com.au
+> until it is removed. Since it is virtually guaranteed that there is at
+> least one user of securityfs that has created dentries the initial
+> securityfs mount cannot go away until all dentries have been removed.
+> 
+> Since most of the users of the initial securityfs mount don't go away
+> until the system is shutdown the initial securityfs won't go away when
+> unmounted. Instead a mount will usually surface the same superblock as
+> before. The additional dget() doesn't matter in this scenario since it
+> is required that all dentries have been cleaned up by the respective
+> users before the superblock can be destroyed, i.e. superblock shutdown
+> is tied to the lifetime of the associated dentries.
+> 
+> However, in order to support ima namespaces we need to extend securityfs
+> to support being mounted outside of the initial user namespace. For
+> namespaced users the pinning logic doesn't make sense. Whereas in the
+> initial namespace the securityfs instance and the associated data
+> structures of its users can't go away for reason explained earlier users
+> of non-initial securityfs instances do go away when the last users of
+> the namespace are gone.
+> 
+> So for those users we neither want to duplicate the pinning logic nor
+> make the global securityfs instance display different information based
+> on the namespace. Both options would be really messy and hacky.
+> 
+> Instead we will simply give each namespace its own securityfs instance
+> similar to how each ipc namespace has its own mqueue instance and all
+> entries in there are cleaned up on umount or when the last user of the
+> associated namespace is gone.
+> 
+> This means that the superblock's lifetime isn't tied to the dentries.
+> Instead the last umount, without any fds kept open, will trigger a clean
+> shutdown. But now the additional dget() gets in the way. Instead of
+> being able to rely on the generic superblock shutdown logic we would
+> need to drop the additional dentry reference during superblock shutdown
+> for all associated users. That would force the use of a generic
+> coordination mechanism for current and future users of securityfs which
+> is unnecessary. Simply remove the additional dget() in
+> securityfs_dentry_create().
+> 
+> In securityfs_remove() we will call dget() to take an additional
+> reference on the dentry about to be removed. After simple_unlink() or
+> simple_rmdir() have dropped the dentry refcount we can call d_delete()
+> which will either turn the dentry into negative dentry if our earlier
+> dget() is the only reference to the dentry, i.e. it has no other users,
+> or remove it from the hashqueues in case there are additional users.
+> 
+> All of these changes should not have any effect on the userspace
+> semantics of the initial securityfs mount.
+> 
+> Signed-off-by: Christian Brauner <brauner@kernel.org>
+> Cc: John Johansen <john.johansen@canonical.com>
+> Cc: Matthew Garrett <mjg59@srcf.ucam.org>
+> Cc: Micah Morton <mortonm@chromium.org>
+> Cc: Kentaro Takeda <takedakn@nttdata.co.jp>
+> Cc: James Morris <jmorris@namei.org>
+> Cc: Jarkko Sakkinen <jarkko@kernel.org>
+> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
+> Reviewed-by: Mimi Zohar <zohar@linux.ibm.com>
+> ---
+>  security/inode.c | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
+> 
+> diff --git a/security/inode.c b/security/inode.c
+> index 6c326939750d..13e6780c4444 100644
+> --- a/security/inode.c
+> +++ b/security/inode.c
+> @@ -159,7 +159,6 @@ static struct dentry *securityfs_create_dentry(const char *name, umode_t mode,
+>  		inode->i_fop = fops;
+>  	}
+>  	d_instantiate(dentry, inode);
+> -	dget(dentry);
+>  	inode_unlock(dir);
+>  	return dentry;
+>  
+> @@ -302,10 +301,12 @@ void securityfs_remove(struct dentry *dentry)
+>  	dir = d_inode(dentry->d_parent);
+>  	inode_lock(dir);
+>  	if (simple_positive(dentry)) {
+> +		dget(dentry);
+>  		if (d_is_dir(dentry))
+>  			simple_rmdir(dir, dentry);
+>  		else
+>  			simple_unlink(dir, dentry);
+> +		d_delete(dentry);
+>  		dput(dentry);
+>  	}
+>  	inode_unlock(dir);
+> -- 
+> 2.34.1
