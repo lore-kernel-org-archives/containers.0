@@ -1,11 +1,11 @@
 Received: from mail.hallyn.com (mail.hallyn.com [178.63.66.53])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1CE9E29A2
-	for <containers@lists.linux.dev>; Tue, 10 May 2022 18:51:39 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EC4F328EA
+	for <containers@lists.linux.dev>; Tue, 10 May 2022 20:41:58 +0000 (UTC)
 Received: by mail.hallyn.com (Postfix, from userid 1001)
-	id ECD64FDF; Tue, 10 May 2022 13:51:37 -0500 (CDT)
-Date: Tue, 10 May 2022 13:51:37 -0500
+	id 404B979C; Tue, 10 May 2022 15:41:51 -0500 (CDT)
+Date: Tue, 10 May 2022 15:41:51 -0500
 From: "Serge E. Hallyn" <serge@hallyn.com>
 To: Christian Brauner <brauner@kernel.org>
 Cc: "Serge E. Hallyn" <serge@hallyn.com>,
@@ -24,7 +24,7 @@ Cc: "Serge E. Hallyn" <serge@hallyn.com>,
 	Kentaro Takeda <takedakn@nttdata.co.jp>,
 	Jarkko Sakkinen <jarkko@kernel.org>
 Subject: Re: [PATCH v12 01/26] securityfs: rework dentry creation
-Message-ID: <20220510185137.GA10706@mail.hallyn.com>
+Message-ID: <20220510204151.GA12935@mail.hallyn.com>
 References: <20220420140633.753772-1-stefanb@linux.ibm.com>
  <20220420140633.753772-2-stefanb@linux.ibm.com>
  <20220509195414.GA30894@mail.hallyn.com>
@@ -125,7 +125,6 @@ On Tue, May 10, 2022 at 05:51:07PM +0200, Christian Brauner wrote:
 >   	dput(dentry);				// second dput()
 >   }
 
-Oh - I was thinking about the new d_delete, but I guess that doesn't matter.
+Thanks, I get it now
 
-thanks,
--serge
+Reviewed-by: Serge Hallyn <serge@hallyn.com>
