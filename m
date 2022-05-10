@@ -1,128 +1,131 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
+Received: from mail.hallyn.com (mail.hallyn.com [178.63.66.53])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2444523C2
-	for <containers@lists.linux.dev>; Tue, 10 May 2022 16:51:08 +0000 (UTC)
-Received: from pps.filterd (m0098404.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 24AFJjbp026754;
-	Tue, 10 May 2022 16:50:44 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
- mime-version : subject : to : cc : references : from : in-reply-to :
- content-type : content-transfer-encoding; s=pp1;
- bh=MtEUdrFg5vVjbNQCS/BU2XYQmsKHTDxuTJJMpHB118M=;
- b=eT/g0iwRdTnHQeQijJOg2K/U6rbI2tmCnru3jZ1b2HoQR077MWSjm296OHocij0et23e
- w7HT+xEliTu60ZSC95uUdfT2n85pQunzIzI2SkmIFNzwJSPf076wXcG0MKsl5HKPAg86
- GbaVpX7+143ggcNMLo/j2RX2JLLf4gMUzxUN7yLBN5a3MZzRg+JkMvfhUMPKILXnLpBW
- V7egPydqAQwrq6RkmyLgqQrRyqBgQxVz8RJJB8YjhZlVno9CCmBfaAj9VgUCeKhq5ZBY
- 6yxW1bDrBBWmthmIqnm+8Cx5l8DWjzcK1qDAlC8blLG9PLcUahToPsNnbgng4ZMptObt 7w== 
-Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3fytkkt5sv-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 10 May 2022 16:50:44 +0000
-Received: from m0098404.ppops.net (m0098404.ppops.net [127.0.0.1])
-	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 24AGTFMC001381;
-	Tue, 10 May 2022 16:50:43 GMT
-Received: from ppma01wdc.us.ibm.com (fd.55.37a9.ip4.static.sl-reverse.com [169.55.85.253])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3fytkkt5sc-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 10 May 2022 16:50:43 +0000
-Received: from pps.filterd (ppma01wdc.us.ibm.com [127.0.0.1])
-	by ppma01wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 24AGT47v027915;
-	Tue, 10 May 2022 16:50:42 GMT
-Received: from b01cxnp22034.gho.pok.ibm.com (b01cxnp22034.gho.pok.ibm.com [9.57.198.24])
-	by ppma01wdc.us.ibm.com with ESMTP id 3fwgd96b1f-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 10 May 2022 16:50:42 +0000
-Received: from b01ledav002.gho.pok.ibm.com (b01ledav002.gho.pok.ibm.com [9.57.199.107])
-	by b01cxnp22034.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 24AGof3f61342026
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Tue, 10 May 2022 16:50:41 GMT
-Received: from b01ledav002.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 67F9E124055;
-	Tue, 10 May 2022 16:50:41 +0000 (GMT)
-Received: from b01ledav002.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 033AD124058;
-	Tue, 10 May 2022 16:50:41 +0000 (GMT)
-Received: from [9.47.158.152] (unknown [9.47.158.152])
-	by b01ledav002.gho.pok.ibm.com (Postfix) with ESMTP;
-	Tue, 10 May 2022 16:50:40 +0000 (GMT)
-Message-ID: <c76f52d9-07eb-39dd-dad4-43b108696539@linux.ibm.com>
-Date: Tue, 10 May 2022 12:50:40 -0400
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1CE9E29A2
+	for <containers@lists.linux.dev>; Tue, 10 May 2022 18:51:39 +0000 (UTC)
+Received: by mail.hallyn.com (Postfix, from userid 1001)
+	id ECD64FDF; Tue, 10 May 2022 13:51:37 -0500 (CDT)
+Date: Tue, 10 May 2022 13:51:37 -0500
+From: "Serge E. Hallyn" <serge@hallyn.com>
+To: Christian Brauner <brauner@kernel.org>
+Cc: "Serge E. Hallyn" <serge@hallyn.com>,
+	Stefan Berger <stefanb@linux.ibm.com>,
+	linux-integrity@vger.kernel.org, zohar@linux.ibm.com,
+	christian.brauner@ubuntu.com, containers@lists.linux.dev,
+	dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
+	krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
+	mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
+	puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
+	linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
+	linux-security-module@vger.kernel.org, jmorris@namei.org,
+	jpenumak@redhat.com, John Johansen <john.johansen@canonical.com>,
+	Matthew Garrett <mjg59@srcf.ucam.org>,
+	Micah Morton <mortonm@chromium.org>,
+	Kentaro Takeda <takedakn@nttdata.co.jp>,
+	Jarkko Sakkinen <jarkko@kernel.org>
+Subject: Re: [PATCH v12 01/26] securityfs: rework dentry creation
+Message-ID: <20220510185137.GA10706@mail.hallyn.com>
+References: <20220420140633.753772-1-stefanb@linux.ibm.com>
+ <20220420140633.753772-2-stefanb@linux.ibm.com>
+ <20220509195414.GA30894@mail.hallyn.com>
+ <20220510102525.hlt2rm3k3hg5r6gg@wittgenstein>
+ <20220510141025.GA7290@mail.hallyn.com>
+ <20220510155107.srxifzuqfstvet2f@wittgenstein>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.8.0
-Subject: Re: [PATCH v12 01/26] securityfs: rework dentry creation
-Content-Language: en-US
-To: Christian Brauner <brauner@kernel.org>,
-        "Serge E. Hallyn"
- <serge@hallyn.com>
-Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com,
-        christian.brauner@ubuntu.com, containers@lists.linux.dev,
-        dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
-        krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
-        mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
-        puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
-        linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
-        linux-security-module@vger.kernel.org, jmorris@namei.org,
-        jpenumak@redhat.com, John Johansen <john.johansen@canonical.com>,
-        Matthew Garrett <mjg59@srcf.ucam.org>,
-        Micah Morton <mortonm@chromium.org>,
-        Kentaro Takeda <takedakn@nttdata.co.jp>,
-        Jarkko Sakkinen <jarkko@kernel.org>
-References: <20220420140633.753772-1-stefanb@linux.ibm.com>
- <20220420140633.753772-2-stefanb@linux.ibm.com>
- <20220509195414.GA30894@mail.hallyn.com>
- <20220510102525.hlt2rm3k3hg5r6gg@wittgenstein>
-From: Stefan Berger <stefanb@linux.ibm.com>
-In-Reply-To: <20220510102525.hlt2rm3k3hg5r6gg@wittgenstein>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: rm2ZvGlia5ghHqQtREAD3mTlCv2558Ga
-X-Proofpoint-GUID: FwZzpy1yN5E-3p3du-KT6wkIbBSpD0C3
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.205,Aquarius:18.0.858,Hydra:6.0.486,FMLib:17.11.64.514
- definitions=2022-05-10_04,2022-05-10_01,2022-02-23_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 spamscore=0 malwarescore=0
- lowpriorityscore=0 phishscore=0 suspectscore=0 adultscore=0 clxscore=1011
- impostorscore=0 mlxlogscore=803 bulkscore=0 priorityscore=1501 mlxscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2202240000
- definitions=main-2205100072
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220510155107.srxifzuqfstvet2f@wittgenstein>
+User-Agent: Mutt/1.9.4 (2018-02-28)
 
-
-
-On 5/10/22 06:25, Christian Brauner wrote:
-> On Mon, May 09, 2022 at 02:54:14PM -0500, Serge Hallyn wrote:
->> On Wed, Apr 20, 2022 at 10:06:08AM -0400, Stefan Berger wrote:
->>> From: Christian Brauner <brauner@kernel.org>
->>>
->>> When securityfs creates a new file or directory via
->>> securityfs_create_dentry() it will take an additional reference on the
->>> newly created dentry after it has attached the new inode to the new
->>> dentry and added it to the hashqueues.
->>> If we contrast this with debugfs which has the same underlying logic as
->>> securityfs. It uses a similar pairing as securityfs. Where securityfs
->>> has the securityfs_create_dentry() and securityfs_remove() pairing,
->>> debugfs has the __debugfs_create_file() and debugfs_remove() pairing.
->>>
->>> In contrast to securityfs, debugfs doesn't take an additional reference
->>> on the newly created dentry in __debugfs_create_file() which would need
->>> to be put in debugfs_remove().
->>>
->>> The additional dget() isn't a problem per se. In the current
->>> implementation of securityfs each created dentry pins the filesystem via
->>
->> Is 'via' an extra word here or is there a missing word?
->>
->> I'll delay the rest of my response as the missing word may answer my
->> remaining question :)
+On Tue, May 10, 2022 at 05:51:07PM +0200, Christian Brauner wrote:
+> On Tue, May 10, 2022 at 09:10:25AM -0500, Serge Hallyn wrote:
+> > On Tue, May 10, 2022 at 12:25:25PM +0200, Christian Brauner wrote:
+> > > On Mon, May 09, 2022 at 02:54:14PM -0500, Serge Hallyn wrote:
+> > > > On Wed, Apr 20, 2022 at 10:06:08AM -0400, Stefan Berger wrote:
+> > > > > From: Christian Brauner <brauner@kernel.org>
+> > > > > 
+> > > > > When securityfs creates a new file or directory via
+> > > > > securityfs_create_dentry() it will take an additional reference on the
+> > > > > newly created dentry after it has attached the new inode to the new
+> > > > > dentry and added it to the hashqueues.
+> > > > > If we contrast this with debugfs which has the same underlying logic as
+> > > > > securityfs. It uses a similar pairing as securityfs. Where securityfs
+> > > > > has the securityfs_create_dentry() and securityfs_remove() pairing,
+> > > > > debugfs has the __debugfs_create_file() and debugfs_remove() pairing.
+> > > > > 
+> > > > > In contrast to securityfs, debugfs doesn't take an additional reference
+> > > > > on the newly created dentry in __debugfs_create_file() which would need
+> > > > > to be put in debugfs_remove().
+> > > > > 
+> > > > > The additional dget() isn't a problem per se. In the current
+> > > > > implementation of securityfs each created dentry pins the filesystem via
+> > > > 
+> > > > Is 'via' an extra word here or is there a missing word?
+> > > > 
+> > > > I'll delay the rest of my response as the missing word may answer my
+> > > > remaining question :)
+> > > 
+> > > It can be both. It should either be removed or it should be followed by
+> > > "securityfs_create_dentry()". securityfs_create_dentry() takes two
+> > > references one in lookup_one_len() and another one explicitly via
+> > > dget(). The latter one isn't needed. Some of that has been covered in an
+> > > earlier thread:
+> > > https://lore.kernel.org/lkml/20220105101815.ldsm4s5yx7pmuiil@wittgenstein
+> > 
+> > Yes, I saw that two references were being taken.  And near as I can tell,
+> > the second one was never being dropped.  So if you tell me that before this
+> > patch the dentries are never freed, then I'm happy.  Otherwise, I'm
+> > bothered the fact that no matching dput is being deleted in the code (to
+> > match the extra dget being removed).  So where is the code where the final
+> > dput was happening, and is it the d_delete() you're adding which is making
+> > it so that that dput won't be called now?
 > 
-> It can be both. It should either be removed or it should be followed by
-> "securityfs_create_dentry()". securityfs_create_dentry() takes two
+> * So consider mounting securityfs _without this patch applied_:
+> 
+>   mount -t securityfs /sfs
+>   
+>   and assume we only have a single user that creates a file "foo" via
+>   
+>   securityfs_create_file()
+>   {
+>   	lookup_one_len();	// first dget()
+>   	dget();			// second dget()
+>   }
+>   
+>   now assume that user at some point calls
+>   
+>   void securityfs_remove()
+>   {
+>   	if (d_is_dir(dentry))
+>   		simple_rmdir(dir, dentry);	// first dput()
+>   	else
+>   		simple_unlink(dir, dentry);	// first dput()
+>   	dput(dentry);				// second dput()
+>   }
+> 
+> * Now consider mounting securityfs _with this patch applied_:
+> 
+>   securityfs_create_file()
+>   {
+>   	lookup_one_len();	// first dget()
+>   }
+>   
+>   void securityfs_remove()
+>   {
+>   	dget();					// second dget() 
+>   	if (d_is_dir(dentry))
+>   		simple_rmdir(dir, dentry);	// first dput()
+>   	else
+>   		simple_unlink(dir, dentry);	// first dput()
+>   	dput(dentry);				// second dput()
+>   }
 
-I am adding "securityfs_create_dentry()" to the text.
+Oh - I was thinking about the new d_delete, but I guess that doesn't matter.
+
+thanks,
+-serge
