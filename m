@@ -1,11 +1,11 @@
 Received: from mail.hallyn.com (mail.hallyn.com [178.63.66.53])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9D4667C
-	for <containers@lists.linux.dev>; Sun, 22 May 2022 17:06:43 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 09F057C
+	for <containers@lists.linux.dev>; Sun, 22 May 2022 17:31:01 +0000 (UTC)
 Received: by mail.hallyn.com (Postfix, from userid 1001)
-	id 7B8C23F4; Sun, 22 May 2022 12:06:41 -0500 (CDT)
-Date: Sun, 22 May 2022 12:06:41 -0500
+	id 476603F4; Sun, 22 May 2022 12:31:00 -0500 (CDT)
+Date: Sun, 22 May 2022 12:31:00 -0500
 From: "Serge E. Hallyn" <serge@hallyn.com>
 To: Stefan Berger <stefanb@linux.ibm.com>
 Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
@@ -16,12 +16,12 @@ Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
 	puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
 	linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
 	linux-security-module@vger.kernel.org, jmorris@namei.org,
-	jpenumak@redhat.com
-Subject: Re: [PATCH v12 10/26] ima: Switch to lazy lsm policy updates for
- better performance
-Message-ID: <20220522170641.GA24041@mail.hallyn.com>
+	jpenumak@redhat.com, Denis Semakin <denis.semakin@huawei.com>
+Subject: Re: [PATCH v12 11/26] ima: Define mac_admin_ns_capable() as a
+ wrapper for ns_capable()
+Message-ID: <20220522173100.GB24041@mail.hallyn.com>
 References: <20220420140633.753772-1-stefanb@linux.ibm.com>
- <20220420140633.753772-11-stefanb@linux.ibm.com>
+ <20220420140633.753772-12-stefanb@linux.ibm.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
@@ -30,102 +30,96 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220420140633.753772-11-stefanb@linux.ibm.com>
+In-Reply-To: <20220420140633.753772-12-stefanb@linux.ibm.com>
 User-Agent: Mutt/1.9.4 (2018-02-28)
 
-On Wed, Apr 20, 2022 at 10:06:17AM -0400, Stefan Berger wrote:
-> Instead of calling ima_lsm_update_rules() for every namespace upon
-> invocation of the ima_lsm_policy_change() notification function,
-> only set a flag in a namespace and defer the call to
-> ima_lsm_update_rules() to before the policy is accessed the next time,
-> which is either in ima_policy_start(), when displaying the policy via
-> the policy file in securityfs, or when calling ima_match_policy().
+On Wed, Apr 20, 2022 at 10:06:18AM -0400, Stefan Berger wrote:
+> Define mac_admin_ns_capable() as a wrapper for the combined ns_capable()
+> checks on CAP_MAC_ADMIN and CAP_SYS_ADMIN in a user namespace. Return
+> true on the check if either capability or both are available.
 > 
-> The performance numbers before this change for a test enabling
-> and disabling an SELinux module was as follows with a given number
-> of IMA namespaces that each a have a policy containing 2 rules
-> with SELinux labels:
+> Use mac_admin_ns_capable() in place of capable(SYS_ADMIN). This will allow
+> an IMA namespace to read the policy with only CAP_MAC_ADMIN, which has
+> less privileges than CAP_SYS_ADMIN.
 > 
-> 2: ~9s
-> 192: ~11s
-> 1920: ~80s
-> 
-> With this change:
-> 
-> 2: ~6.5s
-> 192: ~7s
-> 1920: ~8.3s
-> 
+> Since CAP_MAC_ADMIN is an additional capability added to an existing gate
+> avoid auditing in case it is not set.
+
+It would probably be best to become a user of
+https://lore.kernel.org/all/20220217145003.78982-2-cgzones@googlemail.com/
+
+when that lands.
+
+> Signed-off-by: Denis Semakin <denis.semakin@huawei.com>
 > Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-
-Acked-by: Serge Hallyn <serge@hallyn.com>
-
-> ---
->  security/integrity/ima/ima.h        |  4 ++++
->  security/integrity/ima/ima_policy.c | 15 ++++++++++++++-
->  2 files changed, 18 insertions(+), 1 deletion(-)
 > 
-> diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
-> index c68b5117d034..5bf7f080c2be 100644
-> --- a/security/integrity/ima/ima.h
-> +++ b/security/integrity/ima/ima.h
-> @@ -123,6 +123,10 @@ struct ima_h_table {
->  };
+> ---
+> v11:
+>   - use ns_capable_noaudit for CAP_MAC_ADMIN to avoid auditing in this case
+> ---
+>  include/linux/capability.h      | 6 ++++++
+>  security/integrity/ima/ima.h    | 6 ++++++
+>  security/integrity/ima/ima_fs.c | 5 ++++-
+>  3 files changed, 16 insertions(+), 1 deletion(-)
+> 
+> diff --git a/include/linux/capability.h b/include/linux/capability.h
+> index 65efb74c3585..dc3e1230b365 100644
+> --- a/include/linux/capability.h
+> +++ b/include/linux/capability.h
+> @@ -270,6 +270,12 @@ static inline bool checkpoint_restore_ns_capable(struct user_namespace *ns)
+>  		ns_capable(ns, CAP_SYS_ADMIN);
+>  }
 >  
->  struct ima_namespace {
-> +	unsigned long ima_ns_flags;
-> +/* Bit numbers for above flags; use BIT() to get flag */
-> +#define IMA_NS_LSM_UPDATE_RULES		0
-> +
->  	/* policy rules */
->  	struct list_head ima_default_rules; /* Kconfig, builtin & arch rules */
->  	struct list_head ima_policy_rules;  /* arch & custom rules */
-> diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
-> index 23c559c8fae9..59e4ae5a6361 100644
-> --- a/security/integrity/ima/ima_policy.c
-> +++ b/security/integrity/ima/ima_policy.c
-> @@ -228,6 +228,14 @@ static struct ima_rule_entry critical_data_rules[] __ro_after_init = {
->  	{.action = MEASURE, .func = CRITICAL_DATA, .flags = IMA_FUNC},
->  };
->  
-> +static void ima_lsm_update_rules(struct ima_namespace *ns);
-> +
-> +static inline void ima_lazy_lsm_update_rules(struct ima_namespace *ns)
+> +static inline bool mac_admin_ns_capable(struct user_namespace *ns)
 > +{
-> +	if (test_and_clear_bit(IMA_NS_LSM_UPDATE_RULES, &ns->ima_ns_flags))
-> +		ima_lsm_update_rules(ns);
+> +	return ns_capable_noaudit(ns, CAP_MAC_ADMIN) ||
+> +		ns_capable(ns, CAP_SYS_ADMIN);
 > +}
 > +
->  static int ima_policy __initdata;
+>  /* audit system wants to get cap info from files as well */
+>  int get_vfs_caps_from_disk(struct user_namespace *mnt_userns,
+>  			   const struct dentry *dentry,
+> diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+> index 5bf7f080c2be..626a6ce2453c 100644
+> --- a/security/integrity/ima/ima.h
+> +++ b/security/integrity/ima/ima.h
+> @@ -491,4 +491,10 @@ static inline int ima_filter_rule_match(u32 secid, u32 field, u32 op,
+>  #define	POLICY_FILE_FLAGS	S_IWUSR
+>  #endif /* CONFIG_IMA_READ_POLICY */
 >  
->  static int __init default_measure_policy_setup(char *str)
-> @@ -478,7 +486,8 @@ int ima_lsm_policy_change(struct notifier_block *nb, unsigned long event,
->  		return NOTIFY_DONE;
->  
->  	ns = container_of(nb, struct ima_namespace, ima_lsm_policy_notifier);
-> -	ima_lsm_update_rules(ns);
+> +static inline
+> +struct user_namespace *ima_user_ns_from_file(const struct file *filp)
+> +{
+> +	return file_inode(filp)->i_sb->s_user_ns;
+> +}
+
+include/linux/fs.h has file_mnt_user_ns().  Maybe you should add a
+file_sb_user_ns() next to that?
+
 > +
-> +	set_bit(IMA_NS_LSM_UPDATE_RULES, &ns->ima_ns_flags);
+>  #endif /* __LINUX_IMA_H */
+> diff --git a/security/integrity/ima/ima_fs.c b/security/integrity/ima/ima_fs.c
+> index 89d3113ceda1..c41aa61b7393 100644
+> --- a/security/integrity/ima/ima_fs.c
+> +++ b/security/integrity/ima/ima_fs.c
+> @@ -377,6 +377,9 @@ static const struct seq_operations ima_policy_seqops = {
+>   */
+>  static int ima_open_policy(struct inode *inode, struct file *filp)
+>  {
+> +#ifdef CONFIG_IMA_READ_POLICY
+> +	struct user_namespace *user_ns = ima_user_ns_from_file(filp);
+> +#endif
+>  	struct ima_namespace *ns = &init_ima_ns;
 >  
->  	return NOTIFY_OK;
->  }
-> @@ -705,6 +714,8 @@ int ima_match_policy(struct ima_namespace *ns,
->  	if (template_desc && !*template_desc)
->  		*template_desc = ima_template_desc_current();
->  
-> +	ima_lazy_lsm_update_rules(ns);
-> +
->  	rcu_read_lock();
->  	ima_rules_tmp = rcu_dereference(ns->ima_rules);
->  	list_for_each_entry_rcu(entry, ima_rules_tmp, list) {
-> @@ -1907,6 +1918,8 @@ void *ima_policy_start(struct seq_file *m, loff_t *pos)
->  	struct ima_rule_entry *entry;
->  	struct list_head *ima_rules_tmp;
->  
-> +	ima_lazy_lsm_update_rules(ns);
-> +
->  	rcu_read_lock();
->  	ima_rules_tmp = rcu_dereference(ns->ima_rules);
->  	list_for_each_entry_rcu(entry, ima_rules_tmp, list) {
+>  	if (!(filp->f_flags & O_WRONLY)) {
+> @@ -385,7 +388,7 @@ static int ima_open_policy(struct inode *inode, struct file *filp)
+>  #else
+>  		if ((filp->f_flags & O_ACCMODE) != O_RDONLY)
+>  			return -EACCES;
+> -		if (!capable(CAP_SYS_ADMIN))
+> +		if (!mac_admin_ns_capable(user_ns))
+>  			return -EPERM;
+>  		return seq_open(filp, &ima_policy_seqops);
+>  #endif
 > -- 
 > 2.34.1
