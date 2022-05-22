@@ -1,16 +1,14 @@
 Received: from mail.hallyn.com (mail.hallyn.com [178.63.66.53])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 861893205
-	for <containers@lists.linux.dev>; Sat, 21 May 2022 15:46:39 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B5E27360
+	for <containers@lists.linux.dev>; Sun, 22 May 2022 02:35:13 +0000 (UTC)
 Received: by mail.hallyn.com (Postfix, from userid 1001)
-	id 058E266D; Sat, 21 May 2022 10:09:06 -0500 (CDT)
-Date: Sat, 21 May 2022 10:09:06 -0500
+	id B17D1666; Sat, 21 May 2022 21:35:05 -0500 (CDT)
+Date: Sat, 21 May 2022 21:35:05 -0500
 From: "Serge E. Hallyn" <serge@hallyn.com>
-To: Christian Brauner <brauner@kernel.org>
-Cc: "Serge E. Hallyn" <serge@hallyn.com>,
-	Stefan Berger <stefanb@linux.ibm.com>,
-	linux-integrity@vger.kernel.org, zohar@linux.ibm.com,
+To: Stefan Berger <stefanb@linux.ibm.com>
+Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
 	christian.brauner@ubuntu.com, containers@lists.linux.dev,
 	dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
 	krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
@@ -18,15 +16,12 @@ Cc: "Serge E. Hallyn" <serge@hallyn.com>,
 	puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
 	linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
 	linux-security-module@vger.kernel.org, jmorris@namei.org,
-	jpenumak@redhat.com,
-	James Bottomley <James.Bottomley@HansenPartnership.com>
-Subject: Re: [PATCH v12 02/26] securityfs: Extend securityfs with namespacing
- support
-Message-ID: <20220521150906.GA13961@mail.hallyn.com>
+	jpenumak@redhat.com
+Subject: Re: [PATCH v12 09/26] ima: Move ima_lsm_policy_notifier into
+ ima_namespace
+Message-ID: <20220522023505.GA18987@mail.hallyn.com>
 References: <20220420140633.753772-1-stefanb@linux.ibm.com>
- <20220420140633.753772-3-stefanb@linux.ibm.com>
- <20220521022302.GA8575@mail.hallyn.com>
- <20220521093839.3srwejkeqthgk2fq@wittgenstein>
+ <20220420140633.753772-10-stefanb@linux.ibm.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
@@ -35,205 +30,183 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220521093839.3srwejkeqthgk2fq@wittgenstein>
+In-Reply-To: <20220420140633.753772-10-stefanb@linux.ibm.com>
 User-Agent: Mutt/1.9.4 (2018-02-28)
 
-On Sat, May 21, 2022 at 11:38:39AM +0200, Christian Brauner wrote:
-> On Fri, May 20, 2022 at 09:23:02PM -0500, Serge Hallyn wrote:
-> > On Wed, Apr 20, 2022 at 10:06:09AM -0400, Stefan Berger wrote:
-> > > Enable multiple instances of securityfs by keying each instance with a
-> > > pointer to the user namespace it belongs to.
-> > > 
-> > > Since we do not need the pinning of the filesystem for the virtualization
-> > > case, limit the usage of simple_pin_fs() and simpe_release_fs() to the
-> > > case when the init_user_ns is active. This simplifies the cleanup for the
-> > > virtualization case where usage of securityfs_remove() to free dentries
-> > > is therefore not needed anymore.
-> > > 
-> > > For the initial securityfs, i.e. the one mounted in the host userns mount,
-> > > nothing changes. The rules for securityfs_remove() are as before and it is
-> > > still paired with securityfs_create(). Specifically, a file created via
-> > > securityfs_create_dentry() in the initial securityfs mount still needs to
-> > > be removed by a call to securityfs_remove(). Creating a new dentry in the
-> > > initial securityfs mount still pins the filesystem like it always did.
-> > > Consequently, the initial securityfs mount is not destroyed on
-> > > umount/shutdown as long as at least one user of it still has dentries that
-> > > it hasn't removed with a call to securityfs_remove().
-> > > 
-> > > Prevent mounting of an instance of securityfs in another user namespace
-> > > than it belongs to. Also, prevent accesses to files and directories by
-> > > a user namespace that is neither the user namespace it belongs to
-> > > nor an ancestor of the user namespace that the instance of securityfs
-> > > belongs to. Do not prevent access if securityfs was bind-mounted and
-> > > therefore the init_user_ns is the owning user namespace.
-> > > 
-> > > Suggested-by: Christian Brauner <brauner@kernel.org>
-> > > Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-> > > Signed-off-by: James Bottomley <James.Bottomley@HansenPartnership.com>
-> > > 
-> > > ---
-> > > v11:
-> > >  - Formatted comment's first line to be '/*'
-> > > ---
-> > >  security/inode.c | 73 ++++++++++++++++++++++++++++++++++++++++--------
-> > >  1 file changed, 62 insertions(+), 11 deletions(-)
-> > > 
-> > > diff --git a/security/inode.c b/security/inode.c
-> > > index 13e6780c4444..84c9396792a9 100644
-> > > --- a/security/inode.c
-> > > +++ b/security/inode.c
-> > > @@ -21,9 +21,38 @@
-> > >  #include <linux/security.h>
-> > >  #include <linux/lsm_hooks.h>
-> > >  #include <linux/magic.h>
-> > > +#include <linux/user_namespace.h>
-> > >  
-> > > -static struct vfsmount *mount;
-> > > -static int mount_count;
-> > > +static struct vfsmount *init_securityfs_mount;
-> > > +static int init_securityfs_mount_count;
-> > > +
-> > > +static int securityfs_permission(struct user_namespace *mnt_userns,
-> > > +				 struct inode *inode, int mask)
-> > > +{
-> > > +	int err;
-> > > +
-> > > +	err = generic_permission(&init_user_ns, inode, mask);
-> > > +	if (!err) {
-> > > +		/*
-> > > +		 * Unless bind-mounted, deny access if current_user_ns() is not
-> > > +		 * ancestor.
-> > 
-> > This comment has confused me the last few times I looked at this.  I see
-> > now you're using "bind-mounted" as a shortcut for saying "bind mounted from
-> > the init_user_ns into a child_user_ns container".  I do think that needs
-> > to be made clearer in this comment.
-> > 
-> > Should the init_user_ns really be special here?  What if I'm running a
-> > first level container with uptodate userspace that mounts its own
-> > securityfs, but in that i want to run a nested older userspace that
-> > bind mounts the parent securityfs?  Is there a good reason to deny that?
-> > 
-> > It would seem to me the better check would be
-> > 
-> > 	if (!is_original_mounter_of(current_user_ns, inode->i_sb->s_user_ns) &&
-> > 	     !in_userns(current_user_ns(), inode->i_sb->s_user_ns))
-> > 		err = -EACCESS;
-> > 
-> > the is_original_mounter_of() would require the user_ns to cache first
-> > its parent securityfs userns, and, when a task in the user_ns mounts
-> > securityfs, then cache its own userns.  (without a reference).
-> > If current_user_ns() has mounted a securityfs for a user_ns other than
-> > inode->i_sb->s_user_ns (or init_user_ns), then reject the mount.
-> > Otherwise check current_user_ns()->parent, etc, until init_user_ns.
-> > If you reach init_user_ns, or an ns which mounted inode->i_sb->s_user_ns,
-> > then allow, else deny.
-> > 
-> > It's the kind of special casing we've worked hard to avoid in other
-> > namespaces.
-> > 
-> > > +		 */
-> > > +		if (inode->i_sb->s_user_ns != &init_user_ns &&
-> > > +		    !in_userns(current_user_ns(), inode->i_sb->s_user_ns))
-> > > +			err = -EACCES;
-> > > +	}
-> > > +
-> > > +	return err;
-> > > +}
-> > > +
-> > > +static const struct inode_operations securityfs_dir_inode_operations = {
-> > > +	.permission	= securityfs_permission,
-> > > +	.lookup		= simple_lookup,
-> > > +};
-> > > +
-> > > +static const struct inode_operations securityfs_file_inode_operations = {
-> > > +	.permission	= securityfs_permission,
-> > > +};
-> > >  
-> > >  static void securityfs_free_inode(struct inode *inode)
-> > >  {
-> > > @@ -40,20 +69,25 @@ static const struct super_operations securityfs_super_operations = {
-> > >  static int securityfs_fill_super(struct super_block *sb, struct fs_context *fc)
-> > >  {
-> > >  	static const struct tree_descr files[] = {{""}};
-> > > +	struct user_namespace *ns = fc->user_ns;
-> > >  	int error;
-> > >  
-> > > +	if (WARN_ON(ns != current_user_ns()))
-> > > +		return -EINVAL;
-> > > +
-> > >  	error = simple_fill_super(sb, SECURITYFS_MAGIC, files);
-> > >  	if (error)
-> > >  		return error;
-> > >  
-> > >  	sb->s_op = &securityfs_super_operations;
-> > > +	sb->s_root->d_inode->i_op = &securityfs_dir_inode_operations;
-> > >  
-> > >  	return 0;
-> > >  }
-> > >  
-> > >  static int securityfs_get_tree(struct fs_context *fc)
-> > >  {
-> > > -	return get_tree_single(fc, securityfs_fill_super);
-> > > +	return get_tree_keyed(fc, securityfs_fill_super, fc->user_ns);
-> > >  }
-> > >  
-> > >  static const struct fs_context_operations securityfs_context_ops = {
-> > > @@ -71,6 +105,7 @@ static struct file_system_type fs_type = {
-> > >  	.name =		"securityfs",
-> > >  	.init_fs_context = securityfs_init_fs_context,
-> > >  	.kill_sb =	kill_litter_super,
-> > > +	.fs_flags =	FS_USERNS_MOUNT,
-> > >  };
-> > >  
-> > >  /**
-> > > @@ -109,6 +144,7 @@ static struct dentry *securityfs_create_dentry(const char *name, umode_t mode,
-> > >  					const struct file_operations *fops,
-> > >  					const struct inode_operations *iops)
-> > >  {
-> > > +	struct user_namespace *ns = current_user_ns();
-> > >  	struct dentry *dentry;
-> > >  	struct inode *dir, *inode;
-> > >  	int error;
-> > > @@ -118,12 +154,19 @@ static struct dentry *securityfs_create_dentry(const char *name, umode_t mode,
-> > >  
-> > >  	pr_debug("securityfs: creating file '%s'\n",name);
-> > >  
-> > > -	error = simple_pin_fs(&fs_type, &mount, &mount_count);
-> > > -	if (error)
-> > > -		return ERR_PTR(error);
-> > > +	if (ns == &init_user_ns) {
-> > > +		error = simple_pin_fs(&fs_type, &init_securityfs_mount,
-> > > +				      &init_securityfs_mount_count);
-> > 
-> > So ...  it's less work for the kernel to skip the simple_pin_fs()
-> > here, but it's more code, and more confusing code, to skip it.
-> > 
-> > So I just want to ask, to make sure:  is it worth it?  Or should
-> > it just be done for all namespaces here (and below and for release),
-> > for shorter, simpler, easier to read and grok code?
+On Wed, Apr 20, 2022 at 10:06:16AM -0400, Stefan Berger wrote:
+> Move the ima_lsm_policy_notifier into the ima_namespace. Each IMA
+> namespace can now register its own LSM policy change notifier callback.
+> The policy change notifier for the init_ima_ns still remains in init_ima()
+> and therefore handle the registration of the callback for all other
+> namespaces in init_ima_namespace().
 > 
-> I think you might've skipped a few version of the thread.
-
-I sure did :)
-
-> It would be more code and a lot more confusing to try and keep the
-> simple_pin_fs(). You will need a per-userns vfsmount pointer and you
-
-Ah, yes, and here you can just use &init_securityfs_mount.
-
-> still need to change securityfs_create_dentry and securityfs_remove. For
-> more context see [1] and [2].
+> Rate-limit the kernel warning 'rule for LSM <label> is undefined` for
+> IMA namespace to avoid flooding the kernel log with this type of message.
 > 
-> [1]: https://lore.kernel.org/lkml/20211206172600.1495968-12-stefanb@linux.ibm.com
-> [2]: https://lore.kernel.org/lkml/20211206172600.1495968-13-stefanb@linux.ibm.com
-> 
-> The fs pinning logic is most suited for single-superblock, almost
-> system-lifetime bound pseudo filesystems such as debugfs or configfs.
-> It becomes a rather huge burden when a pseudo fs is supposed to
-> support multiple superblocks (in this case keyed by userns).
-
-Thanks!
+> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
+> Reviewed-by: Mimi Zohar <zohar@linux.ibm.com>
 
 Acked-by: Serge Hallyn <serge@hallyn.com>
 
+> 
+> ---
+> v11:
+>  - Renamed 'rc' to 'ret'
+>  - Use pr_warn_ratelimited('rule for LSM...') for IMA namespaces
+> 
+> v10:
+>  - Only call pr_warn('rule for LSM <label> is undefined`) for init_ima_ns
+> ---
+>  security/integrity/ima/ima.h             |  2 ++
+>  security/integrity/ima/ima_init_ima_ns.c | 14 +++++++++++++
+>  security/integrity/ima/ima_main.c        |  6 +-----
+>  security/integrity/ima/ima_policy.c      | 26 ++++++++++++++++--------
+>  4 files changed, 35 insertions(+), 13 deletions(-)
+> 
+> diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+> index b35c8504ef87..c68b5117d034 100644
+> --- a/security/integrity/ima/ima.h
+> +++ b/security/integrity/ima/ima.h
+> @@ -144,6 +144,8 @@ struct ima_namespace {
+>  	int valid_policy;
+>  
+>  	struct dentry *ima_policy;
+> +
+> +	struct notifier_block ima_lsm_policy_notifier;
+>  } __randomize_layout;
+>  extern struct ima_namespace init_ima_ns;
+>  
+> diff --git a/security/integrity/ima/ima_init_ima_ns.c b/security/integrity/ima/ima_init_ima_ns.c
+> index 425eed1c6838..c4fe8f3e9a73 100644
+> --- a/security/integrity/ima/ima_init_ima_ns.c
+> +++ b/security/integrity/ima/ima_init_ima_ns.c
+> @@ -10,6 +10,8 @@
+>  
+>  static int ima_init_namespace(struct ima_namespace *ns)
+>  {
+> +	int ret;
+> +
+>  	INIT_LIST_HEAD(&ns->ima_default_rules);
+>  	INIT_LIST_HEAD(&ns->ima_policy_rules);
+>  	INIT_LIST_HEAD(&ns->ima_temp_rules);
+> @@ -30,6 +32,15 @@ static int ima_init_namespace(struct ima_namespace *ns)
+>  	ns->valid_policy = 1;
+>  	ns->ima_fs_flags = 0;
+>  
+> +	if (ns != &init_ima_ns) {
+> +		ns->ima_lsm_policy_notifier.notifier_call =
+> +						ima_lsm_policy_change;
+> +		ret = register_blocking_lsm_notifier
+> +						(&ns->ima_lsm_policy_notifier);
+> +		if (ret)
+> +			return ret;
+> +	}
+> +
+>  	return 0;
+>  }
+>  
+> @@ -39,5 +50,8 @@ int __init ima_ns_init(void)
+>  }
+>  
+>  struct ima_namespace init_ima_ns = {
+> +	.ima_lsm_policy_notifier = {
+> +		.notifier_call = ima_lsm_policy_change,
+> +	},
+>  };
+>  EXPORT_SYMBOL(init_ima_ns);
+> diff --git a/security/integrity/ima/ima_main.c b/security/integrity/ima/ima_main.c
+> index 005f9e784e7b..d44faf1c065d 100644
+> --- a/security/integrity/ima/ima_main.c
+> +++ b/security/integrity/ima/ima_main.c
+> @@ -38,10 +38,6 @@ int ima_appraise;
+>  int __ro_after_init ima_hash_algo = HASH_ALGO_SHA1;
+>  static int hash_setup_done;
+>  
+> -static struct notifier_block ima_lsm_policy_notifier = {
+> -	.notifier_call = ima_lsm_policy_change,
+> -};
+> -
+>  static int __init hash_setup(char *str)
+>  {
+>  	struct ima_template_desc *template_desc = ima_template_desc_current();
+> @@ -1089,7 +1085,7 @@ static int __init init_ima(void)
+>  	if (error)
+>  		return error;
+>  
+> -	error = register_blocking_lsm_notifier(&ima_lsm_policy_notifier);
+> +	error = register_blocking_lsm_notifier(&ns->ima_lsm_policy_notifier);
+>  	if (error)
+>  		pr_warn("Couldn't register LSM notifier, error %d\n", error);
+>  
+> diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
+> index 0a7c61ca3265..23c559c8fae9 100644
+> --- a/security/integrity/ima/ima_policy.c
+> +++ b/security/integrity/ima/ima_policy.c
+> @@ -368,7 +368,8 @@ static void ima_free_rule(struct ima_rule_entry *entry)
+>  	kfree(entry);
+>  }
+>  
+> -static struct ima_rule_entry *ima_lsm_copy_rule(struct ima_rule_entry *entry)
+> +static struct ima_rule_entry *ima_lsm_copy_rule(struct ima_namespace *ns,
+> +						struct ima_rule_entry *entry)
+>  {
+>  	struct ima_rule_entry *nentry;
+>  	int i;
+> @@ -399,18 +400,25 @@ static struct ima_rule_entry *ima_lsm_copy_rule(struct ima_rule_entry *entry)
+>  		ima_filter_rule_init(nentry->lsm[i].type, Audit_equal,
+>  				     nentry->lsm[i].args_p,
+>  				     &nentry->lsm[i].rule);
+> -		if (!nentry->lsm[i].rule)
+> -			pr_warn("rule for LSM \'%s\' is undefined\n",
+> -				nentry->lsm[i].args_p);
+> +		if (!nentry->lsm[i].rule) {
+> +			if (ns == &init_ima_ns)
+> +				pr_warn("rule for LSM \'%s\' is undefined\n",
+> +					nentry->lsm[i].args_p);
+> +			else
+> +				pr_warn_ratelimited
+> +					("rule for LSM \'%s\' is undefined\n",
+> +					 nentry->lsm[i].args_p);
+> +		}
+>  	}
+>  	return nentry;
+>  }
+>  
+> -static int ima_lsm_update_rule(struct ima_rule_entry *entry)
+> +static int ima_lsm_update_rule(struct ima_namespace *ns,
+> +			       struct ima_rule_entry *entry)
+>  {
+>  	struct ima_rule_entry *nentry;
+>  
+> -	nentry = ima_lsm_copy_rule(entry);
+> +	nentry = ima_lsm_copy_rule(ns, entry);
+>  	if (!nentry)
+>  		return -ENOMEM;
+>  
+> @@ -453,7 +461,7 @@ static void ima_lsm_update_rules(struct ima_namespace *ns)
+>  		if (!ima_rule_contains_lsm_cond(entry))
+>  			continue;
+>  
+> -		result = ima_lsm_update_rule(entry);
+> +		result = ima_lsm_update_rule(ns, entry);
+>  		if (result) {
+>  			pr_err("lsm rule update error %d\n", result);
+>  			return;
+> @@ -464,12 +472,14 @@ static void ima_lsm_update_rules(struct ima_namespace *ns)
+>  int ima_lsm_policy_change(struct notifier_block *nb, unsigned long event,
+>  			  void *lsm_data)
+>  {
+> -	struct ima_namespace *ns = &init_ima_ns;
+> +	struct ima_namespace *ns;
+>  
+>  	if (event != LSM_POLICY_CHANGE)
+>  		return NOTIFY_DONE;
+>  
+> +	ns = container_of(nb, struct ima_namespace, ima_lsm_policy_notifier);
+>  	ima_lsm_update_rules(ns);
+> +
+>  	return NOTIFY_OK;
+>  }
+>  
+> -- 
+> 2.34.1
