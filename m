@@ -1,274 +1,146 @@
-Received: from mail.hallyn.com (mail.hallyn.com [178.63.66.53])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 424D77A
-	for <containers@lists.linux.dev>; Mon, 30 May 2022 01:16:12 +0000 (UTC)
-Received: by mail.hallyn.com (Postfix, from userid 1001)
-	id 6052266E; Sun, 29 May 2022 20:16:10 -0500 (CDT)
-Date: Sun, 29 May 2022 20:16:10 -0500
-From: "Serge E. Hallyn" <serge@hallyn.com>
-To: Stefan Berger <stefanb@linux.ibm.com>
-Cc: linux-integrity@vger.kernel.org, zohar@linux.ibm.com, serge@hallyn.com,
-	christian.brauner@ubuntu.com, containers@lists.linux.dev,
-	dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
-	krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
-	mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
-	puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
-	linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
-	linux-security-module@vger.kernel.org, jmorris@namei.org,
-	jpenumak@redhat.com,
-	James Bottomley <James.Bottomley@HansenPartnership.com>,
-	Christian Brauner <brauner@kernel.org>
-Subject: Re: [PATCH v12 21/26] ima: Setup securityfs for IMA namespace
-Message-ID: <20220530011610.GA7909@mail.hallyn.com>
-References: <20220420140633.753772-1-stefanb@linux.ibm.com>
- <20220420140633.753772-22-stefanb@linux.ibm.com>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DAE8817E8
+	for <containers@lists.linux.dev>; Mon, 30 May 2022 08:14:05 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id EB3A7C385B8;
+	Mon, 30 May 2022 08:14:01 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1653898445;
+	bh=IiUVNys82QKu71QCm8k+glI5bp4KFPNfGLhFwPbxkn0=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=PEaUS7QOfbZ9ewQuHtkHiLC41azqD02A82nuPpdE5Ndwrq8UR/p+tw9S1PM26EsEQ
+	 jpybBSwJ5os1HcmCyljv1BXBWah6n0CJAW4ki28jU/wIrytmS3bbhBkM6q3F6k4H9j
+	 aoVt7SJZhOgZnvqMGv+IXox7tEuaDUuvHBZu3VNB+5kh+qSTHJ5UAN4z4rPHYpLwc8
+	 +XUBVJ5mQT/MEgJnVjIX/Ud5hG4ZVEIS7Cd/3AKJnSCK7mBUGsMP9Bt4uoQvfeRZLB
+	 MeXKC0QBZcKOCdr5L/zqxc8+53ne5KlUZuS9ob30rEnJP8BU/CwdaCM+LWllXZZhcL
+	 oCn7fTxviqyqQ==
+Date: Mon, 30 May 2022 10:13:58 +0200
+From: Christian Brauner <brauner@kernel.org>
+To: Jan Kiszka <jan.kiszka@siemens.com>
+Cc: "Serge E. Hallyn" <serge@hallyn.com>, Al Viro <viro@zeniv.linux.org.uk>,
+	Laurent Vivier <laurent@vivier.eu>, linux-fsdevel@vger.kernel.org,
+	Christoph Hellwig <hch@lst.de>, Kees Cook <keescook@chromium.org>,
+	Sargun Dhillon <sargun@sargun.me>, Jann Horn <jannh@google.com>,
+	Henning Schild <henning.schild@siemens.com>,
+	Andrei Vagin <avagin@gmail.com>,
+	Matthew Bobrowski <repnop@google.com>, linux-kernel@vger.kernel.org,
+	linux-api@vger.kernel.org, containers@lists.linux.dev,
+	Christian Brauner <christian.brauner@ubuntu.com>
+Subject: Re: [PATCH v2 2/2] binfmt_misc: enable sandboxed mounts
+Message-ID: <20220530081358.b3tvgvo63mq5o2oo@wittgenstein>
+References: <20211216112659.310979-1-brauner@kernel.org>
+ <20211216112659.310979-2-brauner@kernel.org>
+ <20211226133140.GA8064@mail.hallyn.com>
+ <0e817424-51db-fe0b-a00e-ac7933e8ac1d@siemens.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20220420140633.753772-22-stefanb@linux.ibm.com>
-User-Agent: Mutt/1.9.4 (2018-02-28)
+In-Reply-To: <0e817424-51db-fe0b-a00e-ac7933e8ac1d@siemens.com>
 
-On Wed, Apr 20, 2022 at 10:06:28AM -0400, Stefan Berger wrote:
-> Setup securityfs with symlinks, directories, and files for IMA
-> namespacing support. The same directory structure that IMA uses on the
-> host is also created for the namespacing case.
+On Sun, May 29, 2022 at 09:35:40PM +0200, Jan Kiszka wrote:
+> On 26.12.21 14:31, Serge E. Hallyn wrote:
+> > On Thu, Dec 16, 2021 at 12:26:59PM +0100, Christian Brauner wrote:
+> >> From: Christian Brauner <christian.brauner@ubuntu.com>
+> >>
+> >> Enable unprivileged sandboxes to create their own binfmt_misc mounts.
+> >> This is based on Laurent's work in [1] but has been significantly
+> >> reworked to fix various issues we identified in earlier versions.
+> >>
+> >> While binfmt_misc can currently only be mounted in the initial user
+> >> namespace, binary types registered in this binfmt_misc instance are
+> >> available to all sandboxes (Either by having them installed in the
+> >> sandbox or by registering the binary type with the F flag causing the
+> >> interpreter to be opened right away). So binfmt_misc binary types are
+> >> already delegated to sandboxes implicitly.
+> >>
+> >> However, while a sandbox has access to all registered binary types in
+> >> binfmt_misc a sandbox cannot currently register its own binary types
+> >> in binfmt_misc. This has prevented various use-cases some of which were
+> >> already outlined in [1] but we have a range of issues associated with
+> >> this (cf. [3]-[5] below which are just a small sample).
+> >>
+> >> Extend binfmt_misc to be mountable in non-initial user namespaces.
+> >> Similar to other filesystem such as nfsd, mqueue, and sunrpc we use
+> >> keyed superblock management. The key determines whether we need to
+> >> create a new superblock or can reuse an already existing one. We use the
+> >> user namespace of the mount as key. This means a new binfmt_misc
+> >> superblock is created once per user namespace creation. Subsequent
+> >> mounts of binfmt_misc in the same user namespace will mount the same
+> >> binfmt_misc instance. We explicitly do not create a new binfmt_misc
+> >> superblock on every binfmt_misc mount as the semantics for
+> >> load_misc_binary() line up with the keying model. This also allows us to
+> >> retrieve the relevant binfmt_misc instance based on the caller's user
+> >> namespace which can be done in a simple (bounded to 32 levels) loop.
+> >>
+> >> Similar to the current binfmt_misc semantics allowing access to the
+> >> binary types in the initial binfmt_misc instance we do allow sandboxes
+> >> access to their parent's binfmt_misc mounts if they do not have created
+> >> a separate binfmt_misc instance.
+> >>
+> >> Overall, this will unblock the use-cases mentioned below and in general
+> >> will also allow to support and harden execution of another
+> >> architecture's binaries in tight sandboxes. For instance, using the
+> >> unshare binary it possible to start a chroot of another architecture and
+> >> configure the binfmt_misc interpreter without being root to run the
+> >> binaries in this chroot and without requiring the host to modify its
+> >> binary type handlers.
+> >>
+> >> Henning had already posted a few experiments in the cover letter at [1].
+> >> But here's an additional example where an unprivileged container
+> >> registers qemu-user-static binary handlers for various binary types in
+> >> its separate binfmt_misc mount and is then seamlessly able to start
+> >> containers with a different architecture without affecting the host:
+> >>
+> >> root    [lxc monitor] /var/snap/lxd/common/lxd/containers f1
+> >> 1000000  \_ /sbin/init
+> >> 1000000      \_ /lib/systemd/systemd-journald
+> >> 1000000      \_ /lib/systemd/systemd-udevd
+> >> 1000100      \_ /lib/systemd/systemd-networkd
+> >> 1000101      \_ /lib/systemd/systemd-resolved
+> >> 1000000      \_ /usr/sbin/cron -f
+> >> 1000103      \_ /usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only
+> >> 1000000      \_ /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
+> >> 1000104      \_ /usr/sbin/rsyslogd -n -iNONE
+> >> 1000000      \_ /lib/systemd/systemd-logind
+> >> 1000000      \_ /sbin/agetty -o -p -- \u --noclear --keep-baud console 115200,38400,9600 vt220
+> >> 1000107      \_ dnsmasq --conf-file=/dev/null -u lxc-dnsmasq --strict-order --bind-interfaces --pid-file=/run/lxc/dnsmasq.pid --liste
+> >> 1000000      \_ [lxc monitor] /var/lib/lxc f1-s390x
+> >> 1100000          \_ /usr/bin/qemu-s390x-static /sbin/init
+> >> 1100000              \_ /usr/bin/qemu-s390x-static /lib/systemd/systemd-journald
+> >> 1100000              \_ /usr/bin/qemu-s390x-static /usr/sbin/cron -f
+> >> 1100103              \_ /usr/bin/qemu-s390x-static /usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-ac
+> >> 1100000              \_ /usr/bin/qemu-s390x-static /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
+> >> 1100104              \_ /usr/bin/qemu-s390x-static /usr/sbin/rsyslogd -n -iNONE
+> >> 1100000              \_ /usr/bin/qemu-s390x-static /lib/systemd/systemd-logind
+> >> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud console 115200,38400,9600 vt220
+> >> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud pts/0 115200,38400,9600 vt220
+> >> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud pts/1 115200,38400,9600 vt220
+> >> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud pts/2 115200,38400,9600 vt220
+> >> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud pts/3 115200,38400,9600 vt220
+> >> 1100000              \_ /usr/bin/qemu-s390x-static /lib/systemd/systemd-udevd
+> >>
+> >> [1]: https://lore.kernel.org/all/20191216091220.465626-1-laurent@vivier.eu
+> >> [2]: https://discuss.linuxcontainers.org/t/binfmt-misc-permission-denied
+> >> [3]: https://discuss.linuxcontainers.org/t/lxd-binfmt-support-for-qemu-static-interpreters
+> >> [4]: https://discuss.linuxcontainers.org/t/3-1-0-binfmt-support-service-in-unprivileged-guest-requires-write-access-on-hosts-proc-sys-fs-binfmt-misc
+> >> [5]: https://discuss.linuxcontainers.org/t/qemu-user-static-not-working-4-11
+> >>
+> >> Link: https://lore.kernel.org/r/20191216091220.465626-2-laurent@vivier.eu (origin)
+> >> Link: https://lore.kernel.org/r/20211028103114.2849140-2-brauner@kernel.org (v1)
+> >> Cc: Sargun Dhillon <sargun@sargun.me>
+> >> Cc: Serge Hallyn <serge@hallyn.com>
+> > 
+> > (one typo below)
+> > 
+> > Acked-by: Serge Hallyn <serge@hallyn.com>
+> > 
 > 
-> The securityfs file and directory ownerships cannot be set when the
-> IMA namespace is initialized. Therefore, delay the setup of the file
-> system to a later point when securityfs is in securityfs_fill_super.
-> 
-> Introduce a variable ima_policy_removed in ima_namespace that is used to
-> remember whether the policy file has previously been removed and thus
-> should not be created again in case of unmounting and again mounting
-> securityfs inside an IMA namespace.
-> 
-> This filesystem can now be mounted as follows:
-> 
-> mount -t securityfs /sys/kernel/security/ /sys/kernel/security/
-> 
-> The following directories, symlinks, and files are available
-> when IMA namespacing is enabled, otherwise it will be empty:
-> 
-> $ ls -l sys/kernel/security/
-> total 0
-> lr--r--r--. 1 root root 0 Dec  2 00:18 ima -> integrity/ima
-> drwxr-xr-x. 3 root root 0 Dec  2 00:18 integrity
-> 
-> $ ls -l sys/kernel/security/ima/
-> total 0
-> -r--r-----. 1 root root 0 Dec  2 00:18 ascii_runtime_measurements
-> -r--r-----. 1 root root 0 Dec  2 00:18 binary_runtime_measurements
-> -rw-------. 1 root root 0 Dec  2 00:18 policy
-> -r--r-----. 1 root root 0 Dec  2 00:18 runtime_measurements_count
-> -r--r-----. 1 root root 0 Dec  2 00:18 violations
-> 
-> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-> Signed-off-by: James Bottomley <James.Bottomley@HansenPartnership.com>
-> Acked-by: Christian Brauner <brauner@kernel.org>
-> Reviewed-by: Mimi Zohar <zohar@linux.ibm.com>
+> What happened to this afterwards? Any remaining issues?
 
-Acked-by: Serge Hallyn <serge@hallyn.com>
-
-but a nit below
-
-> 
-> ---
-> 
-> v9:
->  - rename policy_dentry_removed to ima_policy_removed
-> ---
->  include/linux/ima.h             | 13 ++++++++++
->  security/inode.c                |  6 ++++-
->  security/integrity/ima/ima.h    |  1 +
->  security/integrity/ima/ima_fs.c | 46 +++++++++++++++++++++++----------
->  4 files changed, 52 insertions(+), 14 deletions(-)
-> 
-> diff --git a/include/linux/ima.h b/include/linux/ima.h
-> index b9301e2aaa8b..0cbf0434bc93 100644
-> --- a/include/linux/ima.h
-> +++ b/include/linux/ima.h
-> @@ -41,6 +41,7 @@ extern int ima_measure_critical_data(const char *event_label,
->  				     const char *event_name,
->  				     const void *buf, size_t buf_len,
->  				     bool hash, u8 *digest, size_t digest_len);
-> +extern int ima_fs_ns_init(struct user_namespace *user_ns, struct dentry *root);
->  
->  #ifdef CONFIG_IMA_APPRAISE_BOOTPARAM
->  extern void ima_appraise_parse_cmdline(void);
-> @@ -227,6 +228,12 @@ void free_ima_ns(struct user_namespace *ns);
->  
->  void ima_free_ns_status_list(struct list_head *head, rwlock_t *ns_list_lock);
->  
-> +static inline int ima_securityfs_init(struct user_namespace *user_ns,
-> +				      struct dentry *root)
-> +{
-> +	return ima_fs_ns_init(user_ns, root);
-> +}
-> +
->  #else
->  
->  static inline void free_ima_ns(struct user_namespace *user_ns)
-> @@ -238,6 +245,12 @@ static inline void ima_free_ns_status_list(struct list_head *head,
->  {
->  }
->  
-> +static inline int ima_securityfs_init(struct user_namespace *ns,
-> +				      struct dentry *root)
-> +{
-> +	return 0;
-> +}
-> +
->  #endif /* CONFIG_IMA_NS */
->  
->  #endif /* _LINUX_IMA_H */
-> diff --git a/security/inode.c b/security/inode.c
-> index 84c9396792a9..e81f55f054dc 100644
-> --- a/security/inode.c
-> +++ b/security/inode.c
-> @@ -16,6 +16,7 @@
->  #include <linux/fs_context.h>
->  #include <linux/mount.h>
->  #include <linux/pagemap.h>
-> +#include <linux/ima.h>
->  #include <linux/init.h>
->  #include <linux/namei.h>
->  #include <linux/security.h>
-> @@ -82,7 +83,10 @@ static int securityfs_fill_super(struct super_block *sb, struct fs_context *fc)
->  	sb->s_op = &securityfs_super_operations;
->  	sb->s_root->d_inode->i_op = &securityfs_dir_inode_operations;
->  
-> -	return 0;
-> +	if (ns != &init_user_ns)
-> +		error = ima_securityfs_init(ns, sb->s_root);
-> +
-> +	return error;
->  }
->  
->  static int securityfs_get_tree(struct fs_context *fc)
-> diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
-> index cb48fc1d5b80..801dc3c8bfde 100644
-> --- a/security/integrity/ima/ima.h
-> +++ b/security/integrity/ima/ima.h
-> @@ -152,6 +152,7 @@ struct ima_namespace {
->  	int valid_policy;
->  
->  	struct dentry *ima_policy;
-> +	bool ima_policy_removed;
->  
->  	struct notifier_block ima_lsm_policy_notifier;
->  } __randomize_layout;
-> diff --git a/security/integrity/ima/ima_fs.c b/security/integrity/ima/ima_fs.c
-> index c41aa61b7393..84cd02a9e19b 100644
-> --- a/security/integrity/ima/ima_fs.c
-> +++ b/security/integrity/ima/ima_fs.c
-> @@ -21,6 +21,7 @@
->  #include <linux/rcupdate.h>
->  #include <linux/parser.h>
->  #include <linux/vmalloc.h>
-> +#include <linux/ima.h>
->  
->  #include "ima.h"
->  
-> @@ -433,6 +434,7 @@ static int ima_release_policy(struct inode *inode, struct file *file)
->  #if !defined(CONFIG_IMA_WRITE_POLICY) && !defined(CONFIG_IMA_READ_POLICY)
->  	securityfs_remove(ns->ima_policy);
->  	ns->ima_policy = NULL;
-> +	ns->ima_policy_removed = true;
->  #elif defined(CONFIG_IMA_WRITE_POLICY)
->  	clear_bit(IMA_FS_BUSY, &ns->ima_fs_flags);
->  #elif defined(CONFIG_IMA_READ_POLICY)
-> @@ -449,9 +451,11 @@ static const struct file_operations ima_measure_policy_ops = {
->  	.llseek = generic_file_llseek,
->  };
->  
-> -static int __init ima_fs_ns_init(struct ima_namespace *ns)
-> +int ima_fs_ns_init(struct user_namespace *user_ns, struct dentry *root)
->  {
-> -	struct dentry *ima_dir;
-> +	struct ima_namespace *ns = ima_ns_from_user_ns(user_ns);
-> +	struct dentry *int_dir;
-> +	struct dentry *ima_dir = NULL;
->  	struct dentry *ima_symlink = NULL;
->  	struct dentry *binary_runtime_measurements = NULL;
->  	struct dentry *ascii_runtime_measurements = NULL;
-> @@ -459,11 +463,22 @@ static int __init ima_fs_ns_init(struct ima_namespace *ns)
->  	struct dentry *violations = NULL;
->  	int ret;
->  
-> -	ima_dir = securityfs_create_dir("ima", integrity_dir);
-> -	if (IS_ERR(ima_dir))
-> -		return PTR_ERR(ima_dir);
-> +	/* FIXME: update when evm and integrity are namespaced */
-> +	if (user_ns != &init_user_ns) {
-> +		int_dir = securityfs_create_dir("integrity", root);
-> +		if (IS_ERR(int_dir))
-> +			return PTR_ERR(int_dir);
-> +	} else {
-> +		int_dir = integrity_dir;
-> +	}
->  
-> -	ima_symlink = securityfs_create_symlink("ima", NULL, "integrity/ima",
-> +	ima_dir = securityfs_create_dir("ima", int_dir);
-> +	if (IS_ERR(ima_dir)) {
-> +		ret = PTR_ERR(ima_dir);
-> +		goto out;
-> +	}
-> +
-> +	ima_symlink = securityfs_create_symlink("ima", root, "integrity/ima",
->  						NULL);
->  	if (IS_ERR(ima_symlink)) {
->  		ret = PTR_ERR(ima_symlink);
-> @@ -505,12 +520,15 @@ static int __init ima_fs_ns_init(struct ima_namespace *ns)
->  		goto out;
->  	}
->  
-> -	ns->ima_policy = securityfs_create_file("policy", POLICY_FILE_FLAGS,
-> -						ima_dir, NULL,
-> -						&ima_measure_policy_ops);
-> -	if (IS_ERR(ns->ima_policy)) {
-> -		ret = PTR_ERR(ns->ima_policy);
-> -		goto out;
-> +	if (!ns->ima_policy_removed) {
-
-It would be nicer to avoid this indent level by just doing
-
-	if (ns->ima_policy_removed)
-		return 0;
-
-above the securityfs_create_file().
-
-> +		ns->ima_policy =
-> +		    securityfs_create_file("policy", POLICY_FILE_FLAGS,
-> +					   ima_dir, NULL,
-> +					   &ima_measure_policy_ops);
-> +		if (IS_ERR(ns->ima_policy)) {
-> +			ret = PTR_ERR(ns->ima_policy);
-> +			goto out;
-> +		}
->  	}
->  
->  	return 0;
-> @@ -522,11 +540,13 @@ static int __init ima_fs_ns_init(struct ima_namespace *ns)
->  	securityfs_remove(binary_runtime_measurements);
->  	securityfs_remove(ima_symlink);
->  	securityfs_remove(ima_dir);
-> +	if (user_ns != &init_user_ns)
-> +		securityfs_remove(int_dir);
->  
->  	return ret;
->  }
->  
->  int __init ima_fs_init(void)
->  {
-> -	return ima_fs_ns_init(&init_ima_ns);
-> +	return ima_fs_ns_init(&init_user_ns, NULL);
->  }
-> -- 
-> 2.34.1
-> 
+Not that we know. I plan to queue this up for 5.20.
