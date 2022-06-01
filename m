@@ -1,178 +1,94 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ej1-f48.google.com (mail-ej1-f48.google.com [209.85.218.48])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 62EE57E
-	for <containers@lists.linux.dev>; Wed,  1 Jun 2022 18:25:01 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id BF094C385A5;
-	Wed,  1 Jun 2022 18:24:58 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1654107901;
-	bh=7dmwc1JxqNEK2I53MV/piGLSWyqlDbqSz/Nd/W+NUIU=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=dB5hoqwz3LSkhmpIp+wjclCAcSFgV1Wcdbfs98/GYhIWhH9VDtEFXJuDbWY35vBJ8
-	 4ILCaLzeDc2L/gu8ht+k387/xYhr/lsmoH+8is2Vl0ZjSbcoT/hGwIpSDNesvCaCpa
-	 ysptCPynP7wFXBermVj+UHCAX+fViNjoc5I2STgtOu9BRBrWE7bBdfsG60DpFaWRY3
-	 pEiVGVP3pm0hJeDMKsjRcLoO+DHmyK/HKF9Sntssnqpb0R2hfUpTcLvCPRiXEtLMLE
-	 VG7Etu0VPVNPTKGjPhGdxU562kuDk0FAQE3Rw1FR4zINJEu7w2tx/MQ3F0iUG7XVZQ
-	 MCZiK8GFjRnYg==
-Date: Wed, 1 Jun 2022 20:24:55 +0200
-From: Alexey Gladkov <legion@kernel.org>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: LKML <linux-kernel@vger.kernel.org>,
-	"Eric W . Biederman" <ebiederm@xmission.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Christian Brauner <brauner@kernel.org>,
-	Iurii Zaikin <yzaikin@google.com>,
-	Kees Cook <keescook@chromium.org>,
-	Linux Containers <containers@lists.linux.dev>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	Luis Chamberlain <mcgrof@kernel.org>,
-	Vasily Averin <vvs@virtuozzo.com>
-Subject: Re: [RFC PATCH 2/4] sysctl: ipc: Do not use dynamic memory
-Message-ID: <Ypeu97GDg6mNiKQ8@example.org>
-References: <CAHk-=whi2SzU4XT_FsdTCAuK2qtYmH+-hwi1cbSdG8zu0KXL=g@mail.gmail.com>
- <cover.1654086665.git.legion@kernel.org>
- <857cb160a981b5719d8ed6a3e5e7c456915c64fa.1654086665.git.legion@kernel.org>
- <CAHk-=wjJ2CP0ugbOnwAd-=Cw0i-q_xC1PbJ-_1jrvR-aisiAAA@mail.gmail.com>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F235E2F2B
+	for <containers@lists.linux.dev>; Wed,  1 Jun 2022 18:34:40 +0000 (UTC)
+Received: by mail-ej1-f48.google.com with SMTP id f21so5478054ejh.11
+        for <containers@lists.linux.dev>; Wed, 01 Jun 2022 11:34:40 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linux-foundation.org; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=njosF9y/4mY7h7cHbBRt7eN+aSzBOOky31pVud25XUc=;
+        b=NPllnz8RYVxm2SnTV64EXzDNNfLuN5S4zdx4+p5tMDUvBFc2HBR70PHsb0+FhzIYOe
+         5QBBj11OZ9MvXzN4JDhTfmL34kBXkF5cWwnTwj9QJCpAIQjmWFGOR+tY8hUC7FXp3TPu
+         gpZSXodqw0bfpX1vHBHuU/zTaxExUhW5Sii8s=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=njosF9y/4mY7h7cHbBRt7eN+aSzBOOky31pVud25XUc=;
+        b=cyLmqOyrIPx4iQtCmwUlawO3V9B6pEZLzhqN1bQK6q1ioGEb2cp1ZEcEivpkI88djK
+         BHWxMBilu/EgLAtW3cCpbSZwOYQz4p+3TW2+k36UMZzllJEQjazoRCMdhbqmIM8G7NzG
+         OS8VGgfezXfjl0RcnbxisOYsWkDqleLO/vnwTmi3ggrzenNgUn6guZnVGidx3MA7bIZm
+         izmtlH+X6pdevKLmRsfKqzxMY3EFb8My4dnggl/mz4v6u4ppzKcmiONI5Xh1+6fQsPpE
+         dOdcNhOIPEcefeydawuGSEgjupY0A5pOqzIKoKH7lNqOWwGpMFlWxGkyzWZCbkKR+5WO
+         LUlg==
+X-Gm-Message-State: AOAM532vefWPb+G10J8XuPtEEMcvxpTgXT0EOcp4VsJE1JctgAkA+SDr
+	fK2h/BvmpWBBeGVK6BnloGt3NzSthvEyr6z6
+X-Google-Smtp-Source: ABdhPJxsCsTCeVbrqKFu9UIdnOa2uauECwdYBXbB8MKsvzAFiWmsLGj7039ms48aOdFESPP9M0r4SQ==
+X-Received: by 2002:a17:907:7207:b0:6ff:d25:ee3f with SMTP id dr7-20020a170907720700b006ff0d25ee3fmr790388ejc.389.1654108478947;
+        Wed, 01 Jun 2022 11:34:38 -0700 (PDT)
+Received: from mail-wm1-f41.google.com (mail-wm1-f41.google.com. [209.85.128.41])
+        by smtp.gmail.com with ESMTPSA id f22-20020a1709067f9600b006f3ef214db6sm981429ejr.28.2022.06.01.11.34.36
+        for <containers@lists.linux.dev>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 01 Jun 2022 11:34:37 -0700 (PDT)
+Received: by mail-wm1-f41.google.com with SMTP id o29-20020a05600c511d00b00397697f172dso2873572wms.0
+        for <containers@lists.linux.dev>; Wed, 01 Jun 2022 11:34:36 -0700 (PDT)
+X-Received: by 2002:a1c:7207:0:b0:397:66ee:9d71 with SMTP id
+ n7-20020a1c7207000000b0039766ee9d71mr692055wmc.8.1654108476150; Wed, 01 Jun
+ 2022 11:34:36 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAHk-=wjJ2CP0ugbOnwAd-=Cw0i-q_xC1PbJ-_1jrvR-aisiAAA@mail.gmail.com>
+References: <CAHk-=whi2SzU4XT_FsdTCAuK2qtYmH+-hwi1cbSdG8zu0KXL=g@mail.gmail.com>
+ <cover.1654086665.git.legion@kernel.org> <857cb160a981b5719d8ed6a3e5e7c456915c64fa.1654086665.git.legion@kernel.org>
+ <CAHk-=wjJ2CP0ugbOnwAd-=Cw0i-q_xC1PbJ-_1jrvR-aisiAAA@mail.gmail.com> <Ypeu97GDg6mNiKQ8@example.org>
+In-Reply-To: <Ypeu97GDg6mNiKQ8@example.org>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Wed, 1 Jun 2022 11:34:18 -0700
+X-Gmail-Original-Message-ID: <CAHk-=wgBeQafNgw6DNUwM4vvw4snb83Tb65m_QH9XSic2JSJaQ@mail.gmail.com>
+Message-ID: <CAHk-=wgBeQafNgw6DNUwM4vvw4snb83Tb65m_QH9XSic2JSJaQ@mail.gmail.com>
+Subject: Re: [RFC PATCH 2/4] sysctl: ipc: Do not use dynamic memory
+To: Alexey Gladkov <legion@kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, 
+	"Eric W . Biederman" <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, 
+	Christian Brauner <brauner@kernel.org>, Iurii Zaikin <yzaikin@google.com>, 
+	Kees Cook <keescook@chromium.org>, Linux Containers <containers@lists.linux.dev>, 
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>, Luis Chamberlain <mcgrof@kernel.org>, 
+	Vasily Averin <vvs@virtuozzo.com>
+Content-Type: text/plain; charset="UTF-8"
 
-On Wed, Jun 01, 2022 at 09:45:15AM -0700, Linus Torvalds wrote:
-> On Wed, Jun 1, 2022 at 6:20 AM Alexey Gladkov <legion@kernel.org> wrote:
-> >
-> > Dynamic memory allocation is needed to modify .data and specify the per
-> > namespace parameter. The new sysctl API is allowed to get rid of the
-> > need for such modification.
-> 
-> Ok, this is looking better. That said, a few comments:
-> 
-> >
-> > diff --git a/ipc/ipc_sysctl.c b/ipc/ipc_sysctl.c
-> > index ef313ecfb53a..833b670c38f3 100644
-> > --- a/ipc/ipc_sysctl.c
-> > +++ b/ipc/ipc_sysctl.c
-> > @@ -68,26 +68,94 @@ static int proc_ipc_sem_dointvec(struct ctl_table *table, int write,
-> >         return ret;
-> >  }
-> >
-> > +static inline void *data_from_ns(struct ctl_context *ctx, struct ctl_table *table);
-> > +
-> > +static int ipc_sys_open(struct ctl_context *ctx, struct inode *inode, struct file *file)
-> > +{
-> > +       struct ipc_namespace *ns = current->nsproxy->ipc_ns;
-> > +
-> > +       // For now, we only allow changes in init_user_ns.
-> > +       if (ns->user_ns != &init_user_ns)
-> > +               return -EPERM;
-> > +
-> > +#ifdef CONFIG_CHECKPOINT_RESTORE
-> > +       int index = (ctx->table - ipc_sysctls);
-> > +
-> > +       switch (index) {
-> > +               case IPC_SYSCTL_SEM_NEXT_ID:
-> > +               case IPC_SYSCTL_MSG_NEXT_ID
+On Wed, Jun 1, 2022 at 11:25 AM Alexey Gladkov <legion@kernel.org> wrote:
+>
+> I'm not sure how to get rid of ctl_table since net sysctls are heavily
+> dependent on it.
 
-https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/kernel/bpf/cgroup.c#n1392:
-> [...]
-> 
-> I don't think you actually even compile-tested this, because you're
-> using these IPC_SYSCTL_SEM_NEXT_ID etc enums before you even declared
-> them later in the same file.
+I don't actually think it's worth getting rid of entirely, because
+there's just a lot of simple cases where it "JustWorks(tm)" and having
+just that table entry describe all the semantics is not wrong at all.
 
-I did it but without CONFIG_CHECKPOINT_RESTORE.
+The name may suck, but hey, it's not a big deal. Changing it now would
+be more pain than it's worth.
 
-This is where I'm not sure who can write to ipc sysctls inside
-ipc_namespace.
+No, I was more thinking that things that already need more
+infrastructure than that simple static ctl_table entry might be better
+off trying to migrate to your new "proper read op" model, and having
+more of that dynamic behavior in the read op.
 
-> > +static ssize_t ipc_sys_read(struct ctl_context *ctx, struct file *file,
-> > +                    char *buffer, size_t *lenp, loff_t *ppos)
-> > +{
-> > +       struct ctl_table table = *ctx->table;
-> > +       table.data = data_from_ns(ctx, ctx->table);
-> > +       return table.proc_handler(&table, 0, buffer, lenp, ppos);
-> > +}
-> 
-> Can we please fix the names and the types of this new 'ctx' structure?
-> 
-> Yes, yes, I know the old legacy "sysctl table" is horribly named, and
-> uses "ctl_table".
+The whole "create dynamic ctl_table entries on the fly" model works,
+but it's kind of ugly.
 
-Sure.
+Anyway, I think all of this is "I think there is more room for cleanup
+in this area", and maybe we'll never have enough motivation to
+actually do that.
 
-> But let's just write it out. It's not some random control table for
-> anything. It's a very odd and specific thing: "sysctl". Let's use the
-> full name.
-> 
-> Also, Please just make that "ctl_data" member in that "ctl_context"
-> struct not just have a real name, but a real type. Make it literally
-> be
-> 
->     struct ipc_namespace *ipc_ns;
-> 
-> and if we end up with other things wanting other pointers, just add a
-> new one (or make a union if we care about the size of that allocation,
-> which I don't see any reason we'd do when it's literally just like a
-> couple of pointers in size).
-> 
-> There is no reason to have some pseudo-generic "void *ctl_data" that
-> makes it ambiguous and allows for type confusion and isn't
-> self-documenting. I'd rather have a properly typed pointer that is
-> just initialized to NULL and is not always used or needed, but always
-> has a clear case for *what* it would be used for.
-> 
-> Yes, yes, we have f_private etc for things that are really very very
-> generic and have arbitrary users. But 'sysctl' is not that kind of
-> truly generic use.
+Your patches seem to fix the extant issue with the ipc namespace, and
+the truly disgusting parts (although maybe there are other truly
+disgusting things hiding - I didn't go look for them).
 
-Yep. I made ctl_data in the same way as f_private. My idea is that if
-someone needs to store more than one pointer, they can put a struct there.
-But it turned out that at least now, apart from ipc_namespace, nothing is
-needed.
-
-> I wish we didn't have that silly "create a temporary ctl_table entry"
-> either, and I wish it was properly named. But it's not worth the
-> pointless churn to fix old bad interfaces. But the new ones should
-> have better names, and try to avoid those bad old decisions.
-
-Currently temporary ctl_table is the main strategy for handling sysctl
-entries.
-
-Perhaps it will be possible to get rid of this if we add another
-get_data() that would return what is currently placed in .data in
-ctl_table. I mean make getting .data dynamic.
-
-> But yeah, I think this all is a step in the right direction. And maybe
-> some of those cases and old 'ctl_table' things can be migrated to just
-> using individual read() functions entirely. The whole 'ctl_table'
-> model was broken, and came from the bad old days with an actual
-> 'sysctl()' system call.
-
-I'm not sure how to get rid of ctl_table since net sysctls are heavily
-dependent on it.
-
-I was wondering if it's possible to get rid of ctl_table but if it's not
-possible to rewrite everything to some kind of new magic API, then keeping
-two of them would be a nightmare.
-
-Another problem is that ctl_table is being used by __cgroup_bpf_run_filter_sysctl.
-
-https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/kernel/bpf/cgroup.c#n1392
-
-> Because I think it would be lovely if people would move away from the
-> 'sysctl table' approach entirely for cases where that makes sense, and
-> these guys that already need special handling are very much in that
-> situation.
-
-Since you think that these patches are a step in the right direction, then
-I will prepare the first version with your comments in mind.
-
--- 
-Rgrds, legion
-
+                      Linus
