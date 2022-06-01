@@ -1,21 +1,21 @@
 Received: from us-smtp-delivery-44.mimecast.com (us-smtp-delivery-44.mimecast.com [207.211.30.44])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 885E920E4
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8C8DB210C
 	for <containers@lists.linux.dev>; Wed,  1 Jun 2022 13:22:04 +0000 (UTC)
 Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
  [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
  (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-606-W5A1QcP2OjSmyMrvEcSVfQ-1; Wed, 01 Jun 2022 09:20:48 -0400
-X-MC-Unique: W5A1QcP2OjSmyMrvEcSVfQ-1
+ us-mta-264-O_Pd3AsIMGigCWcA94cQtA-1; Wed, 01 Jun 2022 09:20:53 -0400
+X-MC-Unique: O_Pd3AsIMGigCWcA94cQtA-1
 Received: from smtp.corp.redhat.com (int-mx02.intmail.prod.int.rdu2.redhat.com [10.11.54.2])
 	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
 	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id DD470811E81;
-	Wed,  1 Jun 2022 13:20:47 +0000 (UTC)
+	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id B024B802804;
+	Wed,  1 Jun 2022 13:20:52 +0000 (UTC)
 Received: from comp-core-i7-2640m-0182e6.redhat.com (unknown [10.36.110.3])
-	by smtp.corp.redhat.com (Postfix) with ESMTP id C17D0414A7E7;
-	Wed,  1 Jun 2022 13:20:45 +0000 (UTC)
+	by smtp.corp.redhat.com (Postfix) with ESMTP id 94762414A7E7;
+	Wed,  1 Jun 2022 13:20:50 +0000 (UTC)
 From: Alexey Gladkov <legion@kernel.org>
 To: LKML <linux-kernel@vger.kernel.org>,
 	"Eric W . Biederman" <ebiederm@xmission.com>,
@@ -28,11 +28,11 @@ Cc: Andrew Morton <akpm@linux-foundation.org>,
 	linux-fsdevel@vger.kernel.org,
 	Luis Chamberlain <mcgrof@kernel.org>,
 	Vasily Averin <vvs@virtuozzo.com>
-Subject: [RFC PATCH 1/4] sysctl: API extension for handling sysctl
-Date: Wed,  1 Jun 2022 15:20:29 +0200
-Message-Id: <5ec6759ab3b617f9c12449a9606b6f0b5a7582d0.1654086665.git.legion@kernel.org>
+Subject: [RFC PATCH 3/4] sysctl: userns: Do not use dynamic memory
+Date: Wed,  1 Jun 2022 15:20:31 +0200
+Message-Id: <81190e5e4879d53be2e1416bcad0b663421339d6.1654086665.git.legion@kernel.org>
 In-Reply-To: <cover.1654086665.git.legion@kernel.org>
-References: <CAHk-=whi2SzU4XT_FsdTCAuK2qtYmH+-hwi1cbSdG8zu0KXL=g@mail.gmail.com>  <cover.1654086665.git.legion@kernel.org>
+References: <CAHk-=whi2SzU4XT_FsdTCAuK2qtYmH+-hwi1cbSdG8zu0KXL=g@mail.gmail.com> <cover.1654086665.git.legion@kernel.org>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
@@ -42,214 +42,240 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Scanned-By: MIMEDefang 2.84 on 10.11.54.2
 
-This adds additional optional functions for handling open, read, and
-write operations that can be customized for each sysctl file. It also
-creates ctl_context that persists from opening to closing the file in
-the /proc/sys.
-
-The context allows us to store dynamic information at the time the file
-is opened. This eliminates the need to duplicate ctl_table in order to
-dynamically change .data, .extra1 or .extra2.
-
-This API extends the existing one and does not require any changes to
-already existing sysctl handlers.
+Dynamic memory allocation is needed to modify .data and specify the
+per namespace parameter. The new sysctl API is allowed to get rid of
+the need for such modification.
 
 Signed-off-by: Alexey Gladkov <legion@kernel.org>
 ---
- fs/proc/proc_sysctl.c  | 71 +++++++++++++++++++++++++++++++++++-------
- include/linux/sysctl.h | 20 ++++++++++--
- 2 files changed, 77 insertions(+), 14 deletions(-)
+ include/linux/user_namespace.h |   6 --
+ kernel/ucount.c                | 116 +++++++++++++--------------------
+ kernel/user_namespace.c        |  10 +--
+ 3 files changed, 46 insertions(+), 86 deletions(-)
 
-diff --git a/fs/proc/proc_sysctl.c b/fs/proc/proc_sysctl.c
-index 7d9cfc730bd4..d3d43e738f01 100644
---- a/fs/proc/proc_sysctl.c
-+++ b/fs/proc/proc_sysctl.c
-@@ -560,6 +560,7 @@ static ssize_t proc_sys_call_handler(struct kiocb *iocb, struct iov_iter *iter,
- 	struct inode *inode = file_inode(iocb->ki_filp);
- 	struct ctl_table_header *head = grab_header(inode);
- 	struct ctl_table *table = PROC_I(inode)->sysctl_entry;
-+	struct ctl_fops *fops = table->ctl_fops;
- 	size_t count = iov_iter_count(iter);
- 	char *kbuf;
- 	ssize_t error;
-@@ -577,7 +578,7 @@ static ssize_t proc_sys_call_handler(struct kiocb *iocb, struct iov_iter *iter,
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index 45f09bec02c4..7b134516e5cb 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -95,10 +95,6 @@ struct user_namespace {
+ 	struct key		*persistent_keyring_register;
+ #endif
+ 	struct work_struct	work;
+-#ifdef CONFIG_SYSCTL
+-	struct ctl_table_set	set;
+-	struct ctl_table_header *sysctls;
+-#endif
+ 	struct ucounts		*ucounts;
+ 	long ucount_max[UCOUNT_COUNTS];
+ 	long rlimit_max[UCOUNT_RLIMIT_COUNTS];
+@@ -116,8 +112,6 @@ struct ucounts {
+ extern struct user_namespace init_user_ns;
+ extern struct ucounts init_ucounts;
  
- 	/* if that can happen at all, it should be -EINVAL, not -EISDIR */
- 	error = -EINVAL;
--	if (!table->proc_handler)
-+	if (!table->proc_handler && !fops)
- 		goto out;
+-bool setup_userns_sysctls(struct user_namespace *ns);
+-void retire_userns_sysctls(struct user_namespace *ns);
+ struct ucounts *inc_ucount(struct user_namespace *ns, kuid_t uid, enum ucount_type type);
+ void dec_ucount(struct ucounts *ucounts, enum ucount_type type);
+ struct ucounts *alloc_ucounts(struct user_namespace *ns, kuid_t uid);
+diff --git a/kernel/ucount.c b/kernel/ucount.c
+index ee8e57fd6f90..4a5072671847 100644
+--- a/kernel/ucount.c
++++ b/kernel/ucount.c
+@@ -7,6 +7,7 @@
+ #include <linux/hash.h>
+ #include <linux/kmemleak.h>
+ #include <linux/user_namespace.h>
++#include <linux/fs.h>
  
- 	/* don't even try if the size is too large */
-@@ -600,8 +601,20 @@ static ssize_t proc_sys_call_handler(struct kiocb *iocb, struct iov_iter *iter,
- 	if (error)
- 		goto out_free_buf;
+ struct ucounts init_ucounts = {
+ 	.ns    = &init_user_ns,
+@@ -26,38 +27,20 @@ static DEFINE_SPINLOCK(ucounts_lock);
  
--	/* careful: calling conventions are nasty here */
--	error = table->proc_handler(table, write, kbuf, &count, &iocb->ki_pos);
-+	if (fops) {
-+		struct ctl_context *ctx = iocb->ki_filp->private_data;
+ 
+ #ifdef CONFIG_SYSCTL
+-static struct ctl_table_set *
+-set_lookup(struct ctl_table_root *root)
+-{
+-	return &current_user_ns()->set;
+-}
+-
+-static int set_is_seen(struct ctl_table_set *set)
+-{
+-	return &current_user_ns()->set == set;
+-}
+-
+-static int set_permissions(struct ctl_table_header *head,
+-				  struct ctl_table *table)
+-{
+-	struct user_namespace *user_ns =
+-		container_of(head->set, struct user_namespace, set);
+-	int mode;
+-
+-	/* Allow users with CAP_SYS_RESOURCE unrestrained access */
+-	if (ns_capable(user_ns, CAP_SYS_RESOURCE))
+-		mode = (table->mode & S_IRWXU) >> 6;
+-	else
+-	/* Allow all others at most read-only access */
+-		mode = table->mode & S_IROTH;
+-	return (mode << 6) | (mode << 3) | mode;
+-}
+-
+-static struct ctl_table_root set_root = {
+-	.lookup = set_lookup,
+-	.permissions = set_permissions,
++static int user_sys_open(struct ctl_context *ctx, struct inode *inode,
++		        struct file *file);
++static ssize_t user_sys_read(struct ctl_context *ctx, struct file *file,
++			    char *buffer, size_t *lenp, loff_t *ppos);
++static ssize_t user_sys_write(struct ctl_context *ctx, struct file *file,
++			     char *buffer, size_t *lenp, loff_t *ppos);
 +
-+		if (write && fops->write)
-+			error = fops->write(ctx, iocb->ki_filp, kbuf, &count, &iocb->ki_pos);
-+		else if (!write && fops->read)
-+			error = fops->read(ctx, iocb->ki_filp, kbuf, &count, &iocb->ki_pos);
-+		else
-+			error = -EINVAL;
-+	} else {
-+		/* careful: calling conventions are nasty here */
-+		error = table->proc_handler(table, write, kbuf, &count, &iocb->ki_pos);
-+	}
-+
- 	if (error)
- 		goto out_free_buf;
- 
-@@ -634,17 +647,50 @@ static int proc_sys_open(struct inode *inode, struct file *filp)
- {
- 	struct ctl_table_header *head = grab_header(inode);
- 	struct ctl_table *table = PROC_I(inode)->sysctl_entry;
-+	struct ctl_context *ctx;
-+	int ret = 0;
- 
- 	/* sysctl was unregistered */
- 	if (IS_ERR(head))
- 		return PTR_ERR(head);
- 
--	if (table->poll)
--		filp->private_data = proc_sys_poll_event(table->poll);
-+	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
-+	if (!ctx)
-+		return -ENOMEM;
-+
-+	ctx->table = table;
-+	filp->private_data = ctx;
-+
-+	if (table->ctl_fops && table->ctl_fops->open)
-+		ret = table->ctl_fops->open(ctx, inode, filp);
-+
-+	if (!ret && table->poll)
-+		ctx->poll_event = proc_sys_poll_event(table->poll);
- 
- 	sysctl_head_finish(head);
- 
--	return 0;
-+	return ret;
-+}
-+
-+static int proc_sys_release(struct inode *inode, struct file *filp)
-+{
-+	struct ctl_table_header *head = grab_header(inode);
-+	struct ctl_table *table = PROC_I(inode)->sysctl_entry;
-+	struct ctl_context *ctx = filp->private_data;
-+	int ret = 0;
-+
-+	if (IS_ERR(head))
-+		return PTR_ERR(head);
-+
-+	if (table->ctl_fops && table->ctl_fops->release)
-+		ret = table->ctl_fops->release(ctx, inode, filp);
-+
-+	sysctl_head_finish(head);
-+
-+	kfree(ctx);
-+	filp->private_data =  NULL;
-+
-+	return ret;
- }
- 
- static __poll_t proc_sys_poll(struct file *filp, poll_table *wait)
-@@ -653,23 +699,23 @@ static __poll_t proc_sys_poll(struct file *filp, poll_table *wait)
- 	struct ctl_table_header *head = grab_header(inode);
- 	struct ctl_table *table = PROC_I(inode)->sysctl_entry;
- 	__poll_t ret = DEFAULT_POLLMASK;
--	unsigned long event;
-+	struct ctl_context *ctx;
- 
- 	/* sysctl was unregistered */
- 	if (IS_ERR(head))
- 		return EPOLLERR | EPOLLHUP;
- 
--	if (!table->proc_handler)
-+	if (!table->proc_handler && !table->ctl_fops)
- 		goto out;
- 
- 	if (!table->poll)
- 		goto out;
- 
--	event = (unsigned long)filp->private_data;
-+	ctx = filp->private_data;
- 	poll_wait(filp, &table->poll->wait, wait);
- 
--	if (event != atomic_read(&table->poll->event)) {
--		filp->private_data = proc_sys_poll_event(table->poll);
-+	if (ctx->poll_event != atomic_read(&table->poll->event)) {
-+		ctx->poll_event = proc_sys_poll_event(table->poll);
- 		ret = EPOLLIN | EPOLLRDNORM | EPOLLERR | EPOLLPRI;
- 	}
- 
-@@ -866,6 +912,7 @@ static int proc_sys_getattr(struct user_namespace *mnt_userns,
- 
- static const struct file_operations proc_sys_file_operations = {
- 	.open		= proc_sys_open,
-+	.release	= proc_sys_release,
- 	.poll		= proc_sys_poll,
- 	.read_iter	= proc_sys_read,
- 	.write_iter	= proc_sys_write,
-@@ -1153,7 +1200,7 @@ static int sysctl_check_table(const char *path, struct ctl_table *table)
- 			else
- 				err |= sysctl_check_table_array(path, table);
- 		}
--		if (!table->proc_handler)
-+		if (!table->proc_handler && !table->ctl_fops)
- 			err |= sysctl_err(path, table, "No proc_handler");
- 
- 		if ((table->mode & (S_IRUGO|S_IWUGO)) != table->mode)
-diff --git a/include/linux/sysctl.h b/include/linux/sysctl.h
-index 6353d6db69b2..ca5657c9fcb2 100644
---- a/include/linux/sysctl.h
-+++ b/include/linux/sysctl.h
-@@ -116,9 +116,9 @@ struct ctl_table_poll {
- 	wait_queue_head_t wait;
++static struct ctl_fops user_sys_fops = {
++	.open	= user_sys_open,
++	.read	= user_sys_read,
++	.write	= user_sys_write,
  };
  
--static inline void *proc_sys_poll_event(struct ctl_table_poll *poll)
-+static inline unsigned long proc_sys_poll_event(struct ctl_table_poll *poll)
++static long ue_dummy = 0;
+ static long ue_zero = 0;
+ static long ue_int_max = INT_MAX;
+ 
+@@ -66,9 +49,11 @@ static long ue_int_max = INT_MAX;
+ 		.procname	= name,				\
+ 		.maxlen		= sizeof(long),			\
+ 		.mode		= 0644,				\
++		.data		= &ue_dummy,			\
+ 		.proc_handler	= proc_doulongvec_minmax,	\
+ 		.extra1		= &ue_zero,			\
+ 		.extra2		= &ue_int_max,			\
++		.ctl_fops	= &user_sys_fops,		\
+ 	}
+ static struct ctl_table user_table[] = {
+ 	UCOUNT_ENTRY("max_user_namespaces"),
+@@ -89,44 +74,43 @@ static struct ctl_table user_table[] = {
+ #endif
+ 	{ }
+ };
+-#endif /* CONFIG_SYSCTL */
+ 
+-bool setup_userns_sysctls(struct user_namespace *ns)
++static int user_sys_open(struct ctl_context *ctx, struct inode *inode, struct file *file)
  {
--	return (void *)(unsigned long)atomic_read(&poll->event);
-+	return (unsigned long)atomic_read(&poll->event);
+-#ifdef CONFIG_SYSCTL
+-	struct ctl_table *tbl;
+-
+-	BUILD_BUG_ON(ARRAY_SIZE(user_table) != UCOUNT_COUNTS + 1);
+-	setup_sysctl_set(&ns->set, &set_root, set_is_seen);
+-	tbl = kmemdup(user_table, sizeof(user_table), GFP_KERNEL);
+-	if (tbl) {
+-		int i;
+-		for (i = 0; i < UCOUNT_COUNTS; i++) {
+-			tbl[i].data = &ns->ucount_max[i];
+-		}
+-		ns->sysctls = __register_sysctl_table(&ns->set, "user", tbl);
+-	}
+-	if (!ns->sysctls) {
+-		kfree(tbl);
+-		retire_sysctl_set(&ns->set);
+-		return false;
+-	}
+-#endif
+-	return true;
++	/* Allow users with CAP_SYS_RESOURCE unrestrained access */
++	if ((file->f_mode & FMODE_WRITE) &&
++	    !ns_capable(file->f_cred->user_ns, CAP_SYS_RESOURCE))
++		return -EPERM;
++	return 0;
  }
  
- #define __CTL_TABLE_POLL_INITIALIZER(name) {				\
-@@ -128,6 +128,21 @@ static inline void *proc_sys_poll_event(struct ctl_table_poll *poll)
- #define DEFINE_CTL_TABLE_POLL(name)					\
- 	struct ctl_table_poll name = __CTL_TABLE_POLL_INITIALIZER(name)
+-void retire_userns_sysctls(struct user_namespace *ns)
++static ssize_t user_sys_read(struct ctl_context *ctx, struct file *file,
++		     char *buffer, size_t *lenp, loff_t *ppos)
+ {
+-#ifdef CONFIG_SYSCTL
+-	struct ctl_table *tbl;
++	struct ctl_table table = *ctx->table;
++	table.data = &file->f_cred->user_ns->ucount_max[ctx->table - user_table];
++	return table.proc_handler(&table, 0, buffer, lenp, ppos);
++}
  
-+struct ctl_context {
-+	struct ctl_table *table;
-+	unsigned long poll_event;
-+	void *ctl_data;
+-	tbl = ns->sysctls->ctl_table_arg;
+-	unregister_sysctl_table(ns->sysctls);
+-	retire_sysctl_set(&ns->set);
+-	kfree(tbl);
+-#endif
++static ssize_t user_sys_write(struct ctl_context *ctx, struct file *file,
++		      char *buffer, size_t *lenp, loff_t *ppos)
++{
++	struct ctl_table table = *ctx->table;
++	table.data = &file->f_cred->user_ns->ucount_max[ctx->table - user_table];
++	return table.proc_handler(&table, 1, buffer, lenp, ppos);
+ }
+ 
++static struct ctl_table user_root_table[] = {
++	{
++		.procname       = "user",
++		.mode           = 0555,
++		.child          = user_table,
++	},
++	{}
 +};
 +
-+struct inode;
++#endif /* CONFIG_SYSCTL */
 +
-+struct ctl_fops {
-+	int (*open) (struct ctl_context *, struct inode *, struct file *);
-+	int (*release) (struct ctl_context *, struct inode *, struct file *);
-+	ssize_t (*read) (struct ctl_context *, struct file *, char *, size_t *, loff_t *);
-+	ssize_t (*write) (struct ctl_context *, struct file *, char *, size_t *, loff_t *);
-+};
-+
- /* A sysctl table is an array of struct ctl_table: */
- struct ctl_table {
- 	const char *procname;		/* Text ID for /proc/sys, or zero */
-@@ -139,6 +154,7 @@ struct ctl_table {
- 	struct ctl_table_poll *poll;
- 	void *extra1;
- 	void *extra2;
-+	struct ctl_fops *ctl_fops;
- } __randomize_layout;
+ static struct ucounts *find_ucounts(struct user_namespace *ns, kuid_t uid, struct hlist_head *hashent)
+ {
+ 	struct ucounts *ucounts;
+@@ -357,17 +341,7 @@ bool is_rlimit_overlimit(struct ucounts *ucounts, enum rlimit_type type, unsigne
+ static __init int user_namespace_sysctl_init(void)
+ {
+ #ifdef CONFIG_SYSCTL
+-	static struct ctl_table_header *user_header;
+-	static struct ctl_table empty[1];
+-	/*
+-	 * It is necessary to register the user directory in the
+-	 * default set so that registrations in the child sets work
+-	 * properly.
+-	 */
+-	user_header = register_sysctl("user", empty);
+-	kmemleak_ignore(user_header);
+-	BUG_ON(!user_header);
+-	BUG_ON(!setup_userns_sysctls(&init_user_ns));
++	register_sysctl_table(user_root_table);
+ #endif
+ 	hlist_add_ucounts(&init_ucounts);
+ 	inc_rlimit_ucounts(&init_ucounts, UCOUNT_RLIMIT_NPROC, 1);
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 981bb2d10d83..c0e707bc9a31 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -149,17 +149,10 @@ int create_user_ns(struct cred *new)
+ 	INIT_LIST_HEAD(&ns->keyring_name_list);
+ 	init_rwsem(&ns->keyring_sem);
+ #endif
+-	ret = -ENOMEM;
+-	if (!setup_userns_sysctls(ns))
+-		goto fail_keyring;
  
- struct ctl_node {
+ 	set_cred_user_ns(new, ns);
+ 	return 0;
+-fail_keyring:
+-#ifdef CONFIG_PERSISTENT_KEYRINGS
+-	key_put(ns->persistent_keyring_register);
+-#endif
+-	ns_free_inum(&ns->ns);
++
+ fail_free:
+ 	kmem_cache_free(user_ns_cachep, ns);
+ fail_dec:
+@@ -208,7 +201,6 @@ static void free_user_ns(struct work_struct *work)
+ 			kfree(ns->projid_map.forward);
+ 			kfree(ns->projid_map.reverse);
+ 		}
+-		retire_userns_sysctls(ns);
+ 		key_free_user_ns(ns);
+ 		ns_free_inum(&ns->ns);
+ 		kmem_cache_free(user_ns_cachep, ns);
 -- 
 2.33.3
 
