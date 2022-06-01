@@ -1,457 +1,158 @@
-Received: from us-smtp-delivery-44.mimecast.com (us-smtp-delivery-44.mimecast.com [205.139.111.44])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ej1-f43.google.com (mail-ej1-f43.google.com [209.85.218.43])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CD2CF2563
-	for <containers@lists.linux.dev>; Wed,  1 Jun 2022 13:22:04 +0000 (UTC)
-Received: from mimecast-mx02.redhat.com (mx3-rdu2.redhat.com
- [66.187.233.73]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-519-4Z-CMtpGOVKaHbq7mveZtw-1; Wed, 01 Jun 2022 09:20:51 -0400
-X-MC-Unique: 4Z-CMtpGOVKaHbq7mveZtw-1
-Received: from smtp.corp.redhat.com (int-mx02.intmail.prod.int.rdu2.redhat.com [10.11.54.2])
-	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 4838C1C0F68B;
-	Wed,  1 Jun 2022 13:20:50 +0000 (UTC)
-Received: from comp-core-i7-2640m-0182e6.redhat.com (unknown [10.36.110.3])
-	by smtp.corp.redhat.com (Postfix) with ESMTP id 2E85B414A7E7;
-	Wed,  1 Jun 2022 13:20:48 +0000 (UTC)
-From: Alexey Gladkov <legion@kernel.org>
-To: LKML <linux-kernel@vger.kernel.org>,
-	"Eric W . Biederman" <ebiederm@xmission.com>,
-	Linus Torvalds <torvalds@linux-foundation.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-	Christian Brauner <brauner@kernel.org>,
-	Iurii Zaikin <yzaikin@google.com>,
-	Kees Cook <keescook@chromium.org>,
-	Linux Containers <containers@lists.linux.dev>,
-	linux-fsdevel@vger.kernel.org,
-	Luis Chamberlain <mcgrof@kernel.org>,
-	Vasily Averin <vvs@virtuozzo.com>
-Subject: [RFC PATCH 2/4] sysctl: ipc: Do not use dynamic memory
-Date: Wed,  1 Jun 2022 15:20:30 +0200
-Message-Id: <857cb160a981b5719d8ed6a3e5e7c456915c64fa.1654086665.git.legion@kernel.org>
-In-Reply-To: <cover.1654086665.git.legion@kernel.org>
-References: <CAHk-=whi2SzU4XT_FsdTCAuK2qtYmH+-hwi1cbSdG8zu0KXL=g@mail.gmail.com> <cover.1654086665.git.legion@kernel.org>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A14837E
+	for <containers@lists.linux.dev>; Wed,  1 Jun 2022 16:45:36 +0000 (UTC)
+Received: by mail-ej1-f43.google.com with SMTP id fu3so3472088ejc.7
+        for <containers@lists.linux.dev>; Wed, 01 Jun 2022 09:45:36 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linux-foundation.org; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=sm/cES+pkDaSks5uDugp823Ct/h/91frIrCS39haBeI=;
+        b=U+W2VnjjiSr/t1zwPDQhof68HxSYrjuFmU4KxvbNwAxMXa7BqM5kLE36ZdtINvTa34
+         ojgk21vPuSmXj7NWL6elHx902k/NPV1EXQtsu1yPF8OkeGmVnGeJAX/sH0BCmE4pp1ZT
+         26spaIH9P5OU5fZ1Ek/Wd5EQ3UMh+JGqR4Idc=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=sm/cES+pkDaSks5uDugp823Ct/h/91frIrCS39haBeI=;
+        b=KaUOUCPLv/AsBLDf57QImqikHnIQPExQqT2W5D8mPehTKcsE6yf+WdOWgyDjLayR2O
+         rvJKREmqN3liIsMm0PMjDKjOpKxc0AY/69dWzKmPOx46FDbUH1ojI3h9eXskAU+Z3BDT
+         LMD4YUxUtw8UHfvC6BE4kxYgAEGQDBL/oo+Ubw4vOlBeZhqDGOpKsAZ7XcPVtOS03k/5
+         6SN6wZRPa1zJfgu887qai4lcGaixbC6c/EBrrZ8P9pYQ9nGtoQrLlaTFivqzn0pRviXw
+         E9uyFSFP53Ranw5v1zZtVz8td/9VOE4QS5CM5MZTSvf5dh9Zl2N8LeLozX+IMeLMy13O
+         /eBw==
+X-Gm-Message-State: AOAM530NK+IU6Y4wVfN6GE476VDMxLPsfAZhPm2Pdko6CAoEYHbx3TCE
+	RyvIlqJCVszKkQMoUD9AO+TzlbMiArGZ8FU/
+X-Google-Smtp-Source: ABdhPJzmrU5sJ2Aje5b3k8LOASKY84SihRGKJ3TxVyrCvCQEBtHfRoCtUDrAIwMnEMkqlIkKV/ILiA==
+X-Received: by 2002:a17:906:8416:b0:705:6a1b:e8ef with SMTP id n22-20020a170906841600b007056a1be8efmr372423ejx.614.1654101934711;
+        Wed, 01 Jun 2022 09:45:34 -0700 (PDT)
+Received: from mail-wm1-f50.google.com (mail-wm1-f50.google.com. [209.85.128.50])
+        by smtp.gmail.com with ESMTPSA id 8-20020a170906300800b00704dccefd2bsm880178ejz.204.2022.06.01.09.45.32
+        for <containers@lists.linux.dev>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 01 Jun 2022 09:45:32 -0700 (PDT)
+Received: by mail-wm1-f50.google.com with SMTP id z17so1301565wmf.1
+        for <containers@lists.linux.dev>; Wed, 01 Jun 2022 09:45:32 -0700 (PDT)
+X-Received: by 2002:a7b:c409:0:b0:397:8536:d558 with SMTP id
+ k9-20020a7bc409000000b003978536d558mr295369wmi.38.1654101932086; Wed, 01 Jun
+ 2022 09:45:32 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Scanned-By: MIMEDefang 2.84 on 10.11.54.2
+References: <CAHk-=whi2SzU4XT_FsdTCAuK2qtYmH+-hwi1cbSdG8zu0KXL=g@mail.gmail.com>
+ <cover.1654086665.git.legion@kernel.org> <857cb160a981b5719d8ed6a3e5e7c456915c64fa.1654086665.git.legion@kernel.org>
+In-Reply-To: <857cb160a981b5719d8ed6a3e5e7c456915c64fa.1654086665.git.legion@kernel.org>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Wed, 1 Jun 2022 09:45:15 -0700
+X-Gmail-Original-Message-ID: <CAHk-=wjJ2CP0ugbOnwAd-=Cw0i-q_xC1PbJ-_1jrvR-aisiAAA@mail.gmail.com>
+Message-ID: <CAHk-=wjJ2CP0ugbOnwAd-=Cw0i-q_xC1PbJ-_1jrvR-aisiAAA@mail.gmail.com>
+Subject: Re: [RFC PATCH 2/4] sysctl: ipc: Do not use dynamic memory
+To: Alexey Gladkov <legion@kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, 
+	"Eric W . Biederman" <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, 
+	Christian Brauner <brauner@kernel.org>, Iurii Zaikin <yzaikin@google.com>, 
+	Kees Cook <keescook@chromium.org>, Linux Containers <containers@lists.linux.dev>, 
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>, Luis Chamberlain <mcgrof@kernel.org>, 
+	Vasily Averin <vvs@virtuozzo.com>
+Content-Type: text/plain; charset="UTF-8"
 
-Dynamic memory allocation is needed to modify .data and specify the per
-namespace parameter. The new sysctl API is allowed to get rid of the
-need for such modification.
+On Wed, Jun 1, 2022 at 6:20 AM Alexey Gladkov <legion@kernel.org> wrote:
+>
+> Dynamic memory allocation is needed to modify .data and specify the per
+> namespace parameter. The new sysctl API is allowed to get rid of the
+> need for such modification.
 
-Signed-off-by: Alexey Gladkov <legion@kernel.org>
----
- include/linux/ipc_namespace.h |  18 ---
- ipc/ipc_sysctl.c              | 236 +++++++++++++++++-----------------
- ipc/namespace.c               |   4 -
- 3 files changed, 121 insertions(+), 137 deletions(-)
+Ok, this is looking better. That said, a few comments:
 
-diff --git a/include/linux/ipc_namespace.h b/include/linux/ipc_namespace.h
-index e3e8c8662b49..51c2c247c447 100644
---- a/include/linux/ipc_namespace.h
-+++ b/include/linux/ipc_namespace.h
-@@ -191,22 +191,4 @@ static inline bool setup_mq_sysctls(struct ipc_namespace *ns)
- }
- 
- #endif /* CONFIG_POSIX_MQUEUE_SYSCTL */
--
--#ifdef CONFIG_SYSVIPC_SYSCTL
--
--bool setup_ipc_sysctls(struct ipc_namespace *ns);
--void retire_ipc_sysctls(struct ipc_namespace *ns);
--
--#else /* CONFIG_SYSVIPC_SYSCTL */
--
--static inline void retire_ipc_sysctls(struct ipc_namespace *ns)
--{
--}
--
--static inline bool setup_ipc_sysctls(struct ipc_namespace *ns)
--{
--	return true;
--}
--
--#endif /* CONFIG_SYSVIPC_SYSCTL */
- #endif
-diff --git a/ipc/ipc_sysctl.c b/ipc/ipc_sysctl.c
-index ef313ecfb53a..833b670c38f3 100644
---- a/ipc/ipc_sysctl.c
-+++ b/ipc/ipc_sysctl.c
-@@ -68,26 +68,94 @@ static int proc_ipc_sem_dointvec(struct ctl_table *table, int write,
- 	return ret;
- }
- 
-+static inline void *data_from_ns(struct ctl_context *ctx, struct ctl_table *table);
-+
-+static int ipc_sys_open(struct ctl_context *ctx, struct inode *inode, struct file *file)
-+{
-+	struct ipc_namespace *ns = current->nsproxy->ipc_ns;
-+
-+	// For now, we only allow changes in init_user_ns.
-+	if (ns->user_ns != &init_user_ns)
-+		return -EPERM;
-+
-+#ifdef CONFIG_CHECKPOINT_RESTORE
-+	int index = (ctx->table - ipc_sysctls);
-+
-+	switch (index) {
-+		case IPC_SYSCTL_SEM_NEXT_ID:
-+		case IPC_SYSCTL_MSG_NEXT_ID:
-+		case IPC_SYSCTL_SHM_NEXT_ID:
-+			if (!checkpoint_restore_ns_capable(ns->user_ns))
-+				return -EPERM;
-+			break;
-+	}
-+#endif
-+	ctx->ctl_data = ns;
-+	return 0;
-+}
-+
-+static ssize_t ipc_sys_read(struct ctl_context *ctx, struct file *file,
-+		     char *buffer, size_t *lenp, loff_t *ppos)
-+{
-+	struct ctl_table table = *ctx->table;
-+	table.data = data_from_ns(ctx, ctx->table);
-+	return table.proc_handler(&table, 0, buffer, lenp, ppos);
-+}
-+
-+static ssize_t ipc_sys_write(struct ctl_context *ctx, struct file *file,
-+		      char *buffer, size_t *lenp, loff_t *ppos)
-+{
-+	struct ctl_table table = *ctx->table;
-+	table.data = data_from_ns(ctx, ctx->table);
-+	return table.proc_handler(&table, 1, buffer, lenp, ppos);
-+}
-+
-+static struct ctl_fops ipc_sys_fops = {
-+	.open	= ipc_sys_open,
-+	.read	= ipc_sys_read,
-+	.write	= ipc_sys_write,
-+};
-+
- int ipc_mni = IPCMNI;
- int ipc_mni_shift = IPCMNI_SHIFT;
- int ipc_min_cycle = RADIX_TREE_MAP_SIZE;
- 
-+enum {
-+	IPC_SYSCTL_SHMMAX,
-+	IPC_SYSCTL_SHMALL,
-+	IPC_SYSCTL_SHMMNI,
-+	IPC_SYSCTL_SHM_RMID_FORCED,
-+	IPC_SYSCTL_MSGMAX,
-+	IPC_SYSCTL_MSGMNI,
-+	IPC_SYSCTL_AUTO_MSGMNI,
-+	IPC_SYSCTL_MSGMNB,
-+	IPC_SYSCTL_SEM,
-+#ifdef CONFIG_CHECKPOINT_RESTORE
-+	IPC_SYSCTL_SEM_NEXT_ID,
-+	IPC_SYSCTL_MSG_NEXT_ID,
-+	IPC_SYSCTL_SHM_NEXT_ID,
-+#endif
-+	IPC_SYSCTL_COUNTS
-+};
-+
- static struct ctl_table ipc_sysctls[] = {
--	{
-+	[IPC_SYSCTL_SHMMAX] = {
- 		.procname	= "shmmax",
- 		.data		= &init_ipc_ns.shm_ctlmax,
- 		.maxlen		= sizeof(init_ipc_ns.shm_ctlmax),
- 		.mode		= 0644,
--		.proc_handler	= proc_doulongvec_minmax,
-+		.proc_handler   = proc_doulongvec_minmax,
-+		.ctl_fops	= &ipc_sys_fops,
- 	},
--	{
-+	[IPC_SYSCTL_SHMALL] = {
- 		.procname	= "shmall",
- 		.data		= &init_ipc_ns.shm_ctlall,
- 		.maxlen		= sizeof(init_ipc_ns.shm_ctlall),
- 		.mode		= 0644,
--		.proc_handler	= proc_doulongvec_minmax,
-+		.proc_handler   = proc_doulongvec_minmax,
-+		.ctl_fops	= &ipc_sys_fops,
- 	},
--	{
-+	[IPC_SYSCTL_SHMMNI] = {
- 		.procname	= "shmmni",
- 		.data		= &init_ipc_ns.shm_ctlmni,
- 		.maxlen		= sizeof(init_ipc_ns.shm_ctlmni),
-@@ -95,8 +163,9 @@ static struct ctl_table ipc_sysctls[] = {
- 		.proc_handler	= proc_dointvec_minmax,
- 		.extra1		= SYSCTL_ZERO,
- 		.extra2		= &ipc_mni,
-+		.ctl_fops	= &ipc_sys_fops,
- 	},
--	{
-+	[IPC_SYSCTL_SHM_RMID_FORCED] = {
- 		.procname	= "shm_rmid_forced",
- 		.data		= &init_ipc_ns.shm_rmid_forced,
- 		.maxlen		= sizeof(init_ipc_ns.shm_rmid_forced),
-@@ -104,8 +173,9 @@ static struct ctl_table ipc_sysctls[] = {
- 		.proc_handler	= proc_ipc_dointvec_minmax_orphans,
- 		.extra1		= SYSCTL_ZERO,
- 		.extra2		= SYSCTL_ONE,
-+		.ctl_fops	= &ipc_sys_fops,
- 	},
--	{
-+	[IPC_SYSCTL_MSGMAX] = {
- 		.procname	= "msgmax",
- 		.data		= &init_ipc_ns.msg_ctlmax,
- 		.maxlen		= sizeof(init_ipc_ns.msg_ctlmax),
-@@ -113,8 +183,9 @@ static struct ctl_table ipc_sysctls[] = {
- 		.proc_handler	= proc_dointvec_minmax,
- 		.extra1		= SYSCTL_ZERO,
- 		.extra2		= SYSCTL_INT_MAX,
-+		.ctl_fops	= &ipc_sys_fops,
- 	},
--	{
-+	[IPC_SYSCTL_MSGMNI] = {
- 		.procname	= "msgmni",
- 		.data		= &init_ipc_ns.msg_ctlmni,
- 		.maxlen		= sizeof(init_ipc_ns.msg_ctlmni),
-@@ -122,8 +193,9 @@ static struct ctl_table ipc_sysctls[] = {
- 		.proc_handler	= proc_dointvec_minmax,
- 		.extra1		= SYSCTL_ZERO,
- 		.extra2		= &ipc_mni,
-+		.ctl_fops	= &ipc_sys_fops,
- 	},
--	{
-+	[IPC_SYSCTL_AUTO_MSGMNI] = {
- 		.procname	= "auto_msgmni",
- 		.data		= NULL,
- 		.maxlen		= sizeof(int),
-@@ -131,8 +203,9 @@ static struct ctl_table ipc_sysctls[] = {
- 		.proc_handler	= proc_ipc_auto_msgmni,
- 		.extra1		= SYSCTL_ZERO,
- 		.extra2		= SYSCTL_ONE,
-+		.ctl_fops	= &ipc_sys_fops,
- 	},
--	{
-+	[IPC_SYSCTL_MSGMNB] = {
- 		.procname	=  "msgmnb",
- 		.data		= &init_ipc_ns.msg_ctlmnb,
- 		.maxlen		= sizeof(init_ipc_ns.msg_ctlmnb),
-@@ -140,152 +213,85 @@ static struct ctl_table ipc_sysctls[] = {
- 		.proc_handler	= proc_dointvec_minmax,
- 		.extra1		= SYSCTL_ZERO,
- 		.extra2		= SYSCTL_INT_MAX,
-+		.ctl_fops	= &ipc_sys_fops,
- 	},
--	{
-+	[IPC_SYSCTL_SEM] = {
- 		.procname	= "sem",
- 		.data		= &init_ipc_ns.sem_ctls,
- 		.maxlen		= 4*sizeof(int),
- 		.mode		= 0644,
- 		.proc_handler	= proc_ipc_sem_dointvec,
-+		.ctl_fops	= &ipc_sys_fops,
- 	},
- #ifdef CONFIG_CHECKPOINT_RESTORE
--	{
-+	[IPC_SYSCTL_SEM_NEXT_ID] = {
- 		.procname	= "sem_next_id",
- 		.data		= &init_ipc_ns.ids[IPC_SEM_IDS].next_id,
- 		.maxlen		= sizeof(init_ipc_ns.ids[IPC_SEM_IDS].next_id),
--		.mode		= 0444,
-+		.mode		= 0666,
- 		.proc_handler	= proc_dointvec_minmax,
- 		.extra1		= SYSCTL_ZERO,
- 		.extra2		= SYSCTL_INT_MAX,
-+		.ctl_fops	= &ipc_sys_fops,
- 	},
--	{
-+	[IPC_SYSCTL_MSG_NEXT_ID] = {
- 		.procname	= "msg_next_id",
- 		.data		= &init_ipc_ns.ids[IPC_MSG_IDS].next_id,
- 		.maxlen		= sizeof(init_ipc_ns.ids[IPC_MSG_IDS].next_id),
--		.mode		= 0444,
-+		.mode		= 0666,
- 		.proc_handler	= proc_dointvec_minmax,
- 		.extra1		= SYSCTL_ZERO,
- 		.extra2		= SYSCTL_INT_MAX,
-+		.ctl_fops	= &ipc_sys_fops,
- 	},
--	{
-+	[IPC_SYSCTL_SHM_NEXT_ID] = {
- 		.procname	= "shm_next_id",
- 		.data		= &init_ipc_ns.ids[IPC_SHM_IDS].next_id,
- 		.maxlen		= sizeof(init_ipc_ns.ids[IPC_SHM_IDS].next_id),
--		.mode		= 0444,
-+		.mode		= 0666,
- 		.proc_handler	= proc_dointvec_minmax,
- 		.extra1		= SYSCTL_ZERO,
- 		.extra2		= SYSCTL_INT_MAX,
-+		.ctl_fops	= &ipc_sys_fops,
- 	},
- #endif
--	{}
-+	[IPC_SYSCTL_COUNTS] = {}
- };
- 
--static struct ctl_table_set *set_lookup(struct ctl_table_root *root)
-+static inline void *data_from_ns(struct ctl_context *ctx, struct ctl_table *table)
- {
--	return &current->nsproxy->ipc_ns->ipc_set;
--}
--
--static int set_is_seen(struct ctl_table_set *set)
--{
--	return &current->nsproxy->ipc_ns->ipc_set == set;
--}
--
--static int ipc_permissions(struct ctl_table_header *head, struct ctl_table *table)
--{
--	int mode = table->mode;
--
-+	struct ipc_namespace *ns = ctx->ctl_data;
-+
-+	switch (ctx->table - ipc_sysctls) {
-+		case IPC_SYSCTL_SHMMAX:			return &ns->shm_ctlmax;
-+		case IPC_SYSCTL_SHMALL:			return &ns->shm_ctlall;
-+		case IPC_SYSCTL_SHMMNI:			return &ns->shm_ctlmni;
-+		case IPC_SYSCTL_SHM_RMID_FORCED:	return &ns->shm_rmid_forced;
-+		case IPC_SYSCTL_MSGMAX:			return &ns->msg_ctlmax;
-+		case IPC_SYSCTL_MSGMNI:			return &ns->msg_ctlmni;
-+		case IPC_SYSCTL_MSGMNB:			return &ns->msg_ctlmnb;
-+		case IPC_SYSCTL_SEM:			return &ns->sem_ctls;
- #ifdef CONFIG_CHECKPOINT_RESTORE
--	struct ipc_namespace *ns = current->nsproxy->ipc_ns;
--
--	if (((table->data == &ns->ids[IPC_SEM_IDS].next_id) ||
--	     (table->data == &ns->ids[IPC_MSG_IDS].next_id) ||
--	     (table->data == &ns->ids[IPC_SHM_IDS].next_id)) &&
--	    checkpoint_restore_ns_capable(ns->user_ns))
--		mode = 0666;
-+		case IPC_SYSCTL_SEM_NEXT_ID:		return &ns->ids[IPC_SEM_IDS].next_id;
-+		case IPC_SYSCTL_MSG_NEXT_ID:		return &ns->ids[IPC_MSG_IDS].next_id;
-+		case IPC_SYSCTL_SHM_NEXT_ID:		return &ns->ids[IPC_SHM_IDS].next_id;
- #endif
--	return mode;
--}
--
--static struct ctl_table_root set_root = {
--	.lookup = set_lookup,
--	.permissions = ipc_permissions,
--};
--
--bool setup_ipc_sysctls(struct ipc_namespace *ns)
--{
--	struct ctl_table *tbl;
--
--	setup_sysctl_set(&ns->ipc_set, &set_root, set_is_seen);
--
--	tbl = kmemdup(ipc_sysctls, sizeof(ipc_sysctls), GFP_KERNEL);
--	if (tbl) {
--		int i;
--
--		for (i = 0; i < ARRAY_SIZE(ipc_sysctls); i++) {
--			if (tbl[i].data == &init_ipc_ns.shm_ctlmax)
--				tbl[i].data = &ns->shm_ctlmax;
--
--			else if (tbl[i].data == &init_ipc_ns.shm_ctlall)
--				tbl[i].data = &ns->shm_ctlall;
--
--			else if (tbl[i].data == &init_ipc_ns.shm_ctlmni)
--				tbl[i].data = &ns->shm_ctlmni;
--
--			else if (tbl[i].data == &init_ipc_ns.shm_rmid_forced)
--				tbl[i].data = &ns->shm_rmid_forced;
--
--			else if (tbl[i].data == &init_ipc_ns.msg_ctlmax)
--				tbl[i].data = &ns->msg_ctlmax;
--
--			else if (tbl[i].data == &init_ipc_ns.msg_ctlmni)
--				tbl[i].data = &ns->msg_ctlmni;
--
--			else if (tbl[i].data == &init_ipc_ns.msg_ctlmnb)
--				tbl[i].data = &ns->msg_ctlmnb;
--
--			else if (tbl[i].data == &init_ipc_ns.sem_ctls)
--				tbl[i].data = &ns->sem_ctls;
--#ifdef CONFIG_CHECKPOINT_RESTORE
--			else if (tbl[i].data == &init_ipc_ns.ids[IPC_SEM_IDS].next_id)
--				tbl[i].data = &ns->ids[IPC_SEM_IDS].next_id;
--
--			else if (tbl[i].data == &init_ipc_ns.ids[IPC_MSG_IDS].next_id)
--				tbl[i].data = &ns->ids[IPC_MSG_IDS].next_id;
--
--			else if (tbl[i].data == &init_ipc_ns.ids[IPC_SHM_IDS].next_id)
--				tbl[i].data = &ns->ids[IPC_SHM_IDS].next_id;
--#endif
--			else
--				tbl[i].data = NULL;
--		}
--
--		ns->ipc_sysctls = __register_sysctl_table(&ns->ipc_set, "kernel", tbl);
--	}
--	if (!ns->ipc_sysctls) {
--		kfree(tbl);
--		retire_sysctl_set(&ns->ipc_set);
--		return false;
- 	}
--
--	return true;
-+	return NULL;
- }
- 
--void retire_ipc_sysctls(struct ipc_namespace *ns)
--{
--	struct ctl_table *tbl;
--
--	tbl = ns->ipc_sysctls->ctl_table_arg;
--	unregister_sysctl_table(ns->ipc_sysctls);
--	retire_sysctl_set(&ns->ipc_set);
--	kfree(tbl);
--}
-+static struct ctl_table ipc_root_table[] = {
-+	{
-+		.procname       = "kernel",
-+		.mode           = 0555,
-+		.child          = ipc_sysctls,
-+	},
-+	{}
-+};
- 
- static int __init ipc_sysctl_init(void)
- {
--	if (!setup_ipc_sysctls(&init_ipc_ns)) {
--		pr_warn("ipc sysctl registration failed\n");
--		return -ENOMEM;
--	}
-+	register_sysctl_table(ipc_root_table);
- 	return 0;
- }
- 
-diff --git a/ipc/namespace.c b/ipc/namespace.c
-index 754f3237194a..f760243ca685 100644
---- a/ipc/namespace.c
-+++ b/ipc/namespace.c
-@@ -63,9 +63,6 @@ static struct ipc_namespace *create_ipc_ns(struct user_namespace *user_ns,
- 	if (!setup_mq_sysctls(ns))
- 		goto fail_put;
- 
--	if (!setup_ipc_sysctls(ns))
--		goto fail_put;
--
- 	sem_init_ns(ns);
- 	msg_init_ns(ns);
- 	shm_init_ns(ns);
-@@ -133,7 +130,6 @@ static void free_ipc_ns(struct ipc_namespace *ns)
- 	shm_exit_ns(ns);
- 
- 	retire_mq_sysctls(ns);
--	retire_ipc_sysctls(ns);
- 
- 	dec_ipc_namespaces(ns->ucounts);
- 	put_user_ns(ns->user_ns);
--- 
-2.33.3
+>
+> diff --git a/ipc/ipc_sysctl.c b/ipc/ipc_sysctl.c
+> index ef313ecfb53a..833b670c38f3 100644
+> --- a/ipc/ipc_sysctl.c
+> +++ b/ipc/ipc_sysctl.c
+> @@ -68,26 +68,94 @@ static int proc_ipc_sem_dointvec(struct ctl_table *table, int write,
+>         return ret;
+>  }
+>
+> +static inline void *data_from_ns(struct ctl_context *ctx, struct ctl_table *table);
+> +
+> +static int ipc_sys_open(struct ctl_context *ctx, struct inode *inode, struct file *file)
+> +{
+> +       struct ipc_namespace *ns = current->nsproxy->ipc_ns;
+> +
+> +       // For now, we only allow changes in init_user_ns.
+> +       if (ns->user_ns != &init_user_ns)
+> +               return -EPERM;
+> +
+> +#ifdef CONFIG_CHECKPOINT_RESTORE
+> +       int index = (ctx->table - ipc_sysctls);
+> +
+> +       switch (index) {
+> +               case IPC_SYSCTL_SEM_NEXT_ID:
+> +               case IPC_SYSCTL_MSG_NEXT_ID:
+[...]
 
+I don't think you actually even compile-tested this, because you're
+using these IPC_SYSCTL_SEM_NEXT_ID etc enums before you even declared
+them later in the same file.
+
+> +static ssize_t ipc_sys_read(struct ctl_context *ctx, struct file *file,
+> +                    char *buffer, size_t *lenp, loff_t *ppos)
+> +{
+> +       struct ctl_table table = *ctx->table;
+> +       table.data = data_from_ns(ctx, ctx->table);
+> +       return table.proc_handler(&table, 0, buffer, lenp, ppos);
+> +}
+
+Can we please fix the names and the types of this new 'ctx' structure?
+
+Yes, yes, I know the old legacy "sysctl table" is horribly named, and
+uses "ctl_table".
+
+But let's just write it out. It's not some random control table for
+anything. It's a very odd and specific thing: "sysctl". Let's use the
+full name.
+
+Also, Please just make that "ctl_data" member in that "ctl_context"
+struct not just have a real name, but a real type. Make it literally
+be
+
+    struct ipc_namespace *ipc_ns;
+
+and if we end up with other things wanting other pointers, just add a
+new one (or make a union if we care about the size of that allocation,
+which I don't see any reason we'd do when it's literally just like a
+couple of pointers in size).
+
+There is no reason to have some pseudo-generic "void *ctl_data" that
+makes it ambiguous and allows for type confusion and isn't
+self-documenting. I'd rather have a properly typed pointer that is
+just initialized to NULL and is not always used or needed, but always
+has a clear case for *what* it would be used for.
+
+Yes, yes, we have f_private etc for things that are really very very
+generic and have arbitrary users. But 'sysctl' is not that kind of
+truly generic use.
+
+I wish we didn't have that silly "create a temporary ctl_table entry"
+either, and I wish it was properly named. But it's not worth the
+pointless churn to fix old bad interfaces. But the new ones should
+have better names, and try to avoid those bad old decisions.
+
+But yeah, I think this all is a step in the right direction. And maybe
+some of those cases and old 'ctl_table' things can be migrated to just
+using individual read() functions entirely. The whole 'ctl_table'
+model was broken, and came from the bad old days with an actual
+'sysctl()' system call.
+
+Because I think it would be lovely if people would move away from the
+'sysctl table' approach entirely for cases where that makes sense, and
+these guys that already need special handling are very much in that
+situation.
+
+          Linus
