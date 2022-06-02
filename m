@@ -1,67 +1,184 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 680843205
-	for <containers@lists.linux.dev>; Wed,  1 Jun 2022 19:32:42 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 86751C385A5;
-	Wed,  1 Jun 2022 19:32:39 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 80BDF7E
+	for <containers@lists.linux.dev>; Thu,  2 Jun 2022 10:41:14 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C25D1C385A5;
+	Thu,  2 Jun 2022 10:41:10 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1654111962;
-	bh=v9toHBa5TmDfdKsgDldwIfhdrCTl/2WwCykRfxoO4MQ=;
+	s=k20201202; t=1654166474;
+	bh=QjUiVyKZNsZkKxCa1CLkhlWoj32OkZtXUL2hEbSq5To=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=V3kanJeeGe3k4gb6Vh7lh2ApF/PlQ6NX9yY4cSw1b1HUXf5tUYr2Nh1gEXeVwk5Qq
-	 atk7e3neaHszNz1sTnqzBEOVVLj3suwa34zmDXub6PRF5/0msdNxR72h2+tf2oZvcA
-	 EiZbk1BNqA+2YMdemOqTtp/mUaVTZRO/Z6uEzR8FnBlpiQdeiUh3DgFcinrPo/sI9Q
-	 Hkm24bpe3hJcMHwgn2I1AjnoQuNjpkSmVSRCd5mQTdZ1x4wvoWTp/ufPB5uPUh/5jO
-	 /k8E+HnngmOC57ylnslsksW3bWpBJp0r4TGMkT372cTQ/Ss8X8BFvmteGaA7zYRLay
-	 WbQVg8TDvp71w==
-Date: Wed, 1 Jun 2022 21:32:35 +0200
-From: Alexey Gladkov <legion@kernel.org>
-To: Matthew Wilcox <willy@infradead.org>
-Cc: LKML <linux-kernel@vger.kernel.org>,
-	"Eric W . Biederman" <ebiederm@xmission.com>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Christian Brauner <brauner@kernel.org>,
-	Iurii Zaikin <yzaikin@google.com>,
-	Kees Cook <keescook@chromium.org>,
-	Linux Containers <containers@lists.linux.dev>,
-	linux-fsdevel@vger.kernel.org, Luis Chamberlain <mcgrof@kernel.org>,
-	Vasily Averin <vvs@virtuozzo.com>
-Subject: Re: [RFC PATCH 1/4] sysctl: API extension for handling sysctl
-Message-ID: <Ype+08iXbbWghf3i@example.org>
-References: <CAHk-=whi2SzU4XT_FsdTCAuK2qtYmH+-hwi1cbSdG8zu0KXL=g@mail.gmail.com>
- <cover.1654086665.git.legion@kernel.org>
- <5ec6759ab3b617f9c12449a9606b6f0b5a7582d0.1654086665.git.legion@kernel.org>
- <Ype7skNJzEQ1W96v@casper.infradead.org>
+	b=FTG5+aDnmbwhXJwH72p6338p68jxKp6xoWgm2zpfxEoP8YIs0J566s2gzPhUOEW+i
+	 D6CMaBW6wumkAwZElzLiqvibA0qYBi1xYoLOSKexLQmSycbskXKhd+rV/Ve0nRXe08
+	 1hRippsHY3jPQZszwobu3qaPIRgWFLAfvf7x8s9ZNpYg/KowbNWA3yrHRH26jKcguM
+	 ieHSieHZaWtTu3+o1k50sj/lxo5lA3Rnq3QqI2VZs0a4+MNCfMY+Cvo2UVz3/ghI1/
+	 LDA/fWcRsSmeOM8SPAHljfQl59DWtJpy7KcQaDw0IlS86Z/w2GogyWYTtGzqoF4WQS
+	 KLd98FLRlHIQA==
+Date: Thu, 2 Jun 2022 12:41:07 +0200
+From: Christian Brauner <brauner@kernel.org>
+To: Kees Cook <keescook@chromium.org>
+Cc: Jan Kiszka <jan.kiszka@siemens.com>,
+	"Serge E. Hallyn" <serge@hallyn.com>,
+	Al Viro <viro@zeniv.linux.org.uk>,
+	Laurent Vivier <laurent@vivier.eu>, linux-fsdevel@vger.kernel.org,
+	Christoph Hellwig <hch@lst.de>, Sargun Dhillon <sargun@sargun.me>,
+	Jann Horn <jannh@google.com>,
+	Henning Schild <henning.schild@siemens.com>,
+	Andrei Vagin <avagin@gmail.com>,
+	Matthew Bobrowski <repnop@google.com>, linux-kernel@vger.kernel.org,
+	linux-api@vger.kernel.org, containers@lists.linux.dev,
+	Christian Brauner <christian.brauner@ubuntu.com>
+Subject: Re: [PATCH v2 2/2] binfmt_misc: enable sandboxed mounts
+Message-ID: <20220602104107.6b3d3udhslvhg6ew@wittgenstein>
+References: <20211216112659.310979-1-brauner@kernel.org>
+ <20211216112659.310979-2-brauner@kernel.org>
+ <20211226133140.GA8064@mail.hallyn.com>
+ <0e817424-51db-fe0b-a00e-ac7933e8ac1d@siemens.com>
+ <20220530081358.b3tvgvo63mq5o2oo@wittgenstein>
+ <202205311219.725ED1C69@keescook>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <Ype7skNJzEQ1W96v@casper.infradead.org>
+In-Reply-To: <202205311219.725ED1C69@keescook>
 
-On Wed, Jun 01, 2022 at 08:19:14PM +0100, Matthew Wilcox wrote:
-> On Wed, Jun 01, 2022 at 03:20:29PM +0200, Alexey Gladkov wrote:
-> > +struct ctl_fops {
-> > +	int (*open) (struct ctl_context *, struct inode *, struct file *);
-> > +	int (*release) (struct ctl_context *, struct inode *, struct file *);
-> > +	ssize_t (*read) (struct ctl_context *, struct file *, char *, size_t *, loff_t *);
-> > +	ssize_t (*write) (struct ctl_context *, struct file *, char *, size_t *, loff_t *);
-> > +};
+On Tue, May 31, 2022 at 12:24:37PM -0700, Kees Cook wrote:
+> On Mon, May 30, 2022 at 10:13:58AM +0200, Christian Brauner wrote:
+> > On Sun, May 29, 2022 at 09:35:40PM +0200, Jan Kiszka wrote:
+> > > On 26.12.21 14:31, Serge E. Hallyn wrote:
+> > > > On Thu, Dec 16, 2021 at 12:26:59PM +0100, Christian Brauner wrote:
+> > > >> From: Christian Brauner <christian.brauner@ubuntu.com>
+> > > >>
+> > > >> Enable unprivileged sandboxes to create their own binfmt_misc mounts.
+> > > >> This is based on Laurent's work in [1] but has been significantly
+> > > >> reworked to fix various issues we identified in earlier versions.
+> > > >>
+> > > >> While binfmt_misc can currently only be mounted in the initial user
+> > > >> namespace, binary types registered in this binfmt_misc instance are
+> > > >> available to all sandboxes (Either by having them installed in the
+> > > >> sandbox or by registering the binary type with the F flag causing the
+> > > >> interpreter to be opened right away). So binfmt_misc binary types are
+> > > >> already delegated to sandboxes implicitly.
+> > > >>
+> > > >> However, while a sandbox has access to all registered binary types in
+> > > >> binfmt_misc a sandbox cannot currently register its own binary types
+> > > >> in binfmt_misc. This has prevented various use-cases some of which were
+> > > >> already outlined in [1] but we have a range of issues associated with
+> > > >> this (cf. [3]-[5] below which are just a small sample).
+> > > >>
+> > > >> Extend binfmt_misc to be mountable in non-initial user namespaces.
+> > > >> Similar to other filesystem such as nfsd, mqueue, and sunrpc we use
+> > > >> keyed superblock management. The key determines whether we need to
+> > > >> create a new superblock or can reuse an already existing one. We use the
+> > > >> user namespace of the mount as key. This means a new binfmt_misc
+> > > >> superblock is created once per user namespace creation. Subsequent
+> > > >> mounts of binfmt_misc in the same user namespace will mount the same
+> > > >> binfmt_misc instance. We explicitly do not create a new binfmt_misc
+> > > >> superblock on every binfmt_misc mount as the semantics for
+> > > >> load_misc_binary() line up with the keying model. This also allows us to
+> > > >> retrieve the relevant binfmt_misc instance based on the caller's user
+> > > >> namespace which can be done in a simple (bounded to 32 levels) loop.
+> > > >>
+> > > >> Similar to the current binfmt_misc semantics allowing access to the
+> > > >> binary types in the initial binfmt_misc instance we do allow sandboxes
+> > > >> access to their parent's binfmt_misc mounts if they do not have created
+> > > >> a separate binfmt_misc instance.
+> > > >>
+> > > >> Overall, this will unblock the use-cases mentioned below and in general
+> > > >> will also allow to support and harden execution of another
+> > > >> architecture's binaries in tight sandboxes. For instance, using the
+> > > >> unshare binary it possible to start a chroot of another architecture and
+> > > >> configure the binfmt_misc interpreter without being root to run the
+> > > >> binaries in this chroot and without requiring the host to modify its
+> > > >> binary type handlers.
+> > > >>
+> > > >> Henning had already posted a few experiments in the cover letter at [1].
+> > > >> But here's an additional example where an unprivileged container
+> > > >> registers qemu-user-static binary handlers for various binary types in
+> > > >> its separate binfmt_misc mount and is then seamlessly able to start
+> > > >> containers with a different architecture without affecting the host:
+> > > >>
+> > > >> root    [lxc monitor] /var/snap/lxd/common/lxd/containers f1
+> > > >> 1000000  \_ /sbin/init
+> > > >> 1000000      \_ /lib/systemd/systemd-journald
+> > > >> 1000000      \_ /lib/systemd/systemd-udevd
+> > > >> 1000100      \_ /lib/systemd/systemd-networkd
+> > > >> 1000101      \_ /lib/systemd/systemd-resolved
+> > > >> 1000000      \_ /usr/sbin/cron -f
+> > > >> 1000103      \_ /usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only
+> > > >> 1000000      \_ /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
+> > > >> 1000104      \_ /usr/sbin/rsyslogd -n -iNONE
+> > > >> 1000000      \_ /lib/systemd/systemd-logind
+> > > >> 1000000      \_ /sbin/agetty -o -p -- \u --noclear --keep-baud console 115200,38400,9600 vt220
+> > > >> 1000107      \_ dnsmasq --conf-file=/dev/null -u lxc-dnsmasq --strict-order --bind-interfaces --pid-file=/run/lxc/dnsmasq.pid --liste
+> > > >> 1000000      \_ [lxc monitor] /var/lib/lxc f1-s390x
+> > > >> 1100000          \_ /usr/bin/qemu-s390x-static /sbin/init
+> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /lib/systemd/systemd-journald
+> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /usr/sbin/cron -f
+> > > >> 1100103              \_ /usr/bin/qemu-s390x-static /usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-ac
+> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
+> > > >> 1100104              \_ /usr/bin/qemu-s390x-static /usr/sbin/rsyslogd -n -iNONE
+> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /lib/systemd/systemd-logind
+> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud console 115200,38400,9600 vt220
+> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud pts/0 115200,38400,9600 vt220
+> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud pts/1 115200,38400,9600 vt220
+> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud pts/2 115200,38400,9600 vt220
+> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud pts/3 115200,38400,9600 vt220
+> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /lib/systemd/systemd-udevd
+> > > >>
+> > > >> [1]: https://lore.kernel.org/all/20191216091220.465626-1-laurent@vivier.eu
+> > > >> [2]: https://discuss.linuxcontainers.org/t/binfmt-misc-permission-denied
+> > > >> [3]: https://discuss.linuxcontainers.org/t/lxd-binfmt-support-for-qemu-static-interpreters
+> > > >> [4]: https://discuss.linuxcontainers.org/t/3-1-0-binfmt-support-service-in-unprivileged-guest-requires-write-access-on-hosts-proc-sys-fs-binfmt-misc
+> > > >> [5]: https://discuss.linuxcontainers.org/t/qemu-user-static-not-working-4-11
+> > > >>
+> > > >> Link: https://lore.kernel.org/r/20191216091220.465626-2-laurent@vivier.eu (origin)
+> > > >> Link: https://lore.kernel.org/r/20211028103114.2849140-2-brauner@kernel.org (v1)
+> > > >> Cc: Sargun Dhillon <sargun@sargun.me>
+> > > >> Cc: Serge Hallyn <serge@hallyn.com>
+> > > > 
+> > > > (one typo below)
+> > > > 
+> > > > Acked-by: Serge Hallyn <serge@hallyn.com>
+> > > > 
+> > > 
+> > > What happened to this afterwards? Any remaining issues?
+> > 
+> > Not that we know. I plan to queue this up for 5.20.
 > 
-> Why not pass the iocb in ->read and ->write?  We're still regretting not
-> doing that with file_operations.
+> Hello!
+> 
+> Thanks for the thread-ping -- I hadn't had a chance to read through this
+> before, but since it's touching binfmt, it popped up on my radar. :)
+> 
+> I like it overall, though I'd rather see it split up more (there's
+> some refactoring built into the patches that would be nice to split out
+> just to make review easier), but since others have already reviewed it,
+> that's probably overkill.
+> 
+> I'd really like to see some self-tests for this, though. Especially
 
-Because buf and len can be modified in BPF_CGROUP_RUN_PROG_SYSCTL.
-We need to pass the result of this hook to read/write callback.
+Yeah, I had started writing them but decoupled the upstreaming. Imho,
+you can start queueing this up. I'd like this to have very long exposure
+in -next. I'll follow up with selftests in the next weeks. (I'm out for
+a conference this week.)
 
-https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/fs/proc/proc_sysctl.c#n605
-https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/kernel/bpf/cgroup.c#n1441
+> around the cred logic changes and the namespace fallback logic. I'd like
+> to explicitly document and test what the expectations are around the
+> mounts, etc.
+> 
+> Finally, I'd prefer this went via the execve tree.
 
--- 
-Rgrds, legion
+I mentioned this yesterday to you but just so there's a paper trail:
+The series and this iteration preceeds the maintainer entry. That's the
+only reason this originally wasn't aimed at that tree when the series
+was sent. You've been in Cc from the start though. :)
+I'd like to step up and maintain the binfmt_misc fs going forward. There
+are other tweaks it could use.
 
+Christian
