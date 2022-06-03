@@ -1,184 +1,113 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from out01.mta.xmission.com (out01.mta.xmission.com [166.70.13.231])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 80BDF7E
-	for <containers@lists.linux.dev>; Thu,  2 Jun 2022 10:41:14 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C25D1C385A5;
-	Thu,  2 Jun 2022 10:41:10 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1654166474;
-	bh=QjUiVyKZNsZkKxCa1CLkhlWoj32OkZtXUL2hEbSq5To=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=FTG5+aDnmbwhXJwH72p6338p68jxKp6xoWgm2zpfxEoP8YIs0J566s2gzPhUOEW+i
-	 D6CMaBW6wumkAwZElzLiqvibA0qYBi1xYoLOSKexLQmSycbskXKhd+rV/Ve0nRXe08
-	 1hRippsHY3jPQZszwobu3qaPIRgWFLAfvf7x8s9ZNpYg/KowbNWA3yrHRH26jKcguM
-	 ieHSieHZaWtTu3+o1k50sj/lxo5lA3Rnq3QqI2VZs0a4+MNCfMY+Cvo2UVz3/ghI1/
-	 LDA/fWcRsSmeOM8SPAHljfQl59DWtJpy7KcQaDw0IlS86Z/w2GogyWYTtGzqoF4WQS
-	 KLd98FLRlHIQA==
-Date: Thu, 2 Jun 2022 12:41:07 +0200
-From: Christian Brauner <brauner@kernel.org>
-To: Kees Cook <keescook@chromium.org>
-Cc: Jan Kiszka <jan.kiszka@siemens.com>,
-	"Serge E. Hallyn" <serge@hallyn.com>,
-	Al Viro <viro@zeniv.linux.org.uk>,
-	Laurent Vivier <laurent@vivier.eu>, linux-fsdevel@vger.kernel.org,
-	Christoph Hellwig <hch@lst.de>, Sargun Dhillon <sargun@sargun.me>,
-	Jann Horn <jannh@google.com>,
-	Henning Schild <henning.schild@siemens.com>,
-	Andrei Vagin <avagin@gmail.com>,
-	Matthew Bobrowski <repnop@google.com>, linux-kernel@vger.kernel.org,
-	linux-api@vger.kernel.org, containers@lists.linux.dev,
-	Christian Brauner <christian.brauner@ubuntu.com>
-Subject: Re: [PATCH v2 2/2] binfmt_misc: enable sandboxed mounts
-Message-ID: <20220602104107.6b3d3udhslvhg6ew@wittgenstein>
-References: <20211216112659.310979-1-brauner@kernel.org>
- <20211216112659.310979-2-brauner@kernel.org>
- <20211226133140.GA8064@mail.hallyn.com>
- <0e817424-51db-fe0b-a00e-ac7933e8ac1d@siemens.com>
- <20220530081358.b3tvgvo63mq5o2oo@wittgenstein>
- <202205311219.725ED1C69@keescook>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 047C51367
+	for <containers@lists.linux.dev>; Fri,  3 Jun 2022 18:11:21 +0000 (UTC)
+Received: from in02.mta.xmission.com ([166.70.13.52]:46024)
+	by out01.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.93)
+	(envelope-from <ebiederm@xmission.com>)
+	id 1nxAzi-00Gdhh-7l; Fri, 03 Jun 2022 11:21:54 -0600
+Received: from ip68-227-174-4.om.om.cox.net ([68.227.174.4]:41234 helo=email.froward.int.ebiederm.org.xmission.com)
+	by in02.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.93)
+	(envelope-from <ebiederm@xmission.com>)
+	id 1nxAzh-00HHJ3-7S; Fri, 03 Jun 2022 11:21:53 -0600
+From: "Eric W. Biederman" <ebiederm@xmission.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: <linux-kernel@vger.kernel.org> ,
+ Alexey Gladkov <legion@kernel.org> ,
+ Linux Containers <containers@lists.linux.dev> 
+Date: Fri, 03 Jun 2022 12:21:46 -0500
+Message-ID: <875ylh8xxx.fsf@email.froward.int.ebiederm.org>
+User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.1 (gnu/linux)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <202205311219.725ED1C69@keescook>
+Content-Type: text/plain
+X-XM-SPF: eid=1nxAzh-00HHJ3-7S;;;mid=<875ylh8xxx.fsf@email.froward.int.ebiederm.org>;;;hst=in02.mta.xmission.com;;;ip=68.227.174.4;;;frm=ebiederm@xmission.com;;;spf=softfail
+X-XM-AID: U2FsdGVkX190rHEzYxtUa/aQ3ZUqCkNLM08+VG1MKnY=
+X-SA-Exim-Connect-IP: 68.227.174.4
+X-SA-Exim-Mail-From: ebiederm@xmission.com
+X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on sa04.xmission.com
+X-Spam-Level: ****
+X-Spam-Status: No, score=4.5 required=8.0 tests=ALL_TRUSTED,BAYES_50,
+	DCC_CHECK_NEGATIVE,XMSubMetaSxObfu_03,XMSubMetaSx_00,XM_SPF_SoftFail
+	autolearn=disabled version=3.4.2
+X-Spam-Report: 
+	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
+	*  0.8 BAYES_50 BODY: Bayes spam probability is 40 to 60%
+	*      [score: 0.4420]
+	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
+	*      [sa04 1397; Body=1 Fuz1=1 Fuz2=1]
+	*  2.5 XM_SPF_SoftFail SPF-SoftFail
+	*  1.0 XMSubMetaSx_00 1+ Sexy Words
+	*  1.2 XMSubMetaSxObfu_03 Obfuscated Sexy Noun-People
+X-Spam-DCC: XMission; sa04 1397; Body=1 Fuz1=1 Fuz2=1 
+X-Spam-Combo: ****;Linus Torvalds <torvalds@linux-foundation.org>
+X-Spam-Relay-Country: 
+X-Spam-Timing: total 459 ms - load_scoreonly_sql: 0.09 (0.0%),
+	signal_user_changed: 12 (2.7%), b_tie_ro: 11 (2.3%), parse: 0.95
+	(0.2%), extract_message_metadata: 12 (2.5%), get_uri_detail_list: 1.83
+	(0.4%), tests_pri_-1000: 13 (2.8%), tests_pri_-950: 1.14 (0.2%),
+	tests_pri_-900: 0.90 (0.2%), tests_pri_-90: 127 (27.7%), check_bayes:
+	126 (27.4%), b_tokenize: 6 (1.2%), b_tok_get_all: 6 (1.3%),
+	b_comp_prob: 2.0 (0.4%), b_tok_touch_all: 108 (23.6%), b_finish: 0.91
+	(0.2%), tests_pri_0: 265 (57.7%), check_dkim_signature: 0.88 (0.2%),
+	check_dkim_adsp: 3.5 (0.8%), poll_dns_idle: 0.74 (0.2%), tests_pri_10:
+	4.1 (0.9%), tests_pri_500: 21 (4.5%), rewrite_mail: 0.00 (0.0%)
+Subject: [GIT PULL] ipc: per namespace ipc sysctl changes for v5.19
+X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
+X-SA-Exim-Scanned: Yes (on in02.mta.xmission.com)
 
-On Tue, May 31, 2022 at 12:24:37PM -0700, Kees Cook wrote:
-> On Mon, May 30, 2022 at 10:13:58AM +0200, Christian Brauner wrote:
-> > On Sun, May 29, 2022 at 09:35:40PM +0200, Jan Kiszka wrote:
-> > > On 26.12.21 14:31, Serge E. Hallyn wrote:
-> > > > On Thu, Dec 16, 2021 at 12:26:59PM +0100, Christian Brauner wrote:
-> > > >> From: Christian Brauner <christian.brauner@ubuntu.com>
-> > > >>
-> > > >> Enable unprivileged sandboxes to create their own binfmt_misc mounts.
-> > > >> This is based on Laurent's work in [1] but has been significantly
-> > > >> reworked to fix various issues we identified in earlier versions.
-> > > >>
-> > > >> While binfmt_misc can currently only be mounted in the initial user
-> > > >> namespace, binary types registered in this binfmt_misc instance are
-> > > >> available to all sandboxes (Either by having them installed in the
-> > > >> sandbox or by registering the binary type with the F flag causing the
-> > > >> interpreter to be opened right away). So binfmt_misc binary types are
-> > > >> already delegated to sandboxes implicitly.
-> > > >>
-> > > >> However, while a sandbox has access to all registered binary types in
-> > > >> binfmt_misc a sandbox cannot currently register its own binary types
-> > > >> in binfmt_misc. This has prevented various use-cases some of which were
-> > > >> already outlined in [1] but we have a range of issues associated with
-> > > >> this (cf. [3]-[5] below which are just a small sample).
-> > > >>
-> > > >> Extend binfmt_misc to be mountable in non-initial user namespaces.
-> > > >> Similar to other filesystem such as nfsd, mqueue, and sunrpc we use
-> > > >> keyed superblock management. The key determines whether we need to
-> > > >> create a new superblock or can reuse an already existing one. We use the
-> > > >> user namespace of the mount as key. This means a new binfmt_misc
-> > > >> superblock is created once per user namespace creation. Subsequent
-> > > >> mounts of binfmt_misc in the same user namespace will mount the same
-> > > >> binfmt_misc instance. We explicitly do not create a new binfmt_misc
-> > > >> superblock on every binfmt_misc mount as the semantics for
-> > > >> load_misc_binary() line up with the keying model. This also allows us to
-> > > >> retrieve the relevant binfmt_misc instance based on the caller's user
-> > > >> namespace which can be done in a simple (bounded to 32 levels) loop.
-> > > >>
-> > > >> Similar to the current binfmt_misc semantics allowing access to the
-> > > >> binary types in the initial binfmt_misc instance we do allow sandboxes
-> > > >> access to their parent's binfmt_misc mounts if they do not have created
-> > > >> a separate binfmt_misc instance.
-> > > >>
-> > > >> Overall, this will unblock the use-cases mentioned below and in general
-> > > >> will also allow to support and harden execution of another
-> > > >> architecture's binaries in tight sandboxes. For instance, using the
-> > > >> unshare binary it possible to start a chroot of another architecture and
-> > > >> configure the binfmt_misc interpreter without being root to run the
-> > > >> binaries in this chroot and without requiring the host to modify its
-> > > >> binary type handlers.
-> > > >>
-> > > >> Henning had already posted a few experiments in the cover letter at [1].
-> > > >> But here's an additional example where an unprivileged container
-> > > >> registers qemu-user-static binary handlers for various binary types in
-> > > >> its separate binfmt_misc mount and is then seamlessly able to start
-> > > >> containers with a different architecture without affecting the host:
-> > > >>
-> > > >> root    [lxc monitor] /var/snap/lxd/common/lxd/containers f1
-> > > >> 1000000  \_ /sbin/init
-> > > >> 1000000      \_ /lib/systemd/systemd-journald
-> > > >> 1000000      \_ /lib/systemd/systemd-udevd
-> > > >> 1000100      \_ /lib/systemd/systemd-networkd
-> > > >> 1000101      \_ /lib/systemd/systemd-resolved
-> > > >> 1000000      \_ /usr/sbin/cron -f
-> > > >> 1000103      \_ /usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only
-> > > >> 1000000      \_ /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
-> > > >> 1000104      \_ /usr/sbin/rsyslogd -n -iNONE
-> > > >> 1000000      \_ /lib/systemd/systemd-logind
-> > > >> 1000000      \_ /sbin/agetty -o -p -- \u --noclear --keep-baud console 115200,38400,9600 vt220
-> > > >> 1000107      \_ dnsmasq --conf-file=/dev/null -u lxc-dnsmasq --strict-order --bind-interfaces --pid-file=/run/lxc/dnsmasq.pid --liste
-> > > >> 1000000      \_ [lxc monitor] /var/lib/lxc f1-s390x
-> > > >> 1100000          \_ /usr/bin/qemu-s390x-static /sbin/init
-> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /lib/systemd/systemd-journald
-> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /usr/sbin/cron -f
-> > > >> 1100103              \_ /usr/bin/qemu-s390x-static /usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-ac
-> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
-> > > >> 1100104              \_ /usr/bin/qemu-s390x-static /usr/sbin/rsyslogd -n -iNONE
-> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /lib/systemd/systemd-logind
-> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud console 115200,38400,9600 vt220
-> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud pts/0 115200,38400,9600 vt220
-> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud pts/1 115200,38400,9600 vt220
-> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud pts/2 115200,38400,9600 vt220
-> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud pts/3 115200,38400,9600 vt220
-> > > >> 1100000              \_ /usr/bin/qemu-s390x-static /lib/systemd/systemd-udevd
-> > > >>
-> > > >> [1]: https://lore.kernel.org/all/20191216091220.465626-1-laurent@vivier.eu
-> > > >> [2]: https://discuss.linuxcontainers.org/t/binfmt-misc-permission-denied
-> > > >> [3]: https://discuss.linuxcontainers.org/t/lxd-binfmt-support-for-qemu-static-interpreters
-> > > >> [4]: https://discuss.linuxcontainers.org/t/3-1-0-binfmt-support-service-in-unprivileged-guest-requires-write-access-on-hosts-proc-sys-fs-binfmt-misc
-> > > >> [5]: https://discuss.linuxcontainers.org/t/qemu-user-static-not-working-4-11
-> > > >>
-> > > >> Link: https://lore.kernel.org/r/20191216091220.465626-2-laurent@vivier.eu (origin)
-> > > >> Link: https://lore.kernel.org/r/20211028103114.2849140-2-brauner@kernel.org (v1)
-> > > >> Cc: Sargun Dhillon <sargun@sargun.me>
-> > > >> Cc: Serge Hallyn <serge@hallyn.com>
-> > > > 
-> > > > (one typo below)
-> > > > 
-> > > > Acked-by: Serge Hallyn <serge@hallyn.com>
-> > > > 
-> > > 
-> > > What happened to this afterwards? Any remaining issues?
-> > 
-> > Not that we know. I plan to queue this up for 5.20.
-> 
-> Hello!
-> 
-> Thanks for the thread-ping -- I hadn't had a chance to read through this
-> before, but since it's touching binfmt, it popped up on my radar. :)
-> 
-> I like it overall, though I'd rather see it split up more (there's
-> some refactoring built into the patches that would be nice to split out
-> just to make review easier), but since others have already reviewed it,
-> that's probably overkill.
-> 
-> I'd really like to see some self-tests for this, though. Especially
 
-Yeah, I had started writing them but decoupled the upstreaming. Imho,
-you can start queueing this up. I'd like this to have very long exposure
-in -next. I'll follow up with selftests in the next weeks. (I'm out for
-a conference this week.)
+Linus,
 
-> around the cred logic changes and the namespace fallback logic. I'd like
-> to explicitly document and test what the expectations are around the
-> mounts, etc.
-> 
-> Finally, I'd prefer this went via the execve tree.
+Please pull the per-namespace-ipc-sysctls-for-v5.19 tag from the git tree:
 
-I mentioned this yesterday to you but just so there's a paper trail:
-The series and this iteration preceeds the maintainer entry. That's the
-only reason this originally wasn't aimed at that tree when the series
-was sent. You've been in Cc from the start though. :)
-I'd like to step up and maintain the binfmt_misc fs going forward. There
-are other tweaks it could use.
+  git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git per-namespace-ipc-sysctls-for-v5.19
+  HEAD: 38cd5b12b7854941ede1954cf5a2393eb94b5d37 ipc: Remove extra braces
 
-Christian
+These changes update the ipc sysctls so that they are fundamentally
+per ipc namespace.  Previously these sysctls depended upon a hack to
+simulate being per ipc namespace by looking up the ipc namespace in
+read or write.  With this set of changes the ipc sysctls are
+registered per ipc namespace and open looks up the ipc namespace.
+
+Not only does this series of changes ensure the traditional binding at
+open time happens, but it sets a foundation for being able to relax the
+permission checks to allow a user namspace root to change the ipc sysctls
+for an ipc namespace that the user namespace root requires.  To do this
+requires the ipc namespace to be known at open time.
+
+These changes were sent for v5.18[1] but were dropped because some
+additional cleanups were requested.  Linus has given his nod[2] to the
+cleanups so I hope enough cleanups are present this time.
+
+[1] https://lkml.kernel.org/r/877d8kfmdp.fsf@email.froward.int.ebiederm.org
+[2] https://lkml.kernel.org/r/CAHk-=whi2SzU4XT_FsdTCAuK2qtYmH+-hwi1cbSdG8zu0KXL=g@mail.gmail.com
+
+Alexey Gladkov (6):
+      ipc: Store mqueue sysctls in the ipc namespace
+      ipc: Store ipc sysctls in the ipc namespace
+      ipc: Use the same namespace to modify and validate
+      ipc: Remove extra1 field abuse to pass ipc namespace
+      ipc: Check permissions for checkpoint_restart sysctls at open time
+      ipc: Remove extra braces
+
+
+ include/linux/ipc_namespace.h |  37 +++++++-
+ ipc/ipc_sysctl.c              | 205 +++++++++++++++++++++++++-----------------
+ ipc/mq_sysctl.c               | 121 +++++++++++++------------
+ ipc/mqueue.c                  |  10 +--
+ ipc/namespace.c               |  10 +++
+ 5 files changed, 238 insertions(+), 145 deletions(-)
+
+Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
+
+p.s. My apologies for this coming in so late.  Everyone in the house has
+been sick.
+
