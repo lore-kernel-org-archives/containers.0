@@ -1,72 +1,53 @@
-Received: from mail-ed1-f42.google.com (mail-ed1-f42.google.com [209.85.208.42])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 84E0F3D65
-	for <containers@lists.linux.dev>; Fri,  3 Jun 2022 22:59:53 +0000 (UTC)
-Received: by mail-ed1-f42.google.com with SMTP id n28so11941904edb.9
-        for <containers@lists.linux.dev>; Fri, 03 Jun 2022 15:59:53 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linux-foundation.org; s=google;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=9z4AdzgDWuQPwQgbpxeMmLcgt6+lYKFImpeM73S4cMM=;
-        b=LHWjMTkCf7hqgYzvwOgDh7lbnpwJTOkPjkJZFLGY79Q5G92YiPn3piJIjTkey6jBm/
-         klS4oZwkf0LRsgqEbR5XKsuTY8FBPE8ZJBWDuz1fOYqVLoJ9EZoV/fD8K//Ux92GKhae
-         cERo55lHkG0T00YQ1S4cA2U3ao7/6JYX2AKQg=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=9z4AdzgDWuQPwQgbpxeMmLcgt6+lYKFImpeM73S4cMM=;
-        b=uJrxDOjdzfofOqui1mwYNzmeqMQVSRi3jBPS85eC8EJKGI5f7QKiNc3LJ4BfJWdhMH
-         tJ5TtorKV6bU76pz/TQUNGQwgTGor1biXp8tAbUtzRkNYdf9Vcn3LIOC61VpXi1mcChT
-         ihYJrz0BqG7XM+bx/fbpc7P+a9L2cLXtYP3v8bTCrCulFeImbdtSFLi2Gc5CsnWr//n9
-         ULpl0Hxjxh0C9+p3KoHfpWKuStErR3Y9O0y+/xhXklQohY+xfb+GqPrp3L66R7iTA2lq
-         8B/h8ILzYsZTWprhJ7/iHl5PUzeD2oX8x3VlkSUZucDnfZAshjaAQcUTTfYc6aquuvNq
-         QBdg==
-X-Gm-Message-State: AOAM530t02sQWDGhC7NgB4UIzuyqrwLc77t2I4O/VfJey1N2nwa/Szlt
-	BQtjf0NA/bKmS/2nG5Rs3lQNjxK7ErmhBJbx
-X-Google-Smtp-Source: ABdhPJxwqXQsVsGprCH+cOovPtKvNP1r5+66kktvEaDlNNyHoRQqlqXIIhvFLODPaGOZmiLXTnazOg==
-X-Received: by 2002:aa7:d4c6:0:b0:42e:561:8c70 with SMTP id t6-20020aa7d4c6000000b0042e05618c70mr13090669edr.131.1654297191515;
-        Fri, 03 Jun 2022 15:59:51 -0700 (PDT)
-Received: from mail-wr1-f48.google.com (mail-wr1-f48.google.com. [209.85.221.48])
-        by smtp.gmail.com with ESMTPSA id g1-20020a170906348100b00702d8b37a03sm3391685ejb.17.2022.06.03.15.59.49
-        for <containers@lists.linux.dev>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 03 Jun 2022 15:59:50 -0700 (PDT)
-Received: by mail-wr1-f48.google.com with SMTP id k16so12102510wrg.7
-        for <containers@lists.linux.dev>; Fri, 03 Jun 2022 15:59:49 -0700 (PDT)
-X-Received: by 2002:a05:6000:16c4:b0:20f:cd5d:4797 with SMTP id
- h4-20020a05600016c400b0020fcd5d4797mr10192231wrf.193.1654297189459; Fri, 03
- Jun 2022 15:59:49 -0700 (PDT)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AA5DC3D65
+	for <containers@lists.linux.dev>; Fri,  3 Jun 2022 23:25:01 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPS id 56A38C385A9;
+	Fri,  3 Jun 2022 23:25:01 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1654298701;
+	bh=6UHUqQdzkTj73A96QlRsG/2L/VVa49Rs5IzIFnm9O/4=;
+	h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
+	b=T2jYltGAgHZP1k0F85gmYoQRb6jOppkwBft4PeesB0wbCR6Lx/Pr+r8bsT7dOvcVo
+	 11mFtZ5QYV+G2yNnys6wYroJ8ve0GlF66cRErmNRhVr4enu9sYEP88nbPxwYoPoVdB
+	 nWjDhbedschgo3Fkb/ayazkMLoP36ZsQbffjpkGN/tobFYUxHkbGB1QDBd+GVNuLfy
+	 MfELpLL/heTTNIUpnwOL9dorWFyH2/utl7+jj+YU+B2V89VEJOTKTt4lJQ5nWVsbgL
+	 Qm6srEfBmpaNiz8p9ioPOFJpzbbHPyPZBjnvXEvlz9EBFynRuZyKXvMmxOG3ZaaKr1
+	 sT0lHAhN2I2Kg==
+Received: from aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
+	by aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (Postfix) with ESMTP id 39323F5F176;
+	Fri,  3 Jun 2022 23:25:01 +0000 (UTC)
+Subject: Re: [GIT PULL] ipc: per namespace ipc sysctl changes for v5.19
+From: pr-tracker-bot@kernel.org
+In-Reply-To: <875ylh8xxx.fsf@email.froward.int.ebiederm.org>
+References: <875ylh8xxx.fsf@email.froward.int.ebiederm.org>
+X-PR-Tracked-List-Id: <containers.lists.linux.dev>
+X-PR-Tracked-Message-Id: <875ylh8xxx.fsf@email.froward.int.ebiederm.org>
+X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git per-namespace-ipc-sysctls-for-v5.19
+X-PR-Tracked-Commit-Id: 38cd5b12b7854941ede1954cf5a2393eb94b5d37
+X-PR-Merge-Tree: torvalds/linux.git
+X-PR-Merge-Refname: refs/heads/master
+X-PR-Merge-Commit-Id: 1888e9b4bb78c88514b24ecafa9e4e4faf761747
+Message-Id: <165429870122.22913.6194143729922958016.pr-tracker-bot@kernel.org>
+Date: Fri, 03 Jun 2022 23:25:01 +0000
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>, linux-kernel@vger.kernel.org, Alexey Gladkov <legion@kernel.org>, Linux Containers <containers@lists.linux.dev>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
-MIME-Version: 1.0
-References: <875ylh8xxx.fsf@email.froward.int.ebiederm.org>
-In-Reply-To: <875ylh8xxx.fsf@email.froward.int.ebiederm.org>
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Date: Fri, 3 Jun 2022 15:59:33 -0700
-X-Gmail-Original-Message-ID: <CAHk-=wh0ZYiQuCJmohyYpk99mch=Nb+_m4DWxBX03DQWnsvCZA@mail.gmail.com>
-Message-ID: <CAHk-=wh0ZYiQuCJmohyYpk99mch=Nb+_m4DWxBX03DQWnsvCZA@mail.gmail.com>
-Subject: Re: [GIT PULL] ipc: per namespace ipc sysctl changes for v5.19
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Alexey Gladkov <legion@kernel.org>, 
-	Linux Containers <containers@lists.linux.dev>
-Content-Type: text/plain; charset="UTF-8"
 
-On Fri, Jun 3, 2022 at 10:21 AM Eric W. Biederman <ebiederm@xmission.com> wrote:
->
-> These changes were sent for v5.18[1] but were dropped because some
-> additional cleanups were requested.  Linus has given his nod[2] to the
-> cleanups so I hope enough cleanups are present this time.
+The pull request you sent on Fri, 03 Jun 2022 12:21:46 -0500:
 
-Well, I'll be happier still when the next set of cleanups hits:
+> git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git per-namespace-ipc-sysctls-for-v5.19
 
-   https://lore.kernel.org/all/CAHk-=wjJ2CP0ugbOnwAd-=Cw0i-q_xC1PbJ-_1jrvR-aisiAAA@mail.gmail.com/
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/1888e9b4bb78c88514b24ecafa9e4e4faf761747
 
-but yeah, that further cleanup series clearly wasn't quite ready yet.
+Thank you!
 
-              Linus
+-- 
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/prtracker.html
