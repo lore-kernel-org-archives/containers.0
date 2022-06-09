@@ -1,36 +1,43 @@
 Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D993B7A
-	for <containers@lists.linux.dev>; Thu,  9 Jun 2022 16:45:33 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6068033EF
+	for <containers@lists.linux.dev>; Thu,  9 Jun 2022 18:51:53 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=infradead.org; s=bombadil.20210309; h=Sender:In-Reply-To:Content-Type:
 	MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:Reply-To:
 	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=gVI3Ea/l9RerBozp3vD3BZhKp1cPeVbhqnYdNTkFTUE=; b=ueZd8oLTQhOOq2+OTonDgw8aQt
-	+p3JalI3+ek/mLSW7qX3pduaIdhafG+uHamo6+Z4WYWSnGq4feHGxAoEAGuf5xjFhOt2QwGiVlj8f
-	E12cXHcNNPaCbF80Z1+jSZj7PLLrq1Ybs24VRlE8wv/tEVDyqgynyVdreoZVe6mOE75Ns7jHh0WWW
-	Pq2yjGjqgH5bMAeZT4CARnDZIjVJbKwcKITy6FhP/e7OSxr4b7M7tlcHlb15v9s4UIKjIIzgCQNBn
-	2uLfk54tc6rUIqonQQBn4gRpbXR3FznYH+fBOtlCV13Q1Rax8eZGXAm4PFU5FkNN3XNQz9l1J7D6a
-	qz91+VGA==;
+	bh=9J+iIL5J9JY8vshmtS+g/ORNXJXMR4XrfE8PbSkbk6s=; b=W1srEC3JSquGQAXYIpQOfooL5Q
+	0qnK3UQGTm7TOZalgOreMteXYXtBvz/PCV2XLyWJIgVmrsshJlqQbTcW3uY0CNXiqVhv1wg4TKxpP
+	tTIvdGbRGStHpaxPNRvtvsGWjNxJ+NjdBipsrs8hI/Jf4v44iR7XMQV/3+h9EAiXPqrQofKpI/dkG
+	wxgitzkn5yaObK7ga9WtPu88Pe9+3mBwIUltZwT0qK/Qcwz3fHgQF4eSPJS/Biw6PTvXr9hnqrsRt
+	ZswBsVbZIsrD7sZBuwyZ8WKW6fNRKdq9xDzZw2R2vjPiWtZ198VxDgGfPPf7fPXeF3hob5A70I9Gk
+	BZ4gEWzg==;
 Received: from mcgrof by bombadil.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
-	id 1nzLHi-002vFC-Om; Thu, 09 Jun 2022 16:45:26 +0000
-Date: Thu, 9 Jun 2022 09:45:26 -0700
+	id 1nzNFu-003jc3-QS; Thu, 09 Jun 2022 18:51:42 +0000
+Date: Thu, 9 Jun 2022 11:51:42 -0700
 From: Luis Chamberlain <mcgrof@kernel.org>
-To: Alexey Gladkov <legion@kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>,
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Alexey Gladkov <legion@kernel.org>, LKML <linux-kernel@vger.kernel.org>,
 	"Eric W . Biederman" <ebiederm@xmission.com>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	Christian Brauner <brauner@kernel.org>,
 	Iurii Zaikin <yzaikin@google.com>,
 	Kees Cook <keescook@chromium.org>,
 	Linux Containers <containers@lists.linux.dev>,
-	linux-fsdevel@vger.kernel.org, Vasily Averin <vvs@virtuozzo.com>
-Subject: Re: [RFC PATCH 0/4] API extension for handling sysctl
-Message-ID: <YqIjpvyooF8hQQf4@bombadil.infradead.org>
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	Vasily Averin <vvs@virtuozzo.com>,
+	Muchun Song <songmuchun@bytedance.com>, Jia He <hejianet@gmail.com>,
+	Pan Xinhui <xinhui@linux.vnet.ibm.com>,
+	Thomas Huth <thuth@redhat.com>, ChuckLever <chuck.lever@oracle.com>
+Subject: Re: [RFC PATCH 2/4] sysctl: ipc: Do not use dynamic memory
+Message-ID: <YqJBPhCwPE1Pk1f7@bombadil.infradead.org>
 References: <CAHk-=whi2SzU4XT_FsdTCAuK2qtYmH+-hwi1cbSdG8zu0KXL=g@mail.gmail.com>
  <cover.1654086665.git.legion@kernel.org>
+ <857cb160a981b5719d8ed6a3e5e7c456915c64fa.1654086665.git.legion@kernel.org>
+ <CAHk-=wjJ2CP0ugbOnwAd-=Cw0i-q_xC1PbJ-_1jrvR-aisiAAA@mail.gmail.com>
+ <Ypeu97GDg6mNiKQ8@example.org>
+ <CAHk-=wgBeQafNgw6DNUwM4vvw4snb83Tb65m_QH9XSic2JSJaQ@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
@@ -39,34 +46,20 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cover.1654086665.git.legion@kernel.org>
+In-Reply-To: <CAHk-=wgBeQafNgw6DNUwM4vvw4snb83Tb65m_QH9XSic2JSJaQ@mail.gmail.com>
 Sender: Luis Chamberlain <mcgrof@infradead.org>
 
-On Wed, Jun 01, 2022 at 03:20:28PM +0200, Alexey Gladkov wrote:
-> On Fri, Apr 22, 2022 at 01:44:50PM -0700, Linus Torvalds wrote:
-> > On Fri, Apr 22, 2022 at 5:53 AM Alexey Gladkov <legion@kernel.org> wrote:
-> > >
-> > > Yes, Linus, these changes are not the refactoring you were talking
-> > > about, but I plan to try to do such a refactoring in the my next
-> > > patchset.
-> > 
-> > Heh. Ok, I'm not saying these patches are pretty, and looking up the
-> > namespace thing is a bit subtle, but it's certainly prettier than the
-> > existing odd "create a new ctl_table entry because of field abuse".
+On Wed, Jun 01, 2022 at 11:34:18AM -0700, Linus Torvalds wrote:
+> On Wed, Jun 1, 2022 at 11:25 AM Alexey Gladkov <legion@kernel.org> wrote:
+> >
+> > I'm not sure how to get rid of ctl_table since net sysctls are heavily
+> > dependent on it.
 > 
-> As I promised, here is one of the possible options for how to get rid of dynamic
-> memory allocation.
-> 
-> We can slightly extend the API and thus be able to save data at the time the
-> file is opened. This will not only eliminate the need to allocate memory, but
-> also provide access to file struct and f_cred.
-> 
-> I made an RFC because I'm not sure that I did the permissions check for
-> ipc_sysctl. I also did not change all the places where this API can be applied
-> to make the patch smaller. As in the case of /proc/sys/kernel/printk where
-> CAP_SYS_ADMIN is checked[1] for the current process at the time of write.
+> Anyway, I think all of this is "I think there is more room for cleanup
+> in this area", and maybe we'll never have enough motivation to
+> actually do that.
 
-Thanks for all this, can you also add respective selftests extensions
-for this on lib/test_sysctl.c and tools/testing/selftests/sysctl/sysctl.sh ?
+That's a good summary of the cleanup with sysctls so I appreciate the nudges
+in the right directions.
 
   Luis
