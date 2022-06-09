@@ -1,91 +1,117 @@
-Received: from out03.mta.xmission.com (out03.mta.xmission.com [166.70.13.233])
+Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6722F185E
-	for <containers@lists.linux.dev>; Sun,  5 Jun 2022 22:42:03 +0000 (UTC)
-Received: from in02.mta.xmission.com ([166.70.13.52]:37948)
-	by out03.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1nxyT6-00C2pP-7e; Sun, 05 Jun 2022 16:11:32 -0600
-Received: from ip68-227-174-4.om.om.cox.net ([68.227.174.4]:41754 helo=email.froward.int.ebiederm.org.xmission.com)
-	by in02.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1nxyT5-004SZw-BA; Sun, 05 Jun 2022 16:11:31 -0600
-From: "Eric W. Biederman" <ebiederm@xmission.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,  Alexey
- Gladkov <legion@kernel.org>,  Linux Containers
- <containers@lists.linux.dev>
-References: <875ylh8xxx.fsf@email.froward.int.ebiederm.org>
-	<CAHk-=wh0ZYiQuCJmohyYpk99mch=Nb+_m4DWxBX03DQWnsvCZA@mail.gmail.com>
-Date: Sun, 05 Jun 2022 17:11:07 -0500
-In-Reply-To: <CAHk-=wh0ZYiQuCJmohyYpk99mch=Nb+_m4DWxBX03DQWnsvCZA@mail.gmail.com>
-	(Linus Torvalds's message of "Fri, 3 Jun 2022 15:59:33 -0700")
-Message-ID: <87tu8y69s4.fsf@email.froward.int.ebiederm.org>
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.1 (gnu/linux)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8DE92210B
+	for <containers@lists.linux.dev>; Thu,  9 Jun 2022 14:45:12 +0000 (UTC)
+Received: from pps.filterd (m0098393.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 259DkBCQ007837;
+	Thu, 9 Jun 2022 14:28:08 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : subject :
+ from : to : cc : date : in-reply-to : references : content-type :
+ mime-version : content-transfer-encoding; s=pp1;
+ bh=BMK2RcYGfDwfWKAQf1dsbtB2ffMcLJIkRzaY8eo1+0Y=;
+ b=tQ4eAZPxCwgOGTTjHqXQB8Yqj/4yWjWxh4r/upUVch/2svZszgy51HfDIJQ/Wjyf9x2C
+ kNX5PEQghTZDE3n+rYNzD8syHpGKgVyw/kXJby0uF/w1L3ZoSvg7f97YPOe0ucI0m+JW
+ UR7nQNhDqwxU7TFZFIkwj2mW3iLX0Ekjwk9jM1dXUUYsyIQP4nCcxqt3w6NL4hI3ukQp
+ up7E4uisSy203+gnkPetvg6ch9aYUamUZyHjv+QBUJK1z2jqcfBoTMuzOuWzTV+NWgrA
+ oD02kSx3WXvb88+SEdtAO7VtPoM+M8FrO3wnLUeUnCZwrfGhD9w1i5s/vgjH10t2k307 mw== 
+Received: from pps.reinject (localhost [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3gkj1j8xv2-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Thu, 09 Jun 2022 14:28:08 +0000
+Received: from m0098393.ppops.net (m0098393.ppops.net [127.0.0.1])
+	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 259DlpN2013121;
+	Thu, 9 Jun 2022 14:28:08 GMT
+Received: from ppma04ams.nl.ibm.com (63.31.33a9.ip4.static.sl-reverse.com [169.51.49.99])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3gkj1j8xu8-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Thu, 09 Jun 2022 14:28:07 +0000
+Received: from pps.filterd (ppma04ams.nl.ibm.com [127.0.0.1])
+	by ppma04ams.nl.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 259E6Mvu005858;
+	Thu, 9 Jun 2022 14:28:05 GMT
+Received: from b06cxnps4075.portsmouth.uk.ibm.com (d06relay12.portsmouth.uk.ibm.com [9.149.109.197])
+	by ppma04ams.nl.ibm.com with ESMTP id 3gfy19f2bc-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Thu, 09 Jun 2022 14:28:05 +0000
+Received: from d06av22.portsmouth.uk.ibm.com (d06av22.portsmouth.uk.ibm.com [9.149.105.58])
+	by b06cxnps4075.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 259ES1xG13762924
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Thu, 9 Jun 2022 14:28:01 GMT
+Received: from d06av22.portsmouth.uk.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id AD30C4C044;
+	Thu,  9 Jun 2022 14:28:01 +0000 (GMT)
+Received: from d06av22.portsmouth.uk.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 969014C040;
+	Thu,  9 Jun 2022 14:27:58 +0000 (GMT)
+Received: from sig-9-65-64-6.ibm.com (unknown [9.65.64.6])
+	by d06av22.portsmouth.uk.ibm.com (Postfix) with ESMTP;
+	Thu,  9 Jun 2022 14:27:58 +0000 (GMT)
+Message-ID: <686b3d50a03d189f965e90d47043f9a515eb4199.camel@linux.ibm.com>
+Subject: Re: [PATCH v12 01/26] securityfs: rework dentry creation
+From: Mimi Zohar <zohar@linux.ibm.com>
+To: "Serge E. Hallyn" <serge@hallyn.com>,
+        Christian Brauner
+ <brauner@kernel.org>,
+        James Morris <jmorris@namei.org>
+Cc: Stefan Berger <stefanb@linux.ibm.com>, linux-integrity@vger.kernel.org,
+        christian.brauner@ubuntu.com, containers@lists.linux.dev,
+        dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
+        krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
+        mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
+        puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
+        linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
+        linux-security-module@vger.kernel.org, jmorris@namei.org,
+        jpenumak@redhat.com, John Johansen <john.johansen@canonical.com>,
+        Matthew
+ Garrett <mjg59@srcf.ucam.org>,
+        Micah Morton <mortonm@chromium.org>,
+        Kentaro
+ Takeda <takedakn@nttdata.co.jp>,
+        Jarkko Sakkinen <jarkko@kernel.org>
+Date: Thu, 09 Jun 2022 10:27:58 -0400
+In-Reply-To: <20220510204151.GA12935@mail.hallyn.com>
+References: <20220420140633.753772-1-stefanb@linux.ibm.com>
+	 <20220420140633.753772-2-stefanb@linux.ibm.com>
+	 <20220509195414.GA30894@mail.hallyn.com>
+	 <20220510102525.hlt2rm3k3hg5r6gg@wittgenstein>
+	 <20220510141025.GA7290@mail.hallyn.com>
+	 <20220510155107.srxifzuqfstvet2f@wittgenstein>
+	 <20220510204151.GA12935@mail.hallyn.com>
+Content-Type: text/plain; charset="ISO-8859-15"
+X-Mailer: Evolution 3.28.5 (3.28.5-18.el8) 
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
-MIME-Version: 1.0
-Content-Type: text/plain
-X-XM-SPF: eid=1nxyT5-004SZw-BA;;;mid=<87tu8y69s4.fsf@email.froward.int.ebiederm.org>;;;hst=in02.mta.xmission.com;;;ip=68.227.174.4;;;frm=ebiederm@xmission.com;;;spf=softfail
-X-XM-AID: U2FsdGVkX1/IcMM5ic1t771lZP5L72ecB8LyxksRPPU=
-X-SA-Exim-Connect-IP: 68.227.174.4
-X-SA-Exim-Mail-From: ebiederm@xmission.com
-X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on sa07.xmission.com
-X-Spam-Level: *****
-X-Spam-Status: No, score=5.2 required=8.0 tests=ALL_TRUSTED,BAYES_50,
-	DCC_CHECK_NEGATIVE,T_SCC_BODY_TEXT_LINE,T_TM2_M_HEADER_IN_MSG,
-	XMSubLong,XMSubMetaSxObfu_03,XMSubMetaSx_00,XM_SPF_SoftFail
-	autolearn=disabled version=3.4.2
-X-Spam-Report: 
-	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
-	*  0.8 BAYES_50 BODY: Bayes spam probability is 40 to 60%
-	*      [score: 0.4824]
-	*  0.7 XMSubLong Long Subject
-	*  0.0 T_TM2_M_HEADER_IN_MSG BODY: No description available.
-	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
-	*      [sa07 1397; Body=1 Fuz1=1 Fuz2=1]
-	*  1.0 XMSubMetaSx_00 1+ Sexy Words
-	*  2.5 XM_SPF_SoftFail SPF-SoftFail
-	*  1.2 XMSubMetaSxObfu_03 Obfuscated Sexy Noun-People
-	* -0.0 T_SCC_BODY_TEXT_LINE No description available.
-X-Spam-DCC: XMission; sa07 1397; Body=1 Fuz1=1 Fuz2=1 
-X-Spam-Combo: *****;Linus Torvalds <torvalds@linux-foundation.org>
-X-Spam-Relay-Country: 
-X-Spam-Timing: total 270 ms - load_scoreonly_sql: 0.09 (0.0%),
-	signal_user_changed: 11 (4.1%), b_tie_ro: 9 (3.4%), parse: 1.18 (0.4%),
-	 extract_message_metadata: 17 (6.3%), get_uri_detail_list: 1.37 (0.5%),
-	 tests_pri_-1000: 16 (5.8%), tests_pri_-950: 1.37 (0.5%),
-	tests_pri_-900: 1.04 (0.4%), tests_pri_-90: 48 (17.7%), check_bayes:
-	46 (17.2%), b_tokenize: 4.9 (1.8%), b_tok_get_all: 5 (2.0%),
-	b_comp_prob: 1.91 (0.7%), b_tok_touch_all: 31 (11.4%), b_finish: 0.90
-	(0.3%), tests_pri_0: 146 (53.9%), check_dkim_signature: 0.56 (0.2%),
-	check_dkim_adsp: 3.2 (1.2%), poll_dns_idle: 0.89 (0.3%), tests_pri_10:
-	2.9 (1.1%), tests_pri_500: 23 (8.5%), rewrite_mail: 0.00 (0.0%)
-Subject: Re: [GIT PULL] ipc: per namespace ipc sysctl changes for v5.19
-X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
-X-SA-Exim-Scanned: Yes (on in02.mta.xmission.com)
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-TM-AS-GCONF: 00
+X-Proofpoint-ORIG-GUID: FdkeeX_OpzDnD7xynR3IFonJRL0P0Ffm
+X-Proofpoint-GUID: efRawx1twZkB0tKMkSiF2xy8adpEXW3S
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.205,Aquarius:18.0.874,Hydra:6.0.517,FMLib:17.11.64.514
+ definitions=2022-06-09_10,2022-06-09_01,2022-02-23_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 impostorscore=0
+ malwarescore=0 priorityscore=1501 lowpriorityscore=0 phishscore=0
+ mlxlogscore=491 clxscore=1011 mlxscore=0 adultscore=0 bulkscore=0
+ spamscore=0 suspectscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2204290000 definitions=main-2206090058
 
-Linus Torvalds <torvalds@linux-foundation.org> writes:
+Hi James,
 
-> On Fri, Jun 3, 2022 at 10:21 AM Eric W. Biederman <ebiederm@xmission.com> wrote:
->>
->> These changes were sent for v5.18[1] but were dropped because some
->> additional cleanups were requested.  Linus has given his nod[2] to the
->> cleanups so I hope enough cleanups are present this time.
->
-> Well, I'll be happier still when the next set of cleanups hits:
->
->    https://lore.kernel.org/all/CAHk-=wjJ2CP0ugbOnwAd-=Cw0i-q_xC1PbJ-_1jrvR-aisiAAA@mail.gmail.com/
->
-> but yeah, that further cleanup series clearly wasn't quite ready yet.
+On Tue, 2022-05-10 at 15:41 -0500, Serge E. Hallyn wrote:
 
-Yes.  It came in during the merge window.  I have been keeping a weather
-eye on it but I really haven't had a chance to look yet.
+<snip>
 
-Eric
+> Reviewed-by: Serge Hallyn <serge@hallyn.com>
+
+b4 properly applies Serge's tag.  Any chance you could take this patch
+and, probably, 2/26 via the security tree?
+
+thanks,
+
+Mimi
+
+
+
