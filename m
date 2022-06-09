@@ -1,117 +1,72 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
+Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8DE92210B
-	for <containers@lists.linux.dev>; Thu,  9 Jun 2022 14:45:12 +0000 (UTC)
-Received: from pps.filterd (m0098393.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 259DkBCQ007837;
-	Thu, 9 Jun 2022 14:28:08 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : subject :
- from : to : cc : date : in-reply-to : references : content-type :
- mime-version : content-transfer-encoding; s=pp1;
- bh=BMK2RcYGfDwfWKAQf1dsbtB2ffMcLJIkRzaY8eo1+0Y=;
- b=tQ4eAZPxCwgOGTTjHqXQB8Yqj/4yWjWxh4r/upUVch/2svZszgy51HfDIJQ/Wjyf9x2C
- kNX5PEQghTZDE3n+rYNzD8syHpGKgVyw/kXJby0uF/w1L3ZoSvg7f97YPOe0ucI0m+JW
- UR7nQNhDqwxU7TFZFIkwj2mW3iLX0Ekjwk9jM1dXUUYsyIQP4nCcxqt3w6NL4hI3ukQp
- up7E4uisSy203+gnkPetvg6ch9aYUamUZyHjv+QBUJK1z2jqcfBoTMuzOuWzTV+NWgrA
- oD02kSx3WXvb88+SEdtAO7VtPoM+M8FrO3wnLUeUnCZwrfGhD9w1i5s/vgjH10t2k307 mw== 
-Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3gkj1j8xv2-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 09 Jun 2022 14:28:08 +0000
-Received: from m0098393.ppops.net (m0098393.ppops.net [127.0.0.1])
-	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 259DlpN2013121;
-	Thu, 9 Jun 2022 14:28:08 GMT
-Received: from ppma04ams.nl.ibm.com (63.31.33a9.ip4.static.sl-reverse.com [169.51.49.99])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3gkj1j8xu8-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 09 Jun 2022 14:28:07 +0000
-Received: from pps.filterd (ppma04ams.nl.ibm.com [127.0.0.1])
-	by ppma04ams.nl.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 259E6Mvu005858;
-	Thu, 9 Jun 2022 14:28:05 GMT
-Received: from b06cxnps4075.portsmouth.uk.ibm.com (d06relay12.portsmouth.uk.ibm.com [9.149.109.197])
-	by ppma04ams.nl.ibm.com with ESMTP id 3gfy19f2bc-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 09 Jun 2022 14:28:05 +0000
-Received: from d06av22.portsmouth.uk.ibm.com (d06av22.portsmouth.uk.ibm.com [9.149.105.58])
-	by b06cxnps4075.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 259ES1xG13762924
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Thu, 9 Jun 2022 14:28:01 GMT
-Received: from d06av22.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id AD30C4C044;
-	Thu,  9 Jun 2022 14:28:01 +0000 (GMT)
-Received: from d06av22.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 969014C040;
-	Thu,  9 Jun 2022 14:27:58 +0000 (GMT)
-Received: from sig-9-65-64-6.ibm.com (unknown [9.65.64.6])
-	by d06av22.portsmouth.uk.ibm.com (Postfix) with ESMTP;
-	Thu,  9 Jun 2022 14:27:58 +0000 (GMT)
-Message-ID: <686b3d50a03d189f965e90d47043f9a515eb4199.camel@linux.ibm.com>
-Subject: Re: [PATCH v12 01/26] securityfs: rework dentry creation
-From: Mimi Zohar <zohar@linux.ibm.com>
-To: "Serge E. Hallyn" <serge@hallyn.com>,
-        Christian Brauner
- <brauner@kernel.org>,
-        James Morris <jmorris@namei.org>
-Cc: Stefan Berger <stefanb@linux.ibm.com>, linux-integrity@vger.kernel.org,
-        christian.brauner@ubuntu.com, containers@lists.linux.dev,
-        dmitry.kasatkin@gmail.com, ebiederm@xmission.com,
-        krzysztof.struczynski@huawei.com, roberto.sassu@huawei.com,
-        mpeters@redhat.com, lhinds@redhat.com, lsturman@redhat.com,
-        puiterwi@redhat.com, jejb@linux.ibm.com, jamjoom@us.ibm.com,
-        linux-kernel@vger.kernel.org, paul@paul-moore.com, rgb@redhat.com,
-        linux-security-module@vger.kernel.org, jmorris@namei.org,
-        jpenumak@redhat.com, John Johansen <john.johansen@canonical.com>,
-        Matthew
- Garrett <mjg59@srcf.ucam.org>,
-        Micah Morton <mortonm@chromium.org>,
-        Kentaro
- Takeda <takedakn@nttdata.co.jp>,
-        Jarkko Sakkinen <jarkko@kernel.org>
-Date: Thu, 09 Jun 2022 10:27:58 -0400
-In-Reply-To: <20220510204151.GA12935@mail.hallyn.com>
-References: <20220420140633.753772-1-stefanb@linux.ibm.com>
-	 <20220420140633.753772-2-stefanb@linux.ibm.com>
-	 <20220509195414.GA30894@mail.hallyn.com>
-	 <20220510102525.hlt2rm3k3hg5r6gg@wittgenstein>
-	 <20220510141025.GA7290@mail.hallyn.com>
-	 <20220510155107.srxifzuqfstvet2f@wittgenstein>
-	 <20220510204151.GA12935@mail.hallyn.com>
-Content-Type: text/plain; charset="ISO-8859-15"
-X-Mailer: Evolution 3.28.5 (3.28.5-18.el8) 
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D993B7A
+	for <containers@lists.linux.dev>; Thu,  9 Jun 2022 16:45:33 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=bombadil.20210309; h=Sender:In-Reply-To:Content-Type:
+	MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=gVI3Ea/l9RerBozp3vD3BZhKp1cPeVbhqnYdNTkFTUE=; b=ueZd8oLTQhOOq2+OTonDgw8aQt
+	+p3JalI3+ek/mLSW7qX3pduaIdhafG+uHamo6+Z4WYWSnGq4feHGxAoEAGuf5xjFhOt2QwGiVlj8f
+	E12cXHcNNPaCbF80Z1+jSZj7PLLrq1Ybs24VRlE8wv/tEVDyqgynyVdreoZVe6mOE75Ns7jHh0WWW
+	Pq2yjGjqgH5bMAeZT4CARnDZIjVJbKwcKITy6FhP/e7OSxr4b7M7tlcHlb15v9s4UIKjIIzgCQNBn
+	2uLfk54tc6rUIqonQQBn4gRpbXR3FznYH+fBOtlCV13Q1Rax8eZGXAm4PFU5FkNN3XNQz9l1J7D6a
+	qz91+VGA==;
+Received: from mcgrof by bombadil.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
+	id 1nzLHi-002vFC-Om; Thu, 09 Jun 2022 16:45:26 +0000
+Date: Thu, 9 Jun 2022 09:45:26 -0700
+From: Luis Chamberlain <mcgrof@kernel.org>
+To: Alexey Gladkov <legion@kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>,
+	"Eric W . Biederman" <ebiederm@xmission.com>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Christian Brauner <brauner@kernel.org>,
+	Iurii Zaikin <yzaikin@google.com>,
+	Kees Cook <keescook@chromium.org>,
+	Linux Containers <containers@lists.linux.dev>,
+	linux-fsdevel@vger.kernel.org, Vasily Averin <vvs@virtuozzo.com>
+Subject: Re: [RFC PATCH 0/4] API extension for handling sysctl
+Message-ID: <YqIjpvyooF8hQQf4@bombadil.infradead.org>
+References: <CAHk-=whi2SzU4XT_FsdTCAuK2qtYmH+-hwi1cbSdG8zu0KXL=g@mail.gmail.com>
+ <cover.1654086665.git.legion@kernel.org>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: FdkeeX_OpzDnD7xynR3IFonJRL0P0Ffm
-X-Proofpoint-GUID: efRawx1twZkB0tKMkSiF2xy8adpEXW3S
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.205,Aquarius:18.0.874,Hydra:6.0.517,FMLib:17.11.64.514
- definitions=2022-06-09_10,2022-06-09_01,2022-02-23_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 impostorscore=0
- malwarescore=0 priorityscore=1501 lowpriorityscore=0 phishscore=0
- mlxlogscore=491 clxscore=1011 mlxscore=0 adultscore=0 bulkscore=0
- spamscore=0 suspectscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2204290000 definitions=main-2206090058
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <cover.1654086665.git.legion@kernel.org>
+Sender: Luis Chamberlain <mcgrof@infradead.org>
 
-Hi James,
+On Wed, Jun 01, 2022 at 03:20:28PM +0200, Alexey Gladkov wrote:
+> On Fri, Apr 22, 2022 at 01:44:50PM -0700, Linus Torvalds wrote:
+> > On Fri, Apr 22, 2022 at 5:53 AM Alexey Gladkov <legion@kernel.org> wrote:
+> > >
+> > > Yes, Linus, these changes are not the refactoring you were talking
+> > > about, but I plan to try to do such a refactoring in the my next
+> > > patchset.
+> > 
+> > Heh. Ok, I'm not saying these patches are pretty, and looking up the
+> > namespace thing is a bit subtle, but it's certainly prettier than the
+> > existing odd "create a new ctl_table entry because of field abuse".
+> 
+> As I promised, here is one of the possible options for how to get rid of dynamic
+> memory allocation.
+> 
+> We can slightly extend the API and thus be able to save data at the time the
+> file is opened. This will not only eliminate the need to allocate memory, but
+> also provide access to file struct and f_cred.
+> 
+> I made an RFC because I'm not sure that I did the permissions check for
+> ipc_sysctl. I also did not change all the places where this API can be applied
+> to make the patch smaller. As in the case of /proc/sys/kernel/printk where
+> CAP_SYS_ADMIN is checked[1] for the current process at the time of write.
 
-On Tue, 2022-05-10 at 15:41 -0500, Serge E. Hallyn wrote:
+Thanks for all this, can you also add respective selftests extensions
+for this on lib/test_sysctl.c and tools/testing/selftests/sysctl/sysctl.sh ?
 
-<snip>
-
-> Reviewed-by: Serge Hallyn <serge@hallyn.com>
-
-b4 properly applies Serge's tag.  Any chance you could take this patch
-and, probably, 2/26 via the security tree?
-
-thanks,
-
-Mimi
-
-
-
+  Luis
