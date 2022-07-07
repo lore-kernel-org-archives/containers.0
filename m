@@ -1,51 +1,51 @@
 Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 264202111
-	for <containers@lists.linux.dev>; Thu,  7 Jul 2022 14:48:33 +0000 (UTC)
-Received: from pps.filterd (m0098409.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 267EgV46009075;
-	Thu, 7 Jul 2022 14:48:07 GMT
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6B9C42119
+	for <containers@lists.linux.dev>; Thu,  7 Jul 2022 14:48:32 +0000 (UTC)
+Received: from pps.filterd (m0187473.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 267EgpWg034909;
+	Thu, 7 Jul 2022 14:48:10 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=pp1;
- bh=m80vBDr7/oR+QxW+sGrA6iJToDoShUSRJ/+RGfH444Q=;
- b=nFTt2D6lv0D4W05pYogOAlpD00AbPofuP8tf8sM9vHszVpN5+KX6yhwneE+hFrvWvkED
- tBz2EWMUHUkk0coZs5Eo+TEqXB1oo/KwSozX4gJcgpgxdQTwARFiCqkktaKqP6j/hYOz
- Cj2twmorgzOxsYSKyrReUQvqia7gWfwWE+vmDxPMkRJWfgpMsCJRSQBmLSm/clDAzOc5
- 31FfslYqUOJfKKtDEoxAQ1MTKGS3njOhwDzq40mdngm5T/8lC8zsZZjArs9dsEtrc9nO
- LhqjC9pn66FApz+uA7CSlPx8CZwd6lx2Gryo/WrW9CZxp5s4HphN/o0kNDPPFuYtov0w Mg== 
+ bh=gY2Fss/1ExUkc3jipfr4Xskf27Y62MZZ5JlhuHX2cjo=;
+ b=tE+UfaTzZJ1ugR9+aiewG03i34OFR9ju1/UV4rVXnX9s3Iq21x0JXlNd6YlcOLT53Fou
+ lfrdiFjgikrIsW5CisSHZ9K/O+YlggA8M4633/cTLxCAdEu+GcyWwlSBP+ZvGQrBkKVK
+ FTZqQs21Oqs7dustmz0GEDaGxIm4o51zRVcbsBiCAEPhatAKMbXsbpQsmuHmKj4fM3i7
+ pQoZbBHRxSr1O0L1s2g9ArXFg+t42ZDCRHKZ4tZp1mT0XsShwL4F3JDMHwBW2tMAVTza
+ VzTRj6A7aHaCo+xMvGukH+v6sReAW9NbGMoLVaR/Gf3AwDXeeaz+f5t66l0aog2EG09x Ow== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3h61fy86wf-1
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3h61g0r6y9-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 07 Jul 2022 14:48:07 +0000
-Received: from m0098409.ppops.net (m0098409.ppops.net [127.0.0.1])
-	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 267EiZ0Z019598;
-	Thu, 7 Jul 2022 14:48:06 GMT
-Received: from ppma04dal.us.ibm.com (7a.29.35a9.ip4.static.sl-reverse.com [169.53.41.122])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3h61fy86vh-1
+	Thu, 07 Jul 2022 14:48:10 +0000
+Received: from m0187473.ppops.net (m0187473.ppops.net [127.0.0.1])
+	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 267Eh6X9035477;
+	Thu, 7 Jul 2022 14:48:09 GMT
+Received: from ppma04wdc.us.ibm.com (1a.90.2fa9.ip4.static.sl-reverse.com [169.47.144.26])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3h61g0r6x5-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 07 Jul 2022 14:48:06 +0000
-Received: from pps.filterd (ppma04dal.us.ibm.com [127.0.0.1])
-	by ppma04dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 267Eir4Z015639;
-	Thu, 7 Jul 2022 14:48:05 GMT
-Received: from b01cxnp22034.gho.pok.ibm.com (b01cxnp22034.gho.pok.ibm.com [9.57.198.24])
-	by ppma04dal.us.ibm.com with ESMTP id 3h4uqy6sff-1
+	Thu, 07 Jul 2022 14:48:09 +0000
+Received: from pps.filterd (ppma04wdc.us.ibm.com [127.0.0.1])
+	by ppma04wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 267EZmC0029976;
+	Thu, 7 Jul 2022 14:48:08 GMT
+Received: from b01cxnp23032.gho.pok.ibm.com (b01cxnp23032.gho.pok.ibm.com [9.57.198.27])
+	by ppma04wdc.us.ibm.com with ESMTP id 3h4ud53ybs-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 07 Jul 2022 14:48:05 +0000
+	Thu, 07 Jul 2022 14:48:08 +0000
 Received: from b01ledav004.gho.pok.ibm.com (b01ledav004.gho.pok.ibm.com [9.57.199.109])
-	by b01cxnp22034.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 267Em4Gn65012148
+	by b01cxnp23032.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 267Em7JE21168534
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Thu, 7 Jul 2022 14:48:04 GMT
+	Thu, 7 Jul 2022 14:48:07 GMT
 Received: from b01ledav004.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 95AED112069;
-	Thu,  7 Jul 2022 14:48:04 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 57596112063;
+	Thu,  7 Jul 2022 14:48:07 +0000 (GMT)
 Received: from b01ledav004.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 7930F112063;
-	Thu,  7 Jul 2022 14:48:04 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 39678112069;
+	Thu,  7 Jul 2022 14:48:07 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by b01ledav004.gho.pok.ibm.com (Postfix) with ESMTP;
-	Thu,  7 Jul 2022 14:48:04 +0000 (GMT)
+	Thu,  7 Jul 2022 14:48:07 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
@@ -56,11 +56,10 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
         jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
         jmorris@namei.org, jpenumak@redhat.com,
-        Stefan Berger <stefanb@linux.ibm.com>,
-        Christian Brauner <brauner@kernel.org>
-Subject: [PATCH v13 04/26] ima: Move arch_policy_entry into ima_namespace
-Date: Thu,  7 Jul 2022 10:47:38 -0400
-Message-Id: <20220707144800.828288-5-stefanb@linux.ibm.com>
+        Stefan Berger <stefanb@linux.ibm.com>
+Subject: [PATCH v13 22/26] ima: Introduce securityfs file to activate an IMA namespace
+Date: Thu,  7 Jul 2022 10:47:56 -0400
+Message-Id: <20220707144800.828288-23-stefanb@linux.ibm.com>
 X-Mailer: git-send-email 2.36.1
 In-Reply-To: <20220707144800.828288-1-stefanb@linux.ibm.com>
 References: <20220707144800.828288-1-stefanb@linux.ibm.com>
@@ -72,128 +71,196 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: FgT2AdDbR8sDHLQzkhsxbHuXfL4dk7nx
-X-Proofpoint-GUID: 2vVBsDGyNdzRug-rNYGCxQsmfIx983og
+X-Proofpoint-GUID: G8HNeTjjl7vJZ5wH20FMCb-F82ag-ybF
+X-Proofpoint-ORIG-GUID: TYkBqwk2kJOPoJWMUwv-mNL6nCnfj3YW
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.883,Hydra:6.0.517,FMLib:17.11.122.1
  definitions=2022-07-07_12,2022-06-28_01,2022-06-22_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 suspectscore=0 spamscore=0
- phishscore=0 adultscore=0 bulkscore=0 mlxlogscore=999 clxscore=1015
- impostorscore=0 lowpriorityscore=0 priorityscore=1501 malwarescore=0
- mlxscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 clxscore=1015 impostorscore=0
+ mlxscore=0 priorityscore=1501 phishscore=0 adultscore=0 spamscore=0
+ suspectscore=0 bulkscore=0 mlxlogscore=868 lowpriorityscore=0
+ malwarescore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.12.0-2206140000 definitions=main-2207070057
 
-The architecture-specific policy rules, currently defined for EFI and
-powerpc, require the kexec kernel image and kernel modules to be
-validly signed and measured, based on the system's secure boot and/or
-trusted boot mode and the IMA_ARCH_POLICY Kconfig option being enabled.
+Introduce the IMA securityfs file 'active' that users now need to
+write a "1" into (precisely a '1\0' or '1\n') to activate an IMA namespace.
+When reading from the file, it shows either '0' or '1'.
 
-To avoid special-casing init_ima_ns as much as possible, move the
-arch_policy_entry into the ima_namespace.
+The rationale for introducing a file to activate an IMA namespace is that
+subsequent support for IMA-measurement and IMA-appraisal will add
+configuration files for selecting for example the template that an IMA
+namespace is supposed to use for logging measurements, which will add
+an IMA namespace configuration stage (using securityfs files) before its
+activation. Besides that it allows to create a user namespace with
+securityfs mounted and an inactive IMA namespace.
 
-When freeing the arch_policy_entry set the pointer to NULL.
+Also, introduce ns_is_active() to be used in those places where the
+ima_namespace pointer may either be NULL or where the active flag may not
+have been set, yet. An inactive IMA namespace should never be accessed
+since it has not been initialized, yet.
+
+Set the init_ima_ns's active flag since it is considered active right from
+the beginning.
 
 Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-Acked-by: Christian Brauner <brauner@kernel.org>
-Reviewed-by: Mimi Zohar <zohar@linux.ibm.com>
-Reviewed-by: Serge Hallyn <serge@hallyn.com>
+
 ---
- security/integrity/ima/ima.h             |  3 +++
+v12:
+ - Fixed uninitialized ret if IS_ERR(active) was true
+
+v11:
+ - Move code from ima_fs_add_ns_files() into ima_fs_ns_init()
+ - Use ima_ns_flags and IMA_NS_ACTIVE instead of 'atomic_t active'
+
+v10:
+ - use memdup_user_nul to copy input from user
+ - propagating error returned from ima_fs_add_ns_files()
+---
+ security/integrity/ima/ima.h             |  6 +++
+ security/integrity/ima/ima_fs.c          | 64 ++++++++++++++++++++++++
  security/integrity/ima/ima_init_ima_ns.c |  1 +
- security/integrity/ima/ima_policy.c      | 23 +++++++++++------------
- 3 files changed, 15 insertions(+), 12 deletions(-)
+ security/integrity/ima/ima_main.c        |  2 +-
+ 4 files changed, 72 insertions(+), 1 deletion(-)
 
 diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
-index 9bcde1a24e74..2305bf223a98 100644
+index 6592ae2a4300..fa9f99ad7e69 100644
 --- a/security/integrity/ima/ima.h
 +++ b/security/integrity/ima/ima.h
-@@ -125,6 +125,9 @@ struct ima_namespace {
+@@ -126,6 +126,7 @@ struct ima_namespace {
+ 	unsigned long ima_ns_flags;
+ /* Bit numbers for above flags; use BIT() to get flag */
+ #define IMA_NS_LSM_UPDATE_RULES		0
++#define IMA_NS_ACTIVE			1
  
- 	struct list_head __rcu *ima_rules;  /* Pointer to the current policy */
- 	int ima_policy_flag;
-+
-+	/* An array of architecture specific rules */
-+	struct ima_rule_entry *arch_policy_entry;
+ 	struct rb_root ns_status_tree;
+ 	rwlock_t ns_tree_lock;
+@@ -158,6 +159,11 @@ struct ima_namespace {
  } __randomize_layout;
  extern struct ima_namespace init_ima_ns;
  
-diff --git a/security/integrity/ima/ima_init_ima_ns.c b/security/integrity/ima/ima_init_ima_ns.c
-index c919a456b525..ae33621c3955 100644
---- a/security/integrity/ima/ima_init_ima_ns.c
-+++ b/security/integrity/ima/ima_init_ima_ns.c
-@@ -15,6 +15,7 @@ static int ima_init_namespace(struct ima_namespace *ns)
- 	INIT_LIST_HEAD(&ns->ima_temp_rules);
- 	ns->ima_rules = (struct list_head __rcu *)(&ns->ima_default_rules);
- 	ns->ima_policy_flag = 0;
-+	ns->arch_policy_entry = NULL;
++static inline bool ns_is_active(struct ima_namespace *ns)
++{
++	return (ns && test_bit(IMA_NS_ACTIVE, &ns->ima_ns_flags));
++}
++
+ extern const int read_idmap[];
  
- 	return 0;
- }
-diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
-index 0e7e306fb75a..fe1096fd2703 100644
---- a/security/integrity/ima/ima_policy.c
-+++ b/security/integrity/ima/ima_policy.c
-@@ -228,9 +228,6 @@ static struct ima_rule_entry critical_data_rules[] __ro_after_init = {
- 	{.action = MEASURE, .func = CRITICAL_DATA, .flags = IMA_FUNC},
+ #ifdef CONFIG_HAVE_IMA_KEXEC
+diff --git a/security/integrity/ima/ima_fs.c b/security/integrity/ima/ima_fs.c
+index 84cd02a9e19b..301c717e029f 100644
+--- a/security/integrity/ima/ima_fs.c
++++ b/security/integrity/ima/ima_fs.c
+@@ -451,6 +451,57 @@ static const struct file_operations ima_measure_policy_ops = {
+ 	.llseek = generic_file_llseek,
  };
  
--/* An array of architecture specific rules */
--static struct ima_rule_entry *arch_policy_entry __ro_after_init;
--
- static int ima_policy __initdata;
++static ssize_t ima_show_active(struct file *filp,
++			       char __user *buf,
++			       size_t count, loff_t *ppos)
++{
++	struct ima_namespace *ns = &init_ima_ns;
++	char tmpbuf[2];
++	ssize_t len;
++
++	len = scnprintf(tmpbuf, sizeof(tmpbuf),
++			"%d\n", !!test_bit(IMA_NS_ACTIVE, &ns->ima_ns_flags));
++	return simple_read_from_buffer(buf, count, ppos, tmpbuf, len);
++}
++
++static ssize_t ima_write_active(struct file *filp,
++				const char __user *buf,
++				size_t count, loff_t *ppos)
++{
++	struct ima_namespace *ns = &init_ima_ns;
++	unsigned int active;
++	char *kbuf;
++	int err;
++
++	if (ns_is_active(ns))
++		return -EBUSY;
++
++	/* accepting '1\n' and '1\0' and no partial writes */
++	if (count >= 3 || *ppos != 0)
++		return -EINVAL;
++
++	kbuf = memdup_user_nul(buf, count);
++	if (IS_ERR(kbuf))
++		return PTR_ERR(kbuf);
++
++	err = kstrtouint(kbuf, 10, &active);
++	kfree(kbuf);
++	if (err)
++		return err;
++
++	if (active != 1)
++		return -EINVAL;
++
++	set_bit(IMA_NS_ACTIVE, &ns->ima_ns_flags);
++
++	return count;
++}
++
++static const struct file_operations ima_active_ops = {
++	.read = ima_show_active,
++	.write = ima_write_active,
++};
++
+ int ima_fs_ns_init(struct user_namespace *user_ns, struct dentry *root)
+ {
+ 	struct ima_namespace *ns = ima_ns_from_user_ns(user_ns);
+@@ -461,6 +512,7 @@ int ima_fs_ns_init(struct user_namespace *user_ns, struct dentry *root)
+ 	struct dentry *ascii_runtime_measurements = NULL;
+ 	struct dentry *runtime_measurements_count = NULL;
+ 	struct dentry *violations = NULL;
++	struct dentry *active = NULL;
+ 	int ret;
  
- static int __init default_measure_policy_setup(char *str)
-@@ -859,9 +856,10 @@ static int __init ima_init_arch_policy(struct ima_namespace *ns)
- 	for (rules = arch_rules; *rules != NULL; rules++)
- 		arch_entries++;
- 
--	arch_policy_entry = kcalloc(arch_entries + 1,
--				    sizeof(*arch_policy_entry), GFP_KERNEL);
--	if (!arch_policy_entry)
-+	ns->arch_policy_entry = kcalloc(arch_entries + 1,
-+					sizeof(*ns->arch_policy_entry),
-+					GFP_KERNEL);
-+	if (!ns->arch_policy_entry)
- 		return 0;
- 
- 	/* Convert each policy string rules to struct ima_rule_entry format */
-@@ -871,13 +869,13 @@ static int __init ima_init_arch_policy(struct ima_namespace *ns)
- 
- 		result = strscpy(rule, *rules, sizeof(rule));
- 
--		INIT_LIST_HEAD(&arch_policy_entry[i].list);
--		result = ima_parse_rule(ns, rule, &arch_policy_entry[i]);
-+		INIT_LIST_HEAD(&ns->arch_policy_entry[i].list);
-+		result = ima_parse_rule(ns, rule, &ns->arch_policy_entry[i]);
- 		if (result) {
- 			pr_warn("Skipping unknown architecture policy rule: %s\n",
- 				rule);
--			memset(&arch_policy_entry[i], 0,
--			       sizeof(*arch_policy_entry));
-+			memset(&ns->arch_policy_entry[i], 0,
-+			       sizeof(ns->arch_policy_entry[i]));
- 			continue;
+ 	/* FIXME: update when evm and integrity are namespaced */
+@@ -531,8 +583,20 @@ int ima_fs_ns_init(struct user_namespace *user_ns, struct dentry *root)
  		}
- 		i++;
-@@ -925,7 +923,7 @@ void __init ima_init_policy(struct ima_namespace *ns)
- 	if (!arch_entries)
- 		pr_info("No architecture policies found\n");
- 	else
--		add_rules(ns, arch_policy_entry, arch_entries,
-+		add_rules(ns, ns->arch_policy_entry, arch_entries,
- 			  IMA_DEFAULT_POLICY | IMA_CUSTOM_POLICY);
- 
- 	/*
-@@ -1005,7 +1003,8 @@ void ima_update_policy(struct ima_namespace *ns)
- 		 * on boot.  After loading a custom policy, free the
- 		 * architecture specific rules stored as an array.
- 		 */
--		kfree(arch_policy_entry);
-+		kfree(ns->arch_policy_entry);
-+		ns->arch_policy_entry = NULL;
  	}
- 	ima_update_policy_flags(ns);
  
++	if (ns != &init_ima_ns) {
++		active =
++		    securityfs_create_file("active",
++					   S_IRUSR | S_IWUSR | S_IRGRP, ima_dir,
++					   NULL, &ima_active_ops);
++		if (IS_ERR(active)) {
++			ret = PTR_ERR(active);
++			goto out;
++		}
++	}
++
+ 	return 0;
+ out:
++	securityfs_remove(active);
+ 	securityfs_remove(ns->ima_policy);
+ 	securityfs_remove(violations);
+ 	securityfs_remove(runtime_measurements_count);
+diff --git a/security/integrity/ima/ima_init_ima_ns.c b/security/integrity/ima/ima_init_ima_ns.c
+index 41e7db0c9749..5c57abfc70ea 100644
+--- a/security/integrity/ima/ima_init_ima_ns.c
++++ b/security/integrity/ima/ima_init_ima_ns.c
+@@ -58,5 +58,6 @@ struct ima_namespace init_ima_ns = {
+ 	.ima_lsm_policy_notifier = {
+ 		.notifier_call = ima_lsm_policy_change,
+ 	},
++	.ima_ns_flags = BIT(IMA_NS_ACTIVE),
+ };
+ EXPORT_SYMBOL(init_ima_ns);
+diff --git a/security/integrity/ima/ima_main.c b/security/integrity/ima/ima_main.c
+index 4550958d0f06..c397d24267b7 100644
+--- a/security/integrity/ima/ima_main.c
++++ b/security/integrity/ima/ima_main.c
+@@ -441,7 +441,7 @@ static int process_measurement(struct user_namespace *user_ns,
+ 
+ 	while (user_ns) {
+ 		ns = ima_ns_from_user_ns(user_ns);
+-		if (ns) {
++		if (ns_is_active(ns)) {
+ 			int rc;
+ 
+ 			rc = __process_measurement(ns, file, cred, secid, buf,
 -- 
 2.36.1
 
