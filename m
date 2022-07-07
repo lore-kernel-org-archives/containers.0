@@ -1,51 +1,51 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DB6AE7C
-	for <containers@lists.linux.dev>; Thu,  7 Jul 2022 14:48:20 +0000 (UTC)
-Received: from pps.filterd (m0098420.ppops.net [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 267EkpZV007596;
-	Thu, 7 Jul 2022 14:48:10 GMT
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 75C16211F
+	for <containers@lists.linux.dev>; Thu,  7 Jul 2022 14:48:22 +0000 (UTC)
+Received: from pps.filterd (m0127361.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 267EMpDU024927;
+	Thu, 7 Jul 2022 14:48:08 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=pp1;
- bh=6MkXC7AxIl6dyiN1hKRN001xHZoWoEfAYX9KK4yLB6Q=;
- b=Ve/zzeziUwxKhjazoJ7sDsQNvW2rDD3FFhkgRGeqUnJ6Gz0TSr0mRZs5gcuKSVHR6alH
- N8DzghZpsgYOMNNFMfR3EtF8DmGKyYDo+gwnk6J1S8UqATF8badE+E1oI4+m8sg+jDib
- NzR+Vjhf1AQuUY7PP7QXjBJ5GHX5m2lz9NB7+VnGVyGPhP4Up5jDKyXlA0PB8gcIHBsy
- O+JC0H7p6N/2SJfxEeORsgufIwn/H9Bh/QIETA+LaXm/9ymmotLr/2JgIoqr7phnpOlw
- KItIqXWdnIuAv+/S47XKPOntp1DMHoRbU6sJEwWXnQWL8RvUA6XydCTtdA4pAvYSthq3 qw== 
+ bh=O//a5zlLvQZ6XagKc13b+xL++Fbux04O3vgdHrK3Hdk=;
+ b=gM05ZhVmEzsFS6IEmTZ1WDee4cdd86+vyIc7kA7yX1pz88VKSyzsU6933/JzFl7fqesU
+ lzalWallr1a4tN6oZaMVXEdjRi6Uu0Y1ncx5zXZDQFj/w+XC9VFQx+bXvwquE+CoSl5t
+ wATtC4hMsWSYM9AEA0YuQRp6iccQEmwmHfqBO56JRV/qRhElvHZlGa3Utklzjkrh7EgP
+ DxoW84hhHGcKmvphTVKwg56WLbKLdqLCRkS6oF3N6ndvfkg2HEFjWvRjD3DPBS5Z0g/8
+ VS9xR3DhT703gobBcIaw9p3r6gMj5BQyXtHoHhQGqytfuqmMxt4zy60JMU4UBF4Ccu83 tA== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com (PPS) with ESMTPS id 3h61j5r1se-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 07 Jul 2022 14:48:10 +0000
-Received: from m0098420.ppops.net (m0098420.ppops.net [127.0.0.1])
-	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 267El0vY008044;
-	Thu, 7 Jul 2022 14:48:09 GMT
-Received: from ppma01dal.us.ibm.com (83.d6.3fa9.ip4.static.sl-reverse.com [169.63.214.131])
-	by mx0b-001b2d01.pphosted.com (PPS) with ESMTPS id 3h61j5r1rj-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 07 Jul 2022 14:48:09 +0000
-Received: from pps.filterd (ppma01dal.us.ibm.com [127.0.0.1])
-	by ppma01dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 267EZmCL021786;
-	Thu, 7 Jul 2022 14:48:08 GMT
-Received: from b01cxnp23032.gho.pok.ibm.com (b01cxnp23032.gho.pok.ibm.com [9.57.198.27])
-	by ppma01dal.us.ibm.com with ESMTP id 3h4ud7pvtj-1
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3h60qp2540-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Thu, 07 Jul 2022 14:48:08 +0000
-Received: from b01ledav004.gho.pok.ibm.com (b01ledav004.gho.pok.ibm.com [9.57.199.109])
-	by b01cxnp23032.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 267Em7D624903964
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+Received: from m0127361.ppops.net (m0127361.ppops.net [127.0.0.1])
+	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 267EN1Ex026267;
 	Thu, 7 Jul 2022 14:48:07 GMT
+Received: from ppma03wdc.us.ibm.com (ba.79.3fa9.ip4.static.sl-reverse.com [169.63.121.186])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3h60qp253j-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Thu, 07 Jul 2022 14:48:07 +0000
+Received: from pps.filterd (ppma03wdc.us.ibm.com [127.0.0.1])
+	by ppma03wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 267EacLO006769;
+	Thu, 7 Jul 2022 14:48:06 GMT
+Received: from b01cxnp22035.gho.pok.ibm.com (b01cxnp22035.gho.pok.ibm.com [9.57.198.25])
+	by ppma03wdc.us.ibm.com with ESMTP id 3h4ucnuyca-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Thu, 07 Jul 2022 14:48:06 +0000
+Received: from b01ledav004.gho.pok.ibm.com (b01ledav004.gho.pok.ibm.com [9.57.199.109])
+	by b01cxnp22035.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 267Em5w533489304
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Thu, 7 Jul 2022 14:48:05 GMT
 Received: from b01ledav004.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 93599112061;
-	Thu,  7 Jul 2022 14:48:07 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id CC0AB112062;
+	Thu,  7 Jul 2022 14:48:05 +0000 (GMT)
 Received: from b01ledav004.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 77F5411206D;
-	Thu,  7 Jul 2022 14:48:07 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id AEC3A112061;
+	Thu,  7 Jul 2022 14:48:05 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by b01ledav004.gho.pok.ibm.com (Postfix) with ESMTP;
-	Thu,  7 Jul 2022 14:48:07 +0000 (GMT)
+	Thu,  7 Jul 2022 14:48:05 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
@@ -56,10 +56,11 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
         jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
         jmorris@namei.org, jpenumak@redhat.com,
-        Stefan Berger <stefanb@linux.ibm.com>
-Subject: [PATCH v13 24/26] ima: Limit number of policy rules in non-init_ima_ns
-Date: Thu,  7 Jul 2022 10:47:58 -0400
-Message-Id: <20220707144800.828288-25-stefanb@linux.ibm.com>
+        Stefan Berger <stefanb@linux.ibm.com>,
+        Christian Brauner <brauner@kernel.org>
+Subject: [PATCH v13 12/26] ima: Only accept AUDIT rules for non-init_ima_ns namespaces for now
+Date: Thu,  7 Jul 2022 10:47:46 -0400
+Message-Id: <20220707144800.828288-13-stefanb@linux.ibm.com>
 X-Mailer: git-send-email 2.36.1
 In-Reply-To: <20220707144800.828288-1-stefanb@linux.ibm.com>
 References: <20220707144800.828288-1-stefanb@linux.ibm.com>
@@ -71,111 +72,61 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: 0KdKAxTr75UZM5DSYeFKhc8n125Lgtjj
-X-Proofpoint-ORIG-GUID: mpxIn8yl1EEqoIq3ecQ4KLPh522MtPtU
+X-Proofpoint-ORIG-GUID: VuwqG02sLf5rHJV8jeZml0OLWT2VqrnE
+X-Proofpoint-GUID: klyM1Frv1fDm3BTkgEfdqh9kBddn81rw
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.883,Hydra:6.0.517,FMLib:17.11.122.1
  definitions=2022-07-07_12,2022-06-28_01,2022-06-22_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 bulkscore=0
- lowpriorityscore=0 clxscore=1015 phishscore=0 mlxlogscore=999
- impostorscore=0 suspectscore=0 priorityscore=1501 mlxscore=0 spamscore=0
- adultscore=0 malwarescore=0 classifier=spam adjust=0 reason=mlx
- scancount=1 engine=8.12.0-2206140000 definitions=main-2207070055
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 spamscore=0 adultscore=0
+ mlxlogscore=999 clxscore=1015 lowpriorityscore=0 suspectscore=0 mlxscore=0
+ impostorscore=0 priorityscore=1501 malwarescore=0 bulkscore=0 phishscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2206140000
+ definitions=main-2207070057
 
-Limit the number of policy rules a user can set in non-init_ima_ns to a
-hardcoded 1024 rules. This allows to restrict the amount of kernel memory
-used for IMA's policy since now any user can create an IMA namespace and
-could try to waste kernel memory.
-
-Ignore added rules if the user attempts to exceed this limit by setting
-too many additional rules.
-
-Switch the accounting for the memory allocated for IMA policy rules to
-GFP_KERNEL_ACCOUNT so that cgroups kernel memory accounting can take
-effect. This switch has no effect on the init_ima_ns.
+For non-init_ima_ns namespaces, only accept AUDIT rules for now. Reject
+all rules that require support for measuring, appraisal, and hashing.
 
 Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
+Acked-by: Christian Brauner <brauner@kernel.org>
+Reviewed-by: Mimi Zohar <zohar@linux.ibm.com>
 
 ---
-
-v11:
-  - roll back changes to auditing too-many-rules since not auditing from
-    IMA namespaces
+v9:
+  - Jump to err_audit when unsupported rules are detected
 ---
- security/integrity/ima/ima_policy.c | 23 ++++++++++++++++++-----
- 1 file changed, 18 insertions(+), 5 deletions(-)
+ security/integrity/ima/ima_policy.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
 diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
-index 181340678844..d26765df0dba 100644
+index de335dd97309..4a7e1e57655d 100644
 --- a/security/integrity/ima/ima_policy.c
 +++ b/security/integrity/ima/ima_policy.c
-@@ -312,7 +312,8 @@ static struct ima_rule_opt_list *ima_alloc_rule_opt_list(const substring_t *src)
- 		return ERR_PTR(-EINVAL);
+@@ -1865,6 +1865,17 @@ static int ima_parse_rule(struct ima_namespace *ns,
+ 			result = -EINVAL;
+ 			break;
+ 		}
++
++		/* IMA namespace only accepts AUDIT rules */
++		if (ns != &init_ima_ns && result == 0) {
++			switch (entry->action) {
++			case MEASURE:
++			case APPRAISE:
++			case HASH:
++				result = -EINVAL;
++				goto err_audit;
++			}
++		}
+ 	}
+ 	if (!result && !ima_validate_rule(entry))
+ 		result = -EINVAL;
+@@ -1886,6 +1897,7 @@ static int ima_parse_rule(struct ima_namespace *ns,
+ 				     "verity rules should include d-ngv2");
  	}
  
--	opt_list = kzalloc(struct_size(opt_list, items, count), GFP_KERNEL);
-+	opt_list = kzalloc(struct_size(opt_list, items, count),
-+			   GFP_KERNEL_ACCOUNT);
- 	if (!opt_list) {
- 		kfree(src_copy);
- 		return ERR_PTR(-ENOMEM);
-@@ -386,7 +387,7 @@ static struct ima_rule_entry *ima_lsm_copy_rule(struct ima_namespace *ns,
- 	 * Immutable elements are copied over as pointers and data; only
- 	 * lsm rules can change
- 	 */
--	nentry = kmemdup(entry, sizeof(*nentry), GFP_KERNEL);
-+	nentry = kmemdup(entry, sizeof(*nentry), GFP_KERNEL_ACCOUNT);
- 	if (!nentry)
- 		return NULL;
- 
-@@ -842,7 +843,7 @@ static void add_rules(struct ima_namespace *ns,
- 
- 		if (policy_rule & IMA_CUSTOM_POLICY) {
- 			entry = kmemdup(&entries[i], sizeof(*entry),
--					GFP_KERNEL);
-+					GFP_KERNEL_ACCOUNT);
- 			if (!entry)
- 				continue;
- 
-@@ -879,7 +880,7 @@ static int __init ima_init_arch_policy(struct ima_namespace *ns)
- 
- 	ns->arch_policy_entry = kcalloc(arch_entries + 1,
- 					sizeof(*ns->arch_policy_entry),
--					GFP_KERNEL);
-+					GFP_KERNEL_ACCOUNT);
- 	if (!ns->arch_policy_entry)
- 		return 0;
- 
-@@ -991,8 +992,20 @@ void __init ima_init_policy(struct ima_namespace *ns)
- /* Make sure we have a valid policy, at least containing some rules. */
- int ima_check_policy(struct ima_namespace *ns)
- {
-+	struct ima_rule_entry *entry;
-+	size_t len1 = 0;
-+	size_t len2 = 0;
-+
- 	if (list_empty(&ns->ima_temp_rules))
- 		return -EINVAL;
-+	if (ns != &init_ima_ns) {
-+		list_for_each_entry(entry, &ns->ima_temp_rules, list)
-+			len1++;
-+		list_for_each_entry(entry, &ns->ima_policy_rules, list)
-+			len2++;
-+		if (len1 + len2 > 1024)
-+			return -ENOSPC;
-+	}
- 	return 0;
- }
- 
-@@ -1926,7 +1939,7 @@ ssize_t ima_parse_add_rule(struct ima_namespace *ns, char *rule)
- 	if (*p == '#' || *p == '\0')
- 		return len;
- 
--	entry = kzalloc(sizeof(*entry), GFP_KERNEL);
-+	entry = kzalloc(sizeof(*entry), GFP_KERNEL_ACCOUNT);
- 	if (!entry) {
- 		integrity_audit_msg(AUDIT_INTEGRITY_STATUS, NULL,
- 				    NULL, op, "-ENOMEM", -ENOMEM, audit_info);
++err_audit:
+ 	audit_log_format(ab, "res=%d", !result);
+ 	audit_log_end(ab);
+ 	return result;
 -- 
 2.36.1
 
