@@ -1,51 +1,51 @@
 Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 53D2B2119
-	for <containers@lists.linux.dev>; Thu,  7 Jul 2022 14:48:22 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 98291211F
+	for <containers@lists.linux.dev>; Thu,  7 Jul 2022 14:48:23 +0000 (UTC)
 Received: from pps.filterd (m0098419.ppops.net [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 267EMpOV030522;
-	Thu, 7 Jul 2022 14:48:09 GMT
+	by mx0b-001b2d01.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 267EMpXe030516;
+	Thu, 7 Jul 2022 14:48:08 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=pp1;
- bh=E4GgYcrTEpqE6SxivspmYemOkiPELoyTj5/cDwvEZIY=;
- b=hy/aVFHU+837Nt+Wa34D2Q2f15l2vOK1qPL77I99mmq9rzcXYU3nJq1QHEPfvyrFFdi0
- ZPg2FfXovMHDaZ3huw1/5nFpq30eSVpOQKWrPGT+dOb2sTCHZr8xkhlynsCLWLIaPM7u
- 5BQl6jkrTxJpNsmUj7UCmHtEuqf1eU6w4Bq+2UOwJHEHOhJeJMCqXkw8S3buGR73NJW9
- wuHskjPT/jxLYHPNxqnmLePoWdI/8PBU+DH/agJRMiS3ThpEhkvU+ef1R8TbRiUDSXbU
- 8KP2PAJ+ISKaiJhXKfzPXzb7c41iiD/bmqajzR1UD5x+a8AkuRv4xD0Po64l6MElSgcx 7A== 
+ bh=hHJIBF4rbvlnLqiL0Grn08f7zLRut4GfBSNfNo0ju1I=;
+ b=Iz7zKmDmspKaqhFgohhQimrPlbeP8Lu0XfIIBMIjntaRIDDq0HQNrPpUpmwC1rJnDjyK
+ olRGsXLZ8qiHeGvJzRr/ZAbas8ZeOlAAHfGJf9Grcz+RG2S9CqsOKB79Ec6w1bGDIFD+
+ yFpm92ilcaP86ZMvxsBv1/wJ4X9i91Q3xceJxAz6rMzY7rWTomjd3pea9ZjWPyjeMyZa
+ Gk7u2knaNWiblTFDrn7A6G8uJZ3DTRa/WYbx/9ockXSd4eVuB3Gn0S7bLv8xlW0R4GYE
+ /IoccGlEbHbKhtMD8h1FlRJ2GFkZlN12bG/BhenWFyfVQNuxpaQRE4SDl+Nkf5ZH9ytW 8Q== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com (PPS) with ESMTPS id 3h60u1hub2-1
+	by mx0b-001b2d01.pphosted.com (PPS) with ESMTPS id 3h60u1huam-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Thu, 07 Jul 2022 14:48:08 +0000
 Received: from m0098419.ppops.net (m0098419.ppops.net [127.0.0.1])
-	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 267ENI5U005612;
-	Thu, 7 Jul 2022 14:48:08 GMT
-Received: from ppma04wdc.us.ibm.com (1a.90.2fa9.ip4.static.sl-reverse.com [169.47.144.26])
-	by mx0b-001b2d01.pphosted.com (PPS) with ESMTPS id 3h60u1huae-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 07 Jul 2022 14:48:08 +0000
-Received: from pps.filterd (ppma04wdc.us.ibm.com [127.0.0.1])
-	by ppma04wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 267EZZh1029891;
+	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 267EMq5c030587;
 	Thu, 7 Jul 2022 14:48:07 GMT
-Received: from b01cxnp22036.gho.pok.ibm.com (b01cxnp22036.gho.pok.ibm.com [9.57.198.26])
-	by ppma04wdc.us.ibm.com with ESMTP id 3h4ud53ybn-1
+Received: from ppma04wdc.us.ibm.com (1a.90.2fa9.ip4.static.sl-reverse.com [169.47.144.26])
+	by mx0b-001b2d01.pphosted.com (PPS) with ESMTPS id 3h60u1hu9s-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Thu, 07 Jul 2022 14:48:07 +0000
-Received: from b01ledav004.gho.pok.ibm.com (b01ledav004.gho.pok.ibm.com [9.57.199.109])
-	by b01cxnp22036.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 267Em62u13566274
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+Received: from pps.filterd (ppma04wdc.us.ibm.com [127.0.0.1])
+	by ppma04wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 267EZYWm029886;
 	Thu, 7 Jul 2022 14:48:06 GMT
+Received: from b01cxnp22035.gho.pok.ibm.com (b01cxnp22035.gho.pok.ibm.com [9.57.198.25])
+	by ppma04wdc.us.ibm.com with ESMTP id 3h4ud53ybm-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Thu, 07 Jul 2022 14:48:06 +0000
+Received: from b01ledav004.gho.pok.ibm.com (b01ledav004.gho.pok.ibm.com [9.57.199.109])
+	by b01cxnp22035.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 267Em5np38076774
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Thu, 7 Jul 2022 14:48:05 GMT
 Received: from b01ledav004.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 6340A112062;
-	Thu,  7 Jul 2022 14:48:06 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 3B2A7112061;
+	Thu,  7 Jul 2022 14:48:05 +0000 (GMT)
 Received: from b01ledav004.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 452F2112061;
-	Thu,  7 Jul 2022 14:48:06 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 1D39D11206B;
+	Thu,  7 Jul 2022 14:48:05 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by b01ledav004.gho.pok.ibm.com (Postfix) with ESMTP;
-	Thu,  7 Jul 2022 14:48:06 +0000 (GMT)
+	Thu,  7 Jul 2022 14:48:05 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
@@ -58,9 +58,9 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
         jmorris@namei.org, jpenumak@redhat.com,
         Stefan Berger <stefanb@linux.ibm.com>,
         Christian Brauner <brauner@kernel.org>
-Subject: [PATCH v13 16/26] ima: Add functions for creating and freeing of an ima_namespace
-Date: Thu,  7 Jul 2022 10:47:50 -0400
-Message-Id: <20220707144800.828288-17-stefanb@linux.ibm.com>
+Subject: [PATCH v13 08/26] ima: Move IMA securityfs files into ima_namespace or onto stack
+Date: Thu,  7 Jul 2022 10:47:42 -0400
+Message-Id: <20220707144800.828288-9-stefanb@linux.ibm.com>
 X-Mailer: git-send-email 2.36.1
 In-Reply-To: <20220707144800.828288-1-stefanb@linux.ibm.com>
 References: <20220707144800.828288-1-stefanb@linux.ibm.com>
@@ -72,8 +72,8 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: c1yhioQrRiimOJtGJJPbQ5a2_QS6tDHg
-X-Proofpoint-ORIG-GUID: 3rdCVdEQaPZWEkk4lHrQK31rlGm9D9YK
+X-Proofpoint-GUID: haLKEj3CKDMCO5F_YsPQLVYkJAS6ERSq
+X-Proofpoint-ORIG-GUID: xKoxRzO7jHM6IACEsasU6Kc8iXOCXHuz
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.883,Hydra:6.0.517,FMLib:17.11.122.1
  definitions=2022-07-07_12,2022-06-28_01,2022-06-22_01
@@ -83,9 +83,22 @@ X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 priorit
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.12.0-2206140000 definitions=main-2207070057
 
-Implement create_ima_ns() to create an empty ima_namespace. Defer its
-initialization to a later point outside this function. Implement
-free_ima_ns() to free it.
+Earlier we simplified how dentry creation and deletion is manged in
+securityfs. This allows us to move IMA securityfs files from global
+variables directly into ima_fs_ns_init() itself. We can now rely on
+those dentries to be cleaned up when the securityfs instance is cleaned
+when the last reference to it is dropped.
+
+Things are slightly different for the initial IMA namespace. In contrast
+to non-initial IMA namespaces it has pinning logic binding the lifetime
+of the securityfs superblock to created dentries. We need to keep this
+behavior to not regress userspace. Since IMA never removes most of the
+securityfs files the initial securityfs instance stays pinned. This also
+means even for the initial IMA namespace we don't need to keep
+references to these dentries anywhere.
+
+The ima_policy file is the exception since IMA can end up removing it
+on systems that don't allow reading or extending the IMA custom policy.
 
 Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
 Acked-by: Christian Brauner <brauner@kernel.org>
@@ -93,156 +106,106 @@ Reviewed-by: Mimi Zohar <zohar@linux.ibm.com>
 Acked-by: Serge Hallyn <serge@hallyn.com>
 
 ---
-v9:
- - Set user_ns->ims_ns = NULL in free_ima_ns()
- - Refactored create_ima_ns() to defer initialization
- - Removed pr_debug functions
----
- include/linux/ima.h                      | 13 ++++++
- security/integrity/ima/Makefile          |  1 +
- security/integrity/ima/ima.h             | 15 +++++++
- security/integrity/ima/ima_init_ima_ns.c |  2 +-
- security/integrity/ima/ima_ns.c          | 53 ++++++++++++++++++++++++
- 5 files changed, 83 insertions(+), 1 deletion(-)
- create mode 100644 security/integrity/ima/ima_ns.c
 
-diff --git a/include/linux/ima.h b/include/linux/ima.h
-index fcb60a44e05f..76d19995ab89 100644
---- a/include/linux/ima.h
-+++ b/include/linux/ima.h
-@@ -220,4 +220,17 @@ static inline bool ima_appraise_signature(enum kernel_read_file_id func)
- 	return false;
- }
- #endif /* CONFIG_IMA_APPRAISE && CONFIG_INTEGRITY_TRUSTED_KEYRING */
-+
-+#ifdef CONFIG_IMA_NS
-+
-+void free_ima_ns(struct user_namespace *ns);
-+
-+#else
-+
-+static inline void free_ima_ns(struct user_namespace *user_ns)
-+{
-+}
-+
-+#endif /* CONFIG_IMA_NS */
-+
- #endif /* _LINUX_IMA_H */
-diff --git a/security/integrity/ima/Makefile b/security/integrity/ima/Makefile
-index f8a5e5f3975d..b86a35fbed60 100644
---- a/security/integrity/ima/Makefile
-+++ b/security/integrity/ima/Makefile
-@@ -14,6 +14,7 @@ ima-$(CONFIG_HAVE_IMA_KEXEC) += ima_kexec.o
- ima-$(CONFIG_IMA_BLACKLIST_KEYRING) += ima_mok.o
- ima-$(CONFIG_IMA_MEASURE_ASYMMETRIC_KEYS) += ima_asymmetric_keys.o
- ima-$(CONFIG_IMA_QUEUE_EARLY_BOOT_KEYS) += ima_queue_keys.o
-+ima-$(CONFIG_IMA_NS) += ima_ns.o
- 
- ifeq ($(CONFIG_EFI),y)
- ima-$(CONFIG_IMA_SECURE_AND_OR_TRUSTED_BOOT) += ima_efi.o
+v9:
+ - Revert renaming of ima_policy to policy_dentry
+---
+ security/integrity/ima/ima.h    |  2 ++
+ security/integrity/ima/ima_fs.c | 37 ++++++++++++++++++---------------
+ 2 files changed, 22 insertions(+), 17 deletions(-)
+
 diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
-index 528d792c82c1..b4e1170bc170 100644
+index a144edfdb9a1..b35c8504ef87 100644
 --- a/security/integrity/ima/ima.h
 +++ b/security/integrity/ima/ima.h
-@@ -171,6 +171,7 @@ extern bool ima_canonical_fmt;
- int ima_init(void);
- int ima_fs_init(void);
- int ima_ns_init(void);
-+int ima_init_namespace(struct ima_namespace *ns);
- int ima_add_template_entry(struct ima_namespace *ns,
- 			   struct ima_template_entry *entry, int violation,
- 			   const char *op, struct inode *inode,
-@@ -506,4 +507,18 @@ static inline struct ima_namespace
- 	return NULL;
+@@ -142,6 +142,8 @@ struct ima_namespace {
+ 	struct mutex ima_write_mutex;
+ 	unsigned long ima_fs_flags;
+ 	int valid_policy;
++
++	struct dentry *ima_policy;
+ } __randomize_layout;
+ extern struct ima_namespace init_ima_ns;
+ 
+diff --git a/security/integrity/ima/ima_fs.c b/security/integrity/ima/ima_fs.c
+index 4cf786f0bba8..89d3113ceda1 100644
+--- a/security/integrity/ima/ima_fs.c
++++ b/security/integrity/ima/ima_fs.c
+@@ -359,14 +359,6 @@ static ssize_t ima_write_policy(struct file *file, const char __user *buf,
+ 	return result;
  }
  
-+#ifdef CONFIG_IMA_NS
-+
-+struct ima_namespace *create_ima_ns(void);
-+
-+#else
-+
-+static inline struct ima_namespace *create_ima_ns(void)
-+{
-+	WARN(1, "Cannot create an IMA namespace\n");
-+	return ERR_PTR(-EFAULT);
-+}
-+
-+#endif /* CONFIG_IMA_NS */
-+
- #endif /* __LINUX_IMA_H */
-diff --git a/security/integrity/ima/ima_init_ima_ns.c b/security/integrity/ima/ima_init_ima_ns.c
-index c4fe8f3e9a73..b497062090cf 100644
---- a/security/integrity/ima/ima_init_ima_ns.c
-+++ b/security/integrity/ima/ima_init_ima_ns.c
-@@ -8,7 +8,7 @@
+-static struct dentry *ima_dir;
+-static struct dentry *ima_symlink;
+-static struct dentry *binary_runtime_measurements;
+-static struct dentry *ascii_runtime_measurements;
+-static struct dentry *runtime_measurements_count;
+-static struct dentry *violations;
+-static struct dentry *ima_policy;
+-
+ enum ima_fs_flags {
+ 	IMA_FS_BUSY,
+ };
+@@ -436,8 +428,8 @@ static int ima_release_policy(struct inode *inode, struct file *file)
  
- #include "ima.h"
+ 	ima_update_policy(ns);
+ #if !defined(CONFIG_IMA_WRITE_POLICY) && !defined(CONFIG_IMA_READ_POLICY)
+-	securityfs_remove(ima_policy);
+-	ima_policy = NULL;
++	securityfs_remove(ns->ima_policy);
++	ns->ima_policy = NULL;
+ #elif defined(CONFIG_IMA_WRITE_POLICY)
+ 	clear_bit(IMA_FS_BUSY, &ns->ima_fs_flags);
+ #elif defined(CONFIG_IMA_READ_POLICY)
+@@ -454,8 +446,14 @@ static const struct file_operations ima_measure_policy_ops = {
+ 	.llseek = generic_file_llseek,
+ };
  
--static int ima_init_namespace(struct ima_namespace *ns)
-+int ima_init_namespace(struct ima_namespace *ns)
+-int __init ima_fs_init(void)
++static int __init ima_fs_ns_init(struct ima_namespace *ns)
  {
++	struct dentry *ima_dir;
++	struct dentry *ima_symlink = NULL;
++	struct dentry *binary_runtime_measurements = NULL;
++	struct dentry *ascii_runtime_measurements = NULL;
++	struct dentry *runtime_measurements_count = NULL;
++	struct dentry *violations = NULL;
  	int ret;
  
-diff --git a/security/integrity/ima/ima_ns.c b/security/integrity/ima/ima_ns.c
-new file mode 100644
-index 000000000000..b3b81a1e313e
---- /dev/null
-+++ b/security/integrity/ima/ima_ns.c
-@@ -0,0 +1,53 @@
-+// SPDX-License-Identifier: GPL-2.0-only
-+/*
-+ * Copyright (C) 2016-2021 IBM Corporation
-+ * Author:
-+ *  Yuqiong Sun <suny@us.ibm.com>
-+ *  Stefan Berger <stefanb@linux.vnet.ibm.com>
-+ */
+ 	ima_dir = securityfs_create_dir("ima", integrity_dir);
+@@ -504,17 +502,17 @@ int __init ima_fs_init(void)
+ 		goto out;
+ 	}
+ 
+-	ima_policy = securityfs_create_file("policy", POLICY_FILE_FLAGS,
+-					    ima_dir, NULL,
+-					    &ima_measure_policy_ops);
+-	if (IS_ERR(ima_policy)) {
+-		ret = PTR_ERR(ima_policy);
++	ns->ima_policy = securityfs_create_file("policy", POLICY_FILE_FLAGS,
++						ima_dir, NULL,
++						&ima_measure_policy_ops);
++	if (IS_ERR(ns->ima_policy)) {
++		ret = PTR_ERR(ns->ima_policy);
+ 		goto out;
+ 	}
+ 
+ 	return 0;
+ out:
+-	securityfs_remove(ima_policy);
++	securityfs_remove(ns->ima_policy);
+ 	securityfs_remove(violations);
+ 	securityfs_remove(runtime_measurements_count);
+ 	securityfs_remove(ascii_runtime_measurements);
+@@ -524,3 +522,8 @@ int __init ima_fs_init(void)
+ 
+ 	return ret;
+ }
 +
-+#include <linux/ima.h>
-+
-+#include "ima.h"
-+
-+static struct kmem_cache *imans_cachep;
-+
-+struct ima_namespace *create_ima_ns(void)
++int __init ima_fs_init(void)
 +{
-+	struct ima_namespace *ns;
-+
-+	ns = kmem_cache_zalloc(imans_cachep, GFP_KERNEL);
-+	if (!ns)
-+		return ERR_PTR(-ENOMEM);
-+
-+	return ns;
++	return ima_fs_ns_init(&init_ima_ns);
 +}
-+
-+/* destroy_ima_ns() must only be called after ima_init_namespace() was called */
-+static void destroy_ima_ns(struct ima_namespace *ns)
-+{
-+	unregister_blocking_lsm_notifier(&ns->ima_lsm_policy_notifier);
-+	kfree(ns->arch_policy_entry);
-+	ima_free_policy_rules(ns);
-+}
-+
-+void free_ima_ns(struct user_namespace *user_ns)
-+{
-+	struct ima_namespace *ns = user_ns->ima_ns;
-+
-+	if (!ns || WARN_ON(ns == &init_ima_ns))
-+		return;
-+
-+	destroy_ima_ns(ns);
-+
-+	kmem_cache_free(imans_cachep, ns);
-+
-+	user_ns->ima_ns = NULL;
-+}
-+
-+static int __init imans_cache_init(void)
-+{
-+	imans_cachep = KMEM_CACHE(ima_namespace, SLAB_PANIC);
-+	return 0;
-+}
-+subsys_initcall(imans_cache_init)
 -- 
 2.36.1
 
