@@ -1,51 +1,51 @@
 Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6B9E823B1
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5F35B210F
 	for <containers@lists.linux.dev>; Thu,  7 Jul 2022 14:48:32 +0000 (UTC)
-Received: from pps.filterd (m0098410.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 267EMiNQ025948;
-	Thu, 7 Jul 2022 14:48:11 GMT
+Received: from pps.filterd (m0098399.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 267EMf5u005799;
+	Thu, 7 Jul 2022 14:48:09 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=pp1;
- bh=rnaBHwWsozhrkNPR/NBB2RlHrgwsEHZubX6huSo6mJM=;
- b=hETmk7vDSUYu5w+Bz2a8UTfZL64zFX721TNLo+EWtayrHGBV8vYxvD4GFXmaQRiBaJEB
- Jd0vZwrFl9NqIEVdPS+Rx0vbrUpbLqO5k66yqlSMthGPc9dj1mPdbnI/9NKe/NP76LQC
- 8xemF7oip5XHQ9mImlph4l33iPtaR+c444zTYmrvMiJBc/+3SkIPYbdHikR7PQ+FrRYk
- AbKPZNV53b2577/qNOQT1lsC6UnjkDUQCXklzNGGzZoBV8G2tjXEeZQkKqhkOb3sCxPg
- N2RXCs1Wj7z7hoy1wVU5jVtYPEkbLfUez02mB+Omxy6cyl49+gGeDVwXoPnCMK7NAqSX dw== 
+ bh=2xO8/nJ3ytajOj89UUyS+ueaPpiG9WVzTZm7GBACuUc=;
+ b=bdgii+TlfKiiLSaDUg18J4LY3JHkkwHdn1rU1DBSxVmXNCmiZHbNg3jp9V42HWUAzXgU
+ hoshMz1gl4h2zBK2olQHoTUJdbHWPMPWvNjP52Z88/920n4DsgTdF9EE3x2CGnLgKfXH
+ u8Q9moBGF3oDN6CsjZod15ZefCPgVuofLOHkLi4sTgzEJ/T1HaidkZtV0ogQuzSHw1qB
+ 5+pnM4lB6kee5AyQzmpveqhp+npSq2OVmWAKy4EjvAL8FOPMUK7ppNEtvOEQSMJq7/74
+ SyM9gfw2JNvyNzkzyo1SmWv/7XPOFN7/wCMHl0hnRNnsFYS5QCkicx72eerweYSsopVh 1A== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3h612ps928-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 07 Jul 2022 14:48:10 +0000
-Received: from m0098410.ppops.net (m0098410.ppops.net [127.0.0.1])
-	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 267EOFmJ000708;
-	Thu, 7 Jul 2022 14:48:10 GMT
-Received: from ppma03dal.us.ibm.com (b.bd.3ea9.ip4.static.sl-reverse.com [169.62.189.11])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3h612ps91b-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 07 Jul 2022 14:48:10 +0000
-Received: from pps.filterd (ppma03dal.us.ibm.com [127.0.0.1])
-	by ppma03dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 267EaI0c018418;
-	Thu, 7 Jul 2022 14:48:08 GMT
-Received: from b01cxnp23032.gho.pok.ibm.com (b01cxnp23032.gho.pok.ibm.com [9.57.198.27])
-	by ppma03dal.us.ibm.com with ESMTP id 3h4v5vemdx-1
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3h611nha9q-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Thu, 07 Jul 2022 14:48:08 +0000
+Received: from m0098399.ppops.net (m0098399.ppops.net [127.0.0.1])
+	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 267ENTg4009373;
+	Thu, 7 Jul 2022 14:48:08 GMT
+Received: from ppma04dal.us.ibm.com (7a.29.35a9.ip4.static.sl-reverse.com [169.53.41.122])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3h611nha8y-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Thu, 07 Jul 2022 14:48:08 +0000
+Received: from pps.filterd (ppma04dal.us.ibm.com [127.0.0.1])
+	by ppma04dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 267EipG7015616;
+	Thu, 7 Jul 2022 14:48:06 GMT
+Received: from b01cxnp22035.gho.pok.ibm.com (b01cxnp22035.gho.pok.ibm.com [9.57.198.25])
+	by ppma04dal.us.ibm.com with ESMTP id 3h4uqy6sfj-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Thu, 07 Jul 2022 14:48:06 +0000
 Received: from b01ledav004.gho.pok.ibm.com (b01ledav004.gho.pok.ibm.com [9.57.199.109])
-	by b01cxnp23032.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 267Em7gg24445304
+	by b01cxnp22035.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 267Em5Md33489294
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Thu, 7 Jul 2022 14:48:07 GMT
+	Thu, 7 Jul 2022 14:48:05 GMT
 Received: from b01ledav004.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 6E3B8112069;
-	Thu,  7 Jul 2022 14:48:07 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 552F3112065;
+	Thu,  7 Jul 2022 14:48:05 +0000 (GMT)
 Received: from b01ledav004.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 5C67E112061;
-	Thu,  7 Jul 2022 14:48:07 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 405FF112062;
+	Thu,  7 Jul 2022 14:48:05 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by b01ledav004.gho.pok.ibm.com (Postfix) with ESMTP;
-	Thu,  7 Jul 2022 14:48:07 +0000 (GMT)
+	Thu,  7 Jul 2022 14:48:05 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
@@ -57,9 +57,9 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, christian.brauner@ubuntu.com,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
         jmorris@namei.org, jpenumak@redhat.com,
         Stefan Berger <stefanb@linux.ibm.com>
-Subject: [PATCH v13 23/26] ima: Show owning user namespace's uid and gid when displaying policy
-Date: Thu,  7 Jul 2022 10:47:57 -0400
-Message-Id: <20220707144800.828288-24-stefanb@linux.ibm.com>
+Subject: [PATCH v13 09/26] ima: Move ima_lsm_policy_notifier into ima_namespace
+Date: Thu,  7 Jul 2022 10:47:43 -0400
+Message-Id: <20220707144800.828288-10-stefanb@linux.ibm.com>
 X-Mailer: git-send-email 2.36.1
 In-Reply-To: <20220707144800.828288-1-stefanb@linux.ibm.com>
 References: <20220707144800.828288-1-stefanb@linux.ibm.com>
@@ -71,109 +71,189 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: JFKqdsizujM9z7caJj2O6PdTdXOiszWF
-X-Proofpoint-GUID: g_E1pPN5VsVRjD1FjpcLf7WXxv_U0iVi
+X-Proofpoint-GUID: oR7AKB66Bf2f8uTN9cWmoa8e2nEtuczD
+X-Proofpoint-ORIG-GUID: zfMJ3F3bW3bHplA5e4owU9u_q3O81Nol
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.883,Hydra:6.0.517,FMLib:17.11.122.1
  definitions=2022-07-07_12,2022-06-28_01,2022-06-22_01
 X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 bulkscore=0 clxscore=1015
- adultscore=0 impostorscore=0 mlxlogscore=999 phishscore=0 malwarescore=0
- mlxscore=0 priorityscore=1501 spamscore=0 suspectscore=0
- lowpriorityscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2206140000 definitions=main-2207070057
+ impostorscore=0 mlxscore=0 adultscore=0 mlxlogscore=999 spamscore=0
+ suspectscore=0 malwarescore=0 lowpriorityscore=0 priorityscore=1501
+ phishscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2206140000 definitions=main-2207070055
 
-Show the uid and gid values relative to the user namespace that opened
-the IMA policy file. The effect of this change is that when one displays
-the policy from the user namespace that originally set the policy,
-the same uid and gid values are shown in the policy as those that were
-used when the policy was set.
+Move the ima_lsm_policy_notifier into the ima_namespace. Each IMA
+namespace can now register its own LSM policy change notifier callback.
+The policy change notifier for the init_ima_ns still remains in init_ima()
+and therefore handle the registration of the callback for all other
+namespaces in init_ima_namespace().
+
+Rate-limit the kernel warning 'rule for LSM <label> is undefined` for
+IMA namespace to avoid flooding the kernel log with this type of message.
 
 Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
 Reviewed-by: Mimi Zohar <zohar@linux.ibm.com>
-Reviewed-by: Serge Hallyn <serge@hallyn.com>
+Acked-by: Serge Hallyn <serge@hallyn.com>
 
 ---
-v13:
-  - Rephrased commit message following Serge's suggestion
+v11:
+ - Renamed 'rc' to 'ret'
+ - Use pr_warn_ratelimited('rule for LSM...') for IMA namespaces
 
-v9:
-  - use seq_user_ns and from_k{g,u}id_munged()
+v10:
+ - Only call pr_warn('rule for LSM <label> is undefined`) for init_ima_ns
 ---
- security/integrity/ima/ima_policy.c | 19 +++++++++++++------
- 1 file changed, 13 insertions(+), 6 deletions(-)
+ security/integrity/ima/ima.h             |  2 ++
+ security/integrity/ima/ima_init_ima_ns.c | 14 +++++++++++++
+ security/integrity/ima/ima_main.c        |  6 +-----
+ security/integrity/ima/ima_policy.c      | 26 ++++++++++++++++--------
+ 4 files changed, 35 insertions(+), 13 deletions(-)
 
+diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+index b35c8504ef87..c68b5117d034 100644
+--- a/security/integrity/ima/ima.h
++++ b/security/integrity/ima/ima.h
+@@ -144,6 +144,8 @@ struct ima_namespace {
+ 	int valid_policy;
+ 
+ 	struct dentry *ima_policy;
++
++	struct notifier_block ima_lsm_policy_notifier;
+ } __randomize_layout;
+ extern struct ima_namespace init_ima_ns;
+ 
+diff --git a/security/integrity/ima/ima_init_ima_ns.c b/security/integrity/ima/ima_init_ima_ns.c
+index 425eed1c6838..c4fe8f3e9a73 100644
+--- a/security/integrity/ima/ima_init_ima_ns.c
++++ b/security/integrity/ima/ima_init_ima_ns.c
+@@ -10,6 +10,8 @@
+ 
+ static int ima_init_namespace(struct ima_namespace *ns)
+ {
++	int ret;
++
+ 	INIT_LIST_HEAD(&ns->ima_default_rules);
+ 	INIT_LIST_HEAD(&ns->ima_policy_rules);
+ 	INIT_LIST_HEAD(&ns->ima_temp_rules);
+@@ -30,6 +32,15 @@ static int ima_init_namespace(struct ima_namespace *ns)
+ 	ns->valid_policy = 1;
+ 	ns->ima_fs_flags = 0;
+ 
++	if (ns != &init_ima_ns) {
++		ns->ima_lsm_policy_notifier.notifier_call =
++						ima_lsm_policy_change;
++		ret = register_blocking_lsm_notifier
++						(&ns->ima_lsm_policy_notifier);
++		if (ret)
++			return ret;
++	}
++
+ 	return 0;
+ }
+ 
+@@ -39,5 +50,8 @@ int __init ima_ns_init(void)
+ }
+ 
+ struct ima_namespace init_ima_ns = {
++	.ima_lsm_policy_notifier = {
++		.notifier_call = ima_lsm_policy_change,
++	},
+ };
+ EXPORT_SYMBOL(init_ima_ns);
+diff --git a/security/integrity/ima/ima_main.c b/security/integrity/ima/ima_main.c
+index d27454d029e2..789415f65204 100644
+--- a/security/integrity/ima/ima_main.c
++++ b/security/integrity/ima/ima_main.c
+@@ -38,10 +38,6 @@ int ima_appraise;
+ int __ro_after_init ima_hash_algo = HASH_ALGO_SHA1;
+ static int hash_setup_done;
+ 
+-static struct notifier_block ima_lsm_policy_notifier = {
+-	.notifier_call = ima_lsm_policy_change,
+-};
+-
+ static int __init hash_setup(char *str)
+ {
+ 	struct ima_template_desc *template_desc = ima_template_desc_current();
+@@ -1089,7 +1085,7 @@ static int __init init_ima(void)
+ 	if (error)
+ 		return error;
+ 
+-	error = register_blocking_lsm_notifier(&ima_lsm_policy_notifier);
++	error = register_blocking_lsm_notifier(&ns->ima_lsm_policy_notifier);
+ 	if (error)
+ 		pr_warn("Couldn't register LSM notifier, error %d\n", error);
+ 
 diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
-index f5997f5a8f5b..181340678844 100644
+index fe1096fd2703..d1e8a3d22e2b 100644
 --- a/security/integrity/ima/ima_policy.c
 +++ b/security/integrity/ima/ima_policy.c
-@@ -2080,6 +2080,7 @@ static void ima_policy_show_appraise_algos(struct seq_file *m,
+@@ -368,7 +368,8 @@ static void ima_free_rule(struct ima_rule_entry *entry)
+ 	kfree(entry);
+ }
  
- int ima_policy_show(struct seq_file *m, void *v)
+-static struct ima_rule_entry *ima_lsm_copy_rule(struct ima_rule_entry *entry)
++static struct ima_rule_entry *ima_lsm_copy_rule(struct ima_namespace *ns,
++						struct ima_rule_entry *entry)
  {
-+	struct user_namespace *user_ns = seq_user_ns(m);
- 	struct ima_rule_entry *entry = v;
+ 	struct ima_rule_entry *nentry;
  	int i;
- 	char tbuf[64] = {0,};
-@@ -2165,7 +2166,8 @@ int ima_policy_show(struct seq_file *m, void *v)
+@@ -399,18 +400,25 @@ static struct ima_rule_entry *ima_lsm_copy_rule(struct ima_rule_entry *entry)
+ 		ima_filter_rule_init(nentry->lsm[i].type, Audit_equal,
+ 				     nentry->lsm[i].args_p,
+ 				     &nentry->lsm[i].rule);
+-		if (!nentry->lsm[i].rule)
+-			pr_warn("rule for LSM \'%s\' is undefined\n",
+-				nentry->lsm[i].args_p);
++		if (!nentry->lsm[i].rule) {
++			if (ns == &init_ima_ns)
++				pr_warn("rule for LSM \'%s\' is undefined\n",
++					nentry->lsm[i].args_p);
++			else
++				pr_warn_ratelimited
++					("rule for LSM \'%s\' is undefined\n",
++					 nentry->lsm[i].args_p);
++		}
  	}
+ 	return nentry;
+ }
  
- 	if (entry->flags & IMA_UID) {
--		snprintf(tbuf, sizeof(tbuf), "%d", __kuid_val(entry->uid));
-+		snprintf(tbuf, sizeof(tbuf),
-+			 "%d", from_kuid_munged(user_ns, entry->uid));
- 		if (entry->uid_op == &uid_gt)
- 			seq_printf(m, pt(Opt_uid_gt), tbuf);
- 		else if (entry->uid_op == &uid_lt)
-@@ -2176,7 +2178,8 @@ int ima_policy_show(struct seq_file *m, void *v)
- 	}
+-static int ima_lsm_update_rule(struct ima_rule_entry *entry)
++static int ima_lsm_update_rule(struct ima_namespace *ns,
++			       struct ima_rule_entry *entry)
+ {
+ 	struct ima_rule_entry *nentry;
  
- 	if (entry->flags & IMA_EUID) {
--		snprintf(tbuf, sizeof(tbuf), "%d", __kuid_val(entry->uid));
-+		snprintf(tbuf, sizeof(tbuf),
-+			 "%d", from_kuid_munged(user_ns, entry->uid));
- 		if (entry->uid_op == &uid_gt)
- 			seq_printf(m, pt(Opt_euid_gt), tbuf);
- 		else if (entry->uid_op == &uid_lt)
-@@ -2187,7 +2190,8 @@ int ima_policy_show(struct seq_file *m, void *v)
- 	}
+-	nentry = ima_lsm_copy_rule(entry);
++	nentry = ima_lsm_copy_rule(ns, entry);
+ 	if (!nentry)
+ 		return -ENOMEM;
  
- 	if (entry->flags & IMA_GID) {
--		snprintf(tbuf, sizeof(tbuf), "%d", __kgid_val(entry->gid));
-+		snprintf(tbuf, sizeof(tbuf),
-+			 "%d", from_kgid_munged(user_ns, entry->gid));
- 		if (entry->gid_op == &gid_gt)
- 			seq_printf(m, pt(Opt_gid_gt), tbuf);
- 		else if (entry->gid_op == &gid_lt)
-@@ -2198,7 +2202,8 @@ int ima_policy_show(struct seq_file *m, void *v)
- 	}
+@@ -453,7 +461,7 @@ static void ima_lsm_update_rules(struct ima_namespace *ns)
+ 		if (!ima_rule_contains_lsm_cond(entry))
+ 			continue;
  
- 	if (entry->flags & IMA_EGID) {
--		snprintf(tbuf, sizeof(tbuf), "%d", __kgid_val(entry->gid));
-+		snprintf(tbuf, sizeof(tbuf),
-+			 "%d", from_kgid_munged(user_ns, entry->gid));
- 		if (entry->gid_op == &gid_gt)
- 			seq_printf(m, pt(Opt_egid_gt), tbuf);
- 		else if (entry->gid_op == &gid_lt)
-@@ -2209,7 +2214,8 @@ int ima_policy_show(struct seq_file *m, void *v)
- 	}
+-		result = ima_lsm_update_rule(entry);
++		result = ima_lsm_update_rule(ns, entry);
+ 		if (result) {
+ 			pr_err("lsm rule update error %d\n", result);
+ 			return;
+@@ -464,12 +472,14 @@ static void ima_lsm_update_rules(struct ima_namespace *ns)
+ int ima_lsm_policy_change(struct notifier_block *nb, unsigned long event,
+ 			  void *lsm_data)
+ {
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct ima_namespace *ns;
  
- 	if (entry->flags & IMA_FOWNER) {
--		snprintf(tbuf, sizeof(tbuf), "%d", __kuid_val(entry->fowner));
-+		snprintf(tbuf, sizeof(tbuf),
-+			 "%d", from_kuid_munged(user_ns, entry->fowner));
- 		if (entry->fowner_op == &uid_gt)
- 			seq_printf(m, pt(Opt_fowner_gt), tbuf);
- 		else if (entry->fowner_op == &uid_lt)
-@@ -2220,7 +2226,8 @@ int ima_policy_show(struct seq_file *m, void *v)
- 	}
+ 	if (event != LSM_POLICY_CHANGE)
+ 		return NOTIFY_DONE;
  
- 	if (entry->flags & IMA_FGROUP) {
--		snprintf(tbuf, sizeof(tbuf), "%d", __kgid_val(entry->fgroup));
-+		snprintf(tbuf, sizeof(tbuf),
-+			 "%d", from_kgid_munged(user_ns, entry->fgroup));
- 		if (entry->fgroup_op == &gid_gt)
- 			seq_printf(m, pt(Opt_fgroup_gt), tbuf);
- 		else if (entry->fgroup_op == &gid_lt)
++	ns = container_of(nb, struct ima_namespace, ima_lsm_policy_notifier);
+ 	ima_lsm_update_rules(ns);
++
+ 	return NOTIFY_OK;
+ }
+ 
 -- 
 2.36.1
 
