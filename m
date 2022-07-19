@@ -1,225 +1,51 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+Received: from mr85p00im-ztdg06011901.me.com (mr85p00im-ztdg06011901.me.com [17.58.23.198])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B4F454681
-	for <containers@lists.linux.dev>; Tue, 12 Jul 2022 16:47:11 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1657644430;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=G3Svshh0CSIKBecEYyWOPWehxtR8pBn+wN2kw/qyhZM=;
-	b=d1vTbBHjF1TBWrfhuc3AiGykP7kTQagpZ7nhUZVsnZEAtz0qNGkm841kdcfdgHb0/Ae+xI
-	29vXmta9ENf+EiItY+IQX6/z9ug/GPtaDQUNaCfOHFZgbSgJeukJCkOcCjDMTuuFRzyUcx
-	9EWwkIUZxyZ66xMsJCM8w+I35TPZpLg=
-Received: from mimecast-mx02.redhat.com (mx3-rdu2.redhat.com
- [66.187.233.73]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-661-6coTC7AOMUyVvxJ9Rq57pA-1; Tue, 12 Jul 2022 12:47:08 -0400
-X-MC-Unique: 6coTC7AOMUyVvxJ9Rq57pA-1
-Received: from smtp.corp.redhat.com (int-mx01.intmail.prod.int.rdu2.redhat.com [10.11.54.1])
-	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id DC23C1C04B4C;
-	Tue, 12 Jul 2022 16:47:07 +0000 (UTC)
-Received: from [172.16.176.1] (unknown [10.22.48.8])
-	by smtp.corp.redhat.com (Postfix) with ESMTPS id 99E0E40CF8E4;
-	Tue, 12 Jul 2022 16:47:06 +0000 (UTC)
-From: "Benjamin Coddington" <bcodding@redhat.com>
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: "David Howells" <dhowells@redhat.com>, linux-kernel@vger.kernel.org,
- "Ian Kent" <raven@themaw.net>,
- "Trond Myklebust" <trond.myklebust@hammerspace.com>,
- linux-nfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- "Linux Containers" <containers@lists.linux.dev>
-Subject: Re: [RFC PATCH 0/2] Keyagents: another call_usermodehelper approach
- for namespaces
-Date: Tue, 12 Jul 2022 12:47:05 -0400
-Message-ID: <148B818D-0F61-42F6-A0EA-20D060E42560@redhat.com>
-In-Reply-To: <875yk25scg.fsf@email.froward.int.ebiederm.org>
-References: <cover.1657624639.git.bcodding@redhat.com>
- <875yk25scg.fsf@email.froward.int.ebiederm.org>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 850B6EA9
+	for <containers@lists.linux.dev>; Tue, 19 Jul 2022 02:11:45 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=icloud.com;
+	s=1a1hai; t=1658196704;
+	bh=T4xK7W1C8/EAKpZlNLBDLSvbQJQGFkNtPL6rJnWFjMw=;
+	h=Content-Type:From:Mime-Version:Subject:Message-Id:Date:To;
+	b=X5cnwMG7gsS20huIL/ZBS0AlIG1NvH37KKHp57BZgvKa2V/TbAaWoBUTy5awoXA//
+	 Zu3DVR8+lr0GSDRJgeKbScojjeoBvI+Kay06EaCQG+nAlAy03MsGiidyAmIjFIh2z1
+	 xt0eehL6zIcCKe0s28XrhWqIiAjCsF+bzSuUqzbDvpPTLy0FQjYg/r/1EmvUG0eHKI
+	 G3GF5B1MTOph6rfkKx5XDRGW6CHwEBlWPt3n3G707rO5doOgRGnLkVQ1+gLDbIHg8u
+	 Myl0ogxbQoJM8ChtFXSCuv1PL+S2EJVe7sgbrXRt5xJlJhfVldOFlVhHZc8Tp2Q8ry
+	 bfPpel15XldYQ==
+Received: from smtpclient.apple (mr38p00im-dlb-asmtp-mailmevip.me.com [17.57.152.18])
+	by mr85p00im-ztdg06011901.me.com (Postfix) with ESMTPSA id 6C732900474;
+	Tue, 19 Jul 2022 02:11:44 +0000 (UTC)
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+From: Robin Naccari <robianna1973@icloud.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
-MIME-Version: 1.0
-Content-Type: text/plain; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Scanned-By: MIMEDefang 2.84 on 10.11.54.1
+Mime-Version: 1.0 (1.0)
+Subject: Re: [PATCH v2 3/4] seccomp: Support atomic "addfd + send reply"
+Message-Id: <197A77C8-41B4-43E9-9779-CA68F39FD92E@icloud.com>
+Date: Mon, 18 Jul 2022 19:11:43 -0700
+Cc: christian.brauner@ubuntu.com, containers@lists.linux.dev,
+ gscrivan@redhat.com, keescook@chromium.org, linux-kernel@vger.kernel.org,
+ luto@kernel.org, mauricio@kinvolk.io, mic@linux.microsoft.com,
+ rodrigo@kinvolk.io, tycho@tycho.pizza
+To: robianna1973@icloud.com
+X-Mailer: iPad Mail (19F77)
+X-Proofpoint-GUID: 1SsgwYhOc9jBbmZaufleECSYZXZX-DG5
+X-Proofpoint-ORIG-GUID: 1SsgwYhOc9jBbmZaufleECSYZXZX-DG5
+X-Proofpoint-Virus-Version: =?UTF-8?Q?vendor=3Dfsecure_engine=3D1.1.170-22c6f66c430a71ce266a39bfe25bc?=
+ =?UTF-8?Q?2903e8d5c8f:6.0.138,18.0.572,17.0.605.474.0000000_definitions?=
+ =?UTF-8?Q?=3D2020-02-14=5F11:2020-02-14=5F02,2020-02-14=5F11,2020-01-23?=
+ =?UTF-8?Q?=5F02_signatures=3D0?=
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 bulkscore=0
+ malwarescore=0 spamscore=0 phishscore=0 clxscore=1011 mlxscore=0
+ adultscore=0 mlxlogscore=519 classifier=spam adjust=0 reason=mlx
+ scancount=1 engine=8.12.0-2202240000 definitions=main-2207190006
 
-On 12 Jul 2022, at 10:16, Eric W. Biederman wrote:
+=EF=BB=BF
 
-> Adding the containers list to the discussion so more interested people
-> have a chance of seeing this.
->
-> Benjamin Coddington <bcodding@redhat.com> writes:
->
->> A persistent unsolved problem exists: how can the kernel find and/or =
 
->> create
->> the appropriate "container" within which to execute a userspace =
-
->> program to
->> construct keys or satisfy users of call_usermodehelper()?
->>
->> I believe the latest serious attempt to solve this problem was =
-
->> David's "Make
->> containers kernel objects":
->> https://lore.kernel.org/lkml/149547014649.10599.12025037906646164347.s=
-tgit@warthog.procyon.org.uk/
->>
->> Over in NFS' space, we've most recently pondered this issue while =
-
->> looking at
->> ways to pass a kernel socket to userspace in order to handle TLS =
-
->> events:
->> https://lore.kernel.org/linux-nfs/E2BF9CFF-9361-400B-BDEE-CF5E0AFDCA63=
-@redhat.com/
->>
->> The problem is that containers are not kernel objects, rather a =
-
->> collection
->> of namespaces, cgroups, etc.  Attempts at making the kernel aware of
->> containers have been mired in discussion and problems.  It has been
->> suggested that the best representation of a "container" from the =
-
->> kernel's
->> perspective is a process.
->>
->> Keyagents are processes represented by a key.  If a keyagent's key is =
-
->> linked
->> to a session_keyring, it can be sent a realtime signal when a calling
->> process requests a matching key_type.  That signal will dispatch the =
-
->> process
->> to construct the desired key within the keyagent process context.  =
-
->> Keyagents
->> are similar to ssh-agents.  To use a keyagent, one must execute a =
-
->> keyagent
->> process in the desired context, and then link the keyagent's key onto =
-
->> other
->> process' session_keyrings.
->>
->> This method of linking keyagent keys to session_keyrings can be used =
-
->> to
->> construct the various mappings of callers to keyagents that =
-
->> containers may
->> need.  A single keyagent process can answer request-key upcalls =
-
->> across
->> container boundaries, or upcalls can be restricted to specific =
-
->> containers.
->>
->> I'm aware that building on realtime signals may not be a popular =
-
->> choice, but
->> using realtime signals makes this work simple and ensures delivery.  =
-
->> Realtime
->> signals are able to convey everything needed to construct keys in =
-
->> userspace:
->> the under-construction key's serial number.
->>
->> This work is not complete; it has security implications, it needs
->> documentation, it has not been reviewed by anyone.  Thanks for =
-
->> reading this
->> RFC.  I wish to collect criticism and validate this approach.
->
-> At a high level I do agree that we need to send a message to a =
-
-> userspace
-> process and that message should contain enough information to start =
-
-> the
-> user mode helper.
->
-> Then a daemon or possibly the container init can receive the message
-> and dispatch the user mode helper.
->
-> Fundamentally that design solves all of the container issues, and I
-> think solves a few of the user mode helper issues as well.
->
-> The challenge with this design is that it requires someone standing up =
-
-> a
-> daemon to receive the messages and call a user mode helper to retain
-> compatibility with current systems.
-
-Yes..
-
-> I would prefer to see a file descriptor rather than a signal used to
-> deliver the message.  Signals suck for many many reasons and a file
-> descriptor based notification potentially can be much simpler.
-
-In the example keyagent on userspace side, signal handling is done with
-signalfd(2), which greatly simplifies things.
-
-> One of those many reasons is that by not following the common pattern
-> for filling in kernel_siginfo you have left uninitialized padding in
-> your structure that will be copied to userspace thus creating a kernel
-> information leak.  Similarly your code doesn't fill in about half the
-> fields that are present in the siginfo union for the _rt case.
-
-Yes, I just used the stack and only filled in the bare minimum.
-
-> I think a file descriptor based design could additionally address the
-> back and forth your design needs with keys to figure out what event =
-
-> has
-> happened and what user mode helper to invoke.
-
-The keys have already built out a fairly rich interface for accepting
-authorization keys, and instantiating partially-constructed keys.  I =
-
-think
-the only communication needed (currently) is to dispatch and pass the =
-
-key
-serial value.
-
-If we used file descriptors instead of rt signals, there'd be some =
-
-protocol
-engineering to do.
-
-> Ideally I would also like to see a design less tied to keys.  So that =
-
-> we
-> could use this for the other user mode helper cases as well.   That =
-
-> said
-> solving request_key appears to be the truly important part, there =
-
-> aren't
-> many other user mode helpers.  Still it would be nice if in theory the
-> design could be used to dispatch the coredump helper as well.
-
-What if there was a key_type "usermode_helper"?  Requesting a key of =
-
-that
-type executes the binary specified in the callout info.  A keyagent =
-
-could
-satisfy the creation of this key, which would allow the usermode_helper
-process to execute in the context of a container.  If no keyagent, fall =
-
-back
-to the legacy call_usermode_helper.
-
-Thanks for the look,
-Ben
-
+Sent from my iPad=
