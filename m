@@ -1,21 +1,21 @@
 Received: from us-smtp-delivery-44.mimecast.com (us-smtp-delivery-44.mimecast.com [207.211.30.44])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EB1C353A6
-	for <containers@lists.linux.dev>; Tue, 16 Aug 2022 15:45:04 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9FCA853A6
+	for <containers@lists.linux.dev>; Tue, 16 Aug 2022 15:45:07 +0000 (UTC)
 Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
  [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
  (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-159-qpeCTJYqNdyWCkUQKw-9yw-1; Tue, 16 Aug 2022 11:43:52 -0400
-X-MC-Unique: qpeCTJYqNdyWCkUQKw-9yw-1
+ us-mta-654-tOBIA_5-OvaFM29i4NZM_g-1; Tue, 16 Aug 2022 11:43:55 -0400
+X-MC-Unique: tOBIA_5-OvaFM29i4NZM_g-1
 Received: from smtp.corp.redhat.com (int-mx06.intmail.prod.int.rdu2.redhat.com [10.11.54.6])
 	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
 	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id BDD6985A581;
-	Tue, 16 Aug 2022 15:43:51 +0000 (UTC)
+	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 168D5811E76;
+	Tue, 16 Aug 2022 15:43:55 +0000 (UTC)
 Received: from comp-core-i7-2640m-0182e6.redhat.com (unknown [10.40.208.6])
-	by smtp.corp.redhat.com (Postfix) with ESMTP id 585FE2166B26;
-	Tue, 16 Aug 2022 15:43:50 +0000 (UTC)
+	by smtp.corp.redhat.com (Postfix) with ESMTP id AAEB52166B26;
+	Tue, 16 Aug 2022 15:43:53 +0000 (UTC)
 From: Alexey Gladkov <legion@kernel.org>
 To: LKML <linux-kernel@vger.kernel.org>,
 	Linux Containers <containers@lists.linux.dev>
@@ -24,11 +24,11 @@ Cc: Andrew Morton <akpm@linux-foundation.org>,
 	"Eric W . Biederman" <ebiederm@xmission.com>,
 	Kees Cook <keescook@chromium.org>,
 	Manfred Spraul <manfred@colorfullife.com>
-Subject: Re: [PATCH v1] sysctl: Allow change system v ipc sysctls inside ipc namespace
-Date: Tue, 16 Aug 2022 17:42:42 +0200
-Message-Id: <cover.1660664258.git.legion@kernel.org>
-In-Reply-To: <87wnc1i2wo.fsf@email.froward.int.ebiederm.org>
-References: <87wnc1i2wo.fsf@email.froward.int.ebiederm.org>
+Subject: [PATCH v1 2/3] sysctl: Allow to change limits for posix messages queues
+Date: Tue, 16 Aug 2022 17:42:44 +0200
+Message-Id: <0e095acd72553868925b116d778357eb019796a2.1660664258.git.legion@kernel.org>
+In-Reply-To: <cover.1660664258.git.legion@kernel.org>
+References: <87wnc1i2wo.fsf@email.froward.int.ebiederm.org> <cover.1660664258.git.legion@kernel.org>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
@@ -38,63 +38,77 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Scanned-By: MIMEDefang 2.78 on 10.11.54.6
 
-On Mon, Jul 25, 2022 at 11:16:07AM -0500, Eric W. Biederman wrote:
-> Alexey Gladkov <legion@kernel.org> writes:
->
-> > Rootless containers are not allowed to modify kernel IPC parameters such
-> > as kernel.msgmnb.
-> >
-> > It seems to me that we can allow customization of these parameters if
-> > the user has CAP_SYS_RESOURCE in that ipc namespace.
-> >
-> > CAP_SYS_RESOURCE is already needed in order to overcome mqueue limits
-> > (msg_max and msgsize_max).
->
->
-> For changing the permissions on who can modify the SysV limits, I don't
-> think this change is safe.  I don't see anything that will prevent abuse
-> if anyone can modify these limits.  Replacing the ordinary unix DAC
-> permission check with ns_capable will allow anyone to modify the limits.
+All parameters of posix messages queues (queues_max/msg_max/msgsize_max)
+end up being limited by RLIMIT_MSGQUEUE. The code in mqueue_get_inode is
+where that limiting happens.
 
-All limits are set to almost maximum values - ULONG_MAX. Limit values
-are not inherited and are counted in the each ipc namespace (shm_tot is
-not global and is located in ipc_ns). In fact, limits are disabled by
-default. They can only be reduced.
+The RLIMIT_MSGQUEUE is bound to the user namespace and is counted
+hierarchically.
 
-> That said there is RLIMIT_MSGQUEUE that limits the posix messages queues
-> so those should be safe to allow anyone to modify their limits.
->
-> The code in mqueue_get_inode is where that limiting happens.
->
-> For the posix message queues all that should be needed is to change the
-> owner of the sysctl files from the global root to the user namespace
-> root.  There are also two capable calls in ipc/mqueue.c that can
-> probably be changed to ns_capable calls.
->
->
-> The only posix message queue limit that I don't immediately see
-> something that will prevent abuse of is /proc/sys/fs/mqueue/queus_max.
-> That probably still runs into RLIMIT_MSGQUEUE somewhere but it was
-> not immediately obvious at first glance.
+We can allow root in the user namespace to modify the posix messages
+queues parameters.
 
-Everything always ends in mqueue_get_inode. In mqueue_create_attr we
-check mq_queues_max and call mqueue_get_inode almost immediately.
+Signed-off-by: Alexey Gladkov <legion@kernel.org>
+---
+ ipc/mq_sysctl.c | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
 
-I suggest allowing root in user namespace to change ipc namespace
-limits.
-
---
-
-Alexey Gladkov (3):
-  sysctl: Allow change system v ipc sysctls inside ipc namespace
-  sysctl: Allow to change limits for posix messages queues
-  docs: Add information about ipc sysctls limitations
-
- Documentation/admin-guide/sysctl/kernel.rst | 14 ++++++--
- ipc/ipc_sysctl.c                            | 34 ++++++++++++++++---
- ipc/mq_sysctl.c                             | 36 +++++++++++++++++++++
- 3 files changed, 76 insertions(+), 8 deletions(-)
-
+diff --git a/ipc/mq_sysctl.c b/ipc/mq_sysctl.c
+index fbf6a8b93a26..39dcf086b7c2 100644
+--- a/ipc/mq_sysctl.c
++++ b/ipc/mq_sysctl.c
+@@ -12,6 +12,7 @@
+ #include <linux/stat.h>
+ #include <linux/capability.h>
+ #include <linux/slab.h>
++#include <linux/cred.h>
+ 
+ static int msg_max_limit_min = MIN_MSGMAX;
+ static int msg_max_limit_max = HARD_MSGMAX;
+@@ -76,8 +77,43 @@ static int set_is_seen(struct ctl_table_set *set)
+ 	return &current->nsproxy->ipc_ns->mq_set == set;
+ }
+ 
++static int mq_permissions(struct ctl_table_header *head, struct ctl_table *table)
++{
++	struct ipc_namespace *ns =
++		container_of(head->set, struct ipc_namespace, mq_set);
++
++	if (ns->user_ns != &init_user_ns) {
++		kuid_t ns_root_uid = make_kuid(ns->user_ns, 0);
++		kgid_t ns_root_gid = make_kgid(ns->user_ns, 0);
++
++		if (uid_valid(ns_root_uid) && uid_eq(current_euid(), ns_root_uid))
++			return  table->mode >> 6;
++
++		if (gid_valid(ns_root_gid) && in_egroup_p(ns_root_gid))
++			return table->mode >> 3;
++	}
++
++	return table->mode;
++}
++
++static void mq_set_ownership(struct ctl_table_header *head,
++			     struct ctl_table *table,
++			     kuid_t *uid, kgid_t *gid)
++{
++	struct ipc_namespace *ns =
++		container_of(head->set, struct ipc_namespace, mq_set);
++
++	kuid_t ns_root_uid = make_kuid(ns->user_ns, 0);
++	kgid_t ns_root_gid = make_kgid(ns->user_ns, 0);
++
++	*uid = uid_valid(ns_root_uid) ? ns_root_uid : GLOBAL_ROOT_UID;
++	*gid = gid_valid(ns_root_gid) ? ns_root_gid : GLOBAL_ROOT_GID;
++}
++
+ static struct ctl_table_root set_root = {
+ 	.lookup = set_lookup,
++	.permissions = mq_permissions,
++	.set_ownership = mq_set_ownership,
+ };
+ 
+ bool setup_mq_sysctls(struct ipc_namespace *ns)
 -- 
 2.33.4
 
