@@ -1,51 +1,50 @@
 Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BD6EA4C7F
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 804D94C7E
 	for <containers@lists.linux.dev>; Thu, 15 Sep 2022 19:33:02 +0000 (UTC)
-Received: from pps.filterd (m0098404.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 28FJVFEj001374;
+Received: from pps.filterd (m0098409.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 28FI29Ss024638;
 	Thu, 15 Sep 2022 19:32:38 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
- : date : message-id : in-reply-to : references : mime-version :
- content-transfer-encoding; s=pp1;
- bh=rmkybv7f5WmM81JbN2zrNBtOpX3GDcnW2Aljnwf4vp0=;
- b=qMg9pqb5Q/vKEjtO3IFR9YLaE+Amj7bezb9Kp8r3PCwiKU6kFQBJSEbg8UG8TQPc1V1X
- dl3IYp2R19gpWOM0PYIndIZSb7/StXqYdhJqLh11J7F/5TPKYDplHD5kL0l9bWE0KQcP
- hvH36ve6q7OSOeD319vxCOip+WEg36Yv7WH2a13F+nbLqF+kV0gj5Pap/MpBwA4OULOo
- gay11Nfdo/6VdcwcD0sEjYY1JWtUx/kHMaYjECNEl0HLV9yfDJLa0tspIzb33rbFqEXl
- zaL6MeFr3+sCRiwhZoQlL06ewq3aXSgoCblRYVbYPNNj73c4+xkTFw4wA2sQSSDaW4Kz iQ== 
+ : date : message-id : content-transfer-encoding : mime-version; s=pp1;
+ bh=TuMMtW1BAfphcpMxBx1JsHZJgEly9+o2/qDtppvj05E=;
+ b=O93TaGVoIAXgOzM+xPl+wyckSMxpxPnKqOaTQ7QF5RoRZGuYge1YvygEMjNabbQB3XHp
+ y5SQafo/BDU4C8ggAsHZThsFh0sbvbputC9zPlv6+QpDRtFDll2h9SnGEKAUyBV6pkba
+ swbJYblMaUTNnL3BFrHUQfl9mp+fjbat64AI1SLUJLcAajsk0j0PtELrIyWC3rbB69So
+ vqEeadMOYY8FhayzYXGUj0A47/Hb2vyVIT3JRU8UkBA+OYIH+EENcsA+Zht5DrySgDJI
+ snjzPRkXSlVgiIBuYqkl1Y5BivPS/vcg6cYbj4ZVB5fIr9Zt70lLgyAXkOVzxXThkoVR 7w== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3jma9eg25p-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 15 Sep 2022 19:32:38 +0000
-Received: from m0098404.ppops.net (m0098404.ppops.net [127.0.0.1])
-	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 28FJVnL5008999;
-	Thu, 15 Sep 2022 19:32:38 GMT
-Received: from ppma01wdc.us.ibm.com (fd.55.37a9.ip4.static.sl-reverse.com [169.55.85.253])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3jma9eg248-1
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3jm8yn2nwf-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Thu, 15 Sep 2022 19:32:37 +0000
-Received: from pps.filterd (ppma01wdc.us.ibm.com [127.0.0.1])
-	by ppma01wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 28FJJnNC014251;
-	Thu, 15 Sep 2022 19:32:36 GMT
-Received: from b01cxnp23032.gho.pok.ibm.com (b01cxnp23032.gho.pok.ibm.com [9.57.198.27])
-	by ppma01wdc.us.ibm.com with ESMTP id 3jm91m0d7e-1
+Received: from m0098409.ppops.net (m0098409.ppops.net [127.0.0.1])
+	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 28FJRIOQ008803;
+	Thu, 15 Sep 2022 19:32:37 GMT
+Received: from ppma04wdc.us.ibm.com (1a.90.2fa9.ip4.static.sl-reverse.com [169.47.144.26])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3jm8yn2nvg-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 15 Sep 2022 19:32:36 +0000
+	Thu, 15 Sep 2022 19:32:37 +0000
+Received: from pps.filterd (ppma04wdc.us.ibm.com [127.0.0.1])
+	by ppma04wdc.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 28FJK1kL027123;
+	Thu, 15 Sep 2022 19:32:35 GMT
+Received: from b01cxnp23034.gho.pok.ibm.com (b01cxnp23034.gho.pok.ibm.com [9.57.198.29])
+	by ppma04wdc.us.ibm.com with ESMTP id 3jm91r8cvb-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Thu, 15 Sep 2022 19:32:35 +0000
 Received: from b01ledav005.gho.pok.ibm.com (b01ledav005.gho.pok.ibm.com [9.57.199.110])
-	by b01cxnp23032.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 28FJWZlr44892588
+	by b01cxnp23034.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 28FJWY2r2753058
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
 	Thu, 15 Sep 2022 19:32:35 GMT
 Received: from b01ledav005.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 98B09AE05C;
-	Thu, 15 Sep 2022 19:32:35 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id DD306AE062;
+	Thu, 15 Sep 2022 19:32:34 +0000 (GMT)
 Received: from b01ledav005.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 7AF4DAE063;
-	Thu, 15 Sep 2022 19:32:35 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id BC9E7AE05C;
+	Thu, 15 Sep 2022 19:32:34 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by b01ledav005.gho.pok.ibm.com (Postfix) with ESMTP;
-	Thu, 15 Sep 2022 19:32:35 +0000 (GMT)
+	Thu, 15 Sep 2022 19:32:34 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, brauner@kernel.org,
@@ -57,142 +56,191 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, brauner@kernel.org,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
         jmorris@namei.org, jpenumak@redhat.com,
         Stefan Berger <stefanb@linux.ibm.com>
-Subject: [PATCH v14 04/26] ima: Move arch_policy_entry into ima_namespace
-Date: Thu, 15 Sep 2022 15:31:59 -0400
-Message-Id: <20220915193221.1728029-5-stefanb@linux.ibm.com>
+Subject: [PATCH v14 00/26] ima: Namespace IMA with audit support in IMA-ns
+Date: Thu, 15 Sep 2022 15:31:55 -0400
+Message-Id: <20220915193221.1728029-1-stefanb@linux.ibm.com>
 X-Mailer: git-send-email 2.37.2
-In-Reply-To: <20220915193221.1728029-1-stefanb@linux.ibm.com>
-References: <20220915193221.1728029-1-stefanb@linux.ibm.com>
+X-TM-AS-GCONF: 00
+X-Proofpoint-ORIG-GUID: yq5f5jBIEXlX7I4RttLK7T4XW5vL-ciT
+X-Proofpoint-GUID: wcqITmyHJ-vOk4e9xXIcwsyGx38XbgLV
+Content-Transfer-Encoding: 8bit
+X-Proofpoint-UnRewURL: 0 URL was un-rewritten
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: BFBC98XeFfcLgCqD5uPsUHjOD6dHdGP3
-X-Proofpoint-ORIG-GUID: dzlYGgjwu2JcjYpRXbQvQ4eOYNc5lg04
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.895,Hydra:6.0.528,FMLib:17.11.122.1
  definitions=2022-09-15_10,2022-09-14_04,2022-06-22_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 bulkscore=0 phishscore=0
- suspectscore=0 clxscore=1015 priorityscore=1501 adultscore=0 spamscore=0
- mlxlogscore=999 malwarescore=0 lowpriorityscore=0 impostorscore=0
- mlxscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 adultscore=0 suspectscore=0
+ bulkscore=0 lowpriorityscore=0 spamscore=0 priorityscore=1501
+ clxscore=1011 phishscore=0 mlxlogscore=999 mlxscore=0 impostorscore=0
+ malwarescore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.12.0-2209130000 definitions=main-2209150119
 
-The architecture-specific policy rules, currently defined for EFI and
-powerpc, require the kexec kernel image and kernel modules to be
-validly signed and measured, based on the system's secure boot and/or
-trusted boot mode and the IMA_ARCH_POLICY Kconfig option being enabled.
+The goal of this series of patches is to start with the namespacing of
+IMA and support auditing within an IMA namespace (IMA-ns) as the first
+step.
 
-To avoid special-casing init_ima_ns as much as possible, move the
-arch_policy_entry into the ima_namespace.
+In this series the IMA namespace is piggybacking on the user namespace
+and therefore an IMA namespace is created when a user namespace is
+created, although this is done late when SecurityFS is mounted inside
+a user namespace. The advantage of piggybacking on the user namespace
+is that the user namespace can provide the keys infrastructure that IMA
+appraisal support will need later on.
 
-When freeing the arch_policy_entry set the pointer to NULL.
+We chose the goal of supporting auditing within an IMA namespace since it
+requires the least changes to IMA. Following this series, auditing within
+an IMA namespace can be activated by a root running the following lines
+that rely on a statically linked busybox to be installed on the host for
+execution within the minimal container environment:
 
-Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-Acked-by: Christian Brauner <brauner@kernel.org>
-Reviewed-by: Mimi Zohar <zohar@linux.ibm.com>
-Reviewed-by: Serge Hallyn <serge@hallyn.com>
----
- security/integrity/ima/ima.h             |  3 +++
- security/integrity/ima/ima_init_ima_ns.c |  1 +
- security/integrity/ima/ima_policy.c      | 23 +++++++++++------------
- 3 files changed, 15 insertions(+), 12 deletions(-)
+As root (since audit rules may now only be set by root):
 
-diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
-index 9bcde1a24e74..2305bf223a98 100644
---- a/security/integrity/ima/ima.h
-+++ b/security/integrity/ima/ima.h
-@@ -125,6 +125,9 @@ struct ima_namespace {
- 
- 	struct list_head __rcu *ima_rules;  /* Pointer to the current policy */
- 	int ima_policy_flag;
-+
-+	/* An array of architecture specific rules */
-+	struct ima_rule_entry *arch_policy_entry;
- } __randomize_layout;
- extern struct ima_namespace init_ima_ns;
- 
-diff --git a/security/integrity/ima/ima_init_ima_ns.c b/security/integrity/ima/ima_init_ima_ns.c
-index c919a456b525..ae33621c3955 100644
---- a/security/integrity/ima/ima_init_ima_ns.c
-+++ b/security/integrity/ima/ima_init_ima_ns.c
-@@ -15,6 +15,7 @@ static int ima_init_namespace(struct ima_namespace *ns)
- 	INIT_LIST_HEAD(&ns->ima_temp_rules);
- 	ns->ima_rules = (struct list_head __rcu *)(&ns->ima_default_rules);
- 	ns->ima_policy_flag = 0;
-+	ns->arch_policy_entry = NULL;
- 
- 	return 0;
- }
-diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
-index 9b6a18c580a4..d652ec19994f 100644
---- a/security/integrity/ima/ima_policy.c
-+++ b/security/integrity/ima/ima_policy.c
-@@ -228,9 +228,6 @@ static struct ima_rule_entry critical_data_rules[] __ro_after_init = {
- 	{.action = MEASURE, .func = CRITICAL_DATA, .flags = IMA_FUNC},
- };
- 
--/* An array of architecture specific rules */
--static struct ima_rule_entry *arch_policy_entry __ro_after_init;
--
- static int ima_policy __initdata;
- 
- static int __init default_measure_policy_setup(char *str)
-@@ -859,9 +856,10 @@ static int __init ima_init_arch_policy(struct ima_namespace *ns)
- 	for (rules = arch_rules; *rules != NULL; rules++)
- 		arch_entries++;
- 
--	arch_policy_entry = kcalloc(arch_entries + 1,
--				    sizeof(*arch_policy_entry), GFP_KERNEL);
--	if (!arch_policy_entry)
-+	ns->arch_policy_entry = kcalloc(arch_entries + 1,
-+					sizeof(*ns->arch_policy_entry),
-+					GFP_KERNEL);
-+	if (!ns->arch_policy_entry)
- 		return 0;
- 
- 	/* Convert each policy string rules to struct ima_rule_entry format */
-@@ -871,13 +869,13 @@ static int __init ima_init_arch_policy(struct ima_namespace *ns)
- 
- 		result = strscpy(rule, *rules, sizeof(rule));
- 
--		INIT_LIST_HEAD(&arch_policy_entry[i].list);
--		result = ima_parse_rule(ns, rule, &arch_policy_entry[i]);
-+		INIT_LIST_HEAD(&ns->arch_policy_entry[i].list);
-+		result = ima_parse_rule(ns, rule, &ns->arch_policy_entry[i]);
- 		if (result) {
- 			pr_warn("Skipping unknown architecture policy rule: %s\n",
- 				rule);
--			memset(&arch_policy_entry[i], 0,
--			       sizeof(*arch_policy_entry));
-+			memset(&ns->arch_policy_entry[i], 0,
-+			       sizeof(ns->arch_policy_entry[i]));
- 			continue;
- 		}
- 		i++;
-@@ -925,7 +923,7 @@ void __init ima_init_policy(struct ima_namespace *ns)
- 	if (!arch_entries)
- 		pr_info("No architecture policies found\n");
- 	else
--		add_rules(ns, arch_policy_entry, arch_entries,
-+		add_rules(ns, ns->arch_policy_entry, arch_entries,
- 			  IMA_DEFAULT_POLICY | IMA_CUSTOM_POLICY);
- 
- 	/*
-@@ -1005,7 +1003,8 @@ void ima_update_policy(struct ima_namespace *ns)
- 		 * on boot.  After loading a custom policy, free the
- 		 * architecture specific rules stored as an array.
- 		 */
--		kfree(arch_policy_entry);
-+		kfree(ns->arch_policy_entry);
-+		ns->arch_policy_entry = NULL;
- 	}
- 	ima_update_policy_flags(ns);
- 
+mkdir -p rootfs/{bin,mnt,proc}
+cp /sbin/busybox rootfs/bin
+cp /sbin/busybox rootfs/bin/busybox2
+echo >> rootfs/bin/busybox2
+PATH=/bin unshare --user --map-root-user --mount-proc --pid --fork \
+  --root rootfs busybox sh -c \
+ "busybox mount -t securityfs /mnt /mnt; \
+  busybox echo 1 > /mnt/ima/active; \
+  busybox echo 'audit func=BPRM_CHECK mask=MAY_EXEC' > /mnt/ima/policy; \
+  busybox2 cat /mnt/ima/policy"
+
+[busybox2 is used to demonstrate 2 audit messages; see below]
+
+Following the audit log on the host the last line cat'ing the IMA policy
+inside the namespace would have been audited. Unfortunately the auditing
+line is not distinguishable from one stemming from actions on the host.
+The hope here is that Richard Brigg's container id support for auditing
+would help resolve the problem.
+
+In the above the writing of '1' to the 'active' file is used to activate
+the IMA namespace. Future extensions to IMA namespaces will make use of
+the configuration stage after the mounting of securityfs and before the
+activation to for example choose the measurement log template.
+
+The following lines added to a suitable IMA policy on the host would
+cause the execution of the commands inside the container (by uid 1000)
+to be measured and audited as well on the host, thus leading to two
+auditing messages for the 'busybox2 cat' above and log entries in IMA's
+system log.
+
+echo -e "measure func=BPRM_CHECK mask=MAY_EXEC uid=1000\n" \
+        "audit func=BPRM_CHECK mask=MAY_EXEC uid=1000\n" \
+    > /sys/kernel/security/ima/policy
+
+The goal of supporting measurement and auditing by the host, of actions
+occurring within IMA namespaces, is that users, particularly root,
+should not be able to evade the host's IMA policy just by spawning
+new IMA namespaces, running programs there, and discarding the namespaces
+again. This is achieved through 'hierarchical processing' of file
+accesses that are evaluated against the policy of the namespace where
+the action occurred and against all namespaces' and their policies leading
+back to the root IMA namespace (init_ima_ns).
+
+The patch series adds support for a virtualized SecurityFS with a few
+new API calls that are used by IMA namespacing. Only the data relevant
+to the IMA namespace are shown. The files and directories of other
+security subsystems (TPM, evm, Tomoyo, safesetid) are not showing
+up when secruityfs is mounted inside a user namespace.
+
+Much of the code following the virtualization of SecurityFS deals
+with moving IMA's variables from various files into the IMA namespace
+structure called 'ima_namespace'. When it comes to determining the
+current IMA namespace I took the approach to get the current IMA
+namespace (get_current_ns()) on the top level and pass the pointer all
+the way down to those functions that now need access to the ima_namespace
+to get to their variables. This later on comes in handy once hierarchical
+processing is implemented in this series where we walk the list of
+namespaces backwards and again need to pass the pointer into functions.
+
+This patch also introduces usage of CAP_MAC_ADMIN to allow access to the
+IMA policy via reduced capabilities. We would again later on use this
+capability to allow users to set file extended attributes for IMA
+appraisal support.
+
+My tree with these patches is here:
+
+git fetch https://github.com/stefanberger/linux-ima-namespaces v6.0-rc5+imans.v14.posted
+
+Regards,
+   Stefan
+
+
+
+Christian Brauner (1):
+  securityfs: rework dentry creation
+
+Mehmet Kayaalp (2):
+  integrity/ima: Define ns_status for storing namespaced iint data
+  ima: Namespace audit status flags
+
+Stefan Berger (23):
+  securityfs: Extend securityfs with namespacing support
+  ima: Define ima_namespace struct and start moving variables into it
+  ima: Move arch_policy_entry into ima_namespace
+  ima: Move ima_htable into ima_namespace
+  ima: Move measurement list related variables into ima_namespace
+  ima: Move some IMA policy and filesystem related variables into
+    ima_namespace
+  ima: Move IMA securityfs files into ima_namespace or onto stack
+  ima: Move ima_lsm_policy_notifier into ima_namespace
+  ima: Switch to lazy lsm policy updates for better performance
+  ima: Define mac_admin_ns_capable() as a wrapper for ns_capable()
+  ima: Only accept AUDIT rules for non-init_ima_ns namespaces for now
+  userns: Add pointer to ima_namespace to user_namespace
+  ima: Implement hierarchical processing of file accesses
+  ima: Implement ima_free_policy_rules() for freeing of an ima_namespace
+  ima: Add functions for creating and freeing of an ima_namespace
+  integrity: Add optional callback function to integrity_inode_free()
+  ima: Remove unused iints from the integrity_iint_cache
+  ima: Setup securityfs for IMA namespace
+  ima: Introduce securityfs file to activate an IMA namespace
+  ima: Show owning user namespace's uid and gid when displaying policy
+  ima: Limit number of policy rules in non-init_ima_ns
+  ima: Restrict informational audit messages to init_ima_ns
+  ima: Enable IMA namespaces
+
+ include/linux/capability.h                   |   6 +
+ include/linux/fs.h                           |   5 +
+ include/linux/ima.h                          |  36 ++
+ include/linux/integrity.h                    |   8 +-
+ include/linux/user_namespace.h               |   9 +
+ init/Kconfig                                 |  14 +
+ kernel/user.c                                |   4 +
+ kernel/user_namespace.c                      |   2 +
+ security/inode.c                             |  83 +++-
+ security/integrity/iint.c                    |  26 +-
+ security/integrity/ima/Makefile              |   3 +-
+ security/integrity/ima/ima.h                 | 256 ++++++++++--
+ security/integrity/ima/ima_api.c             |  44 ++-
+ security/integrity/ima/ima_appraise.c        |  42 +-
+ security/integrity/ima/ima_asymmetric_keys.c |   8 +-
+ security/integrity/ima/ima_fs.c              | 255 +++++++++---
+ security/integrity/ima/ima_init.c            |  19 +-
+ security/integrity/ima/ima_init_ima_ns.c     |  65 ++++
+ security/integrity/ima/ima_kexec.c           |  15 +-
+ security/integrity/ima/ima_main.c            | 238 +++++++++---
+ security/integrity/ima/ima_ns.c              |  61 +++
+ security/integrity/ima/ima_ns_status.c       | 385 +++++++++++++++++++
+ security/integrity/ima/ima_policy.c          | 314 ++++++++++-----
+ security/integrity/ima/ima_queue.c           |  63 ++-
+ security/integrity/ima/ima_queue_keys.c      |  11 +-
+ security/integrity/ima/ima_template.c        |   5 +-
+ security/integrity/integrity.h               |  39 +-
+ security/security.c                          |   2 +-
+ 28 files changed, 1659 insertions(+), 359 deletions(-)
+ create mode 100644 security/integrity/ima/ima_init_ima_ns.c
+ create mode 100644 security/integrity/ima/ima_ns.c
+ create mode 100644 security/integrity/ima/ima_ns_status.c
+
+
+base-commit: 80e78fcce86de0288793a0ef0f6acf37656ee4cf
+prerequisite-patch-id: 593c4930403a507f88e8cb15ecd32b592ff900b2
 -- 
 2.36.1
 
