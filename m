@@ -1,51 +1,51 @@
 Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 230544C82
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 26A9C4C84
 	for <containers@lists.linux.dev>; Thu, 15 Sep 2022 19:33:03 +0000 (UTC)
-Received: from pps.filterd (m0098404.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 28FJVFTA001317;
-	Thu, 15 Sep 2022 19:32:39 GMT
+Received: from pps.filterd (m0098410.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 28FJGeAB013879;
+	Thu, 15 Sep 2022 19:32:40 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=pp1;
- bh=VPpATL7cZEe1dmqioCAgOIDvGl8VpmStSLfKPpAKDMk=;
- b=JL2ocsLd6kg6f/2GYQ1XfcZr7+PlYHpiffxtbOSmNy2BXKGs/TDYowZ3NdBN8vbUByBU
- cvYYszzZfYZ5FfNpnPTzGv+okXV7iXKjoO1D7rD+T9kR0LFpF6aA3fn+4MONRn27sI+0
- daKR3n4ixkZGUH6H1igMWkgmxTPH2IEaw00A3dak/EU3mF6ro4A61UMHCbvjyJYJH9OR
- qE+Vqp32m0NHzwEqAGAEOvkDhvMOvCFSxfHvRcYxig03pwTdYg0F9PVdA7L25g0bkfjp
- VzZyYL7VwfbT+RisJDtybpSSXXwwyrijVcBb+Zl8GeuW+rQrbnMzbFJfzgB4mHUiCCsQ uQ== 
+ bh=+iYUNgcIqRRsxDhnd9vYgJwdoVMujZ32naeXS06be+8=;
+ b=XvFuxJAqVHuC/IISt8oo4nS3OAGJ1pb2gLv90Fmhriwnp23Mbet/qfxEnJT+Q8GQhVeG
+ TJymkdiBQjT0ab6Q8YBzgS2iF2f2Yhk5W7Bu3VAxlBmrIHUkzNG0H+N0TVIDUvqIep+5
+ d99OKBlO9rnlVjNv4lglZMdYpjnYKzFKJJz9PCaBSOC8Hs/RYJ36RgNuv/OtgZj7uyXN
+ 9RojWpqJ5tsdebCD/EC+BIGBWdNjUZWOKJPvMS9e0pQ9yICvQ32ozuJv9A8oqeDZ54lD
+ deAsB+b6njg1p73rQSjhMKfwFFXMb97J5RTlQeiqnflUl4l4MW0sndLRj0yGDpovIFXW lA== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3jma9eg26a-1
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3jma2mgfm7-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Thu, 15 Sep 2022 19:32:39 +0000
-Received: from m0098404.ppops.net (m0098404.ppops.net [127.0.0.1])
-	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 28FJVnL8008999;
-	Thu, 15 Sep 2022 19:32:38 GMT
-Received: from ppma03dal.us.ibm.com (b.bd.3ea9.ip4.static.sl-reverse.com [169.62.189.11])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3jma9eg24p-1
+Received: from m0098410.ppops.net (m0098410.ppops.net [127.0.0.1])
+	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 28FJUNhG005865;
+	Thu, 15 Sep 2022 19:32:39 GMT
+Received: from ppma01dal.us.ibm.com (83.d6.3fa9.ip4.static.sl-reverse.com [169.63.214.131])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3jma2mgfkb-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Thu, 15 Sep 2022 19:32:38 +0000
-Received: from pps.filterd (ppma03dal.us.ibm.com [127.0.0.1])
-	by ppma03dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 28FJKsgD011690;
+Received: from pps.filterd (ppma01dal.us.ibm.com [127.0.0.1])
+	by ppma01dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 28FJK30D005466;
 	Thu, 15 Sep 2022 19:32:37 GMT
 Received: from b01cxnp23033.gho.pok.ibm.com (b01cxnp23033.gho.pok.ibm.com [9.57.198.28])
-	by ppma03dal.us.ibm.com with ESMTP id 3jm918rgm4-1
+	by ppma01dal.us.ibm.com with ESMTP id 3jm91qgg4r-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
 	Thu, 15 Sep 2022 19:32:37 +0000
 Received: from b01ledav005.gho.pok.ibm.com (b01ledav005.gho.pok.ibm.com [9.57.199.110])
-	by b01cxnp23033.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 28FJWaqc62062994
+	by b01cxnp23033.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 28FJWaIk4653622
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
 	Thu, 15 Sep 2022 19:32:36 GMT
 Received: from b01ledav005.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id ECAE5AE064;
-	Thu, 15 Sep 2022 19:32:35 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 6527CAE05C;
+	Thu, 15 Sep 2022 19:32:36 +0000 (GMT)
 Received: from b01ledav005.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id CDC9BAE05C;
-	Thu, 15 Sep 2022 19:32:35 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 46B5EAE062;
+	Thu, 15 Sep 2022 19:32:36 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by b01ledav005.gho.pok.ibm.com (Postfix) with ESMTP;
-	Thu, 15 Sep 2022 19:32:35 +0000 (GMT)
+	Thu, 15 Sep 2022 19:32:36 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, brauner@kernel.org,
@@ -57,9 +57,9 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, brauner@kernel.org,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
         jmorris@namei.org, jpenumak@redhat.com,
         Stefan Berger <stefanb@linux.ibm.com>
-Subject: [PATCH v14 06/26] ima: Move measurement list related variables into ima_namespace
-Date: Thu, 15 Sep 2022 15:32:01 -0400
-Message-Id: <20220915193221.1728029-7-stefanb@linux.ibm.com>
+Subject: [PATCH v14 09/26] ima: Move ima_lsm_policy_notifier into ima_namespace
+Date: Thu, 15 Sep 2022 15:32:04 -0400
+Message-Id: <20220915193221.1728029-10-stefanb@linux.ibm.com>
 X-Mailer: git-send-email 2.37.2
 In-Reply-To: <20220915193221.1728029-1-stefanb@linux.ibm.com>
 References: <20220915193221.1728029-1-stefanb@linux.ibm.com>
@@ -71,239 +71,189 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: QJUswHN_GVfzsPxfXqdSdl97RMNuPoUm
-X-Proofpoint-ORIG-GUID: -0643uHdjkbKPCPFqp7jawwLaJ6fjwLt
+X-Proofpoint-GUID: gbQqIzFBTLZ1AbRoSrA4vyWOan2L6BMC
+X-Proofpoint-ORIG-GUID: LuEtrneN70ZGQ2ulP195E2GfKCkUI6D4
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.895,Hydra:6.0.528,FMLib:17.11.122.1
  definitions=2022-09-15_10,2022-09-14_04,2022-06-22_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 bulkscore=0 phishscore=0
- suspectscore=0 clxscore=1015 priorityscore=1501 adultscore=0 spamscore=0
- mlxlogscore=999 malwarescore=0 lowpriorityscore=0 impostorscore=0
- mlxscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 suspectscore=0
+ mlxlogscore=999 malwarescore=0 spamscore=0 priorityscore=1501 adultscore=0
+ impostorscore=0 lowpriorityscore=0 phishscore=0 clxscore=1015 mlxscore=0
+ bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.12.0-2209130000 definitions=main-2209150119
 
-Move measurement list related variables into the ima_namespace. This way
-a front-end like securityfs can show the measurement list inside an IMA
-namespace.
+Move the ima_lsm_policy_notifier into the ima_namespace. Each IMA
+namespace can now register its own LSM policy change notifier callback.
+The policy change notifier for the init_ima_ns still remains in init_ima()
+and therefore handle the registration of the callback for all other
+namespaces in init_ima_namespace().
 
-Also, in order for kexec to allocate memory for the existing
-measurement list, the measurement list memory size is stored in the
-binary_runtime_size variable.  To avoid special-casing init_ima_ns, as
-much as possible, move it into the ima_namespace.
+Rate-limit the kernel warning 'rule for LSM <label> is undefined` for
+IMA namespace to avoid flooding the kernel log with this type of message.
 
 Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
 Reviewed-by: Mimi Zohar <zohar@linux.ibm.com>
-Reviewed-by: Serge Hallyn <serge@hallyn.com>
+Acked-by: Serge Hallyn <serge@hallyn.com>
+
 ---
- security/integrity/ima/ima.h             |  5 +++--
- security/integrity/ima/ima_fs.c          |  6 ++++--
- security/integrity/ima/ima_init_ima_ns.c |  5 +++++
- security/integrity/ima/ima_kexec.c       | 12 ++++++-----
- security/integrity/ima/ima_queue.c       | 27 +++++++++++-------------
- 5 files changed, 31 insertions(+), 24 deletions(-)
+v11:
+ - Renamed 'rc' to 'ret'
+ - Use pr_warn_ratelimited('rule for LSM...') for IMA namespaces
+
+v10:
+ - Only call pr_warn('rule for LSM <label> is undefined`) for init_ima_ns
+---
+ security/integrity/ima/ima.h             |  2 ++
+ security/integrity/ima/ima_init_ima_ns.c | 14 +++++++++++++
+ security/integrity/ima/ima_main.c        |  6 +-----
+ security/integrity/ima/ima_policy.c      | 26 ++++++++++++++++--------
+ 4 files changed, 35 insertions(+), 13 deletions(-)
 
 diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
-index 78798cfcf46c..82e8af2bf698 100644
+index b35c8504ef87..c68b5117d034 100644
 --- a/security/integrity/ima/ima.h
 +++ b/security/integrity/ima/ima.h
-@@ -106,7 +106,6 @@ struct ima_queue_entry {
- 	struct list_head later;		/* place in ima_measurements list */
- 	struct ima_template_entry *entry;
- };
--extern struct list_head ima_measurements;	/* list of all measurements */
+@@ -144,6 +144,8 @@ struct ima_namespace {
+ 	int valid_policy;
  
- /* Some details preceding the binary serialized measurement list */
- struct ima_kexec_hdr {
-@@ -136,6 +135,8 @@ struct ima_namespace {
- 	struct ima_rule_entry *arch_policy_entry;
- 
- 	struct ima_h_table ima_htable;
-+	struct list_head ima_measurements;	/* list of all measurements */
-+	unsigned long binary_runtime_size;	/* used by init_ima_ns */
+ 	struct dentry *ima_policy;
++
++	struct notifier_block ima_lsm_policy_notifier;
  } __randomize_layout;
  extern struct ima_namespace init_ima_ns;
  
-@@ -186,7 +187,7 @@ int ima_restore_measurement_entry(struct ima_namespace *ns,
- int ima_restore_measurement_list(struct ima_namespace *ns,
- 				 loff_t bufsize, void *buf);
- int ima_measurements_show(struct seq_file *m, void *v);
--unsigned long ima_get_binary_runtime_size(void);
-+unsigned long ima_get_binary_runtime_size(struct ima_namespace *ns);
- int ima_init_template(void);
- void ima_init_template_list(void);
- int __init ima_init_digests(void);
-diff --git a/security/integrity/ima/ima_fs.c b/security/integrity/ima/ima_fs.c
-index dca7fe32d65e..5ef0e2b2cf64 100644
---- a/security/integrity/ima/ima_fs.c
-+++ b/security/integrity/ima/ima_fs.c
-@@ -80,12 +80,13 @@ static const struct file_operations ima_measurements_count_ops = {
- /* returns pointer to hlist_node */
- static void *ima_measurements_start(struct seq_file *m, loff_t *pos)
- {
-+	struct ima_namespace *ns = &init_ima_ns;
- 	loff_t l = *pos;
- 	struct ima_queue_entry *qe;
- 
- 	/* we need a lock since pos could point beyond last element */
- 	rcu_read_lock();
--	list_for_each_entry_rcu(qe, &ima_measurements, later) {
-+	list_for_each_entry_rcu(qe, &ns->ima_measurements, later) {
- 		if (!l--) {
- 			rcu_read_unlock();
- 			return qe;
-@@ -97,6 +98,7 @@ static void *ima_measurements_start(struct seq_file *m, loff_t *pos)
- 
- static void *ima_measurements_next(struct seq_file *m, void *v, loff_t *pos)
- {
-+	struct ima_namespace *ns = &init_ima_ns;
- 	struct ima_queue_entry *qe = v;
- 
- 	/* lock protects when reading beyond last element
-@@ -107,7 +109,7 @@ static void *ima_measurements_next(struct seq_file *m, void *v, loff_t *pos)
- 	rcu_read_unlock();
- 	(*pos)++;
- 
--	return (&qe->later == &ima_measurements) ? NULL : qe;
-+	return (&qe->later == &ns->ima_measurements) ? NULL : qe;
- }
- 
- static void ima_measurements_stop(struct seq_file *m, void *v)
 diff --git a/security/integrity/ima/ima_init_ima_ns.c b/security/integrity/ima/ima_init_ima_ns.c
-index 1945fa8cfc4d..a7477072c587 100644
+index 425eed1c6838..c4fe8f3e9a73 100644
 --- a/security/integrity/ima/ima_init_ima_ns.c
 +++ b/security/integrity/ima/ima_init_ima_ns.c
-@@ -20,6 +20,11 @@ static int ima_init_namespace(struct ima_namespace *ns)
- 	atomic_long_set(&ns->ima_htable.len, 0);
- 	atomic_long_set(&ns->ima_htable.violations, 0);
- 	memset(&ns->ima_htable.queue, 0, sizeof(ns->ima_htable.queue));
-+	INIT_LIST_HEAD(&ns->ima_measurements);
-+	if (IS_ENABLED(CONFIG_IMA_KEXEC) && ns == &init_ima_ns)
-+		ns->binary_runtime_size = 0;
-+	else
-+		ns->binary_runtime_size = ULONG_MAX;
+@@ -10,6 +10,8 @@
  
+ static int ima_init_namespace(struct ima_namespace *ns)
+ {
++	int ret;
++
+ 	INIT_LIST_HEAD(&ns->ima_default_rules);
+ 	INIT_LIST_HEAD(&ns->ima_policy_rules);
+ 	INIT_LIST_HEAD(&ns->ima_temp_rules);
+@@ -30,6 +32,15 @@ static int ima_init_namespace(struct ima_namespace *ns)
+ 	ns->valid_policy = 1;
+ 	ns->ima_fs_flags = 0;
+ 
++	if (ns != &init_ima_ns) {
++		ns->ima_lsm_policy_notifier.notifier_call =
++						ima_lsm_policy_change;
++		ret = register_blocking_lsm_notifier
++						(&ns->ima_lsm_policy_notifier);
++		if (ret)
++			return ret;
++	}
++
  	return 0;
  }
-diff --git a/security/integrity/ima/ima_kexec.c b/security/integrity/ima/ima_kexec.c
-index 7559c3840f74..eed147bdc83e 100644
---- a/security/integrity/ima/ima_kexec.c
-+++ b/security/integrity/ima/ima_kexec.c
-@@ -15,7 +15,8 @@
- #include "ima.h"
  
- #ifdef CONFIG_IMA_KEXEC
--static int ima_dump_measurement_list(unsigned long *buffer_size, void **buffer,
-+static int ima_dump_measurement_list(struct ima_namespace *ns,
-+				     unsigned long *buffer_size, void **buffer,
- 				     unsigned long segment_size)
- {
- 	struct ima_queue_entry *qe;
-@@ -36,7 +37,7 @@ static int ima_dump_measurement_list(unsigned long *buffer_size, void **buffer,
+@@ -39,5 +50,8 @@ int __init ima_ns_init(void)
+ }
  
- 	memset(&khdr, 0, sizeof(khdr));
- 	khdr.version = 1;
--	list_for_each_entry_rcu(qe, &ima_measurements, later) {
-+	list_for_each_entry_rcu(qe, &ns->ima_measurements, later) {
- 		if (file.count < file.size) {
- 			khdr.count++;
- 			ima_measurements_show(&file, qe);
-@@ -84,6 +85,7 @@ void ima_add_kexec_buffer(struct kimage *image)
- 	struct kexec_buf kbuf = { .image = image, .buf_align = PAGE_SIZE,
- 				  .buf_min = 0, .buf_max = ULONG_MAX,
- 				  .top_down = true };
-+	struct ima_namespace *ns = &init_ima_ns;
- 	unsigned long binary_runtime_size;
+ struct ima_namespace init_ima_ns = {
++	.ima_lsm_policy_notifier = {
++		.notifier_call = ima_lsm_policy_change,
++	},
+ };
+ EXPORT_SYMBOL(init_ima_ns);
+diff --git a/security/integrity/ima/ima_main.c b/security/integrity/ima/ima_main.c
+index d27454d029e2..789415f65204 100644
+--- a/security/integrity/ima/ima_main.c
++++ b/security/integrity/ima/ima_main.c
+@@ -38,10 +38,6 @@ int ima_appraise;
+ int __ro_after_init ima_hash_algo = HASH_ALGO_SHA1;
+ static int hash_setup_done;
  
- 	/* use more understandable variable names than defined in kbuf */
-@@ -96,11 +98,11 @@ void ima_add_kexec_buffer(struct kimage *image)
- 	 * Reserve an extra half page of memory for additional measurements
- 	 * added during the kexec load.
- 	 */
--	binary_runtime_size = ima_get_binary_runtime_size();
-+	binary_runtime_size = ima_get_binary_runtime_size(ns);
- 	if (binary_runtime_size >= ULONG_MAX - PAGE_SIZE)
- 		kexec_segment_size = ULONG_MAX;
- 	else
--		kexec_segment_size = ALIGN(ima_get_binary_runtime_size() +
-+		kexec_segment_size = ALIGN(ima_get_binary_runtime_size(ns) +
- 					   PAGE_SIZE / 2, PAGE_SIZE);
- 	if ((kexec_segment_size == ULONG_MAX) ||
- 	    ((kexec_segment_size >> PAGE_SHIFT) > totalram_pages() / 2)) {
-@@ -108,7 +110,7 @@ void ima_add_kexec_buffer(struct kimage *image)
- 		return;
- 	}
- 
--	ima_dump_measurement_list(&kexec_buffer_size, &kexec_buffer,
-+	ima_dump_measurement_list(ns, &kexec_buffer_size, &kexec_buffer,
- 				  kexec_segment_size);
- 	if (!kexec_buffer) {
- 		pr_err("Not enough memory for the kexec measurement buffer.\n");
-diff --git a/security/integrity/ima/ima_queue.c b/security/integrity/ima/ima_queue.c
-index 43961d5cd2ef..0355c2b0932c 100644
---- a/security/integrity/ima/ima_queue.c
-+++ b/security/integrity/ima/ima_queue.c
-@@ -24,13 +24,6 @@
- /* pre-allocated array of tpm_digest structures to extend a PCR */
- static struct tpm_digest *digests;
- 
--LIST_HEAD(ima_measurements);	/* list of all measurements */
--#ifdef CONFIG_IMA_KEXEC
--static unsigned long binary_runtime_size;
--#else
--static unsigned long binary_runtime_size = ULONG_MAX;
--#endif
+-static struct notifier_block ima_lsm_policy_notifier = {
+-	.notifier_call = ima_lsm_policy_change,
+-};
 -
- /* mutex protects atomicity of extending measurement list
-  * and extending the TPM PCR aggregate. Since tpm_extend can take
-  * long (and the tpm driver uses a mutex), we can't use the spinlock.
-@@ -100,7 +93,7 @@ static int ima_add_digest_entry(struct ima_namespace *ns,
- 	qe->entry = entry;
- 
- 	INIT_LIST_HEAD(&qe->later);
--	list_add_tail_rcu(&qe->later, &ima_measurements);
-+	list_add_tail_rcu(&qe->later, &ns->ima_measurements);
- 
- 	atomic_long_inc(&ns->ima_htable.len);
- 	if (update_htable) {
-@@ -110,12 +103,14 @@ static int ima_add_digest_entry(struct ima_namespace *ns,
- 		INIT_HLIST_NODE(&qe->hnext);
- 	}
- 
--	if (binary_runtime_size != ULONG_MAX) {
-+	if (ns->binary_runtime_size != ULONG_MAX) {
- 		int size;
- 
- 		size = get_binary_runtime_size(entry);
--		binary_runtime_size = (binary_runtime_size < ULONG_MAX - size) ?
--		     binary_runtime_size + size : ULONG_MAX;
-+		ns->binary_runtime_size =
-+			(ns->binary_runtime_size < ULONG_MAX - size)
-+			? ns->binary_runtime_size + size
-+			: ULONG_MAX;
- 	}
- 	return 0;
- }
-@@ -123,14 +118,16 @@ static int ima_add_digest_entry(struct ima_namespace *ns,
- /*
-  * Return the amount of memory required for serializing the
-  * entire binary_runtime_measurement list, including the ima_kexec_hdr
-- * structure.
-+ * structure. Carrying the measurement list across kexec is limited
-+ * to init_ima_ns.
-  */
--unsigned long ima_get_binary_runtime_size(void)
-+unsigned long ima_get_binary_runtime_size(struct ima_namespace *ns)
+ static int __init hash_setup(char *str)
  {
--	if (binary_runtime_size >= (ULONG_MAX - sizeof(struct ima_kexec_hdr)))
-+	if (ns->binary_runtime_size >=
-+				(ULONG_MAX - sizeof(struct ima_kexec_hdr)))
- 		return ULONG_MAX;
- 	else
--		return binary_runtime_size + sizeof(struct ima_kexec_hdr);
-+		return ns->binary_runtime_size + sizeof(struct ima_kexec_hdr);
+ 	struct ima_template_desc *template_desc = ima_template_desc_current();
+@@ -1089,7 +1085,7 @@ static int __init init_ima(void)
+ 	if (error)
+ 		return error;
+ 
+-	error = register_blocking_lsm_notifier(&ima_lsm_policy_notifier);
++	error = register_blocking_lsm_notifier(&ns->ima_lsm_policy_notifier);
+ 	if (error)
+ 		pr_warn("Couldn't register LSM notifier, error %d\n", error);
+ 
+diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
+index d652ec19994f..5f5cc3ce3b15 100644
+--- a/security/integrity/ima/ima_policy.c
++++ b/security/integrity/ima/ima_policy.c
+@@ -368,7 +368,8 @@ static void ima_free_rule(struct ima_rule_entry *entry)
+ 	kfree(entry);
  }
  
- static int ima_pcr_extend(struct tpm_digest *digests_arg, int pcr)
+-static struct ima_rule_entry *ima_lsm_copy_rule(struct ima_rule_entry *entry)
++static struct ima_rule_entry *ima_lsm_copy_rule(struct ima_namespace *ns,
++						struct ima_rule_entry *entry)
+ {
+ 	struct ima_rule_entry *nentry;
+ 	int i;
+@@ -399,18 +400,25 @@ static struct ima_rule_entry *ima_lsm_copy_rule(struct ima_rule_entry *entry)
+ 		ima_filter_rule_init(nentry->lsm[i].type, Audit_equal,
+ 				     nentry->lsm[i].args_p,
+ 				     &nentry->lsm[i].rule);
+-		if (!nentry->lsm[i].rule)
+-			pr_warn("rule for LSM \'%s\' is undefined\n",
+-				nentry->lsm[i].args_p);
++		if (!nentry->lsm[i].rule) {
++			if (ns == &init_ima_ns)
++				pr_warn("rule for LSM \'%s\' is undefined\n",
++					nentry->lsm[i].args_p);
++			else
++				pr_warn_ratelimited
++					("rule for LSM \'%s\' is undefined\n",
++					 nentry->lsm[i].args_p);
++		}
+ 	}
+ 	return nentry;
+ }
+ 
+-static int ima_lsm_update_rule(struct ima_rule_entry *entry)
++static int ima_lsm_update_rule(struct ima_namespace *ns,
++			       struct ima_rule_entry *entry)
+ {
+ 	struct ima_rule_entry *nentry;
+ 
+-	nentry = ima_lsm_copy_rule(entry);
++	nentry = ima_lsm_copy_rule(ns, entry);
+ 	if (!nentry)
+ 		return -ENOMEM;
+ 
+@@ -453,7 +461,7 @@ static void ima_lsm_update_rules(struct ima_namespace *ns)
+ 		if (!ima_rule_contains_lsm_cond(entry))
+ 			continue;
+ 
+-		result = ima_lsm_update_rule(entry);
++		result = ima_lsm_update_rule(ns, entry);
+ 		if (result) {
+ 			pr_err("lsm rule update error %d\n", result);
+ 			return;
+@@ -464,12 +472,14 @@ static void ima_lsm_update_rules(struct ima_namespace *ns)
+ int ima_lsm_policy_change(struct notifier_block *nb, unsigned long event,
+ 			  void *lsm_data)
+ {
+-	struct ima_namespace *ns = &init_ima_ns;
++	struct ima_namespace *ns;
+ 
+ 	if (event != LSM_POLICY_CHANGE)
+ 		return NOTIFY_DONE;
+ 
++	ns = container_of(nb, struct ima_namespace, ima_lsm_policy_notifier);
+ 	ima_lsm_update_rules(ns);
++
+ 	return NOTIFY_OK;
+ }
+ 
 -- 
 2.36.1
 
