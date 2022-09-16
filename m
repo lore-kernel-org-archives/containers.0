@@ -1,96 +1,79 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from sonic304-27.consmr.mail.ne1.yahoo.com (sonic304-27.consmr.mail.ne1.yahoo.com [66.163.191.153])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 36C0E2C9D
-	for <containers@lists.linux.dev>; Fri, 16 Sep 2022 13:21:18 +0000 (UTC)
-Received: from pps.filterd (m0187473.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 28GCux5t022063;
-	Fri, 16 Sep 2022 13:20:59 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
- mime-version : subject : from : to : cc : references : in-reply-to :
- content-type : content-transfer-encoding; s=pp1;
- bh=Srgf2qKYxVi9JvK1f8yknBSY0qAUpFinRzk4DDhX3Kk=;
- b=NR+LRvggLk+hm1zBwza0NvT1o4w5wqGnCEr01CKuVkPTqkReHPPxwc0zK9XWChTLcvlZ
- GxmrVpDCErUZH9ghIyqj/9qVPB4hg0Gf1DNIN70N3a6k4NEzJpwj4Dg6RCOttiiV3XkT
- PQ6B74OsKQ5dbZ2thEl5yum7WSzQmBoPU3PglXwo/rULuTNSjTTXYveSf7pjQEBfsfI+
- /xTTU5jmn3QmhEl77gSUMhr/8Sl7SVC7Jpkh081bvVRmyWZYfGf6Er/14pe+3XII/78s
- Yttg87Z693/tf8eYBWC3V6MiuCkBdPh752cZXrHKDofhEBfyipvtlQwANcctx4FIwEBm dQ== 
-Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3jmsckhekj-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 16 Sep 2022 13:20:58 +0000
-Received: from m0187473.ppops.net (m0187473.ppops.net [127.0.0.1])
-	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 28GCvcUX025095;
-	Fri, 16 Sep 2022 13:20:58 GMT
-Received: from ppma03dal.us.ibm.com (b.bd.3ea9.ip4.static.sl-reverse.com [169.62.189.11])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3jmsckheju-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 16 Sep 2022 13:20:58 +0000
-Received: from pps.filterd (ppma03dal.us.ibm.com [127.0.0.1])
-	by ppma03dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 28GDKtT0017033;
-	Fri, 16 Sep 2022 13:20:56 GMT
-Received: from b01cxnp22035.gho.pok.ibm.com (b01cxnp22035.gho.pok.ibm.com [9.57.198.25])
-	by ppma03dal.us.ibm.com with ESMTP id 3jm918x9sy-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 16 Sep 2022 13:20:56 +0000
-Received: from b01ledav003.gho.pok.ibm.com (b01ledav003.gho.pok.ibm.com [9.57.199.108])
-	by b01cxnp22035.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 28GDKtI94457110
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Fri, 16 Sep 2022 13:20:55 GMT
-Received: from b01ledav003.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 92BF7B2065;
-	Fri, 16 Sep 2022 13:20:55 +0000 (GMT)
-Received: from b01ledav003.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 73192B206A;
-	Fri, 16 Sep 2022 13:20:55 +0000 (GMT)
-Received: from [9.47.158.152] (unknown [9.47.158.152])
-	by b01ledav003.gho.pok.ibm.com (Postfix) with ESMTP;
-	Fri, 16 Sep 2022 13:20:55 +0000 (GMT)
-Message-ID: <7f6a66e8-3b55-c8bb-e745-9251810283ab@linux.ibm.com>
-Date: Fri, 16 Sep 2022 09:20:55 -0400
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E331C5CBE
+	for <containers@lists.linux.dev>; Fri, 16 Sep 2022 17:05:14 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yahoo.com; s=s2048; t=1663347914; bh=g1U1TCuQXVzueLMImuBTzqE+VJ+3TVNeqRBztp6aiMI=; h=Date:Subject:To:Cc:References:From:In-Reply-To:From:Subject:Reply-To; b=WzEC0ZXEDEWEI0bzR/lxbMRhqTRVzzB3PcpIGKSLvMMMkJzI9ZjDGZK9m3RkLOk90l6dS9ss7qLZnEgfVt6zra2PCxS8MCEiVy+FLGUxBu03rfIroXWxkWvTsvqkmjhj5iKbWao1MzkCGIGHM6iXnOYb2koY4gJI0CvGApBUQEy9zG7QAnU0Z8zeo9wys44kJ83gK1c2TCaLrwSXqTbHWa++o0YXKwZfYfJcJHlAQaAYnp8CzOEdRr3e78Kq4ZAWl8h+XHoCCXFxso1RJj1G7K026VJHWcpQTy9gqMfyvyaoSXL+ZkbhcgCMDrzzVjDaDNLVAJjiMcHo1VXA3m4VkA==
+X-SONIC-DKIM-SIGN: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yahoo.com; s=s2048; t=1663347914; bh=zelXIpfF+2mxzWQ1TTSNFjaFjrt3Qf6WaG/Z7cDRc3D=; h=X-Sonic-MF:Date:Subject:To:From:From:Subject; b=TmdILDmsovZjS2pkOtgzdC22LK2zSwzEaafwMfF4bn15UyTv2L64fFWS4ojdzOmYS70m4YFAcXjq8Qt6COHknfibS85YbQEPrqhYJgCs2kKk8Q7//VBBNyVOJoZr42C/wsbErgXqdq5rvsfS6xyyPuiiYHAwli6CB/YOiLRr2lfP71ZOpiSNnQWvZ/z4OuG2RsxrJGRHnB+wOoBI2L1QVhm7sJGzO3oCoM8kldtH3GoVajeFzfR8ll1CU24HTroBfoblEN7+y9fOrJPTOvVwNztqOH9Gz8W/ZDxRioSvl1kwTIzhs5KFZjO1yJb3JPIN+myQhOlpfiNcThk+2XRbCQ==
+X-YMail-OSG: p3D10AIVM1mHdApZPrFMZpYQtknLkmpd1rnoh8EYlAotfbcgnW1LdWoP5GSJr69
+ TWX9FcrO..eSPemWqOeaOUDsPDxV3c3LsmJ1o63hHA7rqC59N9z9v0VH7AlPXXM008wql7GeL_.U
+ MBI0.zSyWuYoRIbPj5luBjeQaxy0ceTSU9yMui6.GYiTNchin6IlLtet2nUn.1z0vjnmkdYremi7
+ EI922FtFYsd5QZUt26c9lSX4kTdr1DyPJ3reyTY4VsDARMyY3tdGU0nw9kFvJrIxTWEO2eXLFReQ
+ 1GFuZFbdIWzsISTI4Ez4A77rDJpY.66BvbEujt8KO7WI6sW.XFw9MblqMaAy7fZErmrV6BjOL0ML
+ x7YwdreLZaMqQyEib7iZJxo0RBRgNizkUssGDB4J0a_C98eprcgzqdEBiUPSpXbh36L4dc_0W7dv
+ KBMZQNmkviIYxs.FEi6Fzya7VEkhANphb4bITN6BUrFkArsuWVkiGaVEfMfQ.piuSTBbUtSiBfog
+ jR0TsQ9Y532YZh0A2LLmGNVGR4FbsqtQ_OiWSr.mratSHKcAshIQabzAqiIupCw83W7UEmq_DHQc
+ _qAq4FZtqXXEwhaVL1wuiimElYc2gzDCe2UZ0587m4AZa9pz4ki6l7zsSFRmXKdOGvC7yJt73_M6
+ ne2O7G_6IFL_lxinAxjXV4M3dZm1WBij7XEp5dggcU95530rN7wJer9pSOJ1pomReupQsDx9URbK
+ aL_N2cIBCzwQISgJ5qiyY1ArRmnrhrQynCUcicnluPli40Ou9QEVn0xwP0.hihkv3kAq21t.cLjK
+ 9KCjBwkOxenZ2pVl1V2MgTySdbyQ.zNdtow6WrFLXW71LlxTsveCWz2__z.OM_q.BW6aFrdWCW5h
+ B2rmUZG1bjIE5anjyKAApuGc70BoVAt.0tAjkaxLPwS57q0uMYac0dA_7opvVqjY4FXUFOqU7Tdf
+ fzXMbMG_f3iZIiAIebfh5KPzeMXdNyebSpG3HUIhxyXM7EfZC_0wwHx2dJbZJQiubaT56hMwW6n4
+ oaysm7NrhKZkXdK9DMJDu2DP55uO7EiJwQxgXhDCdHjsWupWdmaXZEw8bL7C1nnB9FZNBwnPTaY5
+ 15pgNIEEfYxPtVFWGOTWBN1U26DfrSgMw3DHz0iJI3QuxGRiRxOCOMFPDDMn4kvf50Ch9n3wf_HC
+ llfB2715pQmtSUw91VXfMii61hUQJeuHJ9hWzL.c_j.F6pHXkbaUp5RNSDK1EKKMQAHshAwHkJ8Z
+ J3y..pQeN01XwbEOz8.q1oqVAaWmdqaznaeQ77rjqdZWSaLFI5tKo4nDURVKnYIN1Gwb7nbqOoPH
+ KToVfH4OqtSrcl.vJEQolZXkj8uj0HrEAsLWuRbrHE1dh4k.aa3SyaTjq5kAMyGpgjPr1RD6mDXY
+ jFlQsWmWKuzF3NLDXDoWK9aObODRS.Y0bZIH1DXQ9i0bFxjRJtwy2WyGVIZ9L9oAGIquc_IIVQW8
+ MGnsbE8HjJxocyejkea7IVefKcN6HW2K48wx_xlv1ItY47raKovZoA5xacRXjeS1Fqo_T4a4Gei.
+ 42MKZCkNYklQ.iOzLbwTU3OtOzj5_2YGWcnCVuaeLJiYotTURM4NSF4PcJgbhd9HmWe7GrjPL_LE
+ quJDeSBQJAMNjiQoHbAHylJf3LZCfl_MvkHBRU8lm8a1XvZh53u_SqFTROUY_..fz_jgTFs7_C.L
+ vs_4WYAGItiGgKY81Pxl2hvg7wOaZS4P9vA7A1B6uftB3o1KyEg9gHlJuF7I1Cgqy1KnynbvKuW0
+ bWY7wzoEAtuybikDupyu9rOMwl.z5VenOmdubgzuW9pfvpHUmlf.MdOZGVX7bT3dK6u6yGnpxMul
+ bth1liOR29m15MOtx1czniOHM0EwIwMrE5Apl6_Q39iv7zKTpc8lQRlQYKxIiKn2.pt2OHXFwYTK
+ pwERqHse5cLzvikvLa7.00ZeW6eMdHIk55lr3qWf9U7.uriPVxc2w4rZppXcbzz364n4ttdBmqOX
+ YINtxZxT6fco9TshVUJBC10vWsBZNERqfL8T_B1REuadxpM7nTKO.x.yqfIIz5C43LcPkfQXTzSV
+ q7UA7enAdbUdek6BHoW4wmGTPHYi.ZxJB2MUtAHIB_VeKG_8wEcCEkXE7XgjfoDHNNsaF7gBE4BA
+ sqpCCakrAgac3UJ4LDbRGw5MECc5OKFZBXXHljRoxlnd8fNUqbA7zAOn4w7KEIEOTGZZ_94DXBdq
+ jEaEUFXgtp_TIUxB2ep9Pfx283LF0OYeemjm_Rv0PJTxFgu1lT3KMgLxui7AEOwdn4XOBulouZTI
+ P3Q--
+X-Sonic-MF: <casey@schaufler-ca.com>
+Received: from sonic.gate.mail.ne1.yahoo.com by sonic304.consmr.mail.ne1.yahoo.com with HTTP; Fri, 16 Sep 2022 17:05:14 +0000
+Received: by hermes--production-ne1-544744cc75-zkxbp (Yahoo Inc. Hermes SMTP Server) with ESMTPA ID 3068443257e4cf01d6b889e5ae3c073f;
+          Fri, 16 Sep 2022 17:05:11 +0000 (UTC)
+Message-ID: <49617fa0-998d-1e6d-7d86-212139dff51b@schaufler-ca.com>
+Date: Fri, 16 Sep 2022 10:05:09 -0700
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.12.0
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101
+ Thunderbird/91.13.0
 Subject: Re: [PATCH v14 00/26] ima: Namespace IMA with audit support in IMA-ns
 Content-Language: en-US
-From: Stefan Berger <stefanb@linux.ibm.com>
-To: Casey Schaufler <casey@schaufler-ca.com>, linux-integrity@vger.kernel.org
+To: Stefan Berger <stefanb@linux.ibm.com>, linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, brauner@kernel.org,
-        containers@lists.linux.dev, dmitry.kasatkin@gmail.com,
-        ebiederm@xmission.com, krzysztof.struczynski@huawei.com,
-        roberto.sassu@huawei.com, mpeters@redhat.com, lhinds@redhat.com,
-        lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
-        jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
-        rgb@redhat.com, linux-security-module@vger.kernel.org,
-        jmorris@namei.org, jpenumak@redhat.com
+ containers@lists.linux.dev, dmitry.kasatkin@gmail.com,
+ ebiederm@xmission.com, krzysztof.struczynski@huawei.com,
+ roberto.sassu@huawei.com, mpeters@redhat.com, lhinds@redhat.com,
+ lsturman@redhat.com, puiterwi@redhat.com, jejb@linux.ibm.com,
+ jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
+ rgb@redhat.com, linux-security-module@vger.kernel.org, jmorris@namei.org,
+ jpenumak@redhat.com, casey@schaufler-ca.com
 References: <20220915193221.1728029-1-stefanb@linux.ibm.com>
  <7234a3e5-8b3c-3ac4-2e06-c6cffa46c10e@schaufler-ca.com>
  <556b21f9-56ae-7ff6-c38a-9ca856438a66@linux.ibm.com>
+From: Casey Schaufler <casey@schaufler-ca.com>
 In-Reply-To: <556b21f9-56ae-7ff6-c38a-9ca856438a66@linux.ibm.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
-X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: BCRHHPiWVSAsGiphRpdZELpNL8gZVsM6
-X-Proofpoint-ORIG-GUID: 8QHSi_Ibh99Wqk0nOXJbQ6wp7uCU0-T1
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.205,Aquarius:18.0.895,Hydra:6.0.528,FMLib:17.11.122.1
- definitions=2022-09-16_08,2022-09-16_01,2022-06-22_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 mlxscore=0 malwarescore=0
- adultscore=0 clxscore=1015 suspectscore=0 bulkscore=0 phishscore=0
- spamscore=0 impostorscore=0 mlxlogscore=999 priorityscore=1501
- lowpriorityscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2209130000 definitions=main-2209160092
+X-Mailer: WebService/1.1.20663 mail.backend.jedi.jws.acl:role.jedi.acl.token.atz.jws.hermes.yahoo
 
-
-
-On 9/16/22 06:54, Stefan Berger wrote:
-> 
-> 
+On 9/16/2022 3:54 AM, Stefan Berger wrote:
+>
+>
 > On 9/15/22 20:56, Casey Schaufler wrote:
 >> On 9/15/2022 12:31 PM, Stefan Berger wrote:
 >>> The goal of this series of patches is to start with the namespacing of
@@ -104,12 +87,13 @@ On 9/16/22 06:54, Stefan Berger wrote:
 >>> is that the user namespace can provide the keys infrastructure that IMA
 >>> appraisal support will need later on.
 >>>
->>> We chose the goal of supporting auditing within an IMA namespace 
+>>> We chose the goal of supporting auditing within an IMA namespace
 >>> since it
->>> requires the least changes to IMA. Following this series, auditing 
+>>> requires the least changes to IMA. Following this series, auditing
 >>> within
 >>> an IMA namespace can be activated by a root running the following lines
->>> that rely on a statically linked busybox to be installed on the host for
+>>> that rely on a statically linked busybox to be installed on the host
+>>> for
 >>> execution within the minimal container environment:
 >>>
 >>> As root (since audit rules may now only be set by root):
@@ -120,43 +104,11 @@ On 9/16/22 06:54, Stefan Berger wrote:
 >> of the patch set to know this.
 >>
 > CAP_AUDIT_WRITE?
-> 
 
-Currently the capabilities that are required are CAP_SYS_ADMIN, which I 
-could change to CAP_AUDIT_WRITE. This would result in the following 
-change to 26/26:
-
-  diff --git a/security/integrity/ima/ima_policy.c 
-b/security/integrity/ima/ima_policy.c
-index 760e79bb5a34..40cd19d38f23 100644
---- a/security/integrity/ima/ima_policy.c
-+++ b/security/integrity/ima/ima_policy.c
-@@ -1396,15 +1396,15 @@ static unsigned int 
-ima_parse_appraise_algos(char *arg)
-  }
-
-  /*
-- * Either host root with CAP_SYS_ADMIN in current user namespace or
-- * root with CAP_SYS_ADMIN on the host entering a namespace may set
-+ * Either host root with CAP_AUDIT_WRITE in current user namespace or
-+ * root with CAP_AUDIT_WRITE on the host entering a namespace may set
-   * audit rules inside a namespace.
-   */
-  static bool may_set_audit_rule_in_ns(kuid_t uid, struct user_namespace 
-*user_ns)
-  {
-         return (uid_eq(uid, GLOBAL_ROOT_UID) &&
--               ns_capable(user_ns, CAP_SYS_ADMIN))
--               || capable(CAP_SYS_ADMIN);
-+               ns_capable(user_ns, CAP_AUDIT_WRITE))
-+               || capable(CAP_AUDIT_WRITE);
-  }
-  static int ima_parse_rule(struct user_namespace *user_ns,
-                           char *rule, struct ima_rule_entry *entry)
+Not everyone is going to know that. And, is it the only capability
+required to make "things work"? If you call it out in the take message
+people are going to have a better idea about the relationships between
+IMA, audit and capabilities. That's pretty important for unprivileged
+containers.
 
 
-What this check is to prevent is that non-root users spawn a user 
-namespace and set IMA-audit rules which enables them to flood the audit 
-log. From what I see non-root users have the full capability set in a 
-user namespace they spawn. So it has to be filtered to root maybe with 
-CAP_SYS_WRITE instead of CAP_SYS_ADMIN.
