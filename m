@@ -1,53 +1,53 @@
 Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 482A6360
-	for <containers@lists.linux.dev>; Fri, 16 Sep 2022 10:54:19 +0000 (UTC)
-Received: from pps.filterd (m0098399.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 28GAKN8U026781;
-	Fri, 16 Sep 2022 10:54:05 GMT
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 36C0E2C9D
+	for <containers@lists.linux.dev>; Fri, 16 Sep 2022 13:21:18 +0000 (UTC)
+Received: from pps.filterd (m0187473.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 28GCux5t022063;
+	Fri, 16 Sep 2022 13:20:59 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
- mime-version : subject : to : cc : references : from : in-reply-to :
+ mime-version : subject : from : to : cc : references : in-reply-to :
  content-type : content-transfer-encoding; s=pp1;
- bh=mg0UTcI5E/v0w9/TCr34MIXg52j4DcHINPw+UJ0oefo=;
- b=BN4Ejap20mhIUqHhvClsnbcYTvX/oKfAINCxX4uMXdcXtKB0UJ3Fp7JAklPOkfivRvwA
- 92/bfLGAeZkiLw44fnQbcwAjewXdvp60CgSyE4zTn9kFjMVLFXXe3h+69wxUE1OJ4IZa
- TJ1aF9cJj319aoWSNmPpUjCBKWECePPBZtUPh+ilZVuGMlm1hOx1AzaNm5SAS25xkX8K
- fIeVNQPi5AqMpn+toe7HpakeXmnApEaUSUi0uTWf0dWeaHPVo3Ockw4VVIyPsBhd0ieF
- 9kfXfMBGqC+2GnwmORHTJYEJ3HxoJHzWj4kSXX+JnufHfXIikcXZxgbvp2wa4UrTsCDk Qg== 
+ bh=Srgf2qKYxVi9JvK1f8yknBSY0qAUpFinRzk4DDhX3Kk=;
+ b=NR+LRvggLk+hm1zBwza0NvT1o4w5wqGnCEr01CKuVkPTqkReHPPxwc0zK9XWChTLcvlZ
+ GxmrVpDCErUZH9ghIyqj/9qVPB4hg0Gf1DNIN70N3a6k4NEzJpwj4Dg6RCOttiiV3XkT
+ PQ6B74OsKQ5dbZ2thEl5yum7WSzQmBoPU3PglXwo/rULuTNSjTTXYveSf7pjQEBfsfI+
+ /xTTU5jmn3QmhEl77gSUMhr/8Sl7SVC7Jpkh081bvVRmyWZYfGf6Er/14pe+3XII/78s
+ Yttg87Z693/tf8eYBWC3V6MiuCkBdPh752cZXrHKDofhEBfyipvtlQwANcctx4FIwEBm dQ== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3jmq9xgyjy-1
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3jmsckhekj-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 16 Sep 2022 10:54:05 +0000
-Received: from m0098399.ppops.net (m0098399.ppops.net [127.0.0.1])
-	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 28GAn5Mo026431;
-	Fri, 16 Sep 2022 10:54:04 GMT
-Received: from ppma01dal.us.ibm.com (83.d6.3fa9.ip4.static.sl-reverse.com [169.63.214.131])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3jmq9xgyj4-1
+	Fri, 16 Sep 2022 13:20:58 +0000
+Received: from m0187473.ppops.net (m0187473.ppops.net [127.0.0.1])
+	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 28GCvcUX025095;
+	Fri, 16 Sep 2022 13:20:58 GMT
+Received: from ppma03dal.us.ibm.com (b.bd.3ea9.ip4.static.sl-reverse.com [169.62.189.11])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3jmsckheju-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 16 Sep 2022 10:54:04 +0000
-Received: from pps.filterd (ppma01dal.us.ibm.com [127.0.0.1])
-	by ppma01dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 28GAqES5029355;
-	Fri, 16 Sep 2022 10:54:03 GMT
-Received: from b01cxnp23034.gho.pok.ibm.com (b01cxnp23034.gho.pok.ibm.com [9.57.198.29])
-	by ppma01dal.us.ibm.com with ESMTP id 3jm91qnewh-1
+	Fri, 16 Sep 2022 13:20:58 +0000
+Received: from pps.filterd (ppma03dal.us.ibm.com [127.0.0.1])
+	by ppma03dal.us.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 28GDKtT0017033;
+	Fri, 16 Sep 2022 13:20:56 GMT
+Received: from b01cxnp22035.gho.pok.ibm.com (b01cxnp22035.gho.pok.ibm.com [9.57.198.25])
+	by ppma03dal.us.ibm.com with ESMTP id 3jm918x9sy-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 16 Sep 2022 10:54:03 +0000
-Received: from b01ledav006.gho.pok.ibm.com (b01ledav006.gho.pok.ibm.com [9.57.199.111])
-	by b01cxnp23034.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 28GAs15q2753054
+	Fri, 16 Sep 2022 13:20:56 +0000
+Received: from b01ledav003.gho.pok.ibm.com (b01ledav003.gho.pok.ibm.com [9.57.199.108])
+	by b01cxnp22035.gho.pok.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 28GDKtI94457110
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Fri, 16 Sep 2022 10:54:01 GMT
-Received: from b01ledav006.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id D5D3FAC05E;
-	Fri, 16 Sep 2022 10:54:01 +0000 (GMT)
-Received: from b01ledav006.gho.pok.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 59ABEAC059;
-	Fri, 16 Sep 2022 10:54:01 +0000 (GMT)
+	Fri, 16 Sep 2022 13:20:55 GMT
+Received: from b01ledav003.gho.pok.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 92BF7B2065;
+	Fri, 16 Sep 2022 13:20:55 +0000 (GMT)
+Received: from b01ledav003.gho.pok.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 73192B206A;
+	Fri, 16 Sep 2022 13:20:55 +0000 (GMT)
 Received: from [9.47.158.152] (unknown [9.47.158.152])
-	by b01ledav006.gho.pok.ibm.com (Postfix) with ESMTP;
-	Fri, 16 Sep 2022 10:54:01 +0000 (GMT)
-Message-ID: <556b21f9-56ae-7ff6-c38a-9ca856438a66@linux.ibm.com>
-Date: Fri, 16 Sep 2022 06:54:00 -0400
+	by b01ledav003.gho.pok.ibm.com (Postfix) with ESMTP;
+	Fri, 16 Sep 2022 13:20:55 +0000 (GMT)
+Message-ID: <7f6a66e8-3b55-c8bb-e745-9251810283ab@linux.ibm.com>
+Date: Fri, 16 Sep 2022 09:20:55 -0400
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
@@ -58,6 +58,7 @@ User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
  Thunderbird/91.12.0
 Subject: Re: [PATCH v14 00/26] ima: Namespace IMA with audit support in IMA-ns
 Content-Language: en-US
+From: Stefan Berger <stefanb@linux.ibm.com>
 To: Casey Schaufler <casey@schaufler-ca.com>, linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, brauner@kernel.org,
         containers@lists.linux.dev, dmitry.kasatkin@gmail.com,
@@ -69,48 +70,93 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, brauner@kernel.org,
         jmorris@namei.org, jpenumak@redhat.com
 References: <20220915193221.1728029-1-stefanb@linux.ibm.com>
  <7234a3e5-8b3c-3ac4-2e06-c6cffa46c10e@schaufler-ca.com>
-From: Stefan Berger <stefanb@linux.ibm.com>
-In-Reply-To: <7234a3e5-8b3c-3ac4-2e06-c6cffa46c10e@schaufler-ca.com>
+ <556b21f9-56ae-7ff6-c38a-9ca856438a66@linux.ibm.com>
+In-Reply-To: <556b21f9-56ae-7ff6-c38a-9ca856438a66@linux.ibm.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: psa_H7AZO5CVadP95nY4_CFDSnbWGj6d
-X-Proofpoint-GUID: hSPHw-RTBrN3LpZcTZFA6UaCbsVLnhsY
+X-Proofpoint-GUID: BCRHHPiWVSAsGiphRpdZELpNL8gZVsM6
+X-Proofpoint-ORIG-GUID: 8QHSi_Ibh99Wqk0nOXJbQ6wp7uCU0-T1
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.895,Hydra:6.0.528,FMLib:17.11.122.1
- definitions=2022-09-16_05,2022-09-16_01,2022-06-22_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 priorityscore=1501
- impostorscore=0 bulkscore=0 phishscore=0 suspectscore=0 malwarescore=0
- adultscore=0 mlxscore=0 lowpriorityscore=0 clxscore=1011 mlxlogscore=999
- spamscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2209130000 definitions=main-2209160074
+ definitions=2022-09-16_08,2022-09-16_01,2022-06-22_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 mlxscore=0 malwarescore=0
+ adultscore=0 clxscore=1015 suspectscore=0 bulkscore=0 phishscore=0
+ spamscore=0 impostorscore=0 mlxlogscore=999 priorityscore=1501
+ lowpriorityscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2209130000 definitions=main-2209160092
 
 
 
-On 9/15/22 20:56, Casey Schaufler wrote:
-> On 9/15/2022 12:31 PM, Stefan Berger wrote:
->> The goal of this series of patches is to start with the namespacing of
->> IMA and support auditing within an IMA namespace (IMA-ns) as the first
->> step.
->>
->> In this series the IMA namespace is piggybacking on the user namespace
->> and therefore an IMA namespace is created when a user namespace is
->> created, although this is done late when SecurityFS is mounted inside
->> a user namespace. The advantage of piggybacking on the user namespace
->> is that the user namespace can provide the keys infrastructure that IMA
->> appraisal support will need later on.
->>
->> We chose the goal of supporting auditing within an IMA namespace since it
->> requires the least changes to IMA. Following this series, auditing within
->> an IMA namespace can be activated by a root running the following lines
->> that rely on a statically linked busybox to be installed on the host for
->> execution within the minimal container environment:
->>
->> As root (since audit rules may now only be set by root):
+On 9/16/22 06:54, Stefan Berger wrote:
 > 
-> How about calling out the required capabilities? You don't need
-> to be root, you need a specific set of capabilities. It would be
-> very useful for the purposes of understanding the security value
-> of the patch set to know this.
 > 
-CAP_AUDIT_WRITE?
+> On 9/15/22 20:56, Casey Schaufler wrote:
+>> On 9/15/2022 12:31 PM, Stefan Berger wrote:
+>>> The goal of this series of patches is to start with the namespacing of
+>>> IMA and support auditing within an IMA namespace (IMA-ns) as the first
+>>> step.
+>>>
+>>> In this series the IMA namespace is piggybacking on the user namespace
+>>> and therefore an IMA namespace is created when a user namespace is
+>>> created, although this is done late when SecurityFS is mounted inside
+>>> a user namespace. The advantage of piggybacking on the user namespace
+>>> is that the user namespace can provide the keys infrastructure that IMA
+>>> appraisal support will need later on.
+>>>
+>>> We chose the goal of supporting auditing within an IMA namespace 
+>>> since it
+>>> requires the least changes to IMA. Following this series, auditing 
+>>> within
+>>> an IMA namespace can be activated by a root running the following lines
+>>> that rely on a statically linked busybox to be installed on the host for
+>>> execution within the minimal container environment:
+>>>
+>>> As root (since audit rules may now only be set by root):
+>>
+>> How about calling out the required capabilities? You don't need
+>> to be root, you need a specific set of capabilities. It would be
+>> very useful for the purposes of understanding the security value
+>> of the patch set to know this.
+>>
+> CAP_AUDIT_WRITE?
+> 
+
+Currently the capabilities that are required are CAP_SYS_ADMIN, which I 
+could change to CAP_AUDIT_WRITE. This would result in the following 
+change to 26/26:
+
+  diff --git a/security/integrity/ima/ima_policy.c 
+b/security/integrity/ima/ima_policy.c
+index 760e79bb5a34..40cd19d38f23 100644
+--- a/security/integrity/ima/ima_policy.c
++++ b/security/integrity/ima/ima_policy.c
+@@ -1396,15 +1396,15 @@ static unsigned int 
+ima_parse_appraise_algos(char *arg)
+  }
+
+  /*
+- * Either host root with CAP_SYS_ADMIN in current user namespace or
+- * root with CAP_SYS_ADMIN on the host entering a namespace may set
++ * Either host root with CAP_AUDIT_WRITE in current user namespace or
++ * root with CAP_AUDIT_WRITE on the host entering a namespace may set
+   * audit rules inside a namespace.
+   */
+  static bool may_set_audit_rule_in_ns(kuid_t uid, struct user_namespace 
+*user_ns)
+  {
+         return (uid_eq(uid, GLOBAL_ROOT_UID) &&
+-               ns_capable(user_ns, CAP_SYS_ADMIN))
+-               || capable(CAP_SYS_ADMIN);
++               ns_capable(user_ns, CAP_AUDIT_WRITE))
++               || capable(CAP_AUDIT_WRITE);
+  }
+  static int ima_parse_rule(struct user_namespace *user_ns,
+                           char *rule, struct ima_rule_entry *entry)
+
+
+What this check is to prevent is that non-root users spawn a user 
+namespace and set IMA-audit rules which enables them to flood the audit 
+log. From what I see non-root users have the full capability set in a 
+user namespace they spawn. So it has to be filtered to root maybe with 
+CAP_SYS_WRITE instead of CAP_SYS_ADMIN.
