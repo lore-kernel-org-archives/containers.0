@@ -1,124 +1,116 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from us-smtp-delivery-44.mimecast.com (us-smtp-delivery-44.mimecast.com [207.211.30.44])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7831A7462
-	for <containers@lists.linux.dev>; Tue, 20 Sep 2022 16:15:37 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7237CC433C1;
-	Tue, 20 Sep 2022 16:15:35 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1663690537;
-	bh=HGH0DEX/B5xGu+4qt8RGzR+GvT8ac7GQqwwjXmz+Tys=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=UL1R0B52rEay+3d57IwjGXD4wLHejYn7mSTiEcAq0XnT8XRPmfckViCJa0Xsou/73
-	 8suRQch4R9cf+gig9UcvU+60ilqlE1QKgfyn/elI8c+g6AMVl0qlaljrDb4LljPbAO
-	 9W16CgWW8yK1yobx7KZK3H2HSkY3c+4mOcQoxWM39NVmWNTcUjvwiqDm+7TXdkxzsP
-	 QnUGVR2D/OwCN4nBtUBUyXvYBm6x36yZTHSTNYdmaFAiZZAiL5qhaaL2/Rom8wQGlk
-	 dRt2NtbKF+KR2KQP6hGsUvGZQcElFzuglAtZy+jLyuX8KKbgOwkrqHW5F48wwqR2rq
-	 TKROkrGUYDJEw==
-Date: Tue, 20 Sep 2022 18:15:31 +0200
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F0064748E
+	for <containers@lists.linux.dev>; Tue, 20 Sep 2022 18:09:20 +0000 (UTC)
+Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
+ [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ us-mta-315-DWruCP5jNLe8nJwirNOEOA-1; Tue, 20 Sep 2022 14:09:16 -0400
+X-MC-Unique: DWruCP5jNLe8nJwirNOEOA-1
+Received: from smtp.corp.redhat.com (int-mx06.intmail.prod.int.rdu2.redhat.com [10.11.54.6])
+	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id A8DD18001B8;
+	Tue, 20 Sep 2022 18:09:14 +0000 (UTC)
+Received: from comp-core-i7-2640m-0182e6.redhat.com (unknown [10.40.208.17])
+	by smtp.corp.redhat.com (Postfix) with ESMTP id 384462166B26;
+	Tue, 20 Sep 2022 18:09:13 +0000 (UTC)
 From: Alexey Gladkov <legion@kernel.org>
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: LKML <linux-kernel@vger.kernel.org>,
-	Linux Containers <containers@lists.linux.dev>,
-	Andrew Morton <akpm@linux-foundation.org>,
+To: LKML <linux-kernel@vger.kernel.org>,
+	Linux Containers <containers@lists.linux.dev>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
 	Christian Brauner <brauner@kernel.org>,
+	"Eric W . Biederman" <ebiederm@xmission.com>,
 	Kees Cook <keescook@chromium.org>,
 	Manfred Spraul <manfred@colorfullife.com>
-Subject: Re: [PATCH v1 1/3] sysctl: Allow change system v ipc sysctls inside
- ipc namespace
-Message-ID: <YynnI2ySUkpu9j6S@example.org>
-References: <87wnc1i2wo.fsf@email.froward.int.ebiederm.org>
- <cover.1660664258.git.legion@kernel.org>
- <63e9e1ff5f988108ceb663a2fbc23a137b0b4311.1660664258.git.legion@kernel.org>
- <87mtav2xn4.fsf@email.froward.int.ebiederm.org>
+Subject: [PATCH v2 2/3] sysctl: Allow to change limits for posix messages queues
+Date: Tue, 20 Sep 2022 20:08:21 +0200
+Message-Id: <207698b81c7e55b3d00d2476b081a8fee5d369f6.1663696560.git.legion@kernel.org>
+In-Reply-To: <cover.1663696560.git.legion@kernel.org>
+References: <YynnI2ySUkpu9j6S@example.org> <cover.1663696560.git.legion@kernel.org>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <87mtav2xn4.fsf@email.froward.int.ebiederm.org>
+Content-Transfer-Encoding: 8bit
+X-Scanned-By: MIMEDefang 3.1 on 10.11.54.6
 
-On Mon, Sep 19, 2022 at 10:26:39AM -0500, Eric W. Biederman wrote:
-> >
-> > diff --git a/ipc/ipc_sysctl.c b/ipc/ipc_sysctl.c
-> > index ef313ecfb53a..87eb1b1e42fa 100644
-> > --- a/ipc/ipc_sysctl.c
-> > +++ b/ipc/ipc_sysctl.c
-> > @@ -192,23 +192,47 @@ static int set_is_seen(struct ctl_table_set *set)
-> >  
-> >  static int ipc_permissions(struct ctl_table_header *head, struct ctl_table *table)
-> >  {
-> > -	int mode = table->mode;
-> > -
-> > -#ifdef CONFIG_CHECKPOINT_RESTORE
-> >  	struct ipc_namespace *ns = current->nsproxy->ipc_ns;
->         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-> Historically that was the best we could do.  But now that we have
-> an ipc_set member in struct ipc_namespace you can use container_of
-> to compute this value.
-> 
-> For a permission check that is much safer.
+All parameters of posix messages queues (queues_max/msg_max/msgsize_max)
+end up being limited by RLIMIT_MSGQUEUE. The code in mqueue_get_inode is
+where that limiting happens.
 
-Yes. It make sense.
+The RLIMIT_MSGQUEUE is bound to the user namespace and is counted
+hierarchically.
 
-> > +#ifdef CONFIG_CHECKPOINT_RESTORE
-> >  	if (((table->data == &ns->ids[IPC_SEM_IDS].next_id) ||
-> >  	     (table->data == &ns->ids[IPC_MSG_IDS].next_id) ||
-> >  	     (table->data == &ns->ids[IPC_SHM_IDS].next_id)) &&
-> >  	    checkpoint_restore_ns_capable(ns->user_ns))
-> > -		mode = 0666;
-> > +		return 0666;
-> >  #endif
-> > -	return mode;
-> > +	if (ns->user_ns != &init_user_ns) {
-> > +		kuid_t ns_root_uid = make_kuid(ns->user_ns, 0);
-> > +		kgid_t ns_root_gid = make_kgid(ns->user_ns, 0);
-> > +
-> > +		if (uid_valid(ns_root_uid) && uid_eq(current_euid(), ns_root_uid))
-> > +			return table->mode >> 6;
-> > +
-> > +		if (gid_valid(ns_root_gid) && in_egroup_p(ns_root_gid))
-> > +			return table->mode >> 3;
-> 
-> >From 10,000 fee this is fine.  But this has to interact with
-> test_perm in proc_systl.c.  So can you please do what
-> net_ctl_permissions does and replicate the chosen mode all through
-> the mode line.
-> 
-> Perhaps something like:
-> 
-> 	kuid_t ns_root_uid;
-> 	kgid_t ns_root_gid
-> 
-> 	ipc_set_ownership(head, table, &ns_root_uid, &ns_root_gid);
-> 
-> #ifdef CONFIG_CHECKPOINT_RESTORE
-> 	if (...)
->         	mode = 0666;
->         else
-> #endif        
->         if (uid_eq(current_euid(), ns_root_uid))
-> 		mode >>= 6;
->         
->         else if (uid_eq(in_group_p(ns_root_gid))
-> 		mode >>= 3;
-> 
-> 	mode &= 7;
->         mode = (mode << 6) | (mode << 3) | mode;
->         return mode;
->         
-> 
-> If we always pass through the same logic there is the advantage that we
-> will always test it, and there is less room for bugs to slip through.
-> 
-> I added a couple of unnecessary simplifications in there that I just
-> saw as I was writing my example code.
+We can allow root in the user namespace to modify the posix messages
+queues parameters.
 
-Thanks! It looks better. I'll fix it and send a new version.
+Signed-off-by: Alexey Gladkov <legion@kernel.org>
+---
+ ipc/mq_sysctl.c | 38 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
 
+diff --git a/ipc/mq_sysctl.c b/ipc/mq_sysctl.c
+index fbf6a8b93a26..5e573c657775 100644
+--- a/ipc/mq_sysctl.c
++++ b/ipc/mq_sysctl.c
+@@ -12,6 +12,7 @@
+ #include <linux/stat.h>
+ #include <linux/capability.h>
+ #include <linux/slab.h>
++#include <linux/cred.h>
+ 
+ static int msg_max_limit_min = MIN_MSGMAX;
+ static int msg_max_limit_max = HARD_MSGMAX;
+@@ -76,8 +77,45 @@ static int set_is_seen(struct ctl_table_set *set)
+ 	return &current->nsproxy->ipc_ns->mq_set == set;
+ }
+ 
++static void mq_set_ownership(struct ctl_table_header *head,
++			     struct ctl_table *table,
++			     kuid_t *uid, kgid_t *gid)
++{
++	struct ipc_namespace *ns =
++		container_of(head->set, struct ipc_namespace, mq_set);
++
++	kuid_t ns_root_uid = make_kuid(ns->user_ns, 0);
++	kgid_t ns_root_gid = make_kgid(ns->user_ns, 0);
++
++	*uid = uid_valid(ns_root_uid) ? ns_root_uid : GLOBAL_ROOT_UID;
++	*gid = gid_valid(ns_root_gid) ? ns_root_gid : GLOBAL_ROOT_GID;
++}
++
++static int mq_permissions(struct ctl_table_header *head, struct ctl_table *table)
++{
++	struct ipc_namespace *ns =
++		container_of(head->set, struct ipc_namespace, mq_set);
++	int mode = table->mode;
++	kuid_t ns_root_uid;
++	kgid_t ns_root_gid;
++
++	mq_set_ownership(head, table, &ns_root_uid, &ns_root_gid);
++
++	if (uid_eq(current_euid(), ns_root_uid))
++		mode >>= 6;
++
++	if (in_egroup_p(ns_root_gid))
++		mode >>= 3;
++
++	mode &= 7;
++
++	return (mode << 6) | (mode << 3) | mode;
++}
++
+ static struct ctl_table_root set_root = {
+ 	.lookup = set_lookup,
++	.permissions = mq_permissions,
++	.set_ownership = mq_set_ownership,
+ };
+ 
+ bool setup_mq_sysctls(struct ipc_namespace *ns)
 -- 
-Rgrds, legion
+2.33.4
 
