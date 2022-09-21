@@ -1,21 +1,21 @@
-Received: from us-smtp-delivery-44.mimecast.com (us-smtp-delivery-44.mimecast.com [207.211.30.44])
+Received: from us-smtp-delivery-44.mimecast.com (us-smtp-delivery-44.mimecast.com [205.139.111.44])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D9E941FCE
-	for <containers@lists.linux.dev>; Wed, 21 Sep 2022 10:42:10 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5E3E17E34
+	for <containers@lists.linux.dev>; Wed, 21 Sep 2022 10:42:11 +0000 (UTC)
 Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
  [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
  (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-631-DGMXSy5cObOiTx5N5XIHaA-1; Wed, 21 Sep 2022 06:42:06 -0400
-X-MC-Unique: DGMXSy5cObOiTx5N5XIHaA-1
+ us-mta-596-fVaee8P7MsmZEkuHPkr8Dw-1; Wed, 21 Sep 2022 06:42:04 -0400
+X-MC-Unique: fVaee8P7MsmZEkuHPkr8Dw-1
 Received: from smtp.corp.redhat.com (int-mx05.intmail.prod.int.rdu2.redhat.com [10.11.54.5])
 	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
 	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id ECC05801231;
-	Wed, 21 Sep 2022 10:42:05 +0000 (UTC)
-Received: from comp-core-i7-2640m-0182e6.redhat.com (unknown [10.40.208.17])
-	by smtp.corp.redhat.com (Postfix) with ESMTP id 971971759F;
+	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 4AE83811E81;
 	Wed, 21 Sep 2022 10:42:04 +0000 (UTC)
+Received: from comp-core-i7-2640m-0182e6.redhat.com (unknown [10.40.208.17])
+	by smtp.corp.redhat.com (Postfix) with ESMTP id DD59C17582;
+	Wed, 21 Sep 2022 10:42:02 +0000 (UTC)
 From: Alexey Gladkov <legion@kernel.org>
 To: LKML <linux-kernel@vger.kernel.org>,
 	Linux Containers <containers@lists.linux.dev>
@@ -24,9 +24,9 @@ Cc: Andrew Morton <akpm@linux-foundation.org>,
 	"Eric W . Biederman" <ebiederm@xmission.com>,
 	Kees Cook <keescook@chromium.org>,
 	Manfred Spraul <manfred@colorfullife.com>
-Subject: [PATCH v3 2/3] sysctl: Allow to change limits for posix messages queues
-Date: Wed, 21 Sep 2022 12:41:48 +0200
-Message-Id: <7eb21211c8622e91d226e63416b1b93c079f60ee.1663756794.git.legion@kernel.org>
+Subject: [PATCH v3 1/3] sysctl: Allow change system v ipc sysctls inside ipc namespace
+Date: Wed, 21 Sep 2022 12:41:47 +0200
+Message-Id: <e2d84d3ec0172cfff759e6065da84ce0cc2736f8.1663756794.git.legion@kernel.org>
 In-Reply-To: <cover.1663756794.git.legion@kernel.org>
 References: <202209211737.0Bu0F40t-lkp@intel.com> <cover.1663756794.git.legion@kernel.org>
 Precedence: bulk
@@ -38,43 +38,51 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Scanned-By: MIMEDefang 3.1 on 10.11.54.5
 
-All parameters of posix messages queues (queues_max/msg_max/msgsize_max)
-end up being limited by RLIMIT_MSGQUEUE. The code in mqueue_get_inode is
-where that limiting happens.
+Rootless containers are not allowed to modify kernel IPC parameters.
 
-The RLIMIT_MSGQUEUE is bound to the user namespace and is counted
-hierarchically.
+All default limits are set to such high values that in fact there are no
+limits at all. All limits are not inherited and are initialized to
+default values when a new ipc_namespace is created.
 
-We can allow root in the user namespace to modify the posix messages
-queues parameters.
+For new ipc_namespace:
+
+size_t       ipc_ns.shm_ctlmax = SHMMAX; // (ULONG_MAX - (1UL << 24))
+size_t       ipc_ns.shm_ctlall = SHMALL; // (ULONG_MAX - (1UL << 24))
+int          ipc_ns.shm_ctlmni = IPCMNI; // (1 << 15)
+int          ipc_ns.shm_rmid_forced = 0;
+unsigned int ipc_ns.msg_ctlmax = MSGMAX; // 8192
+unsigned int ipc_ns.msg_ctlmni = MSGMNI; // 32000
+unsigned int ipc_ns.msg_ctlmnb = MSGMNB; // 16384
+
+The shm_tot (total amount of shared pages) has also ceased to be
+global, it is located in ipc_namespace and is not inherited from
+anywhere.
+
+In such conditions, it cannot be said that these limits limit anything.
+The real limiter for them is cgroups.
+
+If we allow rootless containers to change these parameters, then it can
+only be reduced.
 
 Signed-off-by: Alexey Gladkov <legion@kernel.org>
 ---
- ipc/mq_sysctl.c | 36 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
+ ipc/ipc_sysctl.c | 36 ++++++++++++++++++++++++++++++++++--
+ 1 file changed, 34 insertions(+), 2 deletions(-)
 
-diff --git a/ipc/mq_sysctl.c b/ipc/mq_sysctl.c
-index fbf6a8b93a26..ff1054fbbacc 100644
---- a/ipc/mq_sysctl.c
-+++ b/ipc/mq_sysctl.c
-@@ -12,6 +12,7 @@
- #include <linux/stat.h>
- #include <linux/capability.h>
- #include <linux/slab.h>
-+#include <linux/cred.h>
- 
- static int msg_max_limit_min = MIN_MSGMAX;
- static int msg_max_limit_max = HARD_MSGMAX;
-@@ -76,8 +77,43 @@ static int set_is_seen(struct ctl_table_set *set)
- 	return &current->nsproxy->ipc_ns->mq_set == set;
+diff --git a/ipc/ipc_sysctl.c b/ipc/ipc_sysctl.c
+index ef313ecfb53a..31282e0a630d 100644
+--- a/ipc/ipc_sysctl.c
++++ b/ipc/ipc_sysctl.c
+@@ -190,25 +190,57 @@ static int set_is_seen(struct ctl_table_set *set)
+ 	return &current->nsproxy->ipc_ns->ipc_set == set;
  }
  
-+static void mq_set_ownership(struct ctl_table_header *head,
-+			     struct ctl_table *table,
-+			     kuid_t *uid, kgid_t *gid)
++static void ipc_set_ownership(struct ctl_table_header *head,
++			      struct ctl_table *table,
++			      kuid_t *uid, kgid_t *gid)
 +{
 +	struct ipc_namespace *ns =
-+		container_of(head->set, struct ipc_namespace, mq_set);
++		container_of(head->set, struct ipc_namespace, ipc_set);
 +
 +	kuid_t ns_root_uid = make_kuid(ns->user_ns, 0);
 +	kgid_t ns_root_gid = make_kgid(ns->user_ns, 0);
@@ -83,32 +91,48 @@ index fbf6a8b93a26..ff1054fbbacc 100644
 +	*gid = gid_valid(ns_root_gid) ? ns_root_gid : GLOBAL_ROOT_GID;
 +}
 +
-+static int mq_permissions(struct ctl_table_header *head, struct ctl_table *table)
-+{
-+	int mode = table->mode;
-+	kuid_t ns_root_uid;
-+	kgid_t ns_root_gid;
+ static int ipc_permissions(struct ctl_table_header *head, struct ctl_table *table)
+ {
+ 	int mode = table->mode;
+ 
+ #ifdef CONFIG_CHECKPOINT_RESTORE
+-	struct ipc_namespace *ns = current->nsproxy->ipc_ns;
++	struct ipc_namespace *ns =
++		container_of(head->set, struct ipc_namespace, ipc_set);
+ 
+ 	if (((table->data == &ns->ids[IPC_SEM_IDS].next_id) ||
+ 	     (table->data == &ns->ids[IPC_MSG_IDS].next_id) ||
+ 	     (table->data == &ns->ids[IPC_SHM_IDS].next_id)) &&
+ 	    checkpoint_restore_ns_capable(ns->user_ns))
+ 		mode = 0666;
++	else
+ #endif
+-	return mode;
++	{
++		kuid_t ns_root_uid;
++		kgid_t ns_root_gid;
 +
-+	mq_set_ownership(head, table, &ns_root_uid, &ns_root_gid);
++		ipc_set_ownership(head, table, &ns_root_uid, &ns_root_gid);
 +
-+	if (uid_eq(current_euid(), ns_root_uid))
-+		mode >>= 6;
++		if (uid_eq(current_euid(), ns_root_uid))
++			mode >>= 6;
 +
-+	if (in_egroup_p(ns_root_gid))
-+		mode >>= 3;
++		else if (in_egroup_p(ns_root_gid))
++			mode >>= 3;
++	}
 +
 +	mode &= 7;
 +
 +	return (mode << 6) | (mode << 3) | mode;
-+}
-+
+ }
+ 
  static struct ctl_table_root set_root = {
  	.lookup = set_lookup,
-+	.permissions = mq_permissions,
-+	.set_ownership = mq_set_ownership,
+ 	.permissions = ipc_permissions,
++	.set_ownership = ipc_set_ownership,
  };
  
- bool setup_mq_sysctls(struct ipc_namespace *ns)
+ bool setup_ipc_sysctls(struct ipc_namespace *ns)
 -- 
 2.33.4
 
