@@ -1,32 +1,34 @@
 Received: from us-smtp-delivery-44.mimecast.com (us-smtp-delivery-44.mimecast.com [205.139.111.44])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5E3E17E34
-	for <containers@lists.linux.dev>; Wed, 21 Sep 2022 10:42:11 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8EA8229CA
+	for <containers@lists.linux.dev>; Wed, 21 Sep 2022 10:42:14 +0000 (UTC)
 Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
  [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
  (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-596-fVaee8P7MsmZEkuHPkr8Dw-1; Wed, 21 Sep 2022 06:42:04 -0400
-X-MC-Unique: fVaee8P7MsmZEkuHPkr8Dw-1
+ us-mta-60-1IQFo52uNZmnFUZIsYK-2Q-1; Wed, 21 Sep 2022 06:42:08 -0400
+X-MC-Unique: 1IQFo52uNZmnFUZIsYK-2Q-1
 Received: from smtp.corp.redhat.com (int-mx05.intmail.prod.int.rdu2.redhat.com [10.11.54.5])
 	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
 	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 4AE83811E81;
-	Wed, 21 Sep 2022 10:42:04 +0000 (UTC)
+	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id E2B4E8630C3;
+	Wed, 21 Sep 2022 10:42:07 +0000 (UTC)
 Received: from comp-core-i7-2640m-0182e6.redhat.com (unknown [10.40.208.17])
-	by smtp.corp.redhat.com (Postfix) with ESMTP id DD59C17582;
-	Wed, 21 Sep 2022 10:42:02 +0000 (UTC)
+	by smtp.corp.redhat.com (Postfix) with ESMTP id 3A4B01759F;
+	Wed, 21 Sep 2022 10:42:06 +0000 (UTC)
 From: Alexey Gladkov <legion@kernel.org>
 To: LKML <linux-kernel@vger.kernel.org>,
-	Linux Containers <containers@lists.linux.dev>
+	Linux Containers <containers@lists.linux.dev>,
+	linux-doc@vger.kernel.org,
+	linux-man@vger.kernel.org
 Cc: Andrew Morton <akpm@linux-foundation.org>,
 	Christian Brauner <brauner@kernel.org>,
 	"Eric W . Biederman" <ebiederm@xmission.com>,
 	Kees Cook <keescook@chromium.org>,
 	Manfred Spraul <manfred@colorfullife.com>
-Subject: [PATCH v3 1/3] sysctl: Allow change system v ipc sysctls inside ipc namespace
-Date: Wed, 21 Sep 2022 12:41:47 +0200
-Message-Id: <e2d84d3ec0172cfff759e6065da84ce0cc2736f8.1663756794.git.legion@kernel.org>
+Subject: [PATCH v3 3/3] docs: Add information about ipc sysctls limitations
+Date: Wed, 21 Sep 2022 12:41:49 +0200
+Message-Id: <ede20ddf7be48b93e8084c3be2e920841ee1a641.1663756794.git.legion@kernel.org>
 In-Reply-To: <cover.1663756794.git.legion@kernel.org>
 References: <202209211737.0Bu0F40t-lkp@intel.com> <cover.1663756794.git.legion@kernel.org>
 Precedence: bulk
@@ -38,101 +40,63 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Scanned-By: MIMEDefang 3.1 on 10.11.54.5
 
-Rootless containers are not allowed to modify kernel IPC parameters.
+After 25b21cb2f6d6 ("[PATCH] IPC namespace core") and 4e9823111bdc
+("[PATCH] IPC namespace - shm") the shared memory page count stopped
+being global and started counting per ipc namespace. The documentation
+and shmget(2) still says that shmall is a global option.
 
-All default limits are set to such high values that in fact there are no
-limits at all. All limits are not inherited and are initialized to
-default values when a new ipc_namespace is created.
+shmget(2):
 
-For new ipc_namespace:
+SHMALL System-wide limit on the total amount of shared memory, measured
+in units of the system page size. On Linux, this limit can be read and
+modified via /proc/sys/kernel/shmall.
 
-size_t       ipc_ns.shm_ctlmax = SHMMAX; // (ULONG_MAX - (1UL << 24))
-size_t       ipc_ns.shm_ctlall = SHMALL; // (ULONG_MAX - (1UL << 24))
-int          ipc_ns.shm_ctlmni = IPCMNI; // (1 << 15)
-int          ipc_ns.shm_rmid_forced = 0;
-unsigned int ipc_ns.msg_ctlmax = MSGMAX; // 8192
-unsigned int ipc_ns.msg_ctlmni = MSGMNI; // 32000
-unsigned int ipc_ns.msg_ctlmnb = MSGMNB; // 16384
-
-The shm_tot (total amount of shared pages) has also ceased to be
-global, it is located in ipc_namespace and is not inherited from
-anywhere.
-
-In such conditions, it cannot be said that these limits limit anything.
-The real limiter for them is cgroups.
-
-If we allow rootless containers to change these parameters, then it can
-only be reduced.
+I think the changes made in 2006 should be documented.
 
 Signed-off-by: Alexey Gladkov <legion@kernel.org>
+Acked-by: "Eric W. Biederman" <ebiederm@xmission.com>
 ---
- ipc/ipc_sysctl.c | 36 ++++++++++++++++++++++++++++++++++--
- 1 file changed, 34 insertions(+), 2 deletions(-)
+ Documentation/admin-guide/sysctl/kernel.rst | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
 
-diff --git a/ipc/ipc_sysctl.c b/ipc/ipc_sysctl.c
-index ef313ecfb53a..31282e0a630d 100644
---- a/ipc/ipc_sysctl.c
-+++ b/ipc/ipc_sysctl.c
-@@ -190,25 +190,57 @@ static int set_is_seen(struct ctl_table_set *set)
- 	return &current->nsproxy->ipc_ns->ipc_set == set;
- }
+diff --git a/Documentation/admin-guide/sysctl/kernel.rst b/Documentation/admin-guide/sysctl/kernel.rst
+index ee6572b1edad..c8b89bd8f004 100644
+--- a/Documentation/admin-guide/sysctl/kernel.rst
++++ b/Documentation/admin-guide/sysctl/kernel.rst
+@@ -541,6 +541,9 @@ default (``MSGMNB``).
+ ``msgmni`` is the maximum number of IPC queues. 32000 by default
+ (``MSGMNI``).
  
-+static void ipc_set_ownership(struct ctl_table_header *head,
-+			      struct ctl_table *table,
-+			      kuid_t *uid, kgid_t *gid)
-+{
-+	struct ipc_namespace *ns =
-+		container_of(head->set, struct ipc_namespace, ipc_set);
-+
-+	kuid_t ns_root_uid = make_kuid(ns->user_ns, 0);
-+	kgid_t ns_root_gid = make_kgid(ns->user_ns, 0);
-+
-+	*uid = uid_valid(ns_root_uid) ? ns_root_uid : GLOBAL_ROOT_UID;
-+	*gid = gid_valid(ns_root_gid) ? ns_root_gid : GLOBAL_ROOT_GID;
-+}
-+
- static int ipc_permissions(struct ctl_table_header *head, struct ctl_table *table)
- {
- 	int mode = table->mode;
++All of these parameters are set per ipc namespace. The maximum number of bytes
++in POSIX message queues is limited by ``RLIMIT_MSGQUEUE``. This limit is
++respected hierarchically in the each user namespace.
  
- #ifdef CONFIG_CHECKPOINT_RESTORE
--	struct ipc_namespace *ns = current->nsproxy->ipc_ns;
-+	struct ipc_namespace *ns =
-+		container_of(head->set, struct ipc_namespace, ipc_set);
+ msg_next_id, sem_next_id, and shm_next_id (System V IPC)
+ ========================================================
+@@ -1181,15 +1184,20 @@ are doing anyway :)
+ shmall
+ ======
  
- 	if (((table->data == &ns->ids[IPC_SEM_IDS].next_id) ||
- 	     (table->data == &ns->ids[IPC_MSG_IDS].next_id) ||
- 	     (table->data == &ns->ids[IPC_SHM_IDS].next_id)) &&
- 	    checkpoint_restore_ns_capable(ns->user_ns))
- 		mode = 0666;
-+	else
- #endif
--	return mode;
-+	{
-+		kuid_t ns_root_uid;
-+		kgid_t ns_root_gid;
-+
-+		ipc_set_ownership(head, table, &ns_root_uid, &ns_root_gid);
-+
-+		if (uid_eq(current_euid(), ns_root_uid))
-+			mode >>= 6;
-+
-+		else if (in_egroup_p(ns_root_gid))
-+			mode >>= 3;
-+	}
-+
-+	mode &= 7;
-+
-+	return (mode << 6) | (mode << 3) | mode;
- }
+-This parameter sets the total amount of shared memory pages that
+-can be used system wide. Hence, ``shmall`` should always be at least
+-``ceil(shmmax/PAGE_SIZE)``.
++This parameter sets the total amount of shared memory pages that can be used
++inside ipc namespace. The shared memory pages counting occurs for each ipc
++namespace separately and is not inherited. Hence, ``shmall`` should always be at
++least ``ceil(shmmax/PAGE_SIZE)``.
  
- static struct ctl_table_root set_root = {
- 	.lookup = set_lookup,
- 	.permissions = ipc_permissions,
-+	.set_ownership = ipc_set_ownership,
- };
+ If you are not sure what the default ``PAGE_SIZE`` is on your Linux
+ system, you can run the following command::
  
- bool setup_ipc_sysctls(struct ipc_namespace *ns)
+ 	# getconf PAGE_SIZE
+ 
++To reduce or disable the ability to allocate shared memory, you must create a
++new ipc namespace, set this parameter to the required value and prohibit the
++creation of a new ipc namespace in the current user namespace or cgroups can
++be used.
+ 
+ shmmax
+ ======
 -- 
 2.33.4
 
