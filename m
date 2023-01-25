@@ -1,71 +1,69 @@
-Received: from us-smtp-delivery-44.mimecast.com (unknown [207.211.30.44])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 758454C7D
-	for <containers@lists.linux.dev>; Wed, 25 Jan 2023 15:31:06 +0000 (UTC)
-Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
- [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-619-LG1apAgMNhCnHMZXWZtq6A-1; Wed, 25 Jan 2023 10:29:34 -0500
-X-MC-Unique: LG1apAgMNhCnHMZXWZtq6A-1
-Received: from smtp.corp.redhat.com (int-mx04.intmail.prod.int.rdu2.redhat.com [10.11.54.4])
-	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 73EAC85C6E2;
-	Wed, 25 Jan 2023 15:29:33 +0000 (UTC)
-Received: from comp-core-i7-2640m-0182e6.redhat.com (ovpn-208-16.brq.redhat.com [10.40.208.16])
-	by smtp.corp.redhat.com (Postfix) with ESMTP id B32BE2026D4B;
-	Wed, 25 Jan 2023 15:29:31 +0000 (UTC)
-From: Alexey Gladkov <legion@kernel.org>
-To: LKML <linux-kernel@vger.kernel.org>,
-	containers@lists.linux.dev,
-	linux-fsdevel@vger.kernel.org
-Cc: Alexey Dobriyan <adobriyan@gmail.com>,
-	Al Viro <viro@zeniv.linux.org.uk>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Christian Brauner <brauner@kernel.org>,
-	Val Cowan <vcowan@redhat.com>
-Subject: [RFC PATCH v1 4/6] proc: Allow to use the allowlist filter in userns
-Date: Wed, 25 Jan 2023 16:28:51 +0100
-Message-Id: <76e8b2d0c0651af6906351b7d43fa2a4d117dc04.1674660533.git.legion@kernel.org>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5FCD833EC
+	for <containers@lists.linux.dev>; Wed, 25 Jan 2023 23:36:30 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A6638C433D2;
+	Wed, 25 Jan 2023 23:36:29 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linux-foundation.org;
+	s=korg; t=1674689790;
+	bh=W6HQ8MA0yrgY78AuioxRnZ92kiAT5egdp56hd0Zn8bA=;
+	h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
+	b=Guj4q8Wlu/BQ0vrXh0xj8fH4hmAV+wXBAgut16Iz4qfH5Xphsfr9+wI7wY0LbxLs0
+	 CS+kZDuXdKZL0IfNs9/WVlNNqB/+kL/EHGW+nfnbfIKFU7fyfPIQlkRl0kIFhI8OMM
+	 ZRYzYl1BLSaJA+JEhljHJwTQEqnERMYgL6Np0Cac=
+Date: Wed, 25 Jan 2023 15:36:28 -0800
+From: Andrew Morton <akpm@linux-foundation.org>
+To: Alexey Gladkov <legion@kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, containers@lists.linux.dev,
+ linux-fsdevel@vger.kernel.org, Alexey Dobriyan <adobriyan@gmail.com>, Al
+ Viro <viro@zeniv.linux.org.uk>, Christian Brauner <brauner@kernel.org>, Val
+ Cowan <vcowan@redhat.com>
+Subject: Re: [RFC PATCH v1 0/6] proc: Add allowlist for procfs files
+Message-Id: <20230125153628.43c12cbe05423fef7d44f0dd@linux-foundation.org>
 In-Reply-To: <cover.1674660533.git.legion@kernel.org>
 References: <cover.1674660533.git.legion@kernel.org>
+X-Mailer: Sylpheed 3.7.0 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Scanned-By: MIMEDefang 3.1 on 10.11.54.4
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 
-Signed-off-by: Alexey Gladkov <legion@kernel.org>
----
- fs/proc/proc_allowlist.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+On Wed, 25 Jan 2023 16:28:47 +0100 Alexey Gladkov <legion@kernel.org> wrote:
 
-diff --git a/fs/proc/proc_allowlist.c b/fs/proc/proc_allowlist.c
-index 2153acb8e467..c605f73622bd 100644
---- a/fs/proc/proc_allowlist.c
-+++ b/fs/proc/proc_allowlist.c
-@@ -100,7 +100,7 @@ static int open_allowlist(struct inode *inode, struct file *file)
- 	struct proc_fs_info *fs_info = proc_sb_info(inode->i_sb);
- 	int ret;
- 
--	if (!capable(CAP_SYS_ADMIN))
-+	if (!ns_capable(current_user_ns(), CAP_SYS_ADMIN))
- 		return -EPERM;
- 
- 	// we need this because shrink_dcache_sb() can't drop our own dentry.
-@@ -199,7 +199,7 @@ static const struct proc_ops proc_allowlist_ops = {
- static int __init proc_allowlist_init(void)
- {
- 	struct proc_dir_entry *pde;
--	pde = proc_create("allowlist", S_IRUSR | S_IWUSR, NULL, &proc_allowlist_ops);
-+	pde = proc_create("allowlist", S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, NULL, &proc_allowlist_ops);
- 	pde_make_permanent(pde);
- 	pde_make_allowlist(pde);
- 	return 0;
--- 
-2.33.6
+> The patch expands subset= option. If the proc is mounted with the
+> subset=allowlist option, the /proc/allowlist file will appear. This file
+> contains the filenames and directories that are allowed for this
+> mountpoint. By default, /proc/allowlist contains only its own name.
+> Changing the allowlist is possible as long as it is present in the
+> allowlist itself.
+> 
+> This allowlist is applied in lookup/readdir so files that will create
+> modules after mounting will not be visible.
+> 
+> Compared to the previous patches [1][2], I switched to a special virtual
+> file from listing filenames in the mount options.
+> 
 
+Changlog doesn't explain why you think Linux needs this feature.  The
+[2/6] changelog hints that containers might be involved.  IOW, please
+fully describe the requirement and use-case(s).
+
+Also, please describe why /proc/allowlist is made available via a mount
+option, rather than being permanently present.
+
+And why add to subset=, instead of a separate mount option.
+
+Does /proc/allowlist work in subdirectories?  Like, permit presence of
+/proc/sys/vm/compact_memory?
+
+I think the whole thing is misnamed, really.  "allowlist" implies
+access permissions.  Some of the test here uses "visibility" and other
+places use "presence", which are better.  "presentlist" and
+/proc/presentlist might be better.  But why not simply /proc/contents?
+
+Please run these patches through checkpatch and consider the result.
