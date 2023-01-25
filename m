@@ -1,21 +1,21 @@
-Received: from us-smtp-delivery-44.mimecast.com (us-smtp-delivery-44.mimecast.com [205.139.111.44])
+Received: from us-smtp-delivery-44.mimecast.com (unknown [207.211.30.44])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 31FED4C7D
-	for <containers@lists.linux.dev>; Wed, 25 Jan 2023 15:31:02 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 758454C7D
+	for <containers@lists.linux.dev>; Wed, 25 Jan 2023 15:31:06 +0000 (UTC)
 Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
  [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
  (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-595-ZpQQD_SlPyav-ZCRRyDwfg-1; Wed, 25 Jan 2023 10:29:27 -0500
-X-MC-Unique: ZpQQD_SlPyav-ZCRRyDwfg-1
+ us-mta-619-LG1apAgMNhCnHMZXWZtq6A-1; Wed, 25 Jan 2023 10:29:34 -0500
+X-MC-Unique: LG1apAgMNhCnHMZXWZtq6A-1
 Received: from smtp.corp.redhat.com (int-mx04.intmail.prod.int.rdu2.redhat.com [10.11.54.4])
 	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
 	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 2B93E811E9C;
-	Wed, 25 Jan 2023 15:29:27 +0000 (UTC)
+	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 73EAC85C6E2;
+	Wed, 25 Jan 2023 15:29:33 +0000 (UTC)
 Received: from comp-core-i7-2640m-0182e6.redhat.com (ovpn-208-16.brq.redhat.com [10.40.208.16])
-	by smtp.corp.redhat.com (Postfix) with ESMTP id 68BFD2026D4B;
-	Wed, 25 Jan 2023 15:29:25 +0000 (UTC)
+	by smtp.corp.redhat.com (Postfix) with ESMTP id B32BE2026D4B;
+	Wed, 25 Jan 2023 15:29:31 +0000 (UTC)
 From: Alexey Gladkov <legion@kernel.org>
 To: LKML <linux-kernel@vger.kernel.org>,
 	containers@lists.linux.dev,
@@ -25,9 +25,9 @@ Cc: Alexey Dobriyan <adobriyan@gmail.com>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	Christian Brauner <brauner@kernel.org>,
 	Val Cowan <vcowan@redhat.com>
-Subject: [RFC PATCH v1 1/6] proc: Fix separator for subset option
-Date: Wed, 25 Jan 2023 16:28:48 +0100
-Message-Id: <ec2a7c3179e8eb2412289f0683da080b3bc2b18b.1674660533.git.legion@kernel.org>
+Subject: [RFC PATCH v1 4/6] proc: Allow to use the allowlist filter in userns
+Date: Wed, 25 Jan 2023 16:28:51 +0100
+Message-Id: <76e8b2d0c0651af6906351b7d43fa2a4d117dc04.1674660533.git.legion@kernel.org>
 In-Reply-To: <cover.1674660533.git.legion@kernel.org>
 References: <cover.1674660533.git.legion@kernel.org>
 Precedence: bulk
@@ -41,22 +41,31 @@ X-Scanned-By: MIMEDefang 3.1 on 10.11.54.4
 
 Signed-off-by: Alexey Gladkov <legion@kernel.org>
 ---
- fs/proc/root.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/proc/proc_allowlist.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/proc/root.c b/fs/proc/root.c
-index 3c2ee3eb1138..5f1015b6418d 100644
---- a/fs/proc/root.c
-+++ b/fs/proc/root.c
-@@ -91,7 +91,7 @@ static int proc_parse_subset_param(struct fs_context *fc, char *value)
- 	struct proc_fs_context *ctx = fc->fs_private;
+diff --git a/fs/proc/proc_allowlist.c b/fs/proc/proc_allowlist.c
+index 2153acb8e467..c605f73622bd 100644
+--- a/fs/proc/proc_allowlist.c
++++ b/fs/proc/proc_allowlist.c
+@@ -100,7 +100,7 @@ static int open_allowlist(struct inode *inode, struct file *file)
+ 	struct proc_fs_info *fs_info = proc_sb_info(inode->i_sb);
+ 	int ret;
  
- 	while (value) {
--		char *ptr = strchr(value, ',');
-+		char *ptr = strchr(value, '+');
+-	if (!capable(CAP_SYS_ADMIN))
++	if (!ns_capable(current_user_ns(), CAP_SYS_ADMIN))
+ 		return -EPERM;
  
- 		if (ptr != NULL)
- 			*ptr++ = '\0';
+ 	// we need this because shrink_dcache_sb() can't drop our own dentry.
+@@ -199,7 +199,7 @@ static const struct proc_ops proc_allowlist_ops = {
+ static int __init proc_allowlist_init(void)
+ {
+ 	struct proc_dir_entry *pde;
+-	pde = proc_create("allowlist", S_IRUSR | S_IWUSR, NULL, &proc_allowlist_ops);
++	pde = proc_create("allowlist", S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, NULL, &proc_allowlist_ops);
+ 	pde_make_permanent(pde);
+ 	pde_make_allowlist(pde);
+ 	return 0;
 -- 
 2.33.6
 
