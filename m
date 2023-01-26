@@ -1,114 +1,77 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DE76A1FAC
-	for <containers@lists.linux.dev>; Thu, 26 Jan 2023 10:16:13 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4B214C433D2;
-	Thu, 26 Jan 2023 10:16:11 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4C8AF110F
+	for <containers@lists.linux.dev>; Thu, 26 Jan 2023 11:13:42 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 32C25C433EF;
+	Thu, 26 Jan 2023 11:13:40 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1674728173;
-	bh=ox2ZCY8+PGvbN6EfZtcC+V0cntnRb2OjSdez+qfafks=;
+	s=k20201202; t=1674731622;
+	bh=D55D9VV7InbUoonDE1/srS8l75cDDnc92dbzMzbWAnk=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=TIzkcWdQaWb0la/QU4Vx4XmurQGQSnyeEOOzWhh8zoM9NdoF628MVo0tEshzAgEpP
-	 5Equ2e5kmAKPLaiw77x4RUJOBbtsorlfAz1G04I2/kqNrdDyoY+C43WRsJz9rWGByu
-	 UprOCeHDT4ken9In3mH4QoCnI3X/f21T2C1xQh4digT5hrjjlKpGRXy5MM/GD8S4Py
-	 5NCPFEVpO3zC8Ql7MvMwKRNpre6bf0B4N+FB4ywj3tujB/gLN8RZeb2UpFbs+ddVml
-	 cLmsBgzYIyYb9mCGKdd0CVC0kTYPyjOqRVhgNu0IIHigEUmeO2p3qVWm9OaaC3c4HC
-	 JYy0bhsCah5iw==
-Date: Thu, 26 Jan 2023 11:16:07 +0100
-From: Christian Brauner <brauner@kernel.org>
+	b=D4WyawDjvW2ueu1Ybe7Qc+zVGVyiQEBad2a44XU1vrVKMU9aPwJNDSxI843iRNLnP
+	 iwv2WZjOYktPYAawLOV71cRpd52d175alPbCt23DKpFonL++/Acv9gMpf6mKaY+5rf
+	 F5+9vCSyD/L0s+h7/0iTdqxf4p7TWRrSDRFhS+p4OnTGlBL9fHRnMNx8IfStWOAiT4
+	 RczhxkciCb2rcjO5rsAlYDbDQnSYGA7abJkW/kGbYpzng9twzA9ESq659px8oe7AwJ
+	 Q5p+YFdiFCeAEFnUQzjZ80TiY8V3CzemSdDkUD/8+mGQpd/9asNuVZKJjaVCBtEGgW
+	 lf2tpOWsq73NA==
+Date: Thu, 26 Jan 2023 12:13:36 +0100
+From: Alexey Gladkov <legion@kernel.org>
 To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Alexey Gladkov <legion@kernel.org>, LKML <linux-kernel@vger.kernel.org>,
-	containers@lists.linux.dev, linux-fsdevel@vger.kernel.org,
+Cc: LKML <linux-kernel@vger.kernel.org>, containers@lists.linux.dev,
+	linux-fsdevel@vger.kernel.org,
 	Alexey Dobriyan <adobriyan@gmail.com>,
-	Al Viro <viro@zeniv.linux.org.uk>, Val Cowan <vcowan@redhat.com>
-Subject: Re: [RFC PATCH v1 0/6] proc: Add allowlist for procfs files
-Message-ID: <20230126101607.b4de35te7gcf6mkn@wittgenstein>
+	Al Viro <viro@zeniv.linux.org.uk>,
+	Christian Brauner <brauner@kernel.org>,
+	Val Cowan <vcowan@redhat.com>
+Subject: Re: [RFC PATCH v1 2/6] proc: Add allowlist to control access to
+ procfs files
+Message-ID: <Y9JgYPHebozyuTTe@example.org>
 References: <cover.1674660533.git.legion@kernel.org>
- <20230125153628.43c12cbe05423fef7d44f0dd@linux-foundation.org>
+ <d87edbe023efb28f60ea04a2e694330db44aa868.1674660533.git.legion@kernel.org>
+ <20230125153642.db8c733f5b21e27d3aa80b7d@linux-foundation.org>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20230125153628.43c12cbe05423fef7d44f0dd@linux-foundation.org>
+In-Reply-To: <20230125153642.db8c733f5b21e27d3aa80b7d@linux-foundation.org>
 
-On Wed, Jan 25, 2023 at 03:36:28PM -0800, Andrew Morton wrote:
-> On Wed, 25 Jan 2023 16:28:47 +0100 Alexey Gladkov <legion@kernel.org> wrote:
+On Wed, Jan 25, 2023 at 03:36:42PM -0800, Andrew Morton wrote:
+> On Wed, 25 Jan 2023 16:28:49 +0100 Alexey Gladkov <legion@kernel.org> wrote:
 > 
-> > The patch expands subset= option. If the proc is mounted with the
-> > subset=allowlist option, the /proc/allowlist file will appear. This file
-> > contains the filenames and directories that are allowed for this
-> > mountpoint. By default, /proc/allowlist contains only its own name.
-> > Changing the allowlist is possible as long as it is present in the
-> > allowlist itself.
+> > If, after creating a container and mounting procfs, the system
+> > configuration may change and new files may appear in procfs. Files
+> > including writable root or any other users.
 > > 
-> > This allowlist is applied in lookup/readdir so files that will create
-> > modules after mounting will not be visible.
+> > In most cases, it is known in advance which files in procfs the user
+> > needs in the container. It is much easier to control the list of what
+> > you want than to control the list of unwanted files.
 > > 
-> > Compared to the previous patches [1][2], I switched to a special virtual
-> > file from listing filenames in the mount options.
+> > To do this, subset=allowlist is added to control the visibility of
+> > static files in procfs (not process pids). After that, the control file
+> > /proc/allowlist appears in the root of the filesystem. This file
+> > contains a list of files and directories that will be visible in this
+> > vmountpoint. Immediately after mount, this file contains only one
+> > name - the name of the file itself.
 > > 
+> > The admin can add names, read this file to get the current state of the
+> > allowlist. The file behaves almost like a regular file. Changes are
+> > applied when the file is closed.
 > 
-> Changlog doesn't explain why you think Linux needs this feature.  The
-> [2/6] changelog hints that containers might be involved.  IOW, please
-> fully describe the requirement and use-case(s).
+> "the admin" is a bit vague.  Precisely which capabilities are required
+> for this?
+
+In this commit, the admin is the one with CAP_SYS_ADMIN. You're right,
+I'll fix the commit message.
+
+> > To prevent changes to allowlist, admin should remove its name from the
+> > list of allowed files. After this change, the file will disappear.
 > 
-> Also, please describe why /proc/allowlist is made available via a mount
-> option, rather than being permanently present.
-> 
-> And why add to subset=, instead of a separate mount option.
-> 
-> Does /proc/allowlist work in subdirectories?  Like, permit presence of
-> /proc/sys/vm/compact_memory?
-> 
-> I think the whole thing is misnamed, really.  "allowlist" implies
-> access permissions.  Some of the test here uses "visibility" and other
-> places use "presence", which are better.  "presentlist" and
-> /proc/presentlist might be better.  But why not simply /proc/contents?
 
-Currently, a lot of container runtimes - even if they mount a new procfs
-instance - overmount various procfs files and directories to ensure that
-they're hidden from the container workload. (The motivations for this
-are mixed and usually it's only needed for containers that run with the
-same privilege level as the host.)
+-- 
+Rgrds, legion
 
-The consequence of overmounting is that we need to refuse mounting
-procfs again somewhere else otherwise the procfs instance might reveal
-files and directories that were supposed to be hidden.
-
-So this patchset moves the ability to hide entries into the kernel
-through an allowlist. This way you can hide files and directories while
-being able to mount procfs again because it will inherit the same
-allowlist.
-
-I get the motivation. The question is whether this belongs into the
-kernel at all. I'm unfortunately not convinced.
-
-This adds a lot of string parsing to procfs and I think we would also
-need to decide what a reasonable maximum limit for such allowlists would
-be. The data structure likely shouldn't be a linked list but at least an
-rbtree especially if the size isn't limited.
-
-But fundamentally I think it moves something that should be and
-currently is a userspace policy into the kernel which I think is wrong.
-Sure you can't predict what files show up in procfs over time but then
-subset=pid is already your friend - even if not as fine-grained.
-
-If this where another simple subset style mount option that allowlists a
-bunch of well-known global proc files then sure. But making this
-dynamically configurable from userspace doesn't make sense to me. I
-mean, users could write /gobble/dy/gook into /proc/allowlist or use it
-to stash secrets or hashes or whatever as we have no way of figuring out
-whether the entry they allowlist does or will actually ever exist.
-
-In general, such flexibility belongs into userspace imho.
-
-Frankly, if that is really required it would almost make more sense to
-be able to attach a new bpf program type to procfs that would allow to
-filter procfs entries. Then the filter could be done purely in
-userspace. If signed bpf lands one could then even ship signed programs
-that are attachable by userns root.
