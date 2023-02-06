@@ -1,51 +1,51 @@
 Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2CA79525A
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BE4005258
 	for <containers@lists.linux.dev>; Mon,  6 Feb 2023 14:03:43 +0000 (UTC)
 Received: from pps.filterd (m0098399.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 316DqeTY027235;
-	Mon, 6 Feb 2023 14:03:35 GMT
+	by mx0a-001b2d01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 316DqVZT027086;
+	Mon, 6 Feb 2023 14:03:30 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=pp1;
- bh=4KGX0WqjU4uuch+zY/5pjQzzgfr+j/RW9wEQS9wXGaw=;
- b=tB01VfXr6t5WUTOazuYej7TjmTSY6tha+Jstw1ERt0Fx3zcPSNWvusiYpEqht8l4sRDO
- j4uuEaNxB1vJIPQ2a+F7gBN680wEwJgkEhms5PSe/hwEknn6NKqY64vukeyEPknFVV/Y
- cY+/aQ4s//Ie/Ru4zGb2XiZeVIwZgy++/0ByIX4H0TcAOtbUGo6owgEbbG8mvIpnBg1z
- 9e1+XyAoz8pflRc7B4ugWBK/zzNMYaPyMaQSgLgnr1D1BWnkWrDbi4bl/bTOjHsC4HTl
- zWA17KThWW1/pxJpleEKEPrn8kBDb+odSIbkagMXGGJk99Cr8GxS+LrkJ5bNaQ+RG3BW kA== 
+ bh=G2M1u732vLr/KEGieyemjxRxAL7h0rIqdLGodGQ85sM=;
+ b=ARtzmG1PXJ+HdY6N+a0trnhORGOsxamVZWlZ5XWy2CoeWkaus3mEvKNGpvTe9/Y0LPLC
+ qgwfDBAyUkqSuOH+OYPFirAH+Rgjvibx2V5B1T9AQDs1qoFQVbxDwDsW39lqvOX1JtK3
+ aOlx3CUp4TGpG6RPs/DuDnksHAY6OYFnj8y5KACHF3L24Y4nmOhWmsWcRLDI/ZswHASg
+ 4phJdRH1e3RotXwOHstQg18MzO5zW3APjvBM0MHxezU09sUxx7px0KnDQR5HxAwnSf7Z
+ OQ/HaGE9EAt6ERdDdX0fVoCWw/7oN0m6ypxs/toLXtk9Kax8StDp3g7xSTGaHJVEWofL 3g== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk2tbggm0-1
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk2tbggd5-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 06 Feb 2023 14:03:35 +0000
+	Mon, 06 Feb 2023 14:03:29 +0000
 Received: from m0098399.ppops.net (m0098399.ppops.net [127.0.0.1])
-	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 316Dqmqu031980;
-	Mon, 6 Feb 2023 14:03:34 GMT
+	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 316Dr11c000438;
+	Mon, 6 Feb 2023 14:03:28 GMT
 Received: from ppma03dal.us.ibm.com (b.bd.3ea9.ip4.static.sl-reverse.com [169.62.189.11])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk2tbggjt-1
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk2tbggbs-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 06 Feb 2023 14:03:34 +0000
+	Mon, 06 Feb 2023 14:03:28 +0000
 Received: from pps.filterd (ppma03dal.us.ibm.com [127.0.0.1])
-	by ppma03dal.us.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 316CFt4o017641;
-	Mon, 6 Feb 2023 14:03:33 GMT
-Received: from smtprelay02.dal12v.mail.ibm.com ([9.208.130.97])
-	by ppma03dal.us.ibm.com (PPS) with ESMTPS id 3nhf07dq61-1
+	by ppma03dal.us.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 316C2Oji017708;
+	Mon, 6 Feb 2023 14:03:27 GMT
+Received: from smtprelay05.dal12v.mail.ibm.com ([9.208.130.101])
+	by ppma03dal.us.ibm.com (PPS) with ESMTPS id 3nhf07dq52-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 06 Feb 2023 14:03:33 +0000
+	Mon, 06 Feb 2023 14:03:27 +0000
 Received: from smtpav02.wdc07v.mail.ibm.com (smtpav02.wdc07v.mail.ibm.com [10.39.53.229])
-	by smtprelay02.dal12v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 316E3W3I38601396
+	by smtprelay05.dal12v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 316E3PIF1245876
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Mon, 6 Feb 2023 14:03:32 GMT
+	Mon, 6 Feb 2023 14:03:26 GMT
 Received: from smtpav02.wdc07v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id EF1565805B;
-	Mon,  6 Feb 2023 14:03:31 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id C44945805E;
+	Mon,  6 Feb 2023 14:03:25 +0000 (GMT)
 Received: from smtpav02.wdc07v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 2A40F58059;
-	Mon,  6 Feb 2023 14:03:30 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id CBA585805B;
+	Mon,  6 Feb 2023 14:03:23 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by smtpav02.wdc07v.mail.ibm.com (Postfix) with ESMTP;
-	Mon,  6 Feb 2023 14:03:30 +0000 (GMT)
+	Mon,  6 Feb 2023 14:03:23 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, brauner@kernel.org,
@@ -57,9 +57,9 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, brauner@kernel.org,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
         jmorris@namei.org, jpenumak@redhat.com,
         Stefan Berger <stefanb@linux.ibm.com>
-Subject: [PATCH v15 15/26] ima: Implement ima_free_policy_rules() for freeing of an ima_namespace
-Date: Mon,  6 Feb 2023 09:02:42 -0500
-Message-Id: <20230206140253.3755945-16-stefanb@linux.ibm.com>
+Subject: [PATCH v15 12/26] ima: Only accept AUDIT rules for non-init_ima_ns namespaces for now
+Date: Mon,  6 Feb 2023 09:02:39 -0500
+Message-Id: <20230206140253.3755945-13-stefanb@linux.ibm.com>
 X-Mailer: git-send-email 2.39.0
 In-Reply-To: <20230206140253.3755945-1-stefanb@linux.ibm.com>
 References: <20230206140253.3755945-1-stefanb@linux.ibm.com>
@@ -71,8 +71,8 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: Pp5ZNQ74DfnA9v36CPqo6MU-2aJVVtF8
-X-Proofpoint-GUID: vGLATNprnMQ8Ot8ckRH2ORudy62_7f_Z
+X-Proofpoint-ORIG-GUID: xDjLcRfslDEyw1eRISdW-HmfMwy-FFU_
+X-Proofpoint-GUID: AQwRnKfBzVHDsUZlGQeoGo0HRoXpJj-h
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.219,Aquarius:18.0.930,Hydra:6.0.562,FMLib:17.11.122.1
  definitions=2023-02-06_07,2023-02-06_03,2022-06-22_01
@@ -82,62 +82,50 @@ X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 spamsco
  bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.12.0-2212070000 definitions=main-2302060121
 
-Implement ima_free_policy_rules() to free the current custom IMA policy's
-rules. This function will be called when an ima_namespace is freed.
+For non-init_ima_ns namespaces, only accept AUDIT rules for now. Reject
+all rules that require support for measuring, appraisal, and hashing.
 
 Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
+Acked-by: Christian Brauner <brauner@kernel.org>
 Reviewed-by: Mimi Zohar <zohar@linux.ibm.com>
-Reviewed-by: Serge Hallyn <serge@hallyn.com>
 
 ---
-v10:
-  - Not calling ima_delete_rules() anymore
-  - Move access check from ima_delete_rules into very last patch
-
- v9:
-  - Only reset temp_ima_appraise when using init_ima_ns.
+v9:
+  - Jump to err_audit when unsupported rules are detected
 ---
- security/integrity/ima/ima.h        |  1 +
- security/integrity/ima/ima_policy.c | 14 ++++++++++++++
- 2 files changed, 15 insertions(+)
+ security/integrity/ima/ima_policy.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
-index 5d647011429b..efe9c82b4396 100644
---- a/security/integrity/ima/ima.h
-+++ b/security/integrity/ima/ima.h
-@@ -333,6 +333,7 @@ void ima_update_policy_flags(struct ima_namespace *ns);
- ssize_t ima_parse_add_rule(struct ima_namespace *ns, char *rule);
- void ima_delete_rules(struct ima_namespace *ns);
- int ima_check_policy(struct ima_namespace *ns);
-+void ima_free_policy_rules(struct ima_namespace *ns);
- void *ima_policy_start(struct seq_file *m, loff_t *pos);
- void *ima_policy_next(struct seq_file *m, void *v, loff_t *pos);
- void ima_policy_stop(struct seq_file *m, void *v);
 diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
-index 2a2c88f7d135..10b85642188f 100644
+index 19aca18db323..2a2c88f7d135 100644
 --- a/security/integrity/ima/ima_policy.c
 +++ b/security/integrity/ima/ima_policy.c
-@@ -2014,6 +2014,20 @@ void ima_delete_rules(struct ima_namespace *ns)
+@@ -1912,6 +1912,17 @@ static int ima_parse_rule(struct ima_namespace *ns,
+ 			result = -EINVAL;
+ 			break;
+ 		}
++
++		/* IMA namespace only accepts AUDIT rules */
++		if (ns != &init_ima_ns && result == 0) {
++			switch (entry->action) {
++			case MEASURE:
++			case APPRAISE:
++			case HASH:
++				result = -EINVAL;
++				goto err_audit;
++			}
++		}
  	}
- }
+ 	if (!result && !ima_validate_rule(entry))
+ 		result = -EINVAL;
+@@ -1933,6 +1944,7 @@ static int ima_parse_rule(struct ima_namespace *ns,
+ 				     "verity rules should include d-ngv2");
+ 	}
  
-+/**
-+ * ima_free_policy_rules - free all policy rules
-+ * @ns: IMA namespace that has the policy
-+ */
-+void ima_free_policy_rules(struct ima_namespace *ns)
-+{
-+	struct ima_rule_entry *entry, *tmp;
-+
-+	list_for_each_entry_safe(entry, tmp, &ns->ima_policy_rules, list) {
-+		list_del(&entry->list);
-+		ima_free_rule(entry);
-+	}
-+}
-+
- #define __ima_hook_stringify(func, str)	(#func),
- 
- const char *const func_tokens[] = {
++err_audit:
+ 	audit_log_format(ab, "res=%d", !result);
+ 	audit_log_end(ab);
+ 	return result;
 -- 
 2.37.3
 
