@@ -1,51 +1,51 @@
 Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 941B7525C
-	for <containers@lists.linux.dev>; Mon,  6 Feb 2023 14:03:41 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9341A5251
+	for <containers@lists.linux.dev>; Mon,  6 Feb 2023 14:03:42 +0000 (UTC)
 Received: from pps.filterd (m0098410.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 316DqLvT023047;
-	Mon, 6 Feb 2023 14:03:21 GMT
+	by mx0a-001b2d01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 316DqMKZ023149;
+	Mon, 6 Feb 2023 14:03:25 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=pp1;
- bh=JkkcZfmFvSLcZNnNMXYlDsdRRQzG86Ez6L31pBsWtGA=;
- b=VWSQCs437uqzcX0Ve7UjwJCt+CKsyUGj1ZMnnljFH+ATk/1w4/QoWjEWcaTeGcVCg+15
- 3etcN6UwlthMYgwgXauVUa/bRLp1uXH8txEM7S5wJN3pPAnSBASG8duy1qdm6mIL5Qft
- 14AyDX6S8d0HuxawS6aDV2UdiaZmN4zrYx6o/aVnW9247ace2AiE1akb0ORwssvzjFMj
- y1wxkXHPb8c3y3SVbYR6hWh/T96PaLblu/wJNufhwuje0jsVE8dwDY/MIgdCalJeTjD5
- MD/UYU2kpOVVi6o/KavCDOLcDifq1pPGdmQHVJbzLUF8BfMr5wV8KkFP5licvsX5Ro9T Eg== 
+ bh=7NpdvJJ+kFIqA/bIpBgYsf8j+v/I3xpk+VSo3mf+jN0=;
+ b=mIQCU/iT5LO/z1TY9u+WmXw6OeX1aPpRlpimDk0QMvFfA9ljucyO0t7EB1PmzqO3/itP
+ Qsa+Kt7QPemrCYm5rrCIRN7MXgsouPcAzP1XepGnAQY2YsUY6nhiQKUML8NEO6qlHhBG
+ rAa4EFvS+ahfgj/ycMKQv5qIngY5JT3aulh9h123fH9ik4Ma7Fvj13K5SABX4YyHyKhP
+ T1RHYyvO4LNWo7ve2zzmQVaPlBYH+K/N+zeSEx1nt/aLj/DTOPNyUdz5FAeaxwX6H6jy
+ lqArsJEODBjxJY5x8eo972b92segn7Z1jF28LW7gqhKr3utDFoMpSDRczgMjwYYglky0 5A== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk1abkhse-1
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk1abkhwt-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 06 Feb 2023 14:03:19 +0000
+	Mon, 06 Feb 2023 14:03:25 +0000
 Received: from m0098410.ppops.net (m0098410.ppops.net [127.0.0.1])
-	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 316DreQn000845;
-	Mon, 6 Feb 2023 14:03:19 GMT
-Received: from ppma04wdc.us.ibm.com (1a.90.2fa9.ip4.static.sl-reverse.com [169.47.144.26])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk1abkhr4-1
+	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 316Dt5hh013269;
+	Mon, 6 Feb 2023 14:03:24 GMT
+Received: from ppma01wdc.us.ibm.com (fd.55.37a9.ip4.static.sl-reverse.com [169.55.85.253])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk1abkhvc-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 06 Feb 2023 14:03:19 +0000
-Received: from pps.filterd (ppma04wdc.us.ibm.com [127.0.0.1])
-	by ppma04wdc.us.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 316C1VsD019596;
-	Mon, 6 Feb 2023 14:03:17 GMT
-Received: from smtprelay01.wdc07v.mail.ibm.com ([9.208.129.119])
-	by ppma04wdc.us.ibm.com (PPS) with ESMTPS id 3nhf07308m-1
+	Mon, 06 Feb 2023 14:03:24 +0000
+Received: from pps.filterd (ppma01wdc.us.ibm.com [127.0.0.1])
+	by ppma01wdc.us.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 316C5kru000521;
+	Mon, 6 Feb 2023 14:03:23 GMT
+Received: from smtprelay06.wdc07v.mail.ibm.com ([9.208.129.118])
+	by ppma01wdc.us.ibm.com (PPS) with ESMTPS id 3nhf072yhu-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 06 Feb 2023 14:03:17 +0000
+	Mon, 06 Feb 2023 14:03:23 +0000
 Received: from smtpav02.wdc07v.mail.ibm.com (smtpav02.wdc07v.mail.ibm.com [10.39.53.229])
-	by smtprelay01.wdc07v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 316E3FNk35521256
+	by smtprelay06.wdc07v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 316E3L9G66126098
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Mon, 6 Feb 2023 14:03:15 GMT
+	Mon, 6 Feb 2023 14:03:21 GMT
 Received: from smtpav02.wdc07v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 7F7A65805D;
-	Mon,  6 Feb 2023 14:03:15 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 71CD158058;
+	Mon,  6 Feb 2023 14:03:21 +0000 (GMT)
 Received: from smtpav02.wdc07v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id AF6955805B;
-	Mon,  6 Feb 2023 14:03:13 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id A1E3E5805B;
+	Mon,  6 Feb 2023 14:03:19 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by smtpav02.wdc07v.mail.ibm.com (Postfix) with ESMTP;
-	Mon,  6 Feb 2023 14:03:13 +0000 (GMT)
+	Mon,  6 Feb 2023 14:03:19 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, brauner@kernel.org,
@@ -57,9 +57,9 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, brauner@kernel.org,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
         jmorris@namei.org, jpenumak@redhat.com,
         Stefan Berger <stefanb@linux.ibm.com>
-Subject: [PATCH v15 07/26] ima: Move some IMA policy and filesystem related variables into ima_namespace
-Date: Mon,  6 Feb 2023 09:02:34 -0500
-Message-Id: <20230206140253.3755945-8-stefanb@linux.ibm.com>
+Subject: [PATCH v15 10/26] ima: Switch to lazy lsm policy updates for better performance
+Date: Mon,  6 Feb 2023 09:02:37 -0500
+Message-Id: <20230206140253.3755945-11-stefanb@linux.ibm.com>
 X-Mailer: git-send-email 2.39.0
 In-Reply-To: <20230206140253.3755945-1-stefanb@linux.ibm.com>
 References: <20230206140253.3755945-1-stefanb@linux.ibm.com>
@@ -71,8 +71,8 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: JitEhgK428roctoYbDdSSNTV11DvWCQn
-X-Proofpoint-GUID: jdckkU5s-2rmE6ybH9nh1AxacgFXKAwE
+X-Proofpoint-ORIG-GUID: 14naSaAV3-RnokxsI4lXuMMrdnz2_QU6
+X-Proofpoint-GUID: orPYh5qEKzUOYPcY1eGBBMj_gleSoDiw
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.219,Aquarius:18.0.930,Hydra:6.0.562,FMLib:17.11.122.1
  definitions=2023-02-06_07,2023-02-06_03,2022-06-22_01
@@ -82,167 +82,97 @@ X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 clxscor
  mlxlogscore=999 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.12.0-2212070000 definitions=main-2302060121
 
-Move the variables ima_write_mutex, ima_fs_flag, and valid_policy, which
-are related to updating the IMA policy, into the ima_namespace. This way
-each IMA namespace can set these variables independently in its instance
-of securityfs.
+Instead of calling ima_lsm_update_rules() for every namespace upon
+invocation of the ima_lsm_policy_change() notification function,
+only set a flag in a namespace and defer the call to
+ima_lsm_update_rules() to before the policy is accessed the next time,
+which is either in ima_policy_start(), when displaying the policy via
+the policy file in securityfs, or when calling ima_match_policy().
+
+The performance numbers before this change for a test enabling
+and disabling an SELinux module was as follows with a given number
+of IMA namespaces that each have a policy containing 2 rules with
+SELinux labels:
+
+2: ~9s
+192: ~11s
+1920: ~80s
+
+With this change:
+
+2: ~6.5s
+192: ~7s
+1920: ~8.3s
 
 Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-Acked-by: Christian Brauner <brauner@kernel.org>
-Reviewed-by: Mimi Zohar <zohar@linux.ibm.com>
 Acked-by: Serge Hallyn <serge@hallyn.com>
 ---
- security/integrity/ima/ima.h             |  5 ++++
- security/integrity/ima/ima_fs.c          | 32 +++++++++++-------------
- security/integrity/ima/ima_init_ima_ns.c |  4 +++
- 3 files changed, 23 insertions(+), 18 deletions(-)
+ security/integrity/ima/ima.h        |  4 ++++
+ security/integrity/ima/ima_policy.c | 15 ++++++++++++++-
+ 2 files changed, 18 insertions(+), 1 deletion(-)
 
 diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
-index 9b751f796c77..4141a219bdd6 100644
+index db28d6d222a6..4de8ec776611 100644
 --- a/security/integrity/ima/ima.h
 +++ b/security/integrity/ima/ima.h
-@@ -137,6 +137,11 @@ struct ima_namespace {
- 	struct ima_h_table ima_htable;
- 	struct list_head ima_measurements;	/* list of all measurements */
- 	unsigned long binary_runtime_size;	/* used by init_ima_ns */
-+
-+	/* securityfs support related variables */
-+	struct mutex ima_write_mutex;
-+	unsigned long ima_fs_flags;
-+	int valid_policy;
- } __randomize_layout;
- extern struct ima_namespace init_ima_ns;
- 
-diff --git a/security/integrity/ima/ima_fs.c b/security/integrity/ima/ima_fs.c
-index 5ef0e2b2cf64..4cf786f0bba8 100644
---- a/security/integrity/ima/ima_fs.c
-+++ b/security/integrity/ima/ima_fs.c
-@@ -24,8 +24,6 @@
- 
- #include "ima.h"
- 
--static DEFINE_MUTEX(ima_write_mutex);
--
- bool ima_canonical_fmt;
- static int __init default_canonical_fmt_setup(char *str)
- {
-@@ -36,8 +34,6 @@ static int __init default_canonical_fmt_setup(char *str)
- }
- __setup("ima_canonical_fmt", default_canonical_fmt_setup);
- 
--static int valid_policy = 1;
--
- static ssize_t ima_show_htable_value(char __user *buf, size_t count,
- 				     loff_t *ppos, atomic_long_t *val)
- {
-@@ -338,7 +334,7 @@ static ssize_t ima_write_policy(struct file *file, const char __user *buf,
- 		goto out;
- 	}
- 
--	result = mutex_lock_interruptible(&ima_write_mutex);
-+	result = mutex_lock_interruptible(&ns->ima_write_mutex);
- 	if (result < 0)
- 		goto out_free;
- 
-@@ -353,12 +349,12 @@ static ssize_t ima_write_policy(struct file *file, const char __user *buf,
- 	} else {
- 		result = ima_parse_add_rule(ns, data);
- 	}
--	mutex_unlock(&ima_write_mutex);
-+	mutex_unlock(&ns->ima_write_mutex);
- out_free:
- 	kfree(data);
- out:
- 	if (result < 0)
--		valid_policy = 0;
-+		ns->valid_policy = 0;
- 
- 	return result;
- }
-@@ -375,8 +371,6 @@ enum ima_fs_flags {
- 	IMA_FS_BUSY,
+@@ -123,6 +123,10 @@ struct ima_h_table {
  };
  
--static unsigned long ima_fs_flags;
--
- #ifdef	CONFIG_IMA_READ_POLICY
- static const struct seq_operations ima_policy_seqops = {
- 		.start = ima_policy_start,
-@@ -391,6 +385,8 @@ static const struct seq_operations ima_policy_seqops = {
-  */
- static int ima_open_policy(struct inode *inode, struct file *filp)
- {
-+	struct ima_namespace *ns = &init_ima_ns;
+ struct ima_namespace {
++	unsigned long ima_ns_flags;
++/* Bit numbers for above flags; use BIT() to get flag */
++#define IMA_NS_LSM_UPDATE_RULES		0
 +
- 	if (!(filp->f_flags & O_WRONLY)) {
- #ifndef	CONFIG_IMA_READ_POLICY
- 		return -EACCES;
-@@ -402,7 +398,7 @@ static int ima_open_policy(struct inode *inode, struct file *filp)
- 		return seq_open(filp, &ima_policy_seqops);
- #endif
- 	}
--	if (test_and_set_bit(IMA_FS_BUSY, &ima_fs_flags))
-+	if (test_and_set_bit(IMA_FS_BUSY, &ns->ima_fs_flags))
- 		return -EBUSY;
- 	return 0;
- }
-@@ -416,25 +412,25 @@ static int ima_open_policy(struct inode *inode, struct file *filp)
-  */
- static int ima_release_policy(struct inode *inode, struct file *file)
- {
--	const char *cause = valid_policy ? "completed" : "failed";
- 	struct ima_namespace *ns = &init_ima_ns;
-+	const char *cause = ns->valid_policy ? "completed" : "failed";
+ 	/* policy rules */
+ 	struct list_head ima_default_rules; /* Kconfig, builtin & arch rules */
+ 	struct list_head ima_policy_rules;  /* arch & custom rules */
+diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
+index 8e71b28855a4..19aca18db323 100644
+--- a/security/integrity/ima/ima_policy.c
++++ b/security/integrity/ima/ima_policy.c
+@@ -252,6 +252,14 @@ static struct ima_rule_entry critical_data_rules[] __ro_after_init = {
+ 	{.action = MEASURE, .func = CRITICAL_DATA, .flags = IMA_FUNC},
+ };
  
- 	if ((file->f_flags & O_ACCMODE) == O_RDONLY)
- 		return seq_release(inode, file);
- 
--	if (valid_policy && ima_check_policy(ns) < 0) {
-+	if (ns->valid_policy && ima_check_policy(ns) < 0) {
- 		cause = "failed";
--		valid_policy = 0;
-+		ns->valid_policy = 0;
- 	}
- 
- 	pr_info("policy update %s\n", cause);
- 	integrity_audit_msg(AUDIT_INTEGRITY_STATUS, NULL, NULL,
--			    "policy_update", cause, !valid_policy, 0);
-+			    "policy_update", cause, !ns->valid_policy, 0);
- 
--	if (!valid_policy) {
-+	if (!ns->valid_policy) {
- 		ima_delete_rules(ns);
--		valid_policy = 1;
--		clear_bit(IMA_FS_BUSY, &ima_fs_flags);
-+		ns->valid_policy = 1;
-+		clear_bit(IMA_FS_BUSY, &ns->ima_fs_flags);
- 		return 0;
- 	}
- 
-@@ -443,7 +439,7 @@ static int ima_release_policy(struct inode *inode, struct file *file)
- 	securityfs_remove(ima_policy);
- 	ima_policy = NULL;
- #elif defined(CONFIG_IMA_WRITE_POLICY)
--	clear_bit(IMA_FS_BUSY, &ima_fs_flags);
-+	clear_bit(IMA_FS_BUSY, &ns->ima_fs_flags);
- #elif defined(CONFIG_IMA_READ_POLICY)
- 	inode->i_mode &= ~S_IWUSR;
- #endif
-diff --git a/security/integrity/ima/ima_init_ima_ns.c b/security/integrity/ima/ima_init_ima_ns.c
-index a7477072c587..425eed1c6838 100644
---- a/security/integrity/ima/ima_init_ima_ns.c
-+++ b/security/integrity/ima/ima_init_ima_ns.c
-@@ -26,6 +26,10 @@ static int ima_init_namespace(struct ima_namespace *ns)
- 	else
- 		ns->binary_runtime_size = ULONG_MAX;
- 
-+	mutex_init(&ns->ima_write_mutex);
-+	ns->valid_policy = 1;
-+	ns->ima_fs_flags = 0;
++static void ima_lsm_update_rules(struct ima_namespace *ns);
 +
- 	return 0;
- }
++static inline void ima_lazy_lsm_update_rules(struct ima_namespace *ns)
++{
++	if (test_and_clear_bit(IMA_NS_LSM_UPDATE_RULES, &ns->ima_ns_flags))
++		ima_lsm_update_rules(ns);
++}
++
+ static int ima_policy __initdata;
  
+ static int __init default_measure_policy_setup(char *str)
+@@ -498,7 +506,8 @@ int ima_lsm_policy_change(struct notifier_block *nb, unsigned long event,
+ 		return NOTIFY_DONE;
+ 
+ 	ns = container_of(nb, struct ima_namespace, ima_lsm_policy_notifier);
+-	ima_lsm_update_rules(ns);
++
++	set_bit(IMA_NS_LSM_UPDATE_RULES, &ns->ima_ns_flags);
+ 
+ 	return NOTIFY_OK;
+ }
+@@ -752,6 +761,8 @@ int ima_match_policy(struct ima_namespace *ns,
+ 	if (template_desc && !*template_desc)
+ 		*template_desc = ima_template_desc_current();
+ 
++	ima_lazy_lsm_update_rules(ns);
++
+ 	rcu_read_lock();
+ 	ima_rules_tmp = rcu_dereference(ns->ima_rules);
+ 	list_for_each_entry_rcu(entry, ima_rules_tmp, list) {
+@@ -2016,6 +2027,8 @@ void *ima_policy_start(struct seq_file *m, loff_t *pos)
+ 	struct ima_rule_entry *entry;
+ 	struct list_head *ima_rules_tmp;
+ 
++	ima_lazy_lsm_update_rules(ns);
++
+ 	rcu_read_lock();
+ 	ima_rules_tmp = rcu_dereference(ns->ima_rules);
+ 	list_for_each_entry_rcu(entry, ima_rules_tmp, list) {
 -- 
 2.37.3
 
