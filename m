@@ -1,51 +1,51 @@
 Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 36962525E
-	for <containers@lists.linux.dev>; Mon,  6 Feb 2023 14:03:46 +0000 (UTC)
-Received: from pps.filterd (m0098409.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 316DqLc2014770;
-	Mon, 6 Feb 2023 14:03:28 GMT
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E46585259
+	for <containers@lists.linux.dev>; Mon,  6 Feb 2023 14:03:51 +0000 (UTC)
+Received: from pps.filterd (m0098410.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 316DqLIR023078;
+	Mon, 6 Feb 2023 14:03:42 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=pp1;
- bh=Y3HrFUOexQ6VH5dv344tNM6Q5Y8CiOzvHA8ouQNFU0I=;
- b=GnmHwBDA24UkuhIZ8kZpKc7Lj1G/dNnbGOm2Y1XDkVIV1nIaazXIzVkRQvzvavaqCMup
- L5pnVCEaa3t7WdMrFegCc6oR7Lf8Bd4kG6e5vTUvmzBxxDci+z8Gm1wK7VrSuk4JFqzc
- Vy+An3f1kPKMUnXzuSqwyAdbvSpWvR9vbLmu9xjn5fwwEuCQnRrOdox2siHcFHbqhdiC
- XpgbLnj5pZhXjlybxAdsJiRbqgkOuB0/1LhZsn6fvn2DVxD4mf2dX/z2v6rmYY8ZBOFG
- U6r2aOlFJbXrz/oFcMf/puTwNZmHIPVrW4BUO3AfQlcdOuengRcQiGVhKf/xYks3laJL MQ== 
+ bh=s1edFH2qTR/cMKYj/JHX4rluR5lgk1wtRdjk7i6fOMU=;
+ b=mTZ9InxqzRCyM4ZPq5qWqXvNFOUWHzNMOAuH/UpFGwha2VwmCJS8rpahDuGLGQfuU6QH
+ WJb2BIEfhmOCrxkJFUFOGI8ePb31pmm/M/2AJ1IWRJI+sCvibbBpmte7+VK9QqrtNFod
+ rqM3R5/V51765soZfCR2mLliyeQRV7+/WMK4ybbsoulxd51VZ/9AmTa78Eid4etilFyn
+ dDNGOKx2DPcxIDDgC/FjxqPl8XhlJE1y0of4myo0vUJ6g+/4SOLngaTPY2XkAt1Slkih
+ VmYOrC9JlJoL8qtbwmmztdXem8fhbL8e25oHuCkEp/K1j1dDg8Tg+VAeIhsQ9BHw+M16 8A== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk1gkk408-1
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk1abkje0-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 06 Feb 2023 14:03:27 +0000
-Received: from m0098409.ppops.net (m0098409.ppops.net [127.0.0.1])
-	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 316DrS09026265;
-	Mon, 6 Feb 2023 14:03:26 GMT
-Received: from ppma03dal.us.ibm.com (b.bd.3ea9.ip4.static.sl-reverse.com [169.62.189.11])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk1gkk3xs-1
+	Mon, 06 Feb 2023 14:03:41 +0000
+Received: from m0098410.ppops.net (m0098410.ppops.net [127.0.0.1])
+	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 316Dtdj6024351;
+	Mon, 6 Feb 2023 14:03:41 GMT
+Received: from ppma02dal.us.ibm.com (a.bd.3ea9.ip4.static.sl-reverse.com [169.62.189.10])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk1abkjd2-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 06 Feb 2023 14:03:26 +0000
-Received: from pps.filterd (ppma03dal.us.ibm.com [127.0.0.1])
-	by ppma03dal.us.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 316CAqhx017625;
-	Mon, 6 Feb 2023 14:03:25 GMT
-Received: from smtprelay03.dal12v.mail.ibm.com ([9.208.130.98])
-	by ppma03dal.us.ibm.com (PPS) with ESMTPS id 3nhf07dq4x-1
+	Mon, 06 Feb 2023 14:03:41 +0000
+Received: from pps.filterd (ppma02dal.us.ibm.com [127.0.0.1])
+	by ppma02dal.us.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 316CL24L001953;
+	Mon, 6 Feb 2023 14:03:39 GMT
+Received: from smtprelay05.dal12v.mail.ibm.com ([9.208.130.101])
+	by ppma02dal.us.ibm.com (PPS) with ESMTPS id 3nhf075pxd-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 06 Feb 2023 14:03:25 +0000
+	Mon, 06 Feb 2023 14:03:39 +0000
 Received: from smtpav02.wdc07v.mail.ibm.com (smtpav02.wdc07v.mail.ibm.com [10.39.53.229])
-	by smtprelay03.dal12v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 316E3Noj8651404
+	by smtprelay05.dal12v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 316E3cUO8717010
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Mon, 6 Feb 2023 14:03:24 GMT
+	Mon, 6 Feb 2023 14:03:38 GMT
 Received: from smtpav02.wdc07v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id A32D75805D;
-	Mon,  6 Feb 2023 14:03:23 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 205075805C;
+	Mon,  6 Feb 2023 14:03:38 +0000 (GMT)
 Received: from smtpav02.wdc07v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 9AF2658058;
-	Mon,  6 Feb 2023 14:03:21 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 5040958059;
+	Mon,  6 Feb 2023 14:03:36 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by smtpav02.wdc07v.mail.ibm.com (Postfix) with ESMTP;
-	Mon,  6 Feb 2023 14:03:21 +0000 (GMT)
+	Mon,  6 Feb 2023 14:03:36 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, brauner@kernel.org,
@@ -56,13 +56,10 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, brauner@kernel.org,
         jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
         jmorris@namei.org, jpenumak@redhat.com,
-        Stefan Berger <stefanb@linux.ibm.com>,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        linux-fsdevel@vger.kernel.org,
-        Denis Semakin <denis.semakin@huawei.com>
-Subject: [PATCH v15 11/26] ima: Define mac_admin_ns_capable() as a wrapper for ns_capable()
-Date: Mon,  6 Feb 2023 09:02:38 -0500
-Message-Id: <20230206140253.3755945-12-stefanb@linux.ibm.com>
+        Stefan Berger <stefanb@linux.ibm.com>
+Subject: [PATCH v15 18/26] integrity: Add optional callback function to integrity_inode_free()
+Date: Mon,  6 Feb 2023 09:02:45 -0500
+Message-Id: <20230206140253.3755945-19-stefanb@linux.ibm.com>
 X-Mailer: git-send-email 2.39.0
 In-Reply-To: <20230206140253.3755945-1-stefanb@linux.ibm.com>
 References: <20230206140253.3755945-1-stefanb@linux.ibm.com>
@@ -74,118 +71,110 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: OCOKYBV_Jf_BVibSB-tOhiL8KIyApJvF
-X-Proofpoint-GUID: EoywHmqD2FWtZtFc-RuWF-JZWTW1Hngd
+X-Proofpoint-ORIG-GUID: cHOPMZ_29Si-x4dUfqSmKGnTmQi4qyNC
+X-Proofpoint-GUID: 6dHNROqfxV077ztijvvyOeI_hHJUoAAi
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.219,Aquarius:18.0.930,Hydra:6.0.562,FMLib:17.11.122.1
  definitions=2023-02-06_07,2023-02-06_03,2022-06-22_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 malwarescore=0 phishscore=0
- clxscore=1011 mlxscore=0 mlxlogscore=999 lowpriorityscore=0
- impostorscore=0 bulkscore=0 suspectscore=0 priorityscore=1501 spamscore=0
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 clxscore=1015 adultscore=0
+ lowpriorityscore=0 malwarescore=0 suspectscore=0 bulkscore=0
+ impostorscore=0 spamscore=0 mlxscore=0 priorityscore=1501 phishscore=0
+ mlxlogscore=889 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.12.0-2212070000 definitions=main-2302060121
 
-Define mac_admin_ns_capable() as a wrapper for the combined ns_capable()
-checks on CAP_MAC_ADMIN and CAP_SYS_ADMIN in a user namespace. Return
-true on the check if either capability or both are available.
+Add an optional callback function to integrity_inode_free() that,
+if provided, must be called and determines whether the iint can be
+freed. Adjust all callers of this function to provide a NULL pointer
+since none of the existing callers needs this check.
 
-Use mac_admin_ns_capable() in place of capable(SYS_ADMIN). This will allow
-an IMA namespace to read the policy with only CAP_MAC_ADMIN, which has
-less privileges than CAP_SYS_ADMIN.
-
-Since CAP_MAC_ADMIN is an additional capability added to an existing gate
-avoid auditing in case it is not set.
-
-Cc: Alexander Viro <viro@zeniv.linux.org.uk>
-Cc: linux-fsdevel@vger.kernel.org
-Signed-off-by: Denis Semakin <denis.semakin@huawei.com>
 Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-
 ---
-v13:
-  - implemented file_sb_user_ns(const struct file *); const is needed so it
-    can be called with seq_file's 'const struct file *file'
+ include/linux/integrity.h |  8 ++++++--
+ security/integrity/iint.c | 15 +++++++++++++--
+ security/security.c       |  2 +-
+ 3 files changed, 20 insertions(+), 5 deletions(-)
 
-v11:
-  - use ns_capable_noaudit for CAP_MAC_ADMIN to avoid auditing in this case
----
- include/linux/capability.h      | 6 ++++++
- include/linux/fs.h              | 5 +++++
- security/integrity/ima/ima.h    | 6 ++++++
- security/integrity/ima/ima_fs.c | 5 ++++-
- 4 files changed, 21 insertions(+), 1 deletion(-)
-
-diff --git a/include/linux/capability.h b/include/linux/capability.h
-index 65efb74c3585..dc3e1230b365 100644
---- a/include/linux/capability.h
-+++ b/include/linux/capability.h
-@@ -270,6 +270,12 @@ static inline bool checkpoint_restore_ns_capable(struct user_namespace *ns)
- 		ns_capable(ns, CAP_SYS_ADMIN);
- }
+diff --git a/include/linux/integrity.h b/include/linux/integrity.h
+index 2ea0f2f65ab6..9fe826b9146e 100644
+--- a/include/linux/integrity.h
++++ b/include/linux/integrity.h
+@@ -19,10 +19,13 @@ enum integrity_status {
+ 	INTEGRITY_UNKNOWN,
+ };
  
-+static inline bool mac_admin_ns_capable(struct user_namespace *ns)
-+{
-+	return ns_capable_noaudit(ns, CAP_MAC_ADMIN) ||
-+		ns_capable(ns, CAP_SYS_ADMIN);
-+}
++struct integrity_iint_cache;
++typedef bool (*iint_removable_cb)(struct integrity_iint_cache *iint);
 +
- /* audit system wants to get cap info from files as well */
- int get_vfs_caps_from_disk(struct user_namespace *mnt_userns,
- 			   const struct dentry *dentry,
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index c1769a2c5d70..4662efed3171 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -2730,6 +2730,11 @@ static inline struct user_namespace *file_mnt_user_ns(struct file *file)
- 	return mnt_user_ns(file->f_path.mnt);
- }
+ /* List of EVM protected security xattrs */
+ #ifdef CONFIG_INTEGRITY
+ extern struct integrity_iint_cache *integrity_inode_get(struct inode *inode);
+-extern void integrity_inode_free(struct inode *inode);
++extern void integrity_inode_free(struct inode *inode, iint_removable_cb check);
+ extern void __init integrity_load_keys(void);
  
-+static inline struct user_namespace *file_sb_user_ns(const struct file *file)
-+{
-+	return i_user_ns(file_inode(file));
-+}
-+
- static inline struct mnt_idmap *file_mnt_idmap(struct file *file)
- {
- 	return mnt_idmap(file->f_path.mnt);
-diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
-index 4de8ec776611..69f95ed0b8c6 100644
---- a/security/integrity/ima/ima.h
-+++ b/security/integrity/ima/ima.h
-@@ -492,4 +492,10 @@ static inline int ima_filter_rule_match(u32 secid, u32 field, u32 op,
- #define	POLICY_FILE_FLAGS	S_IWUSR
- #endif /* CONFIG_IMA_READ_POLICY */
- 
-+static inline
-+struct user_namespace *ima_user_ns_from_file(const struct file *filp)
-+{
-+	return file_sb_user_ns(filp);
-+}
-+
- #endif /* __LINUX_IMA_H */
-diff --git a/security/integrity/ima/ima_fs.c b/security/integrity/ima/ima_fs.c
-index 89d3113ceda1..c41aa61b7393 100644
---- a/security/integrity/ima/ima_fs.c
-+++ b/security/integrity/ima/ima_fs.c
-@@ -377,6 +377,9 @@ static const struct seq_operations ima_policy_seqops = {
-  */
- static int ima_open_policy(struct inode *inode, struct file *filp)
- {
-+#ifdef CONFIG_IMA_READ_POLICY
-+	struct user_namespace *user_ns = ima_user_ns_from_file(filp);
-+#endif
- 	struct ima_namespace *ns = &init_ima_ns;
- 
- 	if (!(filp->f_flags & O_WRONLY)) {
-@@ -385,7 +388,7 @@ static int ima_open_policy(struct inode *inode, struct file *filp)
  #else
- 		if ((filp->f_flags & O_ACCMODE) != O_RDONLY)
- 			return -EACCES;
--		if (!capable(CAP_SYS_ADMIN))
-+		if (!mac_admin_ns_capable(user_ns))
- 			return -EPERM;
- 		return seq_open(filp, &ima_policy_seqops);
- #endif
+@@ -32,7 +35,8 @@ static inline struct integrity_iint_cache *
+ 	return NULL;
+ }
+ 
+-static inline void integrity_inode_free(struct inode *inode)
++static inline void integrity_inode_free(struct inode *inode,
++					iint_removable_cb check)
+ {
+ 	return;
+ }
+diff --git a/security/integrity/iint.c b/security/integrity/iint.c
+index 371cbceaf479..4580df0e716e 100644
+--- a/security/integrity/iint.c
++++ b/security/integrity/iint.c
+@@ -143,21 +143,32 @@ struct integrity_iint_cache *integrity_inode_get(struct inode *inode)
+ /**
+  * integrity_inode_free - called on security_inode_free
+  * @inode: pointer to the inode
++ * @check: optional callback function to check whether the iint can be freed
+  *
+  * Free the integrity information(iint) associated with an inode.
+  */
+-void integrity_inode_free(struct inode *inode)
++void integrity_inode_free(struct inode *inode, iint_removable_cb check)
+ {
+ 	struct integrity_iint_cache *iint;
++	bool freeit = true;
+ 
+ 	if (!IS_IMA(inode))
+ 		return;
+ 
+ 	write_lock(&integrity_iint_lock);
++
+ 	iint = __integrity_iint_find(inode);
+-	rb_erase(&iint->rb_node, &integrity_iint_tree);
++
++	if (check)
++		freeit = check(iint);
++	if (freeit)
++		rb_erase(&iint->rb_node, &integrity_iint_tree);
++
+ 	write_unlock(&integrity_iint_lock);
+ 
++	if (!freeit)
++		return;
++
+ 	ima_free_ns_status_list(&iint->ns_list, &iint->ns_list_lock);
+ 
+ 	iint_free(iint);
+diff --git a/security/security.c b/security/security.c
+index d1571900a8c7..2b1f9ec8dea9 100644
+--- a/security/security.c
++++ b/security/security.c
+@@ -1071,7 +1071,7 @@ static void inode_free_by_rcu(struct rcu_head *head)
+ 
+ void security_inode_free(struct inode *inode)
+ {
+-	integrity_inode_free(inode);
++	integrity_inode_free(inode, NULL);
+ 	call_void_hook(inode_free_security, inode);
+ 	/*
+ 	 * The inode may still be referenced in a path walk and
 -- 
 2.37.3
 
