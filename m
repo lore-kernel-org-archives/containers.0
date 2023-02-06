@@ -1,51 +1,51 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
+Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E46585259
-	for <containers@lists.linux.dev>; Mon,  6 Feb 2023 14:03:51 +0000 (UTC)
-Received: from pps.filterd (m0098410.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 316DqLIR023078;
-	Mon, 6 Feb 2023 14:03:42 GMT
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C35015259
+	for <containers@lists.linux.dev>; Mon,  6 Feb 2023 14:03:53 +0000 (UTC)
+Received: from pps.filterd (m0098417.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 316DqM8Z012180;
+	Mon, 6 Feb 2023 14:03:37 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=pp1;
- bh=s1edFH2qTR/cMKYj/JHX4rluR5lgk1wtRdjk7i6fOMU=;
- b=mTZ9InxqzRCyM4ZPq5qWqXvNFOUWHzNMOAuH/UpFGwha2VwmCJS8rpahDuGLGQfuU6QH
- WJb2BIEfhmOCrxkJFUFOGI8ePb31pmm/M/2AJ1IWRJI+sCvibbBpmte7+VK9QqrtNFod
- rqM3R5/V51765soZfCR2mLliyeQRV7+/WMK4ybbsoulxd51VZ/9AmTa78Eid4etilFyn
- dDNGOKx2DPcxIDDgC/FjxqPl8XhlJE1y0of4myo0vUJ6g+/4SOLngaTPY2XkAt1Slkih
- VmYOrC9JlJoL8qtbwmmztdXem8fhbL8e25oHuCkEp/K1j1dDg8Tg+VAeIhsQ9BHw+M16 8A== 
+ bh=gta5ffT5o/orCVTMEtUgMgmF+UZdjY8Fg/6V90nW7DY=;
+ b=XOUwO1p46r3Qm/oMDj5Y1QtTQ09s+QfsjJmEnOsiVfWjinRyXaxT8LlSVKi2JdCrFicg
+ JUGqnGkEsZrH3t5kpELZLbfLwyh33R1+5/8FzcGjjbP6tdTMXt0rzx4c8YxwEk27DqVw
+ 1G537+FxaPNdkPpKdBaYFL5cSnQSbIVCbvFzH8Dh6Acf7m1RPIdfC3Pg6BnAgSeGcZpq
+ GO6Q8S5e9RhCfCh3/p6FxgqqX+MfyrzTKWVUA1r/jOsBZRHar/ZuatXloPCH7F4iU5YE
+ djHq+kLQqAQur6QO+Q0al9QR4rw3w8zAdammOVJrLH+rCAiQwXVbKIfqEYdRi2iaF1fF DA== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk1abkje0-1
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk2pg0jmg-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 06 Feb 2023 14:03:41 +0000
-Received: from m0098410.ppops.net (m0098410.ppops.net [127.0.0.1])
-	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 316Dtdj6024351;
-	Mon, 6 Feb 2023 14:03:41 GMT
-Received: from ppma02dal.us.ibm.com (a.bd.3ea9.ip4.static.sl-reverse.com [169.62.189.10])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk1abkjd2-1
+	Mon, 06 Feb 2023 14:03:36 +0000
+Received: from m0098417.ppops.net (m0098417.ppops.net [127.0.0.1])
+	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 316Dr5lD022468;
+	Mon, 6 Feb 2023 14:03:36 GMT
+Received: from ppma05wdc.us.ibm.com (1b.90.2fa9.ip4.static.sl-reverse.com [169.47.144.27])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk2pg0jkx-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 06 Feb 2023 14:03:41 +0000
-Received: from pps.filterd (ppma02dal.us.ibm.com [127.0.0.1])
-	by ppma02dal.us.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 316CL24L001953;
-	Mon, 6 Feb 2023 14:03:39 GMT
-Received: from smtprelay05.dal12v.mail.ibm.com ([9.208.130.101])
-	by ppma02dal.us.ibm.com (PPS) with ESMTPS id 3nhf075pxd-1
+	Mon, 06 Feb 2023 14:03:36 +0000
+Received: from pps.filterd (ppma05wdc.us.ibm.com [127.0.0.1])
+	by ppma05wdc.us.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 316CAfnI003488;
+	Mon, 6 Feb 2023 14:03:35 GMT
+Received: from smtprelay06.wdc07v.mail.ibm.com ([9.208.129.118])
+	by ppma05wdc.us.ibm.com (PPS) with ESMTPS id 3nhf072yyd-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 06 Feb 2023 14:03:39 +0000
+	Mon, 06 Feb 2023 14:03:35 +0000
 Received: from smtpav02.wdc07v.mail.ibm.com (smtpav02.wdc07v.mail.ibm.com [10.39.53.229])
-	by smtprelay05.dal12v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 316E3cUO8717010
+	by smtprelay06.wdc07v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 316E3YOW8454866
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Mon, 6 Feb 2023 14:03:38 GMT
+	Mon, 6 Feb 2023 14:03:34 GMT
 Received: from smtpav02.wdc07v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 205075805C;
-	Mon,  6 Feb 2023 14:03:38 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id E746B5805D;
+	Mon,  6 Feb 2023 14:03:33 +0000 (GMT)
 Received: from smtpav02.wdc07v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 5040958059;
-	Mon,  6 Feb 2023 14:03:36 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 23AE258058;
+	Mon,  6 Feb 2023 14:03:32 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by smtpav02.wdc07v.mail.ibm.com (Postfix) with ESMTP;
-	Mon,  6 Feb 2023 14:03:36 +0000 (GMT)
+	Mon,  6 Feb 2023 14:03:32 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, brauner@kernel.org,
@@ -57,9 +57,9 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, brauner@kernel.org,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
         jmorris@namei.org, jpenumak@redhat.com,
         Stefan Berger <stefanb@linux.ibm.com>
-Subject: [PATCH v15 18/26] integrity: Add optional callback function to integrity_inode_free()
-Date: Mon,  6 Feb 2023 09:02:45 -0500
-Message-Id: <20230206140253.3755945-19-stefanb@linux.ibm.com>
+Subject: [PATCH v15 16/26] ima: Add functions for creating and freeing of an ima_namespace
+Date: Mon,  6 Feb 2023 09:02:43 -0500
+Message-Id: <20230206140253.3755945-17-stefanb@linux.ibm.com>
 X-Mailer: git-send-email 2.39.0
 In-Reply-To: <20230206140253.3755945-1-stefanb@linux.ibm.com>
 References: <20230206140253.3755945-1-stefanb@linux.ibm.com>
@@ -71,110 +71,177 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: cHOPMZ_29Si-x4dUfqSmKGnTmQi4qyNC
-X-Proofpoint-GUID: 6dHNROqfxV077ztijvvyOeI_hHJUoAAi
+X-Proofpoint-GUID: wun1pw0VuyfiBldkP7BZNLHa4ompqPNB
+X-Proofpoint-ORIG-GUID: ghm_co2-j34IqbEelBCeD9vt3Q_9bdww
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.219,Aquarius:18.0.930,Hydra:6.0.562,FMLib:17.11.122.1
  definitions=2023-02-06_07,2023-02-06_03,2022-06-22_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 clxscore=1015 adultscore=0
- lowpriorityscore=0 malwarescore=0 suspectscore=0 bulkscore=0
- impostorscore=0 spamscore=0 mlxscore=0 priorityscore=1501 phishscore=0
- mlxlogscore=889 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2212070000 definitions=main-2302060121
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 suspectscore=0
+ lowpriorityscore=0 bulkscore=0 adultscore=0 mlxlogscore=999 phishscore=0
+ impostorscore=0 mlxscore=0 malwarescore=0 clxscore=1015 spamscore=0
+ priorityscore=1501 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2212070000 definitions=main-2302060116
 
-Add an optional callback function to integrity_inode_free() that,
-if provided, must be called and determines whether the iint can be
-freed. Adjust all callers of this function to provide a NULL pointer
-since none of the existing callers needs this check.
+Implement create_ima_ns() to create an empty ima_namespace. Defer its
+initialization to a later point outside this function. Implement
+free_ima_ns() to free it.
 
 Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
----
- include/linux/integrity.h |  8 ++++++--
- security/integrity/iint.c | 15 +++++++++++++--
- security/security.c       |  2 +-
- 3 files changed, 20 insertions(+), 5 deletions(-)
+Acked-by: Christian Brauner <brauner@kernel.org>
+Reviewed-by: Mimi Zohar <zohar@linux.ibm.com>
+Acked-by: Serge Hallyn <serge@hallyn.com>
 
-diff --git a/include/linux/integrity.h b/include/linux/integrity.h
-index 2ea0f2f65ab6..9fe826b9146e 100644
---- a/include/linux/integrity.h
-+++ b/include/linux/integrity.h
-@@ -19,10 +19,13 @@ enum integrity_status {
- 	INTEGRITY_UNKNOWN,
- };
- 
-+struct integrity_iint_cache;
-+typedef bool (*iint_removable_cb)(struct integrity_iint_cache *iint);
+---
+v9:
+ - Set user_ns->ims_ns = NULL in free_ima_ns()
+ - Refactored create_ima_ns() to defer initialization
+ - Removed pr_debug functions
+---
+ include/linux/ima.h                      | 13 ++++++
+ security/integrity/ima/Makefile          |  1 +
+ security/integrity/ima/ima.h             | 15 +++++++
+ security/integrity/ima/ima_init_ima_ns.c |  2 +-
+ security/integrity/ima/ima_ns.c          | 53 ++++++++++++++++++++++++
+ 5 files changed, 83 insertions(+), 1 deletion(-)
+ create mode 100644 security/integrity/ima/ima_ns.c
+
+diff --git a/include/linux/ima.h b/include/linux/ima.h
+index 2038e2e2a88d..1b1fc643b371 100644
+--- a/include/linux/ima.h
++++ b/include/linux/ima.h
+@@ -249,4 +249,17 @@ static inline bool ima_appraise_signature(enum kernel_read_file_id func)
+ 	return false;
+ }
+ #endif /* CONFIG_IMA_APPRAISE && CONFIG_INTEGRITY_TRUSTED_KEYRING */
 +
- /* List of EVM protected security xattrs */
- #ifdef CONFIG_INTEGRITY
- extern struct integrity_iint_cache *integrity_inode_get(struct inode *inode);
--extern void integrity_inode_free(struct inode *inode);
-+extern void integrity_inode_free(struct inode *inode, iint_removable_cb check);
- extern void __init integrity_load_keys(void);
++#ifdef CONFIG_IMA_NS
++
++void free_ima_ns(struct user_namespace *ns);
++
++#else
++
++static inline void free_ima_ns(struct user_namespace *user_ns)
++{
++}
++
++#endif /* CONFIG_IMA_NS */
++
+ #endif /* _LINUX_IMA_H */
+diff --git a/security/integrity/ima/Makefile b/security/integrity/ima/Makefile
+index f8a5e5f3975d..b86a35fbed60 100644
+--- a/security/integrity/ima/Makefile
++++ b/security/integrity/ima/Makefile
+@@ -14,6 +14,7 @@ ima-$(CONFIG_HAVE_IMA_KEXEC) += ima_kexec.o
+ ima-$(CONFIG_IMA_BLACKLIST_KEYRING) += ima_mok.o
+ ima-$(CONFIG_IMA_MEASURE_ASYMMETRIC_KEYS) += ima_asymmetric_keys.o
+ ima-$(CONFIG_IMA_QUEUE_EARLY_BOOT_KEYS) += ima_queue_keys.o
++ima-$(CONFIG_IMA_NS) += ima_ns.o
  
- #else
-@@ -32,7 +35,8 @@ static inline struct integrity_iint_cache *
+ ifeq ($(CONFIG_EFI),y)
+ ima-$(CONFIG_IMA_SECURE_AND_OR_TRUSTED_BOOT) += ima_efi.o
+diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+index efe9c82b4396..9dc199a20fc0 100644
+--- a/security/integrity/ima/ima.h
++++ b/security/integrity/ima/ima.h
+@@ -171,6 +171,7 @@ extern bool ima_canonical_fmt;
+ int ima_init(void);
+ int ima_fs_init(void);
+ int ima_ns_init(void);
++int ima_init_namespace(struct ima_namespace *ns);
+ int ima_add_template_entry(struct ima_namespace *ns,
+ 			   struct ima_template_entry *entry, int violation,
+ 			   const char *op, struct inode *inode,
+@@ -507,4 +508,18 @@ static inline struct ima_namespace
  	return NULL;
  }
  
--static inline void integrity_inode_free(struct inode *inode)
-+static inline void integrity_inode_free(struct inode *inode,
-+					iint_removable_cb check)
++#ifdef CONFIG_IMA_NS
++
++struct ima_namespace *create_ima_ns(void);
++
++#else
++
++static inline struct ima_namespace *create_ima_ns(void)
++{
++	WARN(1, "Cannot create an IMA namespace\n");
++	return ERR_PTR(-EFAULT);
++}
++
++#endif /* CONFIG_IMA_NS */
++
+ #endif /* __LINUX_IMA_H */
+diff --git a/security/integrity/ima/ima_init_ima_ns.c b/security/integrity/ima/ima_init_ima_ns.c
+index c4fe8f3e9a73..b497062090cf 100644
+--- a/security/integrity/ima/ima_init_ima_ns.c
++++ b/security/integrity/ima/ima_init_ima_ns.c
+@@ -8,7 +8,7 @@
+ 
+ #include "ima.h"
+ 
+-static int ima_init_namespace(struct ima_namespace *ns)
++int ima_init_namespace(struct ima_namespace *ns)
  {
- 	return;
- }
-diff --git a/security/integrity/iint.c b/security/integrity/iint.c
-index 371cbceaf479..4580df0e716e 100644
---- a/security/integrity/iint.c
-+++ b/security/integrity/iint.c
-@@ -143,21 +143,32 @@ struct integrity_iint_cache *integrity_inode_get(struct inode *inode)
- /**
-  * integrity_inode_free - called on security_inode_free
-  * @inode: pointer to the inode
-+ * @check: optional callback function to check whether the iint can be freed
-  *
-  * Free the integrity information(iint) associated with an inode.
-  */
--void integrity_inode_free(struct inode *inode)
-+void integrity_inode_free(struct inode *inode, iint_removable_cb check)
- {
- 	struct integrity_iint_cache *iint;
-+	bool freeit = true;
+ 	int ret;
  
- 	if (!IS_IMA(inode))
- 		return;
- 
- 	write_lock(&integrity_iint_lock);
+diff --git a/security/integrity/ima/ima_ns.c b/security/integrity/ima/ima_ns.c
+new file mode 100644
+index 000000000000..b3b81a1e313e
+--- /dev/null
++++ b/security/integrity/ima/ima_ns.c
+@@ -0,0 +1,53 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Copyright (C) 2016-2021 IBM Corporation
++ * Author:
++ *  Yuqiong Sun <suny@us.ibm.com>
++ *  Stefan Berger <stefanb@linux.vnet.ibm.com>
++ */
 +
- 	iint = __integrity_iint_find(inode);
--	rb_erase(&iint->rb_node, &integrity_iint_tree);
++#include <linux/ima.h>
 +
-+	if (check)
-+		freeit = check(iint);
-+	if (freeit)
-+		rb_erase(&iint->rb_node, &integrity_iint_tree);
++#include "ima.h"
 +
- 	write_unlock(&integrity_iint_lock);
- 
-+	if (!freeit)
++static struct kmem_cache *imans_cachep;
++
++struct ima_namespace *create_ima_ns(void)
++{
++	struct ima_namespace *ns;
++
++	ns = kmem_cache_zalloc(imans_cachep, GFP_KERNEL);
++	if (!ns)
++		return ERR_PTR(-ENOMEM);
++
++	return ns;
++}
++
++/* destroy_ima_ns() must only be called after ima_init_namespace() was called */
++static void destroy_ima_ns(struct ima_namespace *ns)
++{
++	unregister_blocking_lsm_notifier(&ns->ima_lsm_policy_notifier);
++	kfree(ns->arch_policy_entry);
++	ima_free_policy_rules(ns);
++}
++
++void free_ima_ns(struct user_namespace *user_ns)
++{
++	struct ima_namespace *ns = user_ns->ima_ns;
++
++	if (!ns || WARN_ON(ns == &init_ima_ns))
 +		return;
 +
- 	ima_free_ns_status_list(&iint->ns_list, &iint->ns_list_lock);
- 
- 	iint_free(iint);
-diff --git a/security/security.c b/security/security.c
-index d1571900a8c7..2b1f9ec8dea9 100644
---- a/security/security.c
-+++ b/security/security.c
-@@ -1071,7 +1071,7 @@ static void inode_free_by_rcu(struct rcu_head *head)
- 
- void security_inode_free(struct inode *inode)
- {
--	integrity_inode_free(inode);
-+	integrity_inode_free(inode, NULL);
- 	call_void_hook(inode_free_security, inode);
- 	/*
- 	 * The inode may still be referenced in a path walk and
++	destroy_ima_ns(ns);
++
++	kmem_cache_free(imans_cachep, ns);
++
++	user_ns->ima_ns = NULL;
++}
++
++static int __init imans_cache_init(void)
++{
++	imans_cachep = KMEM_CACHE(ima_namespace, SLAB_PANIC);
++	return 0;
++}
++subsys_initcall(imans_cache_init)
 -- 
 2.37.3
 
