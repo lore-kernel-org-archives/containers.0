@@ -1,51 +1,51 @@
-Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D0BC6525D
-	for <containers@lists.linux.dev>; Mon,  6 Feb 2023 14:03:41 +0000 (UTC)
-Received: from pps.filterd (m0098421.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 316DqMMD013333;
-	Mon, 6 Feb 2023 14:03:07 GMT
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 36962525E
+	for <containers@lists.linux.dev>; Mon,  6 Feb 2023 14:03:46 +0000 (UTC)
+Received: from pps.filterd (m0098409.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 316DqLc2014770;
+	Mon, 6 Feb 2023 14:03:28 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=pp1;
- bh=J7HIme6ufedUzPvoqjp6uKW4dLKr5qP9U3r5egX4hs4=;
- b=mcNmr0aicIQoJz7jXo7p6kPPPuVTGNK8/GzUopEMBlpZ72Ans6Ht/h8crSR/dnj9YRqi
- riRiLQV0Zh+JwoTldZhwzB2DfA0VxaNyZppdII2XU76hv1aJXHaCDl/t0G+dDvZ7AuX6
- neeNZpb1jlMFrgvlZxc034OrJ0h56DxgAXQxTMHVPKrxbaPLpvBLqcLNNeRSAhiVyBw0
- cF3We9NwsNZOQimJKvYxngSmj9PVRgciAkm7ErwaKTsqvhRNKvi+Ufe840PNEUrbGYLz
- o3obiIU3L5Tg0uW2oFa1P67swHe+GQE/vGMY8YtSAKaT5gepOdhrh3xIWDGwiBB2wmOS rQ== 
+ bh=Y3HrFUOexQ6VH5dv344tNM6Q5Y8CiOzvHA8ouQNFU0I=;
+ b=GnmHwBDA24UkuhIZ8kZpKc7Lj1G/dNnbGOm2Y1XDkVIV1nIaazXIzVkRQvzvavaqCMup
+ L5pnVCEaa3t7WdMrFegCc6oR7Lf8Bd4kG6e5vTUvmzBxxDci+z8Gm1wK7VrSuk4JFqzc
+ Vy+An3f1kPKMUnXzuSqwyAdbvSpWvR9vbLmu9xjn5fwwEuCQnRrOdox2siHcFHbqhdiC
+ XpgbLnj5pZhXjlybxAdsJiRbqgkOuB0/1LhZsn6fvn2DVxD4mf2dX/z2v6rmYY8ZBOFG
+ U6r2aOlFJbXrz/oFcMf/puTwNZmHIPVrW4BUO3AfQlcdOuengRcQiGVhKf/xYks3laJL MQ== 
 Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk2cts8c9-1
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk1gkk408-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 06 Feb 2023 14:03:07 +0000
-Received: from m0098421.ppops.net (m0098421.ppops.net [127.0.0.1])
-	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 316DqNPT013423;
-	Mon, 6 Feb 2023 14:03:06 GMT
-Received: from ppma04dal.us.ibm.com (7a.29.35a9.ip4.static.sl-reverse.com [169.53.41.122])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk2cts8bb-1
+	Mon, 06 Feb 2023 14:03:27 +0000
+Received: from m0098409.ppops.net (m0098409.ppops.net [127.0.0.1])
+	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 316DrS09026265;
+	Mon, 6 Feb 2023 14:03:26 GMT
+Received: from ppma03dal.us.ibm.com (b.bd.3ea9.ip4.static.sl-reverse.com [169.62.189.11])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3nk1gkk3xs-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 06 Feb 2023 14:03:06 +0000
-Received: from pps.filterd (ppma04dal.us.ibm.com [127.0.0.1])
-	by ppma04dal.us.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 316COOhH002578;
-	Mon, 6 Feb 2023 14:03:05 GMT
-Received: from smtprelay02.wdc07v.mail.ibm.com ([9.208.129.120])
-	by ppma04dal.us.ibm.com (PPS) with ESMTPS id 3nhf07dq7s-1
+	Mon, 06 Feb 2023 14:03:26 +0000
+Received: from pps.filterd (ppma03dal.us.ibm.com [127.0.0.1])
+	by ppma03dal.us.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 316CAqhx017625;
+	Mon, 6 Feb 2023 14:03:25 GMT
+Received: from smtprelay03.dal12v.mail.ibm.com ([9.208.130.98])
+	by ppma03dal.us.ibm.com (PPS) with ESMTPS id 3nhf07dq4x-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 06 Feb 2023 14:03:05 +0000
+	Mon, 06 Feb 2023 14:03:25 +0000
 Received: from smtpav02.wdc07v.mail.ibm.com (smtpav02.wdc07v.mail.ibm.com [10.39.53.229])
-	by smtprelay02.wdc07v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 316E33K06554322
+	by smtprelay03.dal12v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 316E3Noj8651404
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Mon, 6 Feb 2023 14:03:03 GMT
+	Mon, 6 Feb 2023 14:03:24 GMT
 Received: from smtpav02.wdc07v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 4D74F5805F;
-	Mon,  6 Feb 2023 14:03:03 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id A32D75805D;
+	Mon,  6 Feb 2023 14:03:23 +0000 (GMT)
 Received: from smtpav02.wdc07v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 238455805C;
-	Mon,  6 Feb 2023 14:03:01 +0000 (GMT)
+	by IMSVA (Postfix) with ESMTP id 9AF2658058;
+	Mon,  6 Feb 2023 14:03:21 +0000 (GMT)
 Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
 	by smtpav02.wdc07v.mail.ibm.com (Postfix) with ESMTP;
-	Mon,  6 Feb 2023 14:03:01 +0000 (GMT)
+	Mon,  6 Feb 2023 14:03:21 +0000 (GMT)
 From: Stefan Berger <stefanb@linux.ibm.com>
 To: linux-integrity@vger.kernel.org
 Cc: zohar@linux.ibm.com, serge@hallyn.com, brauner@kernel.org,
@@ -56,15 +56,13 @@ Cc: zohar@linux.ibm.com, serge@hallyn.com, brauner@kernel.org,
         jamjoom@us.ibm.com, linux-kernel@vger.kernel.org, paul@paul-moore.com,
         rgb@redhat.com, linux-security-module@vger.kernel.org,
         jmorris@namei.org, jpenumak@redhat.com,
-        John Johansen <john.johansen@canonical.com>,
-        Matthew Garrett <mjg59@srcf.ucam.org>,
-        Micah Morton <mortonm@chromium.org>,
-        Kentaro Takeda <takedakn@nttdata.co.jp>,
-        Jarkko Sakkinen <jarkko@kernel.org>,
-        Stefan Berger <stefanb@linux.ibm.com>
-Subject: [PATCH v15 01/26] securityfs: rework dentry creation
-Date: Mon,  6 Feb 2023 09:02:28 -0500
-Message-Id: <20230206140253.3755945-2-stefanb@linux.ibm.com>
+        Stefan Berger <stefanb@linux.ibm.com>,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        linux-fsdevel@vger.kernel.org,
+        Denis Semakin <denis.semakin@huawei.com>
+Subject: [PATCH v15 11/26] ima: Define mac_admin_ns_capable() as a wrapper for ns_capable()
+Date: Mon,  6 Feb 2023 09:02:38 -0500
+Message-Id: <20230206140253.3755945-12-stefanb@linux.ibm.com>
 X-Mailer: git-send-email 2.39.0
 In-Reply-To: <20230206140253.3755945-1-stefanb@linux.ibm.com>
 References: <20230206140253.3755945-1-stefanb@linux.ibm.com>
@@ -76,127 +74,118 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: 2trCQ60WYB5_uD5bggctrBZa-sffJD7G
-X-Proofpoint-ORIG-GUID: bEHi6cVMPJ5BvS8HDAVSciQxZX2Tcuid
+X-Proofpoint-ORIG-GUID: OCOKYBV_Jf_BVibSB-tOhiL8KIyApJvF
+X-Proofpoint-GUID: EoywHmqD2FWtZtFc-RuWF-JZWTW1Hngd
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.219,Aquarius:18.0.930,Hydra:6.0.562,FMLib:17.11.122.1
  definitions=2023-02-06_07,2023-02-06_03,2022-06-22_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 mlxlogscore=999 mlxscore=0
- malwarescore=0 adultscore=0 clxscore=1011 priorityscore=1501
- suspectscore=0 bulkscore=0 impostorscore=0 phishscore=0 spamscore=0
- lowpriorityscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2212070000 definitions=main-2302060116
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 malwarescore=0 phishscore=0
+ clxscore=1011 mlxscore=0 mlxlogscore=999 lowpriorityscore=0
+ impostorscore=0 bulkscore=0 suspectscore=0 priorityscore=1501 spamscore=0
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2212070000 definitions=main-2302060121
 
-From: Christian Brauner <brauner@kernel.org>
+Define mac_admin_ns_capable() as a wrapper for the combined ns_capable()
+checks on CAP_MAC_ADMIN and CAP_SYS_ADMIN in a user namespace. Return
+true on the check if either capability or both are available.
 
-When securityfs creates a new file or directory via
-securityfs_create_dentry() it will take an additional reference on the
-newly created dentry after it has attached the new inode to the new
-dentry and added it to the hashqueues.
-If we contrast this with debugfs, which has the same underlying logic as
-securityfs, it uses a similar pairing as securityfs. Where securityfs
-has the securityfs_create_dentry() and securityfs_remove() pairing,
-debugfs has the __debugfs_create_file() and debugfs_remove() pairing.
+Use mac_admin_ns_capable() in place of capable(SYS_ADMIN). This will allow
+an IMA namespace to read the policy with only CAP_MAC_ADMIN, which has
+less privileges than CAP_SYS_ADMIN.
 
-In contrast to securityfs, debugfs doesn't take an additional reference
-on the newly created dentry in __debugfs_create_file() which would need
-to be put in debugfs_remove().
+Since CAP_MAC_ADMIN is an additional capability added to an existing gate
+avoid auditing in case it is not set.
 
-The additional dget() isn't a problem per se. In the current
-implementation of securityfs each created dentry pins the filesystem via
-securityfs_create_dentry() until it is removed. Since it is virtually
-guaranteed that there is at least one user of securityfs that has created
-dentries the initial securityfs mount cannot go away until all dentries
-have been removed.
-
-Since most of the users of the initial securityfs mount don't go away
-until the system is shutdown the initial securityfs won't go away when
-unmounted. Instead a mount will usually surface the same superblock as
-before. The additional dget() doesn't matter in this scenario since it
-is required that all dentries have been cleaned up by the respective
-users before the superblock can be destroyed, i.e. superblock shutdown
-is tied to the lifetime of the associated dentries.
-
-However, in order to support ima namespaces we need to extend securityfs
-to support being mounted outside of the initial user namespace. For
-namespaced users the pinning logic doesn't make sense. Whereas in the
-initial namespace the securityfs instance and the associated data
-structures of its users can't go away for reason explained earlier users
-of non-initial securityfs instances do go away when the last users of
-the namespace are gone.
-
-So for those users we neither want to duplicate the pinning logic nor
-make the global securityfs instance display different information based
-on the namespace. Both options would be really messy and hacky.
-
-Instead we will simply give each namespace its own securityfs instance
-similar to how each ipc namespace has its own mqueue instance and all
-entries in there are cleaned up on umount or when the last user of the
-associated namespace is gone.
-
-This means that the superblock's lifetime isn't tied to the dentries.
-Instead the last umount, without any fds kept open, will trigger a clean
-shutdown. But now the additional dget() gets in the way. Instead of
-being able to rely on the generic superblock shutdown logic we would
-need to drop the additional dentry reference during superblock shutdown
-for all associated users. That would force the use of a generic
-coordination mechanism for current and future users of securityfs which
-is unnecessary. Simply remove the additional dget() in
-securityfs_dentry_create().
-
-In securityfs_remove() we will call dget() to take an additional
-reference on the dentry about to be removed. After simple_unlink() or
-simple_rmdir() have dropped the dentry refcount we can call d_delete()
-which will either turn the dentry into negative dentry if our earlier
-dget() is the only reference to the dentry, i.e. it has no other users,
-or remove it from the hashqueues in case there are additional users.
-
-All of these changes should not have any effect on the userspace
-semantics of the initial securityfs mount.
-
-Signed-off-by: Christian Brauner <brauner@kernel.org>
-Cc: John Johansen <john.johansen@canonical.com>
-Cc: Matthew Garrett <mjg59@srcf.ucam.org>
-Cc: Micah Morton <mortonm@chromium.org>
-Cc: Kentaro Takeda <takedakn@nttdata.co.jp>
-Cc: James Morris <jmorris@namei.org>
-Cc: Jarkko Sakkinen <jarkko@kernel.org>
+Cc: Alexander Viro <viro@zeniv.linux.org.uk>
+Cc: linux-fsdevel@vger.kernel.org
+Signed-off-by: Denis Semakin <denis.semakin@huawei.com>
 Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-Reviewed-by: Mimi Zohar <zohar@linux.ibm.com>
-Reviewed-by: Serge Hallyn <serge@hallyn.com>
 
 ---
 v13:
-  - Slight improvements in 1st paragraph of commit message
----
- security/inode.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+  - implemented file_sb_user_ns(const struct file *); const is needed so it
+    can be called with seq_file's 'const struct file *file'
 
-diff --git a/security/inode.c b/security/inode.c
-index 6c326939750d..13e6780c4444 100644
---- a/security/inode.c
-+++ b/security/inode.c
-@@ -159,7 +159,6 @@ static struct dentry *securityfs_create_dentry(const char *name, umode_t mode,
- 		inode->i_fop = fops;
- 	}
- 	d_instantiate(dentry, inode);
--	dget(dentry);
- 	inode_unlock(dir);
- 	return dentry;
+v11:
+  - use ns_capable_noaudit for CAP_MAC_ADMIN to avoid auditing in this case
+---
+ include/linux/capability.h      | 6 ++++++
+ include/linux/fs.h              | 5 +++++
+ security/integrity/ima/ima.h    | 6 ++++++
+ security/integrity/ima/ima_fs.c | 5 ++++-
+ 4 files changed, 21 insertions(+), 1 deletion(-)
+
+diff --git a/include/linux/capability.h b/include/linux/capability.h
+index 65efb74c3585..dc3e1230b365 100644
+--- a/include/linux/capability.h
++++ b/include/linux/capability.h
+@@ -270,6 +270,12 @@ static inline bool checkpoint_restore_ns_capable(struct user_namespace *ns)
+ 		ns_capable(ns, CAP_SYS_ADMIN);
+ }
  
-@@ -302,10 +301,12 @@ void securityfs_remove(struct dentry *dentry)
- 	dir = d_inode(dentry->d_parent);
- 	inode_lock(dir);
- 	if (simple_positive(dentry)) {
-+		dget(dentry);
- 		if (d_is_dir(dentry))
- 			simple_rmdir(dir, dentry);
- 		else
- 			simple_unlink(dir, dentry);
-+		d_delete(dentry);
- 		dput(dentry);
- 	}
- 	inode_unlock(dir);
++static inline bool mac_admin_ns_capable(struct user_namespace *ns)
++{
++	return ns_capable_noaudit(ns, CAP_MAC_ADMIN) ||
++		ns_capable(ns, CAP_SYS_ADMIN);
++}
++
+ /* audit system wants to get cap info from files as well */
+ int get_vfs_caps_from_disk(struct user_namespace *mnt_userns,
+ 			   const struct dentry *dentry,
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index c1769a2c5d70..4662efed3171 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -2730,6 +2730,11 @@ static inline struct user_namespace *file_mnt_user_ns(struct file *file)
+ 	return mnt_user_ns(file->f_path.mnt);
+ }
+ 
++static inline struct user_namespace *file_sb_user_ns(const struct file *file)
++{
++	return i_user_ns(file_inode(file));
++}
++
+ static inline struct mnt_idmap *file_mnt_idmap(struct file *file)
+ {
+ 	return mnt_idmap(file->f_path.mnt);
+diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+index 4de8ec776611..69f95ed0b8c6 100644
+--- a/security/integrity/ima/ima.h
++++ b/security/integrity/ima/ima.h
+@@ -492,4 +492,10 @@ static inline int ima_filter_rule_match(u32 secid, u32 field, u32 op,
+ #define	POLICY_FILE_FLAGS	S_IWUSR
+ #endif /* CONFIG_IMA_READ_POLICY */
+ 
++static inline
++struct user_namespace *ima_user_ns_from_file(const struct file *filp)
++{
++	return file_sb_user_ns(filp);
++}
++
+ #endif /* __LINUX_IMA_H */
+diff --git a/security/integrity/ima/ima_fs.c b/security/integrity/ima/ima_fs.c
+index 89d3113ceda1..c41aa61b7393 100644
+--- a/security/integrity/ima/ima_fs.c
++++ b/security/integrity/ima/ima_fs.c
+@@ -377,6 +377,9 @@ static const struct seq_operations ima_policy_seqops = {
+  */
+ static int ima_open_policy(struct inode *inode, struct file *filp)
+ {
++#ifdef CONFIG_IMA_READ_POLICY
++	struct user_namespace *user_ns = ima_user_ns_from_file(filp);
++#endif
+ 	struct ima_namespace *ns = &init_ima_ns;
+ 
+ 	if (!(filp->f_flags & O_WRONLY)) {
+@@ -385,7 +388,7 @@ static int ima_open_policy(struct inode *inode, struct file *filp)
+ #else
+ 		if ((filp->f_flags & O_ACCMODE) != O_RDONLY)
+ 			return -EACCES;
+-		if (!capable(CAP_SYS_ADMIN))
++		if (!mac_admin_ns_capable(user_ns))
+ 			return -EPERM;
+ 		return seq_open(filp, &ima_policy_seqops);
+ #endif
 -- 
 2.37.3
 
