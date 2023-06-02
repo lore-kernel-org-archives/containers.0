@@ -1,111 +1,102 @@
-Received: from out01.mta.xmission.com (out01.mta.xmission.com [166.70.13.231])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-yw1-f177.google.com (mail-yw1-f177.google.com [209.85.128.177])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9C9A110E3
-	for <containers@lists.linux.dev>; Fri,  2 Jun 2023 02:20:20 +0000 (UTC)
-Received: from in02.mta.xmission.com ([166.70.13.52]:52334)
-	by out01.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1q4tna-004fqV-3x; Thu, 01 Jun 2023 19:41:50 -0600
-Received: from ip68-110-29-46.om.om.cox.net ([68.110.29.46]:56980 helo=email.froward.int.ebiederm.org.xmission.com)
-	by in02.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1q4tnY-0034gx-SS; Thu, 01 Jun 2023 19:41:49 -0600
-From: "Eric W. Biederman" <ebiederm@xmission.com>
-To: Paul Moore <paul@paul-moore.com>
-Cc: "~akihirosuda" <suda.kyoto@gmail.com>,  linux-kernel@vger.kernel.org,
-  containers@lists.linux.dev,  serge@hallyn.com,  brauner@kernel.org,
-  akihiro.suda.cz@hco.ntt.co.jp
-References: <168547265011.24337.4306067683997517082-0@git.sr.ht>
-	<CAHC9VhQhBBPyZE24LM6KvYrET2huW-W_YYsyPndpNkn70Mu3Ug@mail.gmail.com>
-	<87fs7abu0f.fsf@email.froward.int.ebiederm.org>
-	<CAHC9VhRk3WhXh-GTDSKFW3PujXiQCDy3xk4Xb9_Lo4szgQ5G6Q@mail.gmail.com>
-Date: Thu, 01 Jun 2023 20:41:42 -0500
-In-Reply-To: <CAHC9VhRk3WhXh-GTDSKFW3PujXiQCDy3xk4Xb9_Lo4szgQ5G6Q@mail.gmail.com>
-	(Paul Moore's message of "Thu, 1 Jun 2023 21:01:55 -0400")
-Message-ID: <87ilc67i95.fsf@email.froward.int.ebiederm.org>
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.1 (gnu/linux)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 222A710796
+	for <containers@lists.linux.dev>; Fri,  2 Jun 2023 14:50:45 +0000 (UTC)
+Received: by mail-yw1-f177.google.com with SMTP id 00721157ae682-565cdb77b01so20061877b3.0
+        for <containers@lists.linux.dev>; Fri, 02 Jun 2023 07:50:45 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=paul-moore.com; s=google; t=1685717445; x=1688309445;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=ivYvW+G6u6YuIsqJJ45hUG/wpL22M96qcNdUDhQyURA=;
+        b=Z+SDdSc0mU9OOIKOIJ2KuGz9G7UhcLwMOjchy0pgHmbQ+oCYCSlk9d2pLULomjCzcl
+         ZRigYdUJE4r6pMZDjXY7XUOmERgZb46QJve7FVd41V6Gs+lfObaFLONdKiSWc36M2bGo
+         LeQE73Z5dQz7eB2tn8/4bSrhmFO9GHcK/g7Rdel9Y2tYj7a+J3agGVcV3T7UQxnPmrLY
+         jQvCYDlciQfPy9YQ7OX6aG+6J+N85z2T9b2+i8151wNRzLfsGkBLfw7q72uGzhCb129S
+         DV3YSC6XaacAPNq2x0MfDpklPCVqxaLlVjKYUyaiPc/pfl7KC4S3Vxxn0O4rmr8duoDs
+         LvBQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1685717445; x=1688309445;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=ivYvW+G6u6YuIsqJJ45hUG/wpL22M96qcNdUDhQyURA=;
+        b=AtOmlVm396joN+/IuLMVnPuHIb4GWMFiD79PVs+8dGXkgG9j4ZW2MKWBcQWAjkzrjj
+         bJU0isVM2KrpG7UBNu9mvaq2ZgsZJR1zEduVOaAhfnyV2q+2GCef7mZ75YoX/+aqV2Zm
+         bsoMhQZqaPmi+nCcTpEbYddRpDI7zjDPa/weyxyza7yWVIdqTCGppLcMKv7sYHfDt0mP
+         5J6ffboUiwGK4Pm7Bf0BRkJEQhzwOevh4Pn2jnVBFsfKkf7iUalLDC+qlDGGT3JXnUbo
+         y/rd3BjzzzQgb0lXeVs2LrgKdwjW1vtibOaBjKpfThCRkaZe7bD2ofSn3z/fasSYxLGp
+         eA8g==
+X-Gm-Message-State: AC+VfDxDbBx3vmYFzKsebYmDRhSyPHWyxD8n4ZSiQH9XK0/tK8p4yPtP
+	PZhBhrsBfVO3w3F/1asKLvOyDPA6yppj0E1l52s2
+X-Google-Smtp-Source: ACHHUZ4lYbZLcY6E5sPAYiv/CQasbi0XlBdzKI0j5yNqJ4GSyCIm969LlGIR2lWS1J22iwEw/DZKkBf8tEX7Pvzq9JM=
+X-Received: by 2002:a0d:d854:0:b0:559:f029:992d with SMTP id
+ a81-20020a0dd854000000b00559f029992dmr173275ywe.24.1685717444882; Fri, 02 Jun
+ 2023 07:50:44 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+References: <168547265011.24337.4306067683997517082-0@git.sr.ht>
+ <CAHC9VhQhBBPyZE24LM6KvYrET2huW-W_YYsyPndpNkn70Mu3Ug@mail.gmail.com>
+ <87fs7abu0f.fsf@email.froward.int.ebiederm.org> <CAHC9VhRk3WhXh-GTDSKFW3PujXiQCDy3xk4Xb9_Lo4szgQ5G6Q@mail.gmail.com>
+ <87ilc67i95.fsf@email.froward.int.ebiederm.org>
+In-Reply-To: <87ilc67i95.fsf@email.froward.int.ebiederm.org>
+From: Paul Moore <paul@paul-moore.com>
+Date: Fri, 2 Jun 2023 10:50:34 -0400
+Message-ID: <CAHC9VhT_D9qc3Od-DTZ52q_7bySOX1FWLTXha_OJUyHK5woq5w@mail.gmail.com>
+Subject: Re: [PATCH linux 0/3] [PATCH] userns: add sysctl "kernel.userns_group_range"
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: "~akihirosuda" <suda.kyoto@gmail.com>, linux-kernel@vger.kernel.org, 
+	containers@lists.linux.dev, serge@hallyn.com, brauner@kernel.org, 
+	akihiro.suda.cz@hco.ntt.co.jp
+Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
-X-XM-SPF: eid=1q4tnY-0034gx-SS;;;mid=<87ilc67i95.fsf@email.froward.int.ebiederm.org>;;;hst=in02.mta.xmission.com;;;ip=68.110.29.46;;;frm=ebiederm@xmission.com;;;spf=pass
-X-XM-AID: U2FsdGVkX19VrZxVOemsucyaabfl73Cwk/oBg1+agj4=
-X-SA-Exim-Connect-IP: 68.110.29.46
-X-SA-Exim-Mail-From: ebiederm@xmission.com
-X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on sa04.xmission.com
-X-Spam-Level: 
-X-Spam-Status: No, score=0.5 required=8.0 tests=ALL_TRUSTED,BAYES_50,
-	DCC_CHECK_NEGATIVE,T_SCC_BODY_TEXT_LINE,T_TM2_M_HEADER_IN_MSG,
-	T_TooManySym_01,T_TooManySym_02,XMSubLong,XM_B_Unicode shortcircuit=no
-	autolearn=disabled version=3.4.2
-X-Spam-Report: 
-	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
-	*  0.8 BAYES_50 BODY: Bayes spam probability is 40 to 60%
-	*      [score: 0.4027]
-	*  0.7 XMSubLong Long Subject
-	*  0.0 T_TM2_M_HEADER_IN_MSG BODY: No description available.
-	*  0.0 XM_B_Unicode BODY: Testing for specific types of unicode
-	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
-	*      [sa04 1397; Body=1 Fuz1=1 Fuz2=1]
-	*  0.0 T_TooManySym_01 4+ unique symbols in subject
-	* -0.0 T_SCC_BODY_TEXT_LINE No description available.
-	*  0.0 T_TooManySym_02 5+ unique symbols in subject
-X-Spam-DCC: XMission; sa04 1397; Body=1 Fuz1=1 Fuz2=1 
-X-Spam-Combo: ;Paul Moore <paul@paul-moore.com>
-X-Spam-Relay-Country: 
-X-Spam-Timing: total 661 ms - load_scoreonly_sql: 0.06 (0.0%),
-	signal_user_changed: 13 (2.0%), b_tie_ro: 11 (1.7%), parse: 1.45
-	(0.2%), extract_message_metadata: 24 (3.6%), get_uri_detail_list: 1.70
-	(0.3%), tests_pri_-2000: 22 (3.3%), tests_pri_-1000: 3.2 (0.5%),
-	tests_pri_-950: 1.66 (0.3%), tests_pri_-900: 1.31 (0.2%),
-	tests_pri_-200: 1.03 (0.2%), tests_pri_-100: 4.4 (0.7%),
-	tests_pri_-90: 155 (23.4%), check_bayes: 123 (18.6%), b_tokenize: 7
-	(1.0%), b_tok_get_all: 7 (1.0%), b_comp_prob: 2.5 (0.4%),
-	b_tok_touch_all: 103 (15.6%), b_finish: 1.18 (0.2%), tests_pri_0: 413
-	(62.5%), check_dkim_signature: 0.98 (0.1%), check_dkim_adsp: 4.7
-	(0.7%), poll_dns_idle: 0.57 (0.1%), tests_pri_10: 2.3 (0.3%),
-	tests_pri_500: 14 (2.1%), rewrite_mail: 0.00 (0.0%)
-Subject: Re: [PATCH linux 0/3] [PATCH] userns: add sysctl
- "kernel.userns_group_range"
-X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
-X-SA-Exim-Scanned: Yes (on in02.mta.xmission.com)
 
-Paul Moore <paul@paul-moore.com> writes:
-
-> On Thu, Jun 1, 2023 at 8:14=E2=80=AFPM Eric W. Biederman <ebiederm@xmissi=
-on.com> wrote:
->> Paul Moore <paul@paul-moore.com> writes:
->> >
->> > Given the challenges around adding access controls to userns
->> > operations, have you considered using the LSM support that was added
->> > upstream last year?  The relevant LSM hook can be found in commit
->> > 7cd4c5c2101c ("security, lsm: Introduce security_create_user_ns()"),
->>
->> Paul how have you handled the real world regression I reported against
->> chromium?
+On Thu, Jun 1, 2023 at 9:41=E2=80=AFPM Eric W. Biederman <ebiederm@xmission=
+.com> wrote:
+> Paul Moore <paul@paul-moore.com> writes:
+> > On Thu, Jun 1, 2023 at 8:14=E2=80=AFPM Eric W. Biederman <ebiederm@xmis=
+sion.com> wrote:
+> >> Paul Moore <paul@paul-moore.com> writes:
+> >> >
+> >> > Given the challenges around adding access controls to userns
+> >> > operations, have you considered using the LSM support that was added
+> >> > upstream last year?  The relevant LSM hook can be found in commit
+> >> > 7cd4c5c2101c ("security, lsm: Introduce security_create_user_ns()"),
+> >>
+> >> Paul how have you handled the real world regression I reported against
+> >> chromium?
+> >
+> > I don't track chromium development.
 >
-> I don't track chromium development.
+> You have chosen to be the maintainer and I reported it to you.
 
-You have chosen to be the maintainer and I reported it to you.
+I just dug through all of the mail I've received from you over the
+past two (?) years, as well as checking the LSM archive on lore and I
+don't see any bug reports from you directed at the upstream LSM or
+SELinux code ... perhaps I missed something, do you have a pointer?
 
->> Paul are you aware that the LSM hook can not be used to achieve the
->> objective of this patchset?
+Also, for the sake of clarification, I do not maintain any part of
+Chromium or Chrome OS.  I do maintain the upstream LSM, SELinux,
+audit, and labeled networking subsystems in the Linux Kernel as well
+as a couple of userspace packages.
+
+> >> Paul are you aware that the LSM hook can not be used to achieve the
+> >> objective of this patchset?
+> >
+> > /me shrugs
 >
-> /me shrugs
->
+> [snip parts about performing a group id check]
 
-[snip parts about performing a group id check]
+My comments here were only discussing the possibility of performing a
+group ID based access control check; I made no claims about the
+desirability of such a check, and I have no interest in rehashing our
+old debates.
 
-The LSM hook you added does not have the technical capability to reduce
-the attack surface to mitigate bugs in the kernel.  It is the
-ineffectiveness of the hook not the permission check that I was
-referring to.
-
-Eric
+--=20
+paul-moore.com
