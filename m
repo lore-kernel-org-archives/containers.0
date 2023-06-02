@@ -1,110 +1,125 @@
-Received: from out03.mta.xmission.com (out03.mta.xmission.com [166.70.13.233])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-oa1-f51.google.com (mail-oa1-f51.google.com [209.85.160.51])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C020CEA8
-	for <containers@lists.linux.dev>; Fri,  2 Jun 2023 00:49:16 +0000 (UTC)
-Received: from in01.mta.xmission.com ([166.70.13.51]:37446)
-	by out03.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1q4sJh-00Evgz-Q9; Thu, 01 Jun 2023 18:06:53 -0600
-Received: from ip68-110-29-46.om.om.cox.net ([68.110.29.46]:32956 helo=email.froward.int.ebiederm.org.xmission.com)
-	by in01.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1q4sJg-003GZB-ML; Thu, 01 Jun 2023 18:06:53 -0600
-From: "Eric W. Biederman" <ebiederm@xmission.com>
-To: ~akihirosuda <akihirosuda@git.sr.ht>
-Cc: linux-kernel@vger.kernel.org,  containers@lists.linux.dev,
-  serge@hallyn.com,  brauner@kernel.org,  paul@paul-moore.com,
-  ~akihirosuda <suda.kyoto@gmail.com>,  akihiro.suda.cz@hco.ntt.co.jp
-References: <168547265011.24337.4306067683997517082-0@git.sr.ht>
-Date: Thu, 01 Jun 2023 19:06:27 -0500
-In-Reply-To: <168547265011.24337.4306067683997517082-0@git.sr.ht>
-	(akihirosuda@git.sr.ht's message of "Tue, 30 May 2023 18:50:50 +0000")
-Message-ID: <87v8g6bud8.fsf@email.froward.int.ebiederm.org>
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.1 (gnu/linux)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A95CA10E3
+	for <containers@lists.linux.dev>; Fri,  2 Jun 2023 01:02:07 +0000 (UTC)
+Received: by mail-oa1-f51.google.com with SMTP id 586e51a60fabf-1a28de15c8aso715353fac.2
+        for <containers@lists.linux.dev>; Thu, 01 Jun 2023 18:02:07 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=paul-moore.com; s=google; t=1685667726; x=1688259726;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=9o3/2D9pqXQu0Kja08e1hU2rc3ztUxCY4Eps47VldFo=;
+        b=KNkEPCsbkJxvJYdvTrUPo8kiFxyN3E0oTIVRNgXzBZ+/0ECQSM+jKwqtWrysFcjw6a
+         DZyYom+T006pCCnXmWAqmmb2A5pJTinU18kAUM5QVhz+0QwucHpSGiqUt7p4K5CTp65m
+         4/0oyu60fV247yyWntwJKLXfavATpkxPNIOeA9vbm7Wxr6sVcttB9XTUAb9aZebN9FK3
+         Y8G09YaYrtHFLmhTVtOijFcYZkKUNBmR+hco1cQ/uP9eEQDxdmofwDaCkTgocKzFRW5Y
+         ux4AIt4qlQGTwUnnRMG+GYwJ5Ssnwib6KYmA6fZphSCC2wT60LGkHKkIaq7Fn143dD5r
+         X8qg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1685667726; x=1688259726;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=9o3/2D9pqXQu0Kja08e1hU2rc3ztUxCY4Eps47VldFo=;
+        b=PRWHw30tHB70BhopeIrjR9l6nZUuyX4o66J3mGFc+7XNqMdqTZRNS9uRhaE7hjhVIk
+         gMX0TsHesGlb6ZbFwIf2Jg8KZ9685bs7inzRnMI9Ln/Fn4ly/ZtGQHNixrIXlwqK2fV8
+         dth0aqjqFHltwKwRQj2yLaPjPp9BS4K92Nf8eZ+Nw20SpLryzkTi1J01FcKGB5P/0l3I
+         i15SfzrK1gp3DgLxQTl3BuUH71dsPeKNbv+02jxpBjVr56TeCYrFYgmR6l7nPz4P5GR6
+         xBpcZcAs0NyEGHeyC5Zoa6Ie/QXCyikZifnOyJNkdUPpu3yqwvN5vn/ig8sZkQfDiUji
+         soHw==
+X-Gm-Message-State: AC+VfDwSWo9dHmmB3Hohxh4U7MezWNMNxg1CsBWtHn2rUAN6flQ5C7ip
+	NMUnSywQuLbQq656pcJIa+V/18h4T0KNP2BsBuiz
+X-Google-Smtp-Source: ACHHUZ6BFLtcpI/8pyU4ctzfJ+V7wPvO8tH2XND3faYj8YEVhBvhnKC7TofGwk7sr16sLm3J/vAdhLUnJrx8pfgPRGI=
+X-Received: by 2002:a05:6870:3491:b0:19f:6711:8dfc with SMTP id
+ n17-20020a056870349100b0019f67118dfcmr629339oah.31.1685667726423; Thu, 01 Jun
+ 2023 18:02:06 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain
-X-XM-SPF: eid=1q4sJg-003GZB-ML;;;mid=<87v8g6bud8.fsf@email.froward.int.ebiederm.org>;;;hst=in01.mta.xmission.com;;;ip=68.110.29.46;;;frm=ebiederm@xmission.com;;;spf=pass
-X-XM-AID: U2FsdGVkX19jCAD3VXiN6cfDqTILsJT4KFsn1CUFU9Y=
-X-SA-Exim-Connect-IP: 68.110.29.46
-X-SA-Exim-Mail-From: ebiederm@xmission.com
-X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on sa05.xmission.com
-X-Spam-Level: 
-X-Spam-Status: No, score=0.5 required=8.0 tests=ALL_TRUSTED,BAYES_50,
-	DCC_CHECK_NEGATIVE,T_TM2_M_HEADER_IN_MSG,T_TooManySym_01,
-	T_TooManySym_02,XMSubLong shortcircuit=no autolearn=disabled
-	version=3.4.2
-X-Spam-Report: 
-	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
-	*  0.8 BAYES_50 BODY: Bayes spam probability is 40 to 60%
-	*      [score: 0.5000]
-	*  0.7 XMSubLong Long Subject
-	*  0.0 T_TM2_M_HEADER_IN_MSG BODY: No description available.
-	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
-	*      [sa05 1397; Body=1 Fuz1=1 Fuz2=1]
-	*  0.0 T_TooManySym_01 4+ unique symbols in subject
-	*  0.0 T_TooManySym_02 5+ unique symbols in subject
-X-Spam-DCC: XMission; sa05 1397; Body=1 Fuz1=1 Fuz2=1 
-X-Spam-Combo: ;~akihirosuda <akihirosuda@git.sr.ht>
-X-Spam-Relay-Country: 
-X-Spam-Timing: total 511 ms - load_scoreonly_sql: 0.12 (0.0%),
-	signal_user_changed: 12 (2.3%), b_tie_ro: 10 (1.9%), parse: 1.61
-	(0.3%), extract_message_metadata: 31 (6.0%), get_uri_detail_list: 2.5
-	(0.5%), tests_pri_-2000: 18 (3.4%), tests_pri_-1000: 3.3 (0.6%),
-	tests_pri_-950: 1.65 (0.3%), tests_pri_-900: 1.30 (0.3%),
-	tests_pri_-200: 1.07 (0.2%), tests_pri_-100: 8 (1.5%), tests_pri_-90:
-	92 (18.0%), check_bayes: 81 (15.8%), b_tokenize: 7 (1.4%),
-	b_tok_get_all: 7 (1.3%), b_comp_prob: 2.5 (0.5%), b_tok_touch_all: 60
-	(11.8%), b_finish: 1.20 (0.2%), tests_pri_0: 225 (44.0%),
-	check_dkim_signature: 0.70 (0.1%), check_dkim_adsp: 6 (1.3%),
-	poll_dns_idle: 86 (16.9%), tests_pri_10: 4.0 (0.8%), tests_pri_500:
-	108 (21.2%), rewrite_mail: 0.00 (0.0%)
-Subject: Re: [PATCH linux 0/3] [PATCH] userns: add sysctl
- "kernel.userns_group_range"
-X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
-X-SA-Exim-Scanned: Yes (on in01.mta.xmission.com)
+References: <168547265011.24337.4306067683997517082-0@git.sr.ht>
+ <CAHC9VhQhBBPyZE24LM6KvYrET2huW-W_YYsyPndpNkn70Mu3Ug@mail.gmail.com> <87fs7abu0f.fsf@email.froward.int.ebiederm.org>
+In-Reply-To: <87fs7abu0f.fsf@email.froward.int.ebiederm.org>
+From: Paul Moore <paul@paul-moore.com>
+Date: Thu, 1 Jun 2023 21:01:55 -0400
+Message-ID: <CAHC9VhRk3WhXh-GTDSKFW3PujXiQCDy3xk4Xb9_Lo4szgQ5G6Q@mail.gmail.com>
+Subject: Re: [PATCH linux 0/3] [PATCH] userns: add sysctl "kernel.userns_group_range"
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: "~akihirosuda" <suda.kyoto@gmail.com>, linux-kernel@vger.kernel.org, 
+	containers@lists.linux.dev, serge@hallyn.com, brauner@kernel.org, 
+	akihiro.suda.cz@hco.ntt.co.jp
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-~akihirosuda <akihirosuda@git.sr.ht> writes:
-
-> This sysctl limits groups who can create a new userns without
-> CAP_SYS_ADMIN in the current userns, so as to mitigate potential kernel
-> vulnerabilities around userns.
+On Thu, Jun 1, 2023 at 8:14=E2=80=AFPM Eric W. Biederman <ebiederm@xmission=
+.com> wrote:
+> Paul Moore <paul@paul-moore.com> writes:
+> > On Tue, May 30, 2023 at 2:50=E2=80=AFPM ~akihirosuda <akihirosuda@git.s=
+r.ht> wrote:
+> >>
+> >> This sysctl limits groups who can create a new userns without
+> >> CAP_SYS_ADMIN in the current userns, so as to mitigate potential kerne=
+l
+> >> vulnerabilities around userns.
+> >>
+> >> The sysctl value format is same as "net.ipv4.ping_group_range".
+> >>
+> >> To disable creating new unprivileged userns, set the sysctl value to "=
+1
+> >> 0" in the initial userns.
+> >>
+> >> To allow everyone to create new userns, set the sysctl value to "0
+> >> 4294967294". This is the default value.
+> >>
+> >> This sysctl replaces "kernel.unprivileged_userns_clone" that is found =
+in
+> >> Ubuntu [1] and Debian GNU/Linux.
+> >>
+> >> Link: https://git.launchpad.net/~ubuntu-
+> >> kernel/ubuntu/+source/linux/+git/jammy/commit?id=3D3422764 [1]
+> >
+> > Given the challenges around adding access controls to userns
+> > operations, have you considered using the LSM support that was added
+> > upstream last year?  The relevant LSM hook can be found in commit
+> > 7cd4c5c2101c ("security, lsm: Introduce security_create_user_ns()"),
 >
-> The sysctl value format is same as "net.ipv4.ping_group_range".
->
-> To disable creating new unprivileged userns, set the sysctl value to "1
-> 0" in the initial userns.
->
-> To allow everyone to create new userns, set the sysctl value to "0
-> 4294967294". This is the default value.
->
-> This sysctl replaces "kernel.unprivileged_userns_clone" that is found in
-> Ubuntu [1] and Debian GNU/Linux.
->
-> Link: https://git.launchpad.net/~ubuntu-
-> kernel/ubuntu/+source/linux/+git/jammy/commit?id=3422764 [1]
->
-> Signed-off-by: Akihiro Suda <akihiro.suda.cz@hco.ntt.co.jp>
+> Paul how have you handled the real world regression I reported against
+> chromium?
 
-How does this functionally differ from what already exists
-user.max_user_namespaces?
+I don't track chromium development.
 
-Given that setns exists I don't see limiting creation of user namespaces
-by group being meaningful, if your goal is to reduce the attack surface
-of the kernel to mitigate potential kernel vulnerabilities.
+> Paul are you aware that the LSM hook can not be used to achieve the
+> objective of this patchset?
 
-How does this functionality interact with the use of setgroups in a user
-namespace?
+/me shrugs
 
-What is the value of a group_range inside of a newly created user
-namespace?  How does that work to maintain the policy you are trying to
-implement?
+I thought one could look into a cred struct using a BPF LSM, which
+would allow one to make access control decisions based on group ID,
+but I will be the first to admit I'm not a BPF LSM expert.
+Regardless, one could introduce a group ID check into a LSM if they
+were so inclined.
 
-Eric
+I also find it slightly amusing that you are arguing against my reply
+that was discussing *not* adding another userns control point; of all
+people I thought you would be supportive of this ... /me shrugs again.
+
+> > and although only SELinux currently provides an access control
+> > implementation, there is no reason you couldn't add support for your
+> > favorite LSM, or even just a simple BPF LSM to enforce the group
+> > controls as you've described them here.
+>
+> Is there a publicly available SELinux policy that uses that LSM hook?
+
+I have no idea, I don't track all of the publicly available SELinux
+policies because frankly it doesn't matter; the SELinux feature
+exists, and it is my role to support and maintain it.  There are
+LSM/SELinux features which are not widely exercised in general purpose
+SELinux policies for various reasons, but *are* used in specialized
+environments that are not often discussed on public mailing lists.
+
+--=20
+paul-moore.com
