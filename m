@@ -1,181 +1,188 @@
-Received: from mail-yb1-f179.google.com (mail-yb1-f179.google.com [209.85.219.179])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mail.hallyn.com (mail.hallyn.com [178.63.66.53])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D6797523E
-	for <containers@lists.linux.dev>; Fri,  2 Jun 2023 21:02:43 +0000 (UTC)
-Received: by mail-yb1-f179.google.com with SMTP id 3f1490d57ef6-bb15165ba06so2376929276.2
-        for <containers@lists.linux.dev>; Fri, 02 Jun 2023 14:02:43 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1685739762; x=1688331762;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=kRGX/7FVcKXywnk21BiSZROJV8xYMUqrqkGkpYOfQwY=;
-        b=Oy8N/RIkZHE7Ca9DK2TAOVdN2mdqX2GzIN7en9kr0rJrnFR8LesI5uLuIhIOC35YeC
-         OAD57nZ29rcWqbpMcfv3QJadMbwAFjppOx16wbLbHLghBoYCBsxKYm9GH0EtLDuajuUs
-         V2nrkwKtMMtjUX2I36oFib2qNyGtiTk+iWJfofKZv8V8ufmx42lhAuFYkqimMBXlzvFR
-         hRtuu6v9yTm6b2NLfldSQZFGXfPmBAVivBRDPfvOVsLRK9qS6WGXPbZRWjKNbpZkIpw0
-         gxd3PkpdPEZAe2puKHcAzAqWT/3x5qdCHTIphakvoVVK8QoSsqBLrMas3nJhUmmhzOjH
-         hs5g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1685739762; x=1688331762;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=kRGX/7FVcKXywnk21BiSZROJV8xYMUqrqkGkpYOfQwY=;
-        b=VN7GDXVUlKC592njdmNYAd2hndhrLqrdMUrYBBo640z8mx4xCQg3USJMR8ghk5RisL
-         mMnlGyZZMzfp/NxuRR9yIrJmrg7jn/aljTKX+bUDwOmkfxF+ydhWWBYxY+OhRZPweFK+
-         iWAC2PWXr1pA/M+yPazMVKFdtH6MmGfb7UMxhLwRr82zVKMRCGtMgQYFb9WvIR+8P+gF
-         LtW3WtsDCfkqtLzBQtFaR6XUBKaBjapuzUUIRJX4GV4hKyEl1Hq5UpFnnUjW9lVxJfE0
-         fl8OLGaJIX1DjsprHv/3rkiJM9RlXAJyYFnbupYXbKtnRHlWg16a7wud6z6wwewZiqyR
-         Z7jQ==
-X-Gm-Message-State: AC+VfDz4ofnAUpO5UWf8kVhpmRWVcJ4jYTJMxpAQxiw4eKVfsXhxgHOW
-	/umSgQWstag2BosZZbqi/Kxs0avnd/nYJSKwc3M=
-X-Google-Smtp-Source: ACHHUZ5xk2aJcGinyOCzK1I5WIGqUm5962AKqUeDB7EYyqifvJrVfKm7A9zeaFmS1/EHR34jsZFI36zqPYI2c+qy1Ak=
-X-Received: by 2002:a25:ab28:0:b0:b9e:5aad:ed72 with SMTP id
- u37-20020a25ab28000000b00b9e5aaded72mr4084855ybi.31.1685739762435; Fri, 02
- Jun 2023 14:02:42 -0700 (PDT)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8C5C51F95D
+	for <containers@lists.linux.dev>; Wed, 12 Jul 2023 19:01:46 +0000 (UTC)
+Received: by mail.hallyn.com (Postfix, from userid 1001)
+	id E6A38C85; Wed, 12 Jul 2023 13:54:48 -0500 (CDT)
+Date: Wed, 12 Jul 2023 13:54:48 -0500
+From: "Serge E. Hallyn" <serge@hallyn.com>
+To: Jan Kiszka <jan.kiszka@siemens.com>
+Cc: Christian Brauner <brauner@kernel.org>,
+	Kees Cook <keescook@chromium.org>,
+	"Serge E. Hallyn" <serge@hallyn.com>,
+	Al Viro <viro@zeniv.linux.org.uk>,
+	Laurent Vivier <laurent@vivier.eu>, linux-fsdevel@vger.kernel.org,
+	Christoph Hellwig <hch@lst.de>, Sargun Dhillon <sargun@sargun.me>,
+	Jann Horn <jannh@google.com>,
+	Henning Schild <henning.schild@siemens.com>,
+	Andrei Vagin <avagin@gmail.com>,
+	Matthew Bobrowski <repnop@google.com>, linux-kernel@vger.kernel.org,
+	linux-api@vger.kernel.org, containers@lists.linux.dev,
+	Christian Brauner <christian.brauner@ubuntu.com>
+Subject: Re: [PATCH v2 2/2] binfmt_misc: enable sandboxed mounts
+Message-ID: <20230712185448.GA611149@mail.hallyn.com>
+References: <20211216112659.310979-1-brauner@kernel.org>
+ <20211216112659.310979-2-brauner@kernel.org>
+ <20211226133140.GA8064@mail.hallyn.com>
+ <0e817424-51db-fe0b-a00e-ac7933e8ac1d@siemens.com>
+ <20220530081358.b3tvgvo63mq5o2oo@wittgenstein>
+ <202205311219.725ED1C69@keescook>
+ <20220602104107.6b3d3udhslvhg6ew@wittgenstein>
+ <08b4b0c8-3621-a970-d206-d24e6eb81355@siemens.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-References: <168547265011.24337.4306067683997517082-0@git.sr.ht>
- <CAHC9VhQhBBPyZE24LM6KvYrET2huW-W_YYsyPndpNkn70Mu3Ug@mail.gmail.com>
- <87fs7abu0f.fsf@email.froward.int.ebiederm.org> <CAHC9VhRk3WhXh-GTDSKFW3PujXiQCDy3xk4Xb9_Lo4szgQ5G6Q@mail.gmail.com>
- <87ilc67i95.fsf@email.froward.int.ebiederm.org> <CAHC9VhT_D9qc3Od-DTZ52q_7bySOX1FWLTXha_OJUyHK5woq5w@mail.gmail.com>
-In-Reply-To: <CAHC9VhT_D9qc3Od-DTZ52q_7bySOX1FWLTXha_OJUyHK5woq5w@mail.gmail.com>
-From: Akihiro Suda <suda.kyoto@gmail.com>
-Date: Sat, 3 Jun 2023 06:02:30 +0900
-Message-ID: <CAG8fp8TN+DQu8kok7_PcxtK=7TTBJTYm60-Y9ZnH+Euf5n4xJQ@mail.gmail.com>
-Subject: Re: [PATCH linux 0/3] [PATCH] userns: add sysctl "kernel.userns_group_range"
-To: Paul Moore <paul@paul-moore.com>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, linux-kernel@vger.kernel.org, 
-	containers@lists.linux.dev, serge@hallyn.com, brauner@kernel.org, 
-	akihiro.suda.cz@hco.ntt.co.jp
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <08b4b0c8-3621-a970-d206-d24e6eb81355@siemens.com>
 
-Thank you all for feedbacks,
+On Tue, Feb 28, 2023 at 07:20:28AM +0100, Jan Kiszka wrote:
+> On 02.06.22 12:41, Christian Brauner wrote:
+> > On Tue, May 31, 2022 at 12:24:37PM -0700, Kees Cook wrote:
+> >> On Mon, May 30, 2022 at 10:13:58AM +0200, Christian Brauner wrote:
+> >>> On Sun, May 29, 2022 at 09:35:40PM +0200, Jan Kiszka wrote:
+> >>>> On 26.12.21 14:31, Serge E. Hallyn wrote:
+> >>>>> On Thu, Dec 16, 2021 at 12:26:59PM +0100, Christian Brauner wrote:
+> >>>>>> From: Christian Brauner <christian.brauner@ubuntu.com>
+> >>>>>>
+> >>>>>> Enable unprivileged sandboxes to create their own binfmt_misc mounts.
+> >>>>>> This is based on Laurent's work in [1] but has been significantly
+> >>>>>> reworked to fix various issues we identified in earlier versions.
+> >>>>>>
+> >>>>>> While binfmt_misc can currently only be mounted in the initial user
+> >>>>>> namespace, binary types registered in this binfmt_misc instance are
+> >>>>>> available to all sandboxes (Either by having them installed in the
+> >>>>>> sandbox or by registering the binary type with the F flag causing the
+> >>>>>> interpreter to be opened right away). So binfmt_misc binary types are
+> >>>>>> already delegated to sandboxes implicitly.
+> >>>>>>
+> >>>>>> However, while a sandbox has access to all registered binary types in
+> >>>>>> binfmt_misc a sandbox cannot currently register its own binary types
+> >>>>>> in binfmt_misc. This has prevented various use-cases some of which were
+> >>>>>> already outlined in [1] but we have a range of issues associated with
+> >>>>>> this (cf. [3]-[5] below which are just a small sample).
+> >>>>>>
+> >>>>>> Extend binfmt_misc to be mountable in non-initial user namespaces.
+> >>>>>> Similar to other filesystem such as nfsd, mqueue, and sunrpc we use
+> >>>>>> keyed superblock management. The key determines whether we need to
+> >>>>>> create a new superblock or can reuse an already existing one. We use the
+> >>>>>> user namespace of the mount as key. This means a new binfmt_misc
+> >>>>>> superblock is created once per user namespace creation. Subsequent
+> >>>>>> mounts of binfmt_misc in the same user namespace will mount the same
+> >>>>>> binfmt_misc instance. We explicitly do not create a new binfmt_misc
+> >>>>>> superblock on every binfmt_misc mount as the semantics for
+> >>>>>> load_misc_binary() line up with the keying model. This also allows us to
+> >>>>>> retrieve the relevant binfmt_misc instance based on the caller's user
+> >>>>>> namespace which can be done in a simple (bounded to 32 levels) loop.
+> >>>>>>
+> >>>>>> Similar to the current binfmt_misc semantics allowing access to the
+> >>>>>> binary types in the initial binfmt_misc instance we do allow sandboxes
+> >>>>>> access to their parent's binfmt_misc mounts if they do not have created
+> >>>>>> a separate binfmt_misc instance.
+> >>>>>>
+> >>>>>> Overall, this will unblock the use-cases mentioned below and in general
+> >>>>>> will also allow to support and harden execution of another
+> >>>>>> architecture's binaries in tight sandboxes. For instance, using the
+> >>>>>> unshare binary it possible to start a chroot of another architecture and
+> >>>>>> configure the binfmt_misc interpreter without being root to run the
+> >>>>>> binaries in this chroot and without requiring the host to modify its
+> >>>>>> binary type handlers.
+> >>>>>>
+> >>>>>> Henning had already posted a few experiments in the cover letter at [1].
+> >>>>>> But here's an additional example where an unprivileged container
+> >>>>>> registers qemu-user-static binary handlers for various binary types in
+> >>>>>> its separate binfmt_misc mount and is then seamlessly able to start
+> >>>>>> containers with a different architecture without affecting the host:
+> >>>>>>
+> >>>>>> root    [lxc monitor] /var/snap/lxd/common/lxd/containers f1
+> >>>>>> 1000000  \_ /sbin/init
+> >>>>>> 1000000      \_ /lib/systemd/systemd-journald
+> >>>>>> 1000000      \_ /lib/systemd/systemd-udevd
+> >>>>>> 1000100      \_ /lib/systemd/systemd-networkd
+> >>>>>> 1000101      \_ /lib/systemd/systemd-resolved
+> >>>>>> 1000000      \_ /usr/sbin/cron -f
+> >>>>>> 1000103      \_ /usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only
+> >>>>>> 1000000      \_ /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
+> >>>>>> 1000104      \_ /usr/sbin/rsyslogd -n -iNONE
+> >>>>>> 1000000      \_ /lib/systemd/systemd-logind
+> >>>>>> 1000000      \_ /sbin/agetty -o -p -- \u --noclear --keep-baud console 115200,38400,9600 vt220
+> >>>>>> 1000107      \_ dnsmasq --conf-file=/dev/null -u lxc-dnsmasq --strict-order --bind-interfaces --pid-file=/run/lxc/dnsmasq.pid --liste
+> >>>>>> 1000000      \_ [lxc monitor] /var/lib/lxc f1-s390x
+> >>>>>> 1100000          \_ /usr/bin/qemu-s390x-static /sbin/init
+> >>>>>> 1100000              \_ /usr/bin/qemu-s390x-static /lib/systemd/systemd-journald
+> >>>>>> 1100000              \_ /usr/bin/qemu-s390x-static /usr/sbin/cron -f
+> >>>>>> 1100103              \_ /usr/bin/qemu-s390x-static /usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-ac
+> >>>>>> 1100000              \_ /usr/bin/qemu-s390x-static /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
+> >>>>>> 1100104              \_ /usr/bin/qemu-s390x-static /usr/sbin/rsyslogd -n -iNONE
+> >>>>>> 1100000              \_ /usr/bin/qemu-s390x-static /lib/systemd/systemd-logind
+> >>>>>> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud console 115200,38400,9600 vt220
+> >>>>>> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud pts/0 115200,38400,9600 vt220
+> >>>>>> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud pts/1 115200,38400,9600 vt220
+> >>>>>> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud pts/2 115200,38400,9600 vt220
+> >>>>>> 1100000              \_ /usr/bin/qemu-s390x-static /sbin/agetty -o -p -- \u --noclear --keep-baud pts/3 115200,38400,9600 vt220
+> >>>>>> 1100000              \_ /usr/bin/qemu-s390x-static /lib/systemd/systemd-udevd
+> >>>>>>
+> >>>>>> [1]: https://lore.kernel.org/all/20191216091220.465626-1-laurent@vivier.eu
+> >>>>>> [2]: https://discuss.linuxcontainers.org/t/binfmt-misc-permission-denied
+> >>>>>> [3]: https://discuss.linuxcontainers.org/t/lxd-binfmt-support-for-qemu-static-interpreters
+> >>>>>> [4]: https://discuss.linuxcontainers.org/t/3-1-0-binfmt-support-service-in-unprivileged-guest-requires-write-access-on-hosts-proc-sys-fs-binfmt-misc
+> >>>>>> [5]: https://discuss.linuxcontainers.org/t/qemu-user-static-not-working-4-11
+> >>>>>>
+> >>>>>> Link: https://lore.kernel.org/r/20191216091220.465626-2-laurent@vivier.eu (origin)
+> >>>>>> Link: https://lore.kernel.org/r/20211028103114.2849140-2-brauner@kernel.org (v1)
+> >>>>>> Cc: Sargun Dhillon <sargun@sargun.me>
+> >>>>>> Cc: Serge Hallyn <serge@hallyn.com>
+> >>>>>
+> >>>>> (one typo below)
+> >>>>>
+> >>>>> Acked-by: Serge Hallyn <serge@hallyn.com>
+> >>>>>
+> >>>>
+> >>>> What happened to this afterwards? Any remaining issues?
+> >>>
+> >>> Not that we know. I plan to queue this up for 5.20.
+> >>
+> >> Hello!
+> >>
+> >> Thanks for the thread-ping -- I hadn't had a chance to read through this
+> >> before, but since it's touching binfmt, it popped up on my radar. :)
+> >>
+> >> I like it overall, though I'd rather see it split up more (there's
+> >> some refactoring built into the patches that would be nice to split out
+> >> just to make review easier), but since others have already reviewed it,
+> >> that's probably overkill.
+> >>
+> >> I'd really like to see some self-tests for this, though. Especially
+> > 
+> > Yeah, I had started writing them but decoupled the upstreaming. Imho,
+> > you can start queueing this up. I'd like this to have very long exposure
+> > in -next. I'll follow up with selftests in the next weeks. (I'm out for
+> > a conference this week.)
+> > 
+> >> around the cred logic changes and the namespace fallback logic. I'd like
+> >> to explicitly document and test what the expectations are around the
+> >> mounts, etc.
+> >>
+> >> Finally, I'd prefer this went via the execve tree.
+> > 
+> > I mentioned this yesterday to you but just so there's a paper trail:
+> > The series and this iteration preceeds the maintainer entry. That's the
+> > only reason this originally wasn't aimed at that tree when the series
+> > was sent. You've been in Cc from the start though. :)
+> > I'd like to step up and maintain the binfmt_misc fs going forward. There
+> > are other tweaks it could use.
+> > 
+> 
+> Did anything happen after this? I'm not finding traced in lkml at least.
+> 
+> Jan
 
-> (Paul)
+Looking at https://lore.kernel.org/all/20230630-hufen-herzallerliebst-fde8e7aecba0@brauner/
+looks like Christian was going to ping Kees about taking
+https://git.kernel.org/pub/scm/linux/kernel/git/vfs/vfs.git/log/?h=vfs.binfmt_misc
 
-> Given the challenges around adding access controls to userns
-> operations, have you considered using the LSM support that was added
-> upstream last year?
-
-I'll consider this.
-
-> The relevant LSM hook can be found in commit
-> 7cd4c5c2101c ("security, lsm: Introduce security_create_user_ns()"),
-> and although only SELinux currently provides an access control
-> implementation, there is no reason you couldn't add support for your
-> favorite LSM, or even just a simple BPF LSM to enforce the group
-> controls as you've described them here.
-
-My intent is to provide an universal knob that works for both SELinux
-distros and AppArmor distros.
-So I guess I should try to use BPF LSM (and find out how its end-user
-UX in the userspace can be simplified just like sysctl).
-
----
-> (Christian)
-
-> Yes. Please, no more sysctls...
-
-I'll try to find another way, such as (BPF) LSM.
-
----
-> (Eric)
-
-> How does this functionally differ from what already exists
-> user.max_user_namespaces?
-
-My patch is not about the numbers of the UserNS, but about who is
-permitted to create UserNS,
-which can be a potential attack surface to pwn the root in the initial User=
-NS.
-
-> Given that setns exists I don't see limiting creation of user namespaces
-> by group being meaningful, if your goal is to reduce the attack surface
-> of the kernel to mitigate potential kernel vulnerabilities.
-
-Yes, that's my goal.
-The intent is to allow creating UserNS only for (semi-trusted) human
-users who need to run unprivileged (aka rootless) containers.
-Creating UserNS is expected to be prohibited for system daemon
-accounts and human users who do not need (or who are not trusted
-enough) to run containers.
-
-This configuration should be more secure than just allowing everybody
-to run unprivileged (aka rootless) containers, and also more secure
-than just disabling UserNS and running everything as the root.
-
-> How does this functionality interact with the use of setgroups in a user
-> namespace?
->
-> What is the value of a group_range inside of a newly created user
-> namespace?  How does that work to maintain the policy you are trying to
-> implement?
-
-In a child UserNS, the group_range file is expected to use the mapped
-IDs, not the initial UserNS IDs.
-(So, the range can't be just initialized with `.range =3D {0,
-((gid_t)~0U) - 1}`. My patch v1 is wrong.)
-
-> Paul are you aware that the LSM hook can not be used to achieve the
-> objective of this patchset?
-
-What would be an obstacle to using an LSM hook for this? (with an
-addition of GID checks)
-
-2023=E5=B9=B46=E6=9C=882=E6=97=A5(=E9=87=91) 23:50 Paul Moore <paul@paul-mo=
-ore.com>:
->
-> On Thu, Jun 1, 2023 at 9:41=E2=80=AFPM Eric W. Biederman <ebiederm@xmissi=
-on.com> wrote:
-> > Paul Moore <paul@paul-moore.com> writes:
-> > > On Thu, Jun 1, 2023 at 8:14=E2=80=AFPM Eric W. Biederman <ebiederm@xm=
-ission.com> wrote:
-> > >> Paul Moore <paul@paul-moore.com> writes:
-> > >> >
-> > >> > Given the challenges around adding access controls to userns
-> > >> > operations, have you considered using the LSM support that was add=
-ed
-> > >> > upstream last year?  The relevant LSM hook can be found in commit
-> > >> > 7cd4c5c2101c ("security, lsm: Introduce security_create_user_ns()"=
-),
-> > >>
-> > >> Paul how have you handled the real world regression I reported again=
-st
-> > >> chromium?
-> > >
-> > > I don't track chromium development.
-> >
-> > You have chosen to be the maintainer and I reported it to you.
->
-> I just dug through all of the mail I've received from you over the
-> past two (?) years, as well as checking the LSM archive on lore and I
-> don't see any bug reports from you directed at the upstream LSM or
-> SELinux code ... perhaps I missed something, do you have a pointer?
->
-> Also, for the sake of clarification, I do not maintain any part of
-> Chromium or Chrome OS.  I do maintain the upstream LSM, SELinux,
-> audit, and labeled networking subsystems in the Linux Kernel as well
-> as a couple of userspace packages.
->
-> > >> Paul are you aware that the LSM hook can not be used to achieve the
-> > >> objective of this patchset?
-> > >
-> > > /me shrugs
-> >
-> > [snip parts about performing a group id check]
->
-> My comments here were only discussing the possibility of performing a
-> group ID based access control check; I made no claims about the
-> desirability of such a check, and I have no interest in rehashing our
-> old debates.
->
-> --
-> paul-moore.com
+-serge
