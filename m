@@ -1,27 +1,28 @@
 Received: from us-smtp-delivery-44.mimecast.com (us-smtp-delivery-44.mimecast.com [205.139.111.44])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 74E431774C
-	for <containers@lists.linux.dev>; Mon, 15 Jan 2024 15:48:25 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 71DFD17755
+	for <containers@lists.linux.dev>; Mon, 15 Jan 2024 15:48:28 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=kernel.org
-Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
- [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-588-mu28odDXNe6GqZItmyk1Zg-1; Mon, 15 Jan 2024 10:47:11 -0500
-X-MC-Unique: mu28odDXNe6GqZItmyk1Zg-1
+Received: from mimecast-mx02.redhat.com (mx-ext.redhat.com [66.187.233.73])
+ by relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
+ cipher=TLS_AES_256_GCM_SHA384) id us-mta-459-QAkLZRVbNMynMU_EIsS2Bw-1; Mon,
+ 15 Jan 2024 10:47:15 -0500
+X-MC-Unique: QAkLZRVbNMynMU_EIsS2Bw-1
 Received: from smtp.corp.redhat.com (int-mx01.intmail.prod.int.rdu2.redhat.com [10.11.54.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
 	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 34DB5863012;
-	Mon, 15 Jan 2024 15:47:11 +0000 (UTC)
+	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 6458C3830084;
+	Mon, 15 Jan 2024 15:47:14 +0000 (UTC)
 Received: from localhost.redhat.com (unknown [10.45.226.182])
-	by smtp.corp.redhat.com (Postfix) with ESMTP id B45B13C25;
-	Mon, 15 Jan 2024 15:47:09 +0000 (UTC)
+	by smtp.corp.redhat.com (Postfix) with ESMTP id EFF293C25;
+	Mon, 15 Jan 2024 15:47:12 +0000 (UTC)
 From: Alexey Gladkov <legion@kernel.org>
 To: LKML <linux-kernel@vger.kernel.org>,
-	Linux Containers <containers@lists.linux.dev>
+	Linux Containers <containers@lists.linux.dev>,
+	linux-doc@vger.kernel.org
 Cc: Andrew Morton <akpm@linux-foundation.org>,
 	Christian Brauner <brauner@kernel.org>,
 	"Eric W . Biederman" <ebiederm@xmission.com>,
@@ -29,11 +30,11 @@ Cc: Andrew Morton <akpm@linux-foundation.org>,
 	Kees Cook <keescook@chromium.org>,
 	Luis Chamberlain <mcgrof@kernel.org>,
 	Manfred Spraul <manfred@colorfullife.com>
-Subject: [RESEND PATCH v3 0/3]  Allow to change ipc/mq sysctls inside ipc namespace
-Date: Mon, 15 Jan 2024 15:46:40 +0000
-Message-ID: <cover.1705333426.git.legion@kernel.org>
-In-Reply-To: <cover.1663756794.git.legion@kernel.org>
-References: <cover.1663756794.git.legion@kernel.org>
+Subject: [RESEND PATCH v3 2/3] docs: Add information about ipc sysctls limitations
+Date: Mon, 15 Jan 2024 15:46:42 +0000
+Message-ID: <09e99911071766958af488beb4e8a728a4f12135.1705333426.git.legion@kernel.org>
+In-Reply-To: <cover.1705333426.git.legion@kernel.org>
+References: <cover.1663756794.git.legion@kernel.org> <cover.1705333426.git.legion@kernel.org>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
@@ -43,29 +44,65 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Scanned-By: MIMEDefang 3.4.1 on 10.11.54.1
 
-Right now ipc and mq limits count as per ipc namespace, but only real
-root can change them. By default, the current values of these limits are
-such that it can only be reduced. Since only root can change the values,
-it is impossible to reduce these limits in the rootless container.
+After 25b21cb2f6d6 ("[PATCH] IPC namespace core") and 4e9823111bdc
+("[PATCH] IPC namespace - shm") the shared memory page count stopped
+being global and started counting per ipc namespace. The documentation
+and shmget(2) still says that shmall is a global option.
 
-We can allow limit changes within ipc namespace because mq parameters
-are limited by RLIMIT_MSGQUEUE and ipc parameters are not limited to
-anything other than cgroups.
+shmget(2):
 
-This is just a rebase of patches on v6.7-6264-g70d201a40823.
+SHMALL System-wide limit on the total amount of shared memory, measured
+in units of the system page size. On Linux, this limit can be read and
+modified via /proc/sys/kernel/shmall.
 
+I think the changes made in 2006 should be documented.
+
+Signed-off-by: Alexey Gladkov <legion@kernel.org>
+Acked-by: "Eric W. Biederman" <ebiederm@xmission.com>
+Link: https://lkml.kernel.org/r/ede20ddf7be48b93e8084c3be2e920841ee1a641.1663756794.git.legion@kernel.org
+Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
 ---
+ Documentation/admin-guide/sysctl/kernel.rst | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
 
-Alexey Gladkov (3):
-  sysctl: Allow change system v ipc sysctls inside ipc namespace
-  docs: Add information about ipc sysctls limitations
-  sysctl: Allow to change limits for posix messages queues
-
- Documentation/admin-guide/sysctl/kernel.rst | 14 ++++++--
- ipc/ipc_sysctl.c                            | 37 +++++++++++++++++++--
- ipc/mq_sysctl.c                             | 36 ++++++++++++++++++++
- 3 files changed, 82 insertions(+), 5 deletions(-)
-
+diff --git a/Documentation/admin-guide/sysctl/kernel.rst b/Documentation/admin-guide/sysctl/kernel.rst
+index 6584a1f9bfe3..bc578663619d 100644
+--- a/Documentation/admin-guide/sysctl/kernel.rst
++++ b/Documentation/admin-guide/sysctl/kernel.rst
+@@ -594,6 +594,9 @@ default (``MSGMNB``).
+ ``msgmni`` is the maximum number of IPC queues. 32000 by default
+ (``MSGMNI``).
+ 
++All of these parameters are set per ipc namespace. The maximum number of bytes
++in POSIX message queues is limited by ``RLIMIT_MSGQUEUE``. This limit is
++respected hierarchically in the each user namespace.
+ 
+ msg_next_id, sem_next_id, and shm_next_id (System V IPC)
+ ========================================================
+@@ -1274,15 +1277,20 @@ are doing anyway :)
+ shmall
+ ======
+ 
+-This parameter sets the total amount of shared memory pages that
+-can be used system wide. Hence, ``shmall`` should always be at least
+-``ceil(shmmax/PAGE_SIZE)``.
++This parameter sets the total amount of shared memory pages that can be used
++inside ipc namespace. The shared memory pages counting occurs for each ipc
++namespace separately and is not inherited. Hence, ``shmall`` should always be at
++least ``ceil(shmmax/PAGE_SIZE)``.
+ 
+ If you are not sure what the default ``PAGE_SIZE`` is on your Linux
+ system, you can run the following command::
+ 
+ 	# getconf PAGE_SIZE
+ 
++To reduce or disable the ability to allocate shared memory, you must create a
++new ipc namespace, set this parameter to the required value and prohibit the
++creation of a new ipc namespace in the current user namespace or cgroups can
++be used.
+ 
+ shmmax
+ ======
 -- 
 2.43.0
 
