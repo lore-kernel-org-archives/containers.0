@@ -1,153 +1,152 @@
-Received: from us-smtp-delivery-44.mimecast.com (us-smtp-delivery-44.mimecast.com [207.211.30.44])
+Received: from flow7-smtp.messagingengine.com (flow7-smtp.messagingengine.com [103.168.172.142])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 12F5F179A7
-	for <containers@lists.linux.dev>; Mon, 15 Jan 2024 15:49:01 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
-Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=kernel.org
-Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
- [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-577-w6Of273vPOui2F9i1TlWMA-1; Mon, 15 Jan 2024 10:47:13 -0500
-X-MC-Unique: w6Of273vPOui2F9i1TlWMA-1
-Received: from smtp.corp.redhat.com (int-mx01.intmail.prod.int.rdu2.redhat.com [10.11.54.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id B82B482DFE7;
-	Mon, 15 Jan 2024 15:47:12 +0000 (UTC)
-Received: from localhost.redhat.com (unknown [10.45.226.182])
-	by smtp.corp.redhat.com (Postfix) with ESMTP id 6C7723C25;
-	Mon, 15 Jan 2024 15:47:11 +0000 (UTC)
-From: Alexey Gladkov <legion@kernel.org>
-To: LKML <linux-kernel@vger.kernel.org>,
-	Linux Containers <containers@lists.linux.dev>
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-	Christian Brauner <brauner@kernel.org>,
-	"Eric W . Biederman" <ebiederm@xmission.com>,
-	Joel Granados <joel.granados@gmail.com>,
-	Kees Cook <keescook@chromium.org>,
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F221D14374F
+	for <containers@lists.linux.dev>; Thu, 16 May 2024 09:21:13 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.142
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1715851277; cv=none; b=A+TJULvrOiscCO5iIYbu8BH5/VWcSAk3auy/v++7XtSuW2HSRYJwsS7Ev//tAgbTMYiUuOHeXSnqqbXJW0AKOba/B4muMxpM9/czZQYYv6aDuOsvBg/Ea6T57TIDnQmThBXLri1TyDE3+0b0Y2OqFMUjnH8NzLnJIVR5ZAamKto=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1715851277; c=relaxed/simple;
+	bh=WlFpsPSmyjZIBGHuDRdxoUw1jX7zjzbZNZ4acDEAtqA=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version:Content-Type; b=LCEhfXg5nj7TBCtJW5u+HJXCn6LXUd70zOUnKOwrSPPcf8BzaUciFcTPWnEhoqLhzo3Arn2GtIT6aA4IFOjbIShVpewrqDbJMyDvvkP9dpEV+S/eIIzIwyezbT2aJnhpWMV2rd4cR9QcxkYtn/mB/QrkVQDhwemwYmKVLgGUQyc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=3xx0.net; spf=pass smtp.mailfrom=3xx0.net; dkim=pass (2048-bit key) header.d=3xx0.net header.i=@3xx0.net header.b=vfGCEB+3; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=JzWG76IW; arc=none smtp.client-ip=103.168.172.142
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=3xx0.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=3xx0.net
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=3xx0.net header.i=@3xx0.net header.b="vfGCEB+3";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="JzWG76IW"
+Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
+	by mailflow.nyi.internal (Postfix) with ESMTP id 1CEFA2005EA;
+	Thu, 16 May 2024 05:21:13 -0400 (EDT)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute5.internal (MEProxy); Thu, 16 May 2024 05:21:13 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=3xx0.net; h=cc
+	:cc:content-transfer-encoding:content-type:content-type:date
+	:date:from:from:in-reply-to:message-id:mime-version:reply-to
+	:subject:subject:to:to; s=fm1; t=1715851273; x=1715854873; bh=Cs
+	PwxtNEboc97nItRTvXzU9jOSiXL4Xlxrbhmp4vl5I=; b=vfGCEB+3HkxMxLp9FO
+	ipmSzmXydZqFu1zVtJKehBPGsoVPOpBt7iJY2K72FdMMy3GPgrhwsTgSdJdhl/Wm
+	hufbpODk7CL30uk43gFZz7HMHQnmo9zaSDiOv2gO1o//Zxp6ljpeQwxIdNewmuKj
+	q+IbHE3E0IkZJ4lxfJulTMROPt43AlVGy5WXi+6Zst/KcoXtCxo39BklTb4Xj6nI
+	BJ76+5aSPBHiQqcpfxRZCl2rpl/UqhWvfl49Oqd2dMSgdhr8zpR3FrNcDnwpxW08
+	wSiyggz5KPuBWT8z/5vdteJvMAGcphPeTq7sqqT5g61HnTZ1PwQQRwGWtFm/0bLg
+	WfDA==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-transfer-encoding
+	:content-type:content-type:date:date:feedback-id:feedback-id
+	:from:from:in-reply-to:message-id:mime-version:reply-to:subject
+	:subject:to:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender
+	:x-sasl-enc; s=i76614979.fm3; t=1715851273; x=1715854873; bh=CsP
+	wxtNEboc97nItRTvXzU9jOSiXL4Xlxrbhmp4vl5I=; b=JzWG76IW4ZLozth+n20
+	1az3Ny4Xt2CyZqw499vfBo2mgA6JRYjUEJ3Xajb4U+gOERt0glG0G18M5+6AspZK
+	CmeOYDM2e/PQ8d3ebrGYF979HJReR4jmEKZ2UB9h10vm1aESDbdKltbCp3oQyV3t
+	E0fuf6DhmTBYS8uXJkA3oDlQD+7M8kQcjBya8xEVhyzgRtjsXvXVowVbnSAUBxYB
+	/qeVi9jQxoBFtgRXaGY04xurE2QPbARUodbw4OKxUjaRhRe32n3yrTFO+uXQEjK+
+	IZNDEhuOGW4C64/2HyFOAHl9s+jQB3B31bxh0TLeNHrOjHL5dhwJKdcn+/pc2DZB
+	ZSw==
+X-ME-Sender: <xms:B9BFZiHJqT7YDFHlGCDvq2lu4QdBaXJ4RldxzRx62U8QJfl_tfV-5Q>
+    <xme:B9BFZjVlYImEY28SX9dDH7XrMAdfDHqUth9nh2yD8e-5j4Qgixf5-33nqCVj6CkKl
+    2NkXge0KOIos24aQGY>
+X-ME-Received: <xmr:B9BFZsINNVN0FqQuhAljpd7Yhu8F9XPPgkU03J9vNNrv-YiTdQ1b9JJMRn0-rYMWZp4ezJtXBcMDQFuxWZU3az18aWqCbwaV_yZV9IDeAjocyA>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvledrvdehuddgudefucetufdoteggodetrfdotf
+    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
+    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
+    cujfgurhephffvvefufffkofggtgfgsehtkeertdertdejnecuhfhrohhmpeflohhnrght
+    hhgrnhcuvegrlhhmvghlshcuoehjtggrlhhmvghlshesfeiggidtrdhnvghtqeenucggtf
+    frrghtthgvrhhnpeeugeehkeegteeugfekkeehgfejvdetueelffeluddutefhiedvudel
+    heehheegjeenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhroh
+    hmpehjtggrlhhmvghlshesfeiggidtrdhnvght
+X-ME-Proxy: <xmx:B9BFZsGTrkdQfNOM7eYbvwjTc3LANegLpivoWFttOnQtjxWutNIuVQ>
+    <xmx:B9BFZoUTRC4raHIE87jjZB5fc17SWlBQUe7dhSaN3c5GBSmTso0_0Q>
+    <xmx:B9BFZvNpCLLkHwv8gfJDMVkREq0eQ6cXyQgX6t6VnIQUs-ZNjjhtVg>
+    <xmx:B9BFZv3_ZjXZBmyvvzoKl702p9Sgs5Jceedvn2QDpcmhgszehQpFcg>
+    <xmx:CdBFZpUEL0BCn81TtsDEabx4MVf0uLOLvuvIC1yEAnuTiLIiOx_cuTCI>
+Feedback-ID: i76614979:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
+ 16 May 2024 05:21:10 -0400 (EDT)
+From: Jonathan Calmels <jcalmels@3xx0.net>
+To: brauner@kernel.org,
+	ebiederm@xmission.com,
 	Luis Chamberlain <mcgrof@kernel.org>,
-	Manfred Spraul <manfred@colorfullife.com>
-Subject: [RESEND PATCH v3 1/3] sysctl: Allow change system v ipc sysctls inside ipc namespace
-Date: Mon, 15 Jan 2024 15:46:41 +0000
-Message-ID: <d2f4603305cbfed58a24755aa61d027314b73a45.1705333426.git.legion@kernel.org>
-In-Reply-To: <cover.1705333426.git.legion@kernel.org>
-References: <cover.1663756794.git.legion@kernel.org> <cover.1705333426.git.legion@kernel.org>
+	Kees Cook <keescook@chromium.org>,
+	Joel Granados <j.granados@samsung.com>,
+	Serge Hallyn <serge@hallyn.com>,
+	Paul Moore <paul@paul-moore.com>,
+	James Morris <jmorris@namei.org>,
+	David Howells <dhowells@redhat.com>,
+	Jarkko Sakkinen <jarkko@kernel.org>
+Cc: containers@lists.linux.dev,
+	Jonathan Calmels <jcalmels@3xx0.net>,
+	linux-kernel@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org,
+	linux-security-module@vger.kernel.org,
+	keyrings@vger.kernel.org
+Subject: [PATCH 0/3] Introduce user namespace capabilities
+Date: Thu, 16 May 2024 02:22:02 -0700
+Message-ID: <20240516092213.6799-1-jcalmels@3xx0.net>
+X-Mailer: git-send-email 2.45.1
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-X-Scanned-By: MIMEDefang 3.4.1 on 10.11.54.1
 
-Rootless containers are not allowed to modify kernel IPC parameters.
+It's that time of the year again where we debate security settings for user
+namespaces ;)
 
-All default limits are set to such high values that in fact there are no
-limits at all. All limits are not inherited and are initialized to
-default values when a new ipc_namespace is created.
+I’ve been experimenting with different approaches to address the gripe
+around user namespaces being used as attack vectors.
+After invaluable feedback from Serge and Christian offline, this is what I
+came up with.
 
-For new ipc_namespace:
+There are obviously a lot of things we could do differently but I feel this
+is the right balance between functionality, simplicity and security. This
+also serves as a good foundation and could always be extended if the need
+arises in the future.
 
-size_t       ipc_ns.shm_ctlmax = SHMMAX; // (ULONG_MAX - (1UL << 24))
-size_t       ipc_ns.shm_ctlall = SHMALL; // (ULONG_MAX - (1UL << 24))
-int          ipc_ns.shm_ctlmni = IPCMNI; // (1 << 15)
-int          ipc_ns.shm_rmid_forced = 0;
-unsigned int ipc_ns.msg_ctlmax = MSGMAX; // 8192
-unsigned int ipc_ns.msg_ctlmni = MSGMNI; // 32000
-unsigned int ipc_ns.msg_ctlmnb = MSGMNB; // 16384
+Notes:
 
-The shm_tot (total amount of shared pages) has also ceased to be
-global, it is located in ipc_namespace and is not inherited from
-anywhere.
+- Adding a new capability set is far from ideal, but trying to reuse the
+  existing capability framework was deemed both impractical and
+  questionable security-wise, so here we are.
 
-In such conditions, it cannot be said that these limits limit anything.
-The real limiter for them is cgroups.
+- We might want to add new capabilities for some of the checks instead of
+  reusing CAP_SETPCAP every time. Serge mentioned something like
+  CAP_SYS_LIMIT?
 
-If we allow rootless containers to change these parameters, then it can
-only be reduced.
+- In the last patch, we could decide to have stronger requirements and
+  perform checks inside cap_capable() in case we want to retroactively
+  prevent capabilities in old namespaces, this might be an overreach though
+  so I left it out.
 
-Signed-off-by: Alexey Gladkov <legion@kernel.org>
-Link: https://lkml.kernel.org/r/e2d84d3ec0172cfff759e6065da84ce0cc2736f8.1663756794.git.legion@kernel.org
-Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
----
- ipc/ipc_sysctl.c | 37 +++++++++++++++++++++++++++++++++++--
- 1 file changed, 35 insertions(+), 2 deletions(-)
+  I'm also not fond of the ulong logic for setting the sysctl parameter, on
+  the other hand, the usermodhelper code always uses two u32s which makes it
+  very confusing to set in userspace.
 
-diff --git a/ipc/ipc_sysctl.c b/ipc/ipc_sysctl.c
-index 8c62e443f78b..01c4a50d22b2 100644
---- a/ipc/ipc_sysctl.c
-+++ b/ipc/ipc_sysctl.c
-@@ -14,6 +14,7 @@
- #include <linux/ipc_namespace.h>
- #include <linux/msg.h>
- #include <linux/slab.h>
-+#include <linux/cred.h>
- #include "util.h"
- 
- static int proc_ipc_dointvec_minmax_orphans(struct ctl_table *table, int write,
-@@ -190,25 +191,57 @@ static int set_is_seen(struct ctl_table_set *set)
- 	return &current->nsproxy->ipc_ns->ipc_set == set;
- }
- 
-+static void ipc_set_ownership(struct ctl_table_header *head,
-+			      struct ctl_table *table,
-+			      kuid_t *uid, kgid_t *gid)
-+{
-+	struct ipc_namespace *ns =
-+		container_of(head->set, struct ipc_namespace, ipc_set);
-+
-+	kuid_t ns_root_uid = make_kuid(ns->user_ns, 0);
-+	kgid_t ns_root_gid = make_kgid(ns->user_ns, 0);
-+
-+	*uid = uid_valid(ns_root_uid) ? ns_root_uid : GLOBAL_ROOT_UID;
-+	*gid = gid_valid(ns_root_gid) ? ns_root_gid : GLOBAL_ROOT_GID;
-+}
-+
- static int ipc_permissions(struct ctl_table_header *head, struct ctl_table *table)
- {
- 	int mode = table->mode;
- 
- #ifdef CONFIG_CHECKPOINT_RESTORE
--	struct ipc_namespace *ns = current->nsproxy->ipc_ns;
-+	struct ipc_namespace *ns =
-+		container_of(head->set, struct ipc_namespace, ipc_set);
- 
- 	if (((table->data == &ns->ids[IPC_SEM_IDS].next_id) ||
- 	     (table->data == &ns->ids[IPC_MSG_IDS].next_id) ||
- 	     (table->data == &ns->ids[IPC_SHM_IDS].next_id)) &&
- 	    checkpoint_restore_ns_capable(ns->user_ns))
- 		mode = 0666;
-+	else
- #endif
--	return mode;
-+	{
-+		kuid_t ns_root_uid;
-+		kgid_t ns_root_gid;
-+
-+		ipc_set_ownership(head, table, &ns_root_uid, &ns_root_gid);
-+
-+		if (uid_eq(current_euid(), ns_root_uid))
-+			mode >>= 6;
-+
-+		else if (in_egroup_p(ns_root_gid))
-+			mode >>= 3;
-+	}
-+
-+	mode &= 7;
-+
-+	return (mode << 6) | (mode << 3) | mode;
- }
- 
- static struct ctl_table_root set_root = {
- 	.lookup = set_lookup,
- 	.permissions = ipc_permissions,
-+	.set_ownership = ipc_set_ownership,
- };
- 
- bool setup_ipc_sysctls(struct ipc_namespace *ns)
+
+Jonathan Calmels (3):
+  capabilities: user namespace capabilities
+  capabilities: add securebit for strict userns caps
+  capabilities: add cap userns sysctl mask
+
+ fs/proc/array.c                 |  9 ++++
+ include/linux/cred.h            |  3 ++
+ include/linux/securebits.h      |  1 +
+ include/linux/user_namespace.h  |  7 +++
+ include/uapi/linux/prctl.h      |  7 +++
+ include/uapi/linux/securebits.h | 11 ++++-
+ kernel/cred.c                   |  3 ++
+ kernel/sysctl.c                 | 10 ++++
+ kernel/umh.c                    | 16 +++++++
+ kernel/user_namespace.c         | 83 ++++++++++++++++++++++++++++++---
+ security/commoncap.c            | 59 +++++++++++++++++++++++
+ security/keys/process_keys.c    |  3 ++
+ 12 files changed, 204 insertions(+), 8 deletions(-)
+
 -- 
-2.43.0
+2.45.0
 
