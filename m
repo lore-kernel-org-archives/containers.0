@@ -1,257 +1,160 @@
-Received: from smtp-relay-canonical-0.canonical.com (smtp-relay-canonical-0.canonical.com [185.125.188.120])
+Received: from flow6-smtp.messagingengine.com (flow6-smtp.messagingengine.com [103.168.172.141])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E27013715E
-	for <containers@lists.linux.dev>; Sat, 18 May 2024 12:27:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=185.125.188.120
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7AA7715BB
+	for <containers@lists.linux.dev>; Sun, 19 May 2024 01:28:39 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.141
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1716035278; cv=none; b=HIM98HEDgi0PGcIyJkzArFq46eHEjHwntK0xOuJQLs4qeaCibBeBgBGkCkRtB36+YAK9AmJFBbUxMgkV+52TSejHhgaayGOXuiZuHcWK4c7k+Q1tUneO5rOoeiZasIdalq4NcrZ3NpAZ+6lSPGKZkeRqIO7yWNA9uYmBs1cx2V4=
+	t=1716082121; cv=none; b=dhJXJtwRxX0PMqeehBIoikpEyygq6pUi+rRn3ztmsP6v/2swfBr8gY+IY60DN+YSgHUsC1m46ukzlPivoAi466YrqbpjEy7lghMt2Bi12egr7nZjrT3cjPZRwQVuQaIQAtDTK00t4DOIFMAeL45Os76czncyHsg8wZnVJpr5sk0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1716035278; c=relaxed/simple;
-	bh=l9PeXp4vw/KCcUZ++53BMzuRRh0uGvhIInBJkHr67TA=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=eQV1RvTDwweMYVI96KfggH95XbdeB6N8avSkqI/89o/VvzQo3kxwquNPY6/Baffu5jL6c572f6BoucRjKxpMM+tBiBeRS9kjbwjZoT982QEySkjY/FisumxyruCH790Ko0m3cYFdo7y94u4bfE/Jh01Hp21kGzu7s66vdqS2DBA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=canonical.com; spf=pass smtp.mailfrom=canonical.com; dkim=pass (2048-bit key) header.d=canonical.com header.i=@canonical.com header.b=H+O9P6ao; arc=none smtp.client-ip=185.125.188.120
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=canonical.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=canonical.com
+	s=arc-20240116; t=1716082121; c=relaxed/simple;
+	bh=cx8p0aOrLv2aKH95V35JoNaCc3yz4DZ2hH/JWbzkDI0=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=bdaLxY9oY2AOek0aJ1swgEbuTDmHpr2tuN24hihKZEYYKP/tuq5jaqAl9Ttf6aTc4Xdll7yyc+mx3ag3Ss9HAuEpwyAtW52UbrP64bTlMMzhgDxLF6mu0PKEB3V8cloofrMOLFfJABYtRKc81HAJUAnO92/G0QxQAWCVA9RdYM4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=3xx0.net; spf=pass smtp.mailfrom=3xx0.net; dkim=pass (2048-bit key) header.d=3xx0.net header.i=@3xx0.net header.b=LBQjTwYS; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=DWCOv+tG; arc=none smtp.client-ip=103.168.172.141
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=3xx0.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=3xx0.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=canonical.com header.i=@canonical.com header.b="H+O9P6ao"
-Received: from [10.8.193.2] (unknown [50.39.103.33])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-relay-canonical-0.canonical.com (Postfix) with ESMTPSA id AAD3540ECA;
-	Sat, 18 May 2024 12:27:38 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=canonical.com;
-	s=20210705; t=1716035268;
-	bh=sXZbZDLCNj22sUbcOEyEP2UEg9NrXec19kZpuJeYKrg=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type;
-	b=H+O9P6aovIWArXk0nBYi3Yp4A8SWvjGbb0JnbbTtOOBqKHcqnULlYHROssvsUWhCn
-	 estnNEv+EJ6gvILDfgcU5x43YbCrZTFEQFCbDRGHkQm4dgCf0yj9ao3R34iruA02SS
-	 E6VVcVvyEYeYQuunHyWnz0InyU0Ax/OeqaqpwZ8NpVtXqYWW/2mHGpov/60GVVlOaL
-	 i8dD43gQ97IYXpyPeJeT9kItwmBbJmpgdar0tcO2/FiVarfDNsU2+HKSnCXIlwupA2
-	 hoaiYvBIXFjK9Kw+51MufG6rhw6BGSotxh9dOI6wMXP7JKObDen+y4eSGJiJ+VyOvT
-	 887wA9KlBDf+Q==
-Message-ID: <7f94cb03-d573-4cc5-b288-038e44bc1318@canonical.com>
-Date: Sat, 18 May 2024 05:27:27 -0700
-Precedence: bulk
-X-Mailing-List: containers@lists.linux.dev
-List-Id: <containers.lists.linux.dev>
-List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
-List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
-MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
+	dkim=pass (2048-bit key) header.d=3xx0.net header.i=@3xx0.net header.b="LBQjTwYS";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="DWCOv+tG"
+Received: from compute6.internal (compute6.nyi.internal [10.202.2.47])
+	by mailflow.nyi.internal (Postfix) with ESMTP id 9272720031D;
+	Sat, 18 May 2024 21:28:38 -0400 (EDT)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute6.internal (MEProxy); Sat, 18 May 2024 21:28:38 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=3xx0.net; h=cc
+	:cc:content-type:content-type:date:date:from:from:in-reply-to
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to; s=fm1; t=1716082118; x=1716085718; bh=okNdeP1Ev4
+	hSO4ZAkeKtTmX/46s631+dJ7jzdCCcfBw=; b=LBQjTwYSdvWxEy5IFww/witrrq
+	f2zthnzYB98kLozA7r0nGJJPOqFkmd8+O7xTujRohXJkGn4QHL0//h0jom2SHrlT
+	kGS1fzNhTrNVEG6QKmHyxgYxFGkTRX4LKmVILsXNsFPLbYQ8oL8klyfVE51GxFwH
+	91+VFOk8f8ChW5fgn1OCmRCnen6fzkCIWA3FMuGSCtOxpGNjL/nzDAmL7kM9eNCs
+	lfwif7rtZayFkiEJbRUGwNdJU8vffhsUtYBG9wDUNVRA0t5kmRZmm7VhuD+LiUEt
+	nvjA7AIKQ0qblHu/IHNcS1ui2BwYowDvaUVgJc3e/10jbXQTO8cer7m4Ls0g==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
+	i76614979.fm1; t=1716082118; x=1716085718; bh=okNdeP1Ev4hSO4ZAke
+	KtTmX/46s631+dJ7jzdCCcfBw=; b=DWCOv+tGUkL/OxqC8+UmzU3Ust/5P3jJ5O
+	pC2Umtldj+oCgfK+mqPhvZF7koo5yAVhfwcHI6rB/MFVMzrsEzR7ttp5uZh3TKSq
+	mpbaLGIWQ1awSobD1os4Uq32YCMe0PoqQg3EvHuhGEL6svO6KRFgveyDWaOLVj1c
+	a0isprNF7bEtsUG9MMe5GtJU6OmFveZhpa7andcVpohFezE/n1zdonoEz8D7Mddw
+	zIJdXlNw44MNv+uKiQ4WTNQseY51GPtgK+K6YeqP8lrnof33THj+4PGF5VHYyYKH
+	6sCw0w5s5l2PLeeNLkTXhiV7kSaWCUizJNr05LqHdJbEspxt7Njg==
+X-ME-Sender: <xms:xVVJZv74evkjotdRBDX1zrz-PumOreh-i-IvvjVGffQkGOQu0y3ivA>
+    <xme:xVVJZk5ULstTlD242G-3brBInrnxvME7tEwiaT6r_ypMywW5Y_5snCST5rVcPIPvz
+    3Un7aRsqRHRbnWQV3M>
+X-ME-Received: <xmr:xVVJZmdRwHVQfepxZ978pYHQ8-XIdewXzY0dL2xlZkxflW0hjQGNsKO6hhKlDtfvOJGXJrwAlGlplgRYOP7xoQg>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvledrvdehjedggeeiucetufdoteggodetrfdotf
+    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
+    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
+    cujfgurhepfffhvfevuffkfhggtggujgesthdtsfdttddtjeenucfhrhhomheplfhonhgr
+    thhhrghnucevrghlmhgvlhhsuceojhgtrghlmhgvlhhsseefgiigtddrnhgvtheqnecugg
+    ftrfgrthhtvghrnhepkeekteegfefgvdefgfefffeufeffjedvudeijeehjeehffekjeek
+    leffueelgffgnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrh
+    homhepjhgtrghlmhgvlhhsseefgiigtddrnhgvth
+X-ME-Proxy: <xmx:xVVJZgKf3I0H6Jn0qAQaigXjJvz3SfXRta1ugGWMqhPoFjHQfhyJcg>
+    <xmx:xVVJZjJE5ytCRj7y5766qKnSNriYrsDxgpmPvST-0h76o_DwXkRB9w>
+    <xmx:xVVJZpyRuzOf-lJ_Cjk8k6tbiWHDPj16hkdLYK642JjtZRLZoKFdNA>
+    <xmx:xVVJZvK4HIJWvjuFlNfr6LvzXYoDnGwrJOGmkSH4anh1iVf_ktlGrw>
+    <xmx:xlVJZiYZ_2usNuHhsJzmD3dcDmdtjx9hEZI9ANvSgQTZ82yq7TyvExAk>
+Feedback-ID: i76614979:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Sat,
+ 18 May 2024 21:28:35 -0400 (EDT)
+Date: Sat, 18 May 2024 18:33:37 -0700
+From: Jonathan Calmels <jcalmels@3xx0.net>
+To: John Johansen <john.johansen@canonical.com>
+Cc: brauner@kernel.org, ebiederm@xmission.com, 
+	Luis Chamberlain <mcgrof@kernel.org>, Kees Cook <keescook@chromium.org>, 
+	Joel Granados <j.granados@samsung.com>, Serge Hallyn <serge@hallyn.com>, 
+	Paul Moore <paul@paul-moore.com>, James Morris <jmorris@namei.org>, 
+	David Howells <dhowells@redhat.com>, Jarkko Sakkinen <jarkko@kernel.org>, containers@lists.linux.dev, 
+	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+	linux-security-module@vger.kernel.org, keyrings@vger.kernel.org
 Subject: Re: [PATCH 1/3] capabilities: user namespace capabilities
-To: Jonathan Calmels <jcalmels@3xx0.net>
-Cc: brauner@kernel.org, ebiederm@xmission.com,
- Luis Chamberlain <mcgrof@kernel.org>, Kees Cook <keescook@chromium.org>,
- Joel Granados <j.granados@samsung.com>, Serge Hallyn <serge@hallyn.com>,
- Paul Moore <paul@paul-moore.com>, James Morris <jmorris@namei.org>,
- David Howells <dhowells@redhat.com>, Jarkko Sakkinen <jarkko@kernel.org>,
- containers@lists.linux.dev, linux-kernel@vger.kernel.org,
- linux-fsdevel@vger.kernel.org, linux-security-module@vger.kernel.org,
- keyrings@vger.kernel.org
+Message-ID: <aiqls6f5bte6ncoomz3etrzwtnq5tuznlaz66w7bvhrnmpgg6w@ahnsazch5gfo>
 References: <20240516092213.6799-1-jcalmels@3xx0.net>
  <20240516092213.6799-2-jcalmels@3xx0.net>
  <641a34bd-e702-4f02-968e-4f71e0957af1@canonical.com>
  <jwuknxmitht42ghsy6nkoegotte5kxi67fh6cbei7o5w3bv5jy@eyphufkqwaap>
  <be62b80f-2e86-4cbc-82ce-c9f62098ef60@canonical.com>
  <txmrzwf2kr6devb5iqghctgvtbccjaspf44entk4fopjbaet2j@zqdfxiy6y6ej>
-Content-Language: en-US
-From: John Johansen <john.johansen@canonical.com>
-Autocrypt: addr=john.johansen@canonical.com; keydata=
- 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 lT9Q
-Organization: Canonical
-In-Reply-To: <txmrzwf2kr6devb5iqghctgvtbccjaspf44entk4fopjbaet2j@zqdfxiy6y6ej>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+ <7f94cb03-d573-4cc5-b288-038e44bc1318@canonical.com>
+Precedence: bulk
+X-Mailing-List: containers@lists.linux.dev
+List-Id: <containers.lists.linux.dev>
+List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
+List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+In-Reply-To: <7f94cb03-d573-4cc5-b288-038e44bc1318@canonical.com>
 
-On 5/17/24 20:50, Jonathan Calmels wrote:
-> On Fri, May 17, 2024 at 04:59:41AM GMT, John Johansen wrote:
->> On 5/17/24 03:51, Jonathan Calmels wrote:
->>> This new capability set would be a universal thing that could be
->>> leveraged today without modification to userspace. Moreover, it’s a
->>> simple framework that can be extended.
->>
->> I would argue that is a problem. Userspace has to change for this to be
->> secure. Is it an improvement over the current state yes.
+On Sat, May 18, 2024 at 05:27:27AM GMT, John Johansen wrote:
+> On 5/17/24 20:50, Jonathan Calmels wrote:
+> > As mentioned above, userspace doesn't necessarily have to change. I'm
+> > also not sure what you mean by easy to by-pass? If I mask off some
+> > capabilities system wide or in a given process tree, I know for a fact
+> > that no namespace will ever get those capabilities.
 > 
-> Well, yes and no. With those patches, I can lock down things today on my
-> system and I don't need to change anything.
+> so by-pass will very much depend on the system but from a distro pov
+> we pretty much have to have bwrap enabled if users want to use flatpaks
+> (and they do), same story for several other tools. Since this basically
+> means said tools need to be available by default, most systems the
+> distro is installed on are vulnerable by default. The trivial by-pass
+> then becomes the exploit running its payload through one of these tools,
+> and yes I have tested it.
 > 
-sure, same as with the big no user ns toggle. This is finer and allows
-selectively enabling on a per application basis.
+> Could a distro disable these tools by default, and require the user/admin
+> to enable them, yes though there would be a lot of friction, push back,
+> and in the end most systems would still end up with them enabled.
+> 
+> With the capibilities approach can a user/admin make their system
+> more secure than the current situation, absolutely.
+> 
+> Note, that regardless of what happens with patch 1, and 2. I think we
+> either need the big sysctl toggle, or a version of your patch 3
 
-> For example I can decide that none of my rootless containers started
-> under SSH will get CAP_NET_ADMIN:
-> 
-> # echo "auth optional pam_cap.so" >> /etc/pam.d/sshd
-> # echo "!cap_net_admin $USER"     >> /etc/security/capability.conf
-> # capsh --secbits=$((1 << 8)) -- -c /usr/sbin/sshd
-> 
-> $ ssh localhost 'unshare -r capsh --current'
-> Current: =ep cap_net_admin-ep
-> Current IAB: !cap_net_admin
-> 
-> Or I can decide than I don't ever want CAP_SYS_RAWIO in my namespaces:
-> 
-> # sysctl -w cap_bound_userns_mask=0x1fffffdffff
-> 
-> This doesn't require changes to userspace.
-> Now, granted if you want to have finer-grained controls, it will require
-> *some* changes in *some* places (e.g. adding new systemd property like
-> UserNSSet=).
-> 
+Ah ok, I get you concerns. Unfortunately, I can't really speak for
+distros or tooling about how this gets leveraged.
+I've never claimed this was going to be bulletproof day 1.
+All I'm saying is that they now have the option to do so.
 
-yep
+As you pointed out, we're coming from a model where today it's open-bar.
+Only now they can put a bouncer in front of it, so to speak :)
 
->>> Well that’s the thing, from past conversations, there is a lot of
->>> disagreement about restricting namespaces. By restricting the
->>> capabilities granted by namespaces instead, we’re actually treating the
->>> root cause of most concerns.
->>>
->> no disagreement there. This is actually Ubuntu's posture with user namespaces
->> atm. Where the user namespace is allowed but the capabilities within it
->> are denied.
->>
->> It does however when not handled correctly result in some very odd failures
->> and would be easier to debug if the use of user namespaces were just
->> cleanly denied.
-> 
-> Yes but as we established it depends on the use case, both are not
-> mutually exclusive.
-> 
-yep
+Regarding distros:
 
->> its not so much the capabilities set as the inheritable part that is
->> problematic. Yes I am well aware of where that is required but I question
->> that capabilities provides the needed controls here.
-> 
-> Again, I'm not opposed to doing this with LSMs. I just think both could
-> work well together. We already do that with standard capabilities vs
-> LSMs, both have their strength and weaknesses.
-> 
-yes, don't get me wrong I am not necessarily advocating an LSM solution
-as being necessary. I just want to make sure the trade-offs of the
-capabilities solution get discussed to help evaluate whether extending
-the current capability model is worth it.
+    Maybe they ship with an empty userns mask by default and admins have
+    to tweak it, understanding full well the consequences of doing so.
 
-> It's always a tradeoff, do you want a setting that's universal and
-> coarse, or do you want one that's tailored to specific things but less
-> ubiquitous.
-> 
-yep
+    Maybe they ship with a conservative mask and use pam rules to
+    adjust it.
 
-> It's also a tradeoff on usability. If this doesn't get used in practice,
-> then there is no point.
-agreed
+    Maybe they introduce something like a wheel/sudo group that you need
+    to be part of to gain extra privileges in your userns.
 
-> I would argue that even though capabilities are complicated, they are
-> more widely understood than LSMs. Are capabilities insufficient in
-> certain scenarios, absolutely, and that's usually where LSMs come in.
-> 
-hrmmm, I am not sure I would agree with capabilities are better understood
-than LSMs, At the base level of capability(X) to get permission yes, but
-the whole permitting, bounding, ... Really I think most people are just
-confused by both
+    Maybe only some system services (e.g. dockerd, lxd/incusd, machined)
+    get confined.
 
->>> This is possible with the security bit introduced in the second patch.
->>> The idea of having those separate is that a service which has dropped
->>> its capabilities can still create a fully privileged user namespace.
->>
->> yes, which is the problem. Not that we don't do that with say setuid
->> applications, but the difference is that they were known to be doing
->> something dangerous and took measures around that.
->>
->> We are starting from a different posture here. Where applications have
->> assumed that user namespaces where safe and no measures were needed.
->> Tools like unshare and bwrap if set to allow user namespaces in their
->> fcaps will allow exploits a trivial by-pass.
-> 
-> Agreed, but we can't really walk back this decision unfortunately.
+    Maybe they need highly specific policies, and this is where you'll
+    would want LSM support. Say an Apparmor profile targetting
+    unshare(1) specifically.
 
-And that is partly the crux of the issue, if we can't walk back the
-decision then the solution becomes more complex
+Regarding tools:
 
-> At least with this patch series system administrators have the ability
-> to limit such tools.
-> 
-agreed
+    Maybe bwrap has its own group you need to be part of to get full
+    caps.
 
->> What I was trying to get at is two points.
->> 1. The written description wasn't clear enough, leaving room for
->>     ambiguity.
->> 2. That I quest that the behavior should be allowed given the
->>     current set of tools that use user namespaces. It reduces exploit
->>     codes ability to directly use unprivileged user namespaces but
->>     makes it all to easy to by-pass the restriction because of the
->>     behavior of the current tool set. ie. user space has to change.
-> 
->> But again, I believe the fcaps behavior is wrong, because of the state of
->> current software. If this had been a proposal where there was no existing
->> software infrastructure I would be starting from a different stance.
-> 
-> As mentioned above, userspace doesn't necessarily have to change. I'm
-> also not sure what you mean by easy to by-pass? If I mask off some
-> capabilities system wide or in a given process tree, I know for a fact
-> that no namespace will ever get those capabilities.
+    Maybe docker uses this set behind `--cap-add` `--cap-drop`.
 
-so by-pass will very much depend on the system but from a distro pov
-we pretty much have to have bwrap enabled if users want to use flatpaks
-(and they do), same story for several other tools. Since this basically
-means said tools need to be available by default, most systems the
-distro is installed on are vulnerable by default. The trivial by-pass
-then becomes the exploit running its payload through one of these tools,
-and yes I have tested it.
+    Maybe lxd/incusd imlement ACL restricting who can do what.
 
-Could a distro disable these tools by default, and require the user/admin
-to enable them, yes though there would be a lot of friction, push back,
-and in the end most systems would still end up with them enabled.
+    Maybe steam always drops everything it doesn't need,
 
-With the capibilities approach can a user/admin make their system
-more secure than the current situation, absolutely.
-
-Note, that regardless of what happens with patch 1, and 2. I think we
-either need the big sysctl toggle, or a version of your patch 3
-
+I'm sure this won't cover every single corner cases, but as stated in
+the headline, this is a start, a simple framework we can always
+extend if needed in the future.
