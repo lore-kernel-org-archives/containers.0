@@ -1,103 +1,153 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from fout2-smtp.messagingengine.com (fout2-smtp.messagingengine.com [103.168.172.145])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D0101535B7;
-	Tue, 21 May 2024 14:12:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0174B12FF89
+	for <containers@lists.linux.dev>; Tue, 21 May 2024 14:29:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.145
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1716300741; cv=none; b=fHj0uaLMQMl2o4N53p1mO6+YyiEOpRux3snY/tdnNUwRr8M5/vtC/Ta0oRTC7k2UcrwdF80G537hvChQibTeQ2i0W1YuV3ZapZRyDc+fGn3bSuEvEKjY/o22QHttQ0ZyAIt8cgwjzBPfO1smtJKx5zEPYtOXTPoveOZx+zkhw6c=
+	t=1716301784; cv=none; b=NBT1lv0tKP2erxaI5dwllN2oBbMXjhkyr1DVUY4WZX2dCf9EE+ql26HaBjvf5iK7+CK9BHYzeOQ+GJyJJew+a2WKqVuujBUxjPTK96el8C+xKaGjjFZN6PqGX1kHhXvkojdswS/NK06GyjqYO7wIyiz+u/Ramwz3TNBOKBamz2M=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1716300741; c=relaxed/simple;
-	bh=wZtYXcGZzSQS0F0yeoqFidLr8irNWnwUfGi6pl/72k0=;
-	h=Mime-Version:Content-Type:Date:Message-Id:Cc:Subject:From:To:
-	 References:In-Reply-To; b=HKzj1dAdA+A05Da6DHMKKKZVa2IkuEOTbPegyHUP1pMHEKj0gBRdbaofDNineRcU5MgMRKGy5NT7qgeS5nlCOz9YgP5S2h/gDnZicdNDyHBlKEf9gs2ls5RfQQ6Qwgvijd0y+3ZJCDpQVRnBMPtzutvcimw5HgG8Z0uw4WP3edM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=JrIGLAzs; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1716301784; c=relaxed/simple;
+	bh=WeOEdQcoOh5D+TLCdjzZgp7upsvhmMlHiaHH2f4LL0Y=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=bQcKJFNxxTW11pWa6UUdWLf3+a/BqqqYOt8q6dYS8L1RCglvHey4C8UZU+oMM/gmz5AKW0htkeGbG8yS7kmXHrZVy3gQYF/vxs/LzGdVF/nrOmHERxErQjtk6OftD3Q686sFpcqqkhqT9p88NF9gkGR79dOeFnLNSbzKLm13YSw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=tycho.pizza; spf=pass smtp.mailfrom=tycho.pizza; dkim=pass (2048-bit key) header.d=tycho.pizza header.i=@tycho.pizza header.b=Z0k2WDlB; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=l/CTsexC; arc=none smtp.client-ip=103.168.172.145
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=tycho.pizza
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=tycho.pizza
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="JrIGLAzs"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id EFCC9C4AF13;
-	Tue, 21 May 2024 14:12:17 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1716300741;
-	bh=wZtYXcGZzSQS0F0yeoqFidLr8irNWnwUfGi6pl/72k0=;
-	h=Date:Cc:Subject:From:To:References:In-Reply-To:From;
-	b=JrIGLAzsfEwXHnF4TBlNEh/ojwF8O6M+gyeuZLu8pnogmhiVqczyd7u/A7hVRG3HL
-	 9FDZ72VEm/uTsI8XttNZIju+adLcvpkyMfgClLZurMViRZSj+uvSzHljqQtjk5jLQh
-	 amVhBSlxMZrElIq7BOOIPkur1EnDRbdpFPOB5woC/ssmfnV18pD1A0zc/N5krICMPi
-	 fE9ad7Q4eGkZWX26254cX5t3pSPmuLWHmTpWOR4dFInouPY3VvanxNZNHR1EAmO7mU
-	 YmT7N8bI7Xp0164viij+Sx42F9xeET58DuFwWTzzpppKKpNT9xxLC6Qhfrn/DYPFsf
-	 PmbD5t4MPiJ3Q==
+	dkim=pass (2048-bit key) header.d=tycho.pizza header.i=@tycho.pizza header.b="Z0k2WDlB";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="l/CTsexC"
+Received: from compute2.internal (compute2.nyi.internal [10.202.2.46])
+	by mailfout.nyi.internal (Postfix) with ESMTP id 1B42713823A7;
+	Tue, 21 May 2024 10:29:42 -0400 (EDT)
+Received: from mailfrontend1 ([10.202.2.162])
+  by compute2.internal (MEProxy); Tue, 21 May 2024 10:29:42 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tycho.pizza; h=
+	cc:cc:content-type:content-type:date:date:from:from:in-reply-to
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to; s=fm3; t=1716301782; x=1716388182; bh=WJ35C0s9XR
+	fN9d5AhSx5pIlmDJ+UA3xXuY4ZoQb5kZo=; b=Z0k2WDlBPJtbEv8GPwr8FfsyP4
+	pJIeCQNKqQIjkDgQKPtUeaot8Pa9gvdxffAqSAkli+e3b01EzrsLWuI6PMyKiE4c
+	u6ZiQUJCiNs8hAOEcNYTGOMw3oy1T3bHaXKPjLpyb936Rw+p/9Kc4XB4MnM3QEcP
+	xCTajLQP3xzzgNFnPQwbwDRe74eLaYuPnOCQFAeWl7sPH3MOFsiYcL6Kqgp0fVnO
+	HxOIVt6Il7I85Md8cCWoIu3BbCmhVwcMZTGsFfaXecEmyHloVLAuU9P72nf8IviP
+	aDXgTyShVvSa8nl7X2EjgZKUkkMkpXu6oBWFzEmWc0fNe/nNqBRnilIp/ELw==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
+	fm1; t=1716301782; x=1716388182; bh=WJ35C0s9XRfN9d5AhSx5pIlmDJ+U
+	A3xXuY4ZoQb5kZo=; b=l/CTsexCnzGBBlebi1q7RXHziELQNQRDxqaLaNkSB8OZ
+	B1baizheqyfBAnopypCbi3ckVVoqwA89iczj1AruP+JzU7dhtJEq1wP0Ms85aUjp
+	uswnR6O4y4CpEK1MYjM4z2GtAz9fFKAFBSw695RPLS0ZwEP52I48DxnbmZYxEWs3
+	cT3MbpiAB7y7F4DGYrURp8Und9+PRCTO7i/HDhZ7f8R74oTEB+9kqStV4EwExeJt
+	wNe3vVja8pi2dLUfGEH4CUHOhIJpSy/bV9vzVd3+Io2PPnR/wjxNCbWb/5k0oeJW
+	OFNO70BB8+8XfZN9Rm37KlcZisyjD6yoFzR26XD1Hg==
+X-ME-Sender: <xms:1a9MZiNsgGjrDfCMxfBDrw6nSfmX-QIMHhGgL3K247l8R5mUi6_ZwA>
+    <xme:1a9MZg-ZDzLSFLZzi8tI3UMToKyCR9ZRhfxtJaJtb_RAZKqehDgAtqGU7TGU7AGFe
+    UQhKIjOfs0VlAG2xPs>
+X-ME-Received: <xmr:1a9MZpT9W2diIVdzR2Sv2TAKnkE-Y2hXlWXdeRn9TW9gasbBaFM4mYoiKRA>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvledrvdeivddgjeehucetufdoteggodetrfdotf
+    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
+    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
+    cujfgurhepfffhvfevuffkfhggtggujgesthdtredttddtvdenucfhrhhomhepvfihtghh
+    ohcutehnuggvrhhsvghnuceothihtghhohesthihtghhohdrphhiiiiirgeqnecuggftrf
+    grthhtvghrnhepueettdetgfejfeffheffffekjeeuveeifeduleegjedutdefffetkeel
+    hfelleetnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomh
+    epthihtghhohesthihtghhohdrphhiiiiirg
+X-ME-Proxy: <xmx:1a9MZitcUQnNB3M_IrtoDN8gDR1y1Nfy0EpUn1Aspl-U4K7hoAhGyw>
+    <xmx:1a9MZqekWo7gkGiEkZed-8sCNf9dEGcL577bFKbmgv_-Wi0LtEsLMg>
+    <xmx:1a9MZm3BYCnCSWWYMp5mVZNIVsPIUwkeljr-F4kHaJ6JfyuYxY-vhQ>
+    <xmx:1a9MZu_aE9XQsdxTzs6Z1eTPNqfiB1GbBjGoFzsyaHssupudRQWTVg>
+    <xmx:1q9MZtuk9PJLI2PmPy-tjTOwp4g-7oCs77FEYQyR5lnd37v3IGhJoP0g>
+Feedback-ID: i21f147d5:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Tue,
+ 21 May 2024 10:29:38 -0400 (EDT)
+Date: Tue, 21 May 2024 08:29:35 -0600
+From: Tycho Andersen <tycho@tycho.pizza>
+To: Jarkko Sakkinen <jarkko@kernel.org>
+Cc: Jonathan Calmels <jcalmels@3xx0.net>, brauner@kernel.org,
+	ebiederm@xmission.com, Luis Chamberlain <mcgrof@kernel.org>,
+	Kees Cook <keescook@chromium.org>,
+	Joel Granados <j.granados@samsung.com>,
+	Serge Hallyn <serge@hallyn.com>, Paul Moore <paul@paul-moore.com>,
+	James Morris <jmorris@namei.org>,
+	David Howells <dhowells@redhat.com>, containers@lists.linux.dev,
+	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-security-module@vger.kernel.org, keyrings@vger.kernel.org
+Subject: Re: [PATCH 3/3] capabilities: add cap userns sysctl mask
+Message-ID: <Zkyvz122pigJGgEw@tycho.pizza>
+References: <20240516092213.6799-1-jcalmels@3xx0.net>
+ <20240516092213.6799-4-jcalmels@3xx0.net>
+ <ZktQZi5iCwxcU0qs@tycho.pizza>
+ <ptixqmplbovxmqy3obybwphsie2xaybfj46xyafdnol7bme4z4@4kwdljmrkdpn>
+ <Zku8839xgFRAEcl+@tycho.pizza>
+ <D1ETFJFE9Y48.1T8I7SIPGFMQ2@kernel.org>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
-Mime-Version: 1.0
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset=UTF-8
-Date: Tue, 21 May 2024 17:12:16 +0300
-Message-Id: <D1FDU1C3W974.2BXBDS10OB8CB@kernel.org>
-Cc: <brauner@kernel.org>, <ebiederm@xmission.com>, "Luis Chamberlain"
- <mcgrof@kernel.org>, "Kees Cook" <keescook@chromium.org>, "Joel Granados"
- <j.granados@samsung.com>, "Serge Hallyn" <serge@hallyn.com>, "Paul Moore"
- <paul@paul-moore.com>, "James Morris" <jmorris@namei.org>, "David Howells"
- <dhowells@redhat.com>, <containers@lists.linux.dev>,
- <linux-kernel@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
- <linux-security-module@vger.kernel.org>, <keyrings@vger.kernel.org>
-Subject: Re: [PATCH 0/3] Introduce user namespace capabilities
-From: "Jarkko Sakkinen" <jarkko@kernel.org>
-To: "John Johansen" <john.johansen@canonical.com>, "Jonathan Calmels"
- <jcalmels@3xx0.net>, "Casey Schaufler" <casey@schaufler-ca.com>
-X-Mailer: aerc 0.17.0
-References: <20240516092213.6799-1-jcalmels@3xx0.net>
- <2804dd75-50fd-481c-8867-bc6cea7ab986@schaufler-ca.com>
- <D1BBFWKGIA94.JP53QNURY3J4@kernel.org>
- <D1BBI1LX2FMW.3MTQAHW0MA1IH@kernel.org>
- <D1BC3VWXKTNC.2DB9JIIDOFIOQ@kernel.org>
- <jvy3npdptyro3m2q2junvnokbq2fjlffljxeqitd55ff37cydc@b7mwtquys6im>
- <df3c9e5c-b0e7-4502-8c36-c5cb775152c0@schaufler-ca.com>
- <vhpmew3kyay3xq4h3di3euauo43an22josvvz6assex4op3gzw@xeq63mqb2lmh>
- <D1CQ1FZ72NIW.2U7ZH0GU6C5W5@kernel.org>
- <D1CQ8J60S7L4.1OVRIWBERNM5Y@kernel.org>
- <D1CQC0PTK1G0.124QCO3S041Q@kernel.org>
- <1b0d222a-b556-48b0-913f-cdd5c30f8d27@canonical.com>
-In-Reply-To: <1b0d222a-b556-48b0-913f-cdd5c30f8d27@canonical.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <D1ETFJFE9Y48.1T8I7SIPGFMQ2@kernel.org>
 
-On Tue May 21, 2024 at 4:57 PM EEST, John Johansen wrote:
-> > One tip: I think this is wrong forum to present namespace ideas in the
-> > first place. It would be probably better to talk about this with e.g.
-> > systemd or podman developers, and similar groups. There's zero evidence
-> > of the usefulness. Then when you go that route and come back with actua=
-l
-> > users, things click much more easily. Now this is all in the void.
-> >=20
-> > BR, Jarkko
->
-> Jarkko,
->
-> this is very much the right forum. User namespaces exist today. This
-> is a discussion around trying to reduce the exposed kernel surface
-> that is being used to attack the kernel.
+On Tue, May 21, 2024 at 01:12:57AM +0300, Jarkko Sakkinen wrote:
+> On Tue May 21, 2024 at 12:13 AM EEST, Tycho Andersen wrote:
+> > On Mon, May 20, 2024 at 12:25:27PM -0700, Jonathan Calmels wrote:
+> > > On Mon, May 20, 2024 at 07:30:14AM GMT, Tycho Andersen wrote:
+> > > > there is an ongoing effort (started at [0]) to constify the first arg
+> > > > here, since you're not supposed to write to it. Your usage looks
+> > > > correct to me, so I think all it needs is a literal "const" here.
+> > > 
+> > > Will do, along with the suggestions from Jarkko
+> > > 
+> > > > > +	struct ctl_table t;
+> > > > > +	unsigned long mask_array[2];
+> > > > > +	kernel_cap_t new_mask, *mask;
+> > > > > +	int err;
+> > > > > +
+> > > > > +	if (write && (!capable(CAP_SETPCAP) ||
+> > > > > +		      !capable(CAP_SYS_ADMIN)))
+> > > > > +		return -EPERM;
+> > > > 
+> > > > ...why CAP_SYS_ADMIN? You mention it in the changelog, but don't
+> > > > explain why.
+> > > 
+> > > No reason really, I was hoping we could decide what we want here.
+> > > UMH uses CAP_SYS_MODULE, Serge mentioned adding a new cap maybe.
+> >
+> > I don't have a strong preference between SETPCAP and a new capability,
+> > but I do think it should be just one. SYS_ADMIN is already god mode
+> > enough, IMO.
+> 
+> Sometimes I think would it make more sense to invent something
+> completely new like capabilities but more modern and robust, instead of
+> increasing complexity of a broken mechanism (especially thanks to
+> CAP_MAC_ADMIN).
+> 
+> I kind of liked the idea of privilege tokens both in Symbian and Maemo
+> (have been involved professionally in both). Emphasis on the idea not
+> necessarily on implementation.
+> 
+> Not an LSM but like something that you could use in the place of POSIX
+> caps. Probably quite tedious effort tho because you would need to pull
+> the whole industry with the new thing...
 
-Agreed, that was harsh way to put it. What I mean is that if this
-feature was included, would it be enabled by distributions?
+And then we have LSM hooks, (ns_)capable(), __secure_computing() plus
+a new set of hooks for this new thing sprinkled around. I guess
+kernel developers wouldn't be excited about it, let alone the rest of
+the industry :)
 
-This user base part or potential user space part is not very well
-described in the cover letter. I.e. "motivation" to put it short.
+Thinking out loud: I wonder if fixing the seccomp TOCTOU against
+pointers would help here. I guess you'd still have issues where your
+policy engine resolves a path arg to open() and that inode changes
+between the decision and the actual vfs access, you have just changed
+the TOCTOU.
 
-I mean the technical details are really in detail in this patch set but
-it would help to digest them if there was some even rough description
-how this would be deployed.
+Or even scarier: what if you could change the return value at any
+kprobe? :)
 
-If the motivation should be obvious, then it is beyond me, and thus
-would be nice if that obvious thing was stated that everyone else gets.
-
-E.g. I like to sometimes just test quite alien patch sets for the sake
-of learning and fun (or not so fun, depends) but this patch set does not
-deliver enough information to do anything at all.
-
-Hope this clears a bit where I stand. IMHO a good patch set should bring
-the details to the specialists on the topic but also have some wider
-audience motivational stuff in order to make clear where it fits in this
-world :-)
-
-BR, Jarkko
+Tycho
