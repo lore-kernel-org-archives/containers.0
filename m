@@ -1,247 +1,89 @@
-Received: from smtp-relay-canonical-0.canonical.com (smtp-relay-canonical-0.canonical.com [185.125.188.120])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ed1-f46.google.com (mail-ed1-f46.google.com [209.85.208.46])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0ECB174C08
-	for <containers@lists.linux.dev>; Fri, 31 May 2024 07:43:41 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=185.125.188.120
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B21A14AECB
+	for <containers@lists.linux.dev>; Thu,  6 Jun 2024 21:11:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.46
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1717141424; cv=none; b=W1LDuxnEBTKRHbto8qAHChesi39IKMwb/JGhBXrJrPTlA120kMQlhvz1jEiGj+Pgawf5eIaLMhiK+E2DNHGNzt3EDFJdx/qeleDIW5MgYgWLgHaEI4711c0h6Hr8o5Qe+f9IA5du98DPfTJwLtRcGwKZnWfzZEaFoAHVpKModVw=
+	t=1717708285; cv=none; b=H+OZViDQYVE9NqHb5rcU0I2tmprlNloAnLAJcO1RazUWTLZ44/HRYka3pVhWRW8NaAuTFsillHWwSOQCn2W3HQrgxrWApk0z3IGlw2dszzGf5+k1HQY0FCUqzsEOjHjEMquEsma62h0BUr/gir+XAZpFRkYFjzZu/uBjNu6RDXo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1717141424; c=relaxed/simple;
-	bh=kC1xZAb+udNeB++ElVbNHuz8Zjw/x1QpXwAQGWF1uVs=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=PnoRyJ4+lXz2MXrMvax/3lePe3zP5iFrLXKRB68DUqAwkxHAaJwDvtF6BJkOH56NrI9UNI42cGz44F9MIM6etntsPhf3GfkZGrNQ4plg1O502oLME2dXoki7wRZnv4sZBF3nJ4OvnKDxD9VBW/jDPTyQUn2uL1nj/CTLaU006Kk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=canonical.com; spf=pass smtp.mailfrom=canonical.com; dkim=pass (2048-bit key) header.d=canonical.com header.i=@canonical.com header.b=ExserTqS; arc=none smtp.client-ip=185.125.188.120
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=canonical.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=canonical.com
+	s=arc-20240116; t=1717708285; c=relaxed/simple;
+	bh=3zf3EcDcgRwvFL6Z73nBVv6KUiDmEEI7iwc25oTFd4U=;
+	h=MIME-Version:From:Date:Message-ID:Subject:To:Content-Type; b=TRljLMpy0MmymfQHfQfMVcQZsMydmVE9F7YY6hGDPlx7QhF5NaBbbM2lRJsaDq52+zz5DM9eHSp+rMpmXf2EkV/rWOt/DwsvZVTspNhsElDF6uLAMCe2LPHu2A+KYmPkMDZBg+7qHxshXx7WxSJYsmt/I7vo7f7/UwL+aONhOrg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=stgraber.org; spf=pass smtp.mailfrom=stgraber.org; dkim=pass (1024-bit key) header.d=stgraber.org header.i=@stgraber.org header.b=obfbkvLC; arc=none smtp.client-ip=209.85.208.46
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=stgraber.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=stgraber.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=canonical.com header.i=@canonical.com header.b="ExserTqS"
-Received: from [192.168.192.85] (unknown [50.39.103.33])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-relay-canonical-0.canonical.com (Postfix) with ESMTPSA id 659723F4BE;
-	Fri, 31 May 2024 07:43:29 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=canonical.com;
-	s=20210705; t=1717141412;
-	bh=hWtfUrNYf/1YpAeStW25FHE9+7SF/Nayua2xG//fSDE=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type;
-	b=ExserTqSIEAEHQRAT7U45ZIiHDONxDqpnCL0qem617Z1PXKb3lZYmiggglJrzyY++
-	 1VFZfx8AcKipA49TRi2FLHb4jJE86NUh0y+ysyv+7b+RDbPjnHtl5McY8cL5OsQR2W
-	 qE29Hq9IdQJzYp3scIWt7sSLx1jOHq84Q+lCb0bwd640gEUoYD2dd+x5sxAScMme2n
-	 e5mTNZoxXn+VFJRYtOMgNAu2xvsldDDKaLJtDOConX0jkY/a9VuOpv3vRQfSKUTx/9
-	 ewRqxSvp4v6CHWNpgou+kUjqGFZ9O5z9rDry+kqt5rVil9vEsAAjJzADyDNJAHQ4Pr
-	 l9/mPNTcjwzjA==
-Message-ID: <0017fff6-8d80-45df-872c-0457d96470f6@canonical.com>
-Date: Fri, 31 May 2024 00:43:26 -0700
+	dkim=pass (1024-bit key) header.d=stgraber.org header.i=@stgraber.org header.b="obfbkvLC"
+Received: by mail-ed1-f46.google.com with SMTP id 4fb4d7f45d1cf-57a30b3a6cbso1829609a12.1
+        for <containers@lists.linux.dev>; Thu, 06 Jun 2024 14:11:21 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=stgraber.org; s=google; t=1717708280; x=1718313080; darn=lists.linux.dev;
+        h=content-transfer-encoding:to:subject:message-id:date:from
+         :mime-version:from:to:cc:subject:date:message-id:reply-to;
+        bh=3zf3EcDcgRwvFL6Z73nBVv6KUiDmEEI7iwc25oTFd4U=;
+        b=obfbkvLCA9Zni/mSKtJkR86kLVxbWD5pe7hDs1AD5BxIuKLXOkQbJimc72JayUyrmn
+         D0cyZuPPVRBav06C3Jex5pdMnqHm8brOhF0D5Q08NR65fbdjEHISF0GeS5vgEs3hxNTY
+         9Es1HsDFlyrEzLFeTIwYj/jRWIn8879BhTzVk=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1717708280; x=1718313080;
+        h=content-transfer-encoding:to:subject:message-id:date:from
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=3zf3EcDcgRwvFL6Z73nBVv6KUiDmEEI7iwc25oTFd4U=;
+        b=pIxE/QpIj9cOm4Q7XwlpJWrqKwm4DUoHZpb/XuLoxwkjNx0upy1qR6uMB48oBfCBM3
+         aoxBzIhgSIL8wMme7BvKaIr/yDsuUiM/2oR4bQCoAsrnjG90SEuW9oGN/JHLptfn1ZSn
+         QMmOU6Qa/23Ng0mUf3IHAp12Hdo7HivnWxu0EwV8HWZAOsGXPeqzR+RVPqROzZ0o1Ag2
+         IcG8D4m09BC64RV5v2U3GkgT91hApjSwQk6RTDItL7ZZWAK5FT0Vkdx5+fP/Ph1TsElb
+         MrXSITKIpC5xdwSvSP2SbxY8HD+9jli5AP+6861A4MchH1DAOERt9udB/tnPSIHZmPvI
+         HtXg==
+X-Gm-Message-State: AOJu0Yzo/tvaKxLyc699nwv8B6QDUcT8M7kz/LK71wNM2Y3LZ7Kr/V3M
+	3qds6syge9yzyZ7uxujDZTizcunEVw1mqTsOTc0jjgluSmZm7/kpI/Nbx0ZjNNoFFqrAl29p3vv
+	QaJlcmLAcSta5lGAqYb2RjBRAKsNf7YLoUurXFtb9V4V2/7xs3Ko=
+X-Google-Smtp-Source: AGHT+IGDHoMiZ7Fajbo0W+HPCyyjUSfreoCXjbxhz1b/cLpPCxict3mgf8pziBgEGm2fHiqitluHV90lfrCD81cG9l0=
+X-Received: by 2002:aa7:c154:0:b0:57a:35f1:9969 with SMTP id
+ 4fb4d7f45d1cf-57c5095d2admr278021a12.28.1717708279427; Thu, 06 Jun 2024
+ 14:11:19 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 0/3] Introduce user namespace capabilities
-To: Jonathan Calmels <jcalmels@3xx0.net>
-Cc: Jarkko Sakkinen <jarkko@kernel.org>,
- Casey Schaufler <casey@schaufler-ca.com>, brauner@kernel.org,
- ebiederm@xmission.com, Luis Chamberlain <mcgrof@kernel.org>,
- Kees Cook <keescook@chromium.org>, Joel Granados <j.granados@samsung.com>,
- Serge Hallyn <serge@hallyn.com>, Paul Moore <paul@paul-moore.com>,
- James Morris <jmorris@namei.org>, David Howells <dhowells@redhat.com>,
- containers@lists.linux.dev, linux-kernel@vger.kernel.org,
- linux-fsdevel@vger.kernel.org, linux-security-module@vger.kernel.org,
- keyrings@vger.kernel.org
-References: <D1BC3VWXKTNC.2DB9JIIDOFIOQ@kernel.org>
- <jvy3npdptyro3m2q2junvnokbq2fjlffljxeqitd55ff37cydc@b7mwtquys6im>
- <df3c9e5c-b0e7-4502-8c36-c5cb775152c0@schaufler-ca.com>
- <vhpmew3kyay3xq4h3di3euauo43an22josvvz6assex4op3gzw@xeq63mqb2lmh>
- <D1CQ1FZ72NIW.2U7ZH0GU6C5W5@kernel.org>
- <D1CQ8J60S7L4.1OVRIWBERNM5Y@kernel.org>
- <D1CQC0PTK1G0.124QCO3S041Q@kernel.org>
- <1b0d222a-b556-48b0-913f-cdd5c30f8d27@canonical.com>
- <D1FDU1C3W974.2BXBDS10OB8CB@kernel.org>
- <872c8eb0-894b-413a-8e35-130984a87bba@canonical.com>
- <7psuqchpr5njlcqb3koeyqz3y2jhuc44vfeockygdarqyc3eyu@qpmujctxfmak>
-Content-Language: en-US
-From: John Johansen <john.johansen@canonical.com>
-Autocrypt: addr=john.johansen@canonical.com; keydata=
- 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 lT9Q
-Organization: Canonical
-In-Reply-To: <7psuqchpr5njlcqb3koeyqz3y2jhuc44vfeockygdarqyc3eyu@qpmujctxfmak>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+From: =?UTF-8?Q?St=C3=A9phane_Graber?= <stgraber@stgraber.org>
+Date: Thu, 6 Jun 2024 17:11:08 -0400
+Message-ID: <CA+enf=tZs+B0OscmvyurqXjLwvwjhV7rZQ9-Rfi16BqAwUN6Cg@mail.gmail.com>
+Subject: CFP for the containers and checkpoint-restore micro-conference at LPC
+ 2024 mailing/containers
+To: containers@lists.linux.dev
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On 5/21/24 17:45, Jonathan Calmels wrote:
-> On Tue, May 21, 2024 at 07:45:20AM GMT, John Johansen wrote:
->> On 5/21/24 07:12, Jarkko Sakkinen wrote:
->>> On Tue May 21, 2024 at 4:57 PM EEST, John Johansen wrote:
->>>>> One tip: I think this is wrong forum to present namespace ideas in the
->>>>> first place. It would be probably better to talk about this with e.g.
->>>>> systemd or podman developers, and similar groups. There's zero evidence
->>>>> of the usefulness. Then when you go that route and come back with actual
->>>>> users, things click much more easily. Now this is all in the void.
->>>>>
->>>>> BR, Jarkko
->>>>
->>>> Jarkko,
->>>>
->>>> this is very much the right forum. User namespaces exist today. This
->>>> is a discussion around trying to reduce the exposed kernel surface
->>>> that is being used to attack the kernel.
->>>
->>> Agreed, that was harsh way to put it. What I mean is that if this
->>> feature was included, would it be enabled by distributions?
->>>
->> Enabled, maybe? It requires the debian distros to make sure their
->> packaging supports xattrs correctly. It should be good but it isn't
->> well exercised. It also requires the work to set these on multiple
->> applications. From experience we are talking 100s.
->>
->> It will break out of repo applications, and require an extra step for
->> users to enable. Ubuntu is already breaking these but for many, of the
->> more popular ones they are shipping profiles so the users don't have
->> to take an extra step. Things like appimages remain broken and wil
->> require an approach similar to the Mac with unverified software
->> downloaded from the internet.
->>
->> Nor does this fix the bwrap, unshare, ... use case. Which means the
->> distro is going to have to continue shipping an alternate solution
->> that covers those. For Ubuntu atm this is just an extra point of
->> friction but I expect we would still end up enabling it to tick the
->> checkbox at some point if it goes into the upstream kernel.
-> 
-> I'm not sure I understand your point here and how this relates to xattrs.
-> This patchset has nothing to do with file capabilities. The userns
-> capability set is purely a process based capability set and in no way
-> influenced by file attributes.
-> 
+Hello,
 
-Oopps sorry the fcaps bit is crossing over a side discussion.
+We're going to have the usual containers and checkpoint/restore
+micro-conference at this year's edition of the Linux Plumbers
+Conference.
+This is going to be in Vienna, Austria between September 18th and 20th 2024=
+.
 
->>> This user base part or potential user space part is not very well
->>> described in the cover letter. I.e. "motivation" to put it short.
->>>
->> yes the cover letter needs work
-> 
-> Yes, it's been mentioned several times already.
-> While not in the cover letter, the motivation is stated in the first
-> patch and provides several references to past discussions on the topic.
-> 
-> This is nothing new, this subject has been contentious for years now and
-> discussed over and over on these lists (Eric would know :)). As
-> mentioned in the patch also, this recently warranted the inclusion of
-> new LSM hooks.
-> 
-> But again, I wrongfully assumed that this problem was well understood
-> and still relatively fresh, that's my bad.
-> 
->>> I mean the technical details are really in detail in this patch set but
->>> it would help to digest them if there was some even rough description
->>> how this would be deployed.
->>>
->> yes
-> 
-> Yes, this was purposefully left out so as not to influence any specific
-> implementation. There is a mention of where this could be done (i.e.
-> init, pam), but at the end of the day, this is going to depend on each
-> use case.
-> Having said that, since it appears to be confusing, maybe we could add
-> some of the examples I sent out in this thread or the other ones.
-> 
-examples would help, especially for people not too familiar with this.
+Registration is open already and as a reminder, getting accepted as a
+presenter in a micro-conference does not provide you with a ticket.
+Everyone who plans on attending, whether in-person or remotely should
+register now (early bird price until August 2nd).
+Registration: https://lpc.events/event/18/page/226-attend
 
+Back to our micro-conference, the CFP is now open and will be closing
+on July 15th!
+Topics of interest are anything that's related to containers,
+namespaces, cgroups, ... whether in kernel land or userspace as well
+as anything that's related to the ability to checkpoint and restore
+processes.
 
-> I want to reiterate that this is a generic capability set, this is not
-> magic switch you turn on to secure the whole system.
-> Its implementation is going to vary across environments and it is going
-> to be dictated by your threat model.
-> 
-yeah
+Full CFP: https://discuss.linuxcontainers.org/t/containers-and-checkpoint-r=
+estore-micro-conference-at-lpc-2024/20131
+Submission link: https://lpc.events/event/18/abstracts/
 
-> For example, John's threat model of securing a multi-user Ubuntu Desktop
-> is going to be very different than say securing a server where all the
-> userspace is fixed and known.
-> The former might require additional integration with the LSM subsystem.
-> Thankfully, this patch should synergize well with it.
-> 
+See you in Vienna!
 
-hrmmm, maybe, I will be happy if they just don't end up complicating
-each other
-
-> Fundamentally, and at its core, it's very simple. Serge put it nicely:
-> 
-
-yes it is, and yet it still worries me a great deal. I have some of
-the same worries as Casey, and also worry that people will take this
-as a solution for all use cases, without understanding the issues.
-
-On the other hand walking back the current state of unprivileged use of
-user namespaces is a huge issue. Having another approach also pushing
-will actually be helpful in some ways.
-
->> If you want root in a child user namespace to not have CAP_MAC_ADMIN,
->> you drop it from your pU.  Simple as that.
-> 
->  From there, you can imagine any integration you want in userspace and
-> ways to enforce your own policies.
-> 
-> TLDR, this is a first step towards empowering userspace with control
-> over capabilities granted by a userns. At present, the kernel does not
-> offer ways to do this. By itself, it is not a comprehensive solution
-
-yep
-
-> designed to thwart threat actors. However, it gives userspace the option
-> to do so.
-
-again, I don't believe the capabilities system is actually capable of
-doing this, it covers some of the use cases. To be fair the LSM doesn't
-cover everything either, there are current use cases that just aren't safe,
-you either break them or allow them and accept the risks. It relies on
-people understanding threat models, and sadly I have become grown quite
-grumpy about that topic.
-
-Anyways I will try to finish up my review of the code this weekend.
-
+St=C3=A9phane
