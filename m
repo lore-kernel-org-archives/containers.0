@@ -1,89 +1,207 @@
-Received: from mail-ed1-f46.google.com (mail-ed1-f46.google.com [209.85.208.46])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from flow3-smtp.messagingengine.com (flow3-smtp.messagingengine.com [103.168.172.138])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B21A14AECB
-	for <containers@lists.linux.dev>; Thu,  6 Jun 2024 21:11:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.46
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EACAEA3F
+	for <containers@lists.linux.dev>; Sun,  9 Jun 2024 10:39:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.138
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1717708285; cv=none; b=H+OZViDQYVE9NqHb5rcU0I2tmprlNloAnLAJcO1RazUWTLZ44/HRYka3pVhWRW8NaAuTFsillHWwSOQCn2W3HQrgxrWApk0z3IGlw2dszzGf5+k1HQY0FCUqzsEOjHjEMquEsma62h0BUr/gir+XAZpFRkYFjzZu/uBjNu6RDXo=
+	t=1717929588; cv=none; b=ZlPnLeXNeaMAX1GiAh1VccFelQa8PvMFVoJHX6sh5NF0A22y3Qqy0r6SxCYYS4DeycHMdj0JdEpOiQozm8KXTKBjPbtCOGeoMv7EVaU5+/3N9IAt2IP5OXp8SIvti9mCtZhP2VewlVYzRjwL3nf2xC33RmUulN1dHMvSL7w5RN8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1717708285; c=relaxed/simple;
-	bh=3zf3EcDcgRwvFL6Z73nBVv6KUiDmEEI7iwc25oTFd4U=;
-	h=MIME-Version:From:Date:Message-ID:Subject:To:Content-Type; b=TRljLMpy0MmymfQHfQfMVcQZsMydmVE9F7YY6hGDPlx7QhF5NaBbbM2lRJsaDq52+zz5DM9eHSp+rMpmXf2EkV/rWOt/DwsvZVTspNhsElDF6uLAMCe2LPHu2A+KYmPkMDZBg+7qHxshXx7WxSJYsmt/I7vo7f7/UwL+aONhOrg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=stgraber.org; spf=pass smtp.mailfrom=stgraber.org; dkim=pass (1024-bit key) header.d=stgraber.org header.i=@stgraber.org header.b=obfbkvLC; arc=none smtp.client-ip=209.85.208.46
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=stgraber.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=stgraber.org
+	s=arc-20240116; t=1717929588; c=relaxed/simple;
+	bh=dKaNr1T+2ZoKYO9xvZbhamHUunp15XF6FR3PVyK6ofs=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version:Content-Type; b=YyfpeObEHeB9j2CAM8UpsCuM+iKk0I56wGlpW2MH/hAnK8jjLkZLq6FpteEbqXQdrCHM2eAhzdA2Yj2MK9F1Bi/1Bdm8Gt3601FGGQRuZ9DRVuhMhUhe/eY4Cv08fYv095zJQg37Rz4x7PJC8Dccf1Hswp6OSWn5do/B9Bvk5Ro=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=3xx0.net; spf=pass smtp.mailfrom=3xx0.net; dkim=pass (2048-bit key) header.d=3xx0.net header.i=@3xx0.net header.b=A6+uuzE1; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=AoEnVlYQ; arc=none smtp.client-ip=103.168.172.138
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=3xx0.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=3xx0.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=stgraber.org header.i=@stgraber.org header.b="obfbkvLC"
-Received: by mail-ed1-f46.google.com with SMTP id 4fb4d7f45d1cf-57a30b3a6cbso1829609a12.1
-        for <containers@lists.linux.dev>; Thu, 06 Jun 2024 14:11:21 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=stgraber.org; s=google; t=1717708280; x=1718313080; darn=lists.linux.dev;
-        h=content-transfer-encoding:to:subject:message-id:date:from
-         :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=3zf3EcDcgRwvFL6Z73nBVv6KUiDmEEI7iwc25oTFd4U=;
-        b=obfbkvLCA9Zni/mSKtJkR86kLVxbWD5pe7hDs1AD5BxIuKLXOkQbJimc72JayUyrmn
-         D0cyZuPPVRBav06C3Jex5pdMnqHm8brOhF0D5Q08NR65fbdjEHISF0GeS5vgEs3hxNTY
-         9Es1HsDFlyrEzLFeTIwYj/jRWIn8879BhTzVk=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1717708280; x=1718313080;
-        h=content-transfer-encoding:to:subject:message-id:date:from
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=3zf3EcDcgRwvFL6Z73nBVv6KUiDmEEI7iwc25oTFd4U=;
-        b=pIxE/QpIj9cOm4Q7XwlpJWrqKwm4DUoHZpb/XuLoxwkjNx0upy1qR6uMB48oBfCBM3
-         aoxBzIhgSIL8wMme7BvKaIr/yDsuUiM/2oR4bQCoAsrnjG90SEuW9oGN/JHLptfn1ZSn
-         QMmOU6Qa/23Ng0mUf3IHAp12Hdo7HivnWxu0EwV8HWZAOsGXPeqzR+RVPqROzZ0o1Ag2
-         IcG8D4m09BC64RV5v2U3GkgT91hApjSwQk6RTDItL7ZZWAK5FT0Vkdx5+fP/Ph1TsElb
-         MrXSITKIpC5xdwSvSP2SbxY8HD+9jli5AP+6861A4MchH1DAOERt9udB/tnPSIHZmPvI
-         HtXg==
-X-Gm-Message-State: AOJu0Yzo/tvaKxLyc699nwv8B6QDUcT8M7kz/LK71wNM2Y3LZ7Kr/V3M
-	3qds6syge9yzyZ7uxujDZTizcunEVw1mqTsOTc0jjgluSmZm7/kpI/Nbx0ZjNNoFFqrAl29p3vv
-	QaJlcmLAcSta5lGAqYb2RjBRAKsNf7YLoUurXFtb9V4V2/7xs3Ko=
-X-Google-Smtp-Source: AGHT+IGDHoMiZ7Fajbo0W+HPCyyjUSfreoCXjbxhz1b/cLpPCxict3mgf8pziBgEGm2fHiqitluHV90lfrCD81cG9l0=
-X-Received: by 2002:aa7:c154:0:b0:57a:35f1:9969 with SMTP id
- 4fb4d7f45d1cf-57c5095d2admr278021a12.28.1717708279427; Thu, 06 Jun 2024
- 14:11:19 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=3xx0.net header.i=@3xx0.net header.b="A6+uuzE1";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="AoEnVlYQ"
+Received: from compute6.internal (compute6.nyi.internal [10.202.2.47])
+	by mailflow.nyi.internal (Postfix) with ESMTP id E12AC200151;
+	Sun,  9 Jun 2024 06:39:45 -0400 (EDT)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute6.internal (MEProxy); Sun, 09 Jun 2024 06:39:45 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=3xx0.net; h=cc
+	:cc:content-transfer-encoding:content-type:content-type:date
+	:date:from:from:in-reply-to:message-id:mime-version:reply-to
+	:subject:subject:to:to; s=fm1; t=1717929585; x=1717933185; bh=/O
+	0tfbzHKuHaojRdWTQXNBZb0w0SRZ82f5WuNVpAO8c=; b=A6+uuzE1rHNWSsZTV2
+	nh1GgNpjc352DgFM/jZmNgD1WhF905rYRmEKbvxZUpXDOMmDeBGRo63NyA943gXB
+	ljW4aI2qdH8o9+YWN9GGDLPEsJEvMaLl3TwU6HWh4C0SGTs/DDfsn0FIEBqiS6AA
+	DkZIjmnKSDloyVn9VQDpcrAu6vCm1QK24jjFQpP9/eUnEjws0WhLBrrVh4ZNvIGG
+	k3TMnL3/B9kNLkDUh/ctpKkeDQpzNdUiWe9Hz+703TzBOwdkoVuai/31wZuczjn/
+	YoUIG97TJBy2DJUMfUJgnKU6dZA8tdEX2Nf8gGGUlgq5bUpxralJlmIJH81XI5wH
+	cr6A==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-transfer-encoding
+	:content-type:content-type:date:date:feedback-id:feedback-id
+	:from:from:in-reply-to:message-id:mime-version:reply-to:subject
+	:subject:to:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender
+	:x-sasl-enc; s=fm1; t=1717929585; x=1717933185; bh=/O0tfbzHKuHao
+	jRdWTQXNBZb0w0SRZ82f5WuNVpAO8c=; b=AoEnVlYQzmapn7PSxAEaGwMl5HKnC
+	Gi+eLp2B2yPpYpKhrgYJbaf1CNuuBb8Nj0EZn5xeqCj/OYQNpSn0N+Sez1NTsyvE
+	o4zzTqq98s08xqhcKsfLLAqfDAJbkr6QW2qGF56RrKkMycCf4a8NuVxGOQ00A4x4
+	I7coXhOtpc6Np3R/o6XT04/Z2yhSdT2YA1jmCw3fjv+o7vQ4+5NrJ72ELB+9FJRL
+	zUlPUqUz8Z2Mov+4pST/+REpzCp9BeZ8zp5lPOmbYZ5KSpvijRSlJTHWvVBZI804
+	dZWBSTfN7LVZodknvVRVtJNFAN9wg0VZPFxZDHl/e0Q8cgnlMx9XY5L1Q==
+X-ME-Sender: <xms:cYZlZk0NrIt22oj_PCTv7GPk8BKAdSC4CvBNBtXMlKrOds-jXCX6kg>
+    <xme:cYZlZvHzJl2uMqjDCy3roIoo-wPALzr84HqJipIzv4B8BezJaghk90YZwAoLHZaiY
+    m6JB2LvR0uL0Rgub5A>
+X-ME-Received: <xmr:cYZlZs67TIAQXuRvS4LNJsxIfRhJCMyiWqLUXp3W9CszFQYAOSHyy3BskIrFs2z4wP4f_IFOCGRfLW-6pzjocKeQK7xB5wKEeX-c2uzDAIy6Cw>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvledrfedtjedgfedtucetufdoteggodetrfdotf
+    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
+    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
+    cujfgurhephffvvefufffkofggtgfgsehtkeertdertdejnecuhfhrohhmpeflohhnrght
+    hhgrnhcuvegrlhhmvghlshcuoehjtggrlhhmvghlshesfeiggidtrdhnvghtqeenucggtf
+    frrghtthgvrhhnpefhieevtdektdekvdfftdetudejvdejudekffelvdegteejueeujeeu
+    fefhieegfeenucffohhmrghinhepphgrmhgptggrphdrshhopdhkvghrnhgvlhdrohhrgh
+    enucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpehjtggr
+    lhhmvghlshesfeiggidtrdhnvght
+X-ME-Proxy: <xmx:cYZlZt12MpxahFlMi53JTtlMs2HyPQa9_US94TsFreIjarv_5keVTg>
+    <xmx:cYZlZnHuRk7vWBuaU_r-RtQjzMj_tt4zI_yGC5SVMw6LoOjX-kDXRA>
+    <xmx:cYZlZm-of11IqdzrJfcOfQNEqi19HaNDmVivU5F753rXVxPN1UYGtw>
+    <xmx:cYZlZskCoHs4JNkY3J6Og298J1wP6jL-wswP_utkz1mzpGJkfCz-1Q>
+    <xmx:cYZlZnGSnk2LavPUrcuXBV7haSMyAl3K3F7V8QEGPjlkJBm2S4l_yIuo>
+Feedback-ID: i76614979:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Sun,
+ 9 Jun 2024 06:39:41 -0400 (EDT)
+From: Jonathan Calmels <jcalmels@3xx0.net>
+To: brauner@kernel.org,	ebiederm@xmission.com,
+	Jonathan Corbet <corbet@lwn.net>,	Paul Moore <paul@paul-moore.com>,
+	James Morris <jmorris@namei.org>,	"Serge E. Hallyn" <serge@hallyn.com>,
+	KP Singh <kpsingh@kernel.org>,	Matt Bobrowski <mattbobrowski@google.com>,
+	Alexei Starovoitov <ast@kernel.org>,
+	Daniel Borkmann <daniel@iogearbox.net>,
+	Andrii Nakryiko <andrii@kernel.org>,
+	Martin KaFai Lau <martin.lau@linux.dev>,
+	Eduard Zingerman <eddyz87@gmail.com>,	Song Liu <song@kernel.org>,
+	Yonghong Song <yonghong.song@linux.dev>,
+	John Fastabend <john.fastabend@gmail.com>,
+	Stanislav Fomichev <sdf@google.com>,	Hao Luo <haoluo@google.com>,
+	Jiri Olsa <jolsa@kernel.org>,	Luis Chamberlain <mcgrof@kernel.org>,
+	Kees Cook <kees@kernel.org>,	Joel Granados <j.granados@samsung.com>,
+	John Johansen <john.johansen@canonical.com>,
+	David Howells <dhowells@redhat.com>,	Jarkko Sakkinen <jarkko@kernel.org>,
+	Stephen Smalley <stephen.smalley.work@gmail.com>,
+	Ondrej Mosnacek <omosnace@redhat.com>,	Mykola Lysenko <mykolal@fb.com>,
+	Shuah Khan <shuah@kernel.org>
+Cc: containers@lists.linux.dev,
+	Jonathan Calmels <jcalmels@3xx0.net>,
+	linux-kernel@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org,
+	linux-doc@vger.kernel.org,
+	linux-security-module@vger.kernel.org,
+	bpf@vger.kernel.org,
+	apparmor@lists.ubuntu.com,
+	keyrings@vger.kernel.org,
+	selinux@vger.kernel.org,
+	linux-kselftest@vger.kernel.org
+Subject: [PATCH v2 0/4] Introduce user namespace capabilities
+Date: Sun,  9 Jun 2024 03:43:33 -0700
+Message-ID: <20240609104355.442002-1-jcalmels@3xx0.net>
+X-Mailer: git-send-email 2.45.2
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-From: =?UTF-8?Q?St=C3=A9phane_Graber?= <stgraber@stgraber.org>
-Date: Thu, 6 Jun 2024 17:11:08 -0400
-Message-ID: <CA+enf=tZs+B0OscmvyurqXjLwvwjhV7rZQ9-Rfi16BqAwUN6Cg@mail.gmail.com>
-Subject: CFP for the containers and checkpoint-restore micro-conference at LPC
- 2024 mailing/containers
-To: containers@lists.linux.dev
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-Hello,
+This patch series introduces a new user namespace capability set, as
+well as some plumbing around it (i.e. sysctl, secbit, lsm support).
 
-We're going to have the usual containers and checkpoint/restore
-micro-conference at this year's edition of the Linux Plumbers
-Conference.
-This is going to be in Vienna, Austria between September 18th and 20th 2024=
-.
+First patch goes over the motivations for this as well as prior art.
 
-Registration is open already and as a reminder, getting accepted as a
-presenter in a micro-conference does not provide you with a ticket.
-Everyone who plans on attending, whether in-person or remotely should
-register now (early bird price until August 2nd).
-Registration: https://lpc.events/event/18/page/226-attend
+In summary, while user namespaces are a great success today in that they
+avoid running a lot of code as root, they also expand the attack surface
+of the kernel substantially which is often abused by attackers. 
+Methods exist to limit the creation of such namespaces [1], however,
+application developers often need to assume that user namespaces are
+available for various tasks such as sandboxing. Thus, instead of
+restricting the creation of user namespaces, we offer ways for userspace
+to limit the capabilities granted to them.
 
-Back to our micro-conference, the CFP is now open and will be closing
-on July 15th!
-Topics of interest are anything that's related to containers,
-namespaces, cgroups, ... whether in kernel land or userspace as well
-as anything that's related to the ability to checkpoint and restore
-processes.
+Why a new capability set and not something specific to the userns (e.g.
+ioctl_ns)?
 
-Full CFP: https://discuss.linuxcontainers.org/t/containers-and-checkpoint-r=
-estore-micro-conference-at-lpc-2024/20131
-Submission link: https://lpc.events/event/18/abstracts/
+    1. We can't really expect userspace to patch every single callsite
+    and opt-in this new security mechanism. 
 
-See you in Vienna!
+    2. We don't necessarily want policies enforced at said callsites.
+    For example a service like systemd-machined or a PAM session need to
+    be able to place restrictions on any namespace spawned under it.
 
-St=C3=A9phane
+    3. We would need to come up with inheritance rules, querying
+    capabilities, etc. At this point we're just reinventing capability
+    sets.
+
+    4. We can easily define interactions between capability sets, thus
+    helping with adoption (patch 2 is an example of this)
+
+Some examples of how this could be leveraged in userspace:
+
+    - Prevent user from getting CAP_NET_ADMIN in user namespaces under SSH:
+        echo "auth optional pam_cap.so" >> /etc/pam.d/sshd
+        echo "!cap_net_admin $USER"     >> /etc/security/capability.conf
+        capsh --secbits=$((1 << 8)) -- -c /usr/sbin/sshd
+
+    - Prevent containers from ever getting CAP_DAC_OVERRIDE:
+        systemd-run -p CapabilityBoundingSet=~CAP_DAC_OVERRIDE \
+                    -p SecureBits=userns-strict-caps \
+                    /usr/bin/dockerd
+        systemd-run -p UserNSCapabilities=~CAP_DAC_OVERRIDE \
+                    /usr/bin/incusd
+
+    - Kernel could be vulnerable to CAP_SYS_RAWIO exploits, prevent it:
+        sysctl -w cap_bound_userns_mask=0x1fffffdffff
+
+    - Drop CAP_SYS_ADMIN for this shell and all the user namespaces below it:
+        bwrap --unshare-user --cap-drop CAP_SYS_ADMIN /bin/sh
+
+[1] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=7cd4c5c2101cb092db00f61f69d24380cf7a0ee8
+
+---
+Changes since v1:
+- Add documentation
+- Change commit wording
+- Cleanup various aspects of the code based on feedback
+- Add new CAP_SYS_CONTROL capability for sysctl check
+- Add BPF-LSM support for modifying userns capabilities
+---
+Jonathan Calmels (4):
+  capabilities: Add user namespace capabilities
+  capabilities: Add securebit to restrict userns caps
+  capabilities: Add sysctl to mask off userns caps
+  bpf,lsm: Allow editing capabilities in BPF-LSM hooks
+
+ Documentation/filesystems/proc.rst            |  1 +
+ Documentation/security/credentials.rst        |  6 ++
+ fs/proc/array.c                               |  9 +++
+ include/linux/cred.h                          |  3 +
+ include/linux/lsm_hook_defs.h                 |  2 +-
+ include/linux/securebits.h                    |  1 +
+ include/linux/security.h                      |  4 +-
+ include/linux/user_namespace.h                |  7 ++
+ include/uapi/linux/capability.h               |  6 +-
+ include/uapi/linux/prctl.h                    |  7 ++
+ include/uapi/linux/securebits.h               | 11 ++-
+ kernel/bpf/bpf_lsm.c                          | 55 +++++++++++++
+ kernel/cred.c                                 |  3 +
+ kernel/sysctl.c                               | 10 +++
+ kernel/umh.c                                  | 15 ++++
+ kernel/user_namespace.c                       | 80 +++++++++++++++++--
+ security/apparmor/lsm.c                       |  2 +-
+ security/commoncap.c                          | 62 +++++++++++++-
+ security/keys/process_keys.c                  |  3 +
+ security/security.c                           |  6 +-
+ security/selinux/hooks.c                      |  2 +-
+ security/selinux/include/classmap.h           |  5 +-
+ .../selftests/bpf/prog_tests/deny_namespace.c | 12 ++-
+ .../selftests/bpf/progs/test_deny_namespace.c |  7 +-
+ 24 files changed, 291 insertions(+), 28 deletions(-)
+
+-- 
+2.45.2
+
