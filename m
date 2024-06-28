@@ -1,152 +1,244 @@
-Received: from mail.hallyn.com (mail.hallyn.com [178.63.66.53])
+Received: from lahtoruutu.iki.fi (lahtoruutu.iki.fi [185.185.170.37])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6D3EC4F5FD
-	for <containers@lists.linux.dev>; Sat, 15 Jun 2024 15:20:12 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=178.63.66.53
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1718464814; cv=none; b=t/qDyQvBWykUa4Y55oUZok5TibYHV4ya+DPfbm/tfss2drYKrCmPmzv8XQKA6VYB2L1Floj0Ilw1AE3uwlj9LgJtokPfB/LpoesMnLsNUHdxacBi8bBFjcjd6PJo/EQo5I5A9oi1q20psg931hxXzeYEyQunRIn3cjH9P45KFW0=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1718464814; c=relaxed/simple;
-	bh=IFh8KhffQ3yr0f1VsXFjXTwbEQq/G+GmRuWLfL7ScZg=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=R+doN4MywucFqVQdmjAMERqw4cu9tTMxZHkRX8o3/YXzxyLv0e2ioersrlQqdzSnigwT/H9d74yOFtuqN5hBz5zlwSJIpANGeYAaynva9oWH46Qzh+u1a7JzOR/nBBa7pcberwNrQRHxiY6EH8DcyNcgJqpwAoc1PsJlnbY/6Cs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=hallyn.com; spf=pass smtp.mailfrom=mail.hallyn.com; arc=none smtp.client-ip=178.63.66.53
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=hallyn.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=mail.hallyn.com
-Received: by mail.hallyn.com (Postfix, from userid 1001)
-	id A5A8DC18; Sat, 15 Jun 2024 10:20:10 -0500 (CDT)
-Date: Sat, 15 Jun 2024 10:20:10 -0500
-From: "Serge E. Hallyn" <serge@hallyn.com>
-To: Jonathan Calmels <jcalmels@3xx0.net>
-Cc: John Johansen <john.johansen@canonical.com>,
-	Paul Moore <paul@paul-moore.com>, brauner@kernel.org,
-	ebiederm@xmission.com, Jonathan Corbet <corbet@lwn.net>,
-	James Morris <jmorris@namei.org>,
-	"Serge E. Hallyn" <serge@hallyn.com>, KP Singh <kpsingh@kernel.org>,
-	Matt Bobrowski <mattbobrowski@google.com>,
-	Alexei Starovoitov <ast@kernel.org>,
-	Daniel Borkmann <daniel@iogearbox.net>,
-	Andrii Nakryiko <andrii@kernel.org>,
-	Martin KaFai Lau <martin.lau@linux.dev>,
-	Eduard Zingerman <eddyz87@gmail.com>, Song Liu <song@kernel.org>,
-	Yonghong Song <yonghong.song@linux.dev>,
-	John Fastabend <john.fastabend@gmail.com>,
-	Stanislav Fomichev <sdf@google.com>, Hao Luo <haoluo@google.com>,
-	Jiri Olsa <jolsa@kernel.org>, Luis Chamberlain <mcgrof@kernel.org>,
-	Kees Cook <kees@kernel.org>, Joel Granados <j.granados@samsung.com>,
-	David Howells <dhowells@redhat.com>,
-	Jarkko Sakkinen <jarkko@kernel.org>,
-	Stephen Smalley <stephen.smalley.work@gmail.com>,
-	Ondrej Mosnacek <omosnace@redhat.com>,
-	Mykola Lysenko <mykolal@fb.com>, Shuah Khan <shuah@kernel.org>,
-	containers@lists.linux.dev, linux-kernel@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, linux-doc@vger.kernel.org,
-	linux-security-module@vger.kernel.org, bpf@vger.kernel.org,
-	apparmor@lists.ubuntu.com, keyrings@vger.kernel.org,
-	selinux@vger.kernel.org, linux-kselftest@vger.kernel.org
-Subject: Re: [PATCH v2 4/4] bpf,lsm: Allow editing capabilities in BPF-LSM
- hooks
-Message-ID: <20240615152010.GB44653@mail.hallyn.com>
-References: <CAHC9VhT5XWbhoY2Nw5jQz4GxpDriUdHw=1YsQ4xLVUtSnFxciA@mail.gmail.com>
- <z2bgjrzeq7crqx24chdbxnaanuhczbjnq6da3xw6al6omjj5xz@mqbzzzfva5sw>
- <887a3658-2d8d-4f9e-98f2-27124bb6f8e6@canonical.com>
- <CAHC9VhQFNPJTOct5rUv3HT6Z2S20mYdW75seiG8no5=fZd7JjA@mail.gmail.com>
- <uuvwcdsy7o4ulmrdzwffr6uywfacmlkjrontmjdj44luantpok@dtatxaa6tzyv>
- <CAHC9VhRnthf8+KgfuzFHXWEAc9RShDO0G_g0kc1OJ-UTih1ywg@mail.gmail.com>
- <rgzhcsblub7wedm734n56cw2qf6czjb4jgck6l5miur6odhovo@n5tgrco74zce>
- <CAHC9VhRGJTND25MFk4gR-FGxoLhMmgUrMpz_YoMFOwL6kr28zQ@mail.gmail.com>
- <ba8d88c8-a251-4c1f-8653-1082b0a101dd@canonical.com>
- <zwh766li4dwx5be6uxnxl2lhtxb4jsiua4atilpqvoeuksgz2h@v3pna3o3ewkp>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7D8E21C0059
+	for <containers@lists.linux.dev>; Fri, 28 Jun 2024 14:43:48 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=185.185.170.37
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1719585831; cv=pass; b=IhTc8X4iEIKZ6OV4QeUXHsqqjpnT3vfFBlpA8Nv3iN+p9oHQFoB3juDD3tzedwbPFB4UOWOxYm6U9C1t+aQWTRcgd5bO6b4v5UGHyCXnLC8q17ikjwBHJJ/HpwwcU38XAkruevvbjGk/fr3Vn42lWUF+XsDbeRDPkY+dWW3bXIw=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1719585831; c=relaxed/simple;
+	bh=ItPXtvr1DUh76hqWh46Sg04DrHvwcZIwypzQpT3G7LQ=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=m2pIDdUUFPeqZBcSRh9//9uobGKinrqwp/EszvZRKaNm2lCUmNgar4rfJyJ44MYpAUNav0BXkI2Vm4BgdfeTHEUGl1Dj/D95UsnZjddpP+okkiiO4obZ+N7dX6GUdBia/cNCXYSf01jqM81Pwn4TzMIVKjjjSGqfMfGdw3DG9HY=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=iki.fi; spf=pass smtp.mailfrom=iki.fi; dkim=pass (2048-bit key) header.d=iki.fi header.i=@iki.fi header.b=WW1ivEvz; arc=pass smtp.client-ip=185.185.170.37
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=iki.fi
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=iki.fi
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=iki.fi header.i=@iki.fi header.b="WW1ivEvz"
+Received: from [192.168.1.215] (83-245-197-232.elisa-laajakaista.fi [83.245.197.232])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits))
+	(No client certificate requested)
+	(Authenticated sender: sakkinen)
+	by lahtoruutu.iki.fi (Postfix) with ESMTPSA id 4W9dV566v9z49Ptk;
+	Fri, 28 Jun 2024 17:43:41 +0300 (EEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=iki.fi; s=lahtoruutu;
+	t=1719585825;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=q0ixtXGjbpoir4FzU+po61uZcfAdJMqG4qMUx4PVDCU=;
+	b=WW1ivEvz2Ct7klUhNk5mq4piFlxPS3Ilzk7jrDq+mw0t/MGqGFMqbZUXuuwcmtoWAYvQvT
+	aUzbL3OE0baND/n+dGnlqi9OoSraZsxxuSk8Xt2MATThllzfBeZyjU4XZowzjnD5exLC1X
+	mBy3l5Z53jhYypa+ny+xwAqZugthgrmb+oV30ut6YEDSadY5Cf5mw0+fapqu9j8QSGcxp8
+	2pmsp2G7rgPPeS9IyjBR1R9+YBosNBTiWe6SaYM5/gmsRqMHnk1pxO7o4P4K1dYg7+VFZa
+	hdS/+0x83COE6l+tfGKSJ0/6VfExpyK2EylUF9YZUyK89NkHV9Yk3nXcSCzHMA==
+ARC-Seal: i=1; s=lahtoruutu; d=iki.fi; t=1719585825; a=rsa-sha256;
+	cv=none;
+	b=uLDDE0y9E96glz6vqgtKk/CdBtRTrLHdFjk7VRCl/3JH5y9s5c3xKwKz4lK/W5y8m3HEpZ
+	MgJx/9sRc54Ye+UbydGz6MPnbG9STVlApxxi+KPqa4469JU3Epc+XpzZ8MdBXXPFf3Kx16
+	p66tb1X2EDHsXfiB1DrBvWlb1oNWInHi9Cd+U1r0cMcrzgctGE6MmqzEUZJ7h33HU2oNbq
+	dR0NyLJ4PBoPpvcEqJI1RyDzLMQSYrF2/XCmBakVIQ/yptSLjgS2KVN9m7CErOU50h5Hrr
+	bBY58xp0zpPnI+B4mafTeZjrLg2C6vfjR+fpTFsWk01Hk6W54xVcc4BnDALndQ==
+ARC-Authentication-Results: i=1;
+	ORIGINATING;
+	auth=pass smtp.auth=sakkinen smtp.mailfrom=jarkko.sakkinen@iki.fi
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=iki.fi;
+	s=lahtoruutu; t=1719585825;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=q0ixtXGjbpoir4FzU+po61uZcfAdJMqG4qMUx4PVDCU=;
+	b=wUAEvyR0DIzseWWSC19geRsDWGmFgWCslDVRCXt036lBHd8OkXPVqH/6l88DnTg2Z1FHia
+	YFxnXyuqcRqvRxLiRfhClRtUCh0Ro71NAT5Mk7pNmyKrh6opOXbKQFhqg8lsimMbnlvfUb
+	5AM+mZxGNYl2OlYgXbi9WDSdQajL6p7z8J9lR0Ewe8h3aArvaxp+qM+5UP6IIgex9QVRTx
+	JD8rNdTf27eSrqIVOuCXQyYsS2/LzeUGI6u5DaSYCXaCZiu6CGzrOxXySHssUGcy4LoM3R
+	w7A/aLP9n2F5v3H/IYWJUnIDvqw3fegiiE6KEbj50/a1XEZBZt+vC7P+r4ILpg==
+Message-ID: <f4de777099b0dff819ee6277b3b7cd7e18d96c78.camel@iki.fi>
+Subject: Re: [PATCH v2 2/4] capabilities: Add securebit to restrict userns
+ caps
+From: Jarkko Sakkinen <jarkko.sakkinen@iki.fi>
+To: Jonathan Calmels <jcalmels@3xx0.net>, brauner@kernel.org, 
+ ebiederm@xmission.com, Jonathan Corbet <corbet@lwn.net>, Paul Moore
+ <paul@paul-moore.com>, James Morris <jmorris@namei.org>, "Serge E. Hallyn"
+ <serge@hallyn.com>, KP Singh <kpsingh@kernel.org>, Matt Bobrowski
+ <mattbobrowski@google.com>, Alexei Starovoitov <ast@kernel.org>, Daniel
+ Borkmann <daniel@iogearbox.net>, Andrii Nakryiko <andrii@kernel.org>,
+ Martin KaFai Lau <martin.lau@linux.dev>, Eduard Zingerman
+ <eddyz87@gmail.com>, Song Liu <song@kernel.org>, Yonghong Song
+ <yonghong.song@linux.dev>, John Fastabend <john.fastabend@gmail.com>,
+ Stanislav Fomichev <sdf@google.com>, Hao Luo <haoluo@google.com>, Jiri Olsa
+ <jolsa@kernel.org>, Luis Chamberlain <mcgrof@kernel.org>, Kees Cook
+ <kees@kernel.org>, Joel Granados <j.granados@samsung.com>, John Johansen
+ <john.johansen@canonical.com>, David Howells <dhowells@redhat.com>, Jarkko
+ Sakkinen <jarkko@kernel.org>, Stephen Smalley
+ <stephen.smalley.work@gmail.com>, Ondrej Mosnacek <omosnace@redhat.com>, 
+ Mykola Lysenko <mykolal@fb.com>, Shuah Khan <shuah@kernel.org>
+Cc: containers@lists.linux.dev, linux-kernel@vger.kernel.org, 
+ linux-fsdevel@vger.kernel.org, linux-doc@vger.kernel.org, 
+ linux-security-module@vger.kernel.org, bpf@vger.kernel.org, 
+ apparmor@lists.ubuntu.com, keyrings@vger.kernel.org,
+ selinux@vger.kernel.org,  linux-kselftest@vger.kernel.org
+Date: Fri, 28 Jun 2024 17:43:38 +0300
+In-Reply-To: <20240609104355.442002-3-jcalmels@3xx0.net>
+References: <20240609104355.442002-1-jcalmels@3xx0.net>
+	 <20240609104355.442002-3-jcalmels@3xx0.net>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.52.2 (3.52.2-1.fc40) 
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <zwh766li4dwx5be6uxnxl2lhtxb4jsiua4atilpqvoeuksgz2h@v3pna3o3ewkp>
 
-On Thu, Jun 13, 2024 at 01:50:29AM -0700, Jonathan Calmels wrote:
-> On Wed, Jun 12, 2024 at 08:54:28PM GMT, John Johansen wrote:
-> > On 6/12/24 10:29, Paul Moore wrote:
-> > > On Wed, Jun 12, 2024 at 4:15 AM Jonathan Calmels <jcalmels@3xx0.net> wrote:
-> > > > On Tue, Jun 11, 2024 at 06:38:31PM GMT, Paul Moore wrote:
-> > > > > On Tue, Jun 11, 2024 at 6:15 PM Jonathan Calmels <jcalmels@3xx0.net> wrote:
-> > > 
-> > > ...
-> > > 
-> > > > > > Arguably, if we do want fine-grained userns policies, we need LSMs to
-> > > > > > influence the userns capset at some point.
-> > > > > 
-> > > > > One could always use, or develop, a LSM that offers additional
-> > > > > controls around exercising capabilities.  There are currently four
-> > > > > in-tree LSMs, including the capabilities LSM, which supply a
-> > > > > security_capable() hook that is used by the capability-based access
-> > > > > controls in the kernel; all of these hook implementations work
-> > > > > together within the LSM framework and provide an additional level of
-> > > > > control/granularity beyond the existing capabilities.
-> > > > 
-> > > > Right, but the idea was to have a simple and easy way to reuse/trigger
-> > > > as much of the commoncap one as possible from BPF. If we're saying we
-> > > > need to reimplement and/or use a whole new framework, then there is
-> > > > little value.
-> > > 
-> > > I can appreciate how allowing direct manipulation of capability bits
-> > > from a BPF LSM looks attractive, but my hope is that our discussion
-> > > here revealed that as you look deeper into making it work there are a
-> > > number of pitfalls which prevent this from being a safe option for
-> > > generalized systems.
-> > > 
-> > > > TBH, I don't feel strongly about this, which is why it is absent from
-> > > > v1. However, as John pointed out, we should at least be able to modify
-> > > > the blob if we want flexible userns caps policies down the road.
-> > > 
-> > > As discussed in this thread, there are existing ways to provide fine
-> > > grained control over exercising capabilities that can be safely used
-> > > within the LSM framework.  I don't want to speak to what John is
-> > > envisioning, but he should be aware of these mechanisms, and if I
-> > > recall he did voice a level of concern about the same worries I
-> > > mentioned.
-> > > 
-> > 
-> > sorry, I should have been more clear. I envision LSMs being able to
-> > update their own state in the userns hook.
-> > 
-> > Basically the portion of the patch that removes const from the
-> > userns hook.
-> 
-> Yes, pretty sure we'll need this regardless.
-> 
-> > An LSM updating the capset is worrysome for all the reasons you
-> > pointed out, and I think a few more. I haven't had a chance to really
-> > look at v2 yet, so I didn't want to speak directly on the bpf part of
-> > the patch without first giving a good once over.
-> > 
-> > > I'm happy to discuss ways in which we can adjust the LSM hooks/layer
-> > > to support different approaches to capability controls, but one LSM
-> > > directly manipulating the state of another is going to be a no vote
-> > > from me.
-> > > 
-> > I might not be as hard no as Paul here, I am always willing to listen
-> > to arguments, but it would have to be a really good argument to
-> > modify the capset, when there are multiple LSMs in play on a system.
-> 
-> The way I see it, it's more about enhancing the capability LSM with BPF
-> hooks and have it modify its own state dynamically, not so much
-> crosstalk between two distinct LSM frameworks (say one where the BPF
-> LSM implements a lot of things like capable()).
-> 
-> In this context and with enough safeguards (say we only allow dropping
-> caps) this could be a net positive. Sure, ordering could come into play
-> in very specific scenarios, but at this point I would expect the
-> admin/LSM author to be conscious about it.
-> 
-> If we think there is no way we can come up with something that's safe
-> enough, and that the risks outweigh the benefits, fine by me, we can
-> drop this patch from the series.
+On Sun, 2024-06-09 at 03:43 -0700, Jonathan Calmels wrote:
+> This patch adds a new capability security bit designed to constrain a
 
-I think pursuing patches 1-3 now, and punting on 4 until later, would
-be great.
+
+nit: if you think of it "This patch adds" could be just "add", right? :-)
+
+Also name the exact thing/symbol/whatever here. This is not a HBO series.
+
+> task=E2=80=99s userns capability set to its bounding set. The reason for =
+this
+> is
+> twofold:
+>=20
+> - This serves as a quick and easy way to lock down a set of
+> capabilities
+> =C2=A0 for a task, thus ensuring that any namespace it creates will never
+> be
+> =C2=A0 more privileged than itself is.
+> - This helps userspace transition to more secure defaults by not
+> requiring
+> =C2=A0 specific logic for the userns capability set, or libcap support.
+>=20
+> Example:
+>=20
+> =C2=A0=C2=A0=C2=A0 # capsh --secbits=3D$((1 << 8)) --drop=3Dcap_sys_rawio=
+ -- \
+> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 -c 'un=
+share -r grep Cap /proc/self/status'
+> =C2=A0=C2=A0=C2=A0 CapInh: 0000000000000000
+> =C2=A0=C2=A0=C2=A0 CapPrm: 000001fffffdffff
+> =C2=A0=C2=A0=C2=A0 CapEff: 000001fffffdffff
+> =C2=A0=C2=A0=C2=A0 CapBnd: 000001fffffdffff
+> =C2=A0=C2=A0=C2=A0 CapAmb: 0000000000000000
+> =C2=A0=C2=A0=C2=A0 CapUNs: 000001fffffdffff
+>=20
+> Signed-off-by: Jonathan Calmels <jcalmels@3xx0.net>
+> ---
+> =C2=A0include/linux/securebits.h=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 |=C2=A0 1 =
++
+> =C2=A0include/uapi/linux/securebits.h | 11 ++++++++++-
+> =C2=A0kernel/user_namespace.c=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0 |=C2=A0 5 +++++
+> =C2=A03 files changed, 16 insertions(+), 1 deletion(-)
+>=20
+> diff --git a/include/linux/securebits.h b/include/linux/securebits.h
+> index 656528673983..5f9d85cd69c3 100644
+> --- a/include/linux/securebits.h
+> +++ b/include/linux/securebits.h
+> @@ -5,4 +5,5 @@
+> =C2=A0#include <uapi/linux/securebits.h>
+> =C2=A0
+> =C2=A0#define issecure(X)		(issecure_mask(X) &
+> current_cred_xxx(securebits))
+> +#define iscredsecure(cred, X)	(issecure_mask(X) & cred-
+> >securebits)
+> =C2=A0#endif /* !_LINUX_SECUREBITS_H */
+> diff --git a/include/uapi/linux/securebits.h
+> b/include/uapi/linux/securebits.h
+> index d6d98877ff1a..2da3f4be4531 100644
+> --- a/include/uapi/linux/securebits.h
+> +++ b/include/uapi/linux/securebits.h
+> @@ -52,10 +52,19 @@
+> =C2=A0#define SECBIT_NO_CAP_AMBIENT_RAISE_LOCKED \
+> =C2=A0			(issecure_mask(SECURE_NO_CAP_AMBIENT_RAISE_L
+> OCKED))
+> =C2=A0
+> +/* When set, user namespace capabilities are restricted to their
+> parent's bounding set. */
+> +#define SECURE_USERNS_STRICT_CAPS			8
+> +#define SECURE_USERNS_STRICT_CAPS_LOCKED		9=C2=A0 /* make
+
+
+
+> bit-8 immutable */
+> +
+> +#define SECBIT_USERNS_STRICT_CAPS
+> (issecure_mask(SECURE_USERNS_STRICT_CAPS))
+> +#define SECBIT_USERNS_STRICT_CAPS_LOCKED \
+> +			(issecure_mask(SECURE_USERNS_STRICT_CAPS_LOC
+> KED))
+> +
+> =C2=A0#define
+> SECURE_ALL_BITS		(issecure_mask(SECURE_NOROOT) | \
+> =C2=A0			=09
+> issecure_mask(SECURE_NO_SETUID_FIXUP) | \
+> =C2=A0				 issecure_mask(SECURE_KEEP_CAPS) | \
+> -			=09
+> issecure_mask(SECURE_NO_CAP_AMBIENT_RAISE))
+> +			=09
+> issecure_mask(SECURE_NO_CAP_AMBIENT_RAISE) | \
+> +			=09
+
+spurious new lines in the diff
+
+please as first priority aim for absolute minimal diff or at least
+do grow diff proactively like this.
+
+If we really think after that, that we need some "extras" to the
+patch set, then we decide that. These only take energy away from
+reviewers.
+
+
+> issecure_mask(SECURE_USERNS_STRICT_CAPS))
+> =C2=A0#define SECURE_ALL_LOCKS	(SECURE_ALL_BITS << 1)
+> =C2=A0
+> =C2=A0#endif /* _UAPI_LINUX_SECUREBITS_H */
+> diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+> index 7e624607330b..53848e2b68cd 100644
+> --- a/kernel/user_namespace.c
+> +++ b/kernel/user_namespace.c
+> @@ -10,6 +10,7 @@
+> =C2=A0#include <linux/cred.h>
+> =C2=A0#include <linux/securebits.h>
+> =C2=A0#include <linux/security.h>
+> +#include <linux/capability.h>
+> =C2=A0#include <linux/keyctl.h>
+> =C2=A0#include <linux/key-type.h>
+> =C2=A0#include <keys/user-type.h>
+> @@ -42,6 +43,10 @@ static void dec_user_namespaces(struct ucounts
+> *ucounts)
+> =C2=A0
+> =C2=A0static void set_cred_user_ns(struct cred *cred, struct
+> user_namespace *user_ns)
+> =C2=A0{
+> +	/* Limit userns capabilities to our parent's bounding set.
+> */
+> +	if (iscredsecure(cred, SECURE_USERNS_STRICT_CAPS))
+> +		cred->cap_userns =3D cap_intersect(cred->cap_userns,
+> cred->cap_bset);
+> +
+> =C2=A0	/* Start with the capabilities defined in the userns set. */
+> =C2=A0	cred->cap_bset =3D cred->cap_userns;
+> =C2=A0	cred->cap_permitted =3D cred->cap_userns;
+
+Going for 4 week holiday starting for next week so focus in on nits
+but since this is something to do access control:
+
+1. Please go surgical with the diff's because this type of patches
+also require a surgical review. Now reviewing this like riding on=20
+a bumpy road with a car of which suspension mechanics is broken
+;-)
+
+Hope you grab my argument here. I only want to look at the problem
+and solution for that not random stuff..
+
+BR, Jarkko
