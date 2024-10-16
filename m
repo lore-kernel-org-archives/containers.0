@@ -1,112 +1,189 @@
-Received: from frasgout12.his.huawei.com (frasgout12.his.huawei.com [14.137.139.154])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-qk1-f173.google.com (mail-qk1-f173.google.com [209.85.222.173])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C39EA14A4FB
-	for <containers@lists.linux.dev>; Fri, 13 Sep 2024 10:39:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=14.137.139.154
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 02DCE20969E
+	for <containers@lists.linux.dev>; Wed, 16 Oct 2024 12:53:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.222.173
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1726223976; cv=none; b=qyh1yh5brOuboJBqR+jHjPWZLbcfA77icfuSIQtrLbEnGiEi0J+qfMUvJkN2lcptEea6xSYf1oDjqY3Eg1dywSvkFlxzH6R7szd6JuegOivlZ6KDEpQJIaXDIVYmAzhUEg/TQlQLv1DNsgg15WgLc1rGBtXsR+01oObqxuBPQJ8=
+	t=1729083238; cv=none; b=pVF7g1umgwdCXVh949jmVj/O+b6iHSETFDjagW1DGreh5uQsMrYCXWXI5eiZzH/hRxj2T7x2OotG+HCuV8qqq3xq2it3WJ1opJ/j6YdidbD6NTLZLxR4yh7dvCMzNXIl8qy3r0VUNNae1+UHM4gStEcL32vPSJt7tiQ4Xi0alj0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1726223976; c=relaxed/simple;
-	bh=FeAp3pV84CzFfdmT3VZoKVKNHsnGG3F/cAqPbXXePqc=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:Cc:From:
-	 In-Reply-To:Content-Type; b=MsjeWF6o+p2kJGI2gTxt5SSAeX7CCA8KarhEvhimg9KiE3XYj94HHjCxThUDVo6WLXDh4LjCjtrw1WRUYpvBEUAVXLXPYcaM44T47ZtNnD3OoKqTZVOPI/WZojD5PXItMhhjwA5ggxkHHVPwoEJAM6s7aJv15vy43bo+DYg027s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=huaweicloud.com; spf=pass smtp.mailfrom=huaweicloud.com; arc=none smtp.client-ip=14.137.139.154
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=huaweicloud.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huaweicloud.com
-Received: from mail.maildlp.com (unknown [172.18.186.51])
-	by frasgout12.his.huawei.com (SkyGuard) with ESMTP id 4X4qsf2qVXz9v7JY
-	for <containers@lists.linux.dev>; Fri, 13 Sep 2024 18:14:14 +0800 (CST)
-Received: from mail02.huawei.com (unknown [7.182.16.27])
-	by mail.maildlp.com (Postfix) with ESMTP id 360941400D2
-	for <containers@lists.linux.dev>; Fri, 13 Sep 2024 18:39:29 +0800 (CST)
-Received: from [10.221.99.168] (unknown [10.221.99.168])
-	by APP2 (Coremail) with SMTP id GxC2BwBXBsdXFuRmKR7XAA--.10238S2;
-	Fri, 13 Sep 2024 11:39:27 +0100 (CET)
-Message-ID: <f5ce940c-eaef-49d9-8c16-a41324b1fb2e@huaweicloud.com>
-Date: Fri, 13 Sep 2024 12:39:16 +0200
+	s=arc-20240116; t=1729083238; c=relaxed/simple;
+	bh=JberB9FQaW9006JRnitxmiG7NJo7GIR48+9qkvupKso=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=gNP4JwwE2Y922Rl71XpWti2B2WPdG4GaoAj2bupLSGWVYa6eqyOR7D6rB3s9+10tGLNl+DeQokEW2jFCTE677X4u5XgidHj8i/D4mYDSsB+PWNfeMKj4UFlJ/kzG7h85wCMvvwHSL0OpVy17gY00ed/q/SrTX8qOZDhHEHZqLEs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=WPNZp4LB; arc=none smtp.client-ip=209.85.222.173
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="WPNZp4LB"
+Received: by mail-qk1-f173.google.com with SMTP id af79cd13be357-7b148919e82so21480785a.0
+        for <containers@lists.linux.dev>; Wed, 16 Oct 2024 05:53:56 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1729083236; x=1729688036; darn=lists.linux.dev;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=2DqNVBnBLcYUKGgGsKMIT+a+OqsGOHkFJ2kO1T6sXPQ=;
+        b=WPNZp4LBubArPVgikwLBJwh4v8hHqBTUSsvZKqE7ItKkreUjnX+mv8UyrVsd1nU6DG
+         ldbuqdli+mebNR0n8gVv0sV14Juhb3J6xkifAEeT4Z9EBmK2R0RFikDjrBcr6rfl4O1N
+         T/zZsneN8cWZ2PCdmL9rbrsCQQbWRy3MZivNCJ4nCh8ps05ROVNZ8rBf/zNuturBbyXq
+         Xf3g50kIanakRRq4PuZ+qEMVDH/97MmQBH2Fv2QDp4siF1jbPZGQB6gCl4gnsuIuBAa6
+         hl0vwRdVjRwIT3ZnsL2rgdOraQKUJTqFKNlEbb8gUVKTCPnJsC0HP1FgYCi1D6rGF0Ax
+         DoNA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1729083236; x=1729688036;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=2DqNVBnBLcYUKGgGsKMIT+a+OqsGOHkFJ2kO1T6sXPQ=;
+        b=kese7/OCDmYCvVOwrjdlx+Rm0yZlCLbKiqgHJeQwYrbGPl+3tbbVQMe16hZzCtBp/F
+         OlEj4mFfZ/ow1TOTp8I4TLC2s0j91NDHHRNtquIxqswlhYmb2hMr5kFVdo5VcCjaS9V/
+         0gy7zbhA2SbumDQBxZ0EQ3Sc7DNH6AvAi7xP1UqTcMI2B3EmK1pixV15z+vXWbN6mG6K
+         FKUaA3pIcONeoL9xvP6h91fZoSvZ24tuoTViatIQM6eSd4RiA59fpfGhUJ9rIrf4S4wX
+         9/Fkx4H6kB9/rvZlCXqTCCHucLtCMe6X/rPaCPPn7RV934XuxhJJGqehew34+cCm+/8o
+         iDrw==
+X-Forwarded-Encrypted: i=1; AJvYcCXvvgYn7FsCIE1TWndih1bqQ/4lh/cIVVGNaN2CgP1zbXcXWCyJdsG9q9My4hpe2xOza5neGS0M1l0O@lists.linux.dev
+X-Gm-Message-State: AOJu0Yzkf/6xk5Hmdvhd8pLcftVTL+76ddOQZ89kWiKBJDFEKm/G4hxa
+	WDX9IQqGDzuwXNchRfIL0V7cSkNKz37f3EeGZ1B4NQqW6pkgyeLlWxAfHYLxNOi+bGgW87eT+FR
+	UqJ0w+dHyBrsZku8u/uMy8ke0i9s=
+X-Google-Smtp-Source: AGHT+IFlZNZ9b2fTtzrg0utIW/Yfdyw4VrLKpdJC9W9Kdj3aKxjox5fknHaN4kiBhOxyxLB4E93HLY+QuhbI7jo3dUE=
+X-Received: by 2002:a05:620a:4509:b0:7b1:1352:66fb with SMTP id
+ af79cd13be357-7b11a36b4f0mr2420396985a.29.1729083235793; Wed, 16 Oct 2024
+ 05:53:55 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: CFP for the containers and checkpoint-restore micro-conference at
- LPC 2024 mailing/containers
-To: =?UTF-8?Q?St=C3=A9phane_Graber?= <stgraber@stgraber.org>,
- containers@lists.linux.dev
-References: <CA+enf=tZs+B0OscmvyurqXjLwvwjhV7rZQ9-Rfi16BqAwUN6Cg@mail.gmail.com>
-Content-Language: en-GB
-Cc: Roberto Sassu <roberto.sassu@huaweicloud.com>, zohar@linux.ibm.com,
- Stefan Berger <stefanb@linux.ibm.com>, linux-integrity@vger.kernel.org,
- James.Bottomley@HansenPartnership.com, brauner@kernel.org
-From: Enrico Bravi <enrico.bravi@huaweicloud.com>
-In-Reply-To: <CA+enf=tZs+B0OscmvyurqXjLwvwjhV7rZQ9-Rfi16BqAwUN6Cg@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
-X-CM-TRANSID:GxC2BwBXBsdXFuRmKR7XAA--.10238S2
-X-Coremail-Antispam: 1UD129KBjvJXoW7WFW8uw48Zw43Jr1fJry7ZFb_yoW8Cr4UpF
-	Wjk3WFkw1Utw1fAw4kuF18ArWYkrWfWrW5A3s8G34rAFs8WasF9rySyFWY9Fy5GrWkJw43
-	XFWYv3Z8Xa4DZFJanT9S1TB71UUUUU7qnTZGkaVYY2UrUUUUjbIjqfuFe4nvWSU5nxnvy2
-	9KBjDU0xBIdaVrnRJUUUymb4IE77IF4wAFF20E14v26r4j6ryUM7CY07I20VC2zVCF04k2
-	6cxKx2IYs7xG6rWj6s0DM7CIcVAFz4kK6r1j6r18M28lY4IEw2IIxxk0rwA2F7IY1VAKz4
-	vEj48ve4kI8wA2z4x0Y4vE2Ix0cI8IcVAFwI0_Jr0_JF4l84ACjcxK6xIIjxv20xvEc7Cj
-	xVAFwI0_Jr0_Gr1l84ACjcxK6I8E87Iv67AKxVW8JVWxJwA2z4x0Y4vEx4A2jsIEc7CjxV
-	AFwI0_Gr0_Gr1UM2AIxVAIcxkEcVAq07x20xvEncxIr21l5I8CrVACY4xI64kE6c02F40E
-	x7xfMcIj6xIIjxv20xvE14v26r1j6r18McIj6I8E87Iv67AKxVWUJVW8JwAm72CE4IkC6x
-	0Yz7v_Jr0_Gr1lF7xvr2IY64vIr41lc7CjxVAaw2AFwI0_JF0_Jw1l42xK82IYc2Ij64vI
-	r41l4I8I3I0E4IkC6x0Yz7v_Jr0_Gr1lx2IqxVAqx4xG67AKxVWUJVWUGwC20s026x8Gjc
-	xK67AKxVWUGVWUWwC2zVAF1VAY17CE14v26r1q6r43MIIYrxkI7VAKI48JMIIF0xvE2Ix0
-	cI8IcVAFwI0_Jr0_JF4lIxAIcVC0I7IYx2IY6xkF7I0E14v26r1j6r4UMIIF0xvE42xK8V
-	AvwI8IcIk0rVWUJVWUCwCI42IY6I8E87Iv67AKxVWUJVW8JwCI42IY6I8E87Iv6xkF7I0E
-	14v26r1j6r4UYxBIdaVFxhVjvjDU0xZFpf9x07UK2NtUUUUU=
-X-CM-SenderInfo: 5hquxuvroe2ttyl6x35dzhxuhorxvhhfrp/
+References: <20240524-vfs-open_by_handle_at-v1-1-3d4b7d22736b@kernel.org>
+ <CAOQ4uxhjQwvJZEcuPyOg02rcDgcLfHQL-zhUGUmTf1VD8cCg4w@mail.gmail.com>
+ <CAOQ4uxgjY=upKo7Ry9NxahJHhU8jV193EjsRbK80=yXd5yikYg@mail.gmail.com>
+ <20241015-geehrt-kaution-c9b3f1381b6f@brauner> <CAOQ4uxj6ja4PN3=S9WxmZG0pLQOjBS-hNdwmGBzFjJ4GX64WCA@mail.gmail.com>
+In-Reply-To: <CAOQ4uxj6ja4PN3=S9WxmZG0pLQOjBS-hNdwmGBzFjJ4GX64WCA@mail.gmail.com>
+From: Amir Goldstein <amir73il@gmail.com>
+Date: Wed, 16 Oct 2024 14:53:44 +0200
+Message-ID: <CAOQ4uxiwGTg=FeO6iiLEwtsP9eTudw-rsLD_0u3NtG8rz5chFg@mail.gmail.com>
+Subject: Re: fanotify sb/mount watch inside userns (Was: [PATCH RFC] :
+ fhandle: relax open_by_handle_at() permission checks)
+To: Lennart Poettering <lennart@poettering.net>, Jan Kara <jack@suse.cz>
+Cc: Jeff Layton <jlayton@kernel.org>, Chuck Lever <chuck.lever@oracle.com>, 
+	Aleksa Sarai <cyphar@cyphar.com>, linux-fsdevel <linux-fsdevel@vger.kernel.org>, 
+	Christian Brauner <brauner@kernel.org>, containers@lists.linux.dev
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On 6/6/2024 11:11 PM, Stéphane Graber wrote:
-> Hello,
-> 
-> We're going to have the usual containers and checkpoint/restore
-> micro-conference at this year's edition of the Linux Plumbers
-> Conference.
-> This is going to be in Vienna, Austria between September 18th and 20th 2024.
-> 
-> Registration is open already and as a reminder, getting accepted as a
-> presenter in a micro-conference does not provide you with a ticket.
-> Everyone who plans on attending, whether in-person or remotely should
-> register now (early bird price until August 2nd).
-> Registration: https://lpc.events/event/18/page/226-attend
-> 
-> Back to our micro-conference, the CFP is now open and will be closing
-> on July 15th!
-> Topics of interest are anything that's related to containers,
-> namespaces, cgroups, ... whether in kernel land or userspace as well
-> as anything that's related to the ability to checkpoint and restore
-> processes.
-> 
-> Full CFP: https://discuss.linuxcontainers.org/t/containers-and-checkpoint-restore-micro-conference-at-lpc-2024/20131
-> Submission link: https://lpc.events/event/18/abstracts/
+[cc the correct containers list]
 
-Hi Stéphane, all,
-
-Roberto and I are also planning to go the LPC. In the last months we had some 
-thoughts on the IMA namespace and, if possible, we would like to share them with 
-you in a presentation.
-
-Title: IMA Namespace Best for Container Integrity?
-
-Abstract:
-
-The IMA namespace has been proposed a while ago but, despite many attempts at 
-addressing maintainers' concerns, it didn't get upstreamed yet. Our work tries 
-to determine if the IMA namespace fulfils the integrity requirements we 
-initially defined, and proposes a few suggestions on how to improve it.
-
-Would it be possible to present it at the end of the main conference, as a BoF?
-
-Thank you and see you in Vienna!
-
-Best regards,
-
-Enrico
-
+On Wed, Oct 16, 2024 at 2:45=E2=80=AFPM Amir Goldstein <amir73il@gmail.com>=
+ wrote:
+>
+> On Tue, Oct 15, 2024 at 4:01=E2=80=AFPM Christian Brauner <brauner@kernel=
+.org> wrote:
+> >
+> > On Sun, Oct 13, 2024 at 06:34:18PM +0200, Amir Goldstein wrote:
+> > > On Fri, May 24, 2024 at 2:35=E2=80=AFPM Amir Goldstein <amir73il@gmai=
+l.com> wrote:
+> > > >
+> > > > On Fri, May 24, 2024 at 1:19=E2=80=AFPM Christian Brauner <brauner@=
+kernel.org> wrote:
+> > > > >
+> > > > > A current limitation of open_by_handle_at() is that it's currentl=
+y not possible
+> > > > > to use it from within containers at all because we require CAP_DA=
+C_READ_SEARCH
+> > > > > in the initial namespace. That's unfortunate because there are sc=
+enarios where
+> > > > > using open_by_handle_at() from within containers.
+> > > > >
+> > > > > Two examples:
+> > > > >
+> > > > > (1) cgroupfs allows to encode cgroups to file handles and reopen =
+them with
+> > > > >     open_by_handle_at().
+> > > > > (2) Fanotify allows placing filesystem watches they currently are=
+n't usable in
+> > > > >     containers because the returned file handles cannot be used.
+> > > > >
+> > >
+> > > Christian,
+> > >
+> > > Follow up question:
+> > > Now that open_by_handle_at(2) is supported from non-root userns,
+> > > What about this old patch to allow sb/mount watches from non-root use=
+rns?
+> > > https://lore.kernel.org/linux-fsdevel/20230416060722.1912831-1-amir73=
+il@gmail.com/
+> > >
+> > > Is it useful for any of your use cases?
+> > > Should I push it forward?
+> >
+> > Dammit, I answered that message already yesterday but somehow it didn't
+> > get sent or lost in some other way.
+> >
+> > I personally don't have a use-case for it but the systemd folks might
+> > and it would be best to just rope them in.
+>
+> Lennart,
+>
+> I must have asked this question before, but enough time has passed so
+> I am going to ask it again.
+>
+> Now that Christian has added support for open_by_handle_at(2) by non-root
+> userns admin, it is a very low hanging fruit to support fanotify sb/mount
+> watches inside userns with this simple patch [1], that was last posted in=
+ 2011.
+>
+> My question is whether this is useful, because there are still a few
+> limitations.
+> I will start with what is possible with this patch:
+> 1. Watch an entire tmpfs filesystem that was mounted inside userns
+> 2. Watch an entire overlayfs filesystem that was mounted [*] inside usern=
+s
+> 3. Watch an entire mount [**] of any [***] filesystem that was
+> idmapped mounted into userns
+>
+> Now the the fine prints:
+> [*] Overlayfs sb/mount CAN be watched, but decoding file handle in
+> events to path
+>      only works if overlayfs is mounted with mount option
+> nfs_export=3Don, which conflicts
+>      with mount option metacopy=3Don, which is often used in containers
+> (e.g. podman)
+> [**] Watching a mount is only possible with the legacy set of fanotify ev=
+ents
+>      (i.e. open,close,access,modify) so this is less useful for
+> directory tree change tracking
+> [***] Watching an idmapped mount has the same limitations as watching
+> an sb/mount
+>      in the root userns, namely, filesystem needs to have a non zero
+> fsid (so not FUSE)
+>      and filesystem needs to have a uniform fsid (so not btrfs
+> subvolume), although
+>      with some stretch, I could make watching an idmapped mount of
+> btrfs subvol work.
+>
+> No support for watching btrfs subvol and overlayfs with metacopy=3Don,
+> reduces the attractiveness for containers, but perhaps there are still us=
+e cases
+> where watching an idmapped mount or userns private tmpfs are useful?
+>
+> To try out this patch inside your favorite container/userns, you can buil=
+d
+> fsnotifywait with a patch to support watching inside userns [2].
+> It's actually only the one lines O_DIRECTORY patch that is needed for the
+> basic tmpfs userns mount case.
+>
+> Jan,
+>
+> If we do not get any buy-in from potential consumers now, do you think th=
+at
+> we should go through with the patch and advertise the new supported use c=
+ases,
+> so that users may come later on?
+>
+> Thanks,
+> Amir.
+>
+> [1] https://github.com/amir73il/linux/commits/fanotify_userns/
+> [2] https://github.com/amir73il/inotify-tools/commits/fanotify_userns/
