@@ -1,115 +1,169 @@
-Received: from smtp-190c.mail.infomaniak.ch (smtp-190c.mail.infomaniak.ch [185.125.25.12])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ed1-f52.google.com (mail-ed1-f52.google.com [209.85.208.52])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 66D5E1F0E56
-	for <containers@lists.linux.dev>; Fri, 31 Jan 2025 17:35:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=185.125.25.12
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3B6BA1A00E7
+	for <containers@lists.linux.dev>; Fri, 18 Apr 2025 11:33:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.52
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1738344958; cv=none; b=bGboc4yxVzn/enlWPdit4moTIHIrxaXe9t9wLWVLdLlbBSYnfLYw++Xk16e+3U2DT21dxyik882Gg+K4E45+9VMIly4rddEOBB/sjUDmYQEDTg1UqRuKpx+zTD0Ut6F0WNvZaJgYUbnXtS6JO2OCk3++eQoQol3IOo/om45WCnM=
+	t=1744975983; cv=none; b=Qk/BeWwOJkb0Xpt+qxNn3Ln7ozg4P6K+g84nteQkZ7KUwQCV1O3zapqTPwYcmINGMqM3Pwk5ROzl4/DsGG/On22ARtAcQ2urI351nxgSTJtKtAxv2SrN/9THoOmz6r8MKRG9AgeH9erEkX6z9b9vAVLflfc5rpjo8eSEQS0NgPc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1738344958; c=relaxed/simple;
-	bh=7tFMd94XrNV2Cv0ba9mt04yYUrLg9TaClHoJK93oO2U=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=jshIZfhL1N1ZJj07mQ57aJ4mFFKQf4B+gej2j5XSij9SRfMfbRvGpf0CKiGNOJnj74jRU8JJ5ctz9KygQ813JQkH+VAkBTWgx+HN4peB4UbWCCzQrfHyDLr9ZehwikXZR8vjnZZV6UaBbpN4XC6Goa4BfaCVUUt5F4z2fde7ZOQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=digikod.net; spf=pass smtp.mailfrom=digikod.net; dkim=pass (1024-bit key) header.d=digikod.net header.i=@digikod.net header.b=sd3WfeB7; arc=none smtp.client-ip=185.125.25.12
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=digikod.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=digikod.net
+	s=arc-20240116; t=1744975983; c=relaxed/simple;
+	bh=WTnrGeFXBjCnzzuEOgvpCFp4CW/g62/iDIbbbUxuCR4=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=oUp+7YzwOZpTFOWzej8vqazOMAk3C529cuP2bBgS0gRJElZXZefMe0/EUnzabD+Cc6Qd6QesLrPzanoK3eZTU6MBA5z2XPaB1lKqIuJPRHYZuYXvsxCRsmWDJdlQZMa1lfsCu2pE86cMSAuPEdaVkR7ahil6WCvpADQBVvwYLrg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=ih/QtggB; arc=none smtp.client-ip=209.85.208.52
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=digikod.net header.i=@digikod.net header.b="sd3WfeB7"
-Received: from smtp-3-0001.mail.infomaniak.ch (smtp-3-0001.mail.infomaniak.ch [10.4.36.108])
-	by smtp-3-3000.mail.infomaniak.ch (Postfix) with ESMTPS id 4Yl32d2k5Qzrj4;
-	Fri, 31 Jan 2025 18:35:53 +0100 (CET)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=digikod.net;
-	s=20191114; t=1738344953;
-	bh=JQNxKR9dbJjG5bam5n/mwVoP3e4BSTQ5f1tiApN5rcs=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=sd3WfeB7FkxYwSUsLyqF80fmYo23XXoWRTEyKyWwSnRlODArcXk9VwRI1pWstO7x2
-	 TvtAzY2cFSZ5e9VgTAypRbTdjJtfQZF01kGaYawHIP9fh18ipHGrrVMEJcapjqMMSk
-	 C45FtTyK0elHkFt6vtxhUSbMfAa04ZYzjXHVW+/A=
-Received: from unknown by smtp-3-0001.mail.infomaniak.ch (Postfix) with ESMTPA id 4Yl32b73zqzHLJ;
-	Fri, 31 Jan 2025 18:35:51 +0100 (CET)
-Date: Fri, 31 Jan 2025 18:35:49 +0100
-From: =?utf-8?Q?Micka=C3=ABl_Sala=C3=BCn?= <mic@digikod.net>
-To: Christian Brauner <brauner@kernel.org>, 
-	=?utf-8?Q?G=C3=BCnther?= Noack <gnoack@google.com>
-Cc: Charles Zaffery <czaffery@roblox.com>, 
-	Daniel Burgener <dburgener@linux.microsoft.com>, Francis Laniel <flaniel@linux.microsoft.com>, 
-	James Morris <jmorris@namei.org>, Jann Horn <jannh@google.com>, Jeff Xu <jeffxu@google.com>, 
-	Kees Cook <kees@kernel.org>, Luca Boccassi <luca.boccassi@gmail.com>, 
-	Mikhail Ivanov <ivanov.mikhail1@huawei-partners.com>, Praveen K Paladugu <prapal@linux.microsoft.com>, 
-	Robert Salvet <robert.salvet@roblox.com>, Shervin Oloumi <enlightened@google.com>, 
-	Tyler Hicks <code@tyhicks.com>, linux-kernel@vger.kernel.org, 
-	linux-security-module@vger.kernel.org, linux-fsdevel@vger.kernel.org, containers@lists.linux.dev
-Subject: Re: [RFC PATCH v1 0/3] Expose Landlock domain IDs via pidfd
-Message-ID: <20250131.baePeenoo2ik@digikod.net>
-References: <20250131163447.1140564-1-mic@digikod.net>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ih/QtggB"
+Received: by mail-ed1-f52.google.com with SMTP id 4fb4d7f45d1cf-5efe8d9ebdfso3472251a12.3
+        for <containers@lists.linux.dev>; Fri, 18 Apr 2025 04:33:00 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1744975979; x=1745580779; darn=lists.linux.dev;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=27X7S16DYjT/LW2Ezo/SSGnQFg4j0BttjbVMhMujxUI=;
+        b=ih/QtggBcYnuFko+ueg0QcPbM3XMzV12ZCJp4agp/xIyRPFXahUubJIvAbIQypi8cV
+         18LcEpCV9G30uozv6RYuScCEIYKlLe+3CUZpxFoqnCOStgNnLP3pTKTEgwVMFSMdKYyq
+         UvGo5wGoFl7nxFfpjcPUZ9k5odoZcWYge0dY74X/9ep6mY2D01IrULe2YHvO8THPqU13
+         3OoJKNpeBtCI1iyRgl1Pf4+zljyvP/NLvRdT2fSYIP8rJKWAj/i76fUcFDJVs1mSL9C0
+         rn97Fce6+9CR2jZ3dDcOOG3RWuseDO3XMePBDO+G+yVSWy2YeBWINHMM8YZrDLMRMxKh
+         FCyA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1744975979; x=1745580779;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=27X7S16DYjT/LW2Ezo/SSGnQFg4j0BttjbVMhMujxUI=;
+        b=cyob5ELB6WSuMRRbbIuwJuc/2goY8pGv1HDjK5NKmjJzRCGLAx5D4rd/mGynCi5zq/
+         R2mgi2i3c/+k5uGiODbvf/bTd58n5lKQF5MKhkZwhyDrsN2neoRzlx2y6r1PO4cR0s8G
+         xvNU1Dbl13agYaq9LdSFOQeFEfh1n5l9z1/CTfD6a4tWk0/gYRwRv2twiD+zDCEVgfRj
+         2iLwNkDylGFAZe6jzqsXiyUOmnLLyInKcCYoJsNmQm80FcDXxnCksKYHw8Gu2JHhECiG
+         lyYOVDlT2hN2iypUjNI8VJleFKbg/El9okbq5QaLonxxqYF1GWDvDft2JKOPzIhMexqc
+         2OKQ==
+X-Forwarded-Encrypted: i=1; AJvYcCWrrZZiFJ8cb+XOOmRfjlsyHXboLhQjpx9Kzp3E3MKgLHyJFChQaDMF9908ZgEXwvoVqyRmwdtj/bqf@lists.linux.dev
+X-Gm-Message-State: AOJu0Yw2AV1AKY/7FOBRicrRcqOiaijodT6tPKvDLJwHZwhsrVFQCxNp
+	LVeprDx5r7lBZdzAuqjRkJvmIW3THpbSV5fz3qETvWTW1nBglPwqM5hdJ5aQEiTXAgfJjA5DFKH
+	reQhZBGe9XekOWSgISv5SyBERnKg=
+X-Gm-Gg: ASbGncvsjpAO8uBMFPIU8DPqrbO3ZjJl0F1CHNqhRwYUYR1Ya35YRb0eYEiiEsxvCDO
+	6ezwJsPrIZ//tKbEkzSeDnRpo/GDgm3nM8s89dcTyWNtSHcPaOo4sixnaM/c9g6VZBMIci/vzVH
+	7cnIUBVM0x3FCWpgNXz7+CRQ==
+X-Google-Smtp-Source: AGHT+IEgwzx2e+QsgQJxBA2Ct7E+PXkO+TM2webM4UiPcmvhRotO0DA2Hd8OHEOP6jOOW1+lwrn40MJ3mLqEi4Xdiqg=
+X-Received: by 2002:a17:907:9622:b0:aca:df11:c53c with SMTP id
+ a640c23a62f3a-acb74dbb5admr210684566b.43.1744975979257; Fri, 18 Apr 2025
+ 04:32:59 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <20250131163447.1140564-1-mic@digikod.net>
-X-Infomaniak-Routing: alpha
+References: <20240524-vfs-open_by_handle_at-v1-1-3d4b7d22736b@kernel.org>
+ <CAOQ4uxhjQwvJZEcuPyOg02rcDgcLfHQL-zhUGUmTf1VD8cCg4w@mail.gmail.com>
+ <CAOQ4uxgjY=upKo7Ry9NxahJHhU8jV193EjsRbK80=yXd5yikYg@mail.gmail.com>
+ <20241015-geehrt-kaution-c9b3f1381b6f@brauner> <CAOQ4uxj6ja4PN3=S9WxmZG0pLQOjBS-hNdwmGBzFjJ4GX64WCA@mail.gmail.com>
+ <CAOQ4uxiwGTg=FeO6iiLEwtsP9eTudw-rsLD_0u3NtG8rz5chFg@mail.gmail.com>
+In-Reply-To: <CAOQ4uxiwGTg=FeO6iiLEwtsP9eTudw-rsLD_0u3NtG8rz5chFg@mail.gmail.com>
+From: Amir Goldstein <amir73il@gmail.com>
+Date: Fri, 18 Apr 2025 13:32:48 +0200
+X-Gm-Features: ATxdqUGV8yWLv2kq_q7MXkpjUzh-Q3ZHWEcnWjLSHuE2R97cZyLSX9a3qYb89Xg
+Message-ID: <CAOQ4uxgwfQNM=cRBJ0BJ-UtZ1R=v3uuFrOfLxWCr5c0WA_Nh3w@mail.gmail.com>
+Subject: Re: fanotify sb/mount watch inside userns (Was: [PATCH RFC] :
+ fhandle: relax open_by_handle_at() permission checks)
+To: Lennart Poettering <lennart@poettering.net>, Jan Kara <jack@suse.cz>, 
+	Miklos Szeredi <miklos@szeredi.hu>, Christian Brauner <brauner@kernel.org>
+Cc: Jeff Layton <jlayton@kernel.org>, Chuck Lever <chuck.lever@oracle.com>, 
+	Aleksa Sarai <cyphar@cyphar.com>, linux-fsdevel <linux-fsdevel@vger.kernel.org>, 
+	containers@lists.linux.dev
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Fri, Jan 31, 2025 at 05:34:44PM +0100, Mickaël Salaün wrote:
-> Hi,
-> 
-> Landlock enables users to create unprivileged nested security sandboxes
-> (i.e. domains).  Each of these domains get a unique ID, which is used to
-> identify and compare different domains.  With the audit support, these
-> IDs will be used in logs, but users also need a way to map these IDs to
-> processes and directly read domain IDs of arbitrary tasks.
-> 
-> pidfd is a reference to a task that enables users to interact with it
-> and read some of its properties with the PIDFD_GET_INFO IOCTL.  This
-> patch series extend this interface with two new properties:
-> PIDFD_INFO_LANDLOCK_LAST_DOMAIN and PIDFD_INFO_LANDLOCK_FIRST_DOMAIN.
-> 
-> Being able to read tasks' domain IDs is useful for telemetry, debugging, and
-> tests.  It enables users:
-> - to know if a task is well sandboxed;
-> - to know which tasks are part of the same sandbox;
-> - to map Landlock audit logs to running processes.
-> 
-> Furthermore, thanks to recvmsg(2)'s SCM_PIDFD, it is also possible to reliably
-> identify a peer's sandbox.
-> 
-> This patch series is based on the audit support patch series v5:
-> https://lore.kernel.org/all/20250108154338.1129069-1-mic@digikod.net/
+On Wed, Oct 16, 2024 at 2:53=E2=80=AFPM Amir Goldstein <amir73il@gmail.com>=
+ wrote:
+>
+...
+> > > > Christian,
+> > > >
+> > > > Follow up question:
+> > > > Now that open_by_handle_at(2) is supported from non-root userns,
+> > > > What about this old patch [1] to allow sb/mount watches from non-ro=
+ot userns?
+> > > >
+> > > >
+...
+> >
+> > My question is whether this is useful, because there are still a few
+> > limitations.
+> > I will start with what is possible with this patch:
+> > 1. Watch an entire tmpfs filesystem that was mounted inside userns
+> > 2. Watch an entire overlayfs filesystem that was mounted [*] inside use=
+rns
+> > 3. Watch an entire mount [**] of any [***] filesystem that was
+> > idmapped mounted into userns
+> >
+> > Now the the fine prints:
+> > [*] Overlayfs sb/mount CAN be watched, but decoding file handle in
+> > events to path
+> >      only works if overlayfs is mounted with mount option
+> > nfs_export=3Don, which conflicts
+> >      with mount option metacopy=3Don, which is often used in containers
+> > (e.g. podman)
+> > [**] Watching a mount is only possible with the legacy set of fanotify =
+events
+> >      (i.e. open,close,access,modify) so this is less useful for
+> > directory tree change tracking
+> > [***] Watching an idmapped mount has the same limitations as watching
+> > an sb/mount
+> >      in the root userns, namely, filesystem needs to have a non zero
+> > fsid (so not FUSE)
+> >      and filesystem needs to have a uniform fsid (so not btrfs
+> > subvolume), although
+> >      with some stretch, I could make watching an idmapped mount of
+> > btrfs subvol work.
+> >
+> > No support for watching btrfs subvol and overlayfs with metacopy=3Don,
+> > reduces the attractiveness for containers, but perhaps there are still =
+use cases
+> > where watching an idmapped mount or userns private tmpfs are useful?
+> >
+> > To try out this patch inside your favorite container/userns, you can bu=
+ild
+> > fsnotifywait with a patch to support watching inside userns [2].
+> > It's actually only the one lines O_DIRECTORY patch that is needed for t=
+he
+> > basic tmpfs userns mount case.
+> >
+> > Jan,
+> >
+> > If we do not get any buy-in from potential consumers now, do you think =
+that
+> > we should go through with the patch and advertise the new supported use=
+ cases,
+> > so that users may come later on?
+> >
 
-That was the v4, here is the v5:
-https://lore.kernel.org/all/20250131163059.1139617-1-mic@digikod.net/
+Hi guys,
 
-> 
-> I'll talk about this feature at FOSDEM:
-> https://fosdem.org/2025/schedule/event/fosdem-2025-6071-sandbox-ids-with-landlock/
-> 
-> Regards,
-> 
-> Mickaël Salaün (3):
->   landlock: Add landlock_read_domain_id()
->   pidfd: Extend PIDFD_GET_INFO with PIDFD_INFO_LANDLOCK_*_DOMAIN
->   samples/landlock: Print domain ID
-> 
->  fs/pidfs.c                   | 24 +++++++++++-
->  include/linux/landlock.h     | 26 +++++++++++++
->  include/uapi/linux/pidfd.h   |  4 ++
->  samples/landlock/sandboxer.c | 29 +++++++++++++-
->  security/landlock/Makefile   | 12 ++++--
->  security/landlock/domain.c   |  2 -
->  security/landlock/domain.h   |  8 ++--
->  security/landlock/ruleset.c  |  2 +
->  security/landlock/syscalls.c | 75 ++++++++++++++++++++++++++++++++++++
->  9 files changed, 169 insertions(+), 13 deletions(-)
->  create mode 100644 include/linux/landlock.h
-> 
-> 
-> base-commit: a4b76d5e6800121372b88c85628a7867a5fdc707
-> -- 
-> 2.48.1
-> 
-> 
+The fine print section in the above "is it useful" question is quite comple=
+x.
+Maybe that explains why I got no response ;)
+
+I can now ask another flavor of the question:
+
+Is it useful to allow FAN_MARK_MNTNS watches from non-root userns?
+
+Just to make sure that I get it right, the unique mntid that is reported wi=
+th
+mount attach/detach events is not namespaced right?
+
+Anyway, this functionality has become a priority for me, so I will
+work on adapting the old patch [3] to mntns marks and post v2.
+
+Thanks,
+Amir.
+
+[1] https://github.com/amir73il/linux/commits/fanotify_userns/
+[2] https://github.com/amir73il/inotify-tools/commits/fanotify_userns/
+[3] https://lore.kernel.org/linux-fsdevel/20230416060722.1912831-1-amir73il=
+@gmail.com/
