@@ -1,208 +1,110 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from out01.mta.xmission.com (out01.mta.xmission.com [166.70.13.231])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 23AF322F75F
-	for <containers@lists.linux.dev>; Thu, 24 Apr 2025 11:34:05 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F0C4A22578D;
+	Mon,  1 Dec 2025 20:04:55 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=166.70.13.231
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1745494448; cv=none; b=LvFZjM7DxgCVUsVLSrgadOPydwxnnJf0RAf7vLhDeCnJuzTfdA4BCawguUl0xg4vwvc/K643w7B8dyCRAyhYTNs2FscmrbakDZASrdkiqpF4xU7xo+f6XmjIf6Zsz3xI+AUCxJTLjSWAEzMKor8I5htWr1cEeYzoRvkCg70TcfU=
+	t=1764619497; cv=none; b=Yg57uh3QcAp8X3o9VkyUyc60JnwPPI1ZG039B0VeNzHmHN6iUcsGX4tulzwXgENfZLDji/GvE16DQBxvFWDFeFp+r4zgySEiyjvALbs1jU2b0Blv/86IeMAQDXYOPh0oqkaAIW912T3pRljZXDVfAjwS5t1cGjcYmhAxfHPFRgI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1745494448; c=relaxed/simple;
-	bh=iKWoOUQson26LfUxIL7SIHtSGdq5XOffycHv6JCneLQ=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=ZYYUbhzn6Jx7G/t0IBWGampsN/DqmywmAV1cASImjjwO7MGcicR2N66x7uqSpl4KQmFBeIc4VIR40SCjv4dVi0gmr7wOs7GCcP7tsatr/eSU7DQFLJVT216UINa/Fjs3RKHktff2g5CVF29N3ZlS9n39ij7S+a+l9Z/HW1eSJB0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=J611qTyw; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=nv0m4t43; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=J611qTyw; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=nv0m4t43; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="J611qTyw";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="nv0m4t43";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="J611qTyw";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="nv0m4t43"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 328121F445;
-	Thu, 24 Apr 2025 11:28:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1745494132; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=/Fyu/Nu9A1yRtHGJim+jCEoPs0g98HsWG9zorgFuOmQ=;
-	b=J611qTywUKO7Z4BAe3lLOvyyUc+/rqIZ2u+Qw9NvrqVT7t2DoK43bGSauEebiXapLZqltf
-	KnKxpjUCjzhe66fbY9nr9xk9rXBWCf0SLS+0ywCp2sDgA/pgavzjnwIudoCyH9qJv5Ccmz
-	VzAzw+fx3nR/3MtmwAzxK/nB6VNoAYI=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1745494132;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=/Fyu/Nu9A1yRtHGJim+jCEoPs0g98HsWG9zorgFuOmQ=;
-	b=nv0m4t43lnoEmxb4uo9Uuz5ygb2Vf64+BwgyrilBbej6HN3hgZfD984oSFYikzM+ijXSYT
-	Bu5Jmi7OaUFSPwDg==
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1745494132; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=/Fyu/Nu9A1yRtHGJim+jCEoPs0g98HsWG9zorgFuOmQ=;
-	b=J611qTywUKO7Z4BAe3lLOvyyUc+/rqIZ2u+Qw9NvrqVT7t2DoK43bGSauEebiXapLZqltf
-	KnKxpjUCjzhe66fbY9nr9xk9rXBWCf0SLS+0ywCp2sDgA/pgavzjnwIudoCyH9qJv5Ccmz
-	VzAzw+fx3nR/3MtmwAzxK/nB6VNoAYI=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1745494132;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=/Fyu/Nu9A1yRtHGJim+jCEoPs0g98HsWG9zorgFuOmQ=;
-	b=nv0m4t43lnoEmxb4uo9Uuz5ygb2Vf64+BwgyrilBbej6HN3hgZfD984oSFYikzM+ijXSYT
-	Bu5Jmi7OaUFSPwDg==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 236391393C;
-	Thu, 24 Apr 2025 11:28:52 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 0F2aCHQgCmhaPAAAD6G6ig
-	(envelope-from <jack@suse.cz>); Thu, 24 Apr 2025 11:28:52 +0000
-Received: by quack3.suse.cz (Postfix, from userid 1000)
-	id D0171A0921; Thu, 24 Apr 2025 13:28:47 +0200 (CEST)
-Date: Thu, 24 Apr 2025 13:28:47 +0200
-From: Jan Kara <jack@suse.cz>
-To: Amir Goldstein <amir73il@gmail.com>
-Cc: Lennart Poettering <lennart@poettering.net>, Jan Kara <jack@suse.cz>, 
-	Miklos Szeredi <miklos@szeredi.hu>, Christian Brauner <brauner@kernel.org>, 
-	Jeff Layton <jlayton@kernel.org>, Chuck Lever <chuck.lever@oracle.com>, 
-	Aleksa Sarai <cyphar@cyphar.com>, linux-fsdevel <linux-fsdevel@vger.kernel.org>, 
-	containers@lists.linux.dev
-Subject: Re: fanotify sb/mount watch inside userns (Was: [PATCH RFC] :
- fhandle: relax open_by_handle_at() permission checks)
-Message-ID: <vmmqyhedlcmph2zcdx5wnhxj57hrmtssr7t47uhbd5py7epuv7@mwedyjqkcq37>
-References: <20240524-vfs-open_by_handle_at-v1-1-3d4b7d22736b@kernel.org>
- <CAOQ4uxhjQwvJZEcuPyOg02rcDgcLfHQL-zhUGUmTf1VD8cCg4w@mail.gmail.com>
- <CAOQ4uxgjY=upKo7Ry9NxahJHhU8jV193EjsRbK80=yXd5yikYg@mail.gmail.com>
- <20241015-geehrt-kaution-c9b3f1381b6f@brauner>
- <CAOQ4uxj6ja4PN3=S9WxmZG0pLQOjBS-hNdwmGBzFjJ4GX64WCA@mail.gmail.com>
- <CAOQ4uxiwGTg=FeO6iiLEwtsP9eTudw-rsLD_0u3NtG8rz5chFg@mail.gmail.com>
- <CAOQ4uxgwfQNM=cRBJ0BJ-UtZ1R=v3uuFrOfLxWCr5c0WA_Nh3w@mail.gmail.com>
+	s=arc-20240116; t=1764619497; c=relaxed/simple;
+	bh=dpjx3y3Tb9cXY+TvTDbrVCrrhentYbXxh4YVOaJqGic=;
+	h=From:To:Cc:In-Reply-To:References:Date:Message-ID:MIME-Version:
+	 Content-Type:Subject; b=MRgi3n60XUN2iOwKvnSimqPEkF5Qi8CCbEmLK3iwNJrfGR8wZNGkX9EfDj+OHNxFENRkvlyi9h9xUa7qBrfe2d9BQDwFzto+YxKmTSIei5E1L3Kis9VU8aN1WqdkM5CWvjS9MvWdcdi9S9aFwmpvQvD587VADrH4Zkt+iEDs9nk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=xmission.com; spf=pass smtp.mailfrom=xmission.com; arc=none smtp.client-ip=166.70.13.231
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=xmission.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=xmission.com
+Received: from in02.mta.xmission.com ([166.70.13.52]:46846)
+	by out01.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.93)
+	(envelope-from <ebiederm@xmission.com>)
+	id 1vQ9Dr-00GGVj-FS; Mon, 01 Dec 2025 12:06:07 -0700
+Received: from ip72-198-198-28.om.om.cox.net ([72.198.198.28]:41296 helo=email.froward.int.ebiederm.org.xmission.com)
+	by in02.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.93)
+	(envelope-from <ebiederm@xmission.com>)
+	id 1vQ9Dq-007zSD-Cr; Mon, 01 Dec 2025 12:06:07 -0700
+From: "Eric W. Biederman" <ebiederm@xmission.com>
+To: Christian Brauner <brauner@kernel.org>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
+ linux-fsdevel@vger.kernel.org,  linux-kernel@vger.kernel.org,
+ Linux Containers <containers@lists.linux.dev> 
+In-Reply-To: <20251128-kernel-namespaces-v619-28629f3fc911@brauner> (Christian
+	Brauner's message of "Fri, 28 Nov 2025 17:48:16 +0100")
+References: <20251128-vfs-v619-77cd88166806@brauner>
+	<20251128-kernel-namespaces-v619-28629f3fc911@brauner>
+Date: Mon, 01 Dec 2025 13:06:02 -0600
+Message-ID: <87ecperpid.fsf@email.froward.int.ebiederm.org>
+User-Agent: Gnus/5.13 (Gnus v5.13)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAOQ4uxgwfQNM=cRBJ0BJ-UtZ1R=v3uuFrOfLxWCr5c0WA_Nh3w@mail.gmail.com>
-X-Spam-Level: 
-X-Spamd-Result: default: False [-3.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-0.998];
-	MID_RHS_NOT_FQDN(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	RCVD_COUNT_THREE(0.00)[3];
-	FREEMAIL_TO(0.00)[gmail.com];
-	ARC_NA(0.00)[];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	MIME_TRACE(0.00)[0:+];
-	FREEMAIL_ENVRCPT(0.00)[gmail.com];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_SOME(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_LAST(0.00)[];
-	RCPT_COUNT_SEVEN(0.00)[10];
-	MISSING_XM_UA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email]
-X-Spam-Score: -3.80
-X-Spam-Flag: NO
+Content-Type: text/plain
+X-XM-SPF: eid=1vQ9Dq-007zSD-Cr;;;mid=<87ecperpid.fsf@email.froward.int.ebiederm.org>;;;hst=in02.mta.xmission.com;;;ip=72.198.198.28;;;frm=ebiederm@xmission.com;;;spf=pass
+X-XM-AID: U2FsdGVkX19aoM64k9dDBoyRNQGGjpvmcBJ6R9OWKtQ=
+X-Spam-Level: *
+X-Spam-Report: 
+	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
+	*  0.1 BAYES_50 BODY: Bayes spam probability is 40 to 60%
+	*      [score: 0.5029]
+	*  0.0 T_TM2_M_HEADER_IN_MSG BODY: No description available.
+	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
+	*      [sa08 1397; Body=1 Fuz1=1 Fuz2=1]
+	*  1.0 XMSubMetaSx_00 1+ Sexy Words
+	*  1.2 XMSubMetaSxObfu_03 Obfuscated Sexy Noun-People
+	*  0.0 T_TooManySym_01 4+ unique symbols in subject
+X-Spam-DCC: XMission; sa08 1397; Body=1 Fuz1=1 Fuz2=1 
+X-Spam-Combo: *;Christian Brauner <brauner@kernel.org>
+X-Spam-Relay-Country: 
+X-Spam-Timing: total 482 ms - load_scoreonly_sql: 0.04 (0.0%),
+	signal_user_changed: 12 (2.4%), b_tie_ro: 10 (2.1%), parse: 0.68
+	(0.1%), extract_message_metadata: 2.4 (0.5%), get_uri_detail_list:
+	0.75 (0.2%), tests_pri_-2000: 2.9 (0.6%), tests_pri_-1000: 2.7 (0.6%),
+	tests_pri_-950: 1.29 (0.3%), tests_pri_-900: 0.97 (0.2%),
+	tests_pri_-90: 227 (47.0%), check_bayes: 225 (46.7%), b_tokenize: 6
+	(1.2%), b_tok_get_all: 36 (7.5%), b_comp_prob: 1.99 (0.4%),
+	b_tok_touch_all: 177 (36.6%), b_finish: 1.28 (0.3%), tests_pri_0: 215
+	(44.7%), check_dkim_signature: 0.58 (0.1%), check_dkim_adsp: 4.8
+	(1.0%), poll_dns_idle: 1.30 (0.3%), tests_pri_10: 2.3 (0.5%),
+	tests_pri_500: 9 (1.8%), rewrite_mail: 0.00 (0.0%)
+Subject: Re: [GIT PULL 05/17 for v6.19] namespaces
+X-SA-Exim-Connect-IP: 166.70.13.52
+X-SA-Exim-Rcpt-To: containers@lists.linux.dev, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, torvalds@linux-foundation.org, brauner@kernel.org
+X-SA-Exim-Mail-From: ebiederm@xmission.com
+X-SA-Exim-Scanned: No (on out01.mta.xmission.com); SAEximRunCond expanded to false
 
-On Fri 18-04-25 13:32:48, Amir Goldstein wrote:
-> On Wed, Oct 16, 2024 at 2:53 PM Amir Goldstein <amir73il@gmail.com> wrote:
-> >
-> ...
-> > > > > Christian,
-> > > > >
-> > > > > Follow up question:
-> > > > > Now that open_by_handle_at(2) is supported from non-root userns,
-> > > > > What about this old patch [1] to allow sb/mount watches from non-root userns?
-> > > > >
-> > > > >
-> ...
-> > >
-> > > My question is whether this is useful, because there are still a few
-> > > limitations.
-> > > I will start with what is possible with this patch:
-> > > 1. Watch an entire tmpfs filesystem that was mounted inside userns
-> > > 2. Watch an entire overlayfs filesystem that was mounted [*] inside userns
-> > > 3. Watch an entire mount [**] of any [***] filesystem that was
-> > > idmapped mounted into userns
-> > >
-> > > Now the the fine prints:
-> > > [*] Overlayfs sb/mount CAN be watched, but decoding file handle in
-> > > events to path
-> > >      only works if overlayfs is mounted with mount option
-> > > nfs_export=on, which conflicts
-> > >      with mount option metacopy=on, which is often used in containers
-> > > (e.g. podman)
-> > > [**] Watching a mount is only possible with the legacy set of fanotify events
-> > >      (i.e. open,close,access,modify) so this is less useful for
-> > > directory tree change tracking
-> > > [***] Watching an idmapped mount has the same limitations as watching
-> > > an sb/mount
-> > >      in the root userns, namely, filesystem needs to have a non zero
-> > > fsid (so not FUSE)
-> > >      and filesystem needs to have a uniform fsid (so not btrfs
-> > > subvolume), although
-> > >      with some stretch, I could make watching an idmapped mount of
-> > > btrfs subvol work.
-> > >
-> > > No support for watching btrfs subvol and overlayfs with metacopy=on,
-> > > reduces the attractiveness for containers, but perhaps there are still use cases
-> > > where watching an idmapped mount or userns private tmpfs are useful?
-> > >
-> > > To try out this patch inside your favorite container/userns, you can build
-> > > fsnotifywait with a patch to support watching inside userns [2].
-> > > It's actually only the one lines O_DIRECTORY patch that is needed for the
-> > > basic tmpfs userns mount case.
-> > >
-> > > Jan,
-> > >
-> > > If we do not get any buy-in from potential consumers now, do you think that
-> > > we should go through with the patch and advertise the new supported use cases,
-> > > so that users may come later on?
-> > >
-> 
-> Hi guys,
-> 
-> The fine print section in the above "is it useful" question is quite complex.
-> Maybe that explains why I got no response ;)
-> 
-> I can now ask another flavor of the question:
-> 
-> Is it useful to allow FAN_MARK_MNTNS watches from non-root userns?
- 
-Yes, I think these are useful but one has to be careful about not leaking
-information from other namespaces.
+Christian Brauner <brauner@kernel.org> writes:
 
-> Just to make sure that I get it right, the unique mntid that is reported with
-> mount attach/detach events is not namespaced right?
+> Hey Linus,
+>
+> /* Summary */
+> This contains substantial namespace infrastructure changes including a new
+> system call, active reference counting, and extensive header cleanups.
+> The branch depends on the shared kbuild branch for -fms-extensions
+> support.
 
-Correct. It is not namespaced.
+I am missing something.  From the description it looks like
+you are making nested containers impossible once this feature
+is adopted.  Because the container will be able to see all of
+the other namespaces and thus to see outside of it's own namespace.
 
-								Honza
--- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+The reason such as system call has not been introduced in the past
+is because it introduces the namespace of namespace problem.
+
+How have you solved the namespace of namespaces problem?
+
+If you want nesting of containers the listing of namespaces very
+much must be incomplete.
+
+I haven't looked at reviewed or looked at the code yet because
+the code was not posted in any of the usual places for container
+development, nor was I copied.
+
+Can you please describe how you are avoiding the namespace of namespaces
+problem?
+
+
+Eric
