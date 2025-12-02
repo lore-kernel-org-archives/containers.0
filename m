@@ -1,110 +1,121 @@
-Received: from out01.mta.xmission.com (out01.mta.xmission.com [166.70.13.231])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ed1-f47.google.com (mail-ed1-f47.google.com [209.85.208.47])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F0C4A22578D;
-	Mon,  1 Dec 2025 20:04:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=166.70.13.231
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CB0FF220687
+	for <containers@lists.linux.dev>; Tue,  2 Dec 2025 17:01:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.47
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1764619497; cv=none; b=Yg57uh3QcAp8X3o9VkyUyc60JnwPPI1ZG039B0VeNzHmHN6iUcsGX4tulzwXgENfZLDji/GvE16DQBxvFWDFeFp+r4zgySEiyjvALbs1jU2b0Blv/86IeMAQDXYOPh0oqkaAIW912T3pRljZXDVfAjwS5t1cGjcYmhAxfHPFRgI=
+	t=1764694881; cv=none; b=hr5vr4ZnchjA/lr9loj4hyRtcO33dh7D/mvKhI3s/y4f+gWzNu7ZZtw/R+M2wv72ZZ31A0xQ++uvZsRezB3blEM0bM6g+nUf5sjiczibh0ACWQh/jYq/TRuFnP5ztSpKnTh60z7ljKlc/W8LLqLd5VeAhk93QLwspMnN3wvQryA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1764619497; c=relaxed/simple;
-	bh=dpjx3y3Tb9cXY+TvTDbrVCrrhentYbXxh4YVOaJqGic=;
-	h=From:To:Cc:In-Reply-To:References:Date:Message-ID:MIME-Version:
-	 Content-Type:Subject; b=MRgi3n60XUN2iOwKvnSimqPEkF5Qi8CCbEmLK3iwNJrfGR8wZNGkX9EfDj+OHNxFENRkvlyi9h9xUa7qBrfe2d9BQDwFzto+YxKmTSIei5E1L3Kis9VU8aN1WqdkM5CWvjS9MvWdcdi9S9aFwmpvQvD587VADrH4Zkt+iEDs9nk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=xmission.com; spf=pass smtp.mailfrom=xmission.com; arc=none smtp.client-ip=166.70.13.231
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=xmission.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=xmission.com
-Received: from in02.mta.xmission.com ([166.70.13.52]:46846)
-	by out01.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1vQ9Dr-00GGVj-FS; Mon, 01 Dec 2025 12:06:07 -0700
-Received: from ip72-198-198-28.om.om.cox.net ([72.198.198.28]:41296 helo=email.froward.int.ebiederm.org.xmission.com)
-	by in02.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.93)
-	(envelope-from <ebiederm@xmission.com>)
-	id 1vQ9Dq-007zSD-Cr; Mon, 01 Dec 2025 12:06:07 -0700
-From: "Eric W. Biederman" <ebiederm@xmission.com>
-To: Christian Brauner <brauner@kernel.org>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>,
- linux-fsdevel@vger.kernel.org,  linux-kernel@vger.kernel.org,
- Linux Containers <containers@lists.linux.dev> 
-In-Reply-To: <20251128-kernel-namespaces-v619-28629f3fc911@brauner> (Christian
-	Brauner's message of "Fri, 28 Nov 2025 17:48:16 +0100")
-References: <20251128-vfs-v619-77cd88166806@brauner>
-	<20251128-kernel-namespaces-v619-28629f3fc911@brauner>
-Date: Mon, 01 Dec 2025 13:06:02 -0600
-Message-ID: <87ecperpid.fsf@email.froward.int.ebiederm.org>
-User-Agent: Gnus/5.13 (Gnus v5.13)
+	s=arc-20240116; t=1764694881; c=relaxed/simple;
+	bh=qRcGZFXKJMaKX/yvJKRpEH3ICexfqw2LvBvIVsUdxyo=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=U7YVsyr6wxA/Rfk5v7gdJpp0+LQ0SVuNysMMqs+HTnioAd6ab2wLOmhrSEfp6f7zewKp6A9t32FpkAmLTnxpjQRL/uLbm9maFx5aumR9qJiwpBlKkdW2p59ySa+Se+dxLrUeZBn/t2w5HRgluLDuAbKzpI5LlAxR2wdAMXdi6eE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org; spf=pass smtp.mailfrom=linuxfoundation.org; dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b=e9Kt6Bep; arc=none smtp.client-ip=209.85.208.47
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linuxfoundation.org
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b="e9Kt6Bep"
+Received: by mail-ed1-f47.google.com with SMTP id 4fb4d7f45d1cf-6417313bddaso9256293a12.3
+        for <containers@lists.linux.dev>; Tue, 02 Dec 2025 09:01:19 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linux-foundation.org; s=google; t=1764694878; x=1765299678; darn=lists.linux.dev;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:from:to:cc:subject:date:message-id:reply-to;
+        bh=aKw8GaNp5Rdkt/37eGWeHQsaSq+KKpAjLZM3zt8c76s=;
+        b=e9Kt6Beps5UQLbcKSHBcGF3+5fto+RLHG2ykgvkXHGAWvFtEegyuLcjqPWjIgLusFV
+         9Rdgwn8M+bUjlZ5mclNDvtwD/eoD8NyTNxAcHg0WSF4y0U7NIDISxh7XKffbU+IHmBhi
+         siFmzR6U4iWQsQtbivCGe/Ccyr9qftUMKFZZU=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1764694878; x=1765299678;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=aKw8GaNp5Rdkt/37eGWeHQsaSq+KKpAjLZM3zt8c76s=;
+        b=Z18IrkmU3VfPcNK2eD/TjZrNyFelSx3dqHOO1e3RnIs3eOODu19KXTlDY/jAOjjN6G
+         bOf9UXcY35ctK105xcHioRBMqkjAOVir4aVinMv1I4liwBtp71LvdMCwB/r4svVPw3i9
+         XAu9KigDbuEfcl3zw8EyfjcID1RoOxhy5xaczcWDkB8gcup0vlXs093ZtTkBwOCMwl2K
+         vphJYA3Peq+hCHWNP7+OPZuQ3OxADcP4Ls3FQfUMnbmAxEozLBV6BeUGuyMGINRsWT4P
+         pC2d+owLt37MUk3pcfA811O/A1Oj8YzaXlQ6qwwPsn51Y/EFrWqFcgEfp9XrJGdY/Sjf
+         j8KA==
+X-Forwarded-Encrypted: i=1; AJvYcCV9MQuIYXi6yIClMwgx+feiFiFd9XQs4Fl09VW32kGB6Hg0kHzFLcKr8GB1U7dgvF0T6/Xl5T+a+3hw@lists.linux.dev
+X-Gm-Message-State: AOJu0YwdhzJu5/tdRUL5nPpeLg3DjpRkcHPuBqyheG2LlzlIQiedc9BI
+	b/JBVlDP+84SOTGel+kjsKlzWmOFXWWkf25/CMfRy4AvBDLW3Y8582oYH66lY71NQNINKG1DJJS
+	LZzACoIA=
+X-Gm-Gg: ASbGncu6Ki59/iBr8mBfxHs/mYm8OkxGsDrO9Yy+L8EGSolfrT1H5kR/Qq862gX24+8
+	EZYqCSlYpl+yDZ00HHj3Oxtv1Loq2qdQnB5OKkhwMEV2y2FKQqFr+vLCUlbHj8oodDo+PhPYU9w
+	Oa/pGnPv91pZvMlpaqMxHrsJ6KMGEAplxCjS+lrSGvVSVqQpkbyXOnfpvnMW55dQO4+R9r4e1Es
+	KJDV1kQNBrjuh4q9QsmfNSKESRGiNJtdAU4YI05AxlNie1QZeCB2oci+DY7X/apr1V3Y6naJGTK
+	NjNQbbBEtv/hqtlbPqEvwTw/FEbI+UFod0ul2W9xh343sfA+Dr/3+QMTXm4hfiEzA7EhcCLggyn
+	hxE6lhJ310eIcFj2cQk+4AekIUWjPSqeZULHjHBBaSlf8dw5CmPfFTQaWOeuNfCmg4q+S8YwAiF
+	01eWEGRYnE/GriB4llliYvp9pio3Es1+s3jhYOV91910wk4VCYFzhba955DF/V4jOw+Y+X6l0=
+X-Google-Smtp-Source: AGHT+IFikOU3axDFgXkuyV2rNstrDkaWQnhKl/IAZmztmxUqbXTuI+FpXaABnlDkFzrLCU5aR3iPDg==
+X-Received: by 2002:a05:6402:2348:b0:640:80cc:f08e with SMTP id 4fb4d7f45d1cf-645eb78686cmr26521054a12.26.1764694877478;
+        Tue, 02 Dec 2025 09:01:17 -0800 (PST)
+Received: from mail-ed1-f49.google.com (mail-ed1-f49.google.com. [209.85.208.49])
+        by smtp.gmail.com with ESMTPSA id 4fb4d7f45d1cf-64750a6ea4csm16106718a12.4.2025.12.02.09.01.15
+        for <containers@lists.linux.dev>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 02 Dec 2025 09:01:16 -0800 (PST)
+Received: by mail-ed1-f49.google.com with SMTP id 4fb4d7f45d1cf-644fcafdce9so9528294a12.1
+        for <containers@lists.linux.dev>; Tue, 02 Dec 2025 09:01:15 -0800 (PST)
+X-Forwarded-Encrypted: i=1; AJvYcCU4PONBzko4pWR1I6zJCkIjnYN/cL/5pYEGrPpXkjsX7ZhJgTBJRfgI18XX85ZqOE557g6scrbv7kWr@lists.linux.dev
+X-Received: by 2002:a05:6402:5203:b0:643:c8b:8d61 with SMTP id
+ 4fb4d7f45d1cf-645eafad307mr30539305a12.0.1764694874663; Tue, 02 Dec 2025
+ 09:01:14 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain
-X-XM-SPF: eid=1vQ9Dq-007zSD-Cr;;;mid=<87ecperpid.fsf@email.froward.int.ebiederm.org>;;;hst=in02.mta.xmission.com;;;ip=72.198.198.28;;;frm=ebiederm@xmission.com;;;spf=pass
-X-XM-AID: U2FsdGVkX19aoM64k9dDBoyRNQGGjpvmcBJ6R9OWKtQ=
-X-Spam-Level: *
-X-Spam-Report: 
-	* -1.0 ALL_TRUSTED Passed through trusted hosts only via SMTP
-	*  0.1 BAYES_50 BODY: Bayes spam probability is 40 to 60%
-	*      [score: 0.5029]
-	*  0.0 T_TM2_M_HEADER_IN_MSG BODY: No description available.
-	* -0.0 DCC_CHECK_NEGATIVE Not listed in DCC
-	*      [sa08 1397; Body=1 Fuz1=1 Fuz2=1]
-	*  1.0 XMSubMetaSx_00 1+ Sexy Words
-	*  1.2 XMSubMetaSxObfu_03 Obfuscated Sexy Noun-People
-	*  0.0 T_TooManySym_01 4+ unique symbols in subject
-X-Spam-DCC: XMission; sa08 1397; Body=1 Fuz1=1 Fuz2=1 
-X-Spam-Combo: *;Christian Brauner <brauner@kernel.org>
-X-Spam-Relay-Country: 
-X-Spam-Timing: total 482 ms - load_scoreonly_sql: 0.04 (0.0%),
-	signal_user_changed: 12 (2.4%), b_tie_ro: 10 (2.1%), parse: 0.68
-	(0.1%), extract_message_metadata: 2.4 (0.5%), get_uri_detail_list:
-	0.75 (0.2%), tests_pri_-2000: 2.9 (0.6%), tests_pri_-1000: 2.7 (0.6%),
-	tests_pri_-950: 1.29 (0.3%), tests_pri_-900: 0.97 (0.2%),
-	tests_pri_-90: 227 (47.0%), check_bayes: 225 (46.7%), b_tokenize: 6
-	(1.2%), b_tok_get_all: 36 (7.5%), b_comp_prob: 1.99 (0.4%),
-	b_tok_touch_all: 177 (36.6%), b_finish: 1.28 (0.3%), tests_pri_0: 215
-	(44.7%), check_dkim_signature: 0.58 (0.1%), check_dkim_adsp: 4.8
-	(1.0%), poll_dns_idle: 1.30 (0.3%), tests_pri_10: 2.3 (0.5%),
-	tests_pri_500: 9 (1.8%), rewrite_mail: 0.00 (0.0%)
+References: <20251128-vfs-v619-77cd88166806@brauner> <20251128-kernel-namespaces-v619-28629f3fc911@brauner>
+ <87ecperpid.fsf@email.froward.int.ebiederm.org>
+In-Reply-To: <87ecperpid.fsf@email.froward.int.ebiederm.org>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Tue, 2 Dec 2025 09:00:57 -0800
+X-Gmail-Original-Message-ID: <CAHk-=whPpVs67fAYWo4=SeD20cxjYoAE3d5RXgeHpXZ81uM7Lg@mail.gmail.com>
+X-Gm-Features: AWmQ_bn2o0AS6BcgpiW3CE955dcwsPRXAVZIKXQGT7yckz2eOdb4b3Geamh17dM
+Message-ID: <CAHk-=whPpVs67fAYWo4=SeD20cxjYoAE3d5RXgeHpXZ81uM7Lg@mail.gmail.com>
 Subject: Re: [GIT PULL 05/17 for v6.19] namespaces
-X-SA-Exim-Connect-IP: 166.70.13.52
-X-SA-Exim-Rcpt-To: containers@lists.linux.dev, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, torvalds@linux-foundation.org, brauner@kernel.org
-X-SA-Exim-Mail-From: ebiederm@xmission.com
-X-SA-Exim-Scanned: No (on out01.mta.xmission.com); SAEximRunCond expanded to false
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Christian Brauner <brauner@kernel.org>, linux-fsdevel@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, Linux Containers <containers@lists.linux.dev>
+Content-Type: text/plain; charset="UTF-8"
 
-Christian Brauner <brauner@kernel.org> writes:
-
-> Hey Linus,
+On Mon, 1 Dec 2025 at 11:06, Eric W. Biederman <ebiederm@xmission.com> wrote:
 >
-> /* Summary */
-> This contains substantial namespace infrastructure changes including a new
-> system call, active reference counting, and extensive header cleanups.
-> The branch depends on the shared kbuild branch for -fms-extensions
-> support.
+> The reason such as system call has not been introduced in the past
+> is because it introduces the namespace of namespace problem.
+>
+> How have you solved the namespace of namespaces problem?
 
-I am missing something.  From the description it looks like
-you are making nested containers impossible once this feature
-is adopted.  Because the container will be able to see all of
-the other namespaces and thus to see outside of it's own namespace.
+So I think Christian would be better at answering this, but to a first
+approximation I think the explanation from commit 76b6f5dfb3fd
+("nstree: add listns()") gives some high-level rules:
 
-The reason such as system call has not been introduced in the past
-is because it introduces the namespace of namespace problem.
+    listns() respects namespace isolation and capabilities:
 
-How have you solved the namespace of namespaces problem?
+    (1) Global listing (user_ns_id = 0):
+        - Requires CAP_SYS_ADMIN in the namespace's owning user namespace
+        - OR the namespace must be in the caller's namespace context (e.g.,
+          a namespace the caller is currently using)
+        - User namespaces additionally allow listing if the caller has
+          CAP_SYS_ADMIN in that user namespace itself
+    (2) Owner-filtered listing (user_ns_id != 0):
+        - Requires CAP_SYS_ADMIN in the specified owner user namespace
+        - OR the namespace must be in the caller's namespace context
+        - This allows unprivileged processes to enumerate namespaces they own
+    (3) Visibility:
+        - Only "active" namespaces are listed
+        - A namespace is active if it has a non-zero __ns_ref_active count
+        - This includes namespaces used by running processes, held by open
+          file descriptors, or kept active by bind mounts
+        - Inactive namespaces (kept alive only by internal kernel
+          references) are not visible via listns()
 
-If you want nesting of containers the listing of namespaces very
-much must be incomplete.
+but it would be very nice if you were to take a closer look at the
+whole thing and make sure you're satisfied with it all.. Even just a
+"overview scan" would be lovely.
 
-I haven't looked at reviewed or looked at the code yet because
-the code was not posted in any of the usual places for container
-development, nor was I copied.
-
-Can you please describe how you are avoiding the namespace of namespaces
-problem?
-
-
-Eric
+            Linus
