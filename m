@@ -1,170 +1,131 @@
-Received: from purple.birch.relay.mailchannels.net (purple.birch.relay.mailchannels.net [23.83.209.150])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CC4CD3806AB
-	for <containers@lists.linux.dev>; Wed, 21 Jan 2026 20:08:50 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=23.83.209.150
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1769026133; cv=pass; b=h68bc2xoEKh0pkaogUK1DWD7qqgJAKVHHPMEvzR7f/Hf8qtpmfprqfiVkZrDVYrR0RJvsWz0jbUwxl0ZKXPIGqiQNKv0Yc4BMYdlO3rH2TNHMjy6kxgSVWgvhA1Q52yTgTp3X6iSqRqRIxuUwXtfuf05yctwBaUiC87dF9zGkOw=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1769026133; c=relaxed/simple;
-	bh=Q30qV0GnuH12TLgAndXDOsWAI0eL9/KOxE0R5cfuz+o=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=qMBzim060hpBzKqANkr6uQYXvAu/zbGxiBkkvE8jsMGjTcmBF0pebN4SXp1Pon5qt33pFJFr6DZSJwpXGi/xctlUclYtgLKYBRWfJrQbKGpxz0/Ki9s54Vlz29+jEufYcrKE3UqN5V9tMBczuOcKG8jHOypnFaPdBjMmJiUBduM=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net; spf=pass smtp.mailfrom=landley.net; dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b=mG/eSTAe; arc=pass smtp.client-ip=23.83.209.150
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=landley.net
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E1C5E21ABBB;
+	Fri, 23 Jan 2026 10:23:54 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1769163835; cv=none; b=j0EtrwddiQlTQOqcxIgCCYxFUPrAK6B/EPoe346laqwm92k8nEmt00lm7V4Ubidl1yzu85LDpMdcZ/RC6gBTa/7gTKlWLa4SMHv8DEPrSOK+mR1uHu04V6HdEid4AV+scQYRsjwGb/vXUibz7ye4cygdMw3Ttuf3SOItYBvwlEA=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1769163835; c=relaxed/simple;
+	bh=EHGi/yi88nJIt6UKAkgHIRx0Y1AOzHWxXOM0POlmDbs=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=stHDXiLBseEI3ehLZ++3jgAY2GVSSUQgIpTD4wIvsdXtuDVsuqW/KnelrmDY/C/VchNDs6MNYyUC4wgX36OIov5B1JVWvs+10j/e0pqj85dFngJ94L1Dx8SgQEKmgTy0csXmgxG5RdU6YrzALexqEMf56ZBrqIOc69MGEjo+50U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=owIHmuiN; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b="mG/eSTAe"
-X-Sender-Id: dreamhost|x-authsender|rob@landley.net
-Received: from relay.mailchannels.net (localhost [127.0.0.1])
-	by relay.mailchannels.net (Postfix) with ESMTP id CCD4C7E274A;
-	Wed, 21 Jan 2026 19:56:42 +0000 (UTC)
-Received: from pdx1-sub0-mail-a228.dreamhost.com (100-117-113-78.trex-nlb.outbound.svc.cluster.local [100.117.113.78])
-	(Authenticated sender: dreamhost)
-	by relay.mailchannels.net (Postfix) with ESMTPA id 2082A7E275A;
-	Wed, 21 Jan 2026 19:56:40 +0000 (UTC)
-ARC-Seal: i=1; a=rsa-sha256; d=mailchannels.net; s=arc-2022; cv=none;
-	t=1769025400;
-	b=g4Ws2/lWNJ2A9TkCA/DFPucq137ohvtXTgDJHwMpNB4V6ihTQNUi6mlgYIGl5KI34ZYd3K
-	mA+BWusN/P7mGgqt73qKgJU+PChgNRvh+rnS8imnNtvU/DYDko4EPYb0uJKr7YGyw/tmzs
-	jNfpXeTPDi6vsQCefnsOkJ5HFtFN2rNIfBLB1QzHejHe2sxwFRFHbc01gtAkvyn+im09vQ
-	8QA7xqyBNfRSA7cnfe+1wgdoz+BglzODempBqCulFknLX4wUkmgWXjbGAryMLnRg6ylvzo
-	2Mr0yidwHlUtGgOAu1R5ylB28U2EUdHx8qSatwOq9msN7aMILZFyiVJlNFXd2Q==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
- d=mailchannels.net;
-	s=arc-2022; t=1769025400;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references:dkim-signature;
-	bh=SYZMu2PthwVJ3NGSR06TqeLRyil+RpjVvva3cQ4KSRI=;
-	b=n45eUNUoHFSbf7l6rl489dxt6L2ipv09y/tR8rv2uNFF1yd486qFwZmVhoQWGUEgPOi2DA
-	GJ4LlxKIOAFMCy697st6EYh6aPLlq1b9Ic/VDDEv1liqI010lG8XkekisqkuoxUiMOwEzu
-	QxvslFlwwGeyjg7V5wXObt4X1Y7XEtOm+5QrCiGA94g+ZoifClKMkmz+dfbSq/0YKvDJx7
-	IXCv3mdOd/1rTlamcRIMJNZJwyBLT5DqZrGbuLn2+/8r2BJIBmAjrk3yzwTgWXhW0LvfhV
-	l19m2JGO4bQ8DV9w52haS87ICwUZO1zQGo75+yscOxlXLV8HA2f1EsEN3YbUbA==
-ARC-Authentication-Results: i=1;
-	rspamd-7699b4d5f4-fm8jz;
-	auth=pass smtp.auth=dreamhost smtp.mailfrom=rob@landley.net
-X-Sender-Id: dreamhost|x-authsender|rob@landley.net
-X-MC-Relay: Neutral
-X-MailChannels-SenderId: dreamhost|x-authsender|rob@landley.net
-X-MailChannels-Auth-Id: dreamhost
-X-Soft-Slimy: 15dbbe696bd9606d_1769025402703_632742312
-X-MC-Loop-Signature: 1769025402703:656845712
-X-MC-Ingress-Time: 1769025402702
-Received: from pdx1-sub0-mail-a228.dreamhost.com (pop.dreamhost.com
- [64.90.62.162])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384)
-	by 100.117.113.78 (trex/7.1.3);
-	Wed, 21 Jan 2026 19:56:42 +0000
-Received: from [IPV6:2607:fb91:b0b:1231:d681:a3ff:d72d:8f4b] (unknown [172.56.11.215])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits))
-	(No client certificate requested)
-	(Authenticated sender: rob@landley.net)
-	by pdx1-sub0-mail-a228.dreamhost.com (Postfix) with ESMTPSA id 4dxFM962DgzRn;
-	Wed, 21 Jan 2026 11:56:37 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=landley.net;
-	s=dreamhost; t=1769025399;
-	bh=SYZMu2PthwVJ3NGSR06TqeLRyil+RpjVvva3cQ4KSRI=;
-	h=Date:Subject:To:Cc:From:Content-Type:Content-Transfer-Encoding;
-	b=mG/eSTAefdXtZR+MXTqdXQEVDjDb7jQF+If/o0u2eUbhAjhjYCmPp2gkf6JlZZVQ1
-	 bcJMVxlJRBnybVKuNri33AATAkDqAq3QjTY2MYnWT58EAu1myTQsyMfejHkzY3/W7X
-	 7Pc4LefDCj20+uZBfp384KKzq3ain9ep5yp4BhhBDjX0oMJFEUtDwx8drg8zam+QzN
-	 g9q8GAmlYSrzAse+eSR1QiBef752u8xCAamfYWhTpNOB47dLMxZqedLYka0UrlZQgw
-	 9PB57Fcw4i/UDmBE/Oke5e0iarTKSB7W//+4QPtE3TTRlQkRLvjT5l+gbqg18zAEp6
-	 VF7jQckYDNcDA==
-Message-ID: <6375f293-709c-41b8-a23d-12010baa3cae@landley.net>
-Date: Wed, 21 Jan 2026 13:56:31 -0600
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="owIHmuiN"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 34EB9C4CEF1;
+	Fri, 23 Jan 2026 10:23:49 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1769163834;
+	bh=EHGi/yi88nJIt6UKAkgHIRx0Y1AOzHWxXOM0POlmDbs=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=owIHmuiNnJn6LHl8oiUqHygfDSa6bV+gCvGGfscFbDPXXJnamr7kc99F49u7dqnTB
+	 mz2ieEOLcIEm+2lb+SWg5ZY9WmpZ2zvFsmpfwEj09P+14gdzhL7pSaB/XiSY2uhUHr
+	 zeAxux5Rm39+ruHliYMWB0Jb0qNo88k/0TtiD3kzIKdcYWKq/V9/KeDM4UszDznIdd
+	 w1Zcaq/AacA3FEpb+lEVD0Fj67fFb5BvGIqlLo9C4lWNHQT4NqaK3Qa2WEM3ObijYp
+	 WAxdIlthpVFMvzMYM02H+m0Y4+seYt3AfjKGFfo7Vakx/QhhAlUHvxArCBfABl1omB
+	 9gbhSP4tNawFg==
+Date: Fri, 23 Jan 2026 11:23:46 +0100
+From: Christian Brauner <brauner@kernel.org>
+To: Andy Lutomirski <luto@amacapital.net>
+Cc: Jeff Layton <jlayton@kernel.org>, Askar Safin <safinaskar@gmail.com>, 
+	amir73il@gmail.com, cyphar@cyphar.com, jack@suse.cz, josef@toxicpanda.com, 
+	linux-fsdevel@vger.kernel.org, viro@zeniv.linux.org.uk, 
+	Lennart Poettering <mzxreary@0pointer.de>, David Howells <dhowells@redhat.com>, 
+	Yunkai Zhang <zhang.yunkai@zte.com.cn>, cgel.zte@gmail.com, Menglong Dong <menglong8.dong@gmail.com>, 
+	linux-kernel@vger.kernel.org, initramfs@vger.kernel.org, containers@lists.linux.dev, 
+	linux-api@vger.kernel.org, news@phoronix.com, lwn@lwn.net, Jonathan Corbet <corbet@lwn.net>, 
+	Rob Landley <rob@landley.net>, emily@redcoat.dev, Christoph Hellwig <hch@lst.de>
+Subject: Re: [PATCH 0/2] mount: add OPEN_TREE_NAMESPACE
+Message-ID: <20260123-autofrei-einspannen-7e65a6100e6e@brauner>
+References: <20251229-work-empty-namespace-v1-0-bfb24c7b061f@kernel.org>
+ <20260119171101.3215697-1-safinaskar@gmail.com>
+ <CALCETrWs59ss3ZMdTH54p3=E_jiYXq2SWV1fmm+HSvZ1pnBiJw@mail.gmail.com>
+ <acb859e1684122e1a73f30115f2389d2c9897251.camel@kernel.org>
+ <CALCETrUZC+sdfpVqqjeC_pqmd+-W84Rq7ron8Vx9MaSSohhJ2g@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 0/2] mount: add OPEN_TREE_NAMESPACE
-To: Jeff Layton <jlayton@kernel.org>, Andy Lutomirski <luto@amacapital.net>,
- Askar Safin <safinaskar@gmail.com>
-Cc: amir73il@gmail.com, cyphar@cyphar.com, jack@suse.cz,
- josef@toxicpanda.com, linux-fsdevel@vger.kernel.org,
- viro@zeniv.linux.org.uk, Lennart Poettering <mzxreary@0pointer.de>,
- David Howells <dhowells@redhat.com>, Zhang Yunkai <zhang.yunkai@zte.com.cn>,
- cgel.zte@gmail.com, Menglong Dong <menglong8.dong@gmail.com>,
- linux-kernel@vger.kernel.org, initramfs@vger.kernel.org,
- containers@lists.linux.dev, linux-api@vger.kernel.org, news@phoronix.com,
- lwn@lwn.net, Jonathan Corbet <corbet@lwn.net>, emily@redcoat.dev,
- Christoph Hellwig <hch@lst.de>
-References: <20251229-work-empty-namespace-v1-0-bfb24c7b061f@kernel.org>
- <20260119171101.3215697-1-safinaskar@gmail.com>
- <CALCETrWs59ss3ZMdTH54p3=E_jiYXq2SWV1fmm+HSvZ1pnBiJw@mail.gmail.com>
- <acb859e1684122e1a73f30115f2389d2c9897251.camel@kernel.org>
-Content-Language: en-US
-From: Rob Landley <rob@landley.net>
-In-Reply-To: <acb859e1684122e1a73f30115f2389d2c9897251.camel@kernel.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <CALCETrUZC+sdfpVqqjeC_pqmd+-W84Rq7ron8Vx9MaSSohhJ2g@mail.gmail.com>
 
->>>> You want rootfs to be a NULLFS instead of ramfs. You don't seem to want it to
->>>> actually _be_ a filesystem. Even with your "fix", containers could communicate
->>>> with each _other_ through it if it becomes accessible. If a container can get
->>>> access to an empty initramfs and write into it, it can ask/answer the question
->>>> "Are there any other containers on this machine running stux24" and then coordinate.
-
-Or you could just make the ROOT= codepath remount the empty initramfs -o 
-ro like some switch_root implementations do. If the PID 1 you launch 
-isn't in initramfs, don't leave initramfs writeable. That seems unlikely 
-to break userspace.
-
-(Having permissions to remount initramfs but _not_ having already 
-"cracked root" seems... a bit funky? You have waaaaay more faith in 
-security modules than I do...)
-
->> I think this new OPEN_TREE_NAMESPACE is nifty, but I don't think the
->> path that gives it sensible behavior should be conditional like this.
->> Either make it *always* mount on top of nullfs (regardless of boot
->> options) or find some way to have it actually be the root.  I assume
->> the latter is challenging for some reason.
+On Wed, Jan 21, 2026 at 10:00:19AM -0800, Andy Lutomirski wrote:
+> > On Jan 19, 2026, at 2:21 PM, Jeff Layton <jlayton@kernel.org> wrote:
+> >
+> > ﻿On Mon, 2026-01-19 at 11:05 -0800, Andy Lutomirski wrote:
+> >>> On Mon, Jan 19, 2026 at 10:56 AM Askar Safin <safinaskar@gmail.com> wrote:
+> >>>
+> >>> Christian Brauner <brauner@kernel.org>:
+> >>>> Extend open_tree() with a new OPEN_TREE_NAMESPACE flag. Similar to
+> >>>> OPEN_TREE_CLONE only the indicated mount tree is copied. Instead of
+> >>>> returning a file descriptor referring to that mount tree
+> >>>> OPEN_TREE_NAMESPACE will cause open_tree() to return a file descriptor
+> >>>> to a new mount namespace. In that new mount namespace the copied mount
+> >>>> tree has been mounted on top of a copy of the real rootfs.
+> >>>
+> >>> I want to point at security benefits of this.
+> >>>
+> >>> [[ TL;DR: [1] and [2] are very big changes to how mount namespaces work.
+> >>> I like them, and I think they should get wider exposure. ]]
+> >>>
+> >>> If this patchset ([1]) and [2] both land (they are both in "next" now and
+> >>> likely will be submitted to mainline soon) and "nullfs_rootfs" is passed on
+> >>> command line, then mount namespace created by open_tree(OPEN_TREE_NAMESPACE) will
+> >>> usually contain exactly 2 mounts: nullfs and whatever was passed to
+> >>> open_tree(OPEN_TREE_NAMESPACE).
+> >>>
+> >>> This means that even if attacker somehow is able to unmount its root and
+> >>> get access to underlying mounts, then the only underlying thing they will
+> >>> get is nullfs.
+> >>>
+> >>> Also this means that other mounts are not only hidden in new namespace, they
+> >>> are fully absent. This prevents attacks discussed here: [3], [4].
+> >>>
+> >>> Also this means that (assuming we have both [1] and [2] and "nullfs_rootfs"
+> >>> is passed), there is no anymore hidden writable mount shared by all containers,
+> >>> potentially available to attackers. This is concern raised in [5]:
+> >>>
+> >>>> You want rootfs to be a NULLFS instead of ramfs. You don't seem to want it to
+> >>>> actually _be_ a filesystem. Even with your "fix", containers could communicate
+> >>>> with each _other_ through it if it becomes accessible. If a container can get
+> >>>> access to an empty initramfs and write into it, it can ask/answer the question
+> >>>> "Are there any other containers on this machine running stux24" and then coordinate.
+> >>
+> >> I think this new OPEN_TREE_NAMESPACE is nifty, but I don't think the
+> >> path that gives it sensible behavior should be conditional like this.
+> >> Either make it *always* mount on top of nullfs (regardless of boot
+> >> options) or find some way to have it actually be the root.  I assume
+> >> the latter is challenging for some reason.
+> >>
+> >
+> > I think that's the plan. I suggested the same to Christian last week,
+> > and he was amenable to removing the option and just always doing a
+> > nullfs_rootfs mount.
+> >
+> > We think that older runtimes should still "just work" with this scheme.
+> > Out of an abundance of caution, we _might_ want a command-line option
+> > to make it go back to old way, in case we find some userland stuff that
+> > doesn't like this for some reason, but hopefully we won't even need
+> > that.
 > 
-> I think that's the plan. I suggested the same to Christian last week,
-> and he was amenable to removing the option and just always doing a
-> nullfs_rootfs mount.
+> What I mean is: even if for some reason the kernel is running in a
+> mode where the *initial* rootfs is a real fs, I think it would be nice
+> for OPEN_TREE_NAMESPACE to use nullfs.
 
-Since 2013, initramfs might be ramfs or tmpfs depending on 
-circumstances. Adding a third option for it be nullfs when there's no 
-cpio.gz extracted into it seems reasonable. (You can always mount a 
-tmpfs _over_ it if you need that later, it's writeable so a PID 1 
-launched in it has workspace.)
+The current patchset makes nullfs unconditional. As each mount
+namespaces creates a new copy of the namespace root of the namespace it
+was created from all mount namespace have nullfs as namespace root.
+So every OPEN_TREE_NAMESPACE/FSMOUNT_NAMESPACE will be mounted on top of
+nullfs as we always take the namespace root. If we have to make nullfs
+conditional then yes, we could still do that - althoug it would be ugly
+in various ways.
 
-That said, if you are changing the semantics, right now we switch_root 
-from initramfs instead of pivot_root because initramfs couldn't be 
-unmounted. With this change would pivot_root become the mechanism for 
-initramfs too? (If the cpio.gz recipient wasn't actually rootfs but was 
-an overmount the way ROOT= does it.)
-
-Aside: it would be nice if inaccessible mount points could automatically 
-be garbage collected. There's already some "lazy umount" plumbing that 
-does that when explicitly requested to, but last I checked there were 
-cases that didn't get caught. It's been a while though, might already 
-have been fixed. Presumably initramfs would always get pinned because 
-it's PID 0's / reference...
-
-Also, could you guys make CONFIG_DEVTMPFS_MOUNT work with initramfs? 
-I've posted patches for that on and off since 2017, most recent one's 
-probably 
-https://landley.net/bin/mkroot/0.8.13/linux-patches/0003-Wire-up-CONFIG_DEVTMPFS_MOUNT-to-initramfs.patch 
-(tested on a 6.17 kernel).
-
-> We think that older runtimes should still "just work" with this scheme.
-> Out of an abundance of caution, we _might_ want a command-line option
-> to make it go back to old way, in case we find some userland stuff that
-> doesn't like this for some reason, but hopefully we won't even need
-> that.
-
-I assume it will break stuff, but I also assume the systems it breaks 
-will never upgrade to a 7.x kernel because the kernel itself would 
-consume all available memory before launching PID 1.
-
-Rob
+I would love to keep nullfs unconditional because it means I can wipe a
+whole class of MNT_LOCKED nonsense from the face of the earth
+afterwards.
