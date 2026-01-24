@@ -1,131 +1,114 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-yx1-f51.google.com (mail-yx1-f51.google.com [74.125.224.51])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E1C5E21ABBB;
-	Fri, 23 Jan 2026 10:23:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1769163835; cv=none; b=j0EtrwddiQlTQOqcxIgCCYxFUPrAK6B/EPoe346laqwm92k8nEmt00lm7V4Ubidl1yzu85LDpMdcZ/RC6gBTa/7gTKlWLa4SMHv8DEPrSOK+mR1uHu04V6HdEid4AV+scQYRsjwGb/vXUibz7ye4cygdMw3Ttuf3SOItYBvwlEA=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1769163835; c=relaxed/simple;
-	bh=EHGi/yi88nJIt6UKAkgHIRx0Y1AOzHWxXOM0POlmDbs=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=stHDXiLBseEI3ehLZ++3jgAY2GVSSUQgIpTD4wIvsdXtuDVsuqW/KnelrmDY/C/VchNDs6MNYyUC4wgX36OIov5B1JVWvs+10j/e0pqj85dFngJ94L1Dx8SgQEKmgTy0csXmgxG5RdU6YrzALexqEMf56ZBrqIOc69MGEjo+50U=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=owIHmuiN; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 67BCF20FAB2
+	for <containers@lists.linux.dev>; Sat, 24 Jan 2026 10:14:31 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.224.51
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1769249672; cv=pass; b=GRO7wfm3E02W7q6gBwRKoNu4nOYdgTn3Sbx9LLFIp5yceVUppyLrjvwW5UBG2fHUKCWGJChO2B2CNISWXFtgnhsaP1GmUSmEJaJb6LbdbNdzcNP5dNr+JPYgGl8qN6uQ2U/i8tx5QTl2IHecL+STHLH7Xq8LxfOoDVpNJYwnY44=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1769249672; c=relaxed/simple;
+	bh=7MM3onG4tUxgwOKfJm5InIVjKBkXtm5OCZzzHG9w3m4=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=dHhlgKwdG76c4awXmWwUeW75SpUP/m04SsS6WLvqeX4lbccDjg7CtZHvtbhOz1vLc5NF69XOd8cYIII1BF3FZ4dtr5eC5rEmx/OZWE1fP/Fn7qnUut23+/5tZekh0FIXleGUCPsjEw4BH5LDux/eUs8W3FjYtiwjI9ttbMwulEU=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=lVmbcPYi; arc=pass smtp.client-ip=74.125.224.51
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="owIHmuiN"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 34EB9C4CEF1;
-	Fri, 23 Jan 2026 10:23:49 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1769163834;
-	bh=EHGi/yi88nJIt6UKAkgHIRx0Y1AOzHWxXOM0POlmDbs=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=owIHmuiNnJn6LHl8oiUqHygfDSa6bV+gCvGGfscFbDPXXJnamr7kc99F49u7dqnTB
-	 mz2ieEOLcIEm+2lb+SWg5ZY9WmpZ2zvFsmpfwEj09P+14gdzhL7pSaB/XiSY2uhUHr
-	 zeAxux5Rm39+ruHliYMWB0Jb0qNo88k/0TtiD3kzIKdcYWKq/V9/KeDM4UszDznIdd
-	 w1Zcaq/AacA3FEpb+lEVD0Fj67fFb5BvGIqlLo9C4lWNHQT4NqaK3Qa2WEM3ObijYp
-	 WAxdIlthpVFMvzMYM02H+m0Y4+seYt3AfjKGFfo7Vakx/QhhAlUHvxArCBfABl1omB
-	 9gbhSP4tNawFg==
-Date: Fri, 23 Jan 2026 11:23:46 +0100
-From: Christian Brauner <brauner@kernel.org>
-To: Andy Lutomirski <luto@amacapital.net>
-Cc: Jeff Layton <jlayton@kernel.org>, Askar Safin <safinaskar@gmail.com>, 
-	amir73il@gmail.com, cyphar@cyphar.com, jack@suse.cz, josef@toxicpanda.com, 
-	linux-fsdevel@vger.kernel.org, viro@zeniv.linux.org.uk, 
-	Lennart Poettering <mzxreary@0pointer.de>, David Howells <dhowells@redhat.com>, 
-	Yunkai Zhang <zhang.yunkai@zte.com.cn>, cgel.zte@gmail.com, Menglong Dong <menglong8.dong@gmail.com>, 
-	linux-kernel@vger.kernel.org, initramfs@vger.kernel.org, containers@lists.linux.dev, 
-	linux-api@vger.kernel.org, news@phoronix.com, lwn@lwn.net, Jonathan Corbet <corbet@lwn.net>, 
-	Rob Landley <rob@landley.net>, emily@redcoat.dev, Christoph Hellwig <hch@lst.de>
-Subject: Re: [PATCH 0/2] mount: add OPEN_TREE_NAMESPACE
-Message-ID: <20260123-autofrei-einspannen-7e65a6100e6e@brauner>
-References: <20251229-work-empty-namespace-v1-0-bfb24c7b061f@kernel.org>
- <20260119171101.3215697-1-safinaskar@gmail.com>
- <CALCETrWs59ss3ZMdTH54p3=E_jiYXq2SWV1fmm+HSvZ1pnBiJw@mail.gmail.com>
- <acb859e1684122e1a73f30115f2389d2c9897251.camel@kernel.org>
- <CALCETrUZC+sdfpVqqjeC_pqmd+-W84Rq7ron8Vx9MaSSohhJ2g@mail.gmail.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="lVmbcPYi"
+Received: by mail-yx1-f51.google.com with SMTP id 956f58d0204a3-6495d592c45so1619612d50.2
+        for <containers@lists.linux.dev>; Sat, 24 Jan 2026 02:14:31 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1769249670; cv=none;
+        d=google.com; s=arc-20240605;
+        b=FUNxIb4WBj9usnP01eKJ1UkQDNix2+DcToMmP6FC6od3um82j66ahyJ9e3B6K/OuKV
+         e0ljQNkg95VfhkQDpQq/0aHgU4e5OPIpLTCVDXhzS2fNU9nbbFqU7LiEX966a3irMtIe
+         qQuTs77oTq2SaNcZ5syzPFRH3dcIagY1ZAgbiTmMAiznJFcv3R2gx3fMWy93QWW+abRZ
+         FmBbszxjSmZ15UTCDw59cwp51ttx1rLx8MGTmjULlLY451EXzSxCqgAhAdMufcu95Sdm
+         BmUZ13dL/jP7uob5nsu1rQ0b082GpwVJ6iNeqY6GQi0vYQUpbxctm7eXTy+YMwXdmXIY
+         bQcQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=7MM3onG4tUxgwOKfJm5InIVjKBkXtm5OCZzzHG9w3m4=;
+        fh=eyNKQDV2lOs5Cx7t6H1A8Tyjfj2nhRsKcySoUwBopiw=;
+        b=K+zVlnEVPowJz6suEQt0GhImMpheraUau4qQ0XxKsdR99r2L+snCxuHqtGA3YOPlQL
+         4I8/wbsgULwHFthQTb68YdvWzGhRU+TuHVp+Au3K/A33lP4TuFj0eXrX0GANlf4GvmXo
+         lCNhTkNLh8dMfX1n2ArTG9lfH76Y/a2hi4Y37MOQUTiPU814q07kkiqi2l+VZVD34jE9
+         j1WfUAea7FaWOXJFOwSp8kqWId6hNWIBL/4Kidme0HTUpWTjomxCN5WC5ThHaE0XtJqg
+         iUf3HiF6hYpZrxfZXeFSMJ62OViKigdDgHQmohKQWKdoQvkKYKFUb6WSshBnjqgt64y4
+         qSGw==;
+        darn=lists.linux.dev
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1769249670; x=1769854470; darn=lists.linux.dev;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=7MM3onG4tUxgwOKfJm5InIVjKBkXtm5OCZzzHG9w3m4=;
+        b=lVmbcPYi6mbeH5wKZ3XYljptcDUQ0m2Y/W/KD0PpuOWa+Nwnv2qdWebhtlx1Jjm8p8
+         D7OT+gAIINRhjxYLXkGuE9y6svBdnsEfQdSAtj41aL+tg0bYOxyS7lYCL3jopifAXhpI
+         baVNDu6rAZxHVg9ZK5aakGAO9vJOxbItO5QJYWKDOBpnkEcAtpkLUKOknYGLc5CQEvdH
+         UzBZN4OMswRwlomQrxzgD4n2SoKfGgd6KiWDKMiXtTEnyTLMGCnaXfFHNOO59sL/FaWm
+         rGD06VxnTaN8x6d9XIJ2vdthVDAHawYTyujoF9sIVNy8GJ+w6Of/yUxTXWtAaotRJkMc
+         RTsA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1769249670; x=1769854470;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=7MM3onG4tUxgwOKfJm5InIVjKBkXtm5OCZzzHG9w3m4=;
+        b=gWwP//9vhV+rhLLZu9jnahZ8T/ZNQbqNnTkgxcQMZ+F7yVREggKFfKhMiZVgY7nmVz
+         86rVUDn3Iqepxrnsrh/okpL6Y2xOqS0otdUaSilgQsavkfeQEBLXt360lhvLHWaS2b24
+         gdfaln0+BrdzJgIR6VkF1gBwo+d5L26dSWJu4QqodrVZD0tdhkDAwAzhpyvl1kFjIO6U
+         rDohjX6wyQhymojSL7pnihFqVNY5T1mnLKYP71WWt1wv+ZtTn8Ia8GkOIJ3td12vUvDT
+         JXOm7NyV7Ga34/+3Z9qNdz14DdURFQhOTHr2Nmt5gV4KtqFEGiavhspVB2KIFv9p0Ztg
+         XhfQ==
+X-Forwarded-Encrypted: i=1; AJvYcCV84Li9yWPL4c2h9Vy8lLH8EP7eQdP7T9358tvkvOWovGvDG8oAEqL/sMmqNwAxr6zJN9+VdLYtoUa7@lists.linux.dev
+X-Gm-Message-State: AOJu0YyUQuga3T0stPOqUnpGNv1PzH2XsaiZh5ckIui4isjiqHptRyfY
+	DwC/pXtpwhewDLLUJWxXQZQkTDD9f/4DFJs3ppOLpGK3kpsNqfBnG6RqEB8v/eSvHxJrT+IEyOb
+	pYp47v2LsXNoq3m8yZgJxoEns19tcRdQ=
+X-Gm-Gg: AZuq6aL0eOJdXYf770RpJR58ses3MiMhkUniVNZ78LeijV5df07ll/1A3JghlkHKaw2
+	cAbdrcBV4wMkBG+3iMmmIKDekpwNpQP3PLw/y0eXdLgeEjjqx/PUWgZD3yZsfEAmGqhmEscN0sJ
+	F92l2SPLzmCQCROKXMxIHYhY3ogdC3TrTh6SwH6e3zImUF/xA74vZGVj9OCyIPxUg6fbJz+lFx1
+	UosG1sYnJsU9+nSIVb9muIEt+J4jSRVzQFUfGSFyctb8hQErhYiPouRDp+m1y30Fq5xGgA=
+X-Received: by 2002:a53:ac82:0:b0:649:3970:fa88 with SMTP id
+ 956f58d0204a3-6495bece06cmr4745338d50.37.1769249670198; Sat, 24 Jan 2026
+ 02:14:30 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <CALCETrUZC+sdfpVqqjeC_pqmd+-W84Rq7ron8Vx9MaSSohhJ2g@mail.gmail.com>
+References: <20251229-work-empty-namespace-v1-0-bfb24c7b061f@kernel.org>
+ <20260119171101.3215697-1-safinaskar@gmail.com> <CALCETrWs59ss3ZMdTH54p3=E_jiYXq2SWV1fmm+HSvZ1pnBiJw@mail.gmail.com>
+ <acb859e1684122e1a73f30115f2389d2c9897251.camel@kernel.org>
+ <CALCETrUZC+sdfpVqqjeC_pqmd+-W84Rq7ron8Vx9MaSSohhJ2g@mail.gmail.com> <20260123-autofrei-einspannen-7e65a6100e6e@brauner>
+In-Reply-To: <20260123-autofrei-einspannen-7e65a6100e6e@brauner>
+From: Askar Safin <safinaskar@gmail.com>
+Date: Sat, 24 Jan 2026 13:13:53 +0300
+X-Gm-Features: AZwV_QgI2djWv53heJq45UjjcmWS5t43scQ8_DAQPG3PfhZnXr_aF6xvpALbmMM
+Message-ID: <CAPnZJGA7jbQAAV09Lr+NKNwRvKmegZFC=LzOZybWG7skF4rpQw@mail.gmail.com>
+Subject: Re: [PATCH 0/2] mount: add OPEN_TREE_NAMESPACE
+To: Christian Brauner <brauner@kernel.org>
+Cc: Andy Lutomirski <luto@amacapital.net>, Jeff Layton <jlayton@kernel.org>, amir73il@gmail.com, 
+	cyphar@cyphar.com, jack@suse.cz, josef@toxicpanda.com, 
+	linux-fsdevel@vger.kernel.org, viro@zeniv.linux.org.uk, 
+	Lennart Poettering <mzxreary@0pointer.de>, David Howells <dhowells@redhat.com>, 
+	Yunkai Zhang <zhang.yunkai@zte.com.cn>, cgel.zte@gmail.com, 
+	Menglong Dong <menglong8.dong@gmail.com>, linux-kernel@vger.kernel.org, 
+	initramfs@vger.kernel.org, containers@lists.linux.dev, 
+	linux-api@vger.kernel.org, news@phoronix.com, lwn@lwn.net, 
+	Jonathan Corbet <corbet@lwn.net>, Rob Landley <rob@landley.net>, Christoph Hellwig <hch@lst.de>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Wed, Jan 21, 2026 at 10:00:19AM -0800, Andy Lutomirski wrote:
-> > On Jan 19, 2026, at 2:21 PM, Jeff Layton <jlayton@kernel.org> wrote:
-> >
-> > ﻿On Mon, 2026-01-19 at 11:05 -0800, Andy Lutomirski wrote:
-> >>> On Mon, Jan 19, 2026 at 10:56 AM Askar Safin <safinaskar@gmail.com> wrote:
-> >>>
-> >>> Christian Brauner <brauner@kernel.org>:
-> >>>> Extend open_tree() with a new OPEN_TREE_NAMESPACE flag. Similar to
-> >>>> OPEN_TREE_CLONE only the indicated mount tree is copied. Instead of
-> >>>> returning a file descriptor referring to that mount tree
-> >>>> OPEN_TREE_NAMESPACE will cause open_tree() to return a file descriptor
-> >>>> to a new mount namespace. In that new mount namespace the copied mount
-> >>>> tree has been mounted on top of a copy of the real rootfs.
-> >>>
-> >>> I want to point at security benefits of this.
-> >>>
-> >>> [[ TL;DR: [1] and [2] are very big changes to how mount namespaces work.
-> >>> I like them, and I think they should get wider exposure. ]]
-> >>>
-> >>> If this patchset ([1]) and [2] both land (they are both in "next" now and
-> >>> likely will be submitted to mainline soon) and "nullfs_rootfs" is passed on
-> >>> command line, then mount namespace created by open_tree(OPEN_TREE_NAMESPACE) will
-> >>> usually contain exactly 2 mounts: nullfs and whatever was passed to
-> >>> open_tree(OPEN_TREE_NAMESPACE).
-> >>>
-> >>> This means that even if attacker somehow is able to unmount its root and
-> >>> get access to underlying mounts, then the only underlying thing they will
-> >>> get is nullfs.
-> >>>
-> >>> Also this means that other mounts are not only hidden in new namespace, they
-> >>> are fully absent. This prevents attacks discussed here: [3], [4].
-> >>>
-> >>> Also this means that (assuming we have both [1] and [2] and "nullfs_rootfs"
-> >>> is passed), there is no anymore hidden writable mount shared by all containers,
-> >>> potentially available to attackers. This is concern raised in [5]:
-> >>>
-> >>>> You want rootfs to be a NULLFS instead of ramfs. You don't seem to want it to
-> >>>> actually _be_ a filesystem. Even with your "fix", containers could communicate
-> >>>> with each _other_ through it if it becomes accessible. If a container can get
-> >>>> access to an empty initramfs and write into it, it can ask/answer the question
-> >>>> "Are there any other containers on this machine running stux24" and then coordinate.
-> >>
-> >> I think this new OPEN_TREE_NAMESPACE is nifty, but I don't think the
-> >> path that gives it sensible behavior should be conditional like this.
-> >> Either make it *always* mount on top of nullfs (regardless of boot
-> >> options) or find some way to have it actually be the root.  I assume
-> >> the latter is challenging for some reason.
-> >>
-> >
-> > I think that's the plan. I suggested the same to Christian last week,
-> > and he was amenable to removing the option and just always doing a
-> > nullfs_rootfs mount.
-> >
-> > We think that older runtimes should still "just work" with this scheme.
-> > Out of an abundance of caution, we _might_ want a command-line option
-> > to make it go back to old way, in case we find some userland stuff that
-> > doesn't like this for some reason, but hopefully we won't even need
-> > that.
-> 
-> What I mean is: even if for some reason the kernel is running in a
-> mode where the *initial* rootfs is a real fs, I think it would be nice
-> for OPEN_TREE_NAMESPACE to use nullfs.
+On Fri, Jan 23, 2026 at 1:23=E2=80=AFPM Christian Brauner <brauner@kernel.o=
+rg> wrote:
+> The current patchset makes nullfs unconditional. As each mount
 
-The current patchset makes nullfs unconditional. As each mount
-namespaces creates a new copy of the namespace root of the namespace it
-was created from all mount namespace have nullfs as namespace root.
-So every OPEN_TREE_NAMESPACE/FSMOUNT_NAMESPACE will be mounted on top of
-nullfs as we always take the namespace root. If we have to make nullfs
-conditional then yes, we could still do that - althoug it would be ugly
-in various ways.
+Oops, I missed that "fs: use nullfs unconditionally as the real
+rootfs" is present in vfs.all.
 
-I would love to keep nullfs unconditional because it means I can wipe a
-whole class of MNT_LOCKED nonsense from the face of the earth
-afterwards.
+--=20
+Askar Safin
