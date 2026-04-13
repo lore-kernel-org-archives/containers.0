@@ -1,31 +1,31 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BF11C3C2785;
-	Mon, 13 Apr 2026 11:22:30 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1746D3AF667;
+	Mon, 13 Apr 2026 11:22:32 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776079350; cv=none; b=aF1YVd+D3G1RjzbQKRudZaPhsI60QIUxpZ0wcyRtBjXM6eYM3ReTlX4jE6tpzhZ6T0Ebn4jHhQbLK+P2IGvr2vLqb84xw9QHAGAC6xwqcUnHRQVrjuYkLIvr5jhRdGxicrxqDsCPReNuYGYfQTsB9XZ24Rqecijou/KoQWHO7So=
+	t=1776079353; cv=none; b=IVaSoVu403HObIDtz9g4ohgK39/GNSClVad5RPXCcPjXeIRCRua3I73Ss5xKOIK0qeOjLUuqFxSTptd57iWWrcAgx7QTUVqbeAGlQZKMGchk+DjWTQWvfXBKEdAreBgr2qATcvRxYQGaC3zUqEnFeCgxXBoCyY5d8UQi3yRlxtQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776079350; c=relaxed/simple;
-	bh=+OQ5CG/U3jB5oYEUYPwcxgV6vHr16i5/CVGIz88bW0I=;
+	s=arc-20240116; t=1776079353; c=relaxed/simple;
+	bh=FQCr7qSm4xiBoSTBWH1BWq5L0Ay30j0R812NdJ+wUOo=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=pulN1dVsbVe9t+pzob0KGJupisiXpQPFhwEPlSV3MU5NymPeThKaL4WqwYp7UtvLTRC4+nQ7VHdbjPLpv9twqnF7RlVkSiktpHFgxQevx4LnE3rktu6V34iqpBq7Q20/Tzn2Zs6z7wXjBUq3GxUsp4tBf+4Vqhfjj/6Km5+2EAY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=fMnnVUVd; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=s95zweFacok+PRi1tGRqcFL5QMqbkZjzeibq0NE0bU2bpTER5PjTScwtL9VZEAui+4jARAya6lqC8iGNdwLjkzCDKjslXrBoSzXaQgdjuaU1moyy3RcPitBr/9jG+dP3sSPSK7Lm65eMNAGZrxhBQNMVxx2SRT+7KF5Bxozs7LY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=LUlf+U5a; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="fMnnVUVd"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A3AFDC19421;
-	Mon, 13 Apr 2026 11:22:28 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="LUlf+U5a"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id E68BFC19421;
+	Mon, 13 Apr 2026 11:22:30 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1776079350;
-	bh=+OQ5CG/U3jB5oYEUYPwcxgV6vHr16i5/CVGIz88bW0I=;
+	s=k20201202; t=1776079352;
+	bh=FQCr7qSm4xiBoSTBWH1BWq5L0Ay30j0R812NdJ+wUOo=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=fMnnVUVdby4vG1pbUjY1TCUZh5/woaFbZWiJn/w0ni7QQ+CfFex3wDZr/qg0uimor
-	 5t4v4wHJJJPiMBkyIpJ/zQfc6DcDXSnwEenNwqZe58iLUrT5MI+Ts1vN2XkvoUxI/f
-	 8wCieQtzfOaa96hMTGKSbaEEdNNHUXV/G2Ps3Uey2ji3DEiXwjFtFDRyuRGxaf4eAe
-	 xRfBBx9zh2l1rUCCKSyJ/EtN7kdb1plymlnFftaqa1UkrQxxf7aPRLR3Q5ei/Z1Upy
-	 DqdZEd9iS3k3wPBpP27YwgRv7hUPQBT78s2/mSOfqed91jvnWUcxFrSxwKQ6ufNfzK
-	 k4awtLHvzB3SQ==
+	b=LUlf+U5aaLSmGeHO6JW2lnpMimJXxFosndPsDyVSddbVMfaEMCtX5PmW2NwFmveiM
+	 EOKLr72aSD30kD99QMxV2JT9bMZ2uW6ppBOlXPuSJWJCSO1FmX5ScbhMhHSbolaEM9
+	 rOVmuMTKWGaLjUkFhN+hPlIk9745WDu2RTPoItxxj7ySY7DJWHMRQfsf6bcPtZ9Q7d
+	 KaCwP9sE3fkWOPq4pfJtbfBBPWJnkVvw3xQDjUObK6BpQnG3bmdOOmM9+dKOL8zQo5
+	 oWeBbCTIsf7YAghYOhuVVigN7VSs0ruAfJyNQSeTJn5KdAFkNYcCgBiGYqwTsYJRoP
+	 p9a/32MzcsndQ==
 From: Alexey Gladkov <legion@kernel.org>
 To: Christian Brauner <brauner@kernel.org>,
 	Dan Klishch <danilklishch@gmail.com>
@@ -35,9 +35,9 @@ Cc: Al Viro <viro@zeniv.linux.org.uk>,
 	containers@lists.linux.dev,
 	linux-fsdevel@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH v9 1/5] namespace: record fully visible mounts in list
-Date: Mon, 13 Apr 2026 13:19:40 +0200
-Message-ID: <684859a8e0ac929cb89c1fbe16ce15b30c70eb1f.1776079055.git.legion@kernel.org>
+Subject: [PATCH v9 2/5] proc: subset=pid: Show /proc/self/net only for CAP_NET_ADMIN
+Date: Mon, 13 Apr 2026 13:19:41 +0200
+Message-ID: <fe88a8c3258de111c1d72d4aa28acb508f5b45fb.1776079055.git.legion@kernel.org>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <cover.1776079055.git.legion@kernel.org>
 References: <cover.1770979341.git.legion@kernel.org> <cover.1776079055.git.legion@kernel.org>
@@ -49,100 +49,86 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-From: Christian Brauner <brauner@kernel.org>
+Cache the mounters credentials and allow access to the net directories
+contingent of the permissions of the mounter of proc.
 
-Instead of wading through all the mounts in the mount namespace rbtree
-to find fully visible procfs and sysfs mounts, be honest about them
-being special cruft and record them in a separate per-mount namespace
-list.
+Do not show /proc/self/net when proc is mounted with subset=pid option
+and the mounter does not have CAP_NET_ADMIN. To avoid inadvertently
+allowing access to /proc/<pid>/net, updating mounter credentials is not
+supported.
 
-Signed-off-by: Christian Brauner <brauner@kernel.org>
+Signed-off-by: Alexey Gladkov <legion@kernel.org>
 ---
- fs/mount.h     |  4 ++++
- fs/namespace.c | 19 +++++++++++--------
- 2 files changed, 15 insertions(+), 8 deletions(-)
+ fs/proc/proc_net.c      | 8 ++++++++
+ fs/proc/root.c          | 2 ++
+ include/linux/proc_fs.h | 1 +
+ 3 files changed, 11 insertions(+)
 
-diff --git a/fs/mount.h b/fs/mount.h
-index e0816c11a198..5df134d56d47 100644
---- a/fs/mount.h
-+++ b/fs/mount.h
-@@ -25,6 +25,7 @@ struct mnt_namespace {
- 	__u32			n_fsnotify_mask;
- 	struct fsnotify_mark_connector __rcu *n_fsnotify_marks;
- #endif
-+	struct hlist_head	mnt_visible_mounts; /* SB_I_USERNS_VISIBLE mounts */
- 	unsigned int		nr_mounts; /* # of mounts in the namespace */
- 	unsigned int		pending_mounts;
- 	refcount_t		passive; /* number references not pinning @mounts */
-@@ -90,6 +91,7 @@ struct mount {
- 	int mnt_expiry_mark;		/* true if marked for expiry */
- 	struct hlist_head mnt_pins;
- 	struct hlist_head mnt_stuck_children;
-+	struct hlist_node mnt_ns_visible; /* link in ns->mnt_visible_mounts */
- 	struct mount *overmount;	/* mounted on ->mnt_root */
- } __randomize_layout;
+diff --git a/fs/proc/proc_net.c b/fs/proc/proc_net.c
+index 52f0b75cbce2..6e0ccef0169f 100644
+--- a/fs/proc/proc_net.c
++++ b/fs/proc/proc_net.c
+@@ -23,6 +23,7 @@
+ #include <linux/uidgid.h>
+ #include <net/net_namespace.h>
+ #include <linux/seq_file.h>
++#include <linux/security.h>
  
-@@ -207,6 +209,8 @@ static inline void move_from_ns(struct mount *mnt)
- 		ns->mnt_first_node = rb_next(&mnt->mnt_node);
- 	rb_erase(&mnt->mnt_node, &ns->mounts);
- 	RB_CLEAR_NODE(&mnt->mnt_node);
-+	if (!hlist_unhashed(&mnt->mnt_ns_visible))
-+		hlist_del_init(&mnt->mnt_ns_visible);
- }
+ #include "internal.h"
  
- bool has_locked_children(struct mount *mnt, struct dentry *dentry);
-diff --git a/fs/namespace.c b/fs/namespace.c
-index 854f4fc66469..539b74403072 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -321,6 +321,7 @@ static struct mount *alloc_vfsmnt(const char *name)
- 		INIT_HLIST_NODE(&mnt->mnt_slave);
- 		INIT_HLIST_NODE(&mnt->mnt_mp_list);
- 		INIT_HLIST_HEAD(&mnt->mnt_stuck_children);
-+		INIT_HLIST_NODE(&mnt->mnt_ns_visible);
- 		RB_CLEAR_NODE(&mnt->mnt_node);
- 		mnt->mnt.mnt_idmap = &nop_mnt_idmap;
+@@ -270,6 +271,7 @@ static struct net *get_proc_task_net(struct inode *dir)
+ 	struct task_struct *task;
+ 	struct nsproxy *ns;
+ 	struct net *net = NULL;
++	struct proc_fs_info *fs_info = proc_sb_info(dir->i_sb);
+ 
+ 	rcu_read_lock();
+ 	task = pid_task(proc_pid(dir), PIDTYPE_PID);
+@@ -282,6 +284,12 @@ static struct net *get_proc_task_net(struct inode *dir)
  	}
-@@ -1098,6 +1099,10 @@ static void mnt_add_to_ns(struct mnt_namespace *ns, struct mount *mnt)
- 	rb_link_node(&mnt->mnt_node, parent, link);
- 	rb_insert_color(&mnt->mnt_node, &ns->mounts);
+ 	rcu_read_unlock();
  
-+	if ((mnt->mnt.mnt_sb->s_iflags & SB_I_USERNS_VISIBLE) &&
-+	    mnt->mnt.mnt_root == mnt->mnt.mnt_sb->s_root)
-+		hlist_add_head(&mnt->mnt_ns_visible, &ns->mnt_visible_mounts);
++	if (net && (fs_info->pidonly == PROC_PIDONLY_ON) &&
++	    security_capable(fs_info->mounter_cred, net->user_ns, CAP_NET_ADMIN, CAP_OPT_NONE) < 0) {
++		put_net(net);
++		net = NULL;
++	}
 +
- 	mnt_notify_add(mnt);
+ 	return net;
  }
  
-@@ -6310,22 +6315,20 @@ static bool mnt_already_visible(struct mnt_namespace *ns,
- 				int *new_mnt_flags)
- {
- 	int new_flags = *new_mnt_flags;
--	struct mount *mnt, *n;
-+	struct mount *mnt;
-+
-+	/* Don't acquire namespace semaphore without a good reason. */
-+	if (hlist_empty(&ns->mnt_visible_mounts))
-+		return false;
+diff --git a/fs/proc/root.c b/fs/proc/root.c
+index 0f9100559471..6d18f9ee0375 100644
+--- a/fs/proc/root.c
++++ b/fs/proc/root.c
+@@ -254,6 +254,7 @@ static int proc_fill_super(struct super_block *s, struct fs_context *fc)
+ 		return -ENOMEM;
  
- 	guard(namespace_shared)();
--	rbtree_postorder_for_each_entry_safe(mnt, n, &ns->mounts, mnt_node) {
-+	hlist_for_each_entry(mnt, &ns->mnt_visible_mounts, mnt_ns_visible) {
- 		struct mount *child;
- 		int mnt_flags;
+ 	fs_info->pid_ns = get_pid_ns(ctx->pid_ns);
++	fs_info->mounter_cred = get_cred(fc->cred);
+ 	proc_apply_options(fs_info, fc, current_user_ns());
  
- 		if (mnt->mnt.mnt_sb->s_type != sb->s_type)
- 			continue;
- 
--		/* This mount is not fully visible if it's root directory
--		 * is not the root directory of the filesystem.
--		 */
--		if (mnt->mnt.mnt_root != mnt->mnt.mnt_sb->s_root)
--			continue;
--
- 		/* A local view of the mount flags */
- 		mnt_flags = mnt->mnt.mnt_flags;
- 
+ 	/* User space would break if executables or devices appear on proc */
+@@ -350,6 +351,7 @@ static void proc_kill_sb(struct super_block *sb)
+ 	kill_anon_super(sb);
+ 	if (fs_info) {
+ 		put_pid_ns(fs_info->pid_ns);
++		put_cred(fs_info->mounter_cred);
+ 		kfree_rcu(fs_info, rcu);
+ 	}
+ }
+diff --git a/include/linux/proc_fs.h b/include/linux/proc_fs.h
+index 19d1c5e5f335..ec123c277d49 100644
+--- a/include/linux/proc_fs.h
++++ b/include/linux/proc_fs.h
+@@ -67,6 +67,7 @@ enum proc_pidonly {
+ struct proc_fs_info {
+ 	struct pid_namespace *pid_ns;
+ 	kgid_t pid_gid;
++	const struct cred *mounter_cred;
+ 	enum proc_hidepid hide_pid;
+ 	enum proc_pidonly pidonly;
+ 	struct rcu_head rcu;
 -- 
 2.53.0
 
