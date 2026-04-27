@@ -1,107 +1,99 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6250439B4AE;
-	Mon, 27 Apr 2026 08:27:12 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8B49034F25C;
+	Mon, 27 Apr 2026 15:54:48 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777278432; cv=none; b=mBVJXc4raQ7kk36xX0XU1Z3CvJSxjW0A9inl4M3IbyaFiq5PeXn4CyGlSg+5WoBPGJHSIj1KRbg7yWEqUB5FKtnzeQwnugOSKgegWF5Hg6rxOBId4obymoUXa5xDOwP74LGxDauF5Bq6NzS9MHUAaEtp/sjqz1iNSZRyGQMrtrA=
+	t=1777305288; cv=none; b=IjJORTjNnzTOm2Um/BbZtYZC5ueHmyrPcGgb2dQgnMer469jAGbGPoxM4fzR0Xnrbr9TsiGqeu5kfO4SYgxFrvdURV1Df6vSyo5qzcxypYZPE6QEOx/kRcm9havoh7BGu5tmYjB2lNiB/ng9TlO3QSKMfq76iByK5VMv6AAT6tM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777278432; c=relaxed/simple;
-	bh=4CFdS8ty6FAiD669kpwSBvY0yy0/IHHFrNW6KvtXaZk=;
+	s=arc-20240116; t=1777305288; c=relaxed/simple;
+	bh=WqCJFZuy4AXneswmV0Hbd45GezhxOXNMFqcmZpKNlww=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=bzPaEikJFxnrFycpre+rfJxdRyiH0Jw/KfgRdzRfmuyWF1rPzO9zm36zLgSif9eIfZAES6ohCAxZ1ACc2PgVq1d+YNoR6KJOBCq1SnsNpmAxyqZ9RDrRr6oheoH4XngfcNg2FM78fQ9NMfMjbxurADwdXELzYi0/ZphrbWIucQU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=RLA16NtG; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version:Content-Type; b=dGRv4okzf9zIU2D7ntyvwxI8gpPzslxjFXE5IlhbWf10zVex6eegdsxNh187H363dE1ndJH1SHFvFy7M9wAYCwP8mzjrkeRTwA2XhZFAlYVsRNiyuhT2UY5jwSnxqeqxOB/gnpb0pea1QNedMAIU3mEu3tG/0k+iupBfkuzeu9Q=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=XAMSLSEd; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="RLA16NtG"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id F1E2FC2BCB4;
-	Mon, 27 Apr 2026 08:27:09 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="XAMSLSEd"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C9670C2BCB7;
+	Mon, 27 Apr 2026 15:54:45 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1777278432;
-	bh=4CFdS8ty6FAiD669kpwSBvY0yy0/IHHFrNW6KvtXaZk=;
+	s=k20201202; t=1777305288;
+	bh=WqCJFZuy4AXneswmV0Hbd45GezhxOXNMFqcmZpKNlww=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=RLA16NtGuLm1ltlMga1iRjoha4q5BNJfIaWMJwP8AOMKp34YDBnQ6BQOqtLCcArA/
-	 1/GU3l3std6L6yDfzljxh99B0KXLMimH6YarSxU7zRJ5YsWv5ZCm/boz8OddSTQdi6
-	 oDPdbW6y5gjArpEBY/WusGrV8XS1F7CLRi7r/PF8BvxA8eMfyJRNenQMhLYGc36YVz
-	 W6yGZsxNpgPJpcA+DVx3uueXf9aylOK55oMjun3swDkjO2QJymYF/x/C7OXGgOlL4F
-	 /Gq+NzLi+6I/Xmjo6AdgS+TYNZYRjJYy5FG2T6lq6S85Pw0NIPyRKFFLxSw5P8QdRn
-	 /7F6OAAdhgXLg==
-From: Alexey Gladkov <legion@kernel.org>
-To: Christian Brauner <brauner@kernel.org>,
-	Dan Klishch <danilklishch@gmail.com>
-Cc: Al Viro <viro@zeniv.linux.org.uk>,
-	Aleksa Sarai <cyphar@cyphar.com>,
+	b=XAMSLSEdSv2B5svUDBpRxn94s2NzaTYCN8/QGTADhjrqu6cnG6hmOXhdCdgCFiLSK
+	 lFbjeGbMYnhZOdEyTLFvid+IWa2KAVwY1q9GaBfI130ZRD4fbMEhnIU9hUcxW1n7yr
+	 AycF/mKFaQ/PkG+ROb0dMwD+e8egFyZdSbusMEDPjfiTqpw9qhqslZ1EI3nEQiPrOK
+	 blSYFqaklR1mWjSR101RQO5JXJkr38GyyBt9ij+qwPyWe2uiWat00Q2Xf3lNy6JiTc
+	 zlY43KtMxb5gxEhh29JLq6YL+pwakXstoP0Q297wwh9PVDF1aqH6rP4Dk6Cv07b+Kc
+	 GEHiK4Tfp0jOA==
+From: Christian Brauner <brauner@kernel.org>
+To: Dan Klishch <danilklishch@gmail.com>,
+	Alexey Gladkov <legion@kernel.org>,
+	Aleksa Sarai <cyphar@cyphar.com>
+Cc: Christian Brauner <brauner@kernel.org>,
+	Al Viro <viro@zeniv.linux.org.uk>,
 	"Eric W . Biederman" <ebiederm@xmission.com>,
-	Kees Cook <keescook@chromium.org>,
 	containers@lists.linux.dev,
 	linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: [PATCH v10 7/7] docs: proc: add documentation about mount restrictions
-Date: Mon, 27 Apr 2026 10:26:08 +0200
-Message-ID: <e7cb804df3c1759ee17cf9df1dc4c211d63d7a5f.1777278334.git.legion@kernel.org>
-X-Mailer: git-send-email 2.54.0
+	linux-kernel@vger.kernel.org,
+	Kees Cook <kees@kernel.org>
+Subject: Re: [PATCH v10 0/7] proc: subset=pid: Relax check of mount visibility
+Date: Mon, 27 Apr 2026 17:54:15 +0200
+Message-ID: <20260427-kentern-miserabel-289e2376f3f3@brauner>
+X-Mailer: git-send-email 2.47.3
 In-Reply-To: <cover.1777278334.git.legion@kernel.org>
-References: <cover.1776079055.git.legion@kernel.org> <cover.1777278334.git.legion@kernel.org>
+References: <cover.1777278334.git.legion@kernel.org>
 Precedence: bulk
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+X-Developer-Signature: v=1; a=openpgp-sha256; l=1978; i=brauner@kernel.org; h=from:subject:message-id; bh=WqCJFZuy4AXneswmV0Hbd45GezhxOXNMFqcmZpKNlww=; b=owGbwMvMwCU28Zj0gdSKO4sYT6slMWS+bzt0Pab4StHBsB19/hm/ak6Xulre9c6e+a1CWbtsp 9A+74eXO0pZGMS4GGTFFFkc2k3C5ZbzVGw2ytSAmcPKBDKEgYtTACai9ICRYVFPfnjGjdCH35fd 4tabNqtH5nr+l2MuUUGLpn8NdjPZJMzwP1honvQMzQoB8XvmZ67G59hu6+eQUV88o8GrUf534nF vTgA=
+X-Developer-Key: i=brauner@kernel.org; a=openpgp; fpr=4880B8C9BD0E5106FC070F4F7B3C391EFEA93624
 Content-Transfer-Encoding: 8bit
 
-procfs has a number of mounting restrictions that are not documented
-anywhere.
+On Mon, 27 Apr 2026 10:26:01 +0200, Alexey Gladkov wrote:
+> When mounting procfs with the subset=pids option, all static files become
+> unavailable and only the dynamic part with information about pids is accessible.
+> 
+> In this case, there is no point in imposing additional restrictions on the
+> visibility of the entire filesystem for the mounter. Everything that can be
+> hidden in procfs is already inaccessible.
+> 
+> [...]
 
-Signed-off-by: Alexey Gladkov <legion@kernel.org>
+Thanks, I think we ended with something that looks quite decent now.
+
 ---
- Documentation/filesystems/proc.rst | 19 ++++++++++++++++++-
- 1 file changed, 18 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/filesystems/proc.rst b/Documentation/filesystems/proc.rst
-index b0c0d1b45b99..b836b725b35d 100644
---- a/Documentation/filesystems/proc.rst
-+++ b/Documentation/filesystems/proc.rst
-@@ -52,6 +52,7 @@ fixes/update part 1.1  Stefani Seibold <stefani@seibold.net>    June 9 2009
- 
-   4	Configuring procfs
-   4.1	Mount options
-+  4.2	Mount restrictions
- 
-   5	Filesystem behavior
- 
-@@ -2401,7 +2402,9 @@ prohibited by hidepid=.  If you use some daemon like identd which needs to learn
- information about processes information, just add identd to this group.
- 
- subset=pid hides all top level files and directories in the procfs that
--are not related to tasks.
-+are not related to tasks. This option cannot be changed on an existing
-+procfs instance because overmounts that existed before the change could
-+otherwise remain reachable after the top level procfs entries are hidden.
- 
- pidns= specifies a pid namespace (either as a string path to something like
- `/proc/$pid/ns/pid`, or a file descriptor when using `FSCONFIG_SET_FD`) that
-@@ -2410,6 +2413,20 @@ will use the calling process's active pid namespace. Note that the pid
- namespace of an existing procfs instance cannot be modified (attempting to do
- so will give an `-EBUSY` error).
- 
-+4.2	Mount restrictions
-+--------------------------
-+
-+If user namespaces are in use, the kernel additionally checks the instances of
-+procfs available to the mounter and will not allow procfs to be mounted if:
-+
-+  1. This mount is not fully visible unless the new procfs is going to be
-+     mounted with subset=pid option.
-+
-+     a. Its root directory is not the root directory of the filesystem.
-+     b. If any file or non-empty procfs directory is hidden by another mount.
-+
-+  2. A new mount overrides the readonly option or any option from atime family.
-+
- Chapter 5: Filesystem behavior
- ==============================
- 
--- 
-2.54.0
+Applied to the vfs-7.2.procfs branch of the vfs/vfs.git tree.
+Patches in the vfs-7.2.procfs branch should appear in linux-next soon.
 
+Please report any outstanding bugs that were missed during review in a
+new review to the original patch series allowing us to drop it.
+
+It's encouraged to provide Acked-bys and Reviewed-bys even though the
+patch has now been applied. If possible patch trailers will be updated.
+
+Note that commit hashes shown below are subject to change due to rebase,
+trailer updates or similar. If in doubt, please check the listed branch.
+
+tree:   https://git.kernel.org/pub/scm/linux/kernel/git/vfs/vfs.git
+branch: vfs-7.2.procfs
+
+[1/7] namespace: record fully visible mounts in list
+      https://git.kernel.org/vfs/vfs/c/18920cc2ade4
+[2/7] fs: move SB_I_USERNS_VISIBLE to FS_USERNS_MOUNT_RESTRICTED
+      https://git.kernel.org/vfs/vfs/c/a09358516cf2
+[3/7] sysfs: remove trivial sysfs_get_tree() wrapper
+      https://git.kernel.org/vfs/vfs/c/630dc69a9f7d
+[4/7] proc: subset=pid: Show /proc/self/net only for CAP_NET_ADMIN
+      https://git.kernel.org/vfs/vfs/c/0ff06ac76088
+[5/7] proc: prevent reconfiguring subset=pid
+      https://git.kernel.org/vfs/vfs/c/87341f4e3436
+[6/7] proc: handle subset=pid separately in userns visibility checks
+      https://git.kernel.org/vfs/vfs/c/6691ea02bddb
+[7/7] docs: proc: add documentation about mount restrictions
+      https://git.kernel.org/vfs/vfs/c/65cb11ddcfcd
