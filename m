@@ -1,31 +1,31 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9E8A239B4BB;
-	Mon, 27 Apr 2026 08:27:09 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6250439B4AE;
+	Mon, 27 Apr 2026 08:27:12 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777278429; cv=none; b=aaocYoCqEtzy5ofjYGNWF1n50B+fZdpJl96JK60frecQjgJ/0LzYNd8aoaCVefVc9SLNx/rMhymZndfHfNtrlOTS0+b2FYIpZ4zWq3xkpSRmloqnVJ8PkjTDjcbDKNS2KMN212wE9rRtcN8MS5WFofR8hVZ6xPsAUgLDXnWKgXQ=
+	t=1777278432; cv=none; b=mBVJXc4raQ7kk36xX0XU1Z3CvJSxjW0A9inl4M3IbyaFiq5PeXn4CyGlSg+5WoBPGJHSIj1KRbg7yWEqUB5FKtnzeQwnugOSKgegWF5Hg6rxOBId4obymoUXa5xDOwP74LGxDauF5Bq6NzS9MHUAaEtp/sjqz1iNSZRyGQMrtrA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777278429; c=relaxed/simple;
-	bh=5zkkuQMPyAXleKE4/+XDYuvRaItMKHwmoNXSzv0Vp1g=;
+	s=arc-20240116; t=1777278432; c=relaxed/simple;
+	bh=4CFdS8ty6FAiD669kpwSBvY0yy0/IHHFrNW6KvtXaZk=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=CzyvbKvfsvqZ3sIZceBHHTxmU7GujSi5wQCE7utSqy43AReJMzCQGYHXSNTOWIklJa+9uCDWV61ZfF9Hsm3fArj1QUSkrikGYbFE9ly9R48DxJYa2IGuWsmtiyFYsfYPqrhoJraS2iIxGx6qPGbEXNGNHvV94xcyXu4yb/Z84qM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=aNC2Iwj6; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=bzPaEikJFxnrFycpre+rfJxdRyiH0Jw/KfgRdzRfmuyWF1rPzO9zm36zLgSif9eIfZAES6ohCAxZ1ACc2PgVq1d+YNoR6KJOBCq1SnsNpmAxyqZ9RDrRr6oheoH4XngfcNg2FM78fQ9NMfMjbxurADwdXELzYi0/ZphrbWIucQU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=RLA16NtG; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="aNC2Iwj6"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8630AC19425;
-	Mon, 27 Apr 2026 08:27:07 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="RLA16NtG"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id F1E2FC2BCB4;
+	Mon, 27 Apr 2026 08:27:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1777278429;
-	bh=5zkkuQMPyAXleKE4/+XDYuvRaItMKHwmoNXSzv0Vp1g=;
+	s=k20201202; t=1777278432;
+	bh=4CFdS8ty6FAiD669kpwSBvY0yy0/IHHFrNW6KvtXaZk=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=aNC2Iwj6ezrquWrmD3ZUHBzkXuFURwGvfH47VDmPjxddXS8ABX6NolgrQjTylGpzM
-	 dM1JKb0x4emJn6V3Rm51pe3OaJpntMLAFPwrq8GlXH3oAecjOnxGy91RP2iCNjGp1v
-	 gdlDehlKzExbPT1syacj0xfhK76kyL8ZUdeMHRI6YCNHFJUSPrhBDmR4uJ3Yi8Cbyj
-	 0XsyTBypSZYh67QERJ67+3MM8jgxxmEILIMxS32DuV0KyuqRTr2ZgiReHnkmiFQ85u
-	 AKQQ/9XIfiILu7FOGbAeEt0d6d4j73Nz7x03iVsl27CjnrCBoy/XJYkSBK2YdcMjtw
-	 +J6wb4+UXlcxg==
+	b=RLA16NtGuLm1ltlMga1iRjoha4q5BNJfIaWMJwP8AOMKp34YDBnQ6BQOqtLCcArA/
+	 1/GU3l3std6L6yDfzljxh99B0KXLMimH6YarSxU7zRJ5YsWv5ZCm/boz8OddSTQdi6
+	 oDPdbW6y5gjArpEBY/WusGrV8XS1F7CLRi7r/PF8BvxA8eMfyJRNenQMhLYGc36YVz
+	 W6yGZsxNpgPJpcA+DVx3uueXf9aylOK55oMjun3swDkjO2QJymYF/x/C7OXGgOlL4F
+	 /Gq+NzLi+6I/Xmjo6AdgS+TYNZYRjJYy5FG2T6lq6S85Pw0NIPyRKFFLxSw5P8QdRn
+	 /7F6OAAdhgXLg==
 From: Alexey Gladkov <legion@kernel.org>
 To: Christian Brauner <brauner@kernel.org>,
 	Dan Klishch <danilklishch@gmail.com>
@@ -36,9 +36,9 @@ Cc: Al Viro <viro@zeniv.linux.org.uk>,
 	containers@lists.linux.dev,
 	linux-fsdevel@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH v10 6/7] proc: handle subset=pid separately in userns visibility checks
-Date: Mon, 27 Apr 2026 10:26:07 +0200
-Message-ID: <4d5e760c3d534dd2e05578d119cc408450053a98.1777278334.git.legion@kernel.org>
+Subject: [PATCH v10 7/7] docs: proc: add documentation about mount restrictions
+Date: Mon, 27 Apr 2026 10:26:08 +0200
+Message-ID: <e7cb804df3c1759ee17cf9df1dc4c211d63d7a5f.1777278334.git.legion@kernel.org>
 X-Mailer: git-send-email 2.54.0
 In-Reply-To: <cover.1777278334.git.legion@kernel.org>
 References: <cover.1776079055.git.legion@kernel.org> <cover.1777278334.git.legion@kernel.org>
@@ -50,90 +50,58 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-When procfs is mounted with subset=pid, only the dynamic process-related
-part of the filesystem remains visible. That part cannot be hidden by
-overmounts, so checking whether an existing procfs mount is fully
-visible does not make sense for this mode.
-
-At the same time, a subset=pid procfs mount must not be used as evidence
-that a later procfs mount would not reveal additional information. It
-provides a restricted view of procfs, not the full filesystem view.
-
-Mark subset=pid procfs instances as restricted variants. Ignore
-restricted variants when looking for an already-visible mount, and allow
-new restricted variants without consulting mnt_already_visible().
+procfs has a number of mounting restrictions that are not documented
+anywhere.
 
 Signed-off-by: Alexey Gladkov <legion@kernel.org>
 ---
- fs/namespace.c                 | 17 ++++++++++++++++-
- fs/proc/root.c                 |  3 +++
- include/linux/fs/super_types.h |  1 +
- 3 files changed, 20 insertions(+), 1 deletion(-)
+ Documentation/filesystems/proc.rst | 19 ++++++++++++++++++-
+ 1 file changed, 18 insertions(+), 1 deletion(-)
 
-diff --git a/fs/namespace.c b/fs/namespace.c
-index ed13416370e3..389d8654f36f 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -6323,10 +6323,18 @@ static bool mnt_already_visible(struct mnt_namespace *ns,
+diff --git a/Documentation/filesystems/proc.rst b/Documentation/filesystems/proc.rst
+index b0c0d1b45b99..b836b725b35d 100644
+--- a/Documentation/filesystems/proc.rst
++++ b/Documentation/filesystems/proc.rst
+@@ -52,6 +52,7 @@ fixes/update part 1.1  Stefani Seibold <stefani@seibold.net>    June 9 2009
  
- 	guard(namespace_shared)();
- 	hlist_for_each_entry(mnt, &ns->mnt_visible_mounts, mnt_ns_visible) {
-+		const struct super_block *sb_visible = mnt->mnt.mnt_sb;
- 		struct mount *child;
- 		int mnt_flags;
+   4	Configuring procfs
+   4.1	Mount options
++  4.2	Mount restrictions
  
--		if (mnt->mnt.mnt_sb->s_type != sb->s_type)
-+		if (sb_visible->s_type != sb->s_type)
-+			continue;
+   5	Filesystem behavior
+ 
+@@ -2401,7 +2402,9 @@ prohibited by hidepid=.  If you use some daemon like identd which needs to learn
+ information about processes information, just add identd to this group.
+ 
+ subset=pid hides all top level files and directories in the procfs that
+-are not related to tasks.
++are not related to tasks. This option cannot be changed on an existing
++procfs instance because overmounts that existed before the change could
++otherwise remain reachable after the top level procfs entries are hidden.
+ 
+ pidns= specifies a pid namespace (either as a string path to something like
+ `/proc/$pid/ns/pid`, or a file descriptor when using `FSCONFIG_SET_FD`) that
+@@ -2410,6 +2413,20 @@ will use the calling process's active pid namespace. Note that the pid
+ namespace of an existing procfs instance cannot be modified (attempting to do
+ so will give an `-EBUSY` error).
+ 
++4.2	Mount restrictions
++--------------------------
 +
-+		/*
-+		 * Restricted variants are not compatible with anything, even
-+		 * other restricted variants.
-+		 */
-+		if (sb_visible->s_iflags & SB_I_RESTRICTED_VARIANT)
- 			continue;
- 
- 		/* A local view of the mount flags */
-@@ -6388,6 +6396,13 @@ static bool mount_too_revealing(const struct super_block *sb, int *new_mnt_flags
- 		return true;
- 	}
- 
-+	/*
-+	 * Restricted variants don't need an already visible mount because they
-+	 * don't expose the full filesystem view.
-+	 */
-+	if (s_iflags & SB_I_RESTRICTED_VARIANT)
-+		return false;
++If user namespaces are in use, the kernel additionally checks the instances of
++procfs available to the mounter and will not allow procfs to be mounted if:
 +
- 	return !mnt_already_visible(ns, sb, new_mnt_flags);
- }
- 
-diff --git a/fs/proc/root.c b/fs/proc/root.c
-index 1bf75a4ee146..99adddfeb4a4 100644
---- a/fs/proc/root.c
-+++ b/fs/proc/root.c
-@@ -275,6 +275,9 @@ static int proc_fill_super(struct super_block *s, struct fs_context *fc)
- 	s->s_time_gran = 1;
- 	s->s_fs_info = fs_info;
- 
-+	if (fs_info->pidonly == PROC_PIDONLY_ON)
-+		s->s_iflags |= SB_I_RESTRICTED_VARIANT;
++  1. This mount is not fully visible unless the new procfs is going to be
++     mounted with subset=pid option.
 +
- 	/*
- 	 * procfs isn't actually a stacking filesystem; however, there is
- 	 * too much magic going on inside it to permit stacking things on
-diff --git a/include/linux/fs/super_types.h b/include/linux/fs/super_types.h
-index 182efbeb9520..a6cdc8f6de4e 100644
---- a/include/linux/fs/super_types.h
-+++ b/include/linux/fs/super_types.h
-@@ -326,6 +326,7 @@ struct super_block {
- #define SB_I_STABLE_WRITES 0x00000008	/* don't modify blks until WB is done */
++     a. Its root directory is not the root directory of the filesystem.
++     b. If any file or non-empty procfs directory is hidden by another mount.
++
++  2. A new mount overrides the readonly option or any option from atime family.
++
+ Chapter 5: Filesystem behavior
+ ==============================
  
- /* sb->s_iflags to limit user namespace mounts */
-+#define SB_I_RESTRICTED_VARIANT		0x00000010
- #define SB_I_IMA_UNVERIFIABLE_SIGNATURE	0x00000020
- #define SB_I_UNTRUSTED_MOUNTER		0x00000040
- #define SB_I_EVM_HMAC_UNSUPPORTED	0x00000080
 -- 
 2.54.0
 
