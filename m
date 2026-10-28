@@ -1,75 +1,100 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.218.72
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793225913;
-	b=juyn2aXzQKlvJlmjgmqNvsQQ8uesCZVfkVHKYFJzOo04bMtl6RL/5Ly9Rs6xi/PSHkTi
-	 /Oa4cLtrgJUUzrnB6Z9s8bXJWTZjhd84nAuQyTrqQo/xjQFrm0xgRBn3Gg2zecPADnnu8
-	 xMDtzKxw5fl2m6eTAOmh3mg6TmK4dNAHQnkgR/47hJSmXmY7o9YZTCQ+HcD/PREWsCvHc
-	 xmPHu7jaXf0T24tTPaLP+yZZ+vhjFTAlgs62Ygmlx5JFQTpo/odNakUKxxzdyddimnQVJ
-	 0I2jLwVILKgSec3XdogObBHNJ39Yx0x/yNjRHi+7QXlhfXBesycj4mTxbJ1LeH6Augg==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793225913;
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.167.48
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1793228190;
+	b=lYtZ4rtuRwSo1gj7HRoi3c/lZthYMZI+faKm4/X1zjmUMhyU1RZTVMyUi8EBL9jVLm+J
+	 g8nUEtTo8nrJd44TfdGgukBq3KVLDC75rlUMwph9qet/18alijwgHqWu9QsKhU4BXFzXp
+	 7rSJEGsFiC6JbpOmzh9pPa1vFmv/i3AhgiSz3vEl9+pyIHnSURKfVGznE10OFOn1UYeOM
+	 XKpeR5DtecDuQ2GprpM/hiY5zLcaM68C2EIDcCaWaGysmDQOPqBt9GP6MM+PUFrb+SAn/
+	 22O7G+vUlsQCzh/1K39TsOfMaJXvwM4OwWRcupS1NYL+JrjejbRzxQ9ZOH5SYZFVhQg==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793228190;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Received:Date:In-Reply-To:
-	 Mime-Version:References:X-Mailer:Message-ID:Subject:From:To:Cc:
-	 Content-Type;
-	bh=O3jI53IvGMjui3qM6yb8MAnyltVbJGBw/n9i8mncKWg=;
-	b=ey2h+wavvFNYPAwrFmXKipVOOtYanZ1A0wKeLeFFlq7W5Y9sTrvBK0ED9nRkGXJnTqBN
-	 zsTlPKjEaTxy9pKJ6LOdURLzVlsDxDt8e9+p2f9cr0GtrNvzo8g1nmPxDZ1oQtfhENvvG
-	 ANQTyH7w1lmxGwpkqnJ4e4jDTGa29tCI20mGLCpOz/R/tV0w4G6M2Ys4R4Ce8tITsCmVo
-	 rmLZMZP2n28JfpWzl/YzEVevndHZXeapZbu1NUQp8daHzi8c4FONkx1UEu/Ms/XmHJNNi
-	 5ri24YRxjUd34xAQaSBxZ3rQl2m2towJxlVic7elZuGJwPa6XeSg+NMpX18nRoyvWmA==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=google.com;
-	spf=pass smtp.mailfrom=flex--halg.bounces.google.com;
-	dkim=pass header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=WcmgSAJy;
-	arc=none smtp.remote-ip=209.85.218.72
-Received: from mail-ej1-f72.google.com (mail-ej1-f72.google.com [209.85.218.72])
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
+	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
+	 Message-ID:Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
+	bh=V0MpBzACJCm623um40rfrBkC0GCIrNAzwGLFIF9vVVM=;
+	b=3VVBt9AN7FHbBhTn/wS6Scm9+zq2jVA/hVGh3gWysKx9BVnqi9ZescpH1im3AImWvOIK
+	 ngc6C6pmoUEIS/1zunOTiXI6WTH+jiViRkodtIxlh5w3lJ07sk12w3BCw4dnOVVzRaZsW
+	 0QvmXfgBjqrhvlw8o/yFND9l1zCELxp6eg9MmlxrnADsCRuCGjoRDIWz+jszyFdlByhFE
+	 e+5D0Xutk+2YKXOJoVeN5jQVzgpTGEYaB7sAlqgGnNyEPSb04g4mNbJ4GzEshpvmMyfvQ
+	 RhcK+aeqMAFsGo9LbTOFZACXxmk574HyeFnY9VuZMypKhChywf4Rzk+EEjPvPlnliDQ==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=none header.from=amacapital.net;
+	spf=pass smtp.mailfrom=amacapital.net;
+	dkim=pass header.d=amacapital-net.20260707.gappssmtp.com header.i=@amacapital-net.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b=cJEtzxCQ;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.167.48
+Received: from mail-lf1-f48.google.com (mail-lf1-f48.google.com [209.85.167.48])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8191460A5BC2
-	for <containers@lists.linux.dev>; Wed, 28 Oct 2026 22:18:20 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 8191460A5BC2
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=flex--halg.bounces.google.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F221C606A31D
+	for <containers@lists.linux.dev>; Wed, 28 Oct 2026 22:56:24 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org F221C606A31D
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=amacapital.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=amacapital.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=WcmgSAJy
-Received: by mail-ej1-f72.google.com with SMTP id a640c23a62f3a-c407a17919aso136214266b.0
-        for <containers@lists.linux.dev>; Wed, 28 Oct 2026 15:18:20 -0700 (PDT)
+	dkim=pass (2048-bit key, unprotected) header.d=amacapital-net.20260707.gappssmtp.com header.i=@amacapital-net.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b=cJEtzxCQ
+Received: by mail-lf1-f48.google.com with SMTP id 2adb3069b0e04-5bcb6faf862so1634865e87.2
+        for <containers@lists.linux.dev>; Wed, 28 Oct 2026 15:56:24 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1793228183; cv=none;
+        d=google.com; s=arc-20260327;
+        b=hcBz4++M1P9KYqGU9aVT2ADcLxcsTU/OzFcwMDJXwIby4DHHAeUeMPpNuReaNhaV4r
+         Mrf2uh9+tIseIWhWewvTOCoHENdfKXjxoWh41BrByLgbKNJf+ln92HrWhEb2E0Urpl3E
+         +/TfRwcEFYsyJsLHDmVI30w8O6xm0THWo6mIZn6mx8dYn0Vh7Vw2efPMwVqtT5N78Psh
+         jmJ+Q9QrU0Wkrl0qYWIwv3mBx8wE9bYx9hOIA0BLNrXahYQ4W6RTLUdEVsr9k3YFERjk
+         ML05k1qMNIDxZJk+8w50eBqIUrxwoxou6eifwP8BTV+lsSFxlRrszerH1JFu34lNM4j9
+         tKTA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=V0MpBzACJCm623um40rfrBkC0GCIrNAzwGLFIF9vVVM=;
+        fh=FR8Ymx3zehDpqAmygw3HC46ZemEVjQdma5htCev/Wsk=;
+        b=Uow/xHDWtztJ3d5gMY6H9F+HZ4syAnkZuyQZEEoGrWWS5KHXG8Tt8SlHOuz/z839I2
+         KazbLM6C7dQuAflf4mwHOYiFPHxDOHGsSPO/eEIiQMNBl85Tw6DSNZC7wC/1Y/Hm42cX
+         X5CSXfHe6jj+IoBnquM8PGixnmh8qrv2JhVsgu8RdF/kOoePR5ItrRaGXuPoHQGbSDb6
+         jTQtoArHYdMjKzrs9wXOThhNeyTcUc/K/NrckhzhmC7usXwfydRKcftakHQ2DWdtERti
+         vP6xlY9uk6UQWzAzp6Tle1fURKFVU7HLM8bu+QKG+o4lShqKbtZZxCuid0sKbAAz+jnU
+         qUyg==;
+        darn=lists.linux.dev
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20260707; t=1793225899; x=1793830699; darn=lists.linux.dev;
-        h=content-type:cc:to:from:subject:message-id:references:mime-version
-         :in-reply-to:date:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=O3jI53IvGMjui3qM6yb8MAnyltVbJGBw/n9i8mncKWg=;
-        b=WcmgSAJy81GoyWvr8NBvSLiyqaIZZaMKXhZB01HItYkABhwnbyFwMysnEdfo9u4kBK
-         mestSZkKn3wWeh0lkGdv5pUEjp1lGlps7dshbeAKzIyu92f2g58exhbH1gp0P3Xwa8kg
-         ASDj01OO7Ov7NVoB2t3Pta0f1Q/ykV+LzCLvIJawkxHjGdUgw7DCyKInDF0aiNeXiEPz
-         u+VLyCn+BnHEauc1kf2TUFoJLpu8bY6o2vdAhTCezKcCuCp0aAJmwrd8Bzby8boyY08j
-         7UgB919jirYuIT9ILq5ACTxjDzsH8qb2E9Cvc4KmyUHc1SLL+ansWx53/u/7I6XZVa1t
-         BA0g==
+        d=amacapital-net.20260707.gappssmtp.com; s=20260707; t=1793228183; x=1793832983; darn=lists.linux.dev;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=V0MpBzACJCm623um40rfrBkC0GCIrNAzwGLFIF9vVVM=;
+        b=cJEtzxCQUKhWmoLfd869Jgb7IioClRZdvGy8QzpxVjlBra3pMBdqlqaQW7do6H8rnL
+         TADJdYmwLLoerdg1Egk8xaoLHSBPd5qBarH2lPqCvVQdFmpSiqZc9amiJCy8oAzPaQBX
+         piuadPq94LK2nZKkzCLm7/3eBEF3HE3Ax1H7MsFz+zsbSMBIibmmueyDi1+kXLyPOZBJ
+         0oueSjR0ZVhxrFGwcjvlwChViAq6pmrdUMoytJRCJS9m/PzFGC4yey7SJCnqG6xybvVq
+         U0B+MdMYHcGT0xAyi4lChmYKxQSUc6g8HPVnB5UXDhe7F8caDUmIWS+0DP9Aa5Z2ZsE8
+         H6iQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793225899; x=1793830699;
-        h=content-type:cc:to:from:subject:message-id:references:mime-version
-         :in-reply-to:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=O3jI53IvGMjui3qM6yb8MAnyltVbJGBw/n9i8mncKWg=;
-        b=clQIZnBHFH6NNiyxo3mfnBqwy8+i2OAKBsgY9HVDcOQdlx3fS1aoQTbSinBhRdlxMA
-         6jGALEBRxxSJq3p7c+jTtaRBZy/+tRjAg/ukBtJOxB0GUsRFcY5W2VnmtniHI96dgzoV
-         wFq3xV/C2wcNBza6R2BnEti4dHCt4iCYEv7gTUhvWYy5ldP9nvewynfR8aNW6FgliNbG
-         t/9XB0g72m3hwke8OPjpIOSEsEbj6ZOM7at+FQ6zPnZR8NHSxmorKi+riU9wluSQDvK2
-         Ay9LsX9JfxwXxil6Y0TcwzPdmJk9MkjvZkRe18WpkhqEG4iXawKFqZA8J6yPuOUXbCJb
-         u7ow==
-X-Forwarded-Encrypted: i=1; AKwUvBxgkCd91DxTZtOly3vWCXnk+B6gKNadrG72UUFaLrsfO4sfRCABUJu4qOsr10o7fKLMaoaHnZPWAOiw@lists.linux.dev
-X-Gm-Message-State: AFq9FYIBZcR9ajSeO1NyVrk20BCgWU6j5JMvv2Ba2918QhsO3N254ekx
-	DqZwzlPl93K+rq2RlNTKwPfLkbxH5DY/gLR70o+REPEvBVNfE77L3OXNiZrDulgLMwN/zzj6Xw=
-	=
-X-Received: from ejbch15.prod.google.com ([2002:a17:906:c2cf:b0:c2e:81fe:4522])
- (user=halg job=prod-delivery.src-stubby-dispatcher) by 2002:a17:907:980c:b0:c2e:4d39:b5a1
- with SMTP id a640c23a62f3a-c49bdf2c6efmr324604666b.17.1793225898939; Wed, 28
- Oct 2026 15:18:18 -0700 (PDT)
-Date: Wed, 28 Oct 2026 22:17:05 +0000
-In-Reply-To: <20261028221705.3915340-1-halg@google.com>
+        d=1e100.net; s=20260707; t=1793228183; x=1793832983;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=V0MpBzACJCm623um40rfrBkC0GCIrNAzwGLFIF9vVVM=;
+        b=yTZLGzaSA59AqBfcwZamvHb7YSuOVNpAGkzSFY359bUhyA6mE/h36T++6jD6wQQ2Hj
+         KMX+6Wv/kd8cXC+83IS3c9dJ3IiOm1ytRAgbwqAbXtBnTfE/6Cpa4nrbLBvRYaaUTZ6H
+         iUgEJqX7ncr8W29h1XKTaqjF3iojHDuwRftJvq4TQCkPTCXXJu3HQRLAwi1swfH0JN3Q
+         Jv05TplG832wGxUShXFB6GdSE0QmxSr/4t0+6TGJNyxJnGkKW0lb0iVMWbdoFz+llsrG
+         n+bEJStMxbiQN37fFhMS0bVrgaakqCm2tQpZJjbUrTv2HMIFqnjPnw5pyavOb24hZyqQ
+         uFnw==
+X-Forwarded-Encrypted: i=1; AKwUvBzztGHhCeDaiHNQecAGa+hVJedMKEFkAUkRnpRUmeoHlBUjSMXQl/7zlatxw+X36FLSqkd55J4L97aS@lists.linux.dev
+X-Gm-Message-State: AFq9FYJRlkYwWn4+8B7qG9QG0MlSZXn9vhN2uiqv4Z7c4kCRq0urdq7r
+	1icKAY5QeRYnXxHMucjZTKHp9RIkfkPY97akzsFp9TSKoJl4HkK/7ez0T3ftHg+cjMlSePvfHeq
+	RE23k4Tz6/wMsIBPiNfuQVgsLzlo1KY/qbD35go3I
+X-Gm-Gg: AYBFou2Dc/+9meAoJ+Y7HmZeqmqeq9E69pSvWJG383f8Y8FR6TlLcxyblb5wjOvG+HZ
+	Fgm44WQ4EnQEZg+ulvTUEeO8zqpKanIlFH5f41cJ0FiSNvcszTRN4F0kF7JkiKiEr0uojP13jgP
+	zU/DQwdBrK8JCbBoNMVjrnqMv+2xyRLCDA+xkx1QVz2Kf53KU4S9p54wkdw/Gdh5bNVzvx0iTzG
+	m9ieaEb/Xl/Kp8ds1at9doUYJ6f/bh2hNFDMyKZJ6uYD9D6gIcml7EZWp0+EAPOxkO50UGuo1DC
+	ckdDuH28ZGOPxgrZsvi0dO5M3rjstI+A7R8iPDJLhu1aRGvSfpP4wwivIDAGlxu0a72yWfzBpg7
+	8RexHRpiKZzx0ub8jvssJhlvuljJTt87ariFZPw==
+X-Received: by 2002:a05:6512:3e19:b0:5bf:c239:71ad with SMTP id
+ 2adb3069b0e04-5bfcad69127mr1282221e87.38.1793228183136; Wed, 28 Oct 2026
+ 15:56:23 -0700 (PDT)
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Post: <mailto:containers@lists.linux.dev>
@@ -78,187 +103,110 @@ List-Subscribe: <mailto:containers+subscribe@lists.linux.dev>
 List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 List-Owner: <mailto:containers+owner@lists.linux.dev>
 Precedence: list
-Mime-Version: 1.0
+MIME-Version: 1.0
 References: <20261028221705.3915340-1-halg@google.com>
-X-Mailer: git-send-email 2.56.0.313.g2479322e68-goog
-Message-ID: <20261028221705.3915340-9-halg@google.com>
-Subject: [PATCH 8/8] selftests/nsfs: add tests for NS_USER_GET_INFO ioctl
-From: "Hallgrimur H. Gunnarsson" <halg@google.com>
-To: Christian Brauner <brauner@kernel.org>, Alexander Viro <viro@zeniv.linux.org.uk>, 
+In-Reply-To: <20261028221705.3915340-1-halg@google.com>
+From: Andy Lutomirski <luto@amacapital.net>
+Date: Wed, 28 Oct 2026 15:56:11 -0700
+X-Gm-Features: AclHuK_P2NrO86m_OPGwNSCuxqmiVp7fbTt4tlVfFApQPbneLnvcqCjpUTpk6N8
+Message-ID: <CALCETrW9ygriu54gxiHFLEd5+hJminQo0r8Jwd63wR69Dj4W7w@mail.gmail.com>
+Subject: Re: [PATCH 0/8] userns: per-namespace capability bounding set and
+ opt-in netns loopback
+To: "Hallgrimur H. Gunnarsson" <halg@google.com>
+Cc: Christian Brauner <brauner@kernel.org>, Alexander Viro <viro@zeniv.linux.org.uk>, 
 	Paul Moore <paul@paul-moore.com>, Serge Hallyn <sergeh@kernel.org>, Kees Cook <kees@kernel.org>, 
 	"David S . Miller" <davem@davemloft.net>, Eric Dumazet <edumazet@google.com>, 
-	Jakub Kicinski <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>
-Cc: Jan Kara <jack@suse.cz>, James Morris <jmorris@namei.org>, Simon Horman <horms@kernel.org>, 
-	Jonathan Corbet <corbet@lwn.net>, Shuah Khan <skhan@linuxfoundation.org>, 
-	Randy Dunlap <rdunlap@infradead.org>, Jann Horn <jannh@google.com>, 
-	"=?UTF-8?q?G=C3=BCnther=20Noack?=" <gnoack@google.com>, KP Singh <kpsingh@kernel.org>, 
-	Jonathan Calmels <jcalmels@3xx0.net>, Casey Schaufler <casey@schaufler-ca.com>, 
-	linux-fsdevel@vger.kernel.org, linux-security-module@vger.kernel.org, 
-	linux-api@vger.kernel.org, containers@lists.linux.dev, netdev@vger.kernel.org, 
-	linux-doc@vger.kernel.org, linux-kselftest@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, "Hallgrimur H. Gunnarsson" <halg@google.com>
+	Jakub Kicinski <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>, Jan Kara <jack@suse.cz>, 
+	James Morris <jmorris@namei.org>, Simon Horman <horms@kernel.org>, Jonathan Corbet <corbet@lwn.net>, 
+	Shuah Khan <skhan@linuxfoundation.org>, Randy Dunlap <rdunlap@infradead.org>, 
+	Jann Horn <jannh@google.com>, =?UTF-8?Q?G=C3=BCnther_Noack?= <gnoack@google.com>, 
+	KP Singh <kpsingh@kernel.org>, Jonathan Calmels <jcalmels@3xx0.net>, 
+	Casey Schaufler <casey@schaufler-ca.com>, linux-fsdevel@vger.kernel.org, 
+	linux-security-module@vger.kernel.org, linux-api@vger.kernel.org, 
+	containers@lists.linux.dev, netdev@vger.kernel.org, linux-doc@vger.kernel.org, 
+	linux-kselftest@vger.kernel.org, linux-kernel@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Add tests for the NS_USER_GET_INFO ioctl to verify user namespace
-capability bounding set inspection and validate error paths.
+On Wed, Oct 28, 2026 at 3:18=E2=80=AFPM Hallgrimur H. Gunnarsson
+<halg@google.com> wrote:
+>
+> When an unprivileged process creates a new user namespace, it is granted
+> a full set of capabilities (CAP_FULL_SET) scoped to that namespace.
+> While these capabilities are isolated to the namespace, they allow
+> unprivileged local users to reach deep kernel subsystems (most notably
+> networking configuration and raw sockets via CAP_NET_ADMIN and
+> CAP_NET_RAW) that historically assumed a trusted caller and have
+> accounted for a large share of local privilege escalation
+> vulnerabilities.
+>
+> Many workloads and sandboxes use unprivileged user namespaces strictly
+> for basic UID/GID, mount, PID, or network isolation and never need
+> high-risk capabilities like CAP_NET_ADMIN or CAP_NET_RAW. Likewise,
+> system administrators often want a host-wide policy ceiling restricting
+> which capabilities unprivileged user namespaces may acquire, without
+> disabling unprivileged user namespaces altogether.
+>
+> Prior work by Jonathan Calmels [1] proposed addressing this via a sixth
+> per-thread capability set (cap_userns) alongside a global sysctl mask.
+> During that discussion [1, 2], feedback (e.g. from Casey Schaufler)
+> suggested that rather than adding another per-thread capability set and
+> prctl() interface, capability restrictions could be integrated directly
+> into struct user_namespace and configured via clone3(). At the same
+> time, as noted in [1], a clone3() flag alone is not sufficient for
+> administrators who need to enforce a host-wide ceiling on unprivileged
+> user namespaces without modifying every userspace callsite.
+>
+> This series combines both pieces of feedback: it embeds a capability
+> bounding set (cap_bset) directly into struct user_namespace, reusing
+> the existing task cap_bset, cap_permitted, and cap_effective sets on
+> namespace entry, and provides both a system-wide sysctl ceiling for
+> unprivileged user namespaces and a CLONE_NEWUSER_BSET flag for
+> voluntary per-namespace restriction via clone3().
 
-Signed-off-by: Hallgrimur H. Gunnarsson <halg@google.com>
----
- .../selftests/filesystems/nsfs/.gitignore     |   1 +
- .../selftests/filesystems/nsfs/Makefile       |   4 +-
- .../selftests/filesystems/nsfs/userns.c       | 120 ++++++++++++++++++
- 3 files changed, 123 insertions(+), 2 deletions(-)
- create mode 100644 tools/testing/selftests/filesystems/nsfs/userns.c
+Why should the task's cap masks affect this?  *Maybe* cap_bset makes
+sense, but I'm struggling a bit to see why cap_permitted and
+cap_effective should matter.
 
-diff --git a/tools/testing/selftests/filesystems/nsfs/.gitignore b/tools/testing/selftests/filesystems/nsfs/.gitignore
-index 92a8249006d1..b0a59f5d49fc 100644
---- a/tools/testing/selftests/filesystems/nsfs/.gitignore
-+++ b/tools/testing/selftests/filesystems/nsfs/.gitignore
-@@ -1,4 +1,5 @@
- # SPDX-License-Identifier: GPL-2.0-only
- owner
- pidns
-+userns
- iterate_mntns
-diff --git a/tools/testing/selftests/filesystems/nsfs/Makefile b/tools/testing/selftests/filesystems/nsfs/Makefile
-index 231aaa7dfd95..9408d7948621 100644
---- a/tools/testing/selftests/filesystems/nsfs/Makefile
-+++ b/tools/testing/selftests/filesystems/nsfs/Makefile
-@@ -1,6 +1,6 @@
- # SPDX-License-Identifier: GPL-2.0-only
--TEST_GEN_PROGS := owner pidns iterate_mntns
-+TEST_GEN_PROGS := owner pidns iterate_mntns userns
- 
--CFLAGS := -Wall -Werror
-+CFLAGS += -Wall -Werror $(KHDR_INCLUDES)
- 
- include ../../lib.mk
-diff --git a/tools/testing/selftests/filesystems/nsfs/userns.c b/tools/testing/selftests/filesystems/nsfs/userns.c
-new file mode 100644
-index 000000000000..70661a495afc
---- /dev/null
-+++ b/tools/testing/selftests/filesystems/nsfs/userns.c
-@@ -0,0 +1,120 @@
-+// SPDX-License-Identifier: GPL-2.0
-+#define _GNU_SOURCE
-+
-+#include <errno.h>
-+#include <fcntl.h>
-+#include <sched.h>
-+#include <sys/ioctl.h>
-+#include <sys/syscall.h>
-+#include <sys/types.h>
-+#include <sys/wait.h>
-+#include <unistd.h>
-+#include <linux/nsfs.h>
-+#include <linux/sched.h>
-+#include <linux/types.h>
-+
-+#include "../../clone3/clone3_selftests.h"
-+#include "../../kselftest_harness.h"
-+
-+TEST(user_get_info_self)
-+{
-+	struct user_ns_info info = {};
-+	int fd;
-+
-+	fd = open("/proc/self/ns/user", O_RDONLY | O_CLOEXEC);
-+	ASSERT_GE(fd, 0) {
-+		TH_LOG("Failed to open /proc/self/ns/user: %m");
-+	}
-+
-+	ASSERT_EQ(0, ioctl(fd, NS_USER_GET_INFO, &info)) {
-+		TH_LOG("ioctl(NS_USER_GET_INFO) failed on self: %m");
-+	}
-+	close(fd);
-+
-+	EXPECT_EQ(USER_NS_INFO_SIZE_VER0, info.size);
-+	EXPECT_EQ(0, info.spare);
-+	EXPECT_NE(0ULL, info.cap_bset);
-+}
-+
-+TEST(user_get_info_restricted_bset)
-+{
-+	struct __clone_args args = {
-+		.flags = CLONE_NEWUSER | CLONE_NEWUSER_BSET,
-+		.exit_signal = SIGCHLD,
-+		.cap_bset = 0,
-+	};
-+	int status;
-+	pid_t pid;
-+
-+	pid = sys_clone3(&args, sizeof(args));
-+	ASSERT_GE(pid, 0);
-+
-+	if (pid == 0) {
-+		struct user_ns_info info = {};
-+		int fd;
-+
-+		fd = open("/proc/self/ns/user", O_RDONLY | O_CLOEXEC);
-+		if (fd < 0)
-+			_exit(1);
-+
-+		if (ioctl(fd, NS_USER_GET_INFO, &info) != 0) {
-+			close(fd);
-+			_exit(2);
-+		}
-+		close(fd);
-+
-+		if (info.cap_bset != 0)
-+			_exit(3);
-+
-+		_exit(0);
-+	}
-+
-+	ASSERT_EQ(pid, waitpid(pid, &status, 0));
-+	ASSERT_TRUE(WIFEXITED(status));
-+	EXPECT_EQ(0, WEXITSTATUS(status));
-+}
-+
-+TEST(user_get_info_invalid_ns_type)
-+{
-+	struct user_ns_info info = {};
-+	int mntns_fd;
-+
-+	mntns_fd = open("/proc/self/ns/mnt", O_RDONLY | O_CLOEXEC);
-+	ASSERT_GE(mntns_fd, 0) {
-+		TH_LOG("Failed to open /proc/self/ns/mnt: %m");
-+	}
-+
-+	EXPECT_EQ(-1, ioctl(mntns_fd, NS_USER_GET_INFO, &info));
-+	EXPECT_EQ(EINVAL, errno);
-+
-+	close(mntns_fd);
-+}
-+
-+TEST(user_get_info_buffer_too_small)
-+{
-+	__u32 small_buf = 0;
-+	int fd;
-+
-+	fd = open("/proc/self/ns/user", O_RDONLY | O_CLOEXEC);
-+	ASSERT_GE(fd, 0);
-+
-+	/* Encode a buffer size smaller than USER_NS_INFO_SIZE_VER0 (4B vs 16B) */
-+	EXPECT_EQ(-1, ioctl(fd, _IOR(NSIO, 14, __u32), &small_buf));
-+
-+	close(fd);
-+}
-+
-+TEST(user_get_info_null_arg)
-+{
-+	int fd;
-+
-+	fd = open("/proc/self/ns/user", O_RDONLY | O_CLOEXEC);
-+	ASSERT_GE(fd, 0);
-+
-+	EXPECT_EQ(-1, ioctl(fd, NS_USER_GET_INFO, NULL));
-+	EXPECT_EQ(EINVAL, errno);
-+
-+	close(fd);
-+}
-+
-+TEST_HARNESS_MAIN
--- 
-2.56.0.313.g2479322e68-goog
+Also, I think that Docker in non-userns mode restricts cap_bset, and
+the purpose of that restriction is rather at odds with interpreting it
+as a restriction on newly created user namespaces for purposes of
+vulnerability mitigation.
 
+>
+> In addition, because restricting CAP_NET_ADMIN at user namespace
+> creation time prevents userspace from bringing up the loopback
+> interface in new network namespaces, the series first introduces
+> an opt-in flag to automatically enable loopback on network namespace
+> creation:
+>
+> 1. Opt-in loopback activation on netns creation (Patch 1)
+>
+>   New network namespaces start with the loopback interface (lo) DOWN by
+>   default, requiring CAP_NET_ADMIN over the owning user namespace to
+>   bring it up. To block external network access while preserving
+>   localhost networking, sandboxes commonly create an isolated network
+>   namespace with only the loopback interface enabled.
+>
+
+The whole unshare/clone flag situation is getting out of hand, IMO.
+And this new thing makes logical sense but is really about reducing
+exposure.
+
+Perhaps we should instead have a small list associated with a userns
+(extensible in the future) of things that the ns's admin (i.e. whoever
+has CAP_SYS_ADMIN relative to the ns) may do.  That list could
+include:
+
+- Create loopback with sensible defaults for ipv4 and/or ipv6 (i see
+no obvious reason to separate them)
+- Create tun/tap interfaces in that ns (and attach them, etc)
+
+And add a very simple new API to do these things.  Actually, the
+tun/tap could just use the normal mechanism.
+
+Thoughts?
+
+--=20
+Andy Lutomirski
+AMA Capital Management, LLC
