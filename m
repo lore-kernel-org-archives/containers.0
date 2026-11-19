@@ -1,72 +1,75 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.218.72
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.208.69
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795084972;
-	b=rbT+cjN+d2lhyAFwg4S7cscaEVrjnVAxWMqGc6riO+b4+jO2Aaf5PBcnsqRj4OO8N+UY
-	 1QHlGSdemrOuxeYuyatAwyJVYznKbV6KDOacJNiS4NUzpTGt8OU8YqO6xUQPMdgGTxwAe
-	 JMx49seoTLZirB+jNfAZrqh7bgnQVKOFtAxfS/xKVf+nt27uNQxY55uRDsMLd3DY8aGlY
-	 OKKVeawJXhl4SG3LGzi9H/BWQd6xkdMHrCevcsZE2/FsXqK0Rq1RR98NVg1kdy7O2pewl
-	 Vs5Mwow2g9lwrmQciI2ZogkZ3SuWq6JMNGMpGKJD5c9tAggdUHkQ8FttmKFpDP4NQRw==
+	t=1795084976;
+	b=4CV8lstXVgzjCTyw5a0qOC4VKlixFH3NhhDZTIRHR1wxClMdbj1oTGnBf9pPhAdAjHMY
+	 seKRfA2QefJzysPSDDW1A+uDWjUbguH2Gbc9aJJ1NseVjUvzFXztaVqFyPaQ84ZKfJ3ci
+	 g4oMN0iUi4JbnsbL5WLeGsRyVdIxJFN1jbrAv5UiGkJw/eCYa6jD+yq2mBB82IO5Yq8GH
+	 pyTmG3AowtwxCH/CR9mqZK+BwLThgWbFwqt3lJXCmVA8GMWSnMZ3npw+iF+w3agJ5NhLK
+	 ohJuvv6HE0G0nDzqjuV/i2QzkjkUU5prBwkO82W0iBhReW4JronUjjL3q5rVCSHnfVw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795084972;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795084976;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Received:Date:Mime-Version:
-	 X-Mailer:Message-ID:Subject:From:To:Cc:Content-Type;
-	bh=vMWbbWSOkcM/Z7Vh8kox11muEBd1XkiAo3xwlvt0N24=;
-	b=2hzMwR2Aa74nk5bUwzoZtLFNjpO3Ra1ja40sJbK0BYOKMpxJmFVrD3JtNBKRb/61k3KI
-	 byZNh3lvK9XoDJPgZQWxI0HtqeVp7QkPasMzG4Ew0DWqirxVYW6uE0U2PbQHry8adk3YC
-	 4Iimn/D6rQjc7JPyzwxPN6qd7hwF/WlXjwyIo51/uDzV8AjVItazOnX7OYs5XS6MHsiB2
-	 EI6rZB55+asDodQ/MqR3REkzJXhZS6PawYLkEScai4DrsvnFKvMBeHgz61HANMuYeMxLk
-	 e60U4ZU0pUpbPoWLwEWptGGzWRRk+5ksHGVDB9blqO6BaJvxZ7cQxMxpwPWlKPdIGMg==
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Received:Date:In-Reply-To:
+	 Mime-Version:References:X-Mailer:Message-ID:Subject:From:To:Cc:
+	 Content-Type;
+	bh=u8ExomxaVoqynWwbL+tI4DQgA+MBylEC1NcrigkAqXU=;
+	b=O01X5NjD+sX3xiyvo8jL3JMFkzOD6yiwsVg463TCKDVR8XnK0ggwovurMbFvyfZOX0j2
+	 tbiwqPIsVwgm6RVE6swGZ1Wn1G/JW0/2qw3DKNbSrWV3HBjQvubfe8fR3ZEaZNWYj3wl7
+	 wEEjk5HyJHRAx8eo+bj3aB8gYgDYBqvymuvN5iOrHR+2hzzWwnf2UqSMrI0x1ZViLaHyr
+	 Ud+Amr8kGmcNwgdVgxS9XIYVhqX3ChdkXnObW+WPW6tPHPy+WJhUeUsQmP1QwNru4S0Ix
+	 RQ1A3GdhTMVZt6fMGesHmwYIfdWiVRlSLsLbLC4HoWun74vaDKNeKhQ13632cjPC9dQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=google.com;
 	spf=pass smtp.mailfrom=flex--halg.bounces.google.com;
-	dkim=pass header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=ZRh+h4Bd;
-	arc=none smtp.remote-ip=209.85.218.72
-Received: from mail-ej1-f72.google.com (mail-ej1-f72.google.com [209.85.218.72])
+	dkim=pass header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=E+UwAL7q;
+	arc=none smtp.remote-ip=209.85.208.69
+Received: from mail-ed1-f69.google.com (mail-ed1-f69.google.com [209.85.208.69])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 47BD960A2603
-	for <containers@lists.linux.dev>; Thu, 19 Nov 2026 10:42:51 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 47BD960A2603
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3521C60A261E
+	for <containers@lists.linux.dev>; Thu, 19 Nov 2026 10:42:54 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 3521C60A261E
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=flex--halg.bounces.google.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=ZRh+h4Bd
-Received: by mail-ej1-f72.google.com with SMTP id a640c23a62f3a-c51314820bfso25167466b.1
-        for <containers@lists.linux.dev>; Thu, 19 Nov 2026 02:42:51 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=E+UwAL7q
+Received: by mail-ed1-f69.google.com with SMTP id 4fb4d7f45d1cf-6b8b0fff76dso1269275a12.2
+        for <containers@lists.linux.dev>; Thu, 19 Nov 2026 02:42:54 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20260707; t=1795084970; x=1795689770; darn=lists.linux.dev;
-        h=content-type:cc:to:from:subject:message-id:mime-version:date:from
-         :to:cc:subject:date:message-id:reply-to:content-type;
-        bh=vMWbbWSOkcM/Z7Vh8kox11muEBd1XkiAo3xwlvt0N24=;
-        b=ZRh+h4BdIEPvOVTSUI1iXFELccTMwEEvqMUMFMq3/xvhMaLYHiahxtgaPzr7zZrs8r
-         fmZp1UdsKnZE6jBSnh44oytSo6YRfySRGs+cWNcZT87Lq4086bMU2BouezUesjRMdr+8
-         oXBfQIoSzQZ684wT88hSseTVX02ZPA70fWBhbpjEhVwRcYDlkpyC4ndvXABFRotoH0k4
-         gvuzEmlfo8g9bH/qM71Y8spkUBP9PpzXGYkwMe88GnGF8WKa7C69yD0pxK+/RsXDTh5Y
-         bKYXo26q2O//NsKcSbjATX7R7lMDPM1Q5zthGxuNgI5JDs99G4P3HAkZqrA/DtAJNG5B
-         hnyA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1795084970; x=1795689770;
-        h=content-type:cc:to:from:subject:message-id:mime-version:date
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+        d=google.com; s=20260707; t=1795084973; x=1795689773; darn=lists.linux.dev;
+        h=content-type:cc:to:from:subject:message-id:references:mime-version
+         :in-reply-to:date:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=vMWbbWSOkcM/Z7Vh8kox11muEBd1XkiAo3xwlvt0N24=;
-        b=cmylVx4OTWeu0bVd9IFMmI3gazvCTYU+fHDsK1XzqRtRaxl6cllDkEhxau3lLEDqIo
-         mJ4Hauys8WkcQfBpLxAOhhkHCUPSeCxUbbsFzsYaWeiqo9PFCwTTIxO87bQPKVVTjPnF
-         uhQufJP9B/kyogU0HAhwId1cuo1XA6cbqMKxQj+rvqdCgfLg/j9msgRdyAN9+9VIoDSq
-         L9ZGcFwxohx3bDPRflcO26s1oCdmegYnn2y2Dk/Rkl9kbvP4YMBbwBkkrOn8ZLPSKybY
-         Nh3JZ6Boe8+IaJERbnBDNq3SQbYRbY7yykx9LIQG4awHnvQHeYIX1iUvxPBQJQXwjIyZ
-         MgPg==
-X-Forwarded-Encrypted: i=1; AL+hErFmM+eP74oC7ZMClhtgODyQEIzEVMquuqEpYXWlU8YQ8Rr8gpCEg+vMmn6wLanfsvdDF1eQZ7uXDQAT@lists.linux.dev
-X-Gm-Message-State: APuU4Z/gOS+CH2wPbgwnP54K5ZRE9eRh/GOCjtFe3EsXLMvvbbvDG8Sm
-	qmfQ4FuaVVPDKzh61V1HvwZ17zVZ+3UR7SfstWBhqgBhK0NM4dXttykfpzIsATJdWkHKlTVETQ=
+        bh=u8ExomxaVoqynWwbL+tI4DQgA+MBylEC1NcrigkAqXU=;
+        b=E+UwAL7qcN+3dYAId4OPeQh0rfiadMVNI7kcd2qVAdn09g2nKzrILo6VzPh4UTkoQz
+         OeYMkW3YwGrYsVTdy/3AOwFJox+JqHyJdlfG8QnuTfHRSLjrm8vq1J7S60pF7hGPhl6/
+         Dln1a/8G1X/vmuKtWUFvIUt72V6IAVIieNXaxOP59X+YQL8KnOqLhleub1b5ATxzAqjk
+         E4L4p0jZm5sT8wFP2SdwlcYnI9PkMQ84sMKDH/vNQtSC8Ig5hlr6WulLp/d1fhyiT40m
+         uE8nYlCcBK3i27P0Lf/G4xdQxju/tcaThQ1QljFfYDisSQFTLgxX3bidQTkd7msX7s17
+         gbwg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1795084973; x=1795689773;
+        h=content-type:cc:to:from:subject:message-id:references:mime-version
+         :in-reply-to:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=u8ExomxaVoqynWwbL+tI4DQgA+MBylEC1NcrigkAqXU=;
+        b=YaiXz89h4s2g6Eahcq0PK0d3x64ZgfoZGjpqeTIxv/cpYjiX47Gg0QNow5H0tSQXJP
+         FusRNAmhXJtZs86xZ3ZSpt5VSF1q+A0p2b7XnLumnn7HRDNb++ZwIGEzguESrM0ENofR
+         f1Rms/sJLuJ86JQHHwGzCg3E6RKdGIItae88bj2a01cUiVVbuqNGI+p+FHiB+V7tU9Pm
+         7kFXV+x8NSDpaqMvdOC42XWnZR1oh5CQwVS3cP48VYhPxhCd0WUtc1yG1o0Mhxhf/KPW
+         DnIUwuN9d26iA3BnnQBxTV257fV9nAjFE/dOvR7pxQscAmxK0rgWYALXBEIu/biEn+l9
+         b+KA==
+X-Forwarded-Encrypted: i=1; AL+hErFnVHQ0wb3gyH8mhkUL+7telPId8+6jD5KWtMXIAeAR0cZsqwB7uWZSZLnkaskYKhQhk+oEN2LuRZ/w@lists.linux.dev
+X-Gm-Message-State: APuU4Z+fXfbS/6zQw8FWtsS4jB8qYUlNEiw6X1R1Y5djlqpkAk7vLC06
+	BhXIwPzoXAPVRAX240dIKEyPbYipASosAhE4u28zIrl66Q+Hz+0eAzm4LqdkLlnT08sjFD09oA=
 	=
-X-Received: from ejak1.prod.google.com ([2002:a17:906:541:b0:c3f:7129:4c10])
- (user=halg job=prod-delivery.src-stubby-dispatcher) by 2002:a17:906:9f8a:b0:c41:61b9:6ef6
- with SMTP id a640c23a62f3a-c510e376c7dmr532576166b.27.1795084969312; Thu, 19
- Nov 2026 02:42:49 -0800 (PST)
-Date: Thu, 19 Nov 2026 10:42:04 +0000
+X-Received: from edqs14.prod.google.com ([2002:aa7:d78e:0:b0:6b5:76e4:de9f])
+ (user=halg job=prod-delivery.src-stubby-dispatcher) by 2002:a05:6402:321b:b0:6ba:1347:5bf
+ with SMTP id 4fb4d7f45d1cf-6ba13470764mr1098394a12.35.1795084972449; Thu, 19
+ Nov 2026 02:42:52 -0800 (PST)
+Date: Thu, 19 Nov 2026 10:42:07 +0000
+In-Reply-To: <20261119104208.782900-1-halg@google.com>
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Post: <mailto:containers@lists.linux.dev>
@@ -76,9 +79,10 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 List-Owner: <mailto:containers+owner@lists.linux.dev>
 Precedence: list
 Mime-Version: 1.0
+References: <20261119104208.782900-1-halg@google.com>
 X-Mailer: git-send-email 2.56.1.708.g77570a6a1d-goog
-Message-ID: <20261119104208.782900-1-halg@google.com>
-Subject: [PATCH v2 0/4] userns: per-namespace capability bounding set
+Message-ID: <20261119104208.782900-4-halg@google.com>
+Subject: [PATCH v2 3/4] proc: expose userns capability mask as CapUns in /proc/<pid>/status
 From: "Hallgrimur H. Gunnarsson" <halg@google.com>
 To: Christian Brauner <brauner@kernel.org>, Serge Hallyn <sergeh@kernel.org>, 
 	Andy Lutomirski <luto@kernel.org>
@@ -95,120 +99,68 @@ Cc: Paul Moore <paul@paul-moore.com>, James Morris <jmorris@namei.org>,
 	linux-kernel@vger.kernel.org, "Hallgrimur H. Gunnarsson" <halg@google.com>
 Content-Type: text/plain; charset="UTF-8"
 
-When an unprivileged process creates a new user namespace, it is granted
-a full set of capabilities (CAP_FULL_SET) scoped to that namespace.
-While isolated to the namespace, these capabilities allow unprivileged
-local users to reach deep kernel subsystems (most notably networking
-configuration and raw sockets via CAP_NET_ADMIN and CAP_NET_RAW) that
-historically assumed a trusted caller and have accounted for a large
-share of local privilege escalation vulnerabilities.
+Render cred->cap_userns as CapUns in /proc/<pid>/status alongside other
+capability masks, allowing userspace tools to inspect a task's userns
+capability mask directly.
 
-Many sandboxes and workloads use unprivileged user namespaces strictly
-for UID/GID, mount, PID, or network isolation and never need high-risk
-capabilities like CAP_NET_ADMIN. Likewise, system administrators,
-service managers, and container runtimes often want to enforce a
-capability ceiling across descendant user namespaces while still
-permitting exceptions for authorized workloads.
+Document the new field in Documentation/filesystems/proc.rst.
 
-Prior work by Jonathan Calmels [1, 2] proposed a per-thread userns
-capability set (cap_userns), while v1 of this series [3] proposed a
-capability bounding set (cap_bset) in struct user_namespace configured
-via a global sysctl and clone3().
+Suggested-by: Christian Brauner <brauner@kernel.org>
+Signed-off-by: Hallgrimur H. Gunnarsson <halg@google.com>
+---
+ Documentation/filesystems/proc.rst | 2 ++
+ fs/proc/array.c                    | 4 +++-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
 
-During v1 review, both Christian Brauner and Andy Lutomirski had
-reservations about the sysctl and clone3() approach, and Andy pointed
-out the need to cover the single-deep container case. Christian then
-proposed combining per-cred cap_userns with the per-namespace cap_bset
-ceiling [4].
-
-This series implements that combined approach:
-
-1. Per-namespace cap_bset and per-cred cap_userns (Patch 1)
-   Introduce user_namespace->cap_bset and cred->cap_userns, controlled
-   via prctl(PR_CAP_USERNS) and SECBIT_CAP_USERNS_STRICT (named _STRICT
-   rather than SECURE_NO_USERNS_CAP_RAISE as it also disables the
-   default cap_permitted exemption). Clamp namespace creation,
-   set_cred_user_ns(), and parent-owner checks in cap_capable_helper()
-   against these ceilings.
-
-   One refinement over the v1 review sketch: set_cred_user_ns() also
-   intersects cred->cap_userns with user_ns->cap_bset on namespace
-   entry. Since userns transitions only move downward in the hierarchy,
-   excluded bits are permanently inert anyway. Clearing them keeps
-   CapUns and PR_CAP_USERNS_IS_SET accurate after setns() and gives all
-   six task capability masks a uniform user_ns->cap_bset subset
-   invariant.
-
-2. Ptrace and dumpability bounding (Patch 2)
-   Require the tracee's cred_userns_bset() to be a subset of the
-   tracer's in the same-namespace ptrace check (complementing the
-   cross-userns owner check in cap_capable_helper()), and update
-   cred_cap_issubset() so widening the effective userns ceiling resets
-   mm->dumpable and pdeath_signal.
-
-3. Introspection via /proc/<pid>/status (Patch 3)
-   Expose cred->cap_userns as CapUns in /proc/<pid>/status. Leave
-   AUDIT_CAPSET unchanged, as capset() never modifies cap_userns
-   (matching cap_bset, where prctl() changes are covered by syscall
-   auditing).
-
-4. Selftests (Patch 4)
-   Add kselftests covering PR_CAP_USERNS, CapUns, nested monotonicity,
-   creator capability retention, SECBIT_CAP_USERNS_STRICT, setns()
-   clamping, parent-owner bounding, ptrace restrictions, and dumpability
-   resets.
-
-Changes in v2:
-- Replace the global sysctl, CLONE_NEWUSER_BSET / struct clone_args
-  extension, and NS_USER_GET_INFO ioctl with per-cred cap_userns,
-  prctl(PR_CAP_USERNS), SECBIT_CAP_USERNS_STRICT, and CapUns in
-  /proc/<pid>/status.
-- Drop CLONE_NEWNET_LOOPBACK and UNSHARE_NEWNET_LOOPBACK to handle in a
-  separate series.
-- Clamp set_cred_user_ns() (including cred->cap_userns) against
-  user_ns->cap_bset and cred_userns_bset(cred).
-- In cap_capable_helper(), bound implicit parent-owner capabilities
-  by the owned namespace's cap_bset, and grant them only when that
-  cap_bset is a subset of cred_userns_bset(cred).
-- Bound same-namespace ptrace checks in cap_ptrace_access_check() and
-  cap_ptrace_traceme() and credential subset checks in
-  cred_cap_issubset() by userns capability ceilings.
-- Rebase onto v7.4-rc1, preserving SECURE_ALL_UNPRIVILEGED handling in
-  set_cred_user_ns().
-- Link to v1: https://lore.kernel.org/r/20261028221705.3915340-1-halg@google.com
-
-[1] https://lore.kernel.org/all/20240609104355.442002-1-jcalmels@3xx0.net/
-[2] https://lwn.net/Articles/978846/
-[3] https://lore.kernel.org/all/20261028221705.3915340-1-halg@google.com/
-[4] https://lore.kernel.org/all/20261111-behagen-faktisch-entgegen-e2e714373895@brauner/
-
-Hallgrimur H. Gunnarsson (4):
-  userns: introduce capability bounding set for user namespaces
-  capability: bound ptrace and cred subset checks by userns ceilings
-  proc: expose userns capability mask as CapUns in /proc/<pid>/status
-  selftests/capabilities: add userns capability bounding set tests
-
- Documentation/filesystems/proc.rst            |    2 +
- Documentation/security/credentials.rst        |   12 +-
- fs/proc/array.c                               |    4 +-
- include/linux/cred.h                          |   22 +
- include/linux/user_namespace.h                |   12 +
- include/uapi/linux/prctl.h                    |    7 +
- include/uapi/linux/securebits.h               |   16 +-
- init/init_task.c                              |    1 +
- kernel/cred.c                                 |   13 +-
- kernel/user.c                                 |    1 +
- kernel/user_namespace.c                       |   33 +-
- security/commoncap.c                          |   80 +-
- security/keys/process_keys.c                  |    1 +
- .../testing/selftests/capabilities/.gitignore |    1 +
- tools/testing/selftests/capabilities/Makefile |    2 +-
- .../capabilities/userns_bounding_set_test.c   | 1064 +++++++++++++++++
- 16 files changed, 1246 insertions(+), 25 deletions(-)
- create mode 100644 tools/testing/selftests/capabilities/userns_bounding_set_test.c
-
-
-base-commit: 6628e7d4c6b25c8d18f1345e3a20d21829aae7e4
+diff --git a/Documentation/filesystems/proc.rst b/Documentation/filesystems/proc.rst
+index fa7a468e8edf..9cf45810e41c 100644
+--- a/Documentation/filesystems/proc.rst
++++ b/Documentation/filesystems/proc.rst
+@@ -200,6 +200,7 @@ read the file /proc/PID/status::
+   CapEff: 0000000000000000
+   CapBnd: ffffffffffffffff
+   CapAmb: 0000000000000000
++  CapUns: ffffffffffffffff
+   NoNewPrivs:     0
+   Seccomp:        0
+   Speculation_Store_Bypass:       thread vulnerable
+@@ -286,6 +287,7 @@ It's slow but very precise.
+  CapEff                      bitmap of effective capabilities
+  CapBnd                      bitmap of capabilities bounding set
+  CapAmb                      bitmap of ambient capabilities
++ CapUns                      bitmap of userns capabilities
+  NoNewPrivs                  no_new_privs, like prctl(PR_GET_NO_NEW_PRIV, ...)
+  Seccomp                     seccomp mode, like prctl(PR_GET_SECCOMP, ...)
+  Speculation_Store_Bypass    speculative store bypass mitigation status
+diff --git a/fs/proc/array.c b/fs/proc/array.c
+index f6f75d206762..2b86673aae00 100644
+--- a/fs/proc/array.c
++++ b/fs/proc/array.c
+@@ -311,7 +311,7 @@ static inline void task_cap(struct seq_file *m, struct task_struct *p)
+ {
+ 	const struct cred *cred;
+ 	kernel_cap_t cap_inheritable, cap_permitted, cap_effective,
+-			cap_bset, cap_ambient;
++			cap_bset, cap_ambient, cap_userns;
+ 
+ 	rcu_read_lock();
+ 	cred = __task_cred(p);
+@@ -320,6 +320,7 @@ static inline void task_cap(struct seq_file *m, struct task_struct *p)
+ 	cap_effective	= cred->cap_effective;
+ 	cap_bset	= cred->cap_bset;
+ 	cap_ambient	= cred->cap_ambient;
++	cap_userns	= cred->cap_userns;
+ 	rcu_read_unlock();
+ 
+ 	render_cap_t(m, "CapInh:\t", &cap_inheritable);
+@@ -327,6 +328,7 @@ static inline void task_cap(struct seq_file *m, struct task_struct *p)
+ 	render_cap_t(m, "CapEff:\t", &cap_effective);
+ 	render_cap_t(m, "CapBnd:\t", &cap_bset);
+ 	render_cap_t(m, "CapAmb:\t", &cap_ambient);
++	render_cap_t(m, "CapUns:\t", &cap_userns);
+ }
+ 
+ static inline void task_seccomp(struct seq_file *m, struct task_struct *p)
 -- 
 2.56.1.708.g77570a6a1d-goog
 
