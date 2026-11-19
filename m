@@ -1,68 +1,69 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795097325;
-	b=24qaEoeAnoNhJ/avfn/0+w5BGBhud0EpaTQMDwxkIHsElEeJNzchBr4VEsScibqsKBJb
-	 L/mY0SZFtRkwCAm9wbH2ubIE5BR/6cyz86Wce2acpBtcAGw6LXVYzTztiTcoukzJpTFJ2
-	 0MyqdtX4OvYz58lvb8zLWpNE5/igqwC4R6d7o+jGvrPMEUmfcX/myyBwooUYIob+6jhf3
-	 w0DcHQWWmNTE9zg4SGykcQPm1GeW6nWkhRoPhfob5SkMMO6vSB84qsOOJK6vKFwdLCeWt
-	 Rz2fmUACVM4dxZ4acNE5tUbo/n53UviEys+FRM2/Wd6Z7u0LzlCXhywTe4s1I6RWbPQ==
+	t=1795100730;
+	b=K6IK5S9XmtCJJ1F4RdydsRLPfnTOYmjMGGvPKPB1vKgDXerMHJjM5Bhp6btB+0yViTDH
+	 oVfovkYYvsB3ZKoOW+dPir8rbpxqXJIyQ5GInpW1NpueAnwUW/ARGj0AxAn6dtN/mFVHf
+	 e1KBD+fJIJAKAxk+6b682Tg+66n8h3DEwuOpZPDUnb+K0bOfA7cw7g+VTbVAQvcMSwxAE
+	 RmAnJuot7v6e+Mbpl9KvGjy7ZZz5CwSH8xYQi82hLB8k44Cm0+VxhcVoEvPuYlaUcHY1z
+	 1nrJDf5OJYf6i3k63PN/uZ6zH69hVOqepp6FXNTFUo4C+QLKn/kMnL7+JN1sDscDB0w==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795097325;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795100730;
 	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 References:MIME-Version:Content-Type:Content-Disposition:
-	 Content-Transfer-Encoding:In-Reply-To;
-	bh=deLFcMvvltUgOBB0nzekqT3DRM7PlPpuRsUgmgE0xJs=;
-	b=tpozhdCkIbrCmRCUQT/JMXUO6jhIvss6p9q/a9ZdiwvG+Bau1V9yxQiyF2Vd4hinVmHu
-	 GcafOyOPJ/zJQDMQr4RrUUSzkVhncJ79vV4g227GC+Ui7Ky6+7fpNDn8xJgw5oQ8wWkQS
-	 adEy6f4FYLozzmax7pBVKHdgoMm1AmO+T23muQrOCENWC2aZVQl7feVqAZVK84rmA8E+N
-	 YxpiFiq1U12oYXWunC6WEfZDTgM7FgvUsSzJSuhpPwkHm5nMcE45MbZlrXS76XNk73dTa
-	 eIIwLdHR40Fxzd45m/oHwIDon8dVXvXCHKcnMzZtvwOus1Ui0kewOuIJPaduMJv9Njg==
+	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
+	bh=2IrwUYnRl/CCcIkHyQ8rD1wVGp6x0G+ouTuLDtWvXeE=;
+	b=Ih9eYJW6P0+ko3S+GYlDYiTlRKDRb7m0BVkWyVMgZhZn2VUulVGbtPryZJftrJv38lyZ
+	 ksXgcK/olt9GkijapRRz7FzeHUFNIhE8XC3QqH8NK074pinH+Z9JGnb8Du9sKQugx7gke
+	 0wzkKpKOwXs8D6UHu5ioaRLmMiRLOE8jFBKlodYOy8C3x0DIzmC38Mqc/vsuHzeLJ3037
+	 XjqzY6E0uTaEncGR8xOzgt0cU1MiHtCoHAjMaKY4vCr4Q5AV8fEby1uY7VPKavX0qqNYq
+	 aPfZiiZ2Z7oBgqGJQSNGEYb7Z4URafSe/jMTJ8zw71h83aYyLub6L+VBNUP4sFeWhig==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b="VGT6CPW/";
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=FVCdDZz9;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D4EAA606A320;
-	Thu, 19 Nov 2026 14:08:45 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with UTF8SMTPS id 82453606A324;
+	Thu, 19 Nov 2026 15:05:30 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=VGT6CPW/
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9B6D61F000C4;
-	Thu, 19 Nov 2026 14:08:39 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=FVCdDZz9
+Received: by smtp.kernel.org (Postfix) with UTF8SMTPSA id 7F96D1F000C4;
+	Thu, 19 Nov 2026 15:05:29 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795097325;
-	bh=deLFcMvvltUgOBB0nzekqT3DRM7PlPpuRsUgmgE0xJs=;
+	s=k20260515; t=1795100730;
+	bh=2IrwUYnRl/CCcIkHyQ8rD1wVGp6x0G+ouTuLDtWvXeE=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=VGT6CPW/wtjf93Hbnt7vGTzxnm+m5tp5bIHpq29p+RgyV5QZXwZhn8vBEMLao+PYg
-	 PCUZ1usoGhC/buvHKCHBr+3FqpWcZI8hA+G/AnsZf0kqeyDDRcuNRnBdBdvUjV8AF5
-	 pbqd3WpW+PvZx1H0nHTPucGg+qChKpjfQL2yIPMnFVf3HQ8i7dLCper3SXG3Oq3Tnn
-	 ljERMRXcjxXOlrsqDe8qKB1/RchUjdc/mKVygZTSK9ZQSj+CKnOlXkNaufaWLk9PPC
-	 h14dMsVmUHWhkRabrbOfkgHJKFwhMsxJ0pXnGerIga4T/8beoldtWKWqL/RWlYosZL
-	 wgB1vSwgzeB9A==
-Date: Thu, 19 Nov 2026 15:08:37 +0100
-From: Christian Brauner <brauner@kernel.org>
+	b=FVCdDZz9CLOzCqQsYElv7NRpYqkN3P7TxOGmYw37Nt2LIqrKvGPDv0cm+uD2pfsxo
+	 reNk0EkMxZdKrLdZ9uuI4nobaoUOyq381WXDOPT/qbY+/22pTATrYksY1SPKUCQUwU
+	 OeDqUtESjF2OrtNUkoeMWt1WYxoX9OfHUTybLCGUCbsvEw8mIdp8GykomUioTiRIql
+	 Tv4B61awo0otLnhmH6ZEzySA2YUo2/dTWIXuWTVYnkNG8ODdZfVNrDyXx+NGvRHCa1
+	 dXZ7iSefdREPcENzx9AlTrLesVex9IbQhbtBvPv7IZ/YCBmIafp1kxixS5wRA92LpZ
+	 g/47LCbfIpyMA==
+Date: Thu, 19 Nov 2026 17:05:26 +0200
+From: Jarkko Sakkinen <jarkko@kernel.org>
 To: "Hallgrimur H. Gunnarsson" <halg@google.com>
-Cc: =?utf-8?Q?Micka=C3=ABl_Sala=C3=BCn?= <mic@digikod.net>, 
-	Alexander Viro <viro@zeniv.linux.org.uk>, Paul Moore <paul@paul-moore.com>, 
-	Serge Hallyn <sergeh@kernel.org>, Kees Cook <kees@kernel.org>, 
-	"David S . Miller" <davem@davemloft.net>, Eric Dumazet <edumazet@google.com>, 
-	Jakub Kicinski <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>, Jan Kara <jack@suse.cz>, 
-	James Morris <jmorris@namei.org>, Simon Horman <horms@kernel.org>, 
-	Jonathan Corbet <corbet@lwn.net>, Shuah Khan <skhan@linuxfoundation.org>, 
-	Randy Dunlap <rdunlap@infradead.org>, Jann Horn <jannh@google.com>, 
-	=?utf-8?Q?G=C3=BCnther?= Noack <gnoack@google.com>, KP Singh <kpsingh@kernel.org>, 
-	Jonathan Calmels <jcalmels@3xx0.net>, Casey Schaufler <casey@schaufler-ca.com>, 
-	linux-fsdevel@vger.kernel.org, linux-security-module@vger.kernel.org, linux-api@vger.kernel.org, 
-	containers@lists.linux.dev, netdev@vger.kernel.org, linux-doc@vger.kernel.org, 
-	linux-kselftest@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 0/8] userns: per-namespace capability bounding set and
- opt-in netns loopback
-Message-ID: <20261119-bagger-sagst-saatgut-096a6c993e9e@brauner>
-References: <20261028221705.3915340-1-halg@google.com>
- <20261107.aighieG4Ami1@digikod.net>
- <20261118.faiBee9Taigh@digikod.net>
- <av7TsXKUE69lyiWl@google.com>
+Cc: Christian Brauner <brauner@kernel.org>,
+	Serge Hallyn <sergeh@kernel.org>, Andy Lutomirski <luto@kernel.org>,
+	Paul Moore <paul@paul-moore.com>, James Morris <jmorris@namei.org>,
+	David Howells <dhowells@redhat.com>, Kees Cook <kees@kernel.org>,
+	Jonathan Corbet <corbet@lwn.net>,
+	Shuah Khan <skhan@linuxfoundation.org>,
+	Randy Dunlap <rdunlap@infradead.org>,
+	=?iso-8859-1?Q?Micka=EBl_Sala=FCn?= <mic@digikod.net>,
+	Jonathan Calmels <jcalmels@3xx0.net>, Jann Horn <jannh@google.com>,
+	=?iso-8859-1?Q?G=FCnther?= Noack <gnoack@google.com>,
+	KP Singh <kpsingh@kernel.org>,
+	Casey Schaufler <casey@schaufler-ca.com>,
+	linux-fsdevel@vger.kernel.org,
+	linux-security-module@vger.kernel.org, linux-api@vger.kernel.org,
+	containers@lists.linux.dev, keyrings@vger.kernel.org,
+	linux-doc@vger.kernel.org, linux-kselftest@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v2 1/4] userns: introduce capability bounding set for
+ user namespaces
+Message-ID: <av8QNiFcnGWocORy@kernel.org>
+References: <20261119104208.782900-1-halg@google.com>
+ <20261119104208.782900-2-halg@google.com>
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Post: <mailto:containers@lists.linux.dev>
@@ -72,34 +73,31 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 List-Owner: <mailto:containers+owner@lists.linux.dev>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <av7TsXKUE69lyiWl@google.com>
+In-Reply-To: <20261119104208.782900-2-halg@google.com>
 
-On Thu, Nov 19, 2026 at 10:47:13AM +0000, Hallgrimur H. Gunnarsson wrote:
-> On Wed, Nov 18, 2026 at 03:43:03PM +0100, Mickaël Salaün wrote:
-> > Hallgrimur, could you please explain why your use case would not work
-> > with Landlock?  The capability split or new clone flags would be
-> > complementary of course.
-> 
-> Apologies for the late reply.
-> 
-> Landlock's capability restrictions work well for self-sandboxing
-> applications and launchers. The main gap for our use case is setting a
-> host-wide default for unprivileged user namespaces while still permitting
-> exceptions. Because Landlock restricts all capability use (not just
-> capabilities acquired via user namespaces) and its domains are strictly
-> irrevocable, PID 1 cannot apply a default policy at boot without
-> locking out privileged services, file-capability helpers, and authorized
-> workloads. Using Landlock here would require explicit opt-in enforcement
-> at every unprivileged transition boundary (SSH, container/job launchers,
-> etc.), where missing any entrypoint leaves unprivileged user namespaces
-> unrestricted.
-> 
-> In v1 we had the global sysctl to tackle this. In v2 (based on Christian
-> and Andy's feedback), we combine per-cred cap_userns with per-userns
-> cap_bset), and PID 1 or a service manager can lower the default userns
+On Thu, Nov 19, 2026 at 10:42:05AM +0000, Hallgrimur H. Gunnarsson wrote:
+>  static void set_cred_user_ns(struct cred *cred, struct user_namespace *user_ns)
 
-Plus, this is useful and improves security in general without having to
-use any LSM framework.
+I read the diff through but this led me to dead end. Cannot find this
+function from anywhere. I look the changes again once this is sorted
+out becaus this is interesting.
+
+I wanted to look at the call site to understand how cap_bset gets set,
+which is not now possible but I do get the gist and agree with it.
+
+I'd figure getting this relates to my rootns patches (perhas). One key
+mechanism for me resolving the unprivileged in my use case is
+MOVE_MOUNT_T_MNTNS [1], which is orthogonal but just pointing out
+the problem space.
+
+I read through https://lwn.net/Articles/978846/ to understand the topic
+overall. Just mentionining as a possible addition to the cover letter
+(not a priority/necessity).
+
+Hope these help and can be kept in the loop :-)
+
+[1] https://git.kernel.org/pub/scm/linux/kernel/git/jarkko/linux-tpmdd.git/commit/?h=rootns&id=cb058646b3dd76b13f5044846c119fe1d28db4bf
+
+Br, Jarkko
