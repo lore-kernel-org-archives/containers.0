@@ -1,75 +1,76 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.208.70
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.72
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795084974;
-	b=vDFrvjrmilk+2qvyvmlz9ctMVgy1k5LJxHfmQFdC//iFe9ROlIlg3u1CpyQjeT+xlVoE
-	 uF9dxH/n4Vuwiq8CfMz3NQWj/vujF7KGe6sLNj3NPX1h1HpLXFnAwqnR+1JVjKLEjs8vj
-	 74cNxqE85X66JBTZGTKjSEIsyjI4iKmaf3l67m/ngjA5QnE+q2BNssxGNht5DfFS6vTJ/
-	 tB6/Q/X7GrMvrjkusoGdKS/HZggWxmYTZWBposTbNNbY+tQbIcI4nxbQKYI0b1kZGumaY
-	 scMcsoen0lVc9w31T9EaZ+f/OvibQi64QBub4we8hFAm2SOCzpawbzvnntLjmnanHLQ==
+	t=1795085236;
+	b=vDGMxYK+T/6AsdhheJoDTfzOIfJOqvj4ojFHrH8JmwknG72djNNw5WooMBTKrpVFfIUY
+	 r2jMdwhRuiQttG4qAL4UoDopYskJNFJitgupflO87w5PR2L+eyR6vtLeoMgVDJOKH8NDt
+	 zOMqRm2ESO6vCLr3DDm+6pwGgax85R+CX1Y9RyXDaAlB0MjdYYR8ZuEmBGWu1L6FFnlI5
+	 tv5unbAJEV309bsvGIyythHfme/bWRpEpxkudoJhBN0VlOezWWV+U19mMxp4ZBp8Aab0w
+	 losMV2C6g+By4leotJ1YgT/4r/GslTy+3YriOBYztMdlXRIpQF+ti+0yIa/ccF15ijw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795084974;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795085236;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Received:Date:In-Reply-To:
-	 Mime-Version:References:X-Mailer:Message-ID:Subject:From:To:Cc:
-	 Content-Type;
-	bh=K0VpW7YvMhl0iK0xeqDJ+A8D6OVh/Im/AWHWGl8sSUs=;
-	b=NBweaqwEmP6TfsbSE6lSYasgIfV2vTHXmzr6O5ctQeMDOWJFfkGHPziuFTmVhzz+3VtT
-	 KhTzyma96kXf7Ro3PLjPqypg93n7WJNFYiGRIgI2XZRQrb7Ow4CqWOkws+FbV+TXpCRKq
-	 cGVf8iLM1wc9dOOUYL5jQizYpwAQhal48q4NyJLkYto/dj5ZCBnZ+ZZQSyoNdDOstxQc3
-	 9CeHWHQdzHlkJLUmZhgeLNekkJsouM6AWUopvn5iOjVpH3Oig8ax8YWlLLkIV/uCxz6AY
-	 8SN3vBfNLC2VHs0zMTILhy2xLpsdE43W/oFr/BNCCnQYqklx+Tyqvrd5WFBXHFT1IVw==
+	 Mime-Version:References:Message-ID:Subject:From:To:Cc:Content-Type:
+	 Content-Transfer-Encoding;
+	bh=67I3bNEfcu+N7yXs6EAi+/lBjbBrobM44S6SPv9jyFg=;
+	b=zUjG+bk33oVfDYAMjiPDu31fKFQ1sgH0wtMDPwBqODTelxF/oOuuYjskyLuRWeQ09JiJ
+	 sOifihPA0K44LNyk8aIYaDWC3WO+boz1Q8YAhZCLTyLdEGoGsID3MdZid0alT4RuEjSZN
+	 dFyxSPSQUpJj1HjxWwapV9q4uxQghJAk1veL5XqIRtCFdJjIPvoW9i+ZFhfcs7U00/OE0
+	 qKdL7jz3IYdK/zFT+w3xUDRdltXLbzFY0AJ7YQ1bXm2Ml3rZSc6R/z/OG2Pd/LpEMMbAO
+	 wcj9j3Aupjx6k2e3XZy+RCNBe5ozNPudtiR0F8fjWWWnnz/KGpkw4EQ2jvYMnTT7mEw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=google.com;
 	spf=pass smtp.mailfrom=flex--halg.bounces.google.com;
-	dkim=pass header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=bUFDmYJj;
-	arc=none smtp.remote-ip=209.85.208.70
-Received: from mail-ed1-f70.google.com (mail-ed1-f70.google.com [209.85.208.70])
+	dkim=pass header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=DurusoPk;
+	arc=none smtp.remote-ip=209.85.128.72
+Received: from mail-wm1-f72.google.com (mail-wm1-f72.google.com [209.85.128.72])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 652D960A2616
-	for <containers@lists.linux.dev>; Thu, 19 Nov 2026 10:42:53 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 652D960A2616
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5A7AD606A326
+	for <containers@lists.linux.dev>; Thu, 19 Nov 2026 10:47:16 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 5A7AD606A326
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=flex--halg.bounces.google.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=bUFDmYJj
-Received: by mail-ed1-f70.google.com with SMTP id 4fb4d7f45d1cf-6b7d9eab7ffso1797197a12.3
-        for <containers@lists.linux.dev>; Thu, 19 Nov 2026 02:42:53 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=DurusoPk
+Received: by mail-wm1-f72.google.com with SMTP id 5b1f17b1804b1-4ba078abd78so15330905e9.1
+        for <containers@lists.linux.dev>; Thu, 19 Nov 2026 02:47:16 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20260707; t=1795084972; x=1795689772; darn=lists.linux.dev;
-        h=content-type:cc:to:from:subject:message-id:references:mime-version
-         :in-reply-to:date:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=K0VpW7YvMhl0iK0xeqDJ+A8D6OVh/Im/AWHWGl8sSUs=;
-        b=bUFDmYJjXqPDQej38BR/KbCJPRT7Z7i6iE2XMh5lFpRxCA+E9Xv7uLQ1tqOAqjYJEi
-         8gCRyiOtonBolnsK0bkYUKywvw2aPZt2XekvOT9tFtGwpzg9nNCB0G7mDeTFKuLmk0oa
-         3KnouVfejlhRt7qN4DH94IgaDn+QnDY5OnCB+LjwGYiGGaT3ilMq/U5WleD9J8R83Q8P
-         XPPHcTdNR05QqOboHeRlq76wVovmxRnUGeUWN4bY1LM/OMAZECRcZa9eKled71I9NTxi
-         nByGNKmg2S7F+2j9UQzOHKlyrvvR4/QPwxAKAvQygzNd9SNENYf7lBYMxSUCslQVOiIu
-         aBHw==
+        d=google.com; s=20260707; t=1795085235; x=1795690035; darn=lists.linux.dev;
+        h=content-transfer-encoding:content-type:cc:to:from:subject
+         :message-id:references:mime-version:in-reply-to:date:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=67I3bNEfcu+N7yXs6EAi+/lBjbBrobM44S6SPv9jyFg=;
+        b=DurusoPkBFMam/pM7ZYoDob+n/eRtem5K3P4LrtTjTMT2mEo3kDrk0YXWgBC2kM+NS
+         p19MknBWOJzwDXnNm5GivlFvfPnRttwJoaHqxgk4j6WJnONGqtLuK+y3HtwMNRtKriE4
+         cSuxQfjf8O+gin7oCDsV97arhqGIaUJ76YOMOxJnklNyKTnnTbxuN0m0Yyi2wyH7ORXL
+         1DfjvR9zzyRvKxZlm2wVT3vH/FM6l4xBAgMABSK3cH5kDtI+SOsEsxA0IaVEcEPLSiPr
+         czo73pmSWxEahJDsg+w8SKn/XUfA4EIcSYBBE5pnTZQK4FGHAHU4LsCrs3WyiC6MFbJG
+         X9Lg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1795084972; x=1795689772;
-        h=content-type:cc:to:from:subject:message-id:references:mime-version
-         :in-reply-to:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=K0VpW7YvMhl0iK0xeqDJ+A8D6OVh/Im/AWHWGl8sSUs=;
-        b=BDa3t5NwgkqzfGvyUkNJ09HwxO88YaKegRkk93ldlwvc74UQib0LbBhyeg0kBpf4zV
-         pjfTw1MGt4/dekCwL7PAETAhI9CtdjXTrWwej/8fdVcR7orAWPMSLbzZSJDjlRtKw3Bd
-         EIlglZxZj+mBuy8EQXpDU4tDKVXKO+1Uk09dJ69ZklRD8qHJq2+2HPAKkMcnJCb2smkN
-         OwFxcCbmmDbuftnYKJD/QYsZqp8DsW0NwDMVlSVzqkg/AXjje0LAmytueLEbBb0dcRnj
-         6+gLOtoHI0wqnRfbFU+Hpc23HojXVLKIgnw0BgaK3uyDwkZKrP/U5VTEjFiEptlLhSbs
-         kgog==
-X-Forwarded-Encrypted: i=1; AL+hErGaWKaNgpJ3robjoU4MKhyrHXsina2xALsEj+Ii9KiTqer4HdthTLuYobOR3LUCHDKdtkguqEVpXwjU@lists.linux.dev
-X-Gm-Message-State: APuU4Z/VDc2Na48IBvZTs0rHFgp4uMVmjo9XiSUkM7n6hicfHV3dz0ox
-	drxrflr6WkLuzqlP0cDFuG0GztjDJslkex8mQS6Nft4u95hBRHputK6Zu8+6ewtH9hP6QIWU8w=
+        d=1e100.net; s=20260707; t=1795085235; x=1795690035;
+        h=content-transfer-encoding:content-type:cc:to:from:subject
+         :message-id:references:mime-version:in-reply-to:date
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=67I3bNEfcu+N7yXs6EAi+/lBjbBrobM44S6SPv9jyFg=;
+        b=hOos1onq84wffzxCA/wr+XinE105ZVJx3n25eJC+rCqoxUqqJREe6Eg/hxQmRIzi0P
+         lhf4bOVJ+prfFkxQeHow4TTDLSylAYYmu3ssUGkZ1W7fVV3RiXIACstlegrCI7DLZq87
+         OB3h5eQSbX/ToU0x9gcdkX1yO8FL4HyJhV0adZFe9L7Adg4X1wJeUcaqt8ASbksYth3E
+         A9zdYeyjDEvoZ3xdXRZoE9cJ0YE4eBtSV7ELoQBg4kRBWxAhzbcoii0ZYAtU6+n15TWX
+         WWDajfX3EBX2ExR1SLSzsfwFvBHEvT9+LLUnRpEBUedN62vcztjVDo2ceYcsDmdEPs7K
+         +YKA==
+X-Forwarded-Encrypted: i=1; AL+hErELoM0YlPj/mgjjn5DaIHLY6k8VR8j/1b1S1oSHiAdOM1HGZXxCantMtOuHyOxDvxWnukKUmJYXk0wC@lists.linux.dev
+X-Gm-Message-State: APuU4Z/4u8bPEonJ76OzL/XRWx3f/2ZsFYXW6a0VxNAdQOcKGIkxIdXH
+	VZvyozjX79anHLff+AMcz47r3nR6dQlCdkunTW34hao6E9mZNhyE4z9DHuxpCqZEZLOlD1w2HA=
 	=
-X-Received: from edev9-n1.prod.google.com ([2002:a05:6402:a2c9:10b0:6b7:77b0:4135])
- (user=halg job=prod-delivery.src-stubby-dispatcher) by 2002:aa7:d411:0:b0:6b8:ac39:bb96
- with SMTP id 4fb4d7f45d1cf-6b8ac39c472mr2401311a12.12.1795084971484; Thu, 19
- Nov 2026 02:42:51 -0800 (PST)
-Date: Thu, 19 Nov 2026 10:42:06 +0000
-In-Reply-To: <20261119104208.782900-1-halg@google.com>
+X-Received: from wmwb7-n1.prod.google.com ([2002:a05:600d:4447:10b0:4a1:a2ef:38dc])
+ (user=halg job=prod-delivery.src-stubby-dispatcher) by 2002:a05:600c:4e56:b0:4bb:7581:2bb9
+ with SMTP id 5b1f17b1804b1-4bb7da3003emr104763395e9.22.1795085234352; Thu, 19
+ Nov 2026 02:47:14 -0800 (PST)
+Date: Thu, 19 Nov 2026 10:47:13 +0000
+In-Reply-To: <20261118.faiBee9Taigh@digikod.net>
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Post: <mailto:containers@lists.linux.dev>
@@ -79,126 +80,55 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 List-Owner: <mailto:containers+owner@lists.linux.dev>
 Precedence: list
 Mime-Version: 1.0
-References: <20261119104208.782900-1-halg@google.com>
-X-Mailer: git-send-email 2.56.1.708.g77570a6a1d-goog
-Message-ID: <20261119104208.782900-3-halg@google.com>
-Subject: [PATCH v2 2/4] capability: bound ptrace and cred subset checks by
- userns ceilings
+References: <20261028221705.3915340-1-halg@google.com> <20261107.aighieG4Ami1@digikod.net>
+ <20261118.faiBee9Taigh@digikod.net>
+Message-ID: <av7TsXKUE69lyiWl@google.com>
+Subject: Re: [PATCH 0/8] userns: per-namespace capability bounding set and
+ opt-in netns loopback
 From: "Hallgrimur H. Gunnarsson" <halg@google.com>
-To: Christian Brauner <brauner@kernel.org>, Serge Hallyn <sergeh@kernel.org>, 
-	Andy Lutomirski <luto@kernel.org>
-Cc: Paul Moore <paul@paul-moore.com>, James Morris <jmorris@namei.org>, 
-	David Howells <dhowells@redhat.com>, Jarkko Sakkinen <jarkko@kernel.org>, Kees Cook <kees@kernel.org>, 
-	Jonathan Corbet <corbet@lwn.net>, Shuah Khan <skhan@linuxfoundation.org>, 
-	Randy Dunlap <rdunlap@infradead.org>, 
-	"=?UTF-8?q?Micka=C3=ABl=20Sala=C3=BCn?=" <mic@digikod.net>, Jonathan Calmels <jcalmels@3xx0.net>, Jann Horn <jannh@google.com>, 
-	"=?UTF-8?q?G=C3=BCnther=20Noack?=" <gnoack@google.com>, KP Singh <kpsingh@kernel.org>, 
-	Casey Schaufler <casey@schaufler-ca.com>, linux-fsdevel@vger.kernel.org, 
-	linux-security-module@vger.kernel.org, linux-api@vger.kernel.org, 
-	containers@lists.linux.dev, keyrings@vger.kernel.org, 
+To: "=?utf-8?Q?Micka=C3=ABl_Sala=C3=BCn?=" <mic@digikod.net>
+Cc: Christian Brauner <brauner@kernel.org>, Alexander Viro <viro@zeniv.linux.org.uk>, 
+	Paul Moore <paul@paul-moore.com>, Serge Hallyn <sergeh@kernel.org>, Kees Cook <kees@kernel.org>, 
+	"David S . Miller" <davem@davemloft.net>, Eric Dumazet <edumazet@google.com>, 
+	Jakub Kicinski <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>, Jan Kara <jack@suse.cz>, 
+	James Morris <jmorris@namei.org>, Simon Horman <horms@kernel.org>, Jonathan Corbet <corbet@lwn.net>, 
+	Shuah Khan <skhan@linuxfoundation.org>, Randy Dunlap <rdunlap@infradead.org>, 
+	Jann Horn <jannh@google.com>, "=?utf-8?Q?G=C3=BCnther?= Noack" <gnoack@google.com>, KP Singh <kpsingh@kernel.org>, 
+	Jonathan Calmels <jcalmels@3xx0.net>, Casey Schaufler <casey@schaufler-ca.com>, 
+	linux-fsdevel@vger.kernel.org, linux-security-module@vger.kernel.org, 
+	linux-api@vger.kernel.org, containers@lists.linux.dev, netdev@vger.kernel.org, 
 	linux-doc@vger.kernel.org, linux-kselftest@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, "Hallgrimur H. Gunnarsson" <halg@google.com>
-Content-Type: text/plain; charset="UTF-8"
+	linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
 
-Same-namespace ptrace checks only compare cap_permitted (or
-cap_effective), ignoring the userns capability ceiling. As a result, a
-task with a lowered ceiling could trace a less-restricted same-UID task
-in the same user namespace and use it to create a wider child user
-namespace.
+On Wed, Nov 18, 2026 at 03:43:03PM +0100, Micka=C3=ABl Sala=C3=BCn wrote:
+> Hallgrimur, could you please explain why your use case would not work
+> with Landlock?  The capability split or new clone flags would be
+> complementary of course.
 
-Require the tracee's cred_userns_bset() to be a subset of the tracer's
-in the same-namespace check in cap_ptrace_access_check() and
-cap_ptrace_traceme(). Cross-namespace implicit CAP_SYS_PTRACE via user
-namespace ownership is already bounded by cap_capable_helper(), while
-tracers holding explicit CAP_SYS_PTRACE retain access.
+Apologies for the late reply.
 
-Also update cred_cap_issubset() so commit_creds() resets mm->dumpable
-and pdeath_signal whenever a credential transition widens the effective
-userns capability ceiling.
+Landlock's capability restrictions work well for self-sandboxing
+applications and launchers. The main gap for our use case is setting a
+host-wide default for unprivileged user namespaces while still permitting
+exceptions. Because Landlock restricts all capability use (not just
+capabilities acquired via user namespaces) and its domains are strictly
+irrevocable, PID 1 cannot apply a default policy at boot without
+locking out privileged services, file-capability helpers, and authorized
+workloads. Using Landlock here would require explicit opt-in enforcement
+at every unprivileged transition boundary (SSH, container/job launchers,
+etc.), where missing any entrypoint leaves unprivileged user namespaces
+unrestricted.
 
-Suggested-by: Christian Brauner <brauner@kernel.org>
-Suggested-by: Andy Lutomirski <luto@kernel.org>
-Signed-off-by: Hallgrimur H. Gunnarsson <halg@google.com>
----
- kernel/cred.c        | 13 +++++++++----
- security/commoncap.c | 12 ++++++++----
- 2 files changed, 17 insertions(+), 8 deletions(-)
+In v1 we had the global sysctl to tackle this. In v2 (based on Christian
+and Andy's feedback), we combine per-cred cap_userns with per-userns
+cap_bset), and PID 1 or a service manager can lower the default userns
+ceiling once at the root of the process tree, while privileged tasks
+automatically retain capabilities held in cap_permitted and can
+explicitly raise cap_userns for authorized workloads unless locked.
 
-diff --git a/kernel/cred.c b/kernel/cred.c
-index d01df40a9a38..968122cdbf07 100644
---- a/kernel/cred.c
-+++ b/kernel/cred.c
-@@ -335,17 +335,22 @@ static bool cred_cap_issubset(const struct cred *set, const struct cred *subset)
- 	 * the capabilities of subset are a subset of set.
- 	 */
- 	if (set_ns == subset_ns)
--		return cap_issubset(subset->cap_permitted, set->cap_permitted);
-+		return cap_issubset(subset->cap_permitted,
-+				    set->cap_permitted) &&
-+			cap_issubset(cred_userns_bset(subset),
-+				     cred_userns_bset(set));
- 
- 	/* The credentials are in a different user namespaces
- 	 * therefore one is a subset of the other only if a set is an
- 	 * ancestor of subset and set->euid is owner of subset or one
--	 * of subsets ancestors.
-+	 * of subsets ancestors, and set's userns capability ceiling
-+	 * covers subset's capabilities.
- 	 */
- 	for (;subset_ns != &init_user_ns; subset_ns = subset_ns->parent) {
--		if ((set_ns == subset_ns->parent)  &&
-+		if (set_ns == subset_ns->parent &&
- 		    uid_eq(subset_ns->owner, set->euid))
--			return true;
-+			return cap_issubset(subset_ns->cap_bset,
-+					    cred_userns_bset(set));
- 	}
- 
- 	return false;
-diff --git a/security/commoncap.c b/security/commoncap.c
-index ddac8e917680..786f99eb6838 100644
---- a/security/commoncap.c
-+++ b/security/commoncap.c
-@@ -157,7 +157,8 @@ int cap_settime(const struct timespec64 *ts, const struct timezone *tz)
-  * @mode: The mode of attachment.
-  *
-  * If we are in the same or an ancestor user_ns and have all the target
-- * task's capabilities, then ptrace access is allowed.
-+ * task's capabilities (including its userns capability ceiling), then
-+ * ptrace access is allowed.
-  * If we have the ptrace capability to the target user_ns, then ptrace
-  * access is allowed.
-  * Else denied.
-@@ -179,7 +180,8 @@ int cap_ptrace_access_check(struct task_struct *child, unsigned int mode)
- 	else
- 		caller_caps = &cred->cap_permitted;
- 	if (cred->user_ns == child_cred->user_ns &&
--	    cap_issubset(child_cred->cap_permitted, *caller_caps))
-+	    cap_issubset(child_cred->cap_permitted, *caller_caps) &&
-+	    cap_issubset(cred_userns_bset(child_cred), cred_userns_bset(cred)))
- 		goto out;
- 	if (ns_capable(child_cred->user_ns, CAP_SYS_PTRACE))
- 		goto out;
-@@ -194,7 +196,8 @@ int cap_ptrace_access_check(struct task_struct *child, unsigned int mode)
-  * @parent: The task proposed to be the tracer
-  *
-  * If parent is in the same or an ancestor user_ns and has all current's
-- * capabilities, then ptrace access is allowed.
-+ * capabilities (including its userns capability ceiling), then ptrace
-+ * access is allowed.
-  * If parent has the ptrace capability to current's user_ns, then ptrace
-  * access is allowed.
-  * Else denied.
-@@ -211,7 +214,8 @@ int cap_ptrace_traceme(struct task_struct *parent)
- 	cred = __task_cred(parent);
- 	child_cred = current_cred();
- 	if (cred->user_ns == child_cred->user_ns &&
--	    cap_issubset(child_cred->cap_permitted, cred->cap_permitted))
-+	    cap_issubset(child_cred->cap_permitted, cred->cap_permitted) &&
-+	    cap_issubset(cred_userns_bset(child_cred), cred_userns_bset(cred)))
- 		goto out;
- 	if (has_ns_capability(parent, child_cred->user_ns, CAP_SYS_PTRACE))
- 		goto out;
--- 
-2.56.1.708.g77570a6a1d-goog
+Another minor difference is visibility. Clamping the task's capability
+sets on userns entry (and exposing CapUns in /proc/<pid>/status in v2)
+makes it easy for userspace to inspect what is actually restricted.
 
