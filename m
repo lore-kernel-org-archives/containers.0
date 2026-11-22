@@ -1,44 +1,44 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795376178;
-	b=cfZ5VP5YrDl5rvD7i1OnKCmrAzK2ElSvta4uR8TkAlo74jFT736GBEJlMaDLtcIDSNe7
-	 V91GF+L6YCMu270p2qYWeSa02auv4W/gfBQ5oSgXWN1eWcCm5wA5mVkslaPY5WQNo19pZ
-	 8+sKG3NKkzCYo6YADFueMDZb5g7qBDnxB/YULTckAatXfSOge1mIoTEr9sVM2Ry50zqI2
-	 aLYXJADbPb4HHehMgo1LRWr742p0fE+QS3QJ8CPx4ZY1PFnNCC8RMHu6qXdgoEHg46CPU
-	 lgNa9TiK45eLxB92jbWM31rLSMf1lktqlgkc+RhJihxTsWZ+XJj/vPSOj6KuKe+DvJg==
+	t=1795376191;
+	b=F+DuJWRAMpFfSHbXJS+YprQCxkVaekpjaO0NB5EOIfzrOrH14DYuY0Wfur3x+y2fY2uw
+	 aE/qQRFK86mDEpm+r4ILY6uafJf6qZuf3OY8IHlzdUJqMEBhzwYNkoRkT3frjToqp7Ter
+	 wDflqDQ0hVzCEBmFKOQAVIHBv1odHm4EhEBy52qOBBenFLC6f0uE9R8fUezmr7jdRyIx9
+	 G5/8kQ5v8eXbqg/u0XvZbKzfv82DXaclBohKqqgZJy75g++EjfpUJuHZ5WTZopHHB8C1X
+	 igMEn1Se2Phh2Mk3NkRlXZsX+daEDGh64IPGDtcHfm+U/pWqBh4q7WgVaxGYyfK/Prw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795376178;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795376191;
 	h=Received:DKIM-Signature:From:To:Cc:Subject:Date:Message-ID:X-Mailer:
 	 In-Reply-To:References:MIME-Version:Content-Transfer-Encoding;
-	bh=l3BxF7eKc8H9WX2SeKI00rPkbSvVT1UJBee/DhqmTQQ=;
-	b=vmDTZwG+RhcSQKOw8TIXiezwWtR7qcjeWdVLqcFxx4IX6zHW/hUqiJJh/n09m7Ar1f0l
-	 LnZDwzfHiaS1O+t7KFXr6cInCHZ4Z7cfygy5202px2RvBmzobwFTCHTOTymK1M57RAxb2
-	 x8AIKO6kWvfrebzx4MR2Zfg6KmxMsr1kXpkqo//zVNykhSdK+NcamVjAisr3UjWf6tGZ6
-	 fLv1/WNyDhxhQmS8Tv3JOoF8Vrggp7sgOnLAmKxc0iB6ep0sIRW4BE/vNbpMU8tnRUFCD
-	 VeyhlvPYkiudhsTxSFKkCLXhVCP9v5scLSBN/nD3HQxTJQlvvd5MWfSy/3OapS2x9JA==
+	bh=43MsiEFgIrWkQNcNF+GYEjx93qeN3UcnPDjH27vMBMY=;
+	b=NjgPFAuP7VX9v/ecV2jOcO6voJMyU921r26ucFJNu+mIo3pZIN8kIhuMfnLGaPqTwE84
+	 RkF9Nuk1FwYmer+1dITbirD7DquoKAjqY4s10em8GrUyxQcQvWViZDmfKS0JRbGoe0Xcu
+	 1Az4bPwg+RGPBR5v2ZPCQ2VIEzsy42SwTJ7IWduePirdp0GNunmWPUQJ9LGHIKcM7mYI7
+	 UbcMBsyddPJvOh0QlBha0/Q12hBQg+8AnJ6k/fr4cmjIoZjxBt7rkDR32DSlZlD5dwFKP
+	 PvtABPomWvreciMV3jISxF00iry6ucnH22TmbAq5tohuM3wE2a+k/k3shc63GkQCW2w==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b="T28tb/dn";
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=Jx9MYo4v;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with UTF8SMTPS id 2C522606A320;
-	Sun, 22 Nov 2026 19:36:17 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with UTF8SMTPS id 383A9606A338;
+	Sun, 22 Nov 2026 19:36:31 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=T28tb/dn
-Received: by smtp.kernel.org (Postfix) with UTF8SMTPSA id 09FC71F000EB;
-	Sun, 22 Nov 2026 19:36:17 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=Jx9MYo4v
+Received: by smtp.kernel.org (Postfix) with UTF8SMTPSA id 1E7691F000D4;
+	Sun, 22 Nov 2026 19:36:30 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795376177;
-	bh=l3BxF7eKc8H9WX2SeKI00rPkbSvVT1UJBee/DhqmTQQ=;
+	s=k20260515; t=1795376190;
+	bh=43MsiEFgIrWkQNcNF+GYEjx93qeN3UcnPDjH27vMBMY=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=T28tb/dnYShrqpGI2ZILYjzh72RVEHrrezyrm54oR6Obd86v3PTs376d9kZmGiJB+
-	 MUaqau3YQxX+z/GWr+9RG0JDb6bK1vqUMm9l/H8m/RqGDXDxO5ShNJ6WPrcOKQFN72
-	 Lp2v8MzuVi6Nq52IkFkGidmWcugTYAZverSueVjAgR2lsfg4eHz5f+C9qJscWQmP91
-	 UvSv7pZiNTWpbNmSdj6YKT2dG8l982i7je4+oLgBuBdSEu85qs20Ob4lOnj9/OCG2z
-	 aSfS6cai0B+r+urHqmyerKvW0s6us7upbOBQhpzjuP6094eRFGxT0XybG4NqwQpfnw
-	 74hvHOnQ9kYMw==
+	b=Jx9MYo4v5dG6TuiLqqMpwfnCLNp1dU3fsjM0rs7NeUiQpqvCbQkc6zfNZfQn1ceCg
+	 dkL6lAYTT/XApYv1EnrG/3bDLes3Ar8rT3NVk6CyizxCjxJOWQr/BQgKMnE4DozfXc
+	 6MaZrPMCQKrw6XbZAf3J55qgj9MKKx8nvfOUvGoHcJ7/8yOdGVy1JssCARbZmF8vek
+	 6kxEG95kGAihkM4HDqZ8n1mTcg/lmo4gtW2J8GayVKr+sLDzrsuUuDCALp/vF2d+2v
+	 BPUR0GZ3wJ2zZz8SvSCUOuV/4ea/j5aB9DkmJvEGCqfWbjjKoyCZJsHY54JfZejPWu
+	 dmVhu9cXx73XQ==
 From: Jarkko Sakkinen <jarkko@kernel.org>
 To: linux-fsdevel@vger.kernel.org
 Cc: Jarkko Sakkinen <jarkko@kernel.org>,
@@ -75,9 +75,9 @@ Cc: Jarkko Sakkinen <jarkko@kernel.org>,
 	Serge Hallyn <sergeh@kernel.org>,
 	Shuah Khan <skhan@linuxfoundation.org>,
 	Zygmunt Krynicki <zygmunt.krynicki@canonical.com>
-Subject: [RFC PATCH v7 05/26] mount: Enforce mount_too_revealing() for foreign mntns
-Date: Sun, 22 Nov 2026 21:35:18 +0200
-Message-ID: <20261122193539.3334213-6-jarkko@kernel.org>
+Subject: [RFC PATCH v7 08/26] userns: Factor out install_user_ns_cred()
+Date: Sun, 22 Nov 2026 21:35:21 +0200
+Message-ID: <20261122193539.3334213-9-jarkko@kernel.org>
 X-Mailer: git-send-email 2.47.3
 In-Reply-To: <20261122193539.3334213-1-jarkko@kernel.org>
 References: <20261122193539.3334213-1-jarkko@kernel.org>
@@ -92,98 +92,77 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-mount_too_revealing() skips visibility checks whenever
-current->nsproxy->mnt_ns belongs to init_user_ns, assuming the caller
-holds CAP_SYS_ADMIN in its current mount namespace. That assumption does
-not hold when an unprivileged caller creates mounts for a child user
-namespace while running in init_mnt_ns or another foreign mount
-namespace.
+userns_install() updates a credential's owning user namespace and
+rebinds its ucounts inline, which cannot be reused by fork paths that
+switch a newly allocated child credential into a target user namespace.
 
-Require CAP_SYS_ADMIN in init_user_ns before bypassing
-mount_too_revealing() for init_mnt_ns, reject chrooted callers lacking
-CAP_SYS_ADMIN in their current mount namespace, and treat existing
-mounts and child overmounts in a foreign mount namespace as locked
-during mnt_already_visible() checks.
+Factor this logic out into install_user_ns_cred() with a !CONFIG_USER_NS
+stub so callers outside kernel/user_namespace.c can install a target
+user namespace on a prepared struct cred.
 
 Co-developed-by: David Howells <dhowells@redhat.com>
 Signed-off-by: David Howells <dhowells@redhat.com>
 Signed-off-by: Jarkko Sakkinen <jarkko@kernel.org>
 ---
- fs/namespace.c | 24 +++++++++++++++++-------
- 1 file changed, 17 insertions(+), 7 deletions(-)
+ include/linux/user_namespace.h |  7 +++++++
+ kernel/user_namespace.c        | 12 ++++++++----
+ 2 files changed, 15 insertions(+), 4 deletions(-)
 
-diff --git a/fs/namespace.c b/fs/namespace.c
-index 781380945d78..1bb9f90a6523 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -6580,7 +6580,7 @@ bool current_chrooted(void)
- 
- static bool mnt_already_visible(struct mnt_namespace *ns,
- 				const struct super_block *sb,
--				int *new_mnt_flags)
-+				int *new_mnt_flags, bool foreign_ns)
- {
- 	int new_flags = *new_mnt_flags;
- 	struct mount *mnt;
-@@ -6606,11 +6606,16 @@ static bool mnt_already_visible(struct mnt_namespace *ns,
- 			continue;
- 
- 		/* A local view of the mount flags */
--		mnt_flags = mnt->mnt.mnt_flags;
-+		mnt_flags = READ_ONCE(mnt->mnt.mnt_flags);
- 
- 		/* Don't miss readonly hidden in the superblock flags */
- 		if (sb_rdonly(mnt->mnt.mnt_sb))
- 			mnt_flags |= MNT_LOCK_READONLY;
-+		if (foreign_ns) {
-+			if (mnt_flags & MNT_READONLY)
-+				mnt_flags |= MNT_LOCK_READONLY;
-+			mnt_flags |= MNT_LOCK_ATIME;
-+		}
- 
- 		/* Verify the mount flags are equal to or more permissive
- 		 * than the proposed new mount.
-@@ -6629,7 +6634,7 @@ static bool mnt_already_visible(struct mnt_namespace *ns,
- 		list_for_each_entry(child, &mnt->mnt_mounts, mnt_child) {
- 			struct inode *inode = child->mnt_mountpoint->d_inode;
- 			/* Only worry about locked mounts */
--			if (!(child->mnt.mnt_flags & MNT_LOCKED))
-+			if (!foreign_ns && !(READ_ONCE(child->mnt.mnt_flags) & MNT_LOCKED))
- 				continue;
- 			/* Is the directory permanently empty? */
- 			if (!is_empty_dir_inode(inode))
-@@ -6649,14 +6654,19 @@ static bool mount_too_revealing(const struct super_block *sb, int *new_mnt_flags
- 	const unsigned long required_iflags = SB_I_NOEXEC | SB_I_NODEV;
- 	struct mnt_namespace *ns = current->nsproxy->mnt_ns;
- 	unsigned long s_iflags;
--
--	if (ns->user_ns == &init_user_ns)
--		return false;
-+	bool foreign_ns;
- 
- 	/* Can this filesystem be too revealing? */
- 	if (!(sb->s_type->fs_flags & FS_USERNS_MOUNT_RESTRICTED))
- 		return false;
- 
-+	foreign_ns = !ns_capable_noaudit(ns->user_ns, CAP_SYS_ADMIN);
-+	if (ns->user_ns == &init_user_ns && !foreign_ns)
-+		return false;
-+
-+	if (foreign_ns && current_chrooted())
-+		return true;
-+
- 	s_iflags = sb->s_iflags;
- 	if ((s_iflags & required_iflags) != required_iflags) {
- 		WARN_ONCE(1, "Expected s_iflags to contain 0x%lx\n",
-@@ -6671,7 +6681,7 @@ static bool mount_too_revealing(const struct super_block *sb, int *new_mnt_flags
- 	if (s_iflags & SB_I_RESTRICTED_VARIANT)
- 		return false;
- 
--	return !mnt_already_visible(ns, sb, new_mnt_flags);
-+	return !mnt_already_visible(ns, sb, new_mnt_flags, foreign_ns);
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index b4a50edfe003..ecee91aa2257 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -182,6 +182,7 @@ static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
  }
  
- bool mnt_may_suid(struct vfsmount *mnt)
+ extern int create_user_ns(struct cred *new);
++int install_user_ns_cred(struct cred *cred, struct user_namespace *user_ns);
+ extern int unshare_userns(unsigned long unshare_flags, struct cred **new_cred);
+ extern void __put_user_ns(struct user_namespace *ns);
+ 
+@@ -224,6 +225,12 @@ static inline int create_user_ns(struct cred *new)
+ 	return -EINVAL;
+ }
+ 
++static inline int install_user_ns_cred(struct cred *cred,
++				       struct user_namespace *user_ns)
++{
++	return -EINVAL;
++}
++
+ static inline int unshare_userns(unsigned long unshare_flags,
+ 				 struct cred **new_cred)
+ {
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 61dcf2fab6f0..218ea4e73006 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -1613,6 +1613,13 @@ static void userns_put(struct ns_common *ns)
+ 	put_user_ns(to_user_ns(ns));
+ }
+ 
++int install_user_ns_cred(struct cred *cred, struct user_namespace *user_ns)
++{
++	put_user_ns(cred->user_ns);
++	set_cred_user_ns(cred, get_user_ns(user_ns));
++	return set_cred_ucounts(cred);
++}
++
+ static int userns_install(struct nsset *nsset, struct ns_common *ns)
+ {
+ 	struct user_namespace *user_ns = to_user_ns(ns);
+@@ -1638,10 +1645,7 @@ static int userns_install(struct nsset *nsset, struct ns_common *ns)
+ 	if (!cred)
+ 		return -EINVAL;
+ 
+-	put_user_ns(cred->user_ns);
+-	set_cred_user_ns(cred, get_user_ns(user_ns));
+-
+-	if (set_cred_ucounts(cred) < 0)
++	if (install_user_ns_cred(cred, user_ns) < 0)
+ 		return -EINVAL;
+ 
+ 	return 0;
 -- 
 2.47.3
 
