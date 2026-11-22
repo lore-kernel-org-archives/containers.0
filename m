@@ -1,45 +1,45 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795313622;
-	b=ma14m/o2pRd6pbJahdtozFOxevuaOo5w4eZ7g83r0GQxzaiaQ7lleNEH/r2cgfuJ3Wje
-	 DZYLHBcuBQjUkFe8NQmt3Z5HW8/c3zbCqtuDKeEGbb1LmDr8WjrdPyKCqdO+jrKbCcBxF
-	 07v3IZ9rsfDTk+/r7hekkMN5jUWaS4pfG4YAN8rf+QUwVd8z2oxf/0KvrL4jUdMliVnBo
-	 qu5PyZO+9omuWL3mSU9Vc/ni93Wgl7pd9gGmAogqGxGQ5TYVzvX8lYIsknvN2hNxr6hcc
-	 rshzwzh4tpgTED/5vWPSMCuC/V7J8HubGWBx6yK13NbOi0KxuW3qMAvj8fv22w8shiA==
+	t=1795313627;
+	b=PHlFnoGgMW5JPvgTag7Rdg7hTPjrtLSScH5Lo0mFgo5E4XIwmf82uJ+zWJYT/0VCBmQV
+	 Z4i9CNfg9ncwGKPAfpKPVHumRva9q1eQsntwZF11nAF26ptS0uMry/VRLa2MrDyX66oBY
+	 h0IfT2nusY7uNgerpRvd1yO7uS34cFk0ZtgNR8DTsosieV7Pefn36HhNjzig9RTZQ65Cl
+	 wy1Og5lb7YzFpuuimOvRhywX2E0nwJM1XKpv/M+arNBO9gtlpSMLimaJ48JEkBE+FSbIP
+	 45isIyJL6WooZag+IlV6Wz/avQ7/Q3aKrz4xzBwKi9vdBQlohUTt2Vn1mTWUMp4tpDA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795313622;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795313627;
 	h=Received:DKIM-Signature:Content-Type:MIME-Version:Message-Id:
 	 In-Reply-To:References:Subject:From:To:Cc:Date;
-	bh=fBzgFQxfDK4iLWmYyLcERpDKYI+EngwvDO2PASCaLKo=;
-	b=rgIrFOp9ZgLl0JgEfxgQ0SWBYcnZahDhBUK6z5cGbD062z5qn0TgI3tGvJIDqBvOwdb2
-	 3rlo9aH7hjczEjgDpTnbxuj7jVYL593x3ZxhwspeHr8UGdE0omw4Bf0vp//gUU5IQ+UaK
-	 HUXdTe56B0joEq+WgiKLkOm5jRc0VFxo+Cr4WwfIPV1CDDg82SCxefR38VX+bD5QfantE
-	 qCCdqxtF0pAwDRqKmpS++EzozXo+72tlkaTIR6D7Auy5c2O45xAmbUxCTxS/FlTMV/lge
-	 SU+aOiiuItMQSB05KkDbo2YBfFLJjsc60vP7DjZjE3Ww51ooU4EgBeO8Pz7BWQIMcag==
+	bh=fZRJwAY0kLkmZpFTl11wk8j7FY+RcHR74PBO3B2HID8=;
+	b=U6ZojW06BivzkmdfSSHG/rWjPBNF5i+7S0F0sHK3MsXGh/MumShvBk0FnLAYOgpvogkE
+	 m7xvKyn9TZQmMCFh4mtKOlFEeHEfLX3Ff/L+Wzeu2hoaV3MCR1MAQYq/jJ9a3Sq998DZB
+	 D3X93rnM3kaN5adQpSwGEfYD5h+Ffnpmk1fqQZ1za0I4jA6+EWJ5xRinfzQF5j6Adwa3h
+	 tYLhdk4MXdael7yygolubPPKHokFFxcZZrFuquRufkAFlqSOonorSSavS9IUp+LZzWhLw
+	 Q9yZLqmy9aoEtSgVcWBb8/cYAgKKCWrdWHIEskAzAX/nJBM/2f8XrWhEI7+yQgdfdTQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=TpcNti2u;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=HuzYQ3+Z;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6B725606A331;
-	Sun, 22 Nov 2026 02:13:42 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BF576606A33B;
+	Sun, 22 Nov 2026 02:13:47 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=TpcNti2u
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 852201F000CA;
-	Sun, 22 Nov 2026 02:13:38 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=HuzYQ3+Z
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id EB3081F000CA;
+	Sun, 22 Nov 2026 02:13:43 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795313622;
-	bh=fBzgFQxfDK4iLWmYyLcERpDKYI+EngwvDO2PASCaLKo=;
+	s=k20260515; t=1795313627;
+	bh=fZRJwAY0kLkmZpFTl11wk8j7FY+RcHR74PBO3B2HID8=;
 	h=In-Reply-To:References:Subject:From:To:Cc:Date;
-	b=TpcNti2uw/g3I0rkQsslyB6PuY+0GdpBgwPbIyrud8im9z4Yv6rEhMrXaS8RxcOR7
-	 DfhXKjvvkSFEeMK2x7O5+XlkT7rA1wCstza/LGnqT45DanBI3Ma1k0ATma9TjS8ql/
-	 izYyUyb9Mvy27cBgWCGTZE1Wa61QIocuwKPFlmrlzy4qbrO8YTCcuhqeVh/p8Wz1zX
-	 vbXeb+akhaKCY0lk977DvNA4jPn3BdA4kJQT4P4PqDqbZIsjH2JvNmHOd1POz6usqw
-	 GXP98O7f/pcQgYh6fSbaSHWkWGoqiSmEdVJnTP2Kb20jJev/IcuOBrsnHeTmXNY4FY
-	 BIWfOcDLccv7Q==
-Content-Type: multipart/mixed; boundary="===============6662202981018923107=="
+	b=HuzYQ3+ZJ4kIQAFE0RRBLcAdMCPKIzlkXHrLV4idMRn0R4difRDbB9pQRXrJGFSut
+	 drbvK8Hxjyw0a7PVuHsUeBe8N4ajEJ3dwCOOa0P7S1hinBUW56jo2uIcrmCQwuWDR6
+	 I6XQiDO1LhCvaQF8w+GKOEYGmNoHAaQ+/nxIvG65kJiY9Isl1nJrjR2Tim1IdXxkWD
+	 LEqcqG5WovbXGTZ1ryNg/VsTYR6GAgWmx1XdPJzxoo6bZsZYsS8/c3q8JbKwvX3S4T
+	 oQNTD6qfb+ev+ZgDKyIAJDjVNHujT0e7Eyt3OqFOka9tlHd4GAFYSKWMbP5RrsD9lk
+	 E0xsl2WH3feww==
+Content-Type: multipart/mixed; boundary="===============6920277758331287056=="
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Post: <mailto:containers@lists.linux.dev>
@@ -49,25 +49,25 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 List-Owner: <mailto:containers+owner@lists.linux.dev>
 Precedence: list
 MIME-Version: 1.0
-Message-Id: <e38bde24044ae1f3535fd4708ab53f7e88a826f4ca42f83f2a6429f84240f795@mail.kernel.org>
-In-Reply-To: <20261122011809.2667684-13-jarkko@kernel.org>
-References: <20261122011809.2667684-13-jarkko@kernel.org>
-Subject: Re: [RFC PATCH v6 12/26] userland: Add userland_open() system call
+Message-Id: <1d998074e046fc55d51361a3f7d642ab1405b4ec87d9bcfe315f717fcf52e456@mail.kernel.org>
+In-Reply-To: <20261122011809.2667684-14-jarkko@kernel.org>
+References: <20261122011809.2667684-14-jarkko@kernel.org>
+Subject: Re: [RFC PATCH v6 13/26] userland: Add USERLAND_GET_NSFD ioctl
 From: bot+bpf-ci@kernel.org
 To: jarkko@kernel.org,linux-fsdevel@vger.kernel.org
 Cc: jarkko@kernel.org,bpf@vger.kernel.org,containers@lists.linux.dev,linux-api@vger.kernel.org,linux-arch@vger.kernel.org,linux-doc@vger.kernel.org,linux-kernel@vger.kernel.org,linux-kselftest@vger.kernel.org,linux-mm@kvack.org,linux-security-module@vger.kernel.org,aleksa@amutable.com,alex@amutable.com,viro@zeniv.linux.org.uk,luto@amacapital.net,arnd@arndb.de,brauner@kernel.org,dhowells@redhat.com,giuseppe@scrivano.org,hughd@google.com,jack@suse.cz,jlayton@kernel.org,corbet@lwn.net,josef@toxicpanda.com,kees@kernel.org,kpsingh@kernel.org,lennart@poettering.net,neal@gompa.dev,oleg@redhat.com,paul@paul-moore.com,ptikhomirov@virtuozzo.com,sergeh@kernel.org,skhan@linuxfoundation.org,zygmunt.krynicki@canonical.com,ast@kernel.org,andrii@kernel.org,daniel@iogearbox.net,martin.lau@kernel.org,eddyz87@gmail.com,yonghong.song@linux.dev,mason@kernel.org,ihor.solodrai@linux.dev
-Date: Sun, 22 Nov 2026 02:13:38 +0000 (UTC)
+Date: Sun, 22 Nov 2026 02:13:43 +0000 (UTC)
 
---===============6662202981018923107==
+--===============6920277758331287056==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 
-> userland: Add userland_open() system call
+> userland: Add USERLAND_GET_NSFD ioctl
 
-TL;DR: Nit only: the current->nsproxy NULL check and -EOPNOTSUPP return in
-userland_open() look unnecessary, since unshare() and setns() don't test it;
-could it be dropped?
+TL;DR: userland->lock is taken with irqs enabled but, once
+clone3(CLONE_INTO_USERLAND) lands later in the series, also under siglock; a
+possible deadlock lockdep would report. Latent at this commit.
 
 > diff --git a/kernel/userland.c b/kernel/userland.c
 > --- a/kernel/userland.c
@@ -75,29 +75,63 @@ could it be dropped?
 
 [ ... ]
 
-> +SYSCALL_DEFINE1(userland_open, unsigned int, flags)
+> +static long userland_get_nsfd(struct userland *userland, unsigned long nstype)
 > +{
-> +	struct userland *c;
-> +	int fd;
-> +
-> +	if (flags & ~USERLAND_ALL_FLAGS)
-> +		return -EINVAL;
-> +	if (unlikely(!current->nsproxy))
-> +		return -EOPNOTSUPP;
-
-This isn't a bug, but can current->nsproxy actually be NULL in a syscall
-here?
-
-A task only loses its nsproxy in exit_task_namespaces() from do_exit(),
-after which it never returns to user mode.  unshare() and setns() dereference
-current->nsproxy without such a test, and userland_create() itself passes
-current to create_new_namespaces(), which dereferences tsk->nsproxy
-unconditionally.
-
-Could this check (and its -EOPNOTSUPP return) be dropped to match
-unshare()/setns()?
 
 [ ... ]
+
+> +	scoped_guard(spinlock, &userland->lock) {
+> +		switch (nstype) {
+> +		case CLONE_NEWNS:
+> +			ns = from_mnt_ns(userland->ns->mnt_ns);
+> +			break;
+
+[ ... ]
+
+Can this lock be taken with hardirqs enabled?  Later in the series,
+commit 498ccb2ffbc4 ("fork: Support CLONE_INTO_USERLAND in clone3()")
+passes args->userland to userland_copy(), and copy_process() calls it
+while holding write_lock_irq(&tasklist_lock) and
+spin_lock(&current->sighand->siglock):
+
+copy_process()
+  write_lock_irq(&tasklist_lock)
+  spin_lock(&current->sighand->siglock)
+  userland_copy()
+    scoped_guard(spinlock, &c->lock)
+
+siglock is hardirq-safe, since it_real_fn() reaches it through
+kill_pid_info()->lock_task_sighand() from a hard hrtimer callback.  That
+gives siglock -> userland->lock, with userland->lock taken here with
+irqs enabled, which lockdep will report and which can deadlock:
+
+CPU0
+ioctl(USERLAND_GET_NSFD, CLONE_NEWNET)
+  spin_lock(&userland->lock)        irqs still enabled
+
+CPU1
+clone3(CLONE_INTO_USERLAND)
+  copy_process()
+    write_lock_irq(&tasklist_lock)
+    spin_lock(&parent->sighand->siglock)
+    userland_copy()
+      spins on userland->lock
+
+CPU0
+hardirq: parent's ITIMER_REAL fires
+  it_real_fn()
+    lock_task_sighand(parent)       spins on siglock held by CPU1
+
+GET_NSFD has no state check for types other than CLONE_NEWPID, so it can
+run while the userland is in USERLAND_INIT or USERLAND_FORKING, at the
+same time as the bootstrapping clone.
+
+At this commit userland_copy() is still passed NULL, so this is latent
+until that later commit.  userland_release(), userland_exit() and the
+later userland_share_nsfd() take the lock the same way, and the series up
+to 942764a55437 still uses scoped_guard(spinlock, ...) at every site.
+Should these sites use spinlock_irq, or should the userland_copy()
+bookkeeping move out of the tasklist_lock/siglock section?
 
 
 ---
@@ -105,4 +139,4 @@ AI reviewed your patch. Please fix the bug or email reply why it's not a bug.
 See: https://github.com/kernel-patches/vmtest/blob/master/ci/claude/README.md
 
 CI run summary: https://github.com/kernel-patches/bpf/actions/runs/44972669664
---===============6662202981018923107==--
+--===============6920277758331287056==--
