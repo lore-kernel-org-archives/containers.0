@@ -1,100 +1,83 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.167.50
-ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1795194602;
-	b=iFld1aFMvKAZoFDdxJYPVwNZVwWJX4fdggHT46wCHT5mc9e89GAhcqC7X6V5ebqoufIw
-	 TI3exHwvDIlOT8PYyMTMbvgHmQLPlTd7lrxUu9ssUeU6iv87NRch0kDs4yEtSNCJn/aOZ
-	 n0i5VHtfW2dASbOWT5+JM2DpcMJXcd6mnJl45mtK7Rpckg++BWFScH54euMYe6sEacy91
-	 N7KMhKJFH2ZKF9dtMJBpddQBYIoEWrczZN9kE+Wcqh0lg9fIv/GQO+YFAi1L4duMQCcoZ
-	 zoO+xLi4hKiJ1Qdb3q4dKzNkGI/qiJbzSmqsloJ8gBmt5gpBu2F1RXcls5k7B9oE3ng==
-ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795194602;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
-	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
-	 Message-ID:Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
-	bh=ZjKXRhmMlyIf4k/Bgeh6+i9VHnnHMzl/5R3cKodeiFA=;
-	b=CMy9MnpZ2lCgbXF/bVinQkhtGWN5New8kpZuusYjvqMkIndDu3K0CMbhbGedRRT5Wbxw
-	 DjF2gHH16fwyd+hugRTicEIS+wgCyNUrqOrq1dQPxV57XdP1enX8qG2SaeBItfNYi2G/9
-	 KlXEyjPYEeEGoboMT0QJaphnLGjW9IG6UUQ7rgRVnZeIfViIK74ianiR/QBhatwWFNedz
-	 GlQOCq5B3jHqNHnI8WzQsJcle+LFYVHzZ3HJ+z06ppruBvahr37SQhJ2wkEhXSDy7yuxH
-	 DAOk0oA08Uks2wd0SgdgwDFZFJx5CJhW5WqNeGT63zwieIpe2dAj4sRy5witbfDVLug==
-ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dmarc=none header.from=amacapital.net;
-	spf=pass smtp.mailfrom=amacapital.net;
-	dkim=pass header.d=amacapital-net.20260707.gappssmtp.com header.i=@amacapital-net.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b=GuuzqGHx;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.167.50
-Received: from mail-lf1-f50.google.com (mail-lf1-f50.google.com [209.85.167.50])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
+	t=1795310300;
+	b=WPYVOg6gOr+qSMQFLMSzVqS704O1lOZ2A/R1YcZOcmyIL3heJl5Rj9+avzAHFA2HdI0+
+	 RX24DF30vK8KbW5EbWA3IwIIS8aPeuFzazKXrB8HtR1bXSDgaZHigVHzeBAgMBizACLzc
+	 41CdNAgihQdtKS52d76U5495X9cgNPBtt17EtBiQqS6L4/1tRVVkDjprFXiS4mIZismCr
+	 CsfNLnkaVmBmjA8tmrqCaS2buwN0Whbk+QfhI44xQOVTsl35IltBT60k+xydJ1JToXd2k
+	 4kRGzoZTFbYIl3pDNW7P2lkBmL8LdXMZzZ5cqEJIgr4fMqvSEe0renbviBgRz5AP7pA==
+ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795310300;
+	h=Received:DKIM-Signature:From:To:Cc:Subject:Date:Message-ID:X-Mailer:
+	 MIME-Version:Content-Transfer-Encoding;
+	bh=RY0oC16g4pVcARSzM2cC6w4tme3da83DOQJt8X7iSwg=;
+	b=RJPRdZLFBdJ7aAW8wq3/ecByxNxyEo0onR7o+8VirfwF8MKhbsHP8xyKCLn0X3unKJFh
+	 plqNrfYGOkpEp/p75yw59iwwUrhv7Zf5jq3XTLB5LrD6aJltXrkaXLDlZ5H88I0B1JSdA
+	 /pzTjENIR3XfYj+XL6irE/jTE2fnd0bz0RkxAUSFemtrAgvZUBTLMJH1RyldBGHxJP576
+	 UyF5J0WidY3IQlcP3Q1lcMDeBcP9mSUkMOq0A7f2g1xnQoVSDGxYxdbGvaZcJQDaEmt5d
+	 VypI8bm7IM+7dUcEbara6POmC9UxDpP71ngvTdIY74k4j6xJL2MWeSbcHcundB06ehw==
+ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b="N507s/tl";
+	arc=none smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2D1CC60A2634
-	for <containers@lists.linux.dev>; Fri, 20 Nov 2026 17:10:01 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 2D1CC60A2634
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=amacapital.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=amacapital.net
+	by smtp.subspace.kernel.org (Postfix) with UTF8SMTPS id 1EFBA606A320;
+	Sun, 22 Nov 2026 01:18:19 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=amacapital-net.20260707.gappssmtp.com header.i=@amacapital-net.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b=GuuzqGHx
-Received: by mail-lf1-f50.google.com with SMTP id 2adb3069b0e04-5be3d5927ceso1600586e87.3
-        for <containers@lists.linux.dev>; Fri, 20 Nov 2026 09:10:00 -0800 (PST)
-ARC-Seal: i=1; a=rsa-sha256; t=1795194599; cv=none;
-        d=google.com; s=arc-20260327;
-        b=e4oPa61o5pTL+fN6L8y749o4d8S8Wm6TM5jYtdQ5MxZ26DAkYsP92PwLasrku9QNxl
-         FcEfw3zAMJ52hYKaG1Mp6EuAJKv0F5GdU1DX8AKf73fdFSDlRVnCZxDz//JhvfdVKcua
-         JgjabGxyQuDB32PxLoo/AyQuVMgEofjj8ydX8Jz+Ima/BY7ZwLRqnjO9oMz0Y2ThHVdv
-         y0bexqMFW3FqgaUzZBj0aXsEWHng9IfJh/lDrsCB7x+lJ98+1tPxl3NRLG+mXDwBNaO3
-         ODIad0TIy0IpQmXrBNrxtGHg+6NLdphs26znGzVPlNiwTBWIPU/tW8fUpJ/aSjK0yt35
-         Xh8w==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=ZjKXRhmMlyIf4k/Bgeh6+i9VHnnHMzl/5R3cKodeiFA=;
-        fh=JMxsMEVSxyhKvwyzlA8E3j0EmApSG5irF5aCbCAt0q8=;
-        b=IUnfnijYbVhGkFhodqx0C+Z55LUuIkKQ1NvOQ44iBK3dLHOcWqKN3J4QP3RIAVhoaR
-         IAKUT4bWvrvkF69xJnq+VA9XzBsD9h9SPVG9YO4oVX9nu6uFke58gRj32iUpM9cHseZ5
-         3+94OPNbamSLDHGiVzpHrWy23VWfLQYs/TWMtfwRNG+3VC/QKel9xiadE8oC+xgw7lz2
-         mNiyLxRn5rkjaM5mUhXuY3juI1An/jrvUHFLY0q47YUAz/OavFxT6hSXxicmgJ0hDwY5
-         SlYkDI2w7MwbnO6b01k1QWbfGeQDRvwbTVu8OxNurmd3JO4y8qKG84MY34YNKZmQiUub
-         +rlQ==;
-        darn=lists.linux.dev
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=amacapital-net.20260707.gappssmtp.com; s=20260707; t=1795194599; x=1795799399; darn=lists.linux.dev;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=ZjKXRhmMlyIf4k/Bgeh6+i9VHnnHMzl/5R3cKodeiFA=;
-        b=GuuzqGHxXu5TAUzwlKH8k6IU+/knnKA7oIaMLa5tP8jKL4BaZXmwO9XAAI9+hiJMvL
-         /4u0F+l5ljJzN6GX6zCDKcGfkxLCvIF4Uy/gYtgW4VWH3o4DjPkdwFPTw5IGXwRg36UT
-         zn8TPFeK3DwxBQzs6m8qlaLou829Au0e4quCx9Bk5UZ4ppmS/xhBmBPywHMS77EPEfNN
-         JI1wKzIw1P71cinLluPuDI9HxL9wgBHbeAmvsR0Qsylmk//k14C/MJRLObGzlDhGHOZM
-         JXuLS1mIKBCKPOJEU4d9IzJQJ/EMsL+G6VvwTurxl70+G5IMJXTvhkINPpqEqQFaUHUT
-         MhaA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1795194599; x=1795799399;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=ZjKXRhmMlyIf4k/Bgeh6+i9VHnnHMzl/5R3cKodeiFA=;
-        b=Zs1HDPjHJuvTG/RW6pXIq1C5CIyG7ZcolK4gNl5IF/fe76kiXW6Gi9TtcNJij3kcLi
-         UgmqTv4TuAZT2DvqUvUDtn7olsv/RFey8EYx3/D4CE9paSDFNP5E7y7eIT819rMERey0
-         ueGUdNX4tyT1rZ95JL10/oMBJ3JUKZFt2wj4Kh6gJD7UTgi/WHfz+7DagvjYgiofobKy
-         iLF7CSwZVHRnu0jGkWTc5eKlOkDK4v9FQD5M3ThMBvenM0gDX3a0DaGZLF/+sQRU78v6
-         SAuSIMxZNF0eOhnozMh8Em97N3GR6H6mNIcXCv4JSYDLMOR1IhvIk1wPtKG5MdZp7qtp
-         /CEA==
-X-Forwarded-Encrypted: i=1; AL+hErHk08Sp6+ZesQR6QYQ+Pmge1CR0ORSqcEDA1Z0Ug+hmjZz+flvKBgLPVAqIUu6/NxamQi2m7a8XRSVF@lists.linux.dev
-X-Gm-Message-State: APuU4Z8KxOAdFt5lf+jHvhFXda6qabTX1sleay58NFt6ptiFAbjuOcMn
-	2ESvPSKHy2zD2N4LPjfziwbEnsuyShitmptNVbUTUsSSTjwZHl47WtTkxr2d8cquRGWuKrH8tgy
-	oduQJThwQ5jVESnI7qY5MK7rBzonicYnfEF1BskS0
-X-Gm-Gg: AZFdTZeG2OQhmsrwq+BIqfOb6eXj0pSQa1wrE8DIKQDLB0IrShaaPGQGGlb4Lnjg0PC
-	snaOdK1S9QmSEjhnIuiG8bh4SZCE2UfsmarVxYpGPM2xKDUy3VGVNnozNz5iZCraceNxoWIA9aM
-	I8Bs9mAA3ND406PZPlwDlcs+Hau7pRL+cI5W2WJQRpZSlCgelOv+v+C+GNrvdevs4/W+v/8orgA
-	Pb9TH+OEtzo2NcYScT85g5Wd0f6l73clPidqitnvlu/WqVH6QKBAqxPrM26Y/K3UN0z+eN4raAk
-	q4SLO+p15sIs8c3mguvZKGBEjTM8HAsUprvSRVYesdhNMh166L9bmFLZI2PASE6J42KJso7ZTdd
-	/GJhSx3OHblOE/2F1zulrIvnDti/B2NXE3Q==
-X-Received: by 2002:a05:6512:1042:b0:5c1:4c4a:f026 with SMTP id
- 2adb3069b0e04-5c1bc6f633dmr1312524e87.4.1795194599155; Fri, 20 Nov 2026
- 09:09:59 -0800 (PST)
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=N507s/tl
+Received: by smtp.kernel.org (Postfix) with UTF8SMTPSA id 036241F000C6;
+	Sun, 22 Nov 2026 01:18:19 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1795310299;
+	bh=RY0oC16g4pVcARSzM2cC6w4tme3da83DOQJt8X7iSwg=;
+	h=From:To:Cc:Subject:Date;
+	b=N507s/tlkoHOxx6TlHiV6IAIlT7/JdsZZYDP6YtVcSExTAASZD7EArKUs3HwLAVB8
+	 uFZMfjWx+uScMKGec3tIy7EuqvXCmhjRhBxKH0fBY1glCk+epOTu3LZ48piiF2ejrR
+	 7fiHPi+1n/oshzItBvA7E8AmLlJrvutZCQ3AGVB+SdFqRCk7QDzqAZRL+3RxxlwGWE
+	 OUie0JL3S/aBSEhnkAOYw73ATAc4dj9sKJUEdB8ook4NlmCCIw+FCQ0KxBXCnwaKui
+	 zxJUmS2E+w6nGmYz6tp3NKfeWyx7GeDZLOUnBWhMLerAxu+RX8ErJM2msJ02thriZl
+	 LrAizr8IaGuIQ==
+From: Jarkko Sakkinen <jarkko@kernel.org>
+To: linux-fsdevel@vger.kernel.org
+Cc: Jarkko Sakkinen <jarkko@kernel.org>,
+	bpf@vger.kernel.org,
+	containers@lists.linux.dev,
+	linux-api@vger.kernel.org,
+	linux-arch@vger.kernel.org,
+	linux-doc@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-kselftest@vger.kernel.org,
+	linux-mm@kvack.org,
+	linux-security-module@vger.kernel.org,
+	Aleksa Sarai <aleksa@amutable.com>,
+	Alexander Mikhalitsyn <alex@amutable.com>,
+	Alexander Viro <viro@zeniv.linux.org.uk>,
+	Andy Lutomirski <luto@amacapital.net>,
+	Arnd Bergmann <arnd@arndb.de>,
+	Christian Brauner <brauner@kernel.org>,
+	David Howells <dhowells@redhat.com>,
+	Giuseppe Scrivano <giuseppe@scrivano.org>,
+	Hugh Dickins <hughd@google.com>,
+	Jan Kara <jack@suse.cz>,
+	Jeff Layton <jlayton@kernel.org>,
+	Jonathan Corbet <corbet@lwn.net>,
+	Josef Bacik <josef@toxicpanda.com>,
+	Kees Cook <kees@kernel.org>,
+	KP Singh <kpsingh@kernel.org>,
+	Lennart Poettering <lennart@poettering.net>,
+	Neal Gompa <neal@gompa.dev>,
+	Oleg Nesterov <oleg@redhat.com>,
+	Paul Moore <paul@paul-moore.com>,
+	Pavel Tikhomirov <ptikhomirov@virtuozzo.com>,
+	Serge Hallyn <sergeh@kernel.org>,
+	Shuah Khan <skhan@linuxfoundation.org>,
+	Zygmunt Krynicki <zygmunt.krynicki@canonical.com>
+Subject: [RFC PATCH v6 00/26] userland: Userland containers
+Date: Sun, 22 Nov 2026 03:17:43 +0200
+Message-ID: <20261122011809.2667684-1-jarkko@kernel.org>
+X-Mailer: git-send-email 2.47.3
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Post: <mailto:containers@lists.linux.dev>
@@ -104,236 +87,368 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 List-Owner: <mailto:containers+owner@lists.linux.dev>
 Precedence: list
 MIME-Version: 1.0
-References: <20261119104208.782900-1-halg@google.com> <20261119104208.782900-2-halg@google.com>
- <CALCETrVqc+1bjH1bhqHee9bsUdk2B6314z7PMexbsnNpMhk14g@mail.gmail.com>
-In-Reply-To: <CALCETrVqc+1bjH1bhqHee9bsUdk2B6314z7PMexbsnNpMhk14g@mail.gmail.com>
-From: Andy Lutomirski <luto@amacapital.net>
-Date: Fri, 20 Nov 2026 09:09:47 -0800
-X-Gm-Features: Aa3M54qqiWJmEKSjiAInchWSC43ADdXnD64UgkMS8cTjGJqVilvL89j5dcH7YsU
-Message-ID: <CALCETrV=zSxb6sgA08DLiK2bQovdMEj9ycG=Cc71mLn2C5Pgeg@mail.gmail.com>
-Subject: Re: [PATCH v2 1/4] userns: introduce capability bounding set for user namespaces
-To: Andy Lutomirski <luto@kernel.org>
-Cc: "Hallgrimur H. Gunnarsson" <halg@google.com>, Christian Brauner <brauner@kernel.org>, 
-	Serge Hallyn <sergeh@kernel.org>, Paul Moore <paul@paul-moore.com>, 
-	James Morris <jmorris@namei.org>, David Howells <dhowells@redhat.com>, 
-	Jarkko Sakkinen <jarkko@kernel.org>, Kees Cook <kees@kernel.org>, Jonathan Corbet <corbet@lwn.net>, 
-	Shuah Khan <skhan@linuxfoundation.org>, Randy Dunlap <rdunlap@infradead.org>, 
-	=?UTF-8?B?TWlja2HDq2wgU2FsYcO8bg==?= <mic@digikod.net>, 
-	Jonathan Calmels <jcalmels@3xx0.net>, Jann Horn <jannh@google.com>, 
-	=?UTF-8?Q?G=C3=BCnther_Noack?= <gnoack@google.com>, 
-	Singh KP <kpsingh@kernel.org>, Casey Schaufler <casey@schaufler-ca.com>, 
-	linux-fsdevel@vger.kernel.org, linux-security-module@vger.kernel.org, 
-	linux-api@vger.kernel.org, containers@lists.linux.dev, 
-	keyrings@vger.kernel.org, linux-doc@vger.kernel.org, 
-	linux-kselftest@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
-> On Nov 19, 2026, at 2:52=E2=80=AFPM, Andy Lutomirski <luto@kernel.org> wr=
-ote:
-> =EF=BB=BFOn Thu, Nov 19, 2026 at 2:43=E2=80=AFAM Hallgrimur H. Gunnarsson
-> <halg@google.com> wrote:
->>
->> When a process creates a new user namespace, it receives a full set of
->> capabilities (CAP_FULL_SET) scoped to that namespace. While namespaced
->> in scope, several of these capabilities (such as CAP_NET_ADMIN and
->> CAP_NET_RAW) expose broad kernel attack surface that many sandboxes and
->> containers never need. However, there is currently no configurable way
->> to withhold such capabilities from user namespaces while still granting
->> them to workloads that require them.
->
->
-> One thought (from the rootns thread): the other decent sized attack
-> surface here is CAP_MOUNT_ADMIN.  Which doesn't exist as a capability
-> bit.
->
-> A sort of horrible solution (but maybe not so awful) would be to
-> declare that the bits in cap_userns aren't actually capability bits,
-> and that you need the bit in cap_userns *and* the bit in cap_effective
-> to do sensitive things, and that mounting needs cap_userns to have
-> NSCAP_MOUNT_ADMIN *and* cap_effective to have CAP_SYS_ADMIN.
->
-> I want to sleep on this.  It might actually solve several problems,
-> e.g. controlling creation of ipv4 and ipv6 loopback or tunnel devices
-> or whatever.
+OVERVIEW
+========
 
-I slept on it. Here=E2=80=99s a counterproposal.  I=E2=80=99m not saying I =
-think this
-is better than this patch set, but I think it=E2=80=99s worth weighting the
-options.
+A userland is an anonymous-inode control object (not an nsfs namespace
+itself) with separate build and live phases that binds together:
 
-Define a whole new set of privilege bits.  As a
-poorly-painted-bikeshed option, I=E2=80=99ll call them eprivs (for exposure
-privileges - it=E2=80=99s a crappy name but at least it=E2=80=99s pronounce=
-able).
+1. A full set of detached namespaces owned by a fresh user namespace,
+   with optional build-phase opt-in sharing (USERLAND_SHARE_NSFD).
+2. A dedicated PID namespace for spawning processes into, signaling
+   members, and polling or waiting on PID 1 exit.
+3. An initially empty mount namespace (CLONE_EMPTY_MNTNS) populated
+   directly in its target user namespace before going live, without
+   inheriting host mounts or cloning staged trees, while still allowing
+   new mounts to be attached at runtime.
 
-An epriv is not permission to do something *to* an object; it=E2=80=99s
-permission to do something that exposes a meaningful attack surface
-within the kernel. So there=E2=80=99s no ns_has_epriv because there is no
-object.  These are kind of the opposite of object capabilities.
-Additionally, an epriv never grants the ability to do something that
-one couldn=E2=80=99t do in an epriv-less world.
+Work on this feature started in 2025 from David Howells' container object
+patch set [1], which I turned into a namespace for namespace roots and
+rebuilt around that premise.
 
-For now, all tasks have all eprivs, even not-yet-defined ones, unless
-user code or config explicitly changes this.  (Maybe some day secure
-boot might remove certain eprivs.)
+While the patch set is manually written, the original motivation came
+from isolating LLM agents. Running untrusted agent workloads made it
+clear that OCI runtimes need to minimize their live configuration
+surface.
 
-There should never be a check like ns_capable || has_epriv. It=E2=80=99s al=
-so
-&&, or perhaps caps are not checked at all.
+Assembling mounts, credentials, and namespaces inside helper processes
+with a half-configured container is what I see as the main challenge,
+and the existential debate around namespaces and container objects is an
+unfocused discussion topic.
 
-Example eprivs include:
+[1] https://lore.kernel.org/all/155059610368.17079.2220554006494174417.stgit@warthog.procyon.org.uk/
 
-EPRIV_FSOPEN_VIRT: may fsconfig, fsopen, etc a virtual fs like fuse or
-tmpfs or overlayfs.
+IMPLEMENTATION
+==============
 
-EPRIV_CLONE_TREE: may clone a mount tree
+Standalone fd-based namespace configuration (patches 01-07) decouples
+user and mount namespace setup from live helper tasks. userns_set_idmap()
+atomically configures USERNS_SETGROUPS_ALLOWED policy and UID, GID, and
+project ID mappings on a CLONE_NEWUSER nsfs fd, checking current_cred()
+so an unprivileged creator can delegate the fd via SCM_RIGHTS to a
+privileged mapping daemon. move_mount(..., MOVE_MOUNT_T_MNTNS) operates
+on any non-anonymous mount namespace fd: on an empty mount namespace it
+installs "/" onto the nullfs root once, attaches relative submounts both
+before entry and into live mount namespaces, and supports
+MOVE_MOUNT_CLONE for recursive bind mounts without OPEN_TREE_CLONE.
 
-EPRIV_MOVE_MOUNT: may move mounts around (but only if you also have
-CAP_SYS_ADMIN on the correct namespace, of course)
+userland_open() allocates a userland instance backed by a pollable
+anonymous-inode fd, creating a fresh owning user namespace and a full
+set of detached namespaces: empty mount (CLONE_EMPTY_MNTNS), PID, UTS,
+IPC, network, cgroup, and time. ioctl(ufd, USERLAND_GET_NSFD, nstype)
+returns nsfs file descriptors for member namespaces, and
+ioctl(ufd, USERLAND_SHARE_NSFD, ns_fd) replaces a member cgroup, IPC,
+UTS, network, or time namespace while the userland is in USERLAND_INIT.
 
-EPRIV_FIREWALL_TC: may configure any firewalling configuration or tc
-configuration (this includes iptables, nftables, and ebtables)
+Superblocks are configured directly in the target user namespace via
+fsopen(), FSCONFIG_SET_USERLAND, and fsmount() for filesystems opting
+into FS_USERLAND_MOUNT (tmpfs, ramfs, devpts, proc, mqueue) or
+FS_USERNS_DELEGATABLE, allowing unprivileged callers to assemble mounts
+without holding CAP_SYS_ADMIN in their own user namespace or entering
+the target user namespace first.
 
-EPRIV_NET_RAW: may use raw/packet sockets (like CAP_NET_RAW)
+Once "/" is installed, processes are spawned into the userland via
+clone3() with CLONE_INTO_USERLAND and struct clone_args.userland, without
+mutating the caller in place. Pairing CLONE_INTO_USERLAND with
+CLONE_VFORK and opening the target binary via openat2(...,
+RESOLVE_IN_ROOT) on the retained "/" mount fd allows spawning with
+execveat() directly into the target root.
 
-EPRIV_TUNTAP: may create and attach to tun/tap interfaces
+The first entrant becomes PID 1; once it exits and
+zap_pid_ns_processes() reaps all members, poll() reports EPOLLHUP and
+waitid(P_USERLAND, ufd, &infop, options, NULL) returns init's exit
+status without consuming it. pidfd_send_signal(ufd, sig, NULL, 0) walks
+pid_ns->idr under tasklist_lock to signal member thread groups, and
+dedicated LSM hooks mediate userland allocation, teardown, namespace
+sharing, process entry, and signal delivery.
 
-EPRIV_IP_LOOPBACK: may set up IPv4 and IPv6 loopback using whatever
-new facility we add
+HOTPLUG
+=======
 
-EPRIV_NETLINK: may use netlink at all
+1. Host calls userland_open().
+2. Host sets uid/gid maps with userns_set_idmap().
+3. Host populates "/" with MOVE_MOUNT_T_MNTNS, optionally combined with
+   MOVE_MOUNT_CLONE for bind mounts.
+4. Host spawns PID 1 with clone3(CLONE_INTO_USERLAND) (optionally
+   passing an AF_UNIX socketpair fd for communication).
+5. PID 1 watches /proc/self/ns/mnt via fanotify(FAN_REPORT_MNT |
+   FAN_MARK_MNTNS, FAN_MNT_ATTACH) or polls /proc/self/mountinfo.
+6. On hotplug, host mounts the filesystem via fsopen() /
+   fsconfig(FSCONFIG_SET_USERLAND) / fsmount() (plus optional
+   MOUNT_ATTR_IDMAP).
+7. Host creates the mountpoint with openat2(RESOLVE_IN_ROOT) + mkdirat()
+   and attaches the mount with MOVE_MOUNT_T_MNTNS.
+8. PID 1 receives FAN_MNT_ATTACH and queries the new mount via
+   statmount().
 
-EPRIV_NET_ADMIN: may use traditional CAP_NET_ADMIN abilities (all
-CAP_NET_ADMIN checks will also check EPRIV_NET_ADMIN)
+CHANGES
+=======
 
-EPRIV_OPEN_FILE_HANDLE: May use open_by_handle_at, etc.
+v6:
+- Rename rootns to userland (CONFIG_USERLAND, userland_open(),
+  userland_ prefix, CLONE_INTO_USERLAND, FSCONFIG_SET_USERLAND,
+  P_USERLAND, USERLAND_GET_NSFD).
+- Replace ROOTNS_WAIT and ROOTNS_KILL ioctls with waitid(P_USERLAND) and
+  pidfd_send_signal() support for userland file descriptors.
+- Add build-phase USERLAND_SHARE_NSFD ioctl and security_userland_share()
+  LSM hook to opt cgroup, IPC, UTS, network, or time namespaces into an
+  existing nsfs fd before process entry.
+- Pass USERNS_SETGROUPS_ALLOWED via userns_set_idmap() flags instead of
+  in-struct request flags.
+- Gate FSCONFIG_SET_USERLAND and unprivileged fsopen() on explicit
+  FS_USERLAND_MOUNT opt-in (tmpfs, ramfs, devpts, proc, mqueue), refresh
+  fc->cred on bind, bound userns_set_idmap() size to PAGE_SIZE (-E2BIG),
+  enforce projid_map privilege checks and atomic ns->flags updates, fix
+  cross-userns slave mount locking in attach_recursive_mnt(), reject
+  SB_NOUSER and cross-mntns nsfs loops in MOVE_MOUNT_CLONE, and walk
+  ancestor PIDNS_ADDING flags in CLONE_INTO_USERLAND (Sashiko).
 
-EPRIV_UNSHARE_USERNS: may unshare userns
+v5:
+- Heavy reduction of cc-list. More added by request.
+- Re-slice the patch set into standalone fd-based user and mount
+  namespace configuration (01-07) followed by rootns (08-25), and split
+  proc, ipc/mqueue, and bpf_lsm changes into separate commits.
+- Add userns_set_idmap() system call to atomically configure setgroups
+  and UID, GID, and project ID mappings on CLONE_NEWUSER nsfs fds
+  without /proc/<pid>/*_map, checking current_cred() so unprivileged
+  userns fds can be delegated via SCM_RIGHTS to a privileged mapping
+  daemon (Andy Lutomirski).
+- Add MOVE_MOUNT_CLONE with MOVE_MOUNT_T_MNTNS in move_mount() to
+  recursively bind-clone host mount subtrees into a target mount
+  namespace fd without OPEN_TREE_CLONE.
+- Clarify in overview and uAPI documentation that rootns is an
+  anonymous-inode control object rather than an nsfs namespace.
+- Fix upfront pidns ancestry check in ROOTNS_WAIT, bootstrap -EINVAL
+  preservation in CLONE_INTO_ROOTNS, FSCONFIG_SET_ROOTNS user_ns
+  delegation and fsmount() rootns_bound/seq_origin handling, proc
+  pidns= mount option override check, cross-userns anonymous mount
+  MNT_LOCKED propagation, and selftest wide-arch _IOC_NONE, socket
+  blocking, and cleanup handling (Sashiko).
+- Extend selftests/rootns with userns_set_idmap(), SCM_RIGHTS
+  delegation, MOVE_MOUNT_CLONE, and hotplug mount coverage.
 
-EPRIV_UNSHARE_NONUSERNS: may unshare any other namespace
+v4:
+- A single syscall API (and shenanigans e.g., in fsconfig).
+- I use a similar API model as I used in SGX driver, as like enclaves,
+  containers are "closures". Instead of /dev/sgx_enclave like device
+  file, anon inode is used.
+- Consolidate rootns_create(), rootns_wait(), and rootns_kill() into a
+  single rootns() system call plus ROOTNS_WAIT and ROOTNS_KILL ioctls,
+  dropping rusage from ROOTNS_WAIT.
+- LSM: lbs_rootns security blob management and security_rootns_alloc(),
+  security_rootns_free(), security_rootns_clone(), and
+  security_rootns_kill() LSM hooks wired into bpf_lsm.
+- Disallow CLONE_VM with CLONE_INTO_ROOTNS across time namespaces, require
+  CAP_SYS_CHROOT, preserve caller umask, reset dumpability on user
+  namespace transitions, and fix ROOTNS_WAIT, FSCONFIG_SET_ROOTNS,
+  fsmount(), and MOVE_MOUNT_T_MNTNS locking and permission checks
+  (Sashiko).
+- Rewrite selftests/rootns in Python. I used similar structure as I've
+  used in selftests/tpm2. This "along the lines" mimics Cells style
+  container manager. Rootns is a quite typical no policy solution and
+  Cells is a managed solution, and they are at the far ends, which can
+  also be witnessed from the patch set sizes.
 
-EPRIV_MOUNT_CGROUPv1, EPRIV_MOUNT_CGROUPv2: may create a new mount of
-these subsystems
+  The question really is where we want to draw the borderline. I'm
+  neither favoring nor supporting any possible solution because I don't
+  know. I'm just saying where they live as a software stack.
+- Update documentation and architecture syscall tables for rootns().
 
-EPRIV_PTRACE: there are lots of different variations that might make sense.
+v3:
+- The patch set size increased predominantly because the coverage of
+  kselftest had to widened to cover the introduced changes.
+- Replace MOVE_MOUNT_T_ROOTNS_ROOT with MOVE_MOUNT_T_MNTNS targeting
+  mnt_ns nsfs fds, and add ioctl(ROOTNS_GET_NSFD) to open member
+  namespace fds (Andy Lutomirski).
+- Allow unprivileged fsopen(), FSCONFIG_SET_ROOTNS, and fsmount() to
+  configure and mount FS_USERNS_MOUNT filesystems directly in the target
+  user namespace without entering it first (Andy Lutomirski).
+- Fix locking, refcounting, credential/dumpability/timens setup,
+  pivot_root() lookup, and cross-userns mount checks across copy_rootns(),
+  CLONE_INTO_ROOTNS, rootns_kill(), FSCONFIG_SET_ROOTNS, and move_mount()
+  (Sashiko).
+- Mark PowerPC rootns syscalls nospu (Sashiko).
+- Update documentation and kselftests.
 
-EPRIV_MOUNT_PROC_PIDONLY: may mount proc-pidonly
+v2:
+- Drop rootns provenance tracking (rootns_id and rootns_may_setns()) and
+  rely on user_namespace ownership for setns() isolation (Andy
+  Lutomirski).
+- Replace the rootns_enter() system call with clone3(CLONE_INTO_ROOTNS)
+  and struct clone_args.rootns (CLONE_ARGS_SIZE_VER3), allowing
+  CLONE_VM | CLONE_VFORK and compatible per-child clone3() flags (Andy
+  Lutomirski).
+- Drop the spurious task_no_new_privs() check in may_enter_rootns_creds()
+  (Andy Lutomirski).
+- Update documentation, Kconfig, syscall tables, and kselftests for
+  CLONE_INTO_ROOTNS.
 
-EPRIV_MOUNT_PROC_NOTPIDONLY: may mount proc not-pidonly
+VERSIONS
+========
 
-EPRIV_MOUNT_SYSFS: may mount sysfs
+v5: https://lore.kernel.org/linux-fsdevel/20261121000844.1863324-1-jarkko@kernel.org/
+v4: https://lore.kernel.org/linux-fsdevel/20261119224312.1037966-1-jarkko@kernel.org/
+v3: https://lore.kernel.org/linux-fsdevel/20261118193539.240065-1-jarkko@kernel.org/
+v2: https://lore.kernel.org/linux-fsdevel/20261117231352.3816603-1-jarkko@kernel.org/
+v1: https://lore.kernel.org/linux-fsdevel/20261117050841.3289652-1-jarkko@kernel.org/
 
-Example eprivs that are questionable:
+Cc: bpf@vger.kernel.org
+Cc: containers@lists.linux.dev
+Cc: linux-api@vger.kernel.org
+Cc: linux-arch@vger.kernel.org
+Cc: linux-doc@vger.kernel.org
+Cc: linux-fsdevel@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
+Cc: linux-kselftest@vger.kernel.org
+Cc: linux-mm@kvack.org
+Cc: linux-security-module@vger.kernel.org
+Cc: Aleksa Sarai <aleksa@amutable.com>
+Cc: Alexander Mikhalitsyn <alex@amutable.com>
+Cc: Alexander Viro <viro@zeniv.linux.org.uk>
+Cc: Andy Lutomirski <luto@amacapital.net>
+Cc: Arnd Bergmann <arnd@arndb.de>
+Cc: Christian Brauner <brauner@kernel.org>
+Cc: David Howells <dhowells@redhat.com>
+Cc: Giuseppe Scrivano <giuseppe@scrivano.org>
+Cc: Hugh Dickins <hughd@google.com>
+Cc: Jan Kara <jack@suse.cz>
+Cc: Jeff Layton <jlayton@kernel.org>
+Cc: Jonathan Corbet <corbet@lwn.net>
+Cc: Josef Bacik <josef@toxicpanda.com>
+Cc: Kees Cook <kees@kernel.org>
+Cc: KP Singh <kpsingh@kernel.org>
+Cc: Lennart Poettering <lennart@poettering.net>
+Cc: Neal Gompa <neal@gompa.dev>
+Cc: Oleg Nesterov <oleg@redhat.com>
+Cc: Paul Moore <paul@paul-moore.com>
+Cc: Pavel Tikhomirov <ptikhomirov@virtuozzo.com>
+Cc: Serge Hallyn <sergeh@kernel.org>
+Cc: Shuah Khan <skhan@linuxfoundation.org>
+Cc: Zygmunt Krynicki <zygmunt.krynicki@canonical.com>
 
-EPRIV_DMESG: the kernel log is a specific object, and I think it's
-better to control access using something kernel-log-specific.
+Jarkko Sakkinen (26):
+  userns: Factor out idmap validation and commit helpers
+  userns: Add userns_set_idmap() system call
+  arch: Wire up userns_set_idmap() system call
+  mount: Add mnt_ns_get_root()
+  mount: Enforce mount_too_revealing() for foreign mntns
+  mount: Support MOVE_MOUNT_T_MNTNS in move_mount()
+  mount: Support MOVE_MOUNT_CLONE with MOVE_MOUNT_T_MNTNS
+  userns: Factor out install_user_ns_cred()
+  nsproxy: Expose create_new_namespaces()
+  userland: Add core infrastructure
+  userland: Track init lifecycle via copy_process() and pid_namespace
+  userland: Add userland_open() system call
+  userland: Add USERLAND_GET_NSFD ioctl
+  userland: Add USERLAND_SHARE_NSFD ioctl
+  exit: Support P_USERLAND in waitid()
+  signal: Support userland fds in pidfd_send_signal()
+  fork: Support CLONE_INTO_USERLAND in clone3()
+  fs: Support FSCONFIG_SET_USERLAND in fsconfig()
+  proc: Implement ->set_userland() fs_context operation
+  ipc/mqueue: Implement ->set_userland() fs_context operation
+  security: Add userland LSM hooks
+  bpf: Register userland LSM hooks
+  arch: Wire up userland_open() system call
+  docs: Document userland uAPI
+  selftests/userland: Add userland test suite
+  MAINTAINERS: Add entry for USERLAND
 
+ Documentation/userspace-api/index.rst         |    1 +
+ .../userspace-api/ioctl/ioctl-number.rst      |    1 +
+ Documentation/userspace-api/userland.rst      |   73 +
+ MAINTAINERS                                   |   11 +
+ arch/alpha/kernel/syscalls/syscall.tbl        |    2 +
+ arch/arm/tools/syscall.tbl                    |    2 +
+ arch/arm64/tools/syscall_32.tbl               |    2 +
+ arch/m68k/kernel/syscalls/syscall.tbl         |    2 +
+ arch/microblaze/kernel/syscalls/syscall.tbl   |    2 +
+ arch/mips/kernel/syscalls/syscall_n32.tbl     |    2 +
+ arch/mips/kernel/syscalls/syscall_n64.tbl     |    2 +
+ arch/mips/kernel/syscalls/syscall_o32.tbl     |    2 +
+ arch/parisc/kernel/syscalls/syscall.tbl       |    2 +
+ arch/powerpc/kernel/syscalls/syscall.tbl      |    2 +
+ arch/s390/kernel/syscalls/syscall.tbl         |    2 +
+ arch/sh/kernel/syscalls/syscall.tbl           |    2 +
+ arch/sparc/kernel/syscalls/syscall.tbl        |    2 +
+ arch/x86/entry/syscalls/syscall_32.tbl        |    2 +
+ arch/x86/entry/syscalls/syscall_64.tbl        |    2 +
+ arch/xtensa/kernel/syscalls/syscall.tbl       |    2 +
+ fs/devpts/inode.c                             |    4 +-
+ fs/filesystems.c                              |   15 +
+ fs/fs_context.c                               |   21 +-
+ fs/fsopen.c                                   |  137 +-
+ fs/internal.h                                 |    7 +-
+ fs/namespace.c                                |  352 ++-
+ fs/proc/root.c                                |   26 +-
+ fs/ramfs/inode.c                              |    2 +-
+ include/linux/cred.h                          |    4 +-
+ include/linux/fs.h                            |    1 +
+ include/linux/fs_context.h                    |    6 +
+ include/linux/lsm_hook_defs.h                 |    8 +
+ include/linux/lsm_hooks.h                     |    3 +
+ include/linux/mnt_namespace.h                 |    2 +
+ include/linux/nsfs.h                          |    1 +
+ include/linux/nsproxy.h                       |    8 +-
+ include/linux/pid_namespace.h                 |    4 +
+ include/linux/sched/task.h                    |    6 +
+ include/linux/security.h                      |   37 +
+ include/linux/syscalls.h                      |    5 +
+ include/linux/user_namespace.h                |    9 +-
+ include/linux/userland.h                      |  107 +
+ include/uapi/asm-generic/unistd.h             |   10 +-
+ include/uapi/linux/mount.h                    |    5 +-
+ include/uapi/linux/nsfs.h                     |   46 +
+ include/uapi/linux/sched.h                    |    5 +
+ include/uapi/linux/userland.h                 |   58 +
+ include/uapi/linux/wait.h                     |    1 +
+ init/Kconfig                                  |   10 +
+ ipc/mqueue.c                                  |   18 +-
+ kernel/Makefile                               |    2 +
+ kernel/bpf/bpf_lsm.c                          |   11 +
+ kernel/cred.c                                 |   27 +-
+ kernel/exit.c                                 |    4 +
+ kernel/fork.c                                 |   71 +-
+ kernel/nsproxy.c                              |   15 +-
+ kernel/pid_namespace.c                        |    2 +
+ kernel/signal.c                               |    4 +
+ kernel/sys_ni.c                               |    4 +
+ kernel/user_namespace.c                       |  419 ++-
+ kernel/userland.c                             |  701 +++++
+ mm/shmem.c                                    |    5 +-
+ scripts/syscall.tbl                           |    2 +
+ security/lsm_init.c                           |    6 +
+ security/security.c                           |   72 +
+ tools/include/uapi/asm-generic/unistd.h       |   10 +-
+ .../perf/arch/arm/entry/syscalls/syscall.tbl  |    2 +
+ .../arch/mips/entry/syscalls/syscall_n64.tbl  |    2 +
+ .../arch/powerpc/entry/syscalls/syscall.tbl   |    2 +
+ .../perf/arch/s390/entry/syscalls/syscall.tbl |    2 +
+ tools/perf/arch/sh/entry/syscalls/syscall.tbl |    2 +
+ .../arch/sparc/entry/syscalls/syscall.tbl     |    2 +
+ .../arch/x86/entry/syscalls/syscall_32.tbl    |    2 +
+ .../arch/x86/entry/syscalls/syscall_64.tbl    |    2 +
+ .../arch/xtensa/entry/syscalls/syscall.tbl    |    2 +
+ tools/scripts/syscall.tbl                     |    2 +
+ tools/testing/selftests/Makefile              |    1 +
+ tools/testing/selftests/userland/Makefile     |    5 +
+ tools/testing/selftests/userland/config       |   10 +
+ .../testing/selftests/userland/test_smoke.sh  |   10 +
+ .../selftests/userland/userland_cells.py      | 1088 ++++++++
+ .../selftests/userland/userland_test.py       | 2306 +++++++++++++++++
+ 82 files changed, 5663 insertions(+), 168 deletions(-)
+ create mode 100644 Documentation/userspace-api/userland.rst
+ create mode 100644 include/linux/userland.h
+ create mode 100644 include/uapi/linux/userland.h
+ create mode 100644 kernel/userland.c
+ create mode 100644 tools/testing/selftests/userland/Makefile
+ create mode 100644 tools/testing/selftests/userland/config
+ create mode 100755 tools/testing/selftests/userland/test_smoke.sh
+ create mode 100644 tools/testing/selftests/userland/userland_cells.py
+ create mode 100755 tools/testing/selftests/userland/userland_test.py
 
+--
+2.47.3
 
-There is no operation that increases eprivs -- even without
-no_new_privs set, a task will never gain an epriv, nor will a child
-ever have an epriv that its creator did not have at the time the child
-was created.
-
-The evolution rules could be as simple as, on fork/clone, the child
-inheriting exactly the parent's eprivs.
-
-Or we could bind eprivs to a userns instead of a task, but that could
-be more limiting and awkward than we want.
-
-
-What do you all think?
-
-
-FWIW, I had an LLM make an inventory (surely not exhaustive) of
-recent-ish CVEs and how they relate to this list.  (The below is the
-only part of this email that is LLM-generated, although I added
-EPRIV_SYSFS because I didn't realize that nonroot userns could mount
-it until I asked an LLM, sigh.)  To me, the list and its breakdown
-suggests that there is quite a lot of room for meaningful attack
-surface reductions while still leaving large parts of userns
-available, and that my epriv proposal captures much of this but the
-cap_userns proposal may be too coarse-grained.
-
-(I also asked about eBPF, and my LLM came up with a lot of CVEs, but
-there's an existing BPF token mechanism and I therefore did not
-propose EPRIV_LOAD_EBPF.)
-
---- begin LLM output ---
-
-**EPRIV_FSOPEN_VIRT:** CVE-2022-0185*, CVE-2023-0386*, CVE-2023-2640*,
-CVE-2023-32629*, CVE-2025-38499*
-
-**EPRIV_CLONE_TREE:** CVE-2025-38499* (only if the check also covers
-the relevant internal mount-cloning path; explicit `open_tree()`
-restrictions alone are insufficient)
-
-**EPRIV_MOVE_MOUNT:** CVE-2025-37988
-
-**EPRIV_FIREWALL_TC:** CVE-2022-25636, CVE-2022-1015, CVE-2022-1016,
-CVE-2022-32250, CVE-2022-34918, CVE-2022-48911*, CVE-2022-2588,
-CVE-2023-32233, CVE-2023-35001, CVE-2023-4004, CVE-2023-4015,
-CVE-2023-4244, CVE-2023-5197, CVE-2023-6817, CVE-2023-3609,
-CVE-2023-4623, CVE-2023-4921, CVE-2024-1086, CVE-2024-0607,
-CVE-2024-27397, CVE-2024-26925, CVE-2025-38001, CVE-2026-23111
-
-**EPRIV_NET_RAW:** None identified.
-
-**EPRIV_TUNTAP:** None identified as requiring TUN/TAP. Some
-packet-triggered exploits may optionally use it, but that does not
-establish it as a necessary blocker.
-
-**EPRIV_IP_LOOPBACK:** None identified.
-
-**EPRIV_NETLINK:** Also those blocked by `EPRIV_FIREWALL_TC`, insofar
-as the documented attack paths use netlink. No additional CVEs
-identified.
-
-**EPRIV_NET_ADMIN:** Also those blocked by `EPRIV_FIREWALL_TC`,
-insofar as the vulnerable operations require `CAP_NET_ADMIN`. No
-additional CVEs identified.
-
-**EPRIV_OPEN_FILE_HANDLE:** CVE-2025-38306*
-
-**EPRIV_UNSHARE_USERNS:** Also those blocked by `EPRIV_FSOPEN_VIRT`,
-`EPRIV_MOVE_MOUNT`, `EPRIV_FIREWALL_TC`, `EPRIV_OPEN_FILE_HANDLE`,
-`EPRIV_MOUNT_CGROUPv1`, and `EPRIV_MOUNT_SYSFS`, plus CVE-2025-38058*.
-More generally, blocks the documented unprivileged user-namespace
-setup for the entire inventory when no usable user namespace already
-exists.
-
-**EPRIV_UNSHARE_NONUSERNS:** Also the namespace-dependent attack paths
-blocked by `EPRIV_FIREWALL_TC`, `EPRIV_MOVE_MOUNT`,
-`EPRIV_MOUNT_CGROUPv1`, `EPRIV_MOUNT_SYSFS`, and many of those blocked
-by `EPRIV_FSOPEN_VIRT`. Coverage depends on whether the necessary
-non-user namespaces already exist.
-
-**EPRIV_MOUNT_CGROUPv1:** CVE-2022-0492*
-
-**EPRIV_MOUNT_CGROUPv2:** None identified.
-
-**EPRIV_PTRACE:** None identified.
-
-**EPRIV_LOAD_EBPF:** None identified.
-
-**EPRIV_MOUNT_PROC_PIDONLY:** None identified.
-
-**EPRIV_MOUNT_PROC_NOTPIDONLY:** None identified.
-
-**EPRIV_MOUNT_SYSFS:** CVE-2025-22089*
-
-CVEs not cleanly blocked by an operation-specific bit
-Excluding the two EPRIV_UNSHARE_* gates:
-
-- CVE-2025-38058: No explicit unmount privilege. The vulnerable race
-involves umount(2) and path lookup.
-
-- CVE-2022-0492: The cgroup-v1 mount bit covers the documented
-new-mount attack path, but not necessarily configuration of
-release_agent on an existing writable hierarchy.
-
-- CVE-2025-38499: The correct gate depends on which filesystem-context
-or internal cloning operation reaches clone_private_mnt(). I would not
-count EPRIV_CLONE_TREE as a definitive blocker without checking the
-exact call paths.
