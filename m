@@ -1,44 +1,44 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795376238;
-	b=H/bSjUP7RChTTFsQ4dyCVdWm/qoIRfHoiVbWpLAjjbLGT8UH77w1kOvjqAN1iWOOLBIG
-	 n60o6cZ/FH5KCtzuW2KalAuf4GM29NMO/5/Gr8wrGSWPis0Pvk42OEs1oepFTNcIn5SDa
-	 YSx+2IfMQuEuZp1Is7yUaXAT0a2gyyO79ncpVFHOOySQeeZx0ReZ2NXlhWa0eGU4iBjbr
-	 rW9C48+O7USRMbde5NTc8mQXfxLpAg1lh3NDsdnyKWXpW0tX+Y9aWlbhmpxmvUX1TypMV
-	 xsd+OVtuLuYiU/SvhcKWxd+2SW+qo0vj7xdyi5QnyBPrvG7plQtf0brkXBOV5NXJQ0A==
+	t=1795376251;
+	b=1KarJaDuhjPeTn49ZGEKlTwIKjr8XzSCKHh0peoo3NOXaIy3vEwF1rL6LXloYk8v51ZZ
+	 RlX1JlZ72qV4Amv0QVI/8XwDrN3sdVxqfkrZR2q9NVfugoZ1iXB555CVrmYfOoNkjodRC
+	 o1u0YhUjmp67RmbcdgPwdLWpN904b9N3eC5r0dhDttT/JbF4ZsLH8admpZd9+1YkAxP1S
+	 VsHXy12YMqYgaOt2PM802RuGtuVwLNd161z8ciJoaZZzUpuuv8QvxobPJIBBGWAZZGPhb
+	 cg8Tas63IPIyedpkGPO6qmuMWmZwCJRlTxoRe/YedPS2AVHD6rOARcm1eKHEoLCwX2w==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795376238;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795376251;
 	h=Received:DKIM-Signature:From:To:Cc:Subject:Date:Message-ID:X-Mailer:
 	 In-Reply-To:References:MIME-Version:Content-Transfer-Encoding;
-	bh=Jfv3MMg/O7UN8A+W1NHYimNXqqAkPIDpKwh6yDT3Yps=;
-	b=yRdUsR0vN9GZjbuivVic5mOgvNQ0BkLOqUOXrs+uhChp7iEfP7Ugu5bcda1fhXME7xuI
-	 tV8eCsDl3S9j08rk/EvmkrRBUU1j+DoMKKAFdAw9pwLt9kY09XpErwNsM4s8MNiiduzGZ
-	 tOzSaIuN8Oy/DlwPBTPq4ohQALCg5zS1hEeiqXQV+1oo7QVoFnfSvcVRPYx5tLk3fIyWm
-	 cFNZCtgnTCCHxXAdbSdIGgV15usrROPTKEh/9wuHALSX45+tUCrqv1BmTtRZexUDcyFQJ
-	 kJ8X9glXefY5zulAh8RLovCfiNc2u+78EBgAoYLVTUO92X3Avq0hJvRLoVDKHa6S/Gw==
+	bh=zs4d8Qildq2fNc6PLk+GUR8ZjIlQZmHZPkOwBRx3+1A=;
+	b=Pu14LMi6C0MVv0oYIfo4K0I0/bq8AEjm6iw9e2cG7G+3C9SK6JIo9z8L7GaGyYaMVlM7
+	 +cWvZfJLrNuvBx2Z3fML1/7ngla2VJU4XMw7s2qZ11m99uW1cvZD3Fu1PWsFtHMrO3A2N
+	 wSbW+xfw4DDGtboAiQjHJkw1C3ogSxHQPBHtBcgmgxexA68Sl9VzyqeSG16hcuTrRt8hs
+	 GIvTN6/SAMq7RBCvlZ6vSxMsaNPN6MjARkTxmECJkzMkcQ1JdoMmwOeFIZx8sun8Pl9cA
+	 thdy7BulebM0baxX9QtSKy5kZr7rxTSXmXf8p5FKVsN9/hG5Ix+ja3V57yiE9sNK9Lw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=n5gU4g52;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=W8nWhqyY;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with UTF8SMTPS id 20DD260A2638;
-	Sun, 22 Nov 2026 19:37:18 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with UTF8SMTPS id 67B84606A6AD;
+	Sun, 22 Nov 2026 19:37:31 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=n5gU4g52
-Received: by smtp.kernel.org (Postfix) with UTF8SMTPSA id DB0961F000EF;
-	Sun, 22 Nov 2026 19:37:16 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=W8nWhqyY
+Received: by smtp.kernel.org (Postfix) with UTF8SMTPSA id 193F91F000C0;
+	Sun, 22 Nov 2026 19:37:30 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795376237;
-	bh=Jfv3MMg/O7UN8A+W1NHYimNXqqAkPIDpKwh6yDT3Yps=;
+	s=k20260515; t=1795376250;
+	bh=zs4d8Qildq2fNc6PLk+GUR8ZjIlQZmHZPkOwBRx3+1A=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=n5gU4g52v76arg2qLN1/ypN62ZK2xci1H49qauQnRD1ZQ4gQRiaGYjG+lO9PfDqlW
-	 JaNR9IvTfBSu/9qDydT2bch63eLvpP4T1EDPgHW8Mzoto0p3nO+szhaHzKbf0skjP8
-	 /oEkzdVR1WlrXz4CBqyZipi3lB4p4mouk96KgWm56giD5yEchAfUB5dWsIpwvq5/SO
-	 eFtzo8KxT3hJ5NmYppp9kdPQ1v715sI0tizcf/CAez1gsnUTR9o9L7Xqzl9uV6h2dk
-	 aX+ZhnyZudMcQlmfslgweTo5EdDIU4iAKk/S4ZSGZENNEbQqlJTvaN0c/FeqdYoMKS
-	 vZPBDfzIqGCmw==
+	b=W8nWhqyY1l/5oIhxo9AusbNPDS7pNe2c7jdlfibiK9O4J7YFbmrpPsuK6dub2ROAe
+	 rn9773eP+vZgMLsdrGpMNtNwUR97O+i7Ymi7QxvdMtYxyu/B5vZtW0/SSzz9CikZZG
+	 zz2so70cW+rNG9k2mcDrKZFtWEFpUpG1MUttpQAI7FZabGlKL8TGb/tF7vF0ZmWO80
+	 Hm87LXNBNvD3YulVza7xOlYl39k1q+U50EdgVJtvNyOJtHreMMEnqffEYjwpr841I8
+	 Iu4gBtD2Cfw8Lt+5t4n478r/phiivzEwhQSTNlPRapp8t/upmoP72EBoqdD5BcfafY
+	 ZTCS4Or2D4EEA==
 From: Jarkko Sakkinen <jarkko@kernel.org>
 To: linux-fsdevel@vger.kernel.org
 Cc: Jarkko Sakkinen <jarkko@kernel.org>,
@@ -75,9 +75,9 @@ Cc: Jarkko Sakkinen <jarkko@kernel.org>,
 	Serge Hallyn <sergeh@kernel.org>,
 	Shuah Khan <skhan@linuxfoundation.org>,
 	Zygmunt Krynicki <zygmunt.krynicki@canonical.com>
-Subject: [RFC PATCH v7 19/26] proc: Implement ->set_userland() fs_context operation
-Date: Sun, 22 Nov 2026 21:35:32 +0200
-Message-ID: <20261122193539.3334213-20-jarkko@kernel.org>
+Subject: [RFC PATCH v7 22/26] bpf: Register userland LSM hooks
+Date: Sun, 22 Nov 2026 21:35:35 +0200
+Message-ID: <20261122193539.3334213-23-jarkko@kernel.org>
 X-Mailer: git-send-email 2.47.3
 In-Reply-To: <20261122193539.3334213-1-jarkko@kernel.org>
 References: <20261122193539.3334213-1-jarkko@kernel.org>
@@ -92,88 +92,56 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-proc_init_fs_context() binds ctx->pid_ns to task_active_pid_ns(current)
-and resets fc->user_ns to ctx->pid_ns->user_ns, overriding the user
-namespace delegated by FSCONFIG_SET_USERLAND and leaving the context
-attached to the caller's PID namespace.
+BPF LSM programs need sleepable and untrusted hook classifications for
+the userland LSM hooks in order to attach policies to userland
+allocation, namespace sharing, cloning, signaling, and release.
 
-Wire up proc_set_userland() to verify that the target userland's PID
-namespace is a descendant of the caller's active PID namespace and
-rebind ctx->pid_ns and fc->user_ns accordingly, and mark proc with
-FS_USERLAND_MOUNT.
+Register bpf_lsm_userland_alloc, bpf_lsm_userland_share,
+bpf_lsm_userland_clone, and bpf_lsm_userland_kill in
+sleepable_lsm_hooks, and bpf_lsm_userland_alloc and
+bpf_lsm_userland_free in untrusted_lsm_hooks under CONFIG_USERLAND.
 
-Co-developed-by: David Howells <dhowells@redhat.com>
-Signed-off-by: David Howells <dhowells@redhat.com>
 Signed-off-by: Jarkko Sakkinen <jarkko@kernel.org>
 ---
- fs/proc/root.c | 26 +++++++++++++++++++++++++-
- 1 file changed, 25 insertions(+), 1 deletion(-)
+ kernel/bpf/bpf_lsm.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/fs/proc/root.c b/fs/proc/root.c
-index 7fbbe92bf73a..e61b1a559172 100644
---- a/fs/proc/root.c
-+++ b/fs/proc/root.c
-@@ -15,6 +15,8 @@
- #include <linux/sched/stat.h>
- #include <linux/module.h>
- #include <linux/bitops.h>
-+#include <linux/nsproxy.h>
+diff --git a/kernel/bpf/bpf_lsm.c b/kernel/bpf/bpf_lsm.c
+index 468e63dbd922..ac8508a6b242 100644
+--- a/kernel/bpf/bpf_lsm.c
++++ b/kernel/bpf/bpf_lsm.c
+@@ -16,6 +16,7 @@
+ #include <linux/btf_ids.h>
+ #include <linux/ima.h>
+ #include <linux/bpf-cgroup.h>
 +#include <linux/userland.h>
- #include <linux/user_namespace.h>
- #include <linux/fs_context.h>
- #include <linux/mount.h>
-@@ -206,6 +208,10 @@ static int proc_parse_param(struct fs_context *fc, struct fs_parameter *param)
- 			errorfc(fc, "cannot reconfigure pidns for existing procfs");
- 			return -EBUSY;
- 		}
-+		if (fc->userland_bound) {
-+			errorfc(fc, "cannot override pidns on userland-bound procfs");
-+			return -EBUSY;
-+		}
- 		err = proc_parse_pidns_param(fc, param, &result);
- 		if (err)
- 			return err;
-@@ -323,6 +329,21 @@ static int proc_get_tree(struct fs_context *fc)
- 	return get_tree_nodev(fc, proc_fill_super);
- }
  
-+static int proc_set_userland(struct fs_context *fc, struct userland *userland)
-+{
-+	struct proc_fs_context *ctx = fc->fs_private;
-+	struct pid_namespace *target = userland->ns->pid_ns_for_children;
-+
-+	if (!pidns_is_ancestor(target, task_active_pid_ns(current)))
-+		return invalfc(fc, "cannot set pidns to non-descendant pidns");
-+
-+	put_pid_ns(ctx->pid_ns);
-+	ctx->pid_ns = get_pid_ns(target);
-+	put_user_ns(fc->user_ns);
-+	fc->user_ns = get_user_ns(ctx->pid_ns->user_ns);
-+	return 0;
-+}
-+
- static void proc_fs_context_free(struct fs_context *fc)
- {
- 	struct proc_fs_context *ctx = fc->fs_private;
-@@ -334,6 +355,7 @@ static void proc_fs_context_free(struct fs_context *fc)
- static const struct fs_context_operations proc_fs_context_ops = {
- 	.free		= proc_fs_context_free,
- 	.parse_param	= proc_parse_param,
-+	.set_userland	= proc_set_userland,
- 	.get_tree	= proc_get_tree,
- 	.reconfigure	= proc_reconfigure,
- };
-@@ -371,7 +393,9 @@ static struct file_system_type proc_fs_type = {
- 	.init_fs_context	= proc_init_fs_context,
- 	.parameters		= proc_fs_parameters,
- 	.kill_sb		= proc_kill_sb,
--	.fs_flags		= FS_USERNS_MOUNT | FS_USERNS_MOUNT_RESTRICTED | FS_DISALLOW_NOTIFY_PERM,
-+	.fs_flags		= FS_USERNS_MOUNT | FS_USERLAND_MOUNT |
-+				  FS_USERNS_MOUNT_RESTRICTED |
-+				  FS_DISALLOW_NOTIFY_PERM,
- };
+ /* For every LSM hook that allows attachment of BPF programs, declare a nop
+  * function where a BPF program can be attached. Notably, we qualify each with
+@@ -404,6 +405,12 @@ BTF_ID(func, bpf_lsm_task_setscheduler)
+ BTF_ID(func, bpf_lsm_userns_create)
+ BTF_ID(func, bpf_lsm_bdev_alloc_security)
+ BTF_ID(func, bpf_lsm_bdev_setintegrity)
++#ifdef CONFIG_USERLAND
++BTF_ID(func, bpf_lsm_userland_alloc)
++BTF_ID(func, bpf_lsm_userland_share)
++BTF_ID(func, bpf_lsm_userland_clone)
++BTF_ID(func, bpf_lsm_userland_kill)
++#endif /* CONFIG_USERLAND */
+ BTF_SET_END(sleepable_lsm_hooks)
  
- void __init proc_root_init(void)
+ BTF_SET_START(untrusted_lsm_hooks)
+@@ -420,6 +427,10 @@ BTF_ID(func, bpf_lsm_sk_free_security)
+ BTF_ID(func, bpf_lsm_task_free)
+ BTF_ID(func, bpf_lsm_bdev_alloc_security)
+ BTF_ID(func, bpf_lsm_bdev_free_security)
++#ifdef CONFIG_USERLAND
++BTF_ID(func, bpf_lsm_userland_alloc)
++BTF_ID(func, bpf_lsm_userland_free)
++#endif /* CONFIG_USERLAND */
+ BTF_SET_END(untrusted_lsm_hooks)
+ 
+ bool bpf_lsm_is_sleepable_hook(u32 btf_id)
 -- 
 2.47.3
 
