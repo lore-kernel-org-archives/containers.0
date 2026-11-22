@@ -1,44 +1,44 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795376233;
-	b=VLp7k7LC9HfbsMyKOPzTMnkt5SFhRXqUjkzC+7tpfUpewQF5uapSVQvVXKya7Vn6aKIe
-	 biTiiWbUb5tj6FeWvBECjlVvHCz0a2mesQ9bJpXWKe6VWGdbO/ycUOdXzDovHgDSGIqrO
-	 sYWW2s9WcmGnRZFGthtxi/fi1de9P+60C5+igHgmHnvYbSGvjsc0YnNdAs1U9TCRJFL1C
-	 0RwLb/jsxjGUlE/PS2zTPVuq75eEHseqT2qhIT9AkNGYj6iTySIyqCuLD981tUj/Dlm6f
-	 hMtksKom3DBxTiYwT+9IJKzCWEhe5JpnlfW/MFHjT1fG3PZplGyG56PfKPwqaUKJ/dg==
+	t=1795376229;
+	b=uNeGMhi3sfKgVpgSQOtEYH/bHGJIaz8woboDt327Ctt3mMXVeddxSzezoDonIxautgBS
+	 xqJP8E7cm5LOvJ201USPgs1pYGVM6aBxIkjgKpdFCtiyKMxe6nAfJ3WOcS25GqJZKuAcn
+	 p4VxFKF10+gc3iMBi/kLo+BQ/Gmlqa/2pw+V0rRHpP0BvQo1AQFuuMF/cqJVyU0lZtzko
+	 m8DQ0QTD26BYT6yPVlZ4syKcDnp64BHibr6CwYuaWFnsBeHbj8tb8YO3Fskj6W2UvCVxg
+	 ZNaKhgMfTdvZZqWczYQ8nH1EIhH1bX94P9uZozxnWMQ0SM0AzpkiJZ/LHzao9yWhFEA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795376233;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795376229;
 	h=Received:DKIM-Signature:From:To:Cc:Subject:Date:Message-ID:X-Mailer:
 	 In-Reply-To:References:MIME-Version:Content-Transfer-Encoding;
-	bh=khxvpcGeTbqQJJSuGbnlbIcol0rjjybMBYSoawPmV50=;
-	b=N9ntUEPrVGEaiR3Pa72nHOW2FO1GjIyb7kLYKuymkIHnQwWLC4R9YzqJJNRqxh7DPI/I
-	 NnSwzwVM5SFTI6s9QPXbU8MhzIpH6hh+4Ll4xrJsSGwuyz8Tub48U5R65nKO6eqVXFf+g
-	 YNYT4yqeq0m8BxqQyNaj7Uakj3KHagwa9wUH7dzzmwnyYjoUPCdXvgtGi+TxvBFpqemFJ
-	 5pImakzHH9HP+S0URiu18y9jquylpR1tBON1HfmvwDsfWDZVthHcT/iElFvSmnnEKA9fM
-	 YOSAzY9CR+RsO7kGW5cXsTZDHXxmHkoan3KDcGpvOisF4342flaF8kGFilR+/Rgeb5w==
+	bh=WbpDZaHnnjHuv0gV/3ertHEHpnm2j+Wl1rDtPX9sAVE=;
+	b=RRjeB61CC/y26o8bU3HgezfoTbLiY5xoGjzCj7cF/BuPf2VBEXqmhqzPDPb+k6TFHG9K
+	 gOAUUyyIoAdq3HzRCqDY+jVOMcz/n6LyBeUvfew/yzckMgLVYhvYJ1QeNYeXVnKjHd+b/
+	 EErdi13SUuvVKqLVFlswTyTCdaFY6deWj5M+yunXJBOXpZ0rcLfXQGykMx7vB5YLbTaPO
+	 EzOWksoxrfHCVbiEe6RcXt0DGfAkuMmeRgZ22BMQt3GXfcOkcJ+apyK6O3jUcP8JlbIMe
+	 sBFMM6RgXlgYeoq1CzO541GP+WGS9xusPugkygJYqAe1ThVSQHBsYZOz6szntqG2ZMw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=HQQjMQcH;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=WqYJWrMV;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with UTF8SMTPS id B87C5606A333;
-	Sun, 22 Nov 2026 19:37:13 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with UTF8SMTPS id CAA8160A262F;
+	Sun, 22 Nov 2026 19:37:09 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=HQQjMQcH
-Received: by smtp.kernel.org (Postfix) with UTF8SMTPSA id A59BA1F000ED;
-	Sun, 22 Nov 2026 19:37:12 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=WqYJWrMV
+Received: by smtp.kernel.org (Postfix) with UTF8SMTPSA id C9A461F000E1;
+	Sun, 22 Nov 2026 19:37:08 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795376233;
-	bh=khxvpcGeTbqQJJSuGbnlbIcol0rjjybMBYSoawPmV50=;
+	s=k20260515; t=1795376229;
+	bh=WbpDZaHnnjHuv0gV/3ertHEHpnm2j+Wl1rDtPX9sAVE=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=HQQjMQcHancZxRSEXTnnNfnmTv7tzCkRXR8gIRGuI6Kc1UeH+LaHw4TYQ003/ayOU
-	 gDqP6tUK/r+t1pBzNsi1MyGF8MUCz2vYR8XvkldC8IJmfod6XSWPp8hEVUDYWDCcbL
-	 mH4yheFxBNmBFok98NZeorlOW9Mj1DWCEk5c6KKXkVCpPQBIcUwZkJkMwYQVZHu63w
-	 wYY1klB0TTGXd6wN8TZ6YId+Ca0GtXKxzxdMI8tN6PEQgaw82keC4o9Col5QNmEi4j
-	 eoDB7f8gDENj95Pb8o/SB+pF6BLcwQQUmKWHcCvXcGAQekK97LLL91HwXFzy1J++SG
-	 kMHn0ByvVy4gg==
+	b=WqYJWrMVyfrrFpHYDBIeYbZTdkThiLeA0h7xG6SorN1P38Pb/Vo5Nm2CC0UQ/+jYt
+	 juNebkrwS3APCUe0n9MntHRtNGbt8BTkyOp62dBAoNcCBJphyTEIrBtBSU0WxHxC2x
+	 w6Su1GLrqSMhHXiBrRQhk1lPlC406bGjnNR8Dhe9pxAMdwdySto3SbNqtXlIGZYazB
+	 uMIaYgPHC5yx/iw1U5fuHJoOqjcUnBHQQPE40trffiGzDb5/a0D1CVMHPV/oCgBPZZ
+	 /Kr1aM1M/5UfhyUgni55gJgOvY0yK6icr25E7+pu2VSBHuINay5oqoCPMofHi/uDuV
+	 NS/qdUT6d/0dA==
 From: Jarkko Sakkinen <jarkko@kernel.org>
 To: linux-fsdevel@vger.kernel.org
 Cc: Jarkko Sakkinen <jarkko@kernel.org>,
@@ -75,9 +75,9 @@ Cc: Jarkko Sakkinen <jarkko@kernel.org>,
 	Serge Hallyn <sergeh@kernel.org>,
 	Shuah Khan <skhan@linuxfoundation.org>,
 	Zygmunt Krynicki <zygmunt.krynicki@canonical.com>
-Subject: [RFC PATCH v7 18/26] fs: Support FSCONFIG_SET_USERLAND in fsconfig()
-Date: Sun, 22 Nov 2026 21:35:31 +0200
-Message-ID: <20261122193539.3334213-19-jarkko@kernel.org>
+Subject: [RFC PATCH v7 17/26] fork: Support CLONE_INTO_USERLAND in clone3()
+Date: Sun, 22 Nov 2026 21:35:30 +0200
+Message-ID: <20261122193539.3334213-18-jarkko@kernel.org>
 X-Mailer: git-send-email 2.47.3
 In-Reply-To: <20261122193539.3334213-1-jarkko@kernel.org>
 References: <20261122193539.3334213-1-jarkko@kernel.org>
@@ -92,631 +92,642 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-fsopen() and fsmount() gate on CAP_SYS_ADMIN in the caller's current
-mount namespace and initialize filesystem contexts from current's user
-and network namespaces, preventing an unprivileged external manager from
-creating superblocks and detached mounts for an unentered userland.
+Multithreaded userspace daemons cannot call setns(CLONE_NEWUSER) or
+safely mutate process-wide filesystem state in place before spawning a
+child into a target namespace set.
 
-Add FSCONFIG_SET_USERLAND and the ->set_userland() fs_context operation
-so callers holding CAP_SYS_ADMIN in the target userland's user namespace
-can bind a newly opened fs_context to that userland once before offering
-parameters. Gate userland context binding on explicit FS_USERLAND_MOUNT
-opt-in (or FS_USERNS_DELEGATABLE), mark tmpfs, ramfs, and devpts with
-FS_USERLAND_MOUNT, refresh fc->cred when FSCONFIG_SET_USERLAND
-authorizes and initializes the context, and keep devpts pty_reserve
-restricted to host mounts.
+Add CLONE_INTO_USERLAND and struct clone_args.userland
+(CLONE_ARGS_SIZE_VER3) to spawn a child process directly into a userland
+whose root mount has been installed. Transition the userland from
+USERLAND_INIT through USERLAND_FORKING to USERLAND_RUNNING for the first
+process so it becomes PID 1, serialize concurrent entrants on waitq
+until bootstrap resolves, and admit subsequent callers into the running
+PID namespace until teardown begins.
+
+Derive child credentials from current, require CAP_SYS_ADMIN and
+CAP_SYS_CHROOT in the target user namespace and an ancestor active PID
+namespace, preserve caller umask, reset dumpability across user
+namespace transitions, commit time namespace vvar mappings after
+copy_process() succeeds, and look up the live mount namespace root.
+Restrict companion flags to CLONE_VFORK, CLONE_PIDFD,
+CLONE_PIDFD_AUTOKILL, CLONE_AUTOREAP, CLONE_CLEAR_SIGHAND,
+CLONE_INTO_CGROUP, and CLONE_NNP.
 
 Co-developed-by: David Howells <dhowells@redhat.com>
 Signed-off-by: David Howells <dhowells@redhat.com>
 Signed-off-by: Jarkko Sakkinen <jarkko@kernel.org>
 ---
- Documentation/filesystems/mount_api.rst |  32 +++++-
- fs/devpts/inode.c                       |   4 +-
- fs/filesystems.c                        |  15 +++
- fs/fs_context.c                         |  21 +++-
- fs/fsopen.c                             | 137 ++++++++++++++++++++++--
- fs/internal.h                           |   6 ++
- fs/namespace.c                          |  18 +++-
- fs/ramfs/inode.c                        |   2 +-
- include/linux/fs.h                      |   1 +
- include/linux/fs_context.h              |   6 ++
- include/uapi/linux/mount.h              |   1 +
- mm/shmem.c                              |   5 +-
- 12 files changed, 229 insertions(+), 19 deletions(-)
+ include/linux/cred.h       |   4 +-
+ include/linux/nsproxy.h    |   4 +-
+ include/linux/sched/task.h |   6 ++
+ include/linux/userland.h   |  15 ++++
+ include/uapi/linux/sched.h |   5 ++
+ kernel/cred.c              |  27 ++++++-
+ kernel/fork.c              |  70 ++++++++++++++++---
+ kernel/nsproxy.c           |   9 ++-
+ kernel/userland.c          | 139 +++++++++++++++++++++++++++++++++++++
+ 9 files changed, 266 insertions(+), 13 deletions(-)
 
-diff --git a/Documentation/filesystems/mount_api.rst b/Documentation/filesystems/mount_api.rst
-index e8b94357b4df..55edc9fdd6fd 100644
---- a/Documentation/filesystems/mount_api.rst
-+++ b/Documentation/filesystems/mount_api.rst
-@@ -80,6 +80,7 @@ context.  This is represented by the fs_context structure::
- 		unsigned int		sb_flags_mask;
- 		unsigned int		s_iflags;
- 		enum fs_context_purpose	purpose:8;
-+		bool			userland_bound:1;
- 		...
- 	};
+diff --git a/include/linux/cred.h b/include/linux/cred.h
+index 49c26af37349..e0bb4d3eab17 100644
+--- a/include/linux/cred.h
++++ b/include/linux/cred.h
+@@ -19,6 +19,7 @@
  
-@@ -123,7 +124,8 @@ The fs_context fields are as follows:
-      There are a subset of the namespaces in use by the invoking process.  They
-      retain references on each namespace.  The subscribed namespaces may be
-      replaced by the filesystem to reflect other sources, such as the parent
--     mount superblock on an automount.
-+     mount superblock on an automount, or to the target userland's
-+     namespaces when bound via FSCONFIG_SET_USERLAND.
+ struct cred;
+ struct inode;
++struct userland;
  
-    * ::
+ extern struct task_struct init_task;
  
-@@ -186,6 +188,15 @@ The fs_context fields are as follows:
- 	FS_CONTEXT_FOR_RECONFIGURE	Change an existing mount
- 	==========================	======================================
+@@ -152,7 +153,8 @@ struct cred {
  
-+   * ::
-+
-+       bool userland_bound:1
-+
-+     Set when the filesystem context has been bound to a target userland via
-+     FSCONFIG_SET_USERLAND.  Filesystems may inspect this flag (for example in
-+     ->init_fs_context() or ->parse_param()) to distinguish userland-delegated
-+     mounts from host mounts.
-+
- The mount context is created by calling vfs_new_fs_context() or
- vfs_dup_fs_context() and is destroyed with put_fs_context().  Note that the
- structure is not refcounted.
-@@ -214,6 +225,8 @@ The filesystem context points to a table of operations::
- 		int (*parse_param)(struct fs_context *fc,
- 				   struct fs_parameter *param);
- 		int (*parse_monolithic)(struct fs_context *fc, void *data);
-+		int (*set_userland)(struct fs_context *fc,
-+				    struct userland *userland);
- 		int (*get_tree)(struct fs_context *fc);
- 		int (*reconfigure)(struct fs_context *fc);
- 	};
-@@ -272,6 +285,23 @@ manage the filesystem context.  They are as follows:
-      finds it's the standard key-val list then it may pass it off to
-      generic_parse_monolithic().
+ extern void __put_cred(struct cred *);
+ extern void exit_creds(struct task_struct *);
+-extern int copy_creds(struct task_struct *, u64);
++int copy_creds(struct task_struct *tsk, u64 clone_flags,
++	       struct userland *userland);
+ extern const struct cred *get_task_cred(struct task_struct *);
+ extern struct cred *cred_alloc_blank(void);
+ extern struct cred *prepare_creds(void);
+diff --git a/include/linux/nsproxy.h b/include/linux/nsproxy.h
+index d611c40cb4ce..17bd48433bba 100644
+--- a/include/linux/nsproxy.h
++++ b/include/linux/nsproxy.h
+@@ -12,6 +12,7 @@ struct ipc_namespace;
+ struct pid_namespace;
+ struct cgroup_namespace;
+ struct fs_struct;
++struct userland;
+ struct user_namespace;
  
-+   * ::
-+
-+	int (*set_userland)(struct fs_context *fc,
-+			    struct userland *userland);
-+
-+     Called by FSCONFIG_SET_USERLAND after updating fc->user_ns, fc->net_ns,
-+     and fc->cred, setting fc->userland_bound, and re-running
-+     ->init_fs_context().  Filesystems opting into FS_USERLAND_MOUNT (or
-+     FS_USERNS_DELEGATABLE) that capture additional namespaces from current in
-+     ->init_fs_context() (such as PID or IPC namespaces) can implement this
-+     operation to rebind their private context to the target userland's
-+     namespaces.  It may update fc->user_ns, which must equal userland->user_ns
-+     on return or the bind fails with -EOPNOTSUPP.
-+
-+     On success it should return 0.  In the case of an error, it should return
-+     a negative error code and the context transitions to FS_CONTEXT_FAILED.
-+
-    * ::
+ /*
+@@ -96,7 +97,8 @@ static inline struct cred *nsset_cred(struct nsset *set)
+ struct nsproxy *create_new_namespaces(u64 flags, struct task_struct *tsk,
+ 				      struct user_namespace *user_ns,
+ 				      struct fs_struct *new_fs);
+-int copy_namespaces(u64 flags, struct task_struct *tsk);
++int copy_namespaces(u64 flags, struct task_struct *tsk,
++		    struct userland *userland);
+ void switch_cred_namespaces(const struct cred *old, const struct cred *new);
+ void exit_nsproxy_namespaces(struct task_struct *tsk);
+ void get_cred_namespaces(struct task_struct *tsk);
+diff --git a/include/linux/sched/task.h b/include/linux/sched/task.h
+index 90ed5bc3c7af..c21ac74d7b72 100644
+--- a/include/linux/sched/task.h
++++ b/include/linux/sched/task.h
+@@ -16,6 +16,8 @@ struct task_struct;
+ struct rusage;
+ union thread_union;
+ struct css_set;
++struct file;
++struct userland;
  
- 	int (*get_tree)(struct fs_context *fc);
-diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
-index bd1e8eb26edb..921b67d18fa2 100644
---- a/fs/devpts/inode.c
-+++ b/fs/devpts/inode.c
-@@ -434,6 +434,8 @@ static int devpts_init_fs_context(struct fs_context *fc)
- 	fsi->mount_opts.max     = NR_UNIX98_PTY_MAX;
- 
- 	if (fc->purpose == FS_CONTEXT_FOR_MOUNT &&
-+	    !fc->userland_bound &&
-+	    fc->user_ns == &init_user_ns &&
- 	    current->nsproxy->mnt_ns == init_task.nsproxy->mnt_ns)
- 		fsi->mount_opts.reserve = true;
- 
-@@ -457,7 +459,7 @@ static struct file_system_type devpts_fs_type = {
- 	.init_fs_context = devpts_init_fs_context,
- 	.parameters	= devpts_param_specs,
- 	.kill_sb	= devpts_kill_sb,
--	.fs_flags	= FS_USERNS_MOUNT,
-+	.fs_flags	= FS_USERNS_MOUNT | FS_USERLAND_MOUNT,
+ /* All the bits taken by the old clone syscall. */
+ #define CLONE_LEGACY_FLAGS 0xffffffffULL
+@@ -39,11 +41,15 @@ struct kernel_clone_args {
+ 	/* Number of elements in *set_tid */
+ 	size_t set_tid_size;
+ 	int cgroup;
++	int userland_fd;
+ 	int idle;
+ 	int (*fn)(void *);
+ 	void *fn_arg;
+ 	struct cgroup *cgrp;
+ 	struct css_set *cset;
++	struct file *userland_file;
++	struct userland *userland;
++	bool userland_bootstrapping;
+ 	unsigned int kill_seq;
  };
  
- /*
-diff --git a/fs/filesystems.c b/fs/filesystems.c
-index 3083d904df9b..9429844bf6bf 100644
---- a/fs/filesystems.c
-+++ b/fs/filesystems.c
-@@ -18,6 +18,7 @@
- #include <linux/uaccess.h>
- #include <linux/fs_parser.h>
- #include <linux/rculist.h>
-+#include "internal.h"
+diff --git a/include/linux/userland.h b/include/linux/userland.h
+index da0978db54dd..a9b99642c46e 100644
+--- a/include/linux/userland.h
++++ b/include/linux/userland.h
+@@ -13,6 +13,7 @@
+ #include <linux/wait.h>
  
- /*
-  * Read-mostly filesystem drivers list.
-@@ -390,6 +391,20 @@ static struct file_system_type *__get_fs_type(const char *name, int len)
- 	return fs;
+ struct file;
++struct kernel_clone_args;
+ struct nsproxy;
+ struct pid;
+ struct pid_namespace;
+@@ -80,6 +81,9 @@ long userland_waitid(int upid, struct waitid_info *infop, int options,
+ 		     struct rusage *ru);
+ int userland_send_signal(struct file *file, int sig,
+ 			 struct siginfo __user *info, unsigned int flags);
++int userland_prepare_fork(struct kernel_clone_args *args);
++int userland_finish_fork(struct kernel_clone_args *args,
++			 struct task_struct *p);
+ #else
+ static inline void userland_put(struct userland *c)
+ {
+@@ -112,6 +116,17 @@ static inline int userland_send_signal(struct file *file, int sig,
+ {
+ 	return -EBADF;
  }
- 
-+struct file_system_type *get_fs_type_noload(const char *name)
-+{
-+	struct file_system_type *fs;
-+	const char *dot = strchr(name, '.');
-+	int len = dot ? dot - name : strlen(name);
 +
-+	fs = __get_fs_type(name, len);
-+	if (dot && fs && !(fs->fs_flags & FS_HAS_SUBTYPE)) {
-+		put_filesystem(fs);
-+		fs = NULL;
-+	}
-+	return fs;
++static inline int userland_prepare_fork(struct kernel_clone_args *args)
++{
++	return -EINVAL;
 +}
 +
- struct file_system_type *get_fs_type(const char *name)
- {
- 	struct file_system_type *fs;
-diff --git a/fs/fs_context.c b/fs/fs_context.c
-index a50584df97be..cd004750b99c 100644
---- a/fs/fs_context.c
-+++ b/fs/fs_context.c
-@@ -249,6 +249,7 @@ EXPORT_SYMBOL(generic_parse_monolithic);
-  * @sb_flags: Filesystem/superblock flags (SB_*)
-  * @sb_flags_mask: Applicable members of @sb_flags
-  * @purpose: The purpose that this configuration shall be used for.
-+ * @init: Whether to initialise the filesystem context immediately.
++static inline int userland_finish_fork(struct kernel_clone_args *args,
++				       struct task_struct *p)
++{
++	return 0;
++}
+ #endif /* CONFIG_USERLAND */
+ 
+ #endif /* _LINUX_USERLAND_H */
+diff --git a/include/uapi/linux/sched.h b/include/uapi/linux/sched.h
+index 19ffeba89428..30551f4cdedb 100644
+--- a/include/uapi/linux/sched.h
++++ b/include/uapi/linux/sched.h
+@@ -40,6 +40,7 @@
+ #define CLONE_NNP		(1ULL << 35) /* Set no_new_privs on child. */
+ #define CLONE_PIDFD_AUTOKILL	(1ULL << 36) /* Kill child when clone pidfd closes. */
+ #define CLONE_EMPTY_MNTNS	(1ULL << 37) /* Create an empty mount namespace. */
++#define CLONE_INTO_USERLAND	(1ULL << 38) /* Clone into a userland. */
+ 
+ /*
+  * cloning flags intersect with CSIGNAL so can be used with unshare and clone3
+@@ -94,6 +95,8 @@
+  *                kernel's limit of nested PID namespaces.
+  * @cgroup:       If CLONE_INTO_CGROUP is specified set this to
+  *                a file descriptor for the cgroup.
++ * @userland:     If CLONE_INTO_USERLAND is specified set this to
++ *                a file descriptor for the userland.
   *
-  * Open a filesystem and create a mount context.  The mount context is
-  * initialised with the supplied flags and, if a submount/automount from
-@@ -259,7 +260,8 @@ static struct fs_context *alloc_fs_context(struct file_system_type *fs_type,
- 				      struct dentry *reference,
- 				      unsigned int sb_flags,
- 				      unsigned int sb_flags_mask,
--				      enum fs_context_purpose purpose)
-+				      enum fs_context_purpose purpose,
-+				      bool init)
+  * The structure is versioned by size and thus extensible.
+  * New struct members must go at the end of the struct and
+@@ -111,12 +114,14 @@ struct clone_args {
+ 	__aligned_u64 set_tid;
+ 	__aligned_u64 set_tid_size;
+ 	__aligned_u64 cgroup;
++	__aligned_u64 userland;
+ };
+ #endif
+ 
+ #define CLONE_ARGS_SIZE_VER0 64 /* sizeof first published struct */
+ #define CLONE_ARGS_SIZE_VER1 80 /* sizeof second published struct */
+ #define CLONE_ARGS_SIZE_VER2 88 /* sizeof third published struct */
++#define CLONE_ARGS_SIZE_VER3 96 /* sizeof fourth published struct */
+ 
+ /*
+  * Scheduling policies
+diff --git a/kernel/cred.c b/kernel/cred.c
+index d01df40a9a38..6bb83edd22b5 100644
+--- a/kernel/cred.c
++++ b/kernel/cred.c
+@@ -12,13 +12,16 @@
+ #include <linux/slab.h>
+ #include <linux/sched.h>
+ #include <linux/sched/coredump.h>
++#include <linux/sched/exec_state.h>
+ #include <linux/key.h>
+ #include <linux/keyctl.h>
+ #include <linux/init_task.h>
++#include <linux/userland.h>
+ #include <linux/security.h>
+ #include <linux/binfmts.h>
+ #include <linux/cn_proc.h>
+ #include <linux/uidgid.h>
++#include <linux/user_namespace.h>
+ 
+ #if 0
+ #define kdebug(FMT, ...)						\
+@@ -251,6 +254,9 @@ struct cred *prepare_exec_creds(void)
+ 	return new;
+ }
+ 
++static bool cred_cap_issubset(const struct cred *set,
++			      const struct cred *subset);
++
+ /*
+  * Copy credentials for the new process created by fork()
+  *
+@@ -260,7 +266,8 @@ struct cred *prepare_exec_creds(void)
+  * The new process gets the current process's subjective credentials as its
+  * objective and subjective credentials
+  */
+-int copy_creds(struct task_struct *p, u64 clone_flags)
++int copy_creds(struct task_struct *p, u64 clone_flags,
++	       struct userland *userland)
  {
- 	struct fs_context *fc;
- 	int ret = -ENOMEM;
-@@ -292,6 +294,9 @@ static struct fs_context *alloc_fs_context(struct file_system_type *fs_type,
- 		break;
+ 	struct cred *new;
+ 	int ret;
+@@ -287,6 +294,24 @@ int copy_creds(struct task_struct *p, u64 clone_flags)
+ 	if (!new)
+ 		return -ENOMEM;
+ 
++	if (userland) {
++		const struct cred *old = current_cred();
++
++		if (new->user_ns != userland->user_ns) {
++			ret = install_user_ns_cred(new, userland->user_ns);
++			if (ret < 0)
++				goto error_put;
++		}
++		if (!cred_cap_issubset(old, new) ||
++		    old->user_ns != new->user_ns) {
++			struct task_exec_state *exec_state;
++
++			exec_state = rcu_dereference_protected(p->exec_state, true);
++			if (exec_state != &init_task_exec_state)
++				WRITE_ONCE(exec_state->dumpable, suid_dumpable);
++		}
++	}
++
+ 	if (clone_flags & CLONE_NEWUSER) {
+ 		ret = create_user_ns(new);
+ 		if (ret < 0)
+diff --git a/kernel/fork.c b/kernel/fork.c
+index d87ab7cbad5e..d8fc18a9af22 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -65,6 +65,7 @@
+ #include <linux/rcupdate.h>
+ #include <linux/ptrace.h>
+ #include <linux/mount.h>
++#include <linux/mnt_namespace.h>
+ #include <linux/audit.h>
+ #include <linux/memcontrol.h>
+ #include <linux/ftrace.h>
+@@ -1616,7 +1617,7 @@ static int copy_exec_state(u64 clone_flags, struct task_struct *tsk)
+ 	struct task_exec_state *exec_state;
+ 
+ 	/* CLONE_VM siblings refcount-share the parent's exec_state. */
+-	if (clone_flags & CLONE_VM) {
++	if ((clone_flags & (CLONE_VM | CLONE_INTO_USERLAND)) == CLONE_VM) {
+ 		exec_state = rcu_dereference_protected(current->exec_state, true);
+ 		refcount_inc(&exec_state->count);
+ 		rcu_assign_pointer(tsk->exec_state, exec_state);
+@@ -1633,7 +1634,7 @@ enum copy_fs_flags_t {
+ };
+ 
+ static int copy_fs(u64 clone_flags, struct task_struct *tsk,
+-		   enum copy_fs_flags_t flags)
++		   enum copy_fs_flags_t flags, struct userland *userland)
+ {
+ 	struct fs_struct *fs;
+ 
+@@ -1649,7 +1650,7 @@ static int copy_fs(u64 clone_flags, struct task_struct *tsk,
+ 		if (current->nsproxy->mnt_ns != &init_mnt_ns)
+ 			return -EINVAL;
+ 		fs = userspace_init_fs;
+-	} else if (flags & COPY_FS_IDLE) {
++	} else if (flags & COPY_FS_IDLE || userland) {
+ 		fs = &init_fs;
+ 	} else {
+ 		fs = current->fs;
+@@ -1671,6 +1672,21 @@ static int copy_fs(u64 clone_flags, struct task_struct *tsk,
+ 	tsk->real_fs = tsk->fs = copy_fs_struct(fs);
+ 	if (!tsk->fs)
+ 		return -ENOMEM;
++	if (userland) {
++		struct path root __free(path_put) = {};
++		int err;
++
++		err = mnt_ns_get_root(userland->ns->mnt_ns, &root);
++		if (err) {
++			free_fs_struct(tsk->fs);
++			tsk->real_fs = NULL;
++			tsk->fs = NULL;
++			return err;
++		}
++		tsk->fs->umask = READ_ONCE(current->fs->umask);
++		set_fs_root(tsk->fs, &root);
++		set_fs_pwd(tsk->fs, &root);
++	}
+ 	return 0;
+ }
+ 
+@@ -2186,7 +2202,7 @@ __latent_entropy struct task_struct *copy_process(
+ #ifdef CONFIG_PROVE_LOCKING
+ 	DEBUG_LOCKS_WARN_ON(!p->softirqs_enabled);
+ #endif
+-	retval = copy_creds(p, clone_flags);
++	retval = copy_creds(p, clone_flags, args->userland);
+ 	if (retval < 0)
+ 		goto bad_fork_free;
+ 
+@@ -2317,7 +2333,7 @@ __latent_entropy struct task_struct *copy_process(
+ 		goto bad_fork_cleanup_semundo;
+ 	retval = copy_fs(clone_flags, p,
+ 			 (args->umh ? COPY_FS_UMH : 0) |
+-			 (args->idle ? COPY_FS_IDLE : 0));
++			 (args->idle ? COPY_FS_IDLE : 0), args->userland);
+ 	if (retval)
+ 		goto bad_fork_cleanup_semundo;
+ 	retval = copy_sighand(clone_flags, p);
+@@ -2329,7 +2345,7 @@ __latent_entropy struct task_struct *copy_process(
+ 	retval = copy_mm(clone_flags, p);
+ 	if (retval)
+ 		goto bad_fork_cleanup_signal;
+-	retval = copy_namespaces(clone_flags, p);
++	retval = copy_namespaces(clone_flags, p, args->userland);
+ 	if (retval)
+ 		goto bad_fork_cleanup_mm;
+ 	retval = copy_io(clone_flags, p);
+@@ -2510,6 +2526,11 @@ __latent_entropy struct task_struct *copy_process(
+ 		goto bad_fork_core_free;
  	}
  
-+	if (!init)
-+		return fc;
++	if (unlikely(args->userland_bootstrapping && !is_child_reaper(pid))) {
++		retval = -EBUSY;
++		goto bad_fork_core_free;
++	}
 +
- 	ret = fc->fs_type->init_fs_context(fc);
- 	if (ret < 0)
- 		goto err_fc;
-@@ -307,10 +312,16 @@ struct fs_context *fs_context_for_mount(struct file_system_type *fs_type,
- 					unsigned int sb_flags)
- {
- 	return alloc_fs_context(fs_type, NULL, sb_flags, 0,
--					FS_CONTEXT_FOR_MOUNT);
-+				FS_CONTEXT_FOR_MOUNT, true);
- }
- EXPORT_SYMBOL(fs_context_for_mount);
+ 	/* Let kill terminate clone/fork in the middle */
+ 	if (fatal_signal_pending(current)) {
+ 		retval = -EINTR;
+@@ -2586,7 +2607,7 @@ __latent_entropy struct task_struct *copy_process(
+ 	write_unlock_irq(&tasklist_lock);
  
-+struct fs_context *fs_context_for_unpriv_mount(struct file_system_type *fs_type)
-+{
-+	return alloc_fs_context(fs_type, NULL, 0, 0,
-+				FS_CONTEXT_FOR_MOUNT, false);
-+}
+ 	if (likely(p->pid) && thread_group_leader(p))
+-		userland_copy(p, pid, NULL);
++		userland_copy(p, pid, args->userland);
+ 
+ 	if (pidfile)
+ 		fd_install(pidfd, pidfile);
+@@ -2781,6 +2802,13 @@ pid_t kernel_clone(struct kernel_clone_args *args)
+ 	if (!valid_signal(args->exit_signal))
+ 		return -EINVAL;
+ 
++	if (unlikely(clone_flags & CLONE_INTO_USERLAND)) {
++		int err = userland_prepare_fork(args);
 +
- struct fs_context *fs_context_for_reconfigure(struct dentry *dentry,
- 					unsigned int sb_flags,
- 					unsigned int sb_flags_mask)
-@@ -320,7 +331,8 @@ struct fs_context *fs_context_for_reconfigure(struct dentry *dentry,
- 		return ERR_PTR(-EINVAL);
- 
- 	return alloc_fs_context(dentry->d_sb->s_type, dentry, sb_flags,
--				sb_flags_mask, FS_CONTEXT_FOR_RECONFIGURE);
-+				sb_flags_mask, FS_CONTEXT_FOR_RECONFIGURE,
-+				true);
- }
- 
- /**
-@@ -337,7 +349,8 @@ struct fs_context *fs_context_for_submount(struct file_system_type *type,
- 	struct fs_context *fc;
- 	int ret;
- 
--	fc = alloc_fs_context(type, reference, 0, 0, FS_CONTEXT_FOR_SUBMOUNT);
-+	fc = alloc_fs_context(type, reference, 0, 0, FS_CONTEXT_FOR_SUBMOUNT,
-+			      true);
- 	if (IS_ERR(fc))
- 		return fc;
- 
-diff --git a/fs/fsopen.c b/fs/fsopen.c
-index 70024870fefa..33cc9163c670 100644
---- a/fs/fsopen.c
-+++ b/fs/fsopen.c
-@@ -13,9 +13,14 @@
- #include <linux/security.h>
- #include <linux/anon_inodes.h>
- #include <linux/namei.h>
-+#include <linux/capability.h>
-+#include <linux/nsproxy.h>
-+#include <linux/userland.h>
-+#include <linux/user_namespace.h>
- #include <linux/file.h>
- #include <uapi/linux/mount.h>
- #include <linux/audit.h>
-+#include <net/net_namespace.h>
- #include "internal.h"
- #include "mount.h"
- 
-@@ -41,6 +46,92 @@ static inline const char *fetch_message_locked(struct fc_log *log, size_t len,
- 	return p;
- }
- 
-+/**
-+ * DOC: FSCONFIG_SET_USERLAND
-+ *
-+ * ``fsconfig(fsfd, FSCONFIG_SET_USERLAND, NULL, NULL, userland_fd)`` binds a newly
-+ * opened ``FS_USERLAND_MOUNT`` or ``FS_USERNS_DELEGATABLE`` filesystem context
-+ * to ``userland_fd`` once before parameters are supplied. Requires
-+ * ``CAP_SYS_ADMIN`` in the userland's user namespace and binds the context to the
-+ * userland's user, network, PID (``proc``), and IPC (``mqueue``) namespaces.
-+ */
-+static int fsconfig_set_userland(struct fs_context *fc, struct fs_parameter *param)
-+{
-+	struct user_namespace *user_ns;
-+	struct net *net;
-+	struct userland *c;
-+	int ret;
++		if (err)
++			return err;
++	}
 +
-+	if (!userland_is_file(param->file))
+ 	/*
+ 	 * Determine whether and which event to report to ptracer.  When
+ 	 * called from kernel_thread or CLONE_UNTRACED is explicitly
+@@ -2802,6 +2830,13 @@ pid_t kernel_clone(struct kernel_clone_args *args)
+ 	p = copy_process(NULL, trace, NUMA_NO_NODE, args);
+ 	add_latent_entropy();
+ 
++	if (unlikely(clone_flags & CLONE_INTO_USERLAND)) {
++		int err = userland_finish_fork(args, p);
++
++		if (err)
++			return err;
++	}
++
+ 	if (IS_ERR(p))
+ 		return PTR_ERR(p);
+ 
+@@ -2959,7 +2994,9 @@ static noinline int copy_clone_args_from_user(struct kernel_clone_args *kargs,
+ 		     CLONE_ARGS_SIZE_VER1);
+ 	BUILD_BUG_ON(offsetofend(struct clone_args, cgroup) !=
+ 		     CLONE_ARGS_SIZE_VER2);
+-	BUILD_BUG_ON(sizeof(struct clone_args) != CLONE_ARGS_SIZE_VER2);
++	BUILD_BUG_ON(offsetofend(struct clone_args, userland) !=
++		     CLONE_ARGS_SIZE_VER3);
++	BUILD_BUG_ON(sizeof(struct clone_args) != CLONE_ARGS_SIZE_VER3);
+ 
+ 	if (unlikely(usize > PAGE_SIZE))
+ 		return -E2BIG;
+@@ -2989,6 +3026,10 @@ static noinline int copy_clone_args_from_user(struct kernel_clone_args *kargs,
+ 	    (args.cgroup > INT_MAX || usize < CLONE_ARGS_SIZE_VER2))
+ 		return -EINVAL;
+ 
++	if ((args.flags & CLONE_INTO_USERLAND) &&
++	    (args.userland > INT_MAX || usize < CLONE_ARGS_SIZE_VER3))
 +		return -EINVAL;
 +
-+	c = param->file->private_data;
-+	user_ns = c->user_ns;
-+	if (!ns_capable(user_ns, CAP_SYS_ADMIN))
+ 	*kargs = (struct kernel_clone_args){
+ 		.flags		= args.flags,
+ 		.pidfd		= u64_to_user_ptr(args.pidfd),
+@@ -3000,6 +3041,7 @@ static noinline int copy_clone_args_from_user(struct kernel_clone_args *kargs,
+ 		.tls		= args.tls,
+ 		.set_tid_size	= args.set_tid_size,
+ 		.cgroup		= args.cgroup,
++		.userland_fd	= args.userland,
+ 	};
+ 
+ 	if (args.set_tid &&
+@@ -3040,13 +3082,19 @@ static inline bool clone3_stack_valid(struct kernel_clone_args *kargs)
+ 	return true;
+ }
+ 
++#define CLONE_INTO_USERLAND_FLAGS \
++	(CLONE_INTO_USERLAND | CLONE_VFORK | CLONE_PIDFD | \
++	 CLONE_CLEAR_SIGHAND | CLONE_INTO_CGROUP | CLONE_AUTOREAP | \
++	 CLONE_NNP | CLONE_PIDFD_AUTOKILL)
++
+ static bool clone3_args_valid(struct kernel_clone_args *kargs)
+ {
+ 	/* Verify that no unknown flags are passed along. */
+ 	if (kargs->flags &
+ 	    ~(CLONE_LEGACY_FLAGS | CLONE_CLEAR_SIGHAND |
+ 	      CLONE_INTO_CGROUP | CLONE_AUTOREAP | CLONE_NNP |
+-	      CLONE_PIDFD_AUTOKILL | CLONE_EMPTY_MNTNS))
++	      CLONE_PIDFD_AUTOKILL | CLONE_EMPTY_MNTNS |
++	      CLONE_INTO_USERLAND))
+ 		return false;
+ 
+ 	/*
+@@ -3064,6 +3112,10 @@ static bool clone3_args_valid(struct kernel_clone_args *kargs)
+ 	    kargs->exit_signal)
+ 		return false;
+ 
++	if ((kargs->flags & CLONE_INTO_USERLAND) &&
++	    (kargs->flags & ~CLONE_INTO_USERLAND_FLAGS))
++		return false;
++
+ 	if (!clone3_stack_valid(kargs))
+ 		return false;
+ 
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index 3c4161515c3c..90cf3c799152 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -13,6 +13,7 @@
+ #include <linux/export.h>
+ #include <linux/nsproxy.h>
+ #include <linux/ns/ns_common_types.h>
++#include <linux/userland.h>
+ #include <linux/init_task.h>
+ #include <linux/mnt_namespace.h>
+ #include <linux/utsname.h>
+@@ -166,12 +167,18 @@ struct nsproxy *create_new_namespaces(u64 flags, struct task_struct *tsk,
+  * called from clone.  This now handles copy for nsproxy and all
+  * namespaces therein.
+  */
+-int copy_namespaces(u64 flags, struct task_struct *tsk)
++int copy_namespaces(u64 flags, struct task_struct *tsk,
++		    struct userland *userland)
+ {
+ 	struct nsproxy *old_ns = tsk->nsproxy;
+ 	struct user_namespace *user_ns = task_cred_xxx(tsk, user_ns);
+ 	struct nsproxy *new_ns;
+ 
++	if (userland) {
++		get_nsproxy(userland->ns);
++		tsk->nsproxy = userland->ns;
++		return 0;
++	}
+ 	if (likely(!(flags & (CLONE_NS_ALL & ~CLONE_NEWUSER)))) {
+ 		if ((flags & CLONE_VM) ||
+ 		    likely(old_ns->time_ns_for_children == old_ns->time_ns)) {
+diff --git a/kernel/userland.c b/kernel/userland.c
+index f449e2ff9152..2375442733b6 100644
+--- a/kernel/userland.c
++++ b/kernel/userland.c
+@@ -17,6 +17,7 @@
+ #include <linux/file.h>
+ #include <linux/freezer.h>
+ #include <linux/fs.h>
++#include <linux/fs_struct.h>
+ #include <linux/anon_inodes.h>
+ #include <linux/userland.h>
+ #include <linux/sched/signal.h>
+@@ -551,3 +552,141 @@ SYSCALL_DEFINE1(userland_open, unsigned int, flags)
+ 
+ 	return fd;
+ }
++
++/**
++ * DOC: CLONE_INTO_USERLAND
++ *
++ * Passing ``CLONE_INTO_USERLAND`` in ``struct clone_args.flags`` (with
++ * ``size >= CLONE_ARGS_SIZE_VER3``) spawns the child into the userland identified
++ * by ``struct clone_args.userland`` once ``"/"`` is mounted in its mount
++ * namespace. The first caller bootstraps PID 1 while concurrent bootstrap
++ * callers wait killably; subsequent callers join the running PID namespace
++ * until teardown begins.
++ *
++ * Requires ``CAP_SYS_ADMIN`` and ``CAP_SYS_CHROOT`` in the target user
++ * namespace (plus ``CAP_SYS_CHROOT`` in the caller's user namespace when
++ * chrooted) and an ancestor active PID namespace. May be combined with
++ * ``CLONE_VFORK``, ``CLONE_PIDFD``, ``CLONE_PIDFD_AUTOKILL``,
++ * ``CLONE_AUTOREAP``, ``CLONE_CLEAR_SIGHAND``, ``CLONE_INTO_CGROUP``, and
++ * ``CLONE_NNP``.
++ *
++ * When spawning from outside the userland's user namespace, the child's
++ * credentials are copied from ``current`` and installed into the userland's
++ * user namespace with capabilities recomputed as in ``setns(CLONE_NEWUSER)``
++ * and dumpability reset to ``suid_dumpable``, retaining ``current``'s kernel
++ * UID, GID, and supplementary groups as mapped there.
++ */
++static bool userland_pidns_alive(struct pid_namespace *pid_ns)
++{
++	for (; pid_ns != &init_pid_ns; pid_ns = pid_ns->parent) {
++		if (!(READ_ONCE(pid_ns->pid_allocated) & PIDNS_ADDING))
++			return false;
++	}
++	return true;
++}
++
++int userland_prepare_fork(struct kernel_clone_args *args)
++{
++	struct file *file __free(fput) = fget(args->userland_fd);
++	struct path root __free(path_put) = {};
++	struct pid_namespace *pid_ns;
++	bool bootstrapping = false;
++	struct userland *userland;
++	int ret;
++
++	if (!file)
++		return -EBADF;
++	if (!userland_is_file(file))
++		return -EINVAL;
++
++	userland = file->private_data;
++	if (!ns_capable(userland->user_ns, CAP_SYS_ADMIN) ||
++	    !ns_capable(userland->user_ns, CAP_SYS_CHROOT))
 +		return -EPERM;
-+	if (!(fc->fs_type->fs_flags &
-+	      (FS_USERLAND_MOUNT | FS_USERNS_DELEGATABLE)))
-+		return -EOPNOTSUPP;
++	if (current_chrooted() && !ns_capable(current_user_ns(), CAP_SYS_CHROOT))
++		return -EPERM;
 +
-+	if (fc->need_free && fc->ops && fc->ops->free)
-+		fc->ops->free(fc);
-+	fc->need_free = false;
-+	fc->fs_private = NULL;
-+	fc->s_fs_info = NULL;
-+	fc->ops = NULL;
-+	fc->sb_flags = 0;
-+	fc->global = false;
-+	security_free_mnt_opts(&fc->security);
++	pid_ns = userland->ns->pid_ns_for_children;
++	if (!pidns_is_ancestor(pid_ns, task_active_pid_ns(current)))
++		return -EXDEV;
 +
-+	if (fc->log.prefix && strcmp(fc->fs_type->name, fc->log.prefix)) {
-+		struct file_system_type *orig;
-+
-+		orig = get_fs_type_noload(fc->log.prefix);
-+		if (!orig) {
-+			fc->phase = FS_CONTEXT_FAILED;
-+			return -ENODEV;
-+		}
-+		put_filesystem(fc->fs_type);
-+		fc->fs_type = orig;
-+	}
-+
-+	scoped_guard(spinlock, &c->lock)
-+		net = get_net(c->ns->net_ns);
-+	put_cred(fc->cred);
-+	fc->cred = get_current_cred();
-+	put_net(fc->net_ns);
-+	fc->net_ns = net;
-+	put_user_ns(fc->user_ns);
-+	fc->user_ns = get_user_ns(user_ns);
-+
-+	fc->userland_bound = true;
-+	fc->userland_mnt_id = c->ns->mnt_ns->ns.ns_id;
-+
-+	ret = fc->fs_type->init_fs_context(fc);
-+	if (ret < 0) {
-+		fc->userland_bound = false;
-+		fc->phase = FS_CONTEXT_FAILED;
++	ret = mnt_ns_get_root(userland->ns->mnt_ns, &root);
++	if (ret)
 +		return ret;
-+	}
-+	fc->need_free = true;
 +
-+	if (fc->ops->set_userland) {
-+		ret = fc->ops->set_userland(fc, c);
-+		if (ret < 0) {
-+			fc->userland_bound = false;
-+			fc->phase = FS_CONTEXT_FAILED;
-+			return ret;
++	for (;;) {
++		bool wait = false;
++
++		scoped_guard(spinlock, &userland->lock) {
++			switch (userland->state) {
++			case USERLAND_INIT:
++				if (!userland_pidns_alive(pid_ns))
++					return -ESRCH;
++				if (READ_ONCE(pid_ns->child_reaper))
++					return -EBUSY;
++				WRITE_ONCE(userland->state, USERLAND_FORKING);
++				bootstrapping = true;
++				break;
++			case USERLAND_FORKING:
++				wait = true;
++				break;
++			case USERLAND_RUNNING:
++				if (!userland_pidns_alive(pid_ns))
++					return -ESRCH;
++				break;
++			case USERLAND_DEAD:
++				return -ESRCH;
++			}
 +		}
++		if (!wait)
++			break;
++
++		ret = wait_event_killable(userland->waitq,
++					  READ_ONCE(userland->state) !=
++					  USERLAND_FORKING);
++		if (ret)
++			return ret;
 +	}
-+	if (fc->user_ns != user_ns) {
-+		fc->userland_bound = false;
-+		fc->phase = FS_CONTEXT_FAILED;
-+		return -EOPNOTSUPP;
-+	}
-+	fc->phase = FS_CONTEXT_CREATE_PARAMS;
++
++	args->userland_file = no_free_ptr(file);
++	args->userland = userland;
++	args->userland_bootstrapping = bootstrapping;
 +	return 0;
 +}
 +
- /*
-  * Allow the user to read back any error, warning or informational messages.
-  * Only one message is returned for each read(2) call.
-@@ -123,9 +214,11 @@ SYSCALL_DEFINE2(fsopen, const char __user *, _fs_name, unsigned int, flags)
- 	struct file_system_type *fs_type;
- 	struct fs_context *fc;
- 	const char *fs_name;
-+	bool priv;
- 	int ret;
- 
--	if (!may_mount())
-+	priv = may_mount();
-+	if (!priv && !IS_ENABLED(CONFIG_USERLAND))
- 		return -EPERM;
- 
- 	if (flags & ~FSOPEN_CLOEXEC)
-@@ -137,17 +230,23 @@ SYSCALL_DEFINE2(fsopen, const char __user *, _fs_name, unsigned int, flags)
- 
- 	audit_log_fsopen(fs_name);
- 
--	fs_type = get_fs_type(fs_name);
-+	fs_type = priv ? get_fs_type(fs_name) : get_fs_type_noload(fs_name);
- 	kfree(fs_name);
- 	if (!fs_type)
--		return -ENODEV;
-+		return priv ? -ENODEV : -EPERM;
++int userland_finish_fork(struct kernel_clone_args *args,
++			 struct task_struct *p)
++{
++	struct file *file __free(fput) = args->userland_file;
++	struct userland *userland = args->userland;
++	struct pid_namespace *pid_ns = userland->ns->pid_ns_for_children;
++	int ret;
 +
-+	if (!priv && !(fs_type->fs_flags & FS_USERLAND_MOUNT)) {
-+		put_filesystem(fs_type);
-+		return -EPERM;
-+	}
- 
--	fc = fs_context_for_mount(fs_type, 0);
-+	fc = priv ? fs_context_for_mount(fs_type, 0) :
-+		    fs_context_for_unpriv_mount(fs_type);
- 	put_filesystem(fs_type);
- 	if (IS_ERR(fc))
- 		return PTR_ERR(fc);
- 
--	fc->phase = FS_CONTEXT_CREATE_PARAMS;
-+	fc->phase = priv ? FS_CONTEXT_CREATE_NS : FS_CONTEXT_AWAITING_NS;
- 
- 	ret = fscontext_alloc_log(fc);
- 	if (ret < 0)
-@@ -222,7 +321,8 @@ static int vfs_cmd_create(struct fs_context *fc, bool exclusive)
- 	struct super_block *sb;
- 	int ret;
- 
--	if (fc->phase != FS_CONTEXT_CREATE_PARAMS)
-+	if (fc->phase != FS_CONTEXT_CREATE_NS &&
-+	    fc->phase != FS_CONTEXT_CREATE_PARAMS)
- 		return -EBUSY;
- 
- 	if (!mount_capable(fc))
-@@ -291,6 +391,8 @@ static int vfs_fsconfig_locked(struct fs_context *fc, int cmd,
- 	ret = finish_clean_context(fc);
- 	if (ret)
- 		return ret;
-+	if (fc->phase == FS_CONTEXT_AWAITING_NS && cmd != FSCONFIG_SET_USERLAND)
-+		return -EPERM;
- 	switch (cmd) {
- 	case FSCONFIG_CMD_CREATE:
- 		return vfs_cmd_create(fc, false);
-@@ -298,9 +400,17 @@ static int vfs_fsconfig_locked(struct fs_context *fc, int cmd,
- 		return vfs_cmd_create(fc, true);
- 	case FSCONFIG_CMD_RECONFIGURE:
- 		return vfs_cmd_reconfigure(fc);
-+	case FSCONFIG_SET_USERLAND:
-+		if (fc->phase != FS_CONTEXT_AWAITING_NS &&
-+		    fc->phase != FS_CONTEXT_CREATE_NS)
-+			return -EBUSY;
-+		return fsconfig_set_userland(fc, param);
-+
- 	default:
--		if (fc->phase != FS_CONTEXT_CREATE_PARAMS &&
--		    fc->phase != FS_CONTEXT_RECONF_PARAMS)
-+		if (fc->phase == FS_CONTEXT_CREATE_NS)
-+			fc->phase = FS_CONTEXT_CREATE_PARAMS;
-+		else if (fc->phase != FS_CONTEXT_CREATE_PARAMS &&
-+			 fc->phase != FS_CONTEXT_RECONF_PARAMS)
- 			return -EBUSY;
- 
- 		return vfs_parse_fs_param(fc, param);
-@@ -390,6 +500,10 @@ SYSCALL_DEFINE5(fsconfig,
- 		if (!_key || _value || aux < 0)
- 			return -EINVAL;
- 		break;
-+	case FSCONFIG_SET_USERLAND:
-+		if (_key || _value || aux < 0)
-+			return -EINVAL;
-+		break;
- 	case FSCONFIG_CMD_CREATE:
- 	case FSCONFIG_CMD_CREATE_EXCL:
- 	case FSCONFIG_CMD_RECONFIGURE:
-@@ -457,6 +571,12 @@ SYSCALL_DEFINE5(fsconfig,
- 			goto out_key;
- 		param.dirfd = aux;
- 		break;
-+	case FSCONFIG_SET_USERLAND:
-+		ret = -EBADF;
-+		param.file = fget(aux);
-+		if (!param.file)
-+			goto out_key;
-+		break;
- 	default:
- 		break;
- 	}
-@@ -482,6 +602,7 @@ SYSCALL_DEFINE5(fsconfig,
- 			putname(param.name);
- 		break;
- 	case FSCONFIG_SET_FD:
-+	case FSCONFIG_SET_USERLAND:
- 		if (param.file)
- 			fput(param.file);
- 		break;
-diff --git a/fs/internal.h b/fs/internal.h
-index ee3f796241ac..c7b57263ac83 100644
---- a/fs/internal.h
-+++ b/fs/internal.h
-@@ -40,12 +40,18 @@ int __block_write_begin_int(struct folio *folio, loff_t pos, unsigned len,
-  */
- extern void __init chrdev_init(void);
- 
-+/*
-+ * filesystems.c
-+ */
-+struct file_system_type *get_fs_type_noload(const char *name);
-+
- /*
-  * fs_context.c
-  */
- extern int parse_monolithic_mount_data(struct fs_context *, void *);
- extern void vfs_clean_context(struct fs_context *fc);
- extern int finish_clean_context(struct fs_context *fc);
-+struct fs_context *fs_context_for_unpriv_mount(struct file_system_type *fs_type);
- 
- /*
-  * namei.c
-diff --git a/fs/namespace.c b/fs/namespace.c
-index b2c89ad2393e..18534cd2d601 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -4716,7 +4716,8 @@ SYSCALL_DEFINE3(fsmount, int, fs_fd, unsigned int, flags,
- 	    !ns_capable(current_user_ns(), CAP_SYS_ADMIN))
- 		return -EPERM;
- 
--	if (!(flags & FSMOUNT_NAMESPACE) && !may_mount())
-+	if (!(flags & FSMOUNT_NAMESPACE) && !IS_ENABLED(CONFIG_USERLAND) &&
-+	    !may_mount())
- 		return -EPERM;
- 
- 	if (attr_flags & ~FSMOUNT_VALID_FLAGS)
-@@ -4751,6 +4752,16 @@ SYSCALL_DEFINE3(fsmount, int, fs_fd, unsigned int, flags,
- 	if (ret)
- 		return ret;
- 
-+	if (fc->userland_bound) {
-+		if (flags & FSMOUNT_NAMESPACE)
-+			return -EINVAL;
-+		if (!ns_capable(fc->user_ns, CAP_SYS_ADMIN))
-+			return -EPERM;
-+	} else if (!(flags & FSMOUNT_NAMESPACE) &&
-+		   IS_ENABLED(CONFIG_USERLAND) && !may_mount()) {
-+		return -EPERM;
++	args->userland_file = NULL;
++	args->userland = NULL;
++	if (!IS_ERR(p)) {
++		if (args->userland_bootstrapping)
++			wake_up_all(&userland->waitq);
++		if (current->nsproxy->time_ns != userland->ns->time_ns)
++			timens_commit(p, userland->ns->time_ns);
++		return 0;
 +	}
 +
- 	/* There must be a valid superblock or we can't mount it */
- 	ret = -EINVAL;
- 	if (!fc->root)
-@@ -4792,9 +4803,12 @@ SYSCALL_DEFINE3(fsmount, int, fs_fd, unsigned int, flags,
- 		return FD_ADD((flags & FSMOUNT_CLOEXEC) ? O_CLOEXEC : 0,
- 			      open_new_namespace(&new_path, MOUNT_COPY_NEW));
- 
--	ns = alloc_mnt_ns(current->nsproxy->mnt_ns->user_ns, true);
-+	ns = alloc_mnt_ns(fc->userland_bound ? fc->user_ns :
-+			  current->nsproxy->mnt_ns->user_ns, true);
- 	if (IS_ERR(ns))
- 		return PTR_ERR(ns);
-+	if (fc->userland_bound)
-+		ns->seq_origin = fc->userland_mnt_id;
- 	mnt = real_mount(new_path.mnt);
- 	ns->root = mnt;
- 	ns->nr_mounts = 1;
-diff --git a/fs/ramfs/inode.c b/fs/ramfs/inode.c
-index ef91b933d4e6..d15542145704 100644
---- a/fs/ramfs/inode.c
-+++ b/fs/ramfs/inode.c
-@@ -319,7 +319,7 @@ static struct file_system_type ramfs_fs_type = {
- 	.init_fs_context = ramfs_init_fs_context,
- 	.parameters	= ramfs_fs_parameters,
- 	.kill_sb	= ramfs_kill_sb,
--	.fs_flags	= FS_USERNS_MOUNT,
-+	.fs_flags	= FS_USERNS_MOUNT | FS_USERLAND_MOUNT,
- };
- 
- static int __init init_ramfs_fs(void)
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 5b3a100aba77..afb514600372 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -2306,6 +2306,7 @@ struct file_system_type {
- #define FS_USERNS_MOUNT_RESTRICTED 512	/* Restrict mount in userns if not already visible */
- #define FS_USERNS_DELEGATABLE	1024	/* Can be mounted inside userns from outside */
- #define FS_DISALLOW_NOTIFY	2048	/* No fsnotify marks on its objects */
-+#define FS_USERLAND_MOUNT	4096	/* Supports FSCONFIG_SET_USERLAND */
- #define FS_RENAME_DOES_D_MOVE	32768	/* FS will handle d_move() during rename() internally. */
- 	int (*init_fs_context)(struct fs_context *);
- 	const struct fs_parameter_spec *parameters;
-diff --git a/include/linux/fs_context.h b/include/linux/fs_context.h
-index d1727dffecc5..a98e5a40d54c 100644
---- a/include/linux/fs_context.h
-+++ b/include/linux/fs_context.h
-@@ -23,6 +23,7 @@ struct net;
- struct pid_namespace;
- struct super_block;
- struct user_namespace;
-+struct userland;
- struct vfsmount;
- struct path;
- 
-@@ -36,6 +37,8 @@ enum fs_context_purpose {
-  * Userspace usage phase for fsopen/fspick.
-  */
- enum fs_context_phase {
-+	FS_CONTEXT_AWAITING_NS,		/* Unprivileged context awaiting target ns */
-+	FS_CONTEXT_CREATE_NS,		/* Set namespaces for sb creation */
- 	FS_CONTEXT_CREATE_PARAMS,	/* Loading params for sb creation */
- 	FS_CONTEXT_CREATING,		/* A superblock is being created */
- 	FS_CONTEXT_AWAITING_MOUNT,	/* Superblock created, awaiting fsmount() */
-@@ -101,6 +104,7 @@ struct fs_context {
- 	const char		*source;	/* The source name (eg. dev path) */
- 	void			*security;	/* LSM options */
- 	void			*s_fs_info;	/* Proposed s_fs_info */
-+	u64			userland_mnt_id;	/* Target userland mnt_ns ID */
- 	unsigned int		sb_flags;	/* Proposed superblock flags (SB_*) */
- 	unsigned int		sb_flags_mask;	/* Superblock flags that were changed */
- 	unsigned int		s_iflags;	/* OR'd with sb->s_iflags */
-@@ -110,6 +114,7 @@ struct fs_context {
- 	bool			global:1;	/* Goes into &init_user_ns */
- 	bool			oldapi:1;	/* Coming from mount(2) */
- 	bool			exclusive:1;    /* create new superblock, reject existing one */
-+	bool			userland_bound:1;	/* Bound via FSCONFIG_SET_USERLAND */
- };
- 
- struct fs_context_operations {
-@@ -117,6 +122,7 @@ struct fs_context_operations {
- 	int (*dup)(struct fs_context *fc, struct fs_context *src_fc);
- 	int (*parse_param)(struct fs_context *fc, struct fs_parameter *param);
- 	int (*parse_monolithic)(struct fs_context *fc, void *data);
-+	int (*set_userland)(struct fs_context *fc, struct userland *userland);
- 	int (*get_tree)(struct fs_context *fc);
- 	int (*reconfigure)(struct fs_context *fc);
- };
-diff --git a/include/uapi/linux/mount.h b/include/uapi/linux/mount.h
-index cb4f7175db02..4c70c0183f5e 100644
---- a/include/uapi/linux/mount.h
-+++ b/include/uapi/linux/mount.h
-@@ -107,6 +107,7 @@ enum fsconfig_command {
- 	FSCONFIG_CMD_CREATE	= 6,	/* Create new or reuse existing superblock */
- 	FSCONFIG_CMD_RECONFIGURE = 7,	/* Invoke superblock reconfiguration */
- 	FSCONFIG_CMD_CREATE_EXCL = 8,	/* Create new superblock, fail if reusing existing superblock */
-+	FSCONFIG_SET_USERLAND	= 9,	/* Set target userland, supplied by fd */
- };
- 
- /*
-diff --git a/mm/shmem.c b/mm/shmem.c
-index 10cef89b00b0..61503304be6b 100644
---- a/mm/shmem.c
-+++ b/mm/shmem.c
-@@ -5592,7 +5592,8 @@ static struct file_system_type shmem_fs_type = {
- 	.parameters	= shmem_fs_parameters,
- #endif
- 	.kill_sb	= kill_anon_super,
--	.fs_flags	= FS_USERNS_MOUNT | FS_ALLOW_IDMAP | FS_MGTIME,
-+	.fs_flags	= FS_USERNS_MOUNT | FS_USERLAND_MOUNT |
-+			  FS_ALLOW_IDMAP | FS_MGTIME,
- };
- 
- #if defined(CONFIG_SYSFS) && defined(CONFIG_TMPFS)
-@@ -6021,7 +6022,7 @@ static struct file_system_type shmem_fs_type = {
- 	.init_fs_context = ramfs_init_fs_context,
- 	.parameters	= ramfs_fs_parameters,
- 	.kill_sb	= ramfs_kill_sb,
--	.fs_flags	= FS_USERNS_MOUNT,
-+	.fs_flags	= FS_USERNS_MOUNT | FS_USERLAND_MOUNT,
- };
- 
- void __init shmem_init(void)
++	ret = PTR_ERR(p);
++	if (args->userland_bootstrapping) {
++		scoped_guard(spinlock, &userland->lock) {
++			if (userland->state == USERLAND_FORKING)
++				WRITE_ONCE(userland->state, USERLAND_INIT);
++		}
++		wake_up_all(&userland->waitq);
++		if (ret == -EINVAL && !args->set_tid_size &&
++		    (READ_ONCE(pid_ns->child_reaper) ||
++		     (READ_ONCE(pid_ns->pid_allocated) & ~PIDNS_ADDING)))
++			ret = -EBUSY;
++	}
++	if ((ret == -ENOMEM || ret == -EBUSY) &&
++	    !userland_pidns_alive(pid_ns))
++		return -ESRCH;
++
++	return ret;
++}
 -- 
 2.47.3
 
