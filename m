@@ -1,44 +1,44 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795376161;
-	b=I/m/WknjkepquTHZzeigYfg3TxX3yHJGFeZfWf1fPwQLWNhCKsKr+E32Oo7UGqq4QW/T
-	 a1F8fBZzwQnt/2Dfk+1mqjZXN8xadmAlIkhqLicWOm4/pNTAnXDwNoOFuHewaGTVYgWjR
-	 tEMhkALAOzYh+RqGu9qR1msJyyoubRXP8sVr7CuKPPuNslN08qayV1z5BTRlUn/OOuMVh
-	 Ipbx9lxEDBPF+0NOzjRv+dalwwHXdka3MBi2r+tC9cm35y3J/R0rajarHqWtGhpHscULz
-	 x3yPOzXECz779wsn+Shs5CWicnWaDfcWHKGEjBU46yN/UwpiVrCgN5kKs4qfprSoAng==
+	t=1795376173;
+	b=uBOddxOuhj8vMUDTmGV0ZDiPfIoRM04Uz7CZOmCkfTXXncH3jZMHx7lmwQhdZ0Az2Suf
+	 xWvxI7Alt6iQLeDr0ZfxdAb6rdsWmUddbWNxWtvbGJSdtw4jkI/NncMDApx5bqtyBWhBk
+	 XcZI8rBcHeixVBsUWd9uKuiq3Y+hCI3TErjSOQMbWQuFZgEibrGI3P61ja68Ogq4pj1WN
+	 esMcoCUMes6zA9mMe34kmoA4UOxVx5RkpYX3sCVwwh2zzVnMeGb5/uukmCEc20PCwbN0n
+	 BQBFykZWm+OpID9rHhIRIRTIohsAqGf0Z7+FDnkkl8n7nyHQ94vZdHnTOck8Ekpe6zA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795376161;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795376173;
 	h=Received:DKIM-Signature:From:To:Cc:Subject:Date:Message-ID:X-Mailer:
 	 In-Reply-To:References:MIME-Version:Content-Transfer-Encoding;
-	bh=PxWsspzEioIIwUqnuiIeYKp1fTe5D8PzGx83Wd5XdHY=;
-	b=uN4bDiJt4K/gBOp0Yn3/NndacLmnAE+IyoCelvck80qqMIZGAvvmyjvI8X88GN6rcruG
-	 GRu2l5J0+29shwyprW+y2jRfMq83R80fA1GAQABpqRyC5EYBSCKenzGNOM8E+1MjsgALo
-	 mdgmnk49UzvCAGa3JtAzCqzPkxOkuhReDQEpjgjiqfVddGOtZ82osQX3kVEVk1ylsz19M
-	 MSkv/FXYiN30KJsLXbOfQaAqTu2EtgFnCPDWgUBHAe5Gnd2q8ImBS3zCjHQF3Hjto00dm
-	 buovwfa83f7qkSZAhsBlb1ouPDfeGEAj/kkPU7Ia8zgByPmobEcXMcYcclxgmj3CcMA==
+	bh=vM1mKrQLSyzANBNyG1aKfJTP501fkwwz9TXQLi7bGuQ=;
+	b=s0H3D5pU8VAOPt5p+syq3G1EZIdKU6N/y4Xzbab9FM6qGnrV5sYgsiNx6RU4krsJJ/NB
+	 Aa1f3SGdZ5C/QGUHOt58M7ohuYVDrtqCXG1IPTrYHOJYwaw4RRu4lTxdJ3glmu5VPACWS
+	 fZPuzQ0ORo877BbiPtQcmqK8c8daK5DFXRk+V4nTc47YOnVE9eubKT5QOz5f1Rc+WhLgj
+	 /LuunyAnNfw3PWI3arJMCgvJb3HlGHDNDiYRVkr7TGhUQsxbwqeD6Ql/6278bu0RT9jyR
+	 2k1l18KBIGeEKwMgHJP3t9RtT9FpLX5icI8oPszAud5/YM6SjxObsDHzKVX0TnifFUw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=DFiqTxJB;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ML3xN9f1;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with UTF8SMTPS id 46200606A32C;
-	Sun, 22 Nov 2026 19:36:01 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with UTF8SMTPS id 9C669606A32D;
+	Sun, 22 Nov 2026 19:36:13 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=DFiqTxJB
-Received: by smtp.kernel.org (Postfix) with UTF8SMTPSA id C697E1F000C0;
-	Sun, 22 Nov 2026 19:35:59 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ML3xN9f1
+Received: by smtp.kernel.org (Postfix) with UTF8SMTPSA id AD8231F0093E;
+	Sun, 22 Nov 2026 19:36:12 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795376160;
-	bh=PxWsspzEioIIwUqnuiIeYKp1fTe5D8PzGx83Wd5XdHY=;
+	s=k20260515; t=1795376173;
+	bh=vM1mKrQLSyzANBNyG1aKfJTP501fkwwz9TXQLi7bGuQ=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=DFiqTxJBeq3OOH2VDJJY2sRb16klNa8m8RHt5Abh/YsPImOZ5nu0uM/UuMH+1ycLe
-	 S+SXiQ9ZdkEJGKkPN8frshQVWuicTWsoG5qYiFtE16U0SbJ6N0d/pprgRSmcbMWB0L
-	 0fc+vdB1MX5xOtwmvvCKQVbCxtNDWEr972W+bhnrLZB08bFuYj96P+xs8sX24UVzV5
-	 vR6e0SgrDbPp5c3KER4nWHsM3H80dhGu3haKOn8CZtqET9eS+adDfRk0TJeYI2DcSh
-	 DNDD/KxSNtFTnTtbxIpVpUpwPU2Jqbe3L0B6Jmlu7Ie34V9iCvX0vbkLcG4h/jk/TN
-	 FUckdOsdfl/JQ==
+	b=ML3xN9f1NmOT9C4XtO9B3G/pEraSCkk+fGaUGxmfXkMSy6TKIXwr5mJ/3Vb0BQdJx
+	 bc4Zgm5HzTPW7ytnpBWX+mvGnJJToKTeHouV6VOQ4K0ixbrEDJTitMQrGpBFHfl/YQ
+	 Uupc2uCAxIGiBsYzn50mAhzkLjT7HECBIIA83ovrkQSr1W0+ZEjB4dtS+3WxjZm+DD
+	 WUEB8tzZ2u5Ytdu9lYsERqyGEtHbrar1iun2ztFzU6sHSkfUhgdjFFouEhwNv/3QaK
+	 mjpaCN5iKa1Kot+n2y5Rwu+az720n6eoCHJuGinUAhRjNbLRwVb6KGTnrvVjvRx6Kj
+	 1lk1dgq8Y6CjA==
 From: Jarkko Sakkinen <jarkko@kernel.org>
 To: linux-fsdevel@vger.kernel.org
 Cc: Jarkko Sakkinen <jarkko@kernel.org>,
@@ -75,9 +75,9 @@ Cc: Jarkko Sakkinen <jarkko@kernel.org>,
 	Serge Hallyn <sergeh@kernel.org>,
 	Shuah Khan <skhan@linuxfoundation.org>,
 	Zygmunt Krynicki <zygmunt.krynicki@canonical.com>
-Subject: [RFC PATCH v7 01/26] userns: Factor out idmap validation and commit helpers
-Date: Sun, 22 Nov 2026 21:35:14 +0200
-Message-ID: <20261122193539.3334213-2-jarkko@kernel.org>
+Subject: [RFC PATCH v7 04/26] mount: Add mnt_ns_get_root()
+Date: Sun, 22 Nov 2026 21:35:17 +0200
+Message-ID: <20261122193539.3334213-5-jarkko@kernel.org>
 X-Mailer: git-send-email 2.47.3
 In-Reply-To: <20261122193539.3334213-1-jarkko@kernel.org>
 References: <20261122193539.3334213-1-jarkko@kernel.org>
@@ -92,322 +92,70 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-map_write() and its permission helpers validate extent ranges, check
-root and unprivileged self-mappings, translate parent ID ranges, sort
-extents, and install the resulting map inline for procfs text writes,
-preventing non-procfs callers from reusing the same validation and
-commit path.
+Empty mount namespaces created with CLONE_EMPTY_MNTNS start with only an
+internal nullfs root mount until a real root filesystem is mounted over
+it, and external callers have no helper to resolve the live root path of
+an unentered mount namespace.
 
-Extract idmap_maps_root(), unpriv_idmap_permitted(),
-validate_and_insert_extent(), free_new_idmap(), resolve_new_idmap(), and
-commit_new_idmap() with no functional change.
+Add mnt_ns_get_root() to look up "/" with LOOKUP_DOWN from the mount
+namespace's base root mount and return -ENOENT if no filesystem has been
+mounted over the initial nullfs root yet.
 
+Co-developed-by: David Howells <dhowells@redhat.com>
+Signed-off-by: David Howells <dhowells@redhat.com>
 Signed-off-by: Jarkko Sakkinen <jarkko@kernel.org>
 ---
- kernel/user_namespace.c | 229 +++++++++++++++++++++-------------------
- 1 file changed, 122 insertions(+), 107 deletions(-)
+ fs/namespace.c                | 16 ++++++++++++++++
+ include/linux/mnt_namespace.h |  2 ++
+ 2 files changed, 18 insertions(+)
 
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index cd748e1cbace..caba2ac33077 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -884,6 +884,22 @@ VISIBLE_IF_KUNIT int uid_gid_map_sort(struct uid_gid_map *map)
- }
- EXPORT_SYMBOL_IF_KUNIT(uid_gid_map_sort);
- 
-+static bool idmap_maps_root(const struct uid_gid_map *new_map)
-+{
-+	unsigned int idx;
-+
-+	for (idx = 0; idx < new_map->nr_extents; idx++) {
-+		const struct uid_gid_extent *e;
-+
-+		if (new_map->nr_extents <= UID_GID_MAP_MAX_BASE_EXTENTS)
-+			e = &new_map->extent[idx];
-+		else
-+			e = &new_map->forward[idx];
-+		if (e->lower_first == 0)
-+			return true;
-+	}
-+	return false;
-+}
- /**
-  * verify_root_map() - check the uid 0 mapping
-  * @file: idmapping file
-@@ -900,22 +916,9 @@ static bool verify_root_map(const struct file *file,
- 			    struct user_namespace *map_ns,
- 			    struct uid_gid_map *new_map)
- {
--	int idx;
- 	const struct user_namespace *file_ns = file->f_cred->user_ns;
--	struct uid_gid_extent *extent0 = NULL;
--
--	for (idx = 0; idx < new_map->nr_extents; idx++) {
--		if (new_map->nr_extents <= UID_GID_MAP_MAX_BASE_EXTENTS)
--			extent0 = &new_map->extent[idx];
--		else
--			extent0 = &new_map->forward[idx];
--		if (extent0->lower_first == 0)
--			break;
--
--		extent0 = NULL;
--	}
- 
--	if (!extent0)
-+	if (!idmap_maps_root(new_map))
- 		return true;
- 
- 	if (map_ns == file_ns) {
-@@ -938,6 +941,103 @@ static bool verify_root_map(const struct file *file,
- 	return true;
+diff --git a/fs/namespace.c b/fs/namespace.c
+index aecd05ac0170..781380945d78 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -6708,6 +6708,22 @@ static void mntns_put(struct ns_common *ns)
+ 	put_mnt_ns(to_mnt_ns(ns));
  }
  
-+static int validate_and_insert_extent(struct uid_gid_map *new_map,
-+				      struct uid_gid_extent *extent)
++int mnt_ns_get_root(struct mnt_namespace *mnt_ns, struct path *root)
 +{
-+	if ((extent->first == (u32)-1) || (extent->lower_first == (u32)-1))
-+		return -EINVAL;
++	int err;
 +
-+	if ((extent->first + extent->count) <= extent->first)
-+		return -EINVAL;
-+	if ((extent->lower_first + extent->count) <= extent->lower_first)
-+		return -EINVAL;
-+
-+	if (mappings_overlap(new_map, extent))
-+		return -EINVAL;
-+
-+	if (new_map->nr_extents >= UID_GID_MAP_MAX_EXTENTS)
-+		return -EINVAL;
-+
-+	return uid_gid_map_insert_extent(new_map, extent);
-+}
-+
-+static void free_new_idmap(struct uid_gid_map *new_map)
-+{
-+	if (new_map->nr_extents > UID_GID_MAP_MAX_BASE_EXTENTS) {
-+		kfree(new_map->forward);
-+		kfree(new_map->reverse);
++	err = vfs_path_lookup(mnt_ns->root->mnt.mnt_root, &mnt_ns->root->mnt,
++			      "/", LOOKUP_DOWN, root);
++	if (err)
++		return err;
++	if (root->mnt == &mnt_ns->root->mnt) {
++		path_put(root);
++		*root = (struct path){};
++		return -ENOENT;
 +	}
-+	memset(new_map, 0, sizeof(*new_map));
++	return 0;
 +}
 +
-+static int resolve_new_idmap(struct uid_gid_map *new_map,
-+			     struct uid_gid_map *parent_map)
-+{
-+	unsigned int idx;
-+
-+	if (new_map->nr_extents == 0)
-+		return -EINVAL;
-+
-+	for (idx = 0; idx < new_map->nr_extents; idx++) {
-+		struct uid_gid_extent *e;
-+		u32 lower_first;
-+
-+		if (new_map->nr_extents <= UID_GID_MAP_MAX_BASE_EXTENTS)
-+			e = &new_map->extent[idx];
-+		else
-+			e = &new_map->forward[idx];
-+
-+		lower_first = map_id_range_down(parent_map,
-+						e->lower_first,
-+						e->count);
-+		if (lower_first == (u32)-1)
-+			return -EPERM;
-+
-+		e->lower_first = lower_first;
-+	}
-+
-+	return uid_gid_map_sort(new_map);
-+}
-+
-+static void commit_new_idmap(struct uid_gid_map *map,
-+			     struct uid_gid_map *new_map)
-+{
-+	if (new_map->nr_extents <= UID_GID_MAP_MAX_BASE_EXTENTS) {
-+		memcpy(map->extent, new_map->extent,
-+		       new_map->nr_extents * sizeof(new_map->extent[0]));
-+	} else {
-+		map->forward = new_map->forward;
-+		map->reverse = new_map->reverse;
-+	}
-+	/*
-+	 * Pairs with smp_rmb() in map_id_range_down(), map_id_range_up(),
-+	 * and m_start().
-+	 */
-+	smp_wmb();
-+	map->nr_extents = new_map->nr_extents;
-+	memset(new_map, 0, sizeof(*new_map));
-+}
-+
-+static bool unpriv_idmap_permitted(const struct user_namespace *ns,
-+				   const struct cred *cred, int cap_setid,
-+				   unsigned long ns_flags,
-+				   const struct uid_gid_map *new_map)
-+{
-+	u32 id;
-+
-+	if (new_map->nr_extents != 1 || new_map->extent[0].count != 1 ||
-+	    !uid_eq(ns->owner, cred->euid))
-+		return false;
-+
-+	id = new_map->extent[0].lower_first;
-+	if (cap_setid == CAP_SETUID)
-+		return uid_eq(make_kuid(ns->parent, id), cred->euid);
-+	if (cap_setid == CAP_SETGID)
-+		return !(ns_flags & USERNS_SETGROUPS_ALLOWED) &&
-+		       gid_eq(make_kgid(ns->parent, id), cred->egid);
-+	return false;
-+}
-+
- /*
-  * Parse the decimal u32 at *pos, up to the next whitespace or NUL, and
-  * leave *pos pointing at that character.
-@@ -966,8 +1066,7 @@ static ssize_t map_write(struct file *file, const char __user *buf,
+ static int mntns_install(struct nsset *nsset, struct ns_common *ns)
  {
- 	struct seq_file *seq = file->private_data;
- 	struct user_namespace *map_ns = seq->private;
--	struct uid_gid_map new_map;
--	unsigned idx;
-+	struct uid_gid_map new_map = {};
- 	struct uid_gid_extent extent;
- 	char *kbuf, *pos, *next_line;
- 	ssize_t ret;
-@@ -1002,8 +1101,6 @@ static ssize_t map_write(struct file *file, const char __user *buf,
- 	 */
- 	mutex_lock(&userns_state_mutex);
+ 	struct nsproxy *nsproxy = nsset->nsproxy;
+diff --git a/include/linux/mnt_namespace.h b/include/linux/mnt_namespace.h
+index 0acd1089d149..98188d1f7428 100644
+--- a/include/linux/mnt_namespace.h
++++ b/include/linux/mnt_namespace.h
+@@ -8,6 +8,7 @@
  
--	memset(&new_map, 0, sizeof(struct uid_gid_map));
--
- 	ret = -EPERM;
- 	/* Only allow one successful write to the map */
- 	if (map->nr_extents != 0)
-@@ -1052,98 +1149,28 @@ static ssize_t map_write(struct file *file, const char __user *buf,
- 		if (*pos != '\0')
- 			goto out;
+ struct mnt_namespace;
+ struct fs_struct;
++struct path;
+ struct user_namespace;
+ struct ns_common;
  
--		/* Verify we have been given valid starting values */
--		if ((extent.first == (u32) -1) ||
--		    (extent.lower_first == (u32) -1))
--			goto out;
--
--		/* Verify count is not zero and does not cause the
--		 * extent to wrap
--		 */
--		if ((extent.first + extent.count) <= extent.first)
--			goto out;
--		if ((extent.lower_first + extent.count) <=
--		     extent.lower_first)
--			goto out;
--
--		/* Do the ranges in extent overlap any previous extents? */
--		if (mappings_overlap(&new_map, &extent))
--			goto out;
--
--		if ((new_map.nr_extents + 1) == UID_GID_MAP_MAX_EXTENTS &&
--		    (next_line != NULL))
--			goto out;
--
--		ret = uid_gid_map_insert_extent(&new_map, &extent);
-+		ret = validate_and_insert_extent(&new_map, &extent);
- 		if (ret < 0)
- 			goto out;
- 		ret = -EINVAL;
- 	}
--	/* Be very certain the new map actually exists */
-+
- 	if (new_map.nr_extents == 0)
- 		goto out;
+@@ -15,6 +16,7 @@ extern struct mnt_namespace init_mnt_ns;
  
- 	ret = -EPERM;
--	/* Validate the user is allowed to use user id's mapped to. */
- 	if (!new_idmap_permitted(file, map_ns, cap_setid, &new_map))
- 		goto out;
- 
--	ret = -EPERM;
--	/* Map the lower ids from the parent user namespace to the
--	 * kernel global id space.
--	 */
--	for (idx = 0; idx < new_map.nr_extents; idx++) {
--		struct uid_gid_extent *e;
--		u32 lower_first;
--
--		if (new_map.nr_extents <= UID_GID_MAP_MAX_BASE_EXTENTS)
--			e = &new_map.extent[idx];
--		else
--			e = &new_map.forward[idx];
--
--		lower_first = map_id_range_down(parent_map,
--						e->lower_first,
--						e->count);
--
--		/* Fail if we can not map the specified extent to
--		 * the kernel global id space.
--		 */
--		if (lower_first == (u32) -1)
--			goto out;
--
--		e->lower_first = lower_first;
--	}
--
--	/*
--	 * If we want to use binary search for lookup, this clones the extent
--	 * array and sorts both copies.
--	 */
--	ret = uid_gid_map_sort(&new_map);
-+	ret = resolve_new_idmap(&new_map, parent_map);
- 	if (ret < 0)
- 		goto out;
- 
--	/* Install the map */
--	if (new_map.nr_extents <= UID_GID_MAP_MAX_BASE_EXTENTS) {
--		memcpy(map->extent, new_map.extent,
--		       new_map.nr_extents * sizeof(new_map.extent[0]));
--	} else {
--		map->forward = new_map.forward;
--		map->reverse = new_map.reverse;
--	}
--	smp_wmb();
--	map->nr_extents = new_map.nr_extents;
--
-+	commit_new_idmap(map, &new_map);
- 	*ppos = count;
- 	ret = count;
- out:
--	if (ret < 0 && new_map.nr_extents > UID_GID_MAP_MAX_BASE_EXTENTS) {
--		kfree(new_map.forward);
--		kfree(new_map.reverse);
--		map->forward = NULL;
--		map->reverse = NULL;
--		map->nr_extents = 0;
--	}
--
-+	free_new_idmap(&new_map);
- 	mutex_unlock(&userns_state_mutex);
- 	kfree(kbuf);
- 	return ret;
-@@ -1213,20 +1240,8 @@ static bool new_idmap_permitted(const struct file *file,
- 	/* Don't allow mappings that would allow anything that wouldn't
- 	 * be allowed without the establishment of unprivileged mappings.
- 	 */
--	if ((new_map->nr_extents == 1) && (new_map->extent[0].count == 1) &&
--	    uid_eq(ns->owner, cred->euid)) {
--		u32 id = new_map->extent[0].lower_first;
--		if (cap_setid == CAP_SETUID) {
--			kuid_t uid = make_kuid(ns->parent, id);
--			if (uid_eq(uid, cred->euid))
--				return true;
--		} else if (cap_setid == CAP_SETGID) {
--			kgid_t gid = make_kgid(ns->parent, id);
--			if (!(ns->flags & USERNS_SETGROUPS_ALLOWED) &&
--			    gid_eq(gid, cred->egid))
--				return true;
--		}
--	}
-+	if (unpriv_idmap_permitted(ns, cred, cap_setid, ns->flags, new_map))
-+		return true;
- 
- 	/* Allow anyone to set a mapping that doesn't require privilege */
- 	if (!cap_valid(cap_setid))
+ extern struct mnt_namespace *copy_mnt_ns(u64, struct mnt_namespace *,
+ 		struct user_namespace *, struct fs_struct *);
++int mnt_ns_get_root(struct mnt_namespace *mnt_ns, struct path *root);
+ extern void put_mnt_ns(struct mnt_namespace *ns);
+ DEFINE_FREE(put_mnt_ns, struct mnt_namespace *, if (!IS_ERR_OR_NULL(_T)) put_mnt_ns(_T))
+ extern struct ns_common *from_mnt_ns(struct mnt_namespace *);
 -- 
 2.47.3
 
