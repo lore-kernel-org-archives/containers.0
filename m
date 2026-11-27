@@ -1,76 +1,126 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.54
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795623860;
-	b=KVxZ50CvBSDEdeFgqO1NZUbcGMhHqlagx4/YqhqM0XVSTP40QNmWiq5f6Qq4X14hWv9Z
-	 FZBVmr/JYKLIMrWh9INc6AViqFOBW+Ab5hVVohdSYqk4zuHQGiMpNW8nDR52USc5ekUpk
-	 cfREcPFdSuaMD3uFRbGNi/rF2kbi/J45EfwgY/nTc9s5ET6bozFFurLGw5NmCzmSF0yPI
-	 ZBqfUAe7pL8eZEr9Py7l3UL8GDC8s5Q5eGyZWAZFNzZbVCUEmFBp45zW9FAR6B+UNY+TJ
-	 vfhfdHVqazeippqgbSepTH8letnLEekAX0j2/Xit1bEzmchiKgy1Gq9BjwoTvAf2vrA==
+	t=1795815676;
+	b=E1xcKGAfxJye5mkSIAjTwkOUEeEos3HnWQQ5p0kgCn1QTwfAnQD9hkoMtDZePyE38pQ0
+	 a7AZ//LdTKViI97GeqIdIBXpQ8Y8g+AUdbwHwanlxAJCilMM+S1pfjh35JC6iTjdM2I3Y
+	 dNaqxRkpCk0CPrHVxKqkeDzB5ujNVi6YLqVlZhEL0k+Zfi0tRoKnSU0NkPW9SPyfpz8Pl
+	 x4/Cd4q2BhDx1GUqAjaemSNxrqnu3e/EEnYGLKLNa1/VN54cPcffwKRrLN05cQC1k1mnS
+	 Jp1060CEId/dRfzkVFrG9HxXTxegUKk59NuOVPxt4LTc677njFMyBObq3QefoJwReYQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795623860;
-	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
-	bh=93PlHQzdBd5hDciyifgipa2sETM6WYe2vvJEu0EdaIE=;
-	b=bJZOpm1IZ0A82i3YDiShiViJwET2+8aO2LMc6QN72srhNwAxWdeOozGJZe4YZDeyzy4m
-	 XJ+/yNfqLiPyYCmosAqPm+q5ZtiPyxzwFJ5N5MBfjaOmxhtUJpI2tR6sE95WZgS7hocvT
-	 T6t3pgtFvu8HNhsJC/MlRA09ICtfCPTH2RH8MR/wPDfylFaFrnUpW4wOvI+fBOY1UQ2cv
-	 ZrvIPGwVIV1jx1MZ+TkfbGqXDA+dr6mguBultnUMnxZ5iYe/2XeJt6YuSCwjtPB4ST+je
-	 CS3VFeTOgN/Tb19YkLTiDlkcpXxxjF/u4KstiGqWPVjVrUQZXBS8uE9ZxHKDuFywx9g==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795815676;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:In-Reply-To:References:
+	 MIME-Version:Content-Transfer-Encoding;
+	bh=GNjJtSmgBzeJqa75AyMuB1FfpMIGeExfgQrDDeRI15s=;
+	b=0necf8iqbIBjQJ0iRrrI9lqtyVprGpPoBYb63HSatsAhcRPsuMTUseTpya87Hxyxk6dh
+	 swCTzUyRAD2DEpY3nW9IX2X4ye13C3JBWtNxg7hmk0owB37cdPxgdN+J21/YpmUpNhd6U
+	 1rUq/i2vDkMjR0bfM2o9w898DPsiowiJ1X82QIn5OMGYLA53klDy/6llstpGXbALTnVGi
+	 LuXB+pLu5D6rb+NzWMyuBOwSuKeY1lhnIGeXIMz+BsYujdCX78OCojXsFsQLEdRBHHWR+
+	 8PTM53JL7+iVqJb5vXGdmf1Lg7CT3fWd+PLOUOfiCW1Gxu1901kao3KfdV/Qzw1T2vg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=UqK2qb3F;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=GD9MXcrS;
+	arc=none smtp.remote-ip=209.85.128.54
+Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with UTF8SMTPS id A6CEF606A31E;
-	Wed, 25 Nov 2026 16:24:20 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3FDE3606A321
+	for <containers@lists.linux.dev>; Fri, 27 Nov 2026 21:41:16 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 3FDE3606A321
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=UqK2qb3F
-Received: by smtp.kernel.org (Postfix) with UTF8SMTPSA id 7624A1F000C4;
-	Wed, 25 Nov 2026 16:24:19 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795623860;
-	bh=93PlHQzdBd5hDciyifgipa2sETM6WYe2vvJEu0EdaIE=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=UqK2qb3FQVwmTqV8oUUCeEtkJg9SD6RlxBIdsewlju3Y6yf64LEDRua/CP8PuokUM
-	 o1vJ05+rehtnQ3lsUqLX4G48iP71LMVhvqDAURRrlVkTETRCB1t1zf1GLgSh8PC6ov
-	 hrTGvDOKmlnQrx8Cvm6tsUTJp5p4ASihgzfEEEV9BP/JDjAgo9v0Ev7deWEw5eoLci
-	 fb4P7fSbUfxBYC/3IBYMbAUeM92yF05ODOER00oMYavQQn/fmId7+9baSwIFZ01rf+
-	 WElptmHmI3QPFYytegFUZC4SluG5bFEfaeSzufIKLwi0d+u4kuLU63S4GkWl1Ozxst
-	 DzmuADMR9Ln/A==
-Date: Wed, 25 Nov 2026 18:24:16 +0200
-From: Jarkko Sakkinen <jarkko@kernel.org>
-To: linux-fsdevel@vger.kernel.org
-Cc: bpf@vger.kernel.org, containers@lists.linux.dev,
-	linux-api@vger.kernel.org, linux-arch@vger.kernel.org,
-	linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-kselftest@vger.kernel.org, linux-mm@kvack.org,
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=GD9MXcrS
+Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-4bb666304fdso83008015e9.0
+        for <containers@lists.linux.dev>; Fri, 27 Nov 2026 13:41:16 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1795815674; x=1796420474; darn=lists.linux.dev;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=GNjJtSmgBzeJqa75AyMuB1FfpMIGeExfgQrDDeRI15s=;
+        b=GD9MXcrS4qB5wDNPR1hwS6KAJl9IfuzzTDuISde4RQFNswXf2RYE4Y2KyzRxnW9gpY
+         QtXZ2P8Z6Hh9Y64cAhF2N7GZQvwwmEVMonio642hVQvoRMvMJg2CaV4OPwsYd1HHHMkf
+         77Mj/d9H1PFQ16eqs0G8GJTIyNbmyI9SPXvaCx+S87CebyfEk2qvzzwhXXbK+oK9+lQU
+         FPtnIBeeQwrAHN4STIi2FonOgHErs5NnnNKZdEQImKxw5cRX1oM490TP9WXwXoNssQ/r
+         csHNJpPTppN/shfMQddxAWTgcWsK2mCcAsowjF22szgNWh8Vm9jxJYShqFNtG1tJHUsb
+         FpfQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1795815674; x=1796420474;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=GNjJtSmgBzeJqa75AyMuB1FfpMIGeExfgQrDDeRI15s=;
+        b=Y1RxFxClx6xNXbyBOedFmNNzxfT1LORcRhLRaZa/2kUWnXvyiVfn2VUPKp6rvi4gWA
+         GC/H/YiYFiqvdPK5ZrWkDA4zbnDClkOfDHatC/axe/nZOOaZOoAnUjaKUOQZapTCrInQ
+         TWXujK+AJkZeRMLs+LlzA3Ph7dyVNrfz5vc6VHQbpBjzeqJOur6q6dDUOU/LAvFyJLO2
+         VCcYNBZwY29liB+Irw0PCW0KES5WSw3Lp2piyuteCYYniSPw9brL+fGLfOTSsm5QNmHq
+         qCiY62AP0p4IgW3FUCtdAsqcN4o19bRIVEYQaeaqCGWjJH192+FyKIqK3fv6HN3iptCW
+         mbBw==
+X-Forwarded-Encrypted: i=1; AL+hErHgBzH1Z5/9eTXEjUfCJUBsA5a2jj3rl8oA6wo4Y6rY4pjKHdfFkPKDMiLkSDUPYco8LdDtBye0YiJM@lists.linux.dev
+X-Gm-Message-State: APuU4Z+Q8wM+BZ+FKkpyByTIsmNK9L39RaWQijlVnn+ycMK0WCcXK8Na
+	+oRh7gfm2eDitxCZpuiXddmn+5bMCJyGnDbW05tJl0iU96Q7BhZSp5zI
+X-Gm-Gg: AZFdTZcZJKgIRHCGUGm3I7dqt42jRPdeKz39MXYkIBgOxVpf7ANaM1rU2eWSrYK65YV
+	V09QHu9AaRHd3WdbakjnYray9rlyRrQZ2mwQPfxOXif6ZRCeWny3yHEOVuBVWHVr1iBJdCiCDid
+	OXAoi41d2JuN8wrOyNg0wVfw2tegALUlR7VOxEniJaC/VZU1Gjt+7a2SsRUrKqq/f1DAy/+KQpV
+	jw+Hwe4XwqkObny3PEaDybN1BHXN3REU0OUFux9uvdIEvWQ7zruJwSs8qezCcGKueqLdr3utufX
+	KpA+vCeEf6NCClOnI5LfuIhwRpNjt/5kcD8yWNJMkipF14hMNPq8j+27ReEw9IDiX9of7cMeYd6
+	mfgqZcng0njcf073ur5RajsRDNvbfOX3vVn/rvXjWYMdRjZhuibTqMLrPBsaIDe9Zjk7eJz8MQG
+	1EFX7gHvqxTwcO/qdhQffPP2OAB5DbprdCIaqUUFmioED/buUNPbVj/ukWRm2EPGvaSIWNCtzco
+	NGoVXKKgzGKgB/NrlkmD+IEoHInCzl/ODUxNqejDqVeWnZYR7Oa2IgwYjfzInBiaYWruIoiwu63
+	TyX1N0oLavpwrPrafqLzBSDbZA==
+X-Received: by 2002:a05:600c:a085:b0:4bb:85d9:156e with SMTP id 5b1f17b1804b1-4bb8880fe46mr518939935e9.11.1795815674386;
+        Fri, 27 Nov 2026 13:41:14 -0800 (PST)
+Received: from localhost ([212.73.77.104])
+        by smtp.gmail.com with UTF8SMTPSA id 5b1f17b1804b1-4bbb97e5356sm37714445e9.4.2026.11.27.13.41.10
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 27 Nov 2026 13:41:13 -0800 (PST)
+From: Askar Safin <safinaskar@gmail.com>
+To: jarkko@kernel.org
+Cc: aleksa@amutable.com,
+	alex@amutable.com,
+	alexei.starovoitov@gmail.com,
+	arnd@arndb.de,
+	bpf@vger.kernel.org,
+	brauner@kernel.org,
+	containers@lists.linux.dev,
+	corbet@lwn.net,
+	dhowells@redhat.com,
+	ebiggers@kernel.org,
+	giuseppe@scrivano.org,
+	hughd@google.com,
+	jack@suse.cz,
+	jlayton@kernel.org,
+	josef@toxicpanda.com,
+	kees@kernel.org,
+	kpsingh@kernel.org,
+	lennart@poettering.net,
+	linux-api@vger.kernel.org,
+	linux-arch@vger.kernel.org,
+	linux-doc@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-kselftest@vger.kernel.org,
+	linux-mm@kvack.org,
 	linux-security-module@vger.kernel.org,
-	Aleksa Sarai <aleksa@amutable.com>,
-	Alexander Mikhalitsyn <alex@amutable.com>,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	Andy Lutomirski <luto@amacapital.net>,
-	Arnd Bergmann <arnd@arndb.de>,
-	Christian Brauner <brauner@kernel.org>,
-	David Howells <dhowells@redhat.com>,
-	Eric Biggers <ebiggers@kernel.org>,
-	Giuseppe Scrivano <giuseppe@scrivano.org>,
-	Hugh Dickins <hughd@google.com>, Jan Kara <jack@suse.cz>,
-	Jeff Layton <jlayton@kernel.org>, Jonathan Corbet <corbet@lwn.net>,
-	Josef Bacik <josef@toxicpanda.com>, Kees Cook <kees@kernel.org>,
-	KP Singh <kpsingh@kernel.org>,
-	Lennart Poettering <lennart@poettering.net>,
-	Neal Gompa <neal@gompa.dev>, Oleg Nesterov <oleg@redhat.com>,
-	Paul Moore <paul@paul-moore.com>,
-	Pavel Tikhomirov <ptikhomirov@virtuozzo.com>,
-	Serge Hallyn <sergeh@kernel.org>,
-	Shuah Khan <skhan@linuxfoundation.org>,
-	Zygmunt Krynicki <zygmunt.krynicki@canonical.com>
+	luto@amacapital.net,
+	neal@gompa.dev,
+	oleg@redhat.com,
+	paul@paul-moore.com,
+	ptikhomirov@virtuozzo.com,
+	sergeh@kernel.org,
+	skhan@linuxfoundation.org,
+	viro@zeniv.linux.org.uk,
+	zygmunt.krynicki@canonical.com
 Subject: Re: [RFC PATCH v7 00/26] userland: Userland containers
-Message-ID: <awcLsCALUwJ1Qlcc@kernel.org>
-References: <20261122193539.3334213-1-jarkko@kernel.org>
- <awYJnFNt9kkBqj59@kernel.org>
+Date: Sat, 28 Nov 2026 00:41:03 +0300
+Message-ID: <20261127214103.542291-1-safinaskar@gmail.com>
+X-Mailer: git-send-email 2.47.3
+In-Reply-To: <awOQDOel_72Xwjm7@kernel.org>
+References: <awOQDOel_72Xwjm7@kernel.org>
 X-Mailing-List: containers@lists.linux.dev
 List-Id: <containers.lists.linux.dev>
 List-Post: <mailto:containers@lists.linux.dev>
@@ -80,168 +130,24 @@ List-Unsubscribe: <mailto:containers+unsubscribe@lists.linux.dev>
 List-Owner: <mailto:containers+owner@lists.linux.dev>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <awYJnFNt9kkBqj59@kernel.org>
+Content-Transfer-Encoding: 8bit
 
-On Wed, Nov 25, 2026 at 12:03:12AM +0200, Jarkko Sakkinen wrote:
-> On Sun, Nov 22, 2026 at 09:35:13PM +0200, Jarkko Sakkinen wrote:
-> > OVERVIEW
-> > ========
-> > 
-> > A userland is an anonymous-inode control object with separate build and
-> > live phases that binds together:
-> > 
-> > 1. A full set of detached namespaces owned by a fresh user namespace,
-> >    with optional build-phase opt-in sharing (USERLAND_SHARE_NSFD).
-> > 2. A dedicated PID namespace for spawning processes into, signaling
-> >    members, and polling or waiting on PID 1 exit.
-> > 3. An initially empty mount namespace (CLONE_EMPTY_MNTNS) populated
-> >    directly in its target user namespace before going live, without
-> >    inheriting host mounts or cloning staged trees, while still allowing
-> >    new mounts to be attached at runtime.
-> > 
-> > Work on this feature started in 2025 after reviewing David Howells'
-> > container object patch set [1], whose underlying mechanics made sense to
-> > me as a continuation of earlier container object efforts [2]. The
-> > lifecycle follows a staircase initialization model similar to the Intel
-> > SGX driver, without an embryonic task state or a parallel namespace
-> > syscall API, pairing a compact policy-agnostic implementation with an
-> > allow-list security model (with LSM hooks) and runtime mount hotplug.
-> > 
-> > While the patch set is manually written, the original motivation came
-> > from isolating LLM agents. Running untrusted agent workloads made it
-> > clear that OCI runtimes need to minimize their live configuration
-> > surface.
-> > 
-> > Assembling mounts, credentials, and namespaces inside helper processes
-> > with a half-configured container is what I see as the main challenge,
-> > and the existential debate around namespaces and container objects is an
-> > unfocused discussion topic.
-> > 
-> > [1] https://lore.kernel.org/all/155059610368.17079.2220554006494174417.stgit@warthog.procyon.org.uk/
-> > [2] https://lwn.net/Articles/1102593/
-> > 
-> > IMPLEMENTATION
-> > ==============
-> > 
-> > Standalone fd-based namespace configuration (patches 01-07) decouples
-> > user and mount namespace setup from live helper tasks. userns_set_idmap()
-> > atomically configures USERNS_SETGROUPS_ALLOWED policy and UID, GID, and
-> > project ID mappings on a CLONE_NEWUSER nsfs fd, checking current_cred()
-> > so an unprivileged creator can delegate the fd via SCM_RIGHTS to a
-> > privileged mapping daemon. move_mount(..., MOVE_MOUNT_T_MNTNS) operates
-> > on any non-anonymous mount namespace fd: on an empty mount namespace it
-> > installs "/" onto the nullfs root once, attaches relative submounts both
-> > before entry and into live mount namespaces, and supports
-> > MOVE_MOUNT_CLONE for recursive bind mounts without OPEN_TREE_CLONE.
-> > 
-> > userland_open() allocates a userland instance backed by a pollable
-> > anonymous-inode fd, creating a fresh owning user namespace and a full
-> > set of detached namespaces: empty mount (CLONE_EMPTY_MNTNS), PID, UTS,
-> > IPC, network, cgroup, and time. ioctl(ufd, USERLAND_GET_NSFD, nstype)
-> > returns nsfs file descriptors for member namespaces, and
-> > ioctl(ufd, USERLAND_SHARE_NSFD, ns_fd) replaces a member cgroup, IPC,
-> > UTS, network, or time namespace while the userland is in USERLAND_INIT.
-> > 
-> > Superblocks are configured directly in the target user namespace via
-> > fsopen(), FSCONFIG_SET_USERLAND, and fsmount() for filesystems opting
-> > into FS_USERLAND_MOUNT (tmpfs, ramfs, devpts, proc, mqueue) or
-> > FS_USERNS_DELEGATABLE, allowing unprivileged callers to assemble mounts
-> > without holding CAP_SYS_ADMIN in their own user namespace or entering
-> > the target user namespace first.
-> > 
-> > Once "/" is installed, processes are spawned into the userland via
-> > clone3() with CLONE_INTO_USERLAND and struct clone_args.userland,
-> > without modifying the calling process's own live state first. Pairing
-> > CLONE_INTO_USERLAND with CLONE_VFORK and opening the target binary via
-> > openat2(..., RESOLVE_IN_ROOT) on the retained "/" mount fd allows
-> > spawning with execveat() directly into the target root.
-> > 
-> > The first entrant becomes PID 1; once it exits and
-> > zap_pid_ns_processes() reaps all members, poll() reports EPOLLHUP and
-> > waitid(P_USERLAND, ufd, infop, options, NULL) returns init's exit
-> > status without consuming it. pidfd_send_signal(ufd, sig, NULL, 0) walks
-> > pid_ns->idr under tasklist_lock to signal member thread groups, and
-> > dedicated LSM hooks mediate userland allocation, teardown, namespace
-> > sharing, process entry, and signal delivery.
-> > 
-> > SYSCALLS
-> > ========
-> > 
-> > Two new system calls are proposed:
-> > 
-> > 1. userland_open(): open an opaque staircase-initialized container
-> >    object (modeled on Intel SGX enclave initialization with separate
-> >    build and live states) with no embryonic state, opting selected
-> >    shared namespaces in via an allow-list instead of unshare semantics.
-> > 2. userns_set_idmap(): configure all UID, GID, and project ID map
-> >    extents for a container user namespace in a single atomic system
-> >    call.
-> > 
-> > Extensions to existing system calls:
-> > 
-> > 1. move_mount() (MOVE_MOUNT_T_MNTNS, MOVE_MOUNT_CLONE): install "/" and
-> >    relative submounts into a mount namespace fd before entry or at
-> >    runtime, and recursively bind-clone mount trees without
-> >    OPEN_TREE_CLONE.
-> > 2. clone3() (CLONE_INTO_USERLAND, struct clone_args.userland): spawn
-> >    PID 1 and subsequent processes directly into a userland without
-> >    modifying the calling process's own live state first.
-> > 3. fsopen() / fsconfig() / fsmount() (FSCONFIG_SET_USERLAND): bind a
-> >    filesystem context to a userland's namespaces and create mounts
-> >    without entering its user namespace.
-> > 4. waitid() (P_USERLAND): wait on a userland fd for PID 1 exit and read
-> >    its exit status without consuming it.
-> > 5. pidfd_send_signal(): broadcast signals to member thread groups via a
-> >    userland fd.
-> > 6. ioctl() (USERLAND_GET_NSFD, USERLAND_SHARE_NSFD): open member nsfs
-> >    file descriptors and opt selected namespaces into existing nsfs fds
-> >    during USERLAND_INIT.
-> > 
-> > HOTPLUG
-> > =======
-> > 
-> > 1. Host calls userland_open().
-> > 2. Host sets uid/gid maps with userns_set_idmap().
-> > 3. Host populates "/" with MOVE_MOUNT_T_MNTNS, optionally combined with
-> >    MOVE_MOUNT_CLONE for bind mounts.
-> > 4. Host spawns PID 1 with clone3(CLONE_INTO_USERLAND) (optionally
-> >    passing an AF_UNIX socketpair fd for communication).
-> > 5. PID 1 watches /proc/self/ns/mnt via fanotify(FAN_REPORT_MNT |
-> >    FAN_MARK_MNTNS, FAN_MNT_ATTACH) or polls /proc/self/mountinfo.
-> > 6. On hotplug, host mounts the filesystem via fsopen() /
-> >    fsconfig(FSCONFIG_SET_USERLAND) / fsmount() (plus optional
-> >    MOUNT_ATTR_IDMAP).
-> > 7. Host creates the mountpoint with openat2(RESOLVE_IN_ROOT) + mkdirat()
-> >    and attaches the mount with MOVE_MOUNT_T_MNTNS.
-> > 8. PID 1 receives FAN_MNT_ATTACH and queries the new mount via
-> >    statmount().
-> 
-> The initial ad-hoc testing of hotplug using a bare metal x86-64 machine
-> and systemd-nspawn has been successful. The kselftest seems provide
-> pretty good guarantees for the basic stability; using the syscalls has
-> caused no issues so far.
-> 
-> I took some time to go through my experimental SystemD patch files and
-> sliced them so that they ought to be easy to bisect and refactor. They
-> should be also quite easy to read, understand and evaluate. Finally, I
-> removed the shitty patch files from my test harness repository.
-> 
-> Resulting outcomes of all of this are:
-> 
-> 1. Rebased RFC v7 patches with refined LSM support and fixes to the
->    known issues as of today:
->    https://git.kernel.org/pub/scm/linux/kernel/git/jarkko/linux-tpmdd.git/log/?h=userland
-> 2. SystemD patches:
->    https://github.com/jarkkojs/systemd/commits/userland/
-> 
-> No new issues were found during testing, other than fixing the issues
-> reported to this thread. This is all feels fairly nice, clean and
-> stable.
+Jarkko Sakkinen <jarkko@kernel.org>:
+> I personally think that "getting in" should not be a goal in the first
+> place. I care more about that whaever gets in has a high bar of
+> quality enough. It can be something different than this but
+> when I read the LWN article about Cells I was alarmed enough
+> so that I had to do this and prove my point.
 
-Possibly userns_set_idmap() should be cut into a patch set of its own,
-as it stands as a feature on its own, and is likely agreeable part for
-any possible solution. I'm open to that.
+I think that Bacik's patchset has better chances than yours.
+I think so, because (as Bacik said) it was tested in Anthropic, and also
+because Brauner reacted positively:
+https://lore.kernel.org/all/20261021-zeitig-niemals-clubmitglieder-b3973fcebd38@brauner/ .
 
-Br, Jarkko
+So I suggest reading Bacik's patchset and say what you don't like about it.
+You will have chance to influence Bacik's proposal before it will be merged.
+
+(Note: I am not kernel developer.)
+
+-- 
+Askar Safin
